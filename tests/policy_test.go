@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -9,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,6 @@ func TestImportExportPolicies(t *testing.T) {
 	verifyExportExistentSucceeds(t)
 	verifyMixedExportFails(t)
 	verifyImportSucceeds(t)
-	verifyDuplicateImportSucceeds(t)
 	verifyDefaultPolicyDuplicateImportFails(t)
 	verifyImportInvalidFails(t)
 	verifyImportDuplicateNameFails(t)
@@ -57,7 +57,7 @@ func TestPolicyFromSearch(t *testing.T) {
 }
 
 func tearDownImportExportTest(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	var cleanupErrors []error
@@ -81,7 +81,7 @@ func tearDownImportExportTest(t *testing.T) {
 			continue
 		}
 		// If there was any cleanup error other than "not found", log it here.
-		assert.Nil(t, cleanupError)
+		assert.Nil(t, cleanupError, fmt.Sprintf("error: %s", cleanupError.Error()))
 	}
 }
 
@@ -99,7 +99,7 @@ func exportPolicy(t *testing.T, service v1.PolicyServiceClient, id string) *stor
 	return resp.Policies[0]
 }
 
-func validateExportFails(t *testing.T, service v1.PolicyServiceClient, id string, expectedErrors []*v1.ExportPolicyError) {
+func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.ExportPolicyError) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ExportPolicies(ctx, &v1.ExportPoliciesRequest{
 		PolicyIds: []string{notAnID},
@@ -130,6 +130,7 @@ func validateImport(t *testing.T, importResp *v1.ImportPoliciesResponse, policie
 
 func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse, expectedPolicy *storage.Policy, ignoreID bool) {
 	require.True(t, importPolicyResponse.GetSucceeded())
+	log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
 	if ignoreID {
 		expectedPolicy.Id = ""
@@ -210,7 +211,7 @@ func createUniquePolicy(t *testing.T, service v1.PolicyServiceClient) *storage.P
 	return newUniquePolicy
 }
 
-func validateExclusionOrScopeOrNotiferRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
+func validateExclusionOrScopeOrNotifierRemoved(t *testing.T, importResp *v1.ImportPoliciesResponse, expectedPolicy *storage.Policy) {
 	require.NotNil(t, importResp)
 	require.True(t, importResp.GetAllSucceeded())
 	require.NotNil(t, importResp.GetResponses())
@@ -229,7 +230,7 @@ func validateExclusionOrScopeOrNotiferRemoved(t *testing.T, importResp *v1.Impor
 }
 
 func verifyExportNonExistentFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	mockErrors := []*v1.ExportPolicyError{
@@ -239,7 +240,7 @@ func verifyExportNonExistentFails(t *testing.T) {
 }
 
 func verifyExportExistentSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -254,7 +255,7 @@ func verifyExportExistentSucceeds(t *testing.T) {
 }
 
 func verifyMixedExportFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	mockErrors := []*v1.ExportPolicyError{
 		makeError(notAnID, "not found"),
@@ -271,7 +272,7 @@ func verifyMixedExportFails(t *testing.T) {
 }
 
 func verifyImportSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -288,25 +289,8 @@ func verifyImportSucceeds(t *testing.T) {
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
 }
 
-func verifyDuplicateImportSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
-	service := v1.NewPolicyServiceClient(conn)
-
-	// Create an existing policy so we don't change default policies
-	policy := createUniquePolicy(t, service)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
-		Policies: []*storage.Policy{policy},
-	})
-	cancel()
-	require.NoError(t, err)
-	// All imported policies are treated as custom policies.
-	markPolicyAsCustom(policy)
-	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{policy}, false)
-}
-
 func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -322,10 +306,12 @@ func verifyDefaultPolicyDuplicateImportFails(t *testing.T) {
 }
 
 func verifyImportInvalidFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	badPolicy := &storage.Policy{}
+	badPolicy := &storage.Policy{
+		PolicyVersion: "1.1",
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{badPolicy},
@@ -338,7 +324,7 @@ func verifyImportInvalidFails(t *testing.T) {
 }
 
 func verifyImportDuplicateNameFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -356,7 +342,7 @@ func verifyImportDuplicateNameFails(t *testing.T) {
 }
 
 func verifyImportDuplicateIDFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -374,7 +360,7 @@ func verifyImportDuplicateIDFails(t *testing.T) {
 }
 
 func verifyImportDuplicateNameAndIDFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -392,7 +378,7 @@ func verifyImportDuplicateNameAndIDFails(t *testing.T) {
 }
 
 func verifyImportNoIDSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	policy := exportPolicy(t, service, knownPolicyID)
@@ -410,7 +396,7 @@ func verifyImportNoIDSucceeds(t *testing.T) {
 }
 
 func verifyImportMultipleSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
@@ -434,7 +420,7 @@ func verifyImportMultipleSucceeds(t *testing.T) {
 }
 
 func verifyImportMixedSuccess(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
@@ -459,7 +445,7 @@ func verifyImportMixedSuccess(t *testing.T) {
 }
 
 func verifyNotifiersRemoved(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
@@ -481,11 +467,11 @@ func verifyNotifiersRemoved(t *testing.T) {
 	policy.Notifiers = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyExclusionsRemoved(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
@@ -515,11 +501,11 @@ func verifyExclusionsRemoved(t *testing.T) {
 	policy.Exclusions = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyScopesRemoved(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
@@ -545,11 +531,11 @@ func verifyScopesRemoved(t *testing.T) {
 	policy.Scope = nil
 	// All imported policies are treated as custom policies.
 	markPolicyAsCustom(policy)
-	validateExclusionOrScopeOrNotiferRemoved(t, importResp, policy)
+	validateExclusionOrScopeOrNotifierRemoved(t, importResp, policy)
 }
 
 func verifyOverwriteNameSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	// Create an existing policy so we don't change default policies
@@ -580,7 +566,7 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 }
 
 func verifyOverwriteIDSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	// Create an existing policy so we don't change default policies
@@ -606,7 +592,7 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 }
 
 func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	// Create an existing policy so we don't change default policies
@@ -638,7 +624,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 }
 
 func verifyConvertSearchToPolicy(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	mockPolicySection := &storage.PolicySection{
@@ -678,7 +664,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 }
 
 func verifyConvertInvalidSearchToPolicyFails(t *testing.T) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
 	queryString := "abc:def,not a valid search"

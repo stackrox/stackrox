@@ -3,11 +3,11 @@ package checkac14
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
+	"go.uber.org/mock/gomock"
 )
 
 func setupMockCtx(ctrl *gomock.Controller, k8sRoles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) (framework.ComplianceContext, *testutils.EvidenceRecords) {

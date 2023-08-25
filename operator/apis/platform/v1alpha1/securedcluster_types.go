@@ -63,21 +63,38 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
+	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
+	// images stored in a cluster-local image repository.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
+	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
+
 	// Allows you to specify additional trusted Root CAs.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
 	// Miscellaneous settings.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Misc *MiscSpec `json:"misc,omitempty"`
+
+	// Overlays
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
+
+	// Monitoring configuration.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
+
+	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	RegistryOverride string `json:"registryOverride,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
@@ -89,7 +106,6 @@ type SensorComponentSpec struct {
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
 	// Set this to 'true' to enable preventive policy enforcement for object creations.
-	//+kubebuilder:validation:Default=true
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
@@ -97,13 +113,11 @@ type AdmissionControlComponentSpec struct {
 	// Set this to 'true' to enable preventive policy enforcement for object updates.
 	//
 	// Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
-	//+kubebuilder:validation:Default=true
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
 
 	// Set this to 'true' to enable monitoring and enforcement for Kubernetes events (port-forward and exec).
-	//+kubebuilder:validation:Default=true
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
@@ -115,9 +129,10 @@ type AdmissionControlComponentSpec struct {
 
 	// Maximum timeout period for admission review, upon which admission review will fail open.
 	// Use it to set request timeouts when you enable inline image scanning.
-	//+kubebuilder:default=3
+	// The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
+	//+kubebuilder:default=20
 	//+kubebuilder:validation:Minimum=1
-	//+kubebuilder:validation:Maximum=10
+	//+kubebuilder:validation:Maximum=25
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 
@@ -128,10 +143,16 @@ type AdmissionControlComponentSpec struct {
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
 	DeploymentSpec `json:",inline"`
+
+	// The number of replicas of the admission control pod.
+	//+kubebuilder:default=3
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=8
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // ImageScanPolicy defines whether images should be scanned at admission control time.
-//+kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline
+// +kubebuilder:validation:Enum=ScanIfMissing;DoNotScanInline
 type ImageScanPolicy string
 
 const (
@@ -147,7 +168,7 @@ func (p ImageScanPolicy) Pointer() *ImageScanPolicy {
 }
 
 // BypassPolicy defines whether admission controller can be bypassed.
-//+kubebuilder:validation:Enum=BreakGlassAnnotation;Disabled
+// +kubebuilder:validation:Enum=BreakGlassAnnotation;Disabled
 type BypassPolicy string
 
 const (
@@ -175,26 +196,31 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Compliance Settings"
 	Compliance *ContainerSpec `json:"compliance,omitempty"`
 
+	// Settings for the Node-Inventory container, which is responsible for scanning the Nodes' filesystem.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanning Settings"
+	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
+
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
 	// not want this behavior, please select 'AvoidTaints' here.
-	//+kubebuilder:validation:Default=TolerateTaints
 	//+kubebuilder:default=TolerateTaints
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 }
 
-// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'KernelModule' or 'None'.
-//+kubebuilder:validation:Enum=EBPF;KernelModule;NoCollection
+// CollectionMethod defines the method of collection used by collector. Options are 'EBPF', 'CORE_BPF', 'None', or 'KernelModule'. Note that the collection method will be switched to EBPF if KernelModule is used.
+// +kubebuilder:validation:Enum=EBPF;CORE_BPF;NoCollection;KernelModule
 type CollectionMethod string
 
 const (
 	// CollectionEBPF means: use EBPF collection.
 	CollectionEBPF CollectionMethod = "EBPF"
-	// CollectionKernelModule means: use KERNEL_MODULE collection.
-	CollectionKernelModule CollectionMethod = "KernelModule"
+	// CollectionCOREBPF means: use CORE_BPF collection.
+	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
+	// CollectionKernelModule means: use KERNEL_MODULE collection.
+	CollectionKernelModule CollectionMethod = "KernelModule"
 )
 
 // Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.
@@ -207,14 +233,13 @@ type AuditLogsSpec struct {
 	// Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
 	// supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
 	// Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
-	//+kubebuilder:validation:Default=Auto
 	//+kubebuilder:default=Auto
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Collection *AuditLogsCollectionSetting `json:"collection,omitempty"`
 }
 
 // AuditLogsCollectionSetting determines if audit log collection is enabled.
-//+kubebuilder:validation:Enum=Auto;Disabled;Enabled
+// +kubebuilder:validation:Enum=Auto;Disabled;Enabled
 type AuditLogsCollectionSetting string
 
 const (
@@ -233,7 +258,7 @@ func (s AuditLogsCollectionSetting) Pointer() *AuditLogsCollectionSetting {
 }
 
 // TaintTolerationPolicy is a type for values of spec.collector.taintToleration
-//+kubebuilder:validation:Enum=TolerateTaints;AvoidTaints
+// +kubebuilder:validation:Enum=TolerateTaints;AvoidTaints
 type TaintTolerationPolicy string
 
 const (
@@ -250,19 +275,17 @@ func (t TaintTolerationPolicy) Pointer() *TaintTolerationPolicy {
 
 // CollectorContainerSpec defines settings for the collector container.
 type CollectorContainerSpec struct {
-	// The method for system-level data collection. Kernel module is recommended.
+	// The method for system-level data collection. EBPF is recommended.
 	// If you select "NoCollection", you will not be able to see any information about network activity
 	// and process executions. The remaining settings in these section will not have any effect.
-	//+kubebuilder:validation:Default=KernelModule
-	//+kubebuilder:default=KernelModule
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	//+kubebuilder:default=EBPF
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:EBPF", "urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
-	// The image flavor to use for collector. "Regular" images are bigger in size, but contain kernel modules
+	// The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
 	// for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
 	// is connected to the internet, or regularly receives Collector Support Package updates (for further
 	// instructions, please refer to the documentation).
-	//+kubebuilder:validation:Default=Regular
 	//+kubebuilder:default=Regular
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
@@ -280,7 +303,7 @@ type ContainerSpec struct {
 }
 
 // CollectorImageFlavor is a type for values of spec.collector.collector.imageFlavor
-//+kubebuilder:validation:Enum=Regular;Slim
+// +kubebuilder:validation:Enum=Regular;Slim
 type CollectorImageFlavor string
 
 const (
@@ -293,6 +316,45 @@ const (
 // Pointer returns the given CollectorImageFlavor as a pointer, needed in k8s resource structs.
 func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
 	return &c
+}
+
+// Note the following struct should mostly match ScannerComponentSpec for the Central's type. Different Scanner
+// types struct are maintained because of UI exposed documentation differences.
+
+// LocalScannerComponentSpec defines settings for the "scanner" component.
+type LocalScannerComponentSpec struct {
+	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
+	// (not recommended).
+	// If you do so, all the settings in this section will have no effect.
+	//+kubebuilder:default=AutoSense
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
+	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
+
+	// Settings pertaining to the analyzer deployment, such as for autoscaling.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Analyzer *ScannerAnalyzerComponent `json:"analyzer,omitempty"`
+
+	// Settings pertaining to the database used by the Red Hat Advanced Cluster Security Scanner.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="DB"
+	DB *DeploymentSpec `json:"db,omitempty"`
+}
+
+// LocalScannerComponentPolicy is a type for values of spec.scanner.scannerComponent.
+// +kubebuilder:validation:Enum=AutoSense;Disabled
+type LocalScannerComponentPolicy string
+
+const (
+	// LocalScannerComponentAutoSense means that scanner should be installed,
+	// unless there is a Central resource in the same namespace.
+	// In that case typically a central scanner will be deployed as a component of Central.
+	LocalScannerComponentAutoSense LocalScannerComponentPolicy = "AutoSense"
+	// LocalScannerComponentDisabled means that scanner should not be installed.
+	LocalScannerComponentDisabled LocalScannerComponentPolicy = "Disabled"
+)
+
+// Pointer returns the pointer of the policy.
+func (l LocalScannerComponentPolicy) Pointer() *LocalScannerComponentPolicy {
+	return &l
 }
 
 // -------------------------------------------------------------
@@ -315,7 +377,7 @@ type SecuredClusterStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,admission-control},{DaemonSet,v1,collector},{Deployment,v1,sensor}}
+//+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{DaemonSet,v1,""}}
 //+genclient
 
 // SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is

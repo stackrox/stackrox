@@ -24,7 +24,8 @@ type centralWhoAmICommand struct {
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	cbr := &cobra.Command{
-		Use: "whoami",
+		Use:   "whoami",
+		Short: "Display information about the current user and their authentication method.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return makeCentralWhoAmICommand(cliEnvironment, c).whoami()
 		}),
@@ -74,9 +75,10 @@ func (cmd *centralWhoAmICommand) whoami() error {
 	}
 	sort.Strings(resources)
 
-	// Print user information.
-	cmd.env.Logger().PrintfLn("User:")
-	cmd.env.Logger().PrintfLn("  %s", auth.GetUserId())
+	cmd.env.Logger().PrintfLn(`UserID:
+	%s
+User name:
+	%s`, auth.GetUserId(), auth.GetUserInfo().GetFriendlyName())
 
 	// Print resource access information
 	cmd.printRoles(roles.GetRoles())

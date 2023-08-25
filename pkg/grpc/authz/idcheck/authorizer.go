@@ -22,7 +22,7 @@ func Wrap(idAuthorizer IdentityBasedAuthorizer) authz.Authorizer {
 }
 
 // Authorized implements the Authorizer interface.
-func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, fullMethodName string) error {
+func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, _ string) error {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return err

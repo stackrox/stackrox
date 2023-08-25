@@ -1,17 +1,25 @@
 import React, { ReactElement } from 'react';
-import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertVariant,
+    Checkbox,
+    Form,
+    PageSection,
+    Text,
+    TextInput,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type ClairIntegration = {
@@ -85,6 +93,18 @@ function ClairIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Deprecation notice"
+                    variant={AlertVariant.warning}
+                    isInline
+                    className="pf-u-mb-lg"
+                >
+                    <Text>
+                        CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster
+                        Security 4.1 release.
+                    </Text>
+                    <Text>Use Clair v4 integration instead.</Text>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup

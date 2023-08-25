@@ -1,0 +1,28 @@
+.collection-form-expandable-section {
+  background-color: var(--pf-global--BackgroundColor--100);
+  padding: var(	--pf-global--spacer--md);
+}
+
+.collection-form-expandable-section button.pf-c-expandable-section__toggle {
+  color: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+}
+
+.collection-form-expandable-section button.pf-c-expandable-section__toggle svg {
+  vertical-align: middle !important;
+}
+
+.collection-form-expandable-section button.pf-c-expandable-section__toggle:focus {
+  /* This blue outline on focus is a global problem, but it is especially jarring in this case */
+  outline: none;
+}
+
+.collection-form-expandable-section .pf-c-expandable-section__toggle-icon {
+  /*
+    Some conflict with TW styles in production build only is causing this element to be
+    misaligned due to an excessive calculated height. Setting this max prevents it from
+    growing too large. This likely can be removed when we fully migrate to PF.
+  */
+  max-height: 2rem;
+}

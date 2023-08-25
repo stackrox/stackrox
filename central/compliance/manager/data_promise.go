@@ -30,7 +30,7 @@ func newFixedDataPromise(ctx context.Context, dataRepoFactory data.RepositoryFac
 	}
 }
 
-func (p *fixedDataPromise) WaitForResult(cancel concurrency.Waitable) (framework.ComplianceDataRepository, error) {
+func (p *fixedDataPromise) WaitForResult(_ concurrency.Waitable) (framework.ComplianceDataRepository, error) {
 	return p.dataRepo, p.err
 }
 

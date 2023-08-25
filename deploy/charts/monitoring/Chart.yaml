@@ -1,6 +1,14 @@
+apiVersion: v2
 name: monitoring
 description: StackRox Monitoring
 version: 1.0.0
 maintainers:
   - name: stackrox
     email: support@stackrox.com
+dependencies:
+  - name: kube-state-metrics
+    version: 4.20.0
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: alertmanager
+    version: 0.20.1
+    repository: https://prometheus-community.github.io/helm-charts

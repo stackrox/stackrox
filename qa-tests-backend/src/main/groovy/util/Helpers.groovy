@@ -1,59 +1,63 @@
 package util
 
 import common.Constants
+
+import groovy.util.logging.Slf4j
+
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
+
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
 
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
+@Slf4j
 class Helpers {
-    private static final int MAX_RETRY_ATTEMPTS = 2
-    private static int retryAttempt = 0
-
-    static <V> V evaluateWithRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
-                println "Caught exception: ${t}. Retrying in ${pauseSecs}s"
+                log.debug("Caught exception. Retrying in ${pauseSecs}s (attempt ${i} of ${retries}): " + t)
             }
             sleep pauseSecs * 1000
         }
         return closure()
     }
 
-    static <V> void withRetry(Object ignored, int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithRetry(ignored, retries, pauseSecs, closure)
+    static <V> void withRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithRetry(retries, pauseSecs, closure)
     }
 
-    static boolean determineRetry(Throwable failure) {
-        if (failure instanceof AssumptionViolatedException) {
-            println "Skipping retry for: " + failure
-            return false
+    static <V> V evaluateWithK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
+        for (int i = 0; i < retries; i++) {
+            try {
+                return closure()
+            } catch (io.fabric8.kubernetes.client.KubernetesClientException t) {
+                log.debug("Caught k8 client exception. Retrying in ${pauseSecs}s", t)
+            }
+            sleep pauseSecs * 1000
         }
+        return closure()
+    }
 
-        retryAttempt++
-        def willRetry = retryAttempt <= MAX_RETRY_ATTEMPTS
-        if (willRetry) {
-            println "An exception occurred which will cause a retry: " + failure
-            println "Test Failed... Attempting Retry #${retryAttempt}"
+    static <V> void withK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
+        evaluateWithK8sClientRetry(retries, pauseSecs, closure)
+    }
+
+    static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
+        Timer t = new Timer(retries, intervalSeconds)
+        int attempt = 0
+        while (t.IsValid()) {
+            attempt++
+            if (closure()) {
+                return true
+            }
+            log.debug "Attempt ${attempt} failed, retrying"
         }
-        return willRetry
-    }
-
-    static void resetRetryAttempts() {
-        retryAttempt = 0
-    }
-
-    static int getAttemptCount() {
-        return retryAttempt + 1
-    }
-
-    static void sleepWithRetryBackoff(int milliseconds) {
-        sleep milliseconds * getAttemptCount()
+        throw new RuntimeException("All ${attempt} attempts failed, could not reach desired state")
     }
 
     static boolean containsNoWhitespace(Object ignored, String baseString, String subString) {
@@ -70,73 +74,75 @@ class Helpers {
     }
 
     static void collectDebugForFailure(Throwable exception) {
-        if (!Env.IN_CI) {
-            println "Won't collect logs when not in CI"
+        if (!collectDebug()) {
             return
         }
 
         if (exception && (exception instanceof AssumptionViolatedException ||
-                exception.getMessage().contains("org.junit.AssumptionViolatedException"))) {
-            println "Won't collect logs for: ${exception.getMessage()}"
+                exception.getMessage()?.contains("org.junit.AssumptionViolatedException"))) {
+            log.info("Won't collect logs for: " + exception)
             return
         }
 
         if (exception) {
-            println "An exception occurred in test: ${exception.getMessage()}"
+            log.error("An exception occurred in test", exception)
         }
 
         try {
             def date = new Date()
             def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
-            def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
+            def debugDir = new File(Env.QA_TEST_DEBUG_LOGS)
             if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
-                println "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
+                log.info "${sdf.format(date)} Debug capture limit reached. Not collecting for this failure."
                 return
             }
 
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
 
-            println "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
+            log.debug "${sdf.format(date)} Will collect various stackrox logs for this failure under ${collectionDir}/"
 
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
+            shellCmd("./scripts/ci/collect-service-logs.sh kube-system ${collectionDir}/kube-system-k8s-logs")
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
+            shellCmd("./scripts/ci/collect-splunk-logs.sh ${Constants.SPLUNK_TEST_NAMESPACE} "+
+                     "${collectionDir}/splunk-logs")
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
         catch (Exception e) {
-            println "Could not collect logs: ${e}"
+            log.error( "Could not collect logs", e)
         }
     }
 
     // collectImageScanForDebug(image) - a best effort debug tool to get a complete image scan.
     static void collectImageScanForDebug(String image, String saveName) {
-        if (!Env.IN_CI) {
-            println "Won't collect image scans when not in CI"
+        if (!collectDebug()) {
             return
         }
 
-        println "Will scan ${image} to ${saveName}"
+        log.debug "Will scan ${image} to ${saveName}"
 
         try {
-            Path imageScans = Paths.get(Constants.FAILURE_DEBUG_DIR).resolve("image-scans")
+            Path imageScans = Paths.get(Env.QA_TEST_DEBUG_LOGS).resolve("image-scans")
             new File(imageScans.toAbsolutePath().toString()).mkdirs()
 
-            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image}".execute(null, new File(".."))
+            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image} -a".execute(null, new File(".."))
             String output = imageScans.resolve(saveName).toAbsolutePath()
             FileWriter sout = new FileWriter(output)
             StringBuilder serr = new StringBuilder()
 
-            proc.consumeProcessOutput(sout, serr)
+            proc.waitForProcessOutput(sout, serr)
             proc.waitFor()
 
             if (proc.exitValue() != 0) {
-                println "Failed to scan the image."
-                println "Stderr: $serr"
-                println "Exit: ${proc.exitValue()}"
+                log.warn "Failed to scan the image. Exit: ${proc.exitValue()}\nStderr: $serr"
             }
+
+            // closing the FileWriter will ensure internal buffer is flushed to file
+            sout.close()
         }
         catch (Exception e) {
-            println "Could not collect image details: ${e}"
+            log.error("Could not collect image details", e)
         }
     }
 
@@ -145,9 +151,19 @@ class Helpers {
         def proc = cmd.execute(null, new File(".."))
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
-        println "Ran: ${cmd}"
-        println "Stdout: $sout"
-        println "Stderr: $serr"
-        println "Exit: ${proc.exitValue()}"
+        log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
+    }
+
+    private static boolean collectDebug() {
+        if ((Env.IN_CI || Env.GATHER_QA_TEST_DEBUG_LOGS) && (Env.QA_TEST_DEBUG_LOGS != "")) {
+            return true
+        }
+
+        log.warn("Debug collection will be skipped. "+
+                 "[CI: ${Env.IN_CI},"+
+                 " GATHER_QA_TEST_DEBUG_LOGS: ${Env.GATHER_QA_TEST_DEBUG_LOGS},"+
+                 " QA_TEST_DEBUG_LOGS: ${Env.QA_TEST_DEBUG_LOGS}]")
+
+        return false
     }
 }

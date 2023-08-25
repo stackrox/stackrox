@@ -33,7 +33,7 @@ type controller struct {
 
 type telemetryCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error
 
-func newController(capabilities centralsensor.SensorCapabilitySet, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
+func newController(capabilities set.Set[centralsensor.SensorCapability], injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
 	ctrl := &controller{
 		stopSig:               stopSig,
 		returnChans:           make(map[string]chan *central.TelemetryResponsePayload),
@@ -184,7 +184,7 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {
 	requestID := resp.GetRequestId()
 	if resp.GetPayload() == nil {
-		return utils.Should(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
+		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
 	}
 
 	var retC chan *central.TelemetryResponsePayload

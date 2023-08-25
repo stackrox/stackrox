@@ -20,6 +20,18 @@ const (
 	StateInactive State = "INACTIVE"
 )
 
+// Severity indicates severity of alert
+type Severity string
+
+// Severity values are defined in google cloud scc api
+const (
+	High     Severity = "HIGH"
+	Low      Severity = "LOW"
+	Medium   Severity = "MEDIUM"
+	Critical Severity = "CRITICAL"
+	Default  Severity = "SEVERITY_UNSPECIFIED"
+)
+
 // A Finding represents a single Finding created by StackRox (as a Source).
 type Finding struct {
 	ID           string                 `json:"name,omitempty"`
@@ -30,6 +42,7 @@ type Finding struct {
 	URL          string                 `json:"externalUri,omitempty"`
 	Properties   map[string]interface{} `json:"sourceProperties,omitempty"`
 	Timestamp    string                 `json:"eventTime"`
+	Severity     Severity               `json:"severity,omitempty"`
 	// The time at which the event took place. For example, if the finding represents an open firewall it would capture the time the open firewall was detected.
 	// A timestamp in RFC3339 UTC "Zulu" format, accurate to nanoseconds. Example: "2014-10-02T15:01:23.045123456Z".
 	// See https://cloud.google.com/security-command-center/docs/reference/rest/v1beta1/organizations.sources.findings#Finding
@@ -56,7 +69,6 @@ type Enforcement struct {
 
 // Properties includes various values, by key, for a new Finding.
 type Properties struct {
-	Severity string `json:"severity,omitempty"`
 
 	// These fields are custom and defined by StackRox.
 	Namespace      string `json:"namespace,omitempty"`

@@ -34,23 +34,26 @@
     $.Values, we apply some bootstrap defaults.
    */}}
 {{ $rox := deepCopy $values }}
-{{ $_ := include "srox.mergeInto" (list $rox ($.Files.Get "internal/config-shape.yaml" | fromYaml)) }}
-{{ $_ = set $ "_rox" $rox }}
 
-[< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-{{/*
-  #TODO(ROX-8672): Add setup and defaulting logic to secured cluster chart
-    Scanner setup
-  */}}
-{{ $_ := set $._rox "scanner" (dict "disable" true) }}
-[<- end >]
+
+{{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
+
+{{/* Only merge scanner config shapes if feature flag is enabled and kubectl output is disabled */}}
+[< if (not .KubectlOutput) ->]
+  {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape $configShapeScanner) }}
+[< else >]
+  {{ $_ := include "srox.mergeInto" (list $rox $configShape) }}
+[< end >]
+
+{{ $_ = set $ "_rox" $rox }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
 {{ $_ = set $._rox "_configFP" $configFP }}
 
 {{/* Global state (accessed from sub-templates) */}}
-{{ $state := dict "notes" list "warnings" list "referencedImages" dict }}
+{{ $state := dict "notes" list "warnings" list "referencedImages" dict "generated" dict }}
 {{ $_ = set $._rox "_state" $state }}
 
 {{/*
@@ -79,63 +82,27 @@
    Environment setup
 */}}
 
-{{/* Infer openshift version */}}
-{{ if kindIs "invalid" $._rox.env.openshift }}
-  {{ $_ := set $._rox.env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-{{ end }}
-{{ if and $._rox.env.openshift (kindIs "bool" $._rox.env.openshift) }}
-  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
-  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
-
-  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm tempalte commands */}}
-  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ else if gt $kubeVersion.Minor 11 }}
-    {{ $_ := set $._rox.env "openshift" 4 }}
-  {{ else }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ end }}
-
-  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $._rox.env.openshift)) }}
-{{ end }}
-{{ if not (kindIs "bool" $._rox.env.openshift) }}
-  {{ $_ := set $._rox.env "openshift" (int $._rox.env.openshift) }}
-{{ else if not $._rox.env.openshift }}
-  {{ $_ := set $._rox.env "openshift" 0 }}
-{{ end }}
+{{/* Detect openshift version */}}
+{{ include "srox.autoSenseOpenshiftVersion" (list $) }}
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
-  {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'enableOpenShiftMonitoring' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
-  {{ end }}
-  
-  {{/* Override monitoring exposure when openshift monitoring is desired */}}
-  {{ if not $._rox.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.sensor.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'sensor.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'sensor.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.sensor "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.collector.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'collector.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'collector.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.collector "exposeMonitoring" true }}
-  {{ end }}
-  
-  {{ if not $._rox.admissionControl.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'admissionControl.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'admissionControl.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.admissionControl "exposeMonitoring" true }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
 {{ end }}
+{{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
+{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+{{ end }}
+
+[<- if .AutoSensePodSecurityPolicies >]
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+[<- end >]
 
 {{ include "srox.applyDefaults" $ }}
 
@@ -193,7 +160,6 @@
 {{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
   {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
-
 {{/* Initial image pull secret setup. */}}
 {{ include "srox.mergeInto" (list $._rox.mainImagePullSecrets $._rox.imagePullSecrets) }}
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
@@ -245,6 +211,11 @@
 {{/* Image settings */}}
 {{ include "srox.configureImage" (list $ ._rox.image.main) }}
 {{ include "srox.configureImage" (list $ ._rox.image.collector) }}
+[< if (not .KubectlOutput) ->]
+{{ include "srox.configureImage" (list $ ._rox.image.scanner) }}
+[<- end >]
+
+{{ include "srox.initGlobalPrefix" (list $) }}
 
 {{/* ManagedBy related settings */}}
 {{/* The field `helmManaged` defaults to true, therefore `managedBy` will only be changed to `MANAGER_TYPE_MANUAL` here
@@ -252,6 +223,39 @@
 {{- if not ._rox.helmManaged }}
   {{ $_ = set $._rox "managedBy" "MANAGER_TYPE_MANUAL" }}
 {{- end }}
+
+[< if (not .KubectlOutput) ->]
+{{/*
+   Local scanner setup.
+  */}}
+
+{{/* Disable scanner always in kubectl outputs */}}
+[< if .KubectlOutput ->]
+  {{ $_ := set $._rox.scanner "disable" true }}
+[< end >]
+
+{{ if eq ._rox.scanner.disable false }}
+  {{ $centralDeployment := dict }}
+  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+  {{ if $centralDeployment.result }}
+    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.scanner "disable" true }}
+  {{ end }}
+{{ end }}
+
+{{ if eq ._rox.scanner.disable false }}
+  {{ if ne ._rox.scanner.mode "slim" }}
+    {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
+  {{ end }}
+
+  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+  {{ $_ := set $._rox.scanner "slimImage" ._rox.image.scanner }}
+  {{ $_ := set $._rox.scanner "slimDBImage" ._rox.image.scannerDb }}
+  {{ include "srox.scannerInit" (list $ $._rox.scanner) }}
+  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner") $.Release.Namespace) }}
+{{ end }}
+[<- end >]
 
 {{/*
     Post-processing steps.

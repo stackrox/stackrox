@@ -1,6 +1,7 @@
 package centralservices
 
 import (
+	_ "embed"
 	"io"
 	"path"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/image"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -29,69 +31,10 @@ var (
 
 	// A values YAML that sets all generatable values explicitly, and causes all
 	// objects to be generated.
-	allValuesExplicit = `
-licenseKey: "my license key"
-env:
-  platform: gke
-  openshift: 4
-  istio: true
-  proxyConfig: "proxy config"
-imagePullSecrets:
-  username: myuser
-  password: mypass
-ca:
-  cert: "ca cert pem"
-  key: "ca key pem"
-additionalCAs:
-  ca.crt: |
-    Extra CA certificate
-central:
-  adminPassword:
-    htpasswd: "htpasswd file"
-  jwtSigner:
-    key: "jwt signing key"
-  serviceTLS:
-    cert: "central tls cert pem"
-    key: "central tls key pem"
-  defaultTLS:
-    cert: "central default tls cert pem"
-    key: "central default tls key pem"
-  exposure:
-    loadBalancer:
-      enabled: true
-scanner:
-  dbPassword:
-    value: "db password"
-  serviceTLS:
-    cert: "scanner tls cert pem"
-    key: "scanner tls key pem"
-  dbServiceTLS:
-    cert: "scanner-db tls cert pem"
-    key: "scanner-db tls key pem"
-enableOpenShiftMonitoring: true
-`
-	autogenerateAll = `
-licenseKey: "my license key"
-additionalCAs:
-  ca.crt: |
-    Extra CA certificate
-env:
-  platform: gke
-  openshift: 4
-  istio: true
-  proxyConfig: "proxy config"
-imagePullSecrets:
-  username: myuser
-  password: mypass
-central:
-  defaultTLS:
-    cert: "central default tls cert pem"
-    key: "central default tls key pem"
-  exposure:
-    loadBalancer:
-      enabled: true
-enableOpenShiftMonitoring: true
-`
+	//go:embed "testdata/all-values-explicit.yaml"
+	allValuesExplicit string
+	//go:embed "testdata/autogenerate-all.yaml"
+	autogenerateAll string
 )
 
 type baseSuite struct {
@@ -160,8 +103,16 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableGenerated() {
 	_, rendered := s.LoadAndRender(autogenerateAll)
 	s.Require().NotEmpty(rendered)
+	// We are in the process to remove these files. The support is limited to
+	// upgrade process only. Exclude them for now.
+	// TODO(ROX-16253): Remove PVC
+	excludes := set.NewFrozenStringSet("01-central-11-pvc.yaml", "00-storage-class.yaml")
 
 	for k, v := range rendered {
+		if excludes.Contains(path.Base(k)) {
+			s.Empty(v, "expected generated values file %s to be empty when specifying all generatable values", k)
+			continue
+		}
 		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 	}
 }
@@ -173,11 +124,15 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)
 
+	// We are in the process to remove these files. The support is limited to
+	// upgrade process only. Exclude them for now.
+	excludes := set.NewFrozenStringSet("01-central-11-pvc.yaml", "00-storage-class.yaml", "99-generated-values-secret.yaml")
+
 	for k, v := range rendered {
-		if path.Base(k) == "99-generated-values-secret.yaml" {
-			s.Empty(v, "expected generated values file to be empty when specifying all generatable values")
-		} else {
-			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
+		if excludes.Contains(path.Base(k)) {
+			s.Empty(v, "expected generated values file %s to be empty when specifying all generatable values", k)
+			continue
 		}
+		s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 	}
 }

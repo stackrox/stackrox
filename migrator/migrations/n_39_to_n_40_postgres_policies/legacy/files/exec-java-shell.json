@@ -1,0 +1,49 @@
+{
+  "id": "0501ac8b-5869-4e1e-b360-84dbf01f2c6c",
+  "name": "Shell Spawned by Java Application",
+  "description": "Detects execution of shell (bash/csh/sh/zsh) as a subprocess of a java application",
+  "rationale": "Java application launching a shell can be an indicator of remote code execution",
+  "remediation": "Determine whether this is intended behavior of the application or an indication of malicious activity",
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "(/[s]*bin/){0,1}(ba|c|z){0,1}sh"
+            }
+          ]
+        },
+        {
+          "fieldName": "Process Ancestor",
+          "values": [
+            {
+              "value": ".*java"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1059.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

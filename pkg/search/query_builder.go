@@ -2,13 +2,16 @@ package search
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/conv"
 	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -30,6 +33,12 @@ const (
 
 	// EqualityPrefixSuffix is the prefix for an exact match
 	EqualityPrefixSuffix = `"`
+
+	// TimeRangePrefix is the prefix for a time range query
+	TimeRangePrefix = "tr/"
+
+	// MaxQueryParameters is the maximum number of query parameters for a single statement
+	MaxQueryParameters = math.MaxUint16
 )
 
 var (
@@ -73,13 +82,163 @@ type fieldValue struct {
 	highlighted bool
 }
 
+// Select defines the select field to be used with the query.
+type Select struct {
+	qs *v1.QuerySelect
+}
+
+// NewQuerySelect creates a new query select.
+func NewQuerySelect(field FieldLabel) *Select {
+	return &Select{
+		qs: &v1.QuerySelect{
+			Field: &v1.QueryField{
+				Name: field.String(),
+			},
+		},
+	}
+}
+
+// AggrFunc sets aggregate function to be applied on the select field.
+func (s *Select) AggrFunc(aggr aggregatefunc.AggrFunc) *Select {
+	s.qs.Field.AggregateFunc = aggr.Name()
+	return s
+}
+
+// Distinct sets query select to distinct.
+func (s *Select) Distinct() *Select {
+	s.qs.Field.Distinct = true
+	return s
+}
+
+// Filter sets filter on the select field.
+func (s *Select) Filter(name string, q *v1.Query) *Select {
+	s.qs.Filter = &v1.QuerySelectFilter{
+		Name:  name,
+		Query: q,
+	}
+	return s
+}
+
+// Proto returns the select clause as *v1.QuerySelect.
+func (s *Select) Proto() *v1.QuerySelect {
+	return s.qs
+}
+
+// NewGroupBy creates a new *GroupBy object.
+func NewGroupBy() *GroupBy {
+	return &GroupBy{
+		grpBy: &v1.QueryGroupBy{},
+	}
+}
+
+// GroupBy defines the group by clause to be used with the query.
+type GroupBy struct {
+	grpBy *v1.QueryGroupBy
+}
+
+// NewPagination creates a new *Pagination object.
+func NewPagination() *Pagination {
+	return &Pagination{
+		qp: &v1.QueryPagination{},
+	}
+}
+
+// Pagination defines the pagination to be used with the query.
+type Pagination struct {
+	qp *v1.QueryPagination
+}
+
+// Limit sets the limit
+func (p *Pagination) Limit(limit int32) *Pagination {
+	p.qp.Limit = limit
+	return p
+}
+
+// Offset sets the offset
+func (p *Pagination) Offset(offset int32) *Pagination {
+	p.qp.Offset = offset
+	return p
+}
+
+// AddSortOption adds the sort option to the pagination object
+func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
+	opt := &v1.QuerySortOption{
+		Field:    string(so.field),
+		Reversed: so.reversed,
+	}
+	if so.aggregateBy.aggrFunc != aggregatefunc.Unset {
+		opt.AggregateBy = so.aggregateBy.Proto()
+	}
+	if so.searchAfter != "" {
+		opt.SearchAfterOpt = &v1.QuerySortOption_SearchAfter{
+			SearchAfter: so.searchAfter,
+		}
+	}
+	p.qp.SortOptions = append(p.qp.SortOptions, opt)
+	return p
+}
+
+// SortOption describes the way to sort the query
+type SortOption struct {
+	field       FieldLabel
+	aggregateBy aggregateBy
+	reversed    bool
+	searchAfter string
+}
+
+// NewSortOption creates a new sort option
+func NewSortOption(field FieldLabel) *SortOption {
+	return &SortOption{
+		field: field,
+	}
+}
+
+// Reversed describes if the sort should be reversed
+func (s *SortOption) Reversed(reversed bool) *SortOption {
+	s.reversed = reversed
+	return s
+}
+
+// SearchAfter starts from the passed value instead of using limit/offset pagination
+func (s *SortOption) SearchAfter(searchAfter string) *SortOption {
+	s.searchAfter = searchAfter
+	return s
+}
+
+// AggregateBy describes the aggregateBy that should be applied to base sort option. When aggregateBy is set,
+// the sorting happens on the aggregateBy of base field not directly on the base field. For example, sort by count(x)
+func (s *SortOption) AggregateBy(aggrFunc aggregatefunc.AggrFunc, distinct bool) *SortOption {
+	s.aggregateBy = aggregateBy{
+		aggrFunc: aggrFunc,
+		distinct: distinct,
+	}
+	return s
+}
+
+type aggregateBy struct {
+	aggrFunc aggregatefunc.AggrFunc
+	distinct bool
+}
+
+func (a *aggregateBy) Proto() *v1.AggregateBy {
+	return &v1.AggregateBy{
+		AggrFunc: a.aggrFunc.Proto(),
+		Distinct: a.distinct,
+	}
+}
+
 // QueryBuilder builds a search query
 type QueryBuilder struct {
 	fieldsToValues map[FieldLabel][]string
-	ids            []string
+	ids            *[]string
 	linkedFields   [][]fieldValue
 
+	selectFields []*Select
+	// TODO(mandar): Deprecate highlighted and replace with selects.
 	highlightedFields map[FieldLabel]struct{}
+
+	groupBy    *GroupBy
+	pagination *Pagination
 }
 
 // NewQueryBuilder instantiates a query builder with no values
@@ -88,6 +247,40 @@ func NewQueryBuilder() *QueryBuilder {
 		fieldsToValues:    make(map[FieldLabel][]string),
 		highlightedFields: make(map[FieldLabel]struct{}),
 	}
+}
+
+// WithSelectFields sets fields to select.
+func (qb *QueryBuilder) WithSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = selects
+	return qb
+}
+
+// AddSelectFields adds fields to select.
+func (qb *QueryBuilder) AddSelectFields(selects ...*Select) *QueryBuilder {
+	qb.selectFields = append(qb.selectFields, selects...)
+	return qb
+}
+
+// WithGroupBy sets query group by.
+func (qb *QueryBuilder) WithGroupBy(grpBy *GroupBy) *QueryBuilder {
+	qb.groupBy = grpBy
+	return qb
+}
+
+// AddGroupBy adds fields to groups query results on.
+func (qb *QueryBuilder) AddGroupBy(fields ...FieldLabel) *QueryBuilder {
+	gb := NewGroupBy()
+	for _, field := range fields {
+		gb.grpBy.Fields = append(gb.grpBy.Fields, field.String())
+	}
+	qb.groupBy = gb
+	return qb
+}
+
+// WithPagination applies pagination to the query
+func (qb *QueryBuilder) WithPagination(p *Pagination) *QueryBuilder {
+	qb.pagination = p
+	return qb
 }
 
 // AddLinkedFields adds a bunch of fields and values where the matches must be in corresponding places in both fields.
@@ -102,14 +295,22 @@ func (qb *QueryBuilder) AddLinkedFields(fields []FieldLabel, values []string) *Q
 
 // AddDocIDs adds the list of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDs(ids ...string) *QueryBuilder {
-	qb.ids = append(qb.ids, ids...)
+	if qb.ids == nil {
+		slice := make([]string, 0, len(ids))
+		qb.ids = &slice
+	}
+	*qb.ids = append(*qb.ids, ids...)
 	return qb
 }
 
 // AddDocIDSet adds the set of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDSet(idSet set.StringSet) *QueryBuilder {
+	if qb.ids == nil {
+		slice := make([]string, 0, len(idSet))
+		qb.ids = &slice
+	}
 	for id := range idSet {
-		qb.ids = append(qb.ids, id)
+		*qb.ids = append(*qb.ids, id)
 	}
 	return qb
 }
@@ -163,7 +364,7 @@ func (qb *QueryBuilder) AddStringsHighlighted(k FieldLabel, v ...string) *QueryB
 	return qb.AddStrings(k, v...).MarkHighlighted(k)
 }
 
-// AddNullField adds a very for documents that don't contain the specified field.
+// AddNullField adds a query for documents that don't contain the specified field.
 func (qb *QueryBuilder) AddNullField(k FieldLabel) *QueryBuilder {
 	return qb.AddStrings(k, NullString)
 }
@@ -214,6 +415,13 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 	return qb
 }
 
+// AddTimeRangeField adds a range query between two times for the specific field.
+func (qb *QueryBuilder) AddTimeRangeField(field FieldLabel, from, to time.Time) *QueryBuilder {
+	value := fmt.Sprintf("%s%d-%d", TimeRangePrefix, from.UnixMilli(), to.UnixMilli())
+	qb.fieldsToValues[field] = append(qb.fieldsToValues[field], value)
+	return qb
+}
+
 // AddNumericField adds a numeric field.
 func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator storage.Comparator, value float32) *QueryBuilder {
 	return qb.AddStrings(k, NumericQueryString(comparator, value))
@@ -256,12 +464,17 @@ func (qb *QueryBuilder) Query() string {
 func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	queries := make([]*v1.Query, 0, len(qb.fieldsToValues)+len(qb.linkedFields))
 
-	if len(qb.ids) > 0 {
-		queries = append(queries, docIDQuery(qb.ids))
+	if qb.ids != nil {
+		queries = append(queries, docIDQuery(*qb.ids))
 	}
 
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
+
+	var qSelects []*v1.QuerySelect
+	for _, sf := range qb.selectFields {
+		qSelects = append(qSelects, sf.qs)
+	}
 
 	for _, field := range fields {
 		_, highlighted := qb.highlightedFields[field]
@@ -272,7 +485,18 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 		queries = append(queries, matchLinkedFieldsQuery(linkedFieldsGroup))
 	}
 
-	return ConjunctionQuery(queries...)
+	cq := ConjunctionQuery(queries...)
+	if qSelects != nil {
+		cq.Selects = qSelects
+	}
+
+	if qb.groupBy != nil {
+		cq.GroupBy = qb.groupBy.grpBy
+	}
+	if qb.pagination != nil {
+		cq.Pagination = qb.pagination.qp
+	}
+	return cq
 }
 
 func (qb *QueryBuilder) getSortedFields() []FieldLabel {

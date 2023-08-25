@@ -2,7 +2,7 @@ package orchestratormanager
 
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.Pod
-import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import objects.ConfigMap
 import objects.DaemonSet
 import objects.Deployment
@@ -34,6 +34,8 @@ interface OrchestratorMain {
     def waitForPodRestart(String ns, String name, int prevRestartCount, int retries, int intervalSeconds)
     String getPodLog(String ns, String name)
     def copyFileToPod(String fromPath, String ns, String podName, String toPath)
+    boolean podReady(Pod pod)
+    def addPodAnnotationByApp(String ns, String appName, String key, String value)
 
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)
@@ -50,6 +52,7 @@ interface OrchestratorMain {
     def getDeploymentReplicaCount(Deployment deployment)
     def getDeploymentUnavailableReplicaCount(Deployment deployment)
     def getDeploymentNodeSelectors(Deployment deployment)
+    def getDeploymentCount()
     def getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
     def createPortForward(int port, Deployment deployment)
@@ -57,16 +60,21 @@ interface OrchestratorMain {
     EnvVar getDeploymentEnv(String ns, String name, String key)
     def scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
+    boolean deploymentReady(String ns, String name)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
     def deleteDaemonSet(DaemonSet daemonSet)
+    boolean containsDaemonSetContainer(String ns, String name, String containerName)
+    def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value)
     def getDaemonSetReplicaCount(DaemonSet daemonSet)
     def getDaemonSetNodeSelectors(DaemonSet daemonSet)
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
+    def getDaemonSetCount()
     def getDaemonSetCount(String ns)
+    boolean daemonSetReady(String ns, String name)
+    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName, String envVarName, String envVarValue)
     def waitForDaemonSetDeletion(String name)
-    def waitForDaemonSetReady(String ns, String name, int retires, int intervalSeconds)
     String getDaemonSetId(DaemonSet daemonSet)
 
     // StatefulSets
@@ -75,9 +83,9 @@ interface OrchestratorMain {
     //Containers
     def deleteContainer(String containerName, String namespace)
     def wasContainerKilled(String containerName, String namespace)
-    def isKubeProxyPresent()
     def isKubeDashboardRunning()
     String getContainerlogs(String ns, String podName, String containerName)
+    def getStaticPodCount()
     def getStaticPodCount(String ns)
 
     //Services
@@ -98,7 +106,8 @@ interface OrchestratorMain {
     def createImagePullSecret(String name, String username, String password, String namespace, String server)
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
-    def getSecretCount(String ns)
+    int getSecretCount(String ns)
+    int getSecretCount()
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
     def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 
@@ -163,16 +172,16 @@ interface OrchestratorMain {
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)
-    def execInContainerByPodName(String name, String namespace, String cmd, int retries)
+    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries)
     String generateYaml(Object orchestratorObject)
     String getNameSpace()
     String getSensorContainerName()
     def waitForSensor()
     int getAllDeploymentTypesCount(String ns)
 
-    V1beta1ValidatingWebhookConfiguration getAdmissionController()
+    ValidatingWebhookConfiguration getAdmissionController()
     def deleteAdmissionController(String name)
-    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config)
+    def createAdmissionController(ValidatingWebhookConfiguration config)
 
     /*TODO:
         def getDeploymenton(String deploymentName)

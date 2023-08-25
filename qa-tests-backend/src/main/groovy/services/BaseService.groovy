@@ -1,6 +1,8 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.util.logging.Slf4j
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -19,10 +21,12 @@ import io.stackrox.proto.api.v1.EmptyOuterClass
 import util.Env
 import util.Keys
 
+@CompileStatic
+@Slf4j
 class BaseService {
 
-    static final BASIC_AUTH_USERNAME = Env.mustGetUsername()
-    static final BASIC_AUTH_PASSWORD = Env.mustGetPassword()
+    static final String BASIC_AUTH_USERNAME = Env.mustGetUsername()
+    static final String BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
     static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 
@@ -42,27 +46,30 @@ class BaseService {
         updateAuthConfig(useClientCert, null)
     }
 
-    static setUseClientCert(boolean use) {
+    static setUseClientCert(Boolean use) {
         updateAuthConfig(use, authInterceptor)
     }
 
-    private static updateAuthConfig(boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
-        if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
-            return
-        }
-        if (useClientCert != newUseClientCert) {
-            if (transportChannel != null) {
-                transportChannel.shutdownNow()
-                transportChannel = null
+    private static updateAuthConfig(Boolean newUseClientCert, ClientInterceptor newAuthInterceptor) {
+        synchronized(BaseService) {
+            if (useClientCert == newUseClientCert && authInterceptor == newAuthInterceptor) {
+                return
+            }
+            if (useClientCert != newUseClientCert) {
+                if (transportChannel != null) {
+                    transportChannel.shutdownNow()
+                    transportChannel = null
+                    effectiveChannel = null
+                    log.debug("The gRPC channel to central was closed")
+                }
+            }
+            if (authInterceptor != newAuthInterceptor) {
                 effectiveChannel = null
             }
-        }
-        if (authInterceptor != newAuthInterceptor) {
-            effectiveChannel = null
-        }
 
-        useClientCert = newUseClientCert
-        authInterceptor = newAuthInterceptor
+            useClientCert = newUseClientCert
+            authInterceptor = newAuthInterceptor
+        }
     }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
@@ -104,10 +111,10 @@ class BaseService {
         }
     }
 
-    static ManagedChannel transportChannel = null
-    static ClientInterceptor authInterceptor = null
-    static Channel effectiveChannel = null
-    private static boolean useClientCert = false
+    private static ManagedChannel transportChannel = null
+    private static ClientInterceptor authInterceptor = null
+    private static Channel effectiveChannel = null
+    private static Boolean useClientCert = false
 
     static initializeChannel() {
         if (transportChannel == null) {
@@ -121,10 +128,13 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                    .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
                     .build()
             effectiveChannel = null
+
+            log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
         }
 
         if (authInterceptor == null) {
@@ -136,7 +146,9 @@ class BaseService {
 
     static Channel getChannel() {
         if (effectiveChannel == null) {
-            initializeChannel()
+            synchronized(BaseService) {
+                initializeChannel()
+            }
         }
         return effectiveChannel
     }

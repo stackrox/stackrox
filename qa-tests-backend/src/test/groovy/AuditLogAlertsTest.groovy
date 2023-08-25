@@ -1,30 +1,33 @@
 import static Services.getAllResourceViolationsWithTimeout
 import static Services.getResourceViolationsWithTimeout
 
-import common.Constants
-import groups.BAT
-import groups.RUNTIME
+import orchestratormanager.OrchestratorTypes
+
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
 import objects.Secret
-import org.junit.Assume
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
-import spock.lang.Stepwise
-import spock.lang.Unroll
-import util.Helpers
 
+import spock.lang.Requires
+import spock.lang.Stepwise
+import spock.lang.Tag
+import spock.lang.Unroll
+import util.Env
+
+// Audit Log alerts are only supported on OpenShift 4
+@Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
 class AuditLogAlertsTest extends BaseSpecification {
-    @Unroll
-    @Category([BAT, RUNTIME])
-    def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
+    static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 60
 
+    @Unroll
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -41,6 +44,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, verb, resourceType)
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "The resource is created, accessed and deleted"
@@ -52,7 +56,8 @@ class AuditLogAlertsTest extends BaseSpecification {
 
         then:
         "Verify that policy was violated"
-        def violations =  getResourceViolationsWithTimeout(resourceType, resName, policy.getName(), 60)
+        def violations =  getResourceViolationsWithTimeout(resourceType, resName,
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation because we are testing only verb at a time
         assert violations != null && violations.size() == 1
 
@@ -77,12 +82,9 @@ class AuditLogAlertsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     def "Verify collection continues even after ACS components restarts: #component"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -99,12 +101,13 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
         createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation
         assert violations != null && violations.size() == 1
 
@@ -122,7 +125,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that only the access after restart triggers a violation"
         def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
 
         // There should only be one violation - the new one
         assert allViolations != null &&
@@ -147,12 +150,9 @@ class AuditLogAlertsTest extends BaseSpecification {
         // the port forward and fails the rest of the test suite.
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     def "Verify collection continues when it is disabled and then re-enabled"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is enabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -169,12 +169,13 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy top propagate to sensor
 
         and:
         "A violation is generated and resolved"
         createGetAndDeleteConfigMap(resName, Constants.ORCHESTRATOR_NAMESPACE)
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         // There should be exactly one violation
         assert violations != null && violations.size() == 1
 
@@ -183,9 +184,9 @@ class AuditLogAlertsTest extends BaseSpecification {
         and:
         "Feature is disabled and then re-enabled"
         assert ClusterService.updateAuditLogDynamicConfig(true)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate to sensor before re-enabling
+        sleep(5000) // wait 5s for it to propagate to sensor before re-enabling
         assert ClusterService.updateAuditLogDynamicConfig(false)
-        Helpers.sleepWithRetryBackoff(5000) // wait 5s for it to propagate again
+        sleep(5000) // wait 5s for it to propagate again
 
         and:
         "Another violation is generated"
@@ -195,7 +196,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that only the access after restart triggers a violation"
         def allViolations =  getAllResourceViolationsWithTimeout("CONFIGMAPS",
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
 
         // There should only be one violation - the new one
         assert allViolations != null &&
@@ -210,12 +211,9 @@ class AuditLogAlertsTest extends BaseSpecification {
         assert ClusterService.updateAuditLogDynamicConfig(previouslyDisabled)
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     def "Verify collection stops when feature is is disabled"() {
-        given:
-        "Running on an OpenShift 4 cluster"
-        Assume.assumeTrue("Audit Log alerts are only supported on OpenShift 4", ClusterService.isOpenShift4())
-
         when:
         "Audit log collection is disabled"
         def previouslyDisabled = ClusterService.getCluster().getDynamicConfig().getDisableAuditLogs()
@@ -230,6 +228,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         def policy = createAuditLogSourcePolicy(resName, "GET", "CONFIGMAPS")
         def policyId = PolicyService.createNewPolicy(policy)
         assert policyId
+        sleep(5000) // wait 5s for the policy to propagate to sensor
 
         and:
         "The resource is accessed"
@@ -238,7 +237,7 @@ class AuditLogAlertsTest extends BaseSpecification {
         then:
         "Verify that no violations were generated"
         def violations =  getResourceViolationsWithTimeout("CONFIGMAPS", resName,
-                policy.getName(), 60)
+                policy.getName(), WAIT_FOR_VIOLATION_TIMEOUT)
         assert violations == null || violations.size() == 0
 
         cleanup:
@@ -285,13 +284,20 @@ class AuditLogAlertsTest extends BaseSpecification {
         testSecret.data = [
                 "value": Base64.getEncoder().encodeToString("sooper sekret".getBytes()),
         ]
-
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createSecret(testSecret)
         orchestrator.getSecret(name, namespace)
         orchestrator.deleteSecret(name, namespace)
     }
 
     def createGetAndDeleteConfigMap(String name, String namespace) {
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
         orchestrator.createConfigMap(name, ["value": "map me"], namespace)
         orchestrator.getConfigMap(name, namespace)
         orchestrator.deleteConfigMap(name, namespace)

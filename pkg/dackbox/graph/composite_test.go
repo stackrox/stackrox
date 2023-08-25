@@ -3,7 +3,7 @@ package graph
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stretchr/testify/assert"
 )
 

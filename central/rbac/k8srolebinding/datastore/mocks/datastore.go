@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -50,6 +50,22 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
+}
+
+// GetManyRoleBindings mocks base method.
+func (m *MockDataStore) GetManyRoleBindings(ctx context.Context, ids []string) ([]*storage.K8SRoleBinding, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyRoleBindings", ctx, ids)
+	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetManyRoleBindings indicates an expected call of GetManyRoleBindings.
+func (mr *MockDataStoreMockRecorder) GetManyRoleBindings(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyRoleBindings", reflect.TypeOf((*MockDataStore)(nil).GetManyRoleBindings), ctx, ids)
 }
 
 // GetRoleBinding mocks base method.

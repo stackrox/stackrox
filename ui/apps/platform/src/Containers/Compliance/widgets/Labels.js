@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const truncate = (key) => {
     const index = key.indexOf('/');
@@ -19,15 +18,10 @@ const Labels = ({ labels }) => (
                     pageBreakInside: 'avoid',
                 }}
             >
-                <Tooltip
-                    content={
-                        <TooltipOverlay>
-                            {label.key} : {label.value || '""'}
-                        </TooltipOverlay>
-                    }
-                >
-                    <span className="text-base font-600 word-break truncate">
-                        {truncate(label.key)} : {label.value || '""'}
+                <Tooltip content={`${label.key} : ${label.value || '""'}`}>
+                    <span className="text-base word-break truncate">
+                        <span className="font-700 pr-1">{`${truncate(label.key)}:`}</span>
+                        <span>{label.value || '""'}</span>
                     </span>
                 </Tooltip>
             </li>

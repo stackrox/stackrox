@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
@@ -22,7 +23,7 @@ func (m safeRawMessage) MarshalJSON() ([]byte, error) {
 }
 
 // WriteLogs takes the LogImbue logs from the Store and writes them to Writer.
-func WriteLogs(w io.Writer, logs []string) error {
+func WriteLogs(w io.Writer, logs []*storage.LogImbue) error {
 	// Each log will be a JSON object. For convenience, we wrap it in "[]" so that
 	// it is readable as a JSON array.
 	jsonWriter := jsonutil.NewJSONArrayWriter(w)
@@ -31,7 +32,7 @@ func WriteLogs(w io.Writer, logs []string) error {
 		return err
 	}
 	for _, alog := range logs {
-		err = jsonWriter.WriteObject(safeRawMessage(alog))
+		err = jsonWriter.WriteObject(safeRawMessage(alog.Log))
 		if err != nil {
 			return err
 		}

@@ -44,7 +44,7 @@ func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, 
 	return false, nil
 }
 
-func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
+func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, indicator *storage.ProcessIndicator, processNotInBaseline bool) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
 		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processNotInBaseline)
 		if err != nil || !processMatched {
@@ -53,8 +53,8 @@ func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, 
 	}
 
 	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processNotInBaseline)
-	}, indicator, nil, nil)
+		return augmentedobjs.ConstructDeploymentWithProcess(enhancedDeployment.Deployment, enhancedDeployment.Images, indicator, processNotInBaseline)
+	}, indicator, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -75,7 +75,7 @@ func (m *kubeEventMatcherImpl) MatchKubeEvent(cache *CacheReceptacle, event *sto
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructKubeResourceWithEvent(kubeResource, event)
-	}, nil, event, nil)
+	}, nil, event, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -89,7 +89,7 @@ type auditLogEventMatcherImpl struct {
 func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, event *storage.KubernetesEvent) (Violations, error) {
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
 		return augmentedobjs.ConstructAuditEvent(event, event.ImpersonatedUser != nil)
-	}, nil, event, nil)
+	}, nil, event, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -121,7 +121,7 @@ type networkFlowMatcherImpl struct {
 }
 
 func (m *networkFlowMatcherImpl) checkFlowEntitySupportsPolicy(t storage.NetworkEntityInfo_Type) bool {
-	// For now we only support running policy checks on flows which we also support in network baselines
+	// For now, we only support running policy checks on flows which we also support in network baselines
 	_, ok := networkbaseline.ValidBaselinePeerEntityTypes[t]
 	return ok
 }
@@ -160,8 +160,7 @@ func (m *networkFlowMatcherImpl) checkWhetherFlowMatches(
 
 func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	cache *CacheReceptacle,
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) (Violations, error) {
 	if cache == nil || cache.augmentedObj == nil {
@@ -172,8 +171,8 @@ func (m *networkFlowMatcherImpl) MatchDeploymentWithNetworkFlowInfo(
 	}
 
 	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(deployment, images, flow)
-	}, nil, nil, flow)
+		return augmentedobjs.ConstructDeploymentWithNetworkFlowInfo(enhancedDeployment.Deployment, enhancedDeployment.Images, flow)
+	}, nil, nil, flow, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -194,8 +193,8 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 
 func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructImage(image)
-	}, nil, nil, nil)
+		return augmentedobjs.ConstructImage(image, image.GetName().GetFullName())
+	}, nil, nil, nil, nil)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
@@ -225,6 +224,7 @@ func (m *matcherImpl) getViolations(
 	indicator *storage.ProcessIndicator,
 	kubeEvent *storage.KubernetesEvent,
 	networkFlow *augmentedobjs.NetworkFlowDetails,
+	networkPolicy *augmentedobjs.NetworkPoliciesApplied,
 ) (*Violations, error) {
 	obj, err := getOrConstructAugmentedObj(cache, constructor)
 	if err != nil {
@@ -232,7 +232,7 @@ func (m *matcherImpl) getViolations(
 	}
 	v := &Violations{}
 	var atLeastOneMatched bool
-	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched bool
+	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched, networkPolicyMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
@@ -242,8 +242,8 @@ func (m *matcherImpl) getViolations(
 			continue
 		}
 
-		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, err :=
-			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow)
+		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, err :=
+			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy)
 		if err != nil {
 			return nil, err
 		}
@@ -256,11 +256,13 @@ func (m *matcherImpl) getViolations(
 			kubeOrAuditEventMatched = true
 		} else if isNetworkFlowViolation {
 			networkFlowMatched = true
+		} else if isNetworkPolicyViolation {
+			networkPolicyMatched = true
 		}
 
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
-	if !atLeastOneMatched && !processIndicatorMatched && !kubeOrAuditEventMatched && !networkFlowMatched {
+	if !atLeastOneMatched && !processIndicatorMatched && !kubeOrAuditEventMatched && !networkFlowMatched && !networkPolicyMatched {
 		return nil, nil
 	}
 
@@ -275,15 +277,17 @@ func (m *matcherImpl) getViolations(
 			return nil, errors.Wrap(err, "generating network flow violation message")
 		}
 		v.AlertViolations = append(v.AlertViolations, networkFlowViolationMsg)
+	} else if networkPolicyMatched {
+		v.AlertViolations = printer.EnhanceNetworkPolicyViolations(v.AlertViolations, networkPolicy)
 	}
 	return v, nil
 }
 
 // MatchDeployment runs detection against the deployment and images.
-func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error) {
+func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment) (Violations, error) {
 	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
-		return augmentedobjs.ConstructDeployment(deployment, images)
-	}, nil, nil, nil)
+		return augmentedobjs.ConstructDeployment(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied)
+	}, nil, nil, nil, enhancedDeployment.NetworkPoliciesApplied)
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}

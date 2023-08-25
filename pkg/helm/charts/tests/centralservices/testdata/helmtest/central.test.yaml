@@ -1,0 +1,133 @@
+defs: |
+  def container(obj; name):
+  obj.spec.template.spec.containers[] | select(.name == name);
+
+  def envVars(obj; container):
+  container(obj; container) | .env | from_entries;
+values:
+  ca:
+    cert: ""
+    key: ""
+  central:
+    persistence:
+      none: true
+    serviceTLS:
+      cert: ""
+      key: ""
+    dbServiceTLS:
+      cert: ""
+      key: ""
+  monitoring:
+    openshift:
+      enabled: false
+tests:
+- name: "central with default settings"
+  expect: |
+    .serviceaccounts["central"] | assertThat(. != null)
+    .secrets["central-htpasswd"].stringData.htpasswd | assertThat(length > 0)
+    .configmaps["central-config"].data.["central-config.yaml"] | assertThat(length > 0)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(length > 0)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
+    .networkpolicys["allow-ext-to-central"] | assertThat(. != null)
+    .networkpolicys["central-db"] | assertThat(. != null)
+    .deployments["central"] | assertThat(. != null)
+    .services["central"] | assertThat(. != null)
+
+- name: "central with DB enabled"
+  values:
+    central:
+      db:
+        enabled: true
+  expect: |
+    .networkpolicys["central-db"] | assertThat(. != null)
+    .configmaps["central-external-db"].data.["central-external-db.yaml"] | assertThat(. != null)
+
+- name: "central with deprecated PodSecurityPolicies enabled"
+  values:
+    system:
+      enablePodSecurityPolicies: true
+  expect: |
+    .podsecuritypolicys["stackrox-central"] | assertThat(. != null)
+    .rolebindings["stackrox-central-psp"] | assertThat(. != null)
+    .clusterroles["stackrox-central-psp"] | assertThat(. != null)
+
+- name: "central with deprecated PodSecurityPolicies disabled"
+  values:
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-central"] | assertThat(. == null)
+    .rolebindings["stackrox-central-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-central-psp"] | assertThat(. == null)
+
+- name: "central with OpenShift 3 and enabled SCCs"
+  server:
+    visibleSchemas:
+    - openshift-3.11.0
+    availableSchemas:
+    - openshift-3.11.0
+  values:
+    env:
+      openshift: 3
+    system:
+      createSCCs: true
+  expect: |
+    .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
+    .roles["use-central-scc"] | assertThat(. == null)
+    .rolebindings["central-use-scc"] | assertThat(. == null)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
+
+- name: "central with OpenShift 4 and disabled SCCs"
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  values:
+    env:
+      openshift: 4
+    system:
+      createSCCs: false
+  expect: |
+    .roles["use-central-scc"] | assertThat(. != null)
+    .rolebindings["central-use-scc"] | assertThat(. != null)
+    .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    verifyNodeAffinities(.deployments["central"])
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
+
+- name: "central with Kubernetes 1.20"
+  server:
+    visibleSchemas:
+    - kubernetes-1.20.2
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == false)
+
+- name: Tenant ID should be set when env.managedServices is true
+  set:
+    env.managedServices: true
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == true)
+
+- name: Tenant ID should not be set when env.managedServices is false
+  set:
+    env.managedServices: false
+  expect: |
+    envVars(.deployments.central; "central") | assertThat(has("ROX_TENANT_ID") == false)
+
+- name: "override affinity"
+  values:
+    central:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+  expect: |
+    .deployments["central"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)

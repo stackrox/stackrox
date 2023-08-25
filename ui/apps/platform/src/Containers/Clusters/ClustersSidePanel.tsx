@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowRight, Check } from 'react-feather';
+import { Alert, Button } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
-import { Message } from '@stackrox/ui-components';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
-import PanelButton from 'Components/PanelButton';
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import { useTheme } from 'Containers/ThemeProvider';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
 import {
-    getClusterById,
+    fetchClusterWithRetentionInformation,
     saveCluster,
     downloadClusterYaml,
-    fetchKernelSupportAvailable,
+    getClusterDefaults,
 } from 'services/ClustersService';
+import { Cluster } from 'types/cluster.proto';
+import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
@@ -26,19 +29,9 @@ import DownloadHelmValues from './DownloadHelmValues';
 import {
     clusterDetailPollingInterval,
     newClusterDefault,
-    wizardSteps,
     centralEnvDefault,
 } from './cluster.helpers';
-import { Cluster, ClusterManagerType } from './clusterTypes';
-
-function fetchCentralEnv() {
-    return fetchKernelSupportAvailable().then((kernelSupportAvailable) => {
-        return {
-            kernelSupportAvailable,
-            successfullyFetched: true,
-        };
-    });
-}
+import { CentralEnv, ClusterManagerType } from './clusterTypes';
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 
@@ -54,45 +47,50 @@ const validate = (values) => {
     return errors;
 };
 
+type WizardStep = 'FORM' | 'DEPLOYMENT';
+
+type SubmissionError = {
+    title: string;
+    text: string;
+};
+
 type MessageState = {
-    type: 'warn' | 'error';
-    message: JSX.Element | string;
+    variant: 'warning' | 'danger';
+    title: string;
+    text: string;
 };
 
 function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
-    const metadata = useMetadata();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
-    const defaultCluster = cloneDeep(newClusterDefault);
-    const envAwareClusterDefault = {
-        ...defaultCluster,
-        mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
-        collectorImage: metadata.releaseBuild
-            ? 'collector.stackrox.io/collector'
-            : 'stackrox/collector',
-    };
+    const metadata = useMetadata();
+    const { analyticsTrack } = useAnalytics();
+
+    const defaultCluster = cloneDeep(newClusterDefault) as unknown as Cluster;
 
     const { isDarkMode } = useTheme();
-    const [selectedCluster, setSelectedCluster] = useState<Partial<Cluster> | null>(
-        envAwareClusterDefault
-    );
-    const [centralEnv, setCentralEnv] = useState(centralEnvDefault);
-    const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
+    const [selectedCluster, setSelectedCluster] = useState<Cluster>(defaultCluster);
+    const [clusterRetentionInfo, setClusterRetentionInfo] =
+        useState<DecommissionedClusterRetentionInfo>(null);
+    const [centralEnv, setCentralEnv] = useState<CentralEnv>(centralEnvDefault);
+    const [wizardStep, setWizardStep] = useState<WizardStep>('FORM');
     const [loadingCounter, setLoadingCounter] = useState(0);
     const [messageState, setMessageState] = useState<MessageState | null>(null);
     const [isBlocked, setIsBlocked] = useState(false);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState<number | null>(null);
-    const [submissionError, setSubmissionError] = useState('');
+    const [submissionError, setSubmissionError] = useState<SubmissionError | null>(null);
     const [isDownloadingBundle, setIsDownloadingBundle] = useState(false);
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
     function unselectCluster() {
-        setSubmissionError('');
+        setSubmissionError(null);
         setSelectedClusterId('');
-        setSelectedCluster(envAwareClusterDefault);
+        setSelectedCluster(defaultCluster);
         setMessageState(null);
         setIsBlocked(false);
-        setWizardStep(wizardSteps.FORM);
+        setWizardStep('FORM');
         setPollingDelay(null);
     }
 
@@ -107,13 +105,26 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
             const clusterIdToRetrieve = selectedClusterId;
 
             setLoadingCounter((prev) => prev + 1);
-            fetchCentralEnv()
-                .then((freshCentralEnv) => {
-                    setCentralEnv(freshCentralEnv);
+            getClusterDefaults()
+                .then((clusterDefaults) => {
+                    const {
+                        mainImageRepository: mainImage,
+                        collectorImageRepository: collectorImage,
+                        kernelSupportAvailable,
+                    } = clusterDefaults;
+
+                    // TODO add catch block to include error message as a property of the object.
+                    setCentralEnv({
+                        kernelSupportAvailable,
+                        successfullyFetched: true,
+                    });
+
                     if (clusterIdToRetrieve === 'new') {
                         const updatedCluster = {
                             ...selectedCluster,
-                            slimCollector: freshCentralEnv.kernelSupportAvailable,
+                            mainImage,
+                            collectorImage,
+                            slimCollector: kernelSupportAvailable,
                         };
                         setSelectedCluster(updatedCluster);
                     }
@@ -127,54 +138,34 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 setMessageState(null);
                 setIsBlocked(false);
                 // don't want to cache or memoize, because we always want the latest real-time data
-                getClusterById(clusterIdToRetrieve)
-                    .then((cluster) => {
+                fetchClusterWithRetentionInformation(clusterIdToRetrieve)
+                    .then((clusterResponse) => {
+                        const { cluster } = clusterResponse;
                         // eslint-disable-next-line no-param-reassign
                         // cluster.managedBy = 'MANAGER_TYPE_MANUAL';
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
+                        setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
                         // stop polling after contact is established
                         if (selectedCluster?.healthStatus?.lastContact) {
                             setPollingDelay(null);
                         }
 
-                        if (wizardStep === wizardSteps.FORM) {
+                        if (wizardStep === 'FORM') {
                             switch (managerType(cluster)) {
                                 case 'MANAGER_TYPE_HELM_CHART':
                                     setMessageState({
-                                        type: 'warn',
-                                        message: (
-                                            <>
-                                                <h3 className="font-700 mb-2">
-                                                    Helm-managed cluster
-                                                </h3>
-                                                <p>
-                                                    This is an Helm-managed cluster. The settings of
-                                                    Helm-managed clusters cannot be changed here,
-                                                    please ask your DevOps team to change the
-                                                    settings by updating the Helm values.
-                                                </p>
-                                            </>
-                                        ),
+                                        variant: 'warning',
+                                        title: 'Helm-managed cluster',
+                                        text: 'This is a Helm-managed cluster. The settings of Helm-managed clusters cannot be changed here, please ask your DevOps team to change the settings by updating the Helm values.',
                                     });
                                     break;
                                 case 'MANAGER_TYPE_KUBERNETES_OPERATOR':
                                     setMessageState({
-                                        type: 'warn',
-                                        message: (
-                                            <>
-                                                <h3 className="font-700 mb-2">
-                                                    Operator-managed cluster
-                                                </h3>
-                                                <p>
-                                                    This is an operator-managed cluster. The
-                                                    settings of operator-managed clusters cannot be
-                                                    changed here and must instead be changed by
-                                                    updating its custom resource definition (CRD).
-                                                </p>
-                                            </>
-                                        ),
+                                        variant: 'warning',
+                                        title: 'Operator-managed cluster',
+                                        text: 'This is an operator-managed cluster. The settings of operator-managed clusters cannot be changed here and must instead be changed by updating its SecuredCluster custom resource (CR).',
                                     });
                                     break;
                                 default:
@@ -182,11 +173,11 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                             }
                         }
                     })
-                    .catch(() => {
+                    .catch((error) => {
                         setMessageState({
-                            type: 'error',
-                            message:
-                                'There was an error retrieving the configuration for the cluster.',
+                            variant: 'danger',
+                            title: 'error retrieving the configuration for the cluster',
+                            text: getAxiosErrorMessage(error),
                         });
                         setIsBlocked(true);
                     })
@@ -243,25 +234,28 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     }
 
     function onNext() {
-        if (wizardStep === wizardSteps.FORM) {
+        if (wizardStep === 'FORM') {
             setMessageState(null);
-            setSubmissionError('');
-            saveCluster(selectedCluster as Cluster)
-                .then((response) => {
-                    const newId = response.response.result.cluster; // really is nested like this
+            setSubmissionError(null);
+            saveCluster(selectedCluster)
+                .then((clusterResponse) => {
+                    analyticsTrack(CLUSTER_CREATED);
+                    const newId = clusterResponse.cluster.id;
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
+                    setClusterRetentionInfo(clusterResponse.clusterRetentionInfo);
 
-                    setWizardStep(wizardSteps.DEPLOYMENT);
+                    setWizardStep('DEPLOYMENT');
 
                     if (!selectedCluster?.healthStatus?.lastContact) {
                         setPollingDelay(clusterDetailPollingInterval);
                     }
                 })
                 .catch((error) => {
-                    setSubmissionError(
-                        error?.response?.data?.message || 'An unknown error has occurred.'
-                    );
+                    setSubmissionError({
+                        title: 'Unable to save changes',
+                        text: getAxiosErrorMessage(error),
+                    });
                 });
         } else {
             unselectCluster();
@@ -273,15 +267,15 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     }
 
     function onDownload() {
-        setSubmissionError('');
+        setSubmissionError(null);
         setIsDownloadingBundle(true);
         if (selectedCluster?.id) {
             downloadClusterYaml(selectedCluster.id, createUpgraderSA)
                 .catch((error) => {
-                    setSubmissionError(
-                        error?.response?.data?.message ||
-                            'We could not download the configuration files.'
-                    );
+                    setSubmissionError({
+                        title: 'Unable to download file',
+                        text: getAxiosErrorMessage(error),
+                    });
                 })
                 .finally(() => {
                     setIsDownloadingBundle(false);
@@ -299,38 +293,28 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
     const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
 
     // @TODO: improve error handling when adding support for new clusters
-    const isForm = wizardStep === wizardSteps.FORM;
-    const iconClassName = 'h-4 w-4';
+    const isForm = wizardStep === 'FORM';
 
-    const panelButtons = isBlocked ? (
-        <div />
-    ) : (
-        <PanelButton
-            icon={
-                isForm ? (
-                    <ArrowRight className={iconClassName} />
-                ) : (
-                    <Check className={iconClassName} />
-                )
-            }
-            className={`mr-2 btn ${isForm ? 'btn-base' : 'btn-success'}`}
-            onClick={onNext}
-            disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
-            tooltip={isForm ? 'Next' : 'Finish'}
-        >
-            {isForm ? 'Next' : 'Finish'}
-        </PanelButton>
-    );
+    const panelButtons =
+        !hasWriteAccessForCluster || isBlocked ? (
+            <div />
+        ) : (
+            <Button
+                variant={isForm ? 'secondary' : 'primary'}
+                isSmall
+                className="pf-u-mr-md"
+                onClick={onNext}
+                disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
+            >
+                {isForm ? 'Next' : 'Finish'}
+            </Button>
+        );
 
     return (
         <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!selectedClusterId}>
             <PanelNew testid="clusters-side-panel">
                 <PanelHead>
-                    <PanelTitle
-                        isUpperCase={false}
-                        testid="clusters-side-panel-header"
-                        text={selectedClusterName}
-                    />
+                    <PanelTitle testid="clusters-side-panel-header" text={selectedClusterName} />
                     <PanelHeadEnd>
                         {panelButtons}
                         <CloseButton
@@ -342,28 +326,37 @@ function ClustersSidePanel({ selectedClusterId, setSelectedClusterId }) {
                 <PanelBody>
                     {!!messageState && (
                         <div className="m-4">
-                            <Message type={messageState.type}>{messageState.message}</Message>
+                            <Alert
+                                variant={messageState.variant}
+                                isInline
+                                title={messageState.title}
+                            >
+                                {messageState.text}
+                            </Alert>
                         </div>
                     )}
-                    {submissionError && submissionError.length > 0 && (
+                    {submissionError && (
                         <div className="w-full">
                             <div className="mb-4 mx-4">
-                                <Message type="error">{submissionError}</Message>
+                                <Alert type="danger" isInline title={submissionError.title}>
+                                    {submissionError.text}
+                                </Alert>
                             </div>
                         </div>
                     )}
-                    {!isBlocked && wizardStep === wizardSteps.FORM && (
+                    {!isBlocked && wizardStep === 'FORM' && (
                         <ClusterEditForm
                             centralEnv={centralEnv}
                             centralVersion={metadata.version}
-                            selectedCluster={selectedCluster as Cluster}
+                            clusterRetentionInfo={clusterRetentionInfo}
+                            selectedCluster={selectedCluster}
                             managerType={managerType(selectedCluster)}
                             handleChange={onChange}
                             handleChangeLabels={handleChangeLabels}
                             isLoading={loadingCounter > 0}
                         />
                     )}
-                    {!isBlocked && wizardStep === wizardSteps.DEPLOYMENT && (
+                    {!isBlocked && wizardStep === 'DEPLOYMENT' && (
                         <div className="flex flex-col md:flex-row p-4">
                             <ClusterDeployment
                                 editing={!!selectedCluster}

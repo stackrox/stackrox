@@ -35,6 +35,47 @@
     }
   },
   "definitions": {
+    "AuthProviderRequiredAttribute": {
+      "type": "object",
+      "properties": {
+        "attributeKey": {
+          "type": "string"
+        },
+        "attributeValue": {
+          "type": "string"
+        }
+      },
+      "description": "RequiredAttribute allows to specify a set of attributes which ALL are required to be returned\nby the auth provider.\nIf any attribute is missing within the external claims of the token issued by Central, the\nauthentication request to this IdP is considered failed."
+    },
+    "TraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
+    },
+    "TraitsOrigin": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DEFAULT",
+        "DECLARATIVE",
+        "DECLARATIVE_ORPHANED"
+      ],
+      "default": "IMPERATIVE",
+      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
+    },
+    "TraitsVisibility": {
+      "type": "string",
+      "enum": [
+        "VISIBLE",
+        "HIDDEN"
+      ],
+      "default": "VISIBLE",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
+    },
     "UserInfoResourceToAccess": {
       "type": "object",
       "properties": {
@@ -52,7 +93,7 @@
       "properties": {
         "typeUrl": {
           "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
         },
         "value": {
           "type": "string",
@@ -60,7 +101,7 @@
           "description": "Must be a valid serialized protocol buffer of the above specified type."
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "runtimeError": {
       "type": "object",
@@ -132,19 +173,40 @@
         },
         "active": {
           "type": "boolean"
+        },
+        "requiredAttributes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthProviderRequiredAttribute"
+          }
+        },
+        "traits": {
+          "$ref": "#/definitions/storageTraits"
+        },
+        "claimMappings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Specifies claims from IdP token that will be copied to Rox token attributes.\n\nEach key in this map contains a path in IdP token we want to map. Path is separated by \".\" symbol.\nFor example, if IdP token payload looks like:\n\n\n{\n\n     \"a\": {\n\n         \"b\" : \"c\",\n\n         \"d\": true,\n\n         \"e\": [ \"val1\", \"val2\", \"val3\" ],\n\n         \"f\": [ true, false, false ],\n\n         \"g\": 123.0,\n\n         \"h\": [ 1, 2, 3]\n\n     }\n\n}\n\n\nthen \"a.b\" would be a valid key and \"a.z\" is not.\n\nWe support the following types of claims:\n* string(path \"a.b\")\n* bool(path \"a.d\")\n* string array(path \"a.e\")\n* bool array (path \"a.f.\")\n\nWe do NOT support the following types of claims:\n* complex claims(path \"a\")\n* float/integer claims(path \"a.g\")\n* float/integer array claims(path \"a.h\")\n\nEach value in this map contains a Rox token attribute name we want to add claim to.\nIf, for example, value is \"groups\", claim would be found in \"external_user.Attributes.groups\" in token.\n\nNote: we only support this feature for OIDC auth provider."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated indicates the last time the auth provider has been updated.\n\nIn case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered\ninvalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional\nlogin attempt)."
         }
       },
-      "title": "Next Tag: 9"
+      "description": "Next Tag: 15."
     },
     "storageServiceIdentity": {
       "type": "object",
       "properties": {
+        "serialStr": {
+          "type": "string"
+        },
         "serial": {
           "type": "string",
           "format": "int64"
-        },
-        "serialStr": {
-          "type": "string"
         },
         "id": {
           "type": "string"
@@ -163,6 +225,7 @@
         "UNKNOWN_SERVICE",
         "SENSOR_SERVICE",
         "CENTRAL_SERVICE",
+        "CENTRAL_DB_SERVICE",
         "REMOTE_SERVICE",
         "COLLECTOR_SERVICE",
         "MONITORING_UI_SERVICE",
@@ -173,7 +236,22 @@
         "SCANNER_DB_SERVICE",
         "ADMISSION_CONTROL_SERVICE"
       ],
-      "default": "UNKNOWN_SERVICE"
+      "default": "UNKNOWN_SERVICE",
+      "title": "Next available tag: 13"
+    },
+    "storageTraits": {
+      "type": "object",
+      "properties": {
+        "mutabilityMode": {
+          "$ref": "#/definitions/TraitsMutabilityMode"
+        },
+        "visibility": {
+          "$ref": "#/definitions/TraitsVisibility"
+        },
+        "origin": {
+          "$ref": "#/definitions/TraitsOrigin"
+        }
+      }
     },
     "storageUserInfo": {
       "type": "object",

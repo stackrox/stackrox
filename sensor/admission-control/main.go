@@ -5,7 +5,6 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -66,6 +65,8 @@ func mainCmd() error {
 		log.Errorf("Failed to configure certificates: %v. Connection to sensor might fail.", err)
 	}
 
+	clientconn.SetUserAgent(clientconn.AdmissionController)
+
 	// Note that the following call returns immediately (connecting happens in the background), hence this does not
 	// delay readiness of the admission-control service even if sensor is unavailable.
 	sensorConn, err := clientconn.AuthenticatedGRPCConnection(env.SensorEndpoint.Setting(), mtls.SensorSubject)
@@ -75,9 +76,7 @@ func mainCmd() error {
 	}
 
 	mgr := manager.New(sensorConn, namespace)
-	if err := mgr.Start(); err != nil {
-		return errors.Wrap(err, "starting admission control manager")
-	}
+	mgr.Start()
 
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC(), namespace); err != nil {
 		log.Errorf("Could not watch Kubernetes for settings updates: %v. Functionality might be impacted", err)
@@ -110,7 +109,7 @@ func mainCmd() error {
 	apiServer.Start()
 
 	// Graceful shutdown logic:
-	// Upon first SIGTERM, keep running normally until either the internal grace period (20s) passes, or another
+	// Upon first SIGTERM, keep running normally until either the internal grace period passes, or another
 	// SIGTERM is received. However, mark the container as not ready immediately, to make sure we no longer receive
 	// new requests once the API server has picked up the non-readiness.
 	sigTermCounter := 0

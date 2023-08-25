@@ -2,7 +2,6 @@ package generate
 
 import (
 	"encoding/pem"
-	"fmt"
 	"os"
 	"path"
 	"strconv"
@@ -14,18 +13,24 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	io2 "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/mode"
 	"github.com/stackrox/rox/roxctl/common/util"
+	"k8s.io/utils/pointer"
 )
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
@@ -89,6 +94,30 @@ func restoreCA(backupBundle string) (mtls.CA, error) {
 	return mtls.LoadCAForSigning(caCert, caKey)
 }
 
+func restoreCentralDBPassword(fileMap map[string][]byte, backupBundle string) error {
+	z, err := zip.NewReader(backupBundle)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(z.Close)
+
+	passPath := path.Join(backup.DatabaseBaseFolder, backup.DatabasePassword)
+
+	// If an older backup, file may not be included
+	if !z.ContainsFile(passPath) {
+		return nil
+	}
+
+	centralDBPass, err := z.ReadFrom(passPath)
+	if err != nil {
+		return err
+	}
+
+	fileMap["central-db-password"] = centralDBPass
+
+	return nil
+}
+
 func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	var ca mtls.CA
 	var err error
@@ -101,12 +130,20 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 		if ca, err = restoreCA(backupBundle); err != nil {
 			return err
 		}
+
+		if err = restoreCentralDBPassword(fileMap, backupBundle); err != nil {
+			return err
+		}
 	}
 	certgen.AddCAToFileMap(fileMap, ca)
 
 	if err := certgen.IssueCentralCert(fileMap, ca); err != nil {
 		return err
 	}
+	if err := certgen.IssueOtherServiceCerts(fileMap, ca, []mtls.Subject{mtls.CentralDBSubject}); err != nil {
+		return err
+	}
+	fileMap["central-db-password"] = []byte(renderer.CreatePassword())
 
 	if err := certgen.IssueScannerCerts(fileMap, ca); err != nil {
 		return err
@@ -117,20 +154,19 @@ func populateMTLSFiles(fileMap map[string][]byte, backupBundle string) error {
 	return nil
 }
 
-func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapper, error) {
-	wrapper := zip.NewWrapper()
+func updateConfig(config *renderer.Config) error {
 
 	if config.ClusterType == storage.ClusterType_GENERIC_CLUSTER {
-		return nil, errors.Errorf("invalid cluster type: %s", config.ClusterType)
+		return errox.InvalidArgs.Newf("invalid cluster type: %s", config.ClusterType)
 	}
 
 	config.SecretsByteMap = make(map[string][]byte)
 	if config.BackupBundle == "" {
 		if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
-			return nil, err
+			return err
 		}
 	} else if err := restoreJWTSigningKey(config.SecretsByteMap, config.BackupBundle); err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(config.LicenseData) > 0 {
@@ -155,9 +191,9 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 		}
 	}
 
-	htpasswd, err := renderer.GenerateHtpasswd(&config)
+	htpasswd, err := renderer.GenerateHtpasswd(config)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, setting := range env.Settings {
@@ -168,15 +204,32 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 	if config.K8sConfig != nil {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
-		if config.K8sConfig.EnableTelemetry {
-			logger.InfofLn(`Unless run in offline mode,
- StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.
-  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag`)
+		if config.K8sConfig.Telemetry.Enabled &&
+			(version.IsReleaseVersion() || env.TelemetryStorageKey.Setting() != "") {
+			config.K8sConfig.Telemetry.StorageKey = env.TelemetryStorageKey.Setting()
+			config.K8sConfig.Telemetry.StorageEndpoint = env.TelemetryEndpoint.Setting()
+		} else {
+			config.K8sConfig.Telemetry.StorageKey = phonehome.DisabledKey
+			config.K8sConfig.Telemetry.Enabled = false
 		}
-		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.EnableTelemetry)
+
+		if config.K8sConfig.Monitoring.OpenShiftMonitoring == nil {
+			isOpenShift4 := config.ClusterType == storage.ClusterType_OPENSHIFT4_CLUSTER
+			config.K8sConfig.Monitoring.OpenShiftMonitoring = pointer.Bool(isOpenShift4)
+		} else if *config.K8sConfig.Monitoring.OpenShiftMonitoring &&
+			config.ClusterType != storage.ClusterType_OPENSHIFT4_CLUSTER {
+			return errox.InvalidArgs.Newf("OpenShift monitoring integration requires OpenShift 4, got %q", config.ClusterType.String())
+		}
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd
+	return nil
+}
+
+func createBundle(config *renderer.Config) (*zip.Wrapper, error) {
+
+	wrapper := zip.NewWrapper()
+
 	wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
 
 	if err := populateMTLSFiles(config.SecretsByteMap, config.BackupBundle); err != nil {
@@ -185,10 +238,10 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 	flavor, err := defaults.GetImageFlavorByName(config.K8sConfig.ImageFlavorName, buildinfo.ReleaseBuild)
 	if err != nil {
-		return nil, fmt.Errorf("%w: '--%s': %v", errorhelpers.ErrInvalidArgs, flags.ImageDefaultsFlagName, err)
+		return nil, common.ErrInvalidCommandOption.CausedByf("'--%s': %v", flags.ImageDefaultsFlagName, err)
 	}
 
-	files, err := renderer.Render(config, flavor)
+	files, err := renderer.Render(*config, flavor)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not render files")
 	}
@@ -199,10 +252,24 @@ func createBundle(logger environment.Logger, config renderer.Config) (*zip.Wrapp
 
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
-func OutputZip(logger environment.Logger, config renderer.Config) error {
+func OutputZip(logger logger.Logger, io io2.IO, config renderer.Config) error {
 	logger.InfofLn("Generating deployment bundle...")
 
-	wrapper, err := createBundle(logger, config)
+	common.LogInfoPsp(logger, config.EnablePodSecurityPolicies)
+
+	err := updateConfig(&config)
+	if err != nil {
+		return err
+	}
+	if config.K8sConfig.Telemetry.Enabled {
+		logger.InfofLn("StackRox Kubernetes Security Platform collects " +
+			"and transmits anonymous usage and system configuration " +
+			"information. If you want to OPT OUT from this, re-generate " +
+			"the deployment bundle with the '--enable-telemetry=false' " +
+			"flag.")
+	}
+
+	wrapper, err := createBundle(&config)
 	if err != nil {
 		return err
 	}
@@ -213,7 +280,7 @@ func OutputZip(logger environment.Logger, config renderer.Config) error {
 		if err != nil {
 			return errors.Wrap(err, "error generating zip file")
 		}
-		_, err = os.Stdout.Write(bytes)
+		_, err = io.Out().Write(bytes)
 		if err != nil {
 			return errors.Wrap(err, "couldn't write zip file")
 		}
@@ -228,10 +295,10 @@ func OutputZip(logger environment.Logger, config renderer.Config) error {
 	logger.InfofLn("Done!")
 
 	if outputPath != "" {
-		logger.InfofLn("Wrote central bundle to %q", outputPath)
+		logger.InfofLn("Wrote central bundle to %q.", outputPath)
 	}
 
-	if err := config.WriteInstructions(os.Stderr); err != nil {
+	if err := config.WriteInstructions(io.ErrOut()); err != nil {
 		return err
 	}
 	return nil
@@ -239,7 +306,9 @@ func OutputZip(logger environment.Logger, config renderer.Config) error {
 
 func (cmd *centralGenerateCommand) interactive() *cobra.Command {
 	return &cobra.Command{
-		Use: "interactive",
+		Use:   "interactive",
+		Short: "Run the command in interactive mode where it prompts you to provide additional information.",
+		Long:  "Run the command in interactive mode where it prompts you to provide additional information. You can press `Enter` to accept the default value for the prompts.",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command(cmd.env)
 			c.SilenceUsage = true
@@ -263,19 +332,11 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralGenerateCmd := &centralGenerateCommand{rendererConfig: &cfg, env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use: "generate",
+		Use:   "generate",
+		Short: "Generate the required YAML configuration files containing the orchestrator objects to deploy StackRox Central.",
 	}
 	c.PersistentFlags().StringVarP(&centralGenerateCmd.rendererConfig.Password, "password", "p", "", "administrator password (default: autogenerated)")
 	utils.Must(c.PersistentFlags().SetAnnotation("password", flags.PasswordKey, []string{"true"}))
-
-	c.PersistentFlags().Var(&flags.LicenseVar{
-		Data: &centralGenerateCmd.rendererConfig.LicenseData,
-	}, "license", flags.LicenseUsage)
-
-	utils.Must(
-		c.PersistentFlags().MarkHidden("license"),
-		c.PersistentFlags().SetAnnotation("license", flags.OptionalKey, []string{"true"}),
-	)
 
 	c.PersistentFlags().Var(&flags.FileContentsVar{
 		Data: &centralGenerateCmd.rendererConfig.DefaultTLSCertPEM,
@@ -295,7 +356,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	c.PersistentFlags().VarPF(
-		flags.ForSetting(env.PlaintextEndpoints), "plaintext-endpoints", "",
+		flags.ForSetting(env.PlaintextEndpoints, cliEnvironment.Logger()), "plaintext-endpoints", "",
 		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
@@ -309,6 +370,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	if !buildinfo.ReleaseBuild {
 		flags.AddHelmChartDebugSetting(c)
 	}
+	c.PersistentFlags().BoolVar(&centralGenerateCmd.rendererConfig.EnablePodSecurityPolicies, "enable-pod-security-policies", true, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes)")
 
 	c.AddCommand(centralGenerateCmd.interactive())
 	c.AddCommand(k8s(cliEnvironment))

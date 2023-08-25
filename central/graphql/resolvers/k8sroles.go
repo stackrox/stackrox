@@ -57,30 +57,16 @@ func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver,
 // K8sRoles return k8s roles based on a query
 func (resolver *Resolver) K8sRoles(ctx context.Context, arg PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sRoles")
-
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
 	}
+
 	query, err := arg.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	k8sRoles, err := resolver.K8sRoleStore.SearchRawRoles(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	var k8SRoleResolvers []*k8SRoleResolver
-	for _, k8srole := range k8sRoles {
-		k8SRoleResolvers = append(k8SRoleResolvers, &k8SRoleResolver{root: resolver, data: k8srole})
-	}
-
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(k8SRoleResolvers, nil)
-
-	return resolvers.([]*k8SRoleResolver), err
+	return resolver.wrapK8SRoles(resolver.K8sRoleStore.SearchRawRoles(ctx, query))
 }
 
 // K8sRoleCount returns count of all k8s roles across infrastructure
@@ -93,11 +79,11 @@ func (resolver *Resolver) K8sRoleCount(ctx context.Context, args RawQuery) (int3
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.K8sRoleStore.Search(ctx, query)
+	count, err := resolver.K8sRoleStore.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {
@@ -185,10 +171,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args PaginatedQue
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(subjectResolvers, nil)
-	return resolvers.([]*subjectResolver), err
+	return paginate(pagination, subjectResolvers, nil)
 }
 
 func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, filterQ *v1.Query) ([]*storage.Subject, error) {
@@ -223,10 +206,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(serviceAccountResolvers, nil)
-	return resolvers.([]*serviceAccountResolver), err
+	return paginate(pagination, serviceAccountResolvers, nil)
 }
 
 // ServiceAccountCount returns the count of service accounts granted permissions to by a given k8s role

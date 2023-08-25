@@ -2,7 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/processbaselineresults/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 func initialize() {
-	storage := rocksdb.New(globaldb.GetRocksDB())
+	storage := pgStore.New(globaldb.GetPostgres())
 	singleton = New(storage)
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -16,6 +15,55 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+// TransformFixableFields transform fixable search fields for cluster vulnerabilities.
+func TransformFixableFields(searcher search.Searcher) search.Searcher {
+	return search.FuncSearcher{
+		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+			// Local copy to avoid changing input.
+			local := q.Clone()
+			pagination := local.GetPagination()
+			local.Pagination = nil
+
+			handleFixableQuery(local)
+
+			local.Pagination = pagination
+			return searcher.Search(ctx, local)
+		},
+		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
+			// Local copy to avoid changing input.
+			local := q.Clone()
+			pagination := local.GetPagination()
+			local.Pagination = nil
+
+			handleFixableQuery(local)
+
+			local.Pagination = pagination
+			return searcher.Count(ctx, local)
+		},
+	}
+}
+
+func handleFixableQuery(q *v1.Query) {
+	if q.GetQuery() == nil {
+		return
+	}
+
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.FixedBy.String() {
+			matchFieldQuery.MatchFieldQuery.Field = search.ClusterCVEFixedBy.String()
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Fixable.String() {
+			matchFieldQuery.MatchFieldQuery.Field = search.ClusterCVEFixable.String()
+		}
+	})
+}
 
 // HandleCVEEdgeSearchQuery handles the query cve edge query
 func HandleCVEEdgeSearchQuery(searcher search.Searcher) search.Searcher {
@@ -122,16 +170,11 @@ func handleSnoozedCVEQuery(ctx context.Context, q *v1.Query) *v1.Query {
 		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
 			searchBySuppressed = true
 		}
-		if features.VulnRiskManagement.Enabled() {
-			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
-				searchByVulnState = true
-			}
+		if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+			searchByVulnState = true
 		}
 	})
 
-	if !features.VulnRiskManagement.Enabled() {
-		return q
-	}
 	if !searchBySuppressed || searchByVulnState {
 		return q
 	}

@@ -17,28 +17,6 @@ const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADI
 ];
 
 describe('Auth Sagas', () => {
-    it('should get and put auth providers when on access page', () => {
-        const authProviders = [{ name: 'ap1', validated: true }];
-        const fetchMock = jest
-            .fn()
-            .mockReturnValueOnce({ response: [] })
-            .mockReturnValueOnce({ response: authProviders });
-
-        return expectSaga(saga)
-            .provide([
-                ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
-                [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
-                [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }],
-                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
-            ])
-            .put(actions.fetchAuthProviders.success(authProviders))
-            .dispatch(createLocationChange('/'))
-            .dispatch(createLocationChange('/main/access'))
-            .silentRun();
-    });
-
     it('should not do a service call to get auth providers when location changes to violations, policies, etc.', () => {
         const fetchMock = jest.fn().mockReturnValue({ response: [] });
         return expectSaga(saga)
@@ -171,6 +149,45 @@ describe('Auth Sagas', () => {
             .silentRun()
             .then(() => {
                 expect(storeAccessTokenMock.mock.calls.length).toBe(1);
+            });
+    });
+
+    it('should handle OIDC response with authorize roxctl mode', () => {
+        delete window.location;
+        window.location = { assign: jest.fn() };
+        const token = 'my-token';
+        const requestedLocation = '/my-location';
+        const storeAccessTokenMock = jest.fn();
+        const callbackURL = 'http://localhost:8080/';
+        const serverState = `provider-id:2ed17ca6-4b3c-4279-8317-f26f8ba01c52#${callbackURL}`;
+
+        return expectSaga(saga)
+            .provide([
+                ...createStateSelectors(),
+                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [
+                    call(AuthService.exchangeAuthToken, `#id_token=${token}`, 'oidc', serverState),
+                    { token, clientState: callbackURL },
+                ],
+                [call(AuthService.storeAccessToken, token), dynamic(storeAccessTokenMock)],
+                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
+                [call(AuthService.logout), null],
+                [call(fetchUserRolePermissions), { response: {} }],
+                [call(AuthService.fetchAvailableProviderTypes), { response: [] }],
+            ])
+            .put(push(requestedLocation))
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/oidc',
+                    null,
+                    `#id_token=${token}&state=${serverState}`
+                )
+            )
+            .silentRun()
+            .then(() => {
+                expect(window.location.assign).toHaveBeenCalledWith(
+                    `${callbackURL}?error=&errorDescription=&token=${token}`
+                );
             });
     });
 

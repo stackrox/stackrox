@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	orderedFlagGroupNames = []string{"central", "scanner"}
+	orderedFlagGroupNames = []string{"central", "central-db", "scanner"}
 )
 
 func readUserInput(prompt string) (string, error) {
@@ -294,8 +294,8 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 		groupsSlice = append(groupsSlice, group)
 	}
 	sort.Slice(groupsSlice, func(i, j int) bool {
-		iPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[i].name)
-		jPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[j].name)
+		iPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[i].name)
+		jPos := sliceutils.Find(orderedFlagGroupNames, groupsSlice[j].name)
 		// If they're both not in the list of ordered flag groups, just sort alphabetically.
 		if iPos == -1 && jPos == -1 {
 			return groupsSlice[i].name < groupsSlice[j].name
@@ -317,7 +317,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 		}
 
 		// set default values for image-{main,scanner,scanner-db} flags
-		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage {
+		if fw.Flag.Name == flags.FlagNameMainImage || fw.Flag.Name == flags.FlagNameScannerImage || fw.Flag.Name == flags.FlagNameScannerDBImage || fw.Flag.Name == flags.FlagNameCentralDBImage {
 			imgDefArg := argSlice.findArgByName(flags.FlagNameImageDefaults)
 			if imgDefArg == nil {
 				panic(fmt.Sprintf("unable to find flag '%s'", flags.FlagNameImageDefaults))
@@ -339,16 +339,21 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 				if fw.Flag.DefValue == "" {
 					fw.Flag.DefValue = flavor.ScannerDBImage()
 				}
+			case flags.FlagNameCentralDBImage:
+				if fw.Flag.DefValue == "" {
+					fw.Flag.DefValue = flavor.CentralDBImage()
+				}
 			}
 		}
 
 		depUnmet := false
 		for _, dep := range fw.Annotations[flags.DependenciesKey] {
 			flag := flagsByName[dep]
+			//nolint:staticcheck // SA5011 flag is definitely not nil because utils.Must panics.
 			if flag == nil {
 				utils.CrashOnError(errors.Errorf("invalid flag dependency %q", dep))
 			}
-			//lint:ignore SA5011 flag is definitely not nil because utils.Must panics.
+			//nolint:staticcheck // SA5011 flag is definitely not nil because utils.Must panics.
 			if !argSlice.flagNameIsSetExplicitly(flag.Name) {
 				depUnmet = true
 				break

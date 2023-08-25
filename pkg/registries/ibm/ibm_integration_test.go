@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package ibm
 
@@ -26,7 +25,7 @@ func TestIBM(t *testing.T) {
 				ApiKey:   apiToken,
 			},
 		},
-	})
+	}, false)
 	require.NoError(t, err)
 
 	image, err := utils.GenerateImageFromString(testImage)

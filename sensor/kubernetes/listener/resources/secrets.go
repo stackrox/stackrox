@@ -1,99 +1,42 @@
 package resources
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/cloudflare/cfssl/certinfo"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
+	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
-const redhatRegistryEndpoint = "registry.redhat.io"
+const (
+	saAnnotation = "kubernetes.io/service-account.name"
+	defaultSA    = "default"
 
-// The following types are copied from the Kubernetes codebase,
-// since it is not placed in any of the officially supported client
-// libraries.
-// dockerConfigJSON represents ~/.docker/config.json file info
-// see https://github.com/docker/docker/pull/12009
-type dockerConfigJSON struct {
-	Auths dockerConfig `json:"auths"`
-}
-
-// dockerConfig represents the config file used by the docker CLI.
-// This config that represents the credentials that should be used
-// when pulling images from specific image repositories.
-type dockerConfig map[string]dockerConfigEntry
-
-// dockerConfigEntry is an entry in the dockerConfig.
-type dockerConfigEntry struct {
-	Username string
-	Password string
-	Email    string
-}
-
-// dockerConfigEntryWithAuth is used solely for deserializing the Auth field
-// into a dockerConfigEntry during JSON deserialization.
-type dockerConfigEntryWithAuth struct {
-	// +optional
-	Username string `json:"username,omitempty"`
-	// +optional
-	Password string `json:"password,omitempty"`
-	// +optional
-	Email string `json:"email,omitempty"`
-	// +optional
-	Auth string `json:"auth,omitempty"`
-}
-
-// decodeDockerConfigFieldAuth deserializes the "auth" field from dockercfg into a
-// username and a password. The format of the auth field is base64(<username>:<password>).
-func decodeDockerConfigFieldAuth(field string) (username, password string, err error) {
-	decoded, err := base64.StdEncoding.DecodeString(field)
-	if err != nil {
-		return
-	}
-
-	parts := strings.SplitN(string(decoded), ":", 2)
-	if len(parts) != 2 {
-		err = errors.New("unable to parse auth field")
-		return
-	}
-
-	username = parts[0]
-	password = parts[1]
-
-	return
-}
-
-func (d *dockerConfigEntry) UnmarshalJSON(data []byte) error {
-	var tmp dockerConfigEntryWithAuth
-	err := json.Unmarshal(data, &tmp)
-	if err != nil {
-		return err
-	}
-
-	d.Username = tmp.Username
-	d.Password = tmp.Password
-	d.Email = tmp.Email
-
-	if len(tmp.Auth) == 0 {
-		return nil
-	}
-
-	d.Username, d.Password, err = decodeDockerConfigFieldAuth(tmp.Auth)
-	return err
-}
+	openshiftConfigNamespace  = "openshift-config"
+	openshiftConfigPullSecret = "pull-secret"
+)
 
 var dataTypeMap = map[string]storage.SecretType{
 	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
@@ -187,41 +130,71 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 }
 
 // secretDispatcher handles secret resource events.
-type secretDispatcher struct{}
-
-// newSecretDispatcher creates and returns a new secret handler.
-func newSecretDispatcher() *secretDispatcher {
-	return &secretDispatcher{}
+type secretDispatcher struct {
+	regStore *registry.Store
 }
 
-func dockerConfigToImageIntegration(registry string, dce dockerConfigEntry) *storage.ImageIntegration {
+// newSecretDispatcher creates and returns a new secret handler.
+func newSecretDispatcher(regStore *registry.Store) *secretDispatcher {
+	return &secretDispatcher{
+		regStore: regStore,
+	}
+}
+
+func deriveIDFromSecret(secret *v1.Secret, registry string) (string, error) {
+	rootUUID, err := uuid.FromString(string(secret.UID))
+	if err != nil {
+		return "", errors.Wrapf(err, "converting secret ID %q to uuid", secret.UID)
+	}
+	id := uuid.NewV5(rootUUID, registry).String()
+	return id, nil
+}
+
+// DockerConfigToImageIntegration creates an image integration for a given
+// registry URL and docker config.
+func DockerConfigToImageIntegration(secret *v1.Secret, registry string, dce config.DockerConfigEntry) (*storage.ImageIntegration, error) {
 	registryType := docker.GenericDockerRegistryType
-	if urlfmt.TrimHTTPPrefixes(registry) == redhatRegistryEndpoint {
+	if rhel.RedHatRegistryEndpoints.Contains(urlfmt.TrimHTTPPrefixes(registry)) {
 		registryType = rhel.RedHatRegistryType
 	}
 
-	username, password := dce.Username, dce.Password
-	// TODO(ROX-8465): Determine which Service Account's token to use to replace the credentials.
-	// if features.LocalImageScanning.Enabled() {
-	// }
-
-	return &storage.ImageIntegration{
-		Id:         uuid.NewV4().String(),
+	var id string
+	if !features.SourcedAutogeneratedIntegrations.Enabled() {
+		id = uuid.NewV4().String()
+	} else {
+		var err error
+		id, err = deriveIDFromSecret(secret, registry)
+		if err != nil {
+			return nil, errors.Wrapf(err, "deriving image integration ID from secret %q", secret.UID)
+		}
+	}
+	ii := &storage.ImageIntegration{
+		Id:         id,
 		Type:       registryType,
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: registry,
-				Username: username,
-				Password: password,
+				Username: dce.Username,
+				Password: dce.Password,
 			},
 		},
 		Autogenerated: true,
 	}
+
+	if features.SourcedAutogeneratedIntegrations.Enabled() {
+		ii.Source = &storage.ImageIntegration_Source{
+			ClusterId:           clusterid.Get(),
+			Namespace:           secret.GetNamespace(),
+			ImagePullSecretName: secret.GetName(),
+		}
+	}
+
+	return ii, nil
 }
 
-func processDockerConfigEvent(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
-	var dockerConfig dockerConfig
+func getDockerConfigFromSecret(secret *v1.Secret) config.DockerConfig {
+	var dockerConfig config.DockerConfig
 	switch secret.Type {
 	case v1.SecretTypeDockercfg:
 		data, ok := secret.Data[v1.DockerConfigKey]
@@ -237,7 +210,7 @@ func processDockerConfigEvent(secret *v1.Secret, action central.ResourceAction) 
 		if !ok {
 			return nil
 		}
-		var dockerConfigJSON dockerConfigJSON
+		var dockerConfigJSON config.DockerConfigJSON
 		if err := json.Unmarshal(data, &dockerConfigJSON); err != nil {
 			log.Error(err)
 			return nil
@@ -247,24 +220,128 @@ func processDockerConfigEvent(secret *v1.Secret, action central.ResourceAction) 
 		utils.Should(errors.New("only Docker Config secrets are allowed"))
 		return nil
 	}
+	return dockerConfig
+}
+
+func imageIntegationIDSetFromSecret(secret *v1.Secret) (set.StringSet, error) {
+	if secret == nil {
+		return nil, nil
+	}
+	dockerConfig := getDockerConfigFromSecret(secret)
+	if len(dockerConfig) == 0 {
+		return nil, nil
+	}
+	imageIntegrationIDSet := set.NewStringSet()
+	for reg := range dockerConfig {
+		id, err := deriveIDFromSecret(secret, reg)
+		if err != nil {
+			return nil, err
+		}
+		imageIntegrationIDSet.Add(id)
+	}
+	return imageIntegrationIDSet, nil
+}
+
+func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret, action central.ResourceAction) *component.ResourceEvent {
+	dockerConfig := getDockerConfigFromSecret(secret)
+	if len(dockerConfig) == 0 {
+		return nil
+	}
 
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
+
+	saName := secret.GetAnnotations()[saAnnotation]
+	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
+	// The default service account always contains an API token.
+	// In OpenShift, the default service account also contains credentials for the
+	// OpenShift Container Registry, which is an internal image registry.
+	fromDefaultSA := saName == defaultSA
+	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
+
+	newIntegrationSet := set.NewStringSet()
 	for registry, dce := range dockerConfig {
-		ii := dockerConfigToImageIntegration(registry, dce)
-		sensorEvents = append(sensorEvents, &central.SensorEvent{
-			// Only update is supported at this time.
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_ImageIntegration{
-				ImageIntegration: ii,
-			},
-		})
+		if fromDefaultSA {
+			// Store the registry credentials so Sensor can reach it.
+			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+			if err != nil {
+				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
+			}
+
+			s.regStore.AddClusterLocalRegistryHost(registry)
+
+		} else if saName == "" {
+			// only send integrations to central that do not have the k8s SA annotation
+			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
+			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
+			if err != nil {
+				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
+			} else if !managedcentral.IsCentralManaged() {
+				sensorEvents = append(sensorEvents, &central.SensorEvent{
+					// Only update is supported at this time.
+					Action: action,
+					Resource: &central.SensorEvent_ImageIntegration{
+						ImageIntegration: ii,
+					},
+				})
+				if features.SourcedAutogeneratedIntegrations.Enabled() {
+					newIntegrationSet.Add(ii.GetId())
+				}
+			}
+
+			// The secrets captured in this block are used for delegated image scanning.
+			if env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting() {
+				// Store registry secrets to enable downstream scanning of all images
+				//
+				// This is only triggered when saName is empty so that we do not overwrite entries inserted
+				// by the 'if fromDefaultSA' block above, these default, builder, deployer, etc. service account secrets
+				// contain entries for the same registries, and therefore would overwrite each other.
+				//
+				// TODO(ROX-16077): a namespace may contain multiple .dockerconfig* secrets for the same registry (not handled
+				// today). To handle, change upsert to key off of more than just namespace+registry endpoint, such
+				// as namespace + secret name + registry.
+				var err error
+				if isGlobalPullSecret {
+					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
+				} else {
+					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+				}
+				if err != nil {
+					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
+				}
+			}
+		}
 
 		registries = append(registries, &storage.ImagePullSecret_Registry{
 			Name:     registry,
 			Username: dce.Username,
 		})
 	}
+	if features.SourcedAutogeneratedIntegrations.Enabled() {
+		// Compute diff between old and new secret to automatically clean up delete secrets
+		oldIntegrations, err := imageIntegationIDSetFromSecret(oldSecret)
+		if err != nil {
+			log.Errorf("error getting ids from old secret %q: %v", string(oldSecret.UID), err)
+		} else {
+			for id := range oldIntegrations.Difference(newIntegrationSet) {
+				sensorEvents = append(sensorEvents, &central.SensorEvent{
+					Id:     id,
+					Action: central.ResourceAction_REMOVE_RESOURCE,
+					Resource: &central.SensorEvent_ImageIntegration{
+						ImageIntegration: &storage.ImageIntegration{
+							Id: id,
+						},
+					},
+				})
+			}
+		}
+	}
+	sort.SliceStable(registries, func(i, j int) bool {
+		if registries[i].Name != registries[j].Name {
+			return registries[i].GetName() < registries[j].GetName()
+		}
+		return registries[i].GetUsername() < registries[j].GetUsername()
+	})
 
 	protoSecret := getProtoSecret(secret)
 	protoSecret.Files = []*storage.SecretDataFile{{
@@ -276,8 +353,16 @@ func processDockerConfigEvent(secret *v1.Secret, action central.ResourceAction) 
 			},
 		},
 	}}
+	events := component.NewEvent(sensorEvents...)
+	events.AddSensorEvent(secretToSensorEvent(action, protoSecret))
 
-	return append(sensorEvents, secretToSensorEvent(action, protoSecret))
+	if env.ResyncDisabled.BooleanSetting() {
+		// When adding new docker config secrets we need to reprocess every deployment in this cluster.
+		// This is because the field `NotPullable` could be updated and hence new image scan results will appear.
+		events.AddDeploymentReference(resolver.ResolveAllDeployments())
+	}
+
+	return events
 }
 
 func getProtoSecret(secret *v1.Secret) *storage.Secret {
@@ -302,18 +387,23 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 }
 
 // ProcessEvent processes a secret resource event, and returns the sensor events to emit in response.
-func (*secretDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	secret := obj.(*v1.Secret)
+
+	oldSecret, ok := oldObj.(*v1.Secret)
+	if !ok {
+		oldSecret = nil
+	}
 
 	switch secret.Type {
 	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg:
-		return processDockerConfigEvent(secret, action)
+		return s.processDockerConfigEvent(secret, oldSecret, action)
 	case v1.SecretTypeServiceAccountToken:
-		// Filter out service account tokens because we have a service account field.
+		// Filter out service account tokens because we have a service account processor.
 		return nil
 	}
 
 	protoSecret := getProtoSecret(secret)
 	populateTypeData(protoSecret, secret.Data)
-	return []*central.SensorEvent{secretToSensorEvent(action, protoSecret)}
+	return component.NewEvent(secretToSensorEvent(action, protoSecret))
 }

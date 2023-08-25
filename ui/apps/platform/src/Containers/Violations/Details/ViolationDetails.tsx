@@ -1,8 +1,6 @@
 import React, { ReactElement } from 'react';
-import { Flex, FlexItem, Title } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
-import ViolationTags from './AnalystNotes/ViolationTags';
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';
 import { ProcessViolation, LifecycleStage, Violation } from '../types/violationTypes';
@@ -10,23 +8,24 @@ import { ProcessViolation, LifecycleStage, Violation } from '../types/violationT
 type ViolationDetailsProps = {
     processViolation?: ProcessViolation;
     lifecycleStage: LifecycleStage;
-    violationId: string;
     violations: Violation[];
 };
 
 function ViolationDetails({
     processViolation,
     lifecycleStage,
-    violationId,
     violations,
 }: ViolationDetailsProps): ReactElement {
     const showRuntimeMessages = processViolation?.processes?.length || lifecycleStage === 'RUNTIME';
     const showDeploytimeMessages = lifecycleStage === 'DEPLOY';
     return (
-        <Flex className="pf-u-mt-md">
+        <Flex>
             <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                 <FlexItem>
-                    <Title headingLevel="h3">Violation events</Title>
+                    <Title headingLevel="h3" className="pf-u-mb-md">
+                        Violation events
+                    </Title>
+                    <Divider component="div" />
                 </FlexItem>
                 {showRuntimeMessages && (
                     <FlexItem>
@@ -41,21 +40,6 @@ function ViolationDetails({
                         <DeploytimeMessages violations={violations} />
                     </FlexItem>
                 )}
-            </Flex>
-            <Flex
-                direction={{ default: 'column' }}
-                data-testid="violation-tags"
-                flex={{ default: 'flex_1' }}
-            >
-                <FlexItem>
-                    <Title headingLevel="h3">Add violation metadata</Title>
-                </FlexItem>
-                <FlexItem data-testid="violation-tags">
-                    <ViolationTags resourceId={violationId} />
-                </FlexItem>
-                <FlexItem data-testid="violation-comments">
-                    <ViolationComments resourceId={violationId} />
-                </FlexItem>
             </Flex>
         </Flex>
     );

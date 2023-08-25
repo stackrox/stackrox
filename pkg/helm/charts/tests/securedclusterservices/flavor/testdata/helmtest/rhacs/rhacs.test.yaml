@@ -5,9 +5,22 @@ tests:
   expect: |
     assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.0.99.0")
     assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8:3.0.99.0")
+
 - name: slim mode
   set:
     collector.slimMode: true
   expect: |
     assertMainIs("registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.0.99.0")
     assertCollectorIs("registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8:3.0.99.0")
+
+- name: scanner image
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  set:
+    scanner.disable: false
+  expect: |
+    assertScannerIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8:3.0.99.0")
+    assertScannerDBIs("registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8:3.0.99.0")

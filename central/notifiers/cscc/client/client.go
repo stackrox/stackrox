@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
 )
@@ -43,7 +43,7 @@ type Config struct {
 
 func (c *Config) postURL(findingID string) string {
 	return fmt.Sprintf(
-		"https://securitycenter.googleapis.com/v1beta1/%s/findings?findingId=%s",
+		"https://securitycenter.googleapis.com/v1p1beta1/%s/findings?findingId=%s",
 		c.SourceID,
 		findingID,
 	)
@@ -84,6 +84,7 @@ func (c *Config) request(finding *findings.Finding, id string) (*http.Request, e
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal")
 	}
+
 	c.Logger.Debugf("Request: %s", string(b))
 
 	req, err := http.NewRequest("POST", c.postURL(id), bytes.NewReader(b))

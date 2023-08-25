@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,7 +23,9 @@ func initialize() {
 		enrichment.NodeEnricherSingleton(),
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
-		reprocessor.Singleton())
+		reprocessor.Singleton(),
+		connection.ManagerSingleton(),
+	)
 }
 
 // Singleton provides the instance of the Service interface to register.

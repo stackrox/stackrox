@@ -3,6 +3,7 @@ package detection
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 )
 
 var (
@@ -10,6 +11,7 @@ var (
 )
 
 // PolicySet is a set of policies.
+//
 //go:generate mockgen-wrapper
 type PolicySet interface {
 	ForOne(policyID string, f func(CompiledPolicy) error) error
@@ -24,6 +26,6 @@ type PolicySet interface {
 // NewPolicySet returns a new instance of a PolicySet.
 func NewPolicySet() PolicySet {
 	return &setImpl{
-		policyIDToCompiled: NewStringCompiledPolicyFastRMap(),
+		policyIDToCompiled: maputil.NewFastRMap[string, CompiledPolicy](),
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -33,18 +32,11 @@ func AuthzTraceHTTPInterceptor(authzTraceSink AuthzTraceSink) httputil.HTTPInter
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
 			if trace := AuthzTraceFromContext(r.Context()); trace != nil {
-				err := statusCodeToError(statusTrackingWriter.GetStatusCode())
+				err := statusTrackingWriter.GetStatusCodeError()
 				go sendAuthzTrace(r.Context(), authzTraceSink, "", err, trace)
 			}
 		})
 	}
-}
-
-func statusCodeToError(code *int) error {
-	if code == nil || *code == http.StatusOK {
-		return nil
-	}
-	return errors.Errorf("%d %s", *code, http.StatusText(*code))
 }
 
 func sendAuthzTrace(ctx context.Context, authzTraceSink AuthzTraceSink, rpcMethod string, handlerErr error, trace *AuthzTrace) {

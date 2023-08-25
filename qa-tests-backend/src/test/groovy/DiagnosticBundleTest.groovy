@@ -1,26 +1,30 @@
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
 
-import spock.lang.Shared
-import com.jayway.restassured.config.RestAssuredConfig
-import com.jayway.restassured.config.SSLConfig
-import groups.BAT
-import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
-import io.stackrox.proto.storage.RoleOuterClass
-import io.stackrox.proto.storage.RoleOuterClass.Role
-import org.junit.experimental.categories.Category
-import services.RoleService
-import spock.lang.Unroll
-import util.Env
-
+import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-@Category(BAT)
+import io.restassured.config.RestAssuredConfig
+import io.restassured.config.SSLConfig
+
+import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
+import io.stackrox.proto.storage.RoleOuterClass
+import io.stackrox.proto.storage.RoleOuterClass.Role
+
+import services.ClusterService
+import services.RoleService
+import util.Env
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+
+@Tag("BAT")
+@Tag("COMPATIBILITY")
 class DiagnosticBundleTest extends BaseSpecification {
 
     @Shared
-    private String debugLogsReaderRoleName
+    private String administrationReaderRoleName
     @Shared
     private GenerateTokenResponse adminToken
     @Shared
@@ -31,28 +35,25 @@ class DiagnosticBundleTest extends BaseSpecification {
     private Role noAccessRole
 
     def setupSpec() {
-        disableAuthzPlugin()
-
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")
-        debugLogsReaderRoleName = UUID.randomUUID()
-        RoleService.createRoleWithPermissionSet(
-                Role.newBuilder().setName(debugLogsReaderRoleName).build(),
+        administrationReaderRoleName = UUID.randomUUID()
+        RoleService.createRoleWithScopeAndPermissionSet(administrationReaderRoleName,
+                UNRESTRICTED_SCOPE_ID,
                 [
-                        "DebugLogs": RoleOuterClass.Access.READ_ACCESS,
+                        "Administration": RoleOuterClass.Access.READ_ACCESS,
                         "Cluster": RoleOuterClass.Access.READ_ACCESS,
                 ]
         )
         debugLogsReaderToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(),
-                debugLogsReaderRoleName)
+                administrationReaderRoleName)
         Map<String, RoleOuterClass.Access> resourceToAccess =
                 [
-                        "DebugLogs": RoleOuterClass.Access.NO_ACCESS,
+                        "Administration": RoleOuterClass.Access.NO_ACCESS,
                         "Cluster": RoleOuterClass.Access.NO_ACCESS,
                 ]
-        noAccessRole = RoleOuterClass.Role.newBuilder()
-                        .setName("No Access Test Role - ${RUN_ID}")
-                        .build()
-        noAccessRole = RoleService.createRoleWithPermissionSet(noAccessRole, resourceToAccess)
+
+        noAccessRole = RoleService.createRoleWithScopeAndPermissionSet("No Access Test Role - ${RUN_ID}",
+            UNRESTRICTED_SCOPE_ID, resourceToAccess)
         noAccessToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), noAccessRole.name)
     }
 
@@ -69,11 +70,14 @@ class DiagnosticBundleTest extends BaseSpecification {
         if (noAccessRole != null) {
             RoleService.deleteRole(noAccessRole.name)
         }
-        RoleService.deleteRole(debugLogsReaderRoleName)
+        RoleService.deleteRole(administrationReaderRoleName)
     }
 
     @Unroll
     def "Test that diagnostic bundle download #desc"() {
+        given:
+        Instant modifiedAfter = (new Date()).toInstant().minusSeconds(1)
+
         when:
         "Making a request for the diagnostic bundle"
 
@@ -113,8 +117,10 @@ class DiagnosticBundleTest extends BaseSpecification {
             try {
                 ZipEntry entry
                 while ((entry = zis.nextEntry) != null) {
-                    print "Found file ${entry.name}"
-                    if (entry.name == "kubernetes/remote/stackrox/sensor/deployment-sensor.yaml") {
+                    log.info "Found file ${entry.name} modified at ${entry.lastModifiedTime}"
+                    assert modifiedAfter.isBefore(entry.lastModifiedTime.toInstant())
+                    if (entry.name == ("kubernetes/" + ClusterService.DEFAULT_CLUSTER_NAME +
+                            "/stackrox/sensor/deployment-sensor.yaml")) {
                         foundK8sInfo = true
                     }
                 }

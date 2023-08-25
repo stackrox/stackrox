@@ -1,10 +1,10 @@
 package generate
 
 import (
-	"fmt"
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 type fileFormatWrapper struct {
@@ -18,7 +18,7 @@ func (f *fileFormatWrapper) String() string {
 func (f *fileFormatWrapper) Set(input string) error {
 	val, ok := v1.DeploymentFormat_value[strings.Replace(strings.ToUpper(input), "-", "_", -1)]
 	if !ok {
-		return fmt.Errorf("%q is not a valid option", input)
+		return errox.InvalidArgs.Newf("%q is not a valid option", input)
 	}
 	*f.DeploymentFormat = v1.DeploymentFormat(val)
 	return nil

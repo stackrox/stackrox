@@ -12,7 +12,8 @@
             },
             "loginUrl": "irrelevant",
             "validated": false,
-            "active": false
+            "active": false,
+            "traits": null
         }
     ]
 }

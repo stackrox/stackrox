@@ -1,0 +1,192 @@
+{
+  "id": "a9b9ecf7-9707-4e32-8b62-d03018ed454f",
+  "name": "Mounting Sensitive Host Directories",
+  "description": "Alert on deployments mounting sensitive host directories",
+  "rationale": "Mounting system directories from host implies container access to sensitive files on the host. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the host is not properly secured.",
+  "remediation": "Ensure that deployments do not mount sensitive host directories, or exclude this deployment if host mount is required.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox compliance",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox",
+          "label": {
+            "key": "app",
+            "value": "stackrox-compliance"
+          }
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-scheduler namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-scheduler"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-etcd namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-controller-manager namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-controller-manager"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-oauth-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-oauth-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-network-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-network-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-machine-api namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-api"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-dns namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-dns"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-csi-drivers namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-multus namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-multus"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on node-ca dameonset in the openshift-image-registry namespace",
+      "deployment": {
+        "name": "node-ca",
+        "scope": {
+          "namespace": "openshift-image-registry"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    }
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Volume Source",
+          "values": [
+            {
+              "value": "(/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

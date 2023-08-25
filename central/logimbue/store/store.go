@@ -1,25 +1,19 @@
 package store
 
 import (
-	"github.com/stackrox/rox/pkg/bolthelper"
-	bolt "go.etcd.io/bbolt"
+	"context"
+
+	"github.com/stackrox/rox/generated/storage"
 )
 
-var logsBucket = []byte("logs")
-
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for logs.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	GetLogs() ([]string, error)
-	GetLogsRange() (start int64, end int64, err error)
-	AddLog(log string) error
-	RemoveLogs(from, to int64) error
-}
+	GetAll(ctx context.Context) ([]*storage.LogImbue, error)
+	Upsert(ctx context.Context, log *storage.LogImbue) error
 
-// newStore returns a new Store instance using the provided bolt DB instance.
-func newStore(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, logsBucket)
-	return &storeImpl{
-		DB: db,
-	}
+	DeleteMany(ctx context.Context, ids []string) error
+
+	Walk(ctx context.Context, fn func(obj *storage.LogImbue) error) error
 }

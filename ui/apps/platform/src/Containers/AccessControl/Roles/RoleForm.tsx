@@ -24,6 +24,10 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 import AccessScopesTable from './AccessScopesTable';
 import PermissionSetsTable from './PermissionSetsTable';
 
+import './RoleForm.css';
+import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
+
 export type RoleFormProps = {
     isActionable: boolean;
     action?: AccessControlQueryAction;
@@ -49,6 +53,8 @@ function RoleForm({
 }: RoleFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, values } = useFormik({
         initialValues: role,
@@ -106,13 +112,18 @@ function RoleForm({
 
     return (
         <Form id="role-form">
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Add role' : role.name}
+                            {action === 'create' ? 'Create role' : role.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={role.traits} />
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>
@@ -120,7 +131,7 @@ function RoleForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
                                         isSmall
                                     >
                                         Edit role
@@ -175,7 +186,11 @@ function RoleForm({
                 <AccessScopesTable
                     fieldId="accessScopeId"
                     accessScopeId={values.accessScopeId}
-                    accessScopes={isActionable ? accessScopes : []}
+                    accessScopes={
+                        isActionable
+                            ? accessScopes
+                            : accessScopes.filter((as) => as.id === values.accessScopeId)
+                    }
                     handleChange={handleChange}
                     isDisabled={isViewing}
                 />

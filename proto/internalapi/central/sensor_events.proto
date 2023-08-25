@@ -24,6 +24,7 @@ enum ResourceAction {
     CREATE_RESOURCE         = 1;
     REMOVE_RESOURCE         = 2;
     UPDATE_RESOURCE         = 3;
+    SYNC_RESOURCE           = 4;
 }
 
 // Event updates from sensor to central.
@@ -51,25 +52,29 @@ message Timing {
     int64  nanos      = 3;
 }
 
-// Next tag: 24.
+// Next tag: 27.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
-    string         id                           = 1;
-    ResourceAction action                       = 2;
-    Timing         timing                       = 3;
+    string          id                           = 1;
+    ResourceAction  action                       = 2;
+    Timing          timing                       = 3;
+    oneof sensor_hash_oneof {
+        uint64 sensor_hash                       = 26;
+    }
 
     message ResourcesSynced {}
 
     oneof resource {
-        storage.NetworkPolicy     network_policy    = 4;
-        storage.Deployment        deployment        = 5;
-        storage.Pod               pod               = 19;
-        storage.NamespaceMetadata namespace         = 6;
-        storage.Secret            secret            = 7;
-        storage.Node              node              = 9;
-        storage.ServiceAccount    service_account   = 14;
-        storage.K8sRole           role              = 15;
-        storage.K8sRoleBinding    binding           = 16;
+        storage.NetworkPolicy          network_policy     = 4;
+        storage.Deployment             deployment         = 5;
+        storage.Pod                    pod                = 19;
+        storage.NamespaceMetadata      namespace          = 6;
+        storage.Secret                 secret             = 7;
+        storage.Node                   node               = 9;
+        storage.NodeInventory          node_inventory     = 25;
+        storage.ServiceAccount         service_account    = 14;
+        storage.K8sRole                role               = 15;
+        storage.K8sRoleBinding         binding            = 16;
 
         storage.ProcessIndicator        process_indicator       = 8;
         storage.ProviderMetadata        provider_metadata       = 10;

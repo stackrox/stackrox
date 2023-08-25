@@ -2,6 +2,8 @@ package httputil
 
 import (
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // StatusTrackingWriter tracks status code written to ResponseWriter instance.
@@ -27,6 +29,15 @@ func (w *StatusTrackingWriter) recordStatusCodeOnce(statusCode int) {
 // GetStatusCode returns recorded status code. Returns nil if no status code was recorded.
 func (w *StatusTrackingWriter) GetStatusCode() *int {
 	return w.statusCode
+}
+
+// GetStatusCodeError returns error for status code. Return nil if status code is OK.
+func (w *StatusTrackingWriter) GetStatusCodeError() error {
+	if w.statusCode == nil || *w.statusCode == http.StatusOK {
+		return nil
+	}
+
+	return errors.Errorf("%d %s", *w.statusCode, http.StatusText(*w.statusCode))
 }
 
 // WriteHeader records statusCode and calls underlying WriteHeader.

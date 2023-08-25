@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
+	batchV1 "k8s.io/api/batch/v1"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -122,6 +123,9 @@ func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *Depl
 // SpecToPodTemplateSpec turns a top level spec into a podTemplateSpec
 func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
 	templateInterface := spec.FieldByName("Template")
+	if !doesFieldExist(templateInterface) {
+		return v1.PodTemplateSpec{}, errors.Errorf("obj %+v does not have a Template field", spec)
+	}
 	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
 		templateInterface = templateInterface.Elem()
 	}
@@ -237,7 +241,10 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podSpec = o.Spec
+	// batch/v1beta1 CronJob is deprecated in v1.21+, unavailable in v1.25+.
 	case *batchV1beta1.CronJob:
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
+	case *batchV1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	default:
 		podTemplate, err := SpecToPodTemplateSpec(spec)
@@ -296,11 +303,7 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
-	if podSpec.ServiceAccountName == "" {
-		w.ServiceAccount = "default"
-	} else {
-		w.ServiceAccount = podSpec.ServiceAccountName
-	}
+	w.ServiceAccount = stringutils.OrDefault(podSpec.ServiceAccountName, "default")
 }
 
 func (w *DeploymentWrap) populateAutomountServiceAccountToken(podSpec v1.PodSpec) {
@@ -458,6 +461,10 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 				for _, drop := range capabilities.Drop {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
+			}
+
+			if ape := s.AllowPrivilegeEscalation; ape != nil {
+				sc.AllowPrivilegeEscalation = *ape
 			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)

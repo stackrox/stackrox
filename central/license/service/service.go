@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -11,6 +10,6 @@ var (
 )
 
 // New creates a new license service
-func New(lockdownMode bool, licenseMgr manager.LicenseManager) grpc.APIService {
-	return newService(lockdownMode, licenseMgr)
+func New() grpc.APIService {
+	return newService()
 }

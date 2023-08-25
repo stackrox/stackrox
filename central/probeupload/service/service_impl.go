@@ -11,9 +11,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/probeupload/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -22,13 +22,15 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ProbeUpload)): {
+		user.With(permissions.View(resources.Administration)): {
 			"/v1.ProbeUploadService/GetExistingProbes",
 		},
 	})
@@ -37,6 +39,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedProbeUploadServiceServer
+
 	mgr manager.Manager
 
 	probeServerHandler http.Handler
@@ -75,10 +79,12 @@ func (s *service) GetExistingProbes(ctx context.Context, req *v1.GetExistingProb
 func (s *service) CustomRoutes() []routes.CustomRoute {
 	return []routes.CustomRoute{
 		{
-			Route:         "/api/extensions/probeupload",
-			Authorizer:    user.With(permissions.Modify(resources.ProbeUpload)),
-			ServerHandler: http.HandlerFunc(s.handleProbeUpload),
-			Compression:   false,
+			Route:      "/api/extensions/probeupload",
+			Authorizer: user.With(permissions.Modify(resources.Administration)),
+			ServerHandler: utils.IfThenElse[http.Handler](
+				env.EnableKernelPackageUpload.BooleanSetting(), http.HandlerFunc(s.handleProbeUpload),
+				httputil.NotImplementedHandler("api is not supported because kernel package upload is disabled.")),
+			Compression: false,
 		},
 		{
 			Route:         "/kernel-objects/",

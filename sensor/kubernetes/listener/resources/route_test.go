@@ -5,15 +5,17 @@ import (
 
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func getSelector(svc *v1.Service) selector {
-	return SelectorFromMap(svc.Spec.Selector)
+func getSelector(svc *v1.Service) selector.Selector {
+	return selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing())
 }
 
 func getTestService(name, namespace string) *v1.Service {
@@ -54,7 +56,7 @@ type mockPortExposureReconciler struct {
 	orderedCalls []call
 }
 
-func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector) []*central.SensorEvent {
+func (m *mockPortExposureReconciler) UpdateExposuresForMatchingDeployments(namespace string, sel selector.Selector) []*central.SensorEvent {
 	m.orderedCalls = append(m.orderedCalls,
 		call{
 			"UpdateExposuresForMatchingDeployments",
@@ -76,6 +78,9 @@ func (m *mockPortExposureReconciler) UpdateExposureOnServiceCreate(svc serviceWi
 type mockEndpointManager struct {
 }
 
+func (m *mockEndpointManager) OnDeploymentCreateOrUpdateByID(string) {
+}
+
 func (m *mockEndpointManager) OnDeploymentCreateOrUpdate(*deploymentWrap) {
 }
 
@@ -85,7 +90,7 @@ func (m *mockEndpointManager) OnDeploymentRemove(*deploymentWrap) {
 func (m *mockEndpointManager) OnServiceCreate(*serviceWrap) {
 }
 
-func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector) {
+func (m *mockEndpointManager) OnServiceUpdateOrRemove(string, selector.Selector) {
 }
 
 func (m *mockEndpointManager) OnNodeCreate(*nodeWrap) {
@@ -130,6 +135,10 @@ func (suite *RouteAndServiceDispatcherTestSuite) SetupTest() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
+	if env.ResyncDisabled.BooleanSetting() {
+		// TODO(ROX-14310): remove the test
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testService := getTestService("test-svc", "test-ns")
 	suite.serviceDispatcher.ProcessEvent(testService, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -142,6 +151,10 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateNoRoute() {
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistingRoute() {
+	if env.ResyncDisabled.BooleanSetting() {
+		// TODO(ROX-14310): remove the test
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testRoute := getTestRoute("test-ns", "test-svc")
 	testService := getTestService("test-svc", "test-ns")
 	suite.routeDispatcher.ProcessEvent(testRoute, nil, central.ResourceAction_CREATE_RESOURCE)
@@ -156,6 +169,10 @@ func (suite *RouteAndServiceDispatcherTestSuite) TestServiceCreateWithPreexistin
 }
 
 func (suite *RouteAndServiceDispatcherTestSuite) TestManyRoutesMatchingAndDeletions() {
+	if env.ResyncDisabled.BooleanSetting() {
+		// TODO(ROX-14310): remove the test
+		suite.T().Skip("If re-sync is disabled we don't call EndpointManager for CREATE and UPDATE events in the dispatcher")
+	}
 	testRouteSvc1 := getTestRoute("test-ns", "test-svc")
 	testSvc1 := getTestService("test-svc", "test-ns")
 	testRoute1Svc2 := getTestRoute("test-ns", "test-svc-2")

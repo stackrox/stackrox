@@ -1,6 +1,8 @@
 package types
 
 import (
+	"net/http"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -19,9 +21,9 @@ type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
-	Global() bool
 	Config() *Config
 	Name() string
+	HTTPClient() *http.Client
 }
 
 // ImageRegistry adds a DataSource function to Registry that describes which
@@ -29,6 +31,7 @@ type Registry interface {
 type ImageRegistry interface {
 	Registry
 	DataSource() *storage.DataSource
+	Source() *storage.ImageIntegration
 }
 
 // DockerfileInstructionSet are the set of acceptable keywords in a Dockerfile

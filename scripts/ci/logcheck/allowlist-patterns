@@ -7,3 +7,16 @@ the database system is starting up
 unexpected status code 520 when retrieving image scan
 # scanner-db has gotten larger and the init container can trigger the autovacuum
 FATAL:  terminating autovacuum process due to administrator command
+# fetching signature was unsuccessful due to issues with contacting registry, i.e. quay outage.
+Error: Fetching signature for image .* unexpected status code 500
+# postgres trying to send data on a connection closed by the client (ROX-13258)
+FATAL:  connection to client lost
+# postgres can terminate these if we upgrade central during the middle of operations
+FATAL:  terminating connection because protocol synchronization was lost
+# with operator installs, sensor logs contain this error w.r.t. refreshing a cert for local scanning.
+# TODO: check if this is benign and/or if sensor is configured appropriately for test.
+unexpected owner for certificate secrets
+# By design, we keep installing PodSecurityPolicy objects as long as the server supports them.
+# We detect if they are not supported and in that case do not apply them, so these warnings are not useful at this point.
+# See ROX-17796 ROX-17766 ROX-17734 for related work.
+policy/v1beta1 PodSecurityPolicy is deprecated in v1.21., unavailable in v1.25.

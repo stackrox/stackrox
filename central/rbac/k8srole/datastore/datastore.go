@@ -2,17 +2,19 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
+	pgStore "github.com/stackrox/rox/central/rbac/k8srole/internal/store/postgres"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to RoleStorage.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
@@ -25,15 +27,17 @@ type DataStore interface {
 	RemoveRole(ctx context.Context, id string) error
 }
 
-// New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
-	d := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
+// New returns a new instance of DataStore using the input store, and searcher.
+func New(k8sRoleStore store.Store, searcher search.Searcher) DataStore {
+	return &datastoreImpl{
+		storage:  k8sRoleStore,
 		searcher: searcher,
 	}
-	if err := d.buildIndex(); err != nil {
-		return nil, errors.Wrap(err, "failed to build index from existing store")
-	}
-	return d, nil
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	dbstore := pgStore.New(pool)
+	searcher := search.New(dbstore, pgStore.NewIndexer(pool))
+	return New(dbstore, searcher)
 }

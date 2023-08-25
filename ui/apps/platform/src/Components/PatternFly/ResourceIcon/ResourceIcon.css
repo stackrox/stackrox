@@ -1,0 +1,10 @@
+.resource-icon {
+  display: inline-block;
+  color: var(--pf-global--palette--white);
+  border-radius: 20px;
+  padding: 1px 6px;
+  text-align: center;
+  vertical-align: 1px;
+  margin-right: var(--pf-global--spacer--xs);
+  font-size: var(--pf-global--FontSize--xs);
+}

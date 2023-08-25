@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"

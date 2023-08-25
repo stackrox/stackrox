@@ -1,17 +1,18 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for ImageCVEEdges.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	Count() (int, error)
-	Exists(id string) (bool, error)
+	Count(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	GetAll() ([]*storage.ImageCVEEdge, error)
-	Get(id string) (*storage.ImageCVEEdge, bool, error)
-	GetMany(ids []string) ([]*storage.ImageCVEEdge, []int, error)
-	UpdateVulnState(cve string, images []string, state storage.VulnerabilityState) error
+	Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error)
 }

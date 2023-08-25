@@ -10,6 +10,14 @@ image:
   collector:
     name: [< required "" .CollectorFullImageRemote >]
     slimName: [< required "" .CollectorSlimImageRemote >]
+  scanner:
+    name: [< required "" .ScannerSlimImageRemote >]
+    tag: [< required "" .ScannerImageTag >]
+  [< if (not .KubectlOutput) >]
+  scannerDb:
+    name: [< required "" .ScannerDBSlimImageRemote >]
+    tag: [< required "" .ScannerImageTag >]
+  [< end >]
 ---
 # Add registry defaults
 image:
@@ -17,6 +25,12 @@ image:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
+  scanner:
+    registry: {{ ._rox.image.registry }}
+  [< if (not .KubectlOutput) >]
+  scannerDb:
+    registry: {{ ._rox.image.registry }}
+  [< end >]
 ---
 # Default to collector slim mode. If configured registry equals the default we can assume the cluster has internet connectivity.
 collector:
@@ -32,6 +46,12 @@ image:
     {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
     {{- end }}
+  scanner:
+    repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
+  [< if (not .KubectlOutput) >]
+  scannerDb:
+    repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
+  [< end >]
 ---
 # Configure collector slim image full ref
 image:
@@ -50,7 +70,7 @@ image:
     {{- else }}
     _abbrevImageRef: {{ ._rox.image.main.repository }}
     {{- end }}
-    tag: {{ .Chart.AppVersion }}
+    tag: [< required "" .ImageTag >]
   collector:
     {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
       {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
@@ -73,11 +93,18 @@ image:
     {{- end }}
 ---
 # Add fullRef references to images
+# TODO(ROX-9261): Add support for image pull policy to scanner slim
 image:
   main:
     fullRef: {{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}
   collector:
     fullRef: {{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}
+  scanner:
+    fullRef: {{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}
+  [< if (not .KubectlOutput) >]
+  scannerDb:
+    fullRef: {{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}
+  [< end >]
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
   complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}

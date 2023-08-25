@@ -8,12 +8,12 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -42,17 +42,17 @@ type EmbeddedVulnerabilityResolver struct {
 }
 
 // Suppressed returns whether CVE is suppressed (UI term: Snooze) or not
-func (evr *EmbeddedVulnerabilityResolver) Suppressed(ctx context.Context) bool {
+func (evr *EmbeddedVulnerabilityResolver) Suppressed(_ context.Context) bool {
 	return evr.data.GetSuppressed()
 }
 
 // SuppressActivation returns the time when the CVE was suppressed
-func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetSuppressActivation())
 }
 
 // SuppressExpiry returns the time when the CVE suppression expires
-func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetSuppressExpiry())
 }
 
@@ -72,58 +72,58 @@ func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVector
 }
 
 // ID returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) ID(ctx context.Context) graphql.ID {
+func (evr *EmbeddedVulnerabilityResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(evr.data.GetCve())
 }
 
-// Cve returns the CVE string (which is effectively an id)
-func (evr *EmbeddedVulnerabilityResolver) Cve(ctx context.Context) string {
+// CVE returns the CVE string (which is effectively an id)
+func (evr *EmbeddedVulnerabilityResolver) CVE(_ context.Context) string {
 	return evr.data.GetCve()
 }
 
 // Cvss returns the CVSS score.
-func (evr *EmbeddedVulnerabilityResolver) Cvss(ctx context.Context) float64 {
+func (evr *EmbeddedVulnerabilityResolver) Cvss(_ context.Context) float64 {
 	return float64(evr.data.GetCvss())
 }
 
 // Link returns a link to the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Link(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Link(_ context.Context) string {
 	return evr.data.GetLink()
 }
 
 // Summary returns the summary of the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Summary(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Summary(_ context.Context) string {
 	return evr.data.GetSummary()
 }
 
 // ScoreVersion returns the version of the CVSS score returned.
-func (evr *EmbeddedVulnerabilityResolver) ScoreVersion(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) ScoreVersion(_ context.Context) string {
 	value := evr.data.GetScoreVersion()
 	return value.String()
 }
 
 // FixedByVersion returns the version of the parent component that removes this CVE.
-func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(ctx context.Context) (string, error) {
+func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(_ context.Context) (string, error) {
 	return evr.data.GetFixedBy(), nil
 }
 
 // IsFixable returns whether or not a component with a fix exists.
-func (evr *EmbeddedVulnerabilityResolver) IsFixable(ctx context.Context, _ RawQuery) (bool, error) {
+func (evr *EmbeddedVulnerabilityResolver) IsFixable(_ context.Context, _ RawQuery) (bool, error) {
 	return evr.data.GetFixedBy() != "", nil
 }
 
 // LastScanned is the last time the vulnerability was scanned in an image.
-func (evr *EmbeddedVulnerabilityResolver) LastScanned(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) LastScanned(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.lastScanned)
 }
 
 // CreatedAt is the firsts time the vulnerability was scanned in an image. Unavailable in an image context.
-func (evr *EmbeddedVulnerabilityResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) CreatedAt(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.lastScanned)
 }
 
 // DiscoveredAtImage is the first time the vulnerability was discovered in the parent image.
-func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(ctx context.Context, _ RawQuery) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) DiscoveredAtImage(_ context.Context, _ RawQuery) (*graphql.Time, error) {
 	return timestamp(evr.data.FirstImageOccurrence)
 }
 
@@ -139,24 +139,6 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityTypes() []string {
 		vulnTypes = append(vulnTypes, vulnType.String())
 	}
 	return vulnTypes
-}
-
-// Components are the components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.CVEs, "Components")
-
-	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
-
-	return evr.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
-}
-
-// ComponentCount is the number of components that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
-	components, err := evr.Components(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(components)), nil
 }
 
 // Images are the images that contain the CVE/Vulnerability.
@@ -276,7 +258,29 @@ func (evr *EmbeddedVulnerabilityResolver) NodeCount(ctx context.Context, args Ra
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) (int, int, error) {
+// Clusters returns resolvers for clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "Clusters")
+
+	if err := readClusters(ctx); err != nil {
+		return nil, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.Clusters(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+// ClusterCount returns a number of clusters affected by cluster vulnerability.
+func (evr *EmbeddedVulnerabilityResolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ClusterCVEs, "ClusterCount")
+
+	if err := readClusters(ctx); err != nil {
+		return 0, err
+	}
+	query := search.AddRawQueriesAsConjunction(args.String(), evr.vulnRawQuery())
+	return evr.root.ClusterCount(ctx, RawQuery{Query: &query})
+}
+
+func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, cve *schema.NVDCVEFeedJSON10DefCVEItem, ct utils.CVEType) (int, int, error) {
 	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -292,7 +296,7 @@ func (resolver *Resolver) getComponentsForAffectedCluster(ctx context.Context, c
 	return len(affectedClusters), len(clusters), nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct converter.CVEType) (int, int, error) {
+func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForPerClusterVuln(ctx context.Context, ct utils.CVEType) (int, int, error) {
 	clusters, err := evr.root.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return 0, 0, err
@@ -324,7 +328,7 @@ func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForImages(ctx co
 }
 
 func (evr *EmbeddedVulnerabilityResolver) getEnvImpactComponentsForNodes(ctx context.Context) (numerator, denominator int, err error) {
-	allNodesCount, err := evr.root.NodeGlobalDataStore.CountAllNodes(ctx)
+	allNodesCount, err := evr.root.NodeDataStore.CountNodes(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -358,11 +362,11 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 
 		switch vulnType {
 		case storage.EmbeddedVulnerability_K8S_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.K8s)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.K8s)
 		case storage.EmbeddedVulnerability_ISTIO_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.Istio)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.Istio)
 		case storage.EmbeddedVulnerability_OPENSHIFT_VULNERABILITY:
-			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, converter.OpenShift)
+			n, d, err = evr.getEnvImpactComponentsForPerClusterVuln(ctx, utils.OpenShift)
 		case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
 			n, d, err = evr.getEnvImpactComponentsForImages(ctx)
 		case storage.EmbeddedVulnerability_NODE_VULNERABILITY:
@@ -387,22 +391,22 @@ func (evr *EmbeddedVulnerabilityResolver) EnvImpact(ctx context.Context) (float6
 }
 
 // Severity return the severity of the vulnerability (CVSSv3 or CVSSv2).
-func (evr *EmbeddedVulnerabilityResolver) Severity(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) Severity(_ context.Context) string {
 	return evr.data.GetSeverity().String()
 }
 
 // PublishedOn is the time the vulnerability was published (ref: NVD).
-func (evr *EmbeddedVulnerabilityResolver) PublishedOn(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) PublishedOn(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetPublishedOn())
 }
 
 // LastModified is the time the vulnerability was last modified (ref: NVD).
-func (evr *EmbeddedVulnerabilityResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+func (evr *EmbeddedVulnerabilityResolver) LastModified(_ context.Context) (*graphql.Time, error) {
 	return timestamp(evr.data.GetLastModified())
 }
 
 // ImpactScore returns the impact score of the vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) float64 {
+func (evr *EmbeddedVulnerabilityResolver) ImpactScore(_ context.Context) float64 {
 	if val := evr.data.GetCvssV3(); val != nil {
 		return float64(evr.data.GetCvssV3().GetImpactScore())
 	}
@@ -413,7 +417,7 @@ func (evr *EmbeddedVulnerabilityResolver) ImpactScore(ctx context.Context) float
 }
 
 // UnusedVarSink represents a query sink
-func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
@@ -462,8 +466,8 @@ func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, q
 
 // ActiveState shows the activeness of a vulnerability in a deployment context.
 func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ RawQuery) (*activeStateResolver, error) {
-	if !features.ActiveVulnManagement.Enabled() {
-		return nil, nil
+	if !env.ActiveVulnMgmt.BooleanSetting() {
+		return &activeStateResolver{}, nil
 	}
 	deploymentID := getDeploymentScope(nil, ctx, evr.ctx)
 	if deploymentID == "" {
@@ -471,7 +475,7 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ Raw
 	}
 
 	// We only support OS level component. The active state is not determined if there is no OS level component associate with this vuln.
-	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddStrings(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, evr.data.GetCve()).AddExactMatches(search.ComponentSource, storage.SourceType_OS.String()).ProtoQuery()
 	osLevelComponents, err := evr.root.ImageComponentDataStore.Count(ctx, query)
 	if err != nil {
 		return nil, err
@@ -494,7 +498,7 @@ func (evr *EmbeddedVulnerabilityResolver) ActiveState(ctx context.Context, _ Raw
 }
 
 // VulnerabilityState return the effective state of this vulnerability (observed, deferred or marked as false positive).
-func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(ctx context.Context) string {
+func (evr *EmbeddedVulnerabilityResolver) VulnerabilityState(_ context.Context) string {
 	return evr.data.GetState().String()
 }
 
@@ -518,6 +522,6 @@ func (evr *EmbeddedVulnerabilityResolver) vulnRawQuery() string {
 }
 
 // EffectiveVulnerabilityRequest is not implemented for v1.
-func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) EffectiveVulnerabilityRequest(_ context.Context) (*VulnerabilityRequestResolver, error) {
 	return nil, nil
 }

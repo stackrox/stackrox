@@ -123,6 +123,27 @@
 #     htpasswd: |
 #       admin:<bcrypt hash>
 #
+#   # Secret configuration options for the StackRox Central DB deployment.
+#   db:
+#     # The password to be used for authenticating central database access IF USING POSTGRES.
+#     # This is not user-relevant and only serves to properly secure the database with a
+#     # pre-shared secret. If this setting is omitted, a password will be automatically generated
+#     # upon initial deployment, and the existing password will be used upon upgrades.
+#     password:
+#       # The plaintext value of the administrator password.
+#       value: <central database password value>
+#     # Internal "central-db.stackrox.svc" service TLS certificate for the Central DB deployment.
+#     # Omit to auto-generate (initial deployment) or use existing (upgrade).
+#     serviceTLS:
+#       cert: |
+#         -----BEGIN CERTIFICATE-----
+#         <PEM-encoded Central DB certificate>
+#         -----END CERTIFICATE-----
+#       key: |
+#         -----BEGIN RSA PRIVATE KEY-----
+#         <PEM-encoded Central DB cert private key>
+#         -----END RSA PRIVATE KEY-----
+#
 # # Secret configuration options for the StackRox Central deployment.
 # scanner:
 #   # The password to be used for authenticating database access. This is not user-relevant

@@ -9,15 +9,19 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestAdmissionControllerConfigMap(t *testing.T) {
+func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
+
 	k8sClient := createK8sClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -44,19 +48,30 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	var config storage.DynamicClusterConfig
 	require.NoError(t, proto.Unmarshal(configData, &config), "could not unmarshal config")
 
-	cc := testutils.GRPCConnectionToCentral(t)
+	cc := centralgrpc.GRPCConnectionToCentral(t)
 
 	policyServiceClient := v1.NewPolicyServiceClient(cc)
 	newPolicy := &storage.Policy{
-		Name:        "testpolicy_" + t.Name(),
+		Name:        "testpolicy_" + t.Name() + "_" + uuid.NewV4().String(),
 		Description: "test deploy time policy",
 		Rationale:   "test deploy time policy",
-		Categories:  []string{"test"},
-		Fields: &storage.PolicyFields{
-			ImageName: &storage.ImageNamePolicy{
-				Tag: "admctrl-policy-test-tag",
+		Categories:  []string{"Test"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageTag,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "admctrl-policy-test-tag",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Severity:           storage.Severity_HIGH_SEVERITY,
 		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
@@ -67,13 +82,12 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	newPolicy, err = policyServiceClient.PostPolicy(ctx, &v1.PostPolicyRequest{
 		Policy: newPolicy,
 	})
-	require.NoError(t, err, "failed to create new policy")
-
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		_, _ = policyServiceClient.DeletePolicy(ctx, &v1.ResourceByID{Id: newPolicy.GetId()})
 	}()
+	require.NoError(t, err, "failed to create new policy")
 
 	testutils.Retry(t, 10, 3*time.Second, func(t testutils.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -100,7 +114,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		assert.Len(t, newPolicyList.GetPolicies(), len(policyList.GetPolicies())+1, "expected one additional policy")
 		numMatches := 0
 		for _, policy := range newPolicyList.GetPolicies() {
-			if proto.Equal(policy, newPolicy) {
+			if policy.GetName() == newPolicy.GetName() {
 				numMatches++
 			}
 		}

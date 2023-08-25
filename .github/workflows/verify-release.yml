@@ -1,0 +1,95 @@
+name: Verify release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (A.B.C[-N])
+        required: true
+        default: 0.0.0-test
+        type: string
+      errata:
+        description: Name of the related Errata advisory
+        required: true
+        default: "RHSA-1970:0000"
+        type: string
+      latest-version:
+        description: Is this latest published version? (enables additional checks)
+        required: true
+        default: false
+        type: boolean
+
+env:
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: ${{ format('Verify release {0}', inputs.version) }}
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  variables:
+    name: Setup variables
+    uses: ./.github/workflows/variables.yml
+    with:
+      version: ${{ inputs.version }}
+
+  properties:
+    name: Read repository properties
+    runs-on: ubuntu-latest
+    outputs:
+      jira-project: ${{ steps.properties.outputs.jira-project }}
+    steps:
+      - name: Read workflow properties file
+        id: properties
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  verify-release:
+    name: Verify all artifacts for release ${{ needs.variables.outputs.named-release-patch }} are published
+    runs-on: ubuntu-latest
+    needs: [variables, properties]
+    env:
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+    steps:
+      - name: Login to Quay.io
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Login to registry.redhat.io
+        uses: docker/login-action@v2
+        with:
+          registry: registry.redhat.io
+          username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+          password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+
+      - name: Verify all artifacts are published
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            verify-release \
+            "${{ needs.variables.outputs.named-release-patch }}" \
+            "${{ github.event.inputs.latest-version }}" \
+            "${{ needs.variables.outputs.named-release }}" \
+            "${{ needs.properties.outputs.jira-project }}" \
+            "${{ github.event.inputs.errata }}"

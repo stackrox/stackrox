@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	detection "github.com/stackrox/rox/pkg/detection"
 	reflect "reflect"

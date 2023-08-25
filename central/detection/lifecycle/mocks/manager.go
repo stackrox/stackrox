@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.
@@ -88,6 +88,18 @@ func (m *MockManager) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 func (mr *MockManagerMockRecorder) IndicatorAdded(indicator interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndicatorAdded", reflect.TypeOf((*MockManager)(nil).IndicatorAdded), indicator)
+}
+
+// RemoveDeploymentFromObservation mocks base method.
+func (m *MockManager) RemoveDeploymentFromObservation(deploymentID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveDeploymentFromObservation", deploymentID)
+}
+
+// RemoveDeploymentFromObservation indicates an expected call of RemoveDeploymentFromObservation.
+func (mr *MockManagerMockRecorder) RemoveDeploymentFromObservation(deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeploymentFromObservation", reflect.TypeOf((*MockManager)(nil).RemoveDeploymentFromObservation), deploymentID)
 }
 
 // RemovePolicy mocks base method.

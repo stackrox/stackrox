@@ -7,6 +7,7 @@ import (
 )
 
 // NonceGenerator is a generator for cryptographically secure nonces.
+//
 //go:generate mockgen-wrapper
 type NonceGenerator interface {
 	Nonce() (string, error)

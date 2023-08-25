@@ -1,6 +1,10 @@
 # This file provides the list of labels to apply on PRs based on files changed
 # More information on the supported syntax can be found here: https://github.com/actions/labeler
 
+area/ci:
+- .github/**/*
+- .openshift-ci/**/*
+- scripts/ci/**/
 area/roxctl:
 - roxctl/**/*
 area/auth:
@@ -19,5 +23,17 @@ area/sensor:
 - sensor/**/*
 area/central:
 - central/**/*
+area/scanner:
+- scanner/**/*
 area/admission-controller:
 - sensor/admission-control/**/*
+area/postgres:
+- central/globaldb/postgres.go
+- image/postgres/**/*
+- pkg/postgres/**/*
+- pkg/search/postgres/**/*
+- tools/generate-helpers/pg-table-bindings/**/*
+- tools/generate-helpers/pg-table-bindings-wrapper
+ci-all-qa-tests:
+- COLLECTOR_VERSION
+- SCANNER_VERSION

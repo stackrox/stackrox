@@ -1,7 +1,6 @@
 package policymigrationhelper
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -11,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -203,7 +202,7 @@ func (suite *TestSuite) SetupSuite() {
 		suite.NoError(err)
 
 		var policy storage.Policy
-		err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+		err = jsonutil.JSONBytesToProto(contents, &policy)
 		suite.NoError(err)
 
 		suite.ExpectedPolicies[policy.Id] = &policy
@@ -245,7 +244,7 @@ func (suite *TestSuite) testUnmodifiedPolicies(migrationFunc func(db *bolt.DB) e
 		policyBytes, err := suite.PreMigPoliciesFS.ReadFile(fmt.Sprintf("%s/%s.json", suite.PreMigPoliciesDir, policyID))
 		suite.Require().NoError(err)
 		var policy storage.Policy
-		err = jsonpb.Unmarshal(bytes.NewReader(policyBytes), &policy)
+		err = jsonutil.JSONBytesToProto(policyBytes, &policy)
 		suite.Require().NoError(err)
 		insertPolicy(suite.T(), bucket, &policy)
 	}
@@ -270,7 +269,7 @@ func (suite *TestSuite) testModifiedPolicies(migrationFunc func(db *bolt.DB) err
 		policyBytes, err := suite.PreMigPoliciesFS.ReadFile(fmt.Sprintf("%s/%s.json", suite.PreMigPoliciesDir, policyID))
 		suite.Require().NoError(err)
 		var policy storage.Policy
-		err = jsonpb.Unmarshal(bytes.NewReader(policyBytes), &policy)
+		err = jsonutil.JSONBytesToProto(policyBytes, &policy)
 		suite.Require().NoError(err)
 		modifiedPolicy := policy.Clone()
 		modifiedPolicy.PolicySections[0].PolicyGroups[0].Values[0].Value = "assfasdf"

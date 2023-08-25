@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -16,13 +17,15 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(reconnect bool, components ...common.SensorComponent) CentralCommunication {
+	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
-		receiver:   NewCentralReceiver(components...),
-		sender:     NewCentralSender(components...),
-		components: components,
+		allFinished: &finished,
+		receiver:    NewCentralReceiver(&finished, components...),
+		sender:      NewCentralSender(&finished, components...),
+		components:  components,
 
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
+		stopper:     concurrency.NewStopper(),
+		isReconnect: reconnect,
 	}
 }

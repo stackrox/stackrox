@@ -51,5 +51,5 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {
+func (s *pipelineImpl) OnFinish(_ string) {
 }

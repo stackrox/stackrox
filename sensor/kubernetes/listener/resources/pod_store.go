@@ -12,6 +12,14 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
+// Cleanup deletes all entries from store
+func (ps *PodStore) Cleanup() {
+	ps.lock.Lock()
+	defer ps.lock.Unlock()
+
+	ps.pods = make(map[string]map[string]map[string]*storage.Pod)
+}
+
 // newPodStore creates and returns a new pod store.
 func newPodStore() *PodStore {
 	return &PodStore{
@@ -93,7 +101,7 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	for _, depMap := range ps.pods {
 		for _, podMap := range depMap {
 			for _, pod := range podMap {
-				ret = append(ret, pod)
+				ret = append(ret, pod.Clone())
 			}
 		}
 	}

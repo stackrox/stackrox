@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,7 +16,7 @@ func CheckClusterNameExtension(client ctrlClient.Client) extensions.ReconcileExt
 	return wrapExtension(checkClusterName, client)
 }
 
-func checkClusterName(ctx context.Context, sc *platform.SecuredCluster, _ ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
+func checkClusterName(_ context.Context, sc *platform.SecuredCluster, _ ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), _ logr.Logger) error {
 	if sc.DeletionTimestamp != nil {
 		return nil // doesn't matter on deletion
 	}

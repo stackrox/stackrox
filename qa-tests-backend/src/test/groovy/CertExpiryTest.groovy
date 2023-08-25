@@ -1,9 +1,15 @@
-import groups.BAT
-import org.junit.experimental.categories.Category
 import services.CredentialExpiryService
 import util.Cert
 
-@Category(BAT)
+import spock.lang.Tag
+import spock.lang.IgnoreIf
+import util.Env
+
+@Tag("BAT")
+@Tag("COMPATIBILITY")
+// skip if executed in a test environment with just secured-cluster deployed in the test cluster
+// i.e. central is deployed elsewhere
+@IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertExpiryTest extends BaseSpecification {
 
     def "Test Central cert expiry"() {

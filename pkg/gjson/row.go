@@ -2,11 +2,10 @@ package gjson
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/tidwall/gjson"
 )
 
@@ -22,7 +21,7 @@ type RowMapper struct {
 func NewRowMapper(jsonObj interface{}, multiPathExpression string) (*RowMapper, error) {
 	bytes, err := json.Marshal(jsonObj)
 	if err != nil {
-		return nil, errorhelpers.NewErrInvariantViolation(err.Error())
+		return nil, errox.InvariantViolation.CausedBy(err)
 	}
 
 	result, err := getResultFromBytes(bytes, multiPathExpression)
@@ -85,7 +84,7 @@ func isJaggedArray(array [][]string) error {
 func getResultFromBytes(bytes []byte, jsonPathExpression string) (gjson.Result, error) {
 	results := gjson.GetManyBytes(bytes, jsonPathExpression)
 	if len(results) != 1 {
-		return gjson.Result{}, errorhelpers.NewErrInvariantViolation("expected gjson " +
+		return gjson.Result{}, errox.InvariantViolation.CausedBy("expected gjson " +
 			"results to be exactly 1")
 	}
 
@@ -110,12 +109,11 @@ func getRowsFromColumns(columns [][]string) [][]string {
 	return rows
 }
 
-// jaggedArrayError helper to create an errorhelpers.ErrInvariantViolation with an explanation about
-// a jagged array being found
+// jaggedArrayError helper to create an errox.InvariantViolation with an explanation about a jagged array being found
 func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
-	return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("jagged array found: yielded values within "+
+	return errox.InvariantViolation.CausedByf("jagged array found: yielded values within "+
 		"each array are not matching; expected each array to hold %d elements but found an array with %d elements "+
-		"at array index %d", maxAmount, violatedAmount, arrayIndex+1))
+		"at array index %d", maxAmount, violatedAmount, arrayIndex+1)
 }
 
 // columnTree is responsible for providing columns and their values in a tree structure.
@@ -126,28 +124,33 @@ func jaggedArrayError(maxAmount, violatedAmount, arrayIndex int) error {
 //
 // Example:
 // Assuming you have a multi-path query such as:
-// {result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
+//	{result.deployments.#.depName,result.deployments.#.images.#.imgName,result.deployments.#.images.#.components.#.compName,result.deployments.#.images.#.components.#.vulns.#.vulnName}
+//
 // which is used against the following JSON object:
-// {"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
+//
+//	{"result":{"deployments":[{"name":"dep1","images":[{"name":"image1","components":[{"name":"comp11","vulns":[{"name":"cve1"}]},{"name":"comp12"}]},{"name":"image2","components":[{"name":"comp21","vulns":[{"name":"cve1"}]},{"name":"comp22","vulns":[{"name":"cve2"}]}]}]}]}}
 //
 // The yielded gjson.Result would look like this:
-// {"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
+//
+//	{"depName":["dep1"],"imgName":[["image1","image2"]],"compName":[[["comp11","comp12"],["comp21","comp22"]]],"vulnName":[[[["cve1"],[]],[["cve1"],["cve2"]]]]}
 //
 // When constructing the column tree, the query will be sorted for "dimension". A dimension is the depth of arrays
 // available per result.
 //
 // The constructed tree would look like the following:
+//
 //	dep1
-//	- image1
+//	 - image1
 //	  - comp11
-//      - cve1
-//    - comp12
-//      - -
-//  - image2
-//    - comp21
-//      - cve1
-//    - comp22
-//      - cve2
+//		- cve1
+//	  - comp12
+//	     - -
+//	 - image2
+//	  - comp21
+//	  	- cve1
+//	  - comp22
+//	    - cve2
 //
 // Each children is representing a related data. Now, when constructing the column, we are aware of
 // related data and can expand the column values.

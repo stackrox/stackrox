@@ -1,0 +1,41 @@
+{
+  "id": "d7a275e1-1bba-47e7-92a1-42340c759883",
+  "name": "Ubuntu Package Manager Execution",
+  "description": "Alert when Debian/Ubuntu package manager programs are executed at runtime",
+  "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Run `dpkg -r --force-all apt && dpkg -r --force-all debconf dpkg` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
+  "categories": [
+    "Package Management"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "apt-get|apt|dpkg"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0011",
+      "techniques": [
+        "T1105"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -1,13 +1,9 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store/bolt"
-	"github.com/stackrox/rox/central/compliance/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/compliance/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -17,16 +13,8 @@ var (
 
 // Singleton returns the compliance DataStore singleton.
 func Singleton() DataStore {
-	var dbStore store.Store
-	var err error
 	once.Do(func() {
-		if features.ComplianceInRocksDB.Enabled() {
-			dbStore = rocksdb.NewRocksdbStore(globaldb.GetRocksDB())
-		} else {
-			dbStore, err = bolt.NewBoltStore(globaldb.GetGlobalDB())
-		}
-		utils.CrashOnError(err)
-
+		dbStore := pgStore.NewStore(globaldb.GetPostgres())
 		dsInstance = NewDataStore(dbStore, NewSacFilter())
 	})
 	return dsInstance

@@ -1,0 +1,41 @@
+{
+  "id": "3ebdc07d-7c01-4508-9f81-3f3673fce536",
+  "name": "Process Targeting Cluster Kubernetes Docker Stats Endpoint",
+  "description": "Detects misuse of the Kubernetes docker stats endpoint",
+  "rationale": "A pod communicating to a Kubernetes API from via command line is highly irregular",
+  "remediation": "Look for open ports that may allow remote execution. Remove network utilities like curl and wget that allow these connections. Consider a firewall deny ingress firewall rule to the node serving the API",
+  "categories": [
+    "Kubernetes"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Arguments",
+          "values": [
+            {
+              "value": "(http?://)?\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\:4194/*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0007",
+      "techniques": [
+        "T1613"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

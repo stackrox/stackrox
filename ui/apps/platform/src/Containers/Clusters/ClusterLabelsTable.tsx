@@ -10,6 +10,7 @@ export type ClusterLabelsTableProps = {
     labels: ClusterLabels;
     hasAction: boolean;
     handleChangeLabels: (labels: ClusterLabels) => void;
+    isValueRequired?: boolean;
 };
 
 /*
@@ -23,13 +24,14 @@ function ClusterLabelsTable({
     labels,
     hasAction,
     handleChangeLabels,
+    isValueRequired,
 }: ClusterLabelsTableProps): ReactElement {
     const refKeyInput = useRef<null | HTMLInputElement>(null); // for focus after adding a label
     const [keyInput, setKeyInput] = useState('');
     const [valueInput, setValueInput] = useState('');
 
     const isValidKey = getIsValidLabelKey(keyInput);
-    const isValidValue = getIsValidLabelValue(valueInput);
+    const isValidValue = getIsValidLabelValue(valueInput, isValueRequired);
     const isValid = isValidKey && isValidValue;
 
     const isReplace = Object.prototype.hasOwnProperty.call(labels, keyInput); // no-prototype-builtins
@@ -75,7 +77,7 @@ function ClusterLabelsTable({
                 <Tr>
                     <Th>Key</Th>
                     <Th>Value</Th>
-                    {hasAction && <Th aria-label="Action" />}
+                    {hasAction && <Th>Action</Th>}
                 </Tr>
             </Thead>
             <Tbody>
@@ -142,7 +144,9 @@ function ClusterLabelsTable({
                             />
                             {validatedValue === ValidatedOptions.error && (
                                 <p className="pf-u-font-size-sm pf-u-danger-color-100">
-                                    Invalid label value
+                                    {valueInput.length === 0
+                                        ? 'Label value is required'
+                                        : 'Invalid label value'}
                                 </p>
                             )}
                         </Td>

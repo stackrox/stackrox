@@ -111,3 +111,12 @@ func GetPod() *storage.Pod {
 		},
 	}
 }
+
+// GetScopedPod returns a mock Pod belonging to the input scope.
+func GetScopedPod(ID string, clusterID string, namespace string) *storage.Pod {
+	return &storage.Pod{
+		Id:        ID,
+		ClusterId: clusterID,
+		Namespace: namespace,
+	}
+}

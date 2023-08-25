@@ -44,7 +44,8 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		return nil, sac.ErrResourceAccessDenied
 	}
 
-	underlying, err := cds.storage.CreateFlowStore(clusterID)
+	underlying, err := cds.storage.CreateFlowStore(ctx, clusterID)
+
 	if err != nil {
 		return nil, err
 	}

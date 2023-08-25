@@ -9,12 +9,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -23,6 +23,7 @@ import (
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -123,7 +124,6 @@ func assertJSONMatches(t *testing.T, buffer *bytes.Buffer, path string, expected
 				t.Error(err)
 				return
 			}
-			ok = true
 			msg, ok = m[segment[1:]]
 			if !ok {
 				t.Errorf("Key not found: %q", segment)
@@ -188,7 +188,7 @@ func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, vari
 		t.Fatal(err)
 	}
 	req := httptest.NewRequest("POST", "/api/graphql", bytes.NewReader(b)).WithContext(
-		resolvers.SetAuthorizerOverride(context.Background(), allow.Anonymous()))
+		loaders.WithLoaderContext(resolvers.SetAuthorizerOverride(context.Background(), allow.Anonymous())))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	assertNoErrors(t, rec.Body)

@@ -1,31 +1,43 @@
 import { distanceInWordsStrict, format, addDays } from 'date-fns';
 
-import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
+import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
+import { IntervalType } from 'types/report.proto';
+
+type DateLike = string | number | Date;
 
 /**
  * Returns a formatted date and time
- * @param {string | Date} timestamp - The timestamp for the date and time
+ * @param {DateLike} timestamp - The timestamp for the date and time
  * @returns {string} - returns a formatted string for the date time
  */
-export function getDateTime(timestamp) {
+export function getDateTime(timestamp: DateLike) {
     return format(timestamp, dateTimeFormat);
 }
 
 /**
  * Returns a formatted date
- * @param {string | Date} timestamp - The timestamp for the date
+ * @param {DateLike} timestamp - The timestamp for the date
  * @returns {string} - returns a formatted string for the date
  */
-export function getDate(timestamp) {
+export function getDate(timestamp: DateLike) {
     return format(timestamp, dateFormat);
 }
 
-export function getLatestDatedItemByKey(key, list = []) {
+/**
+ * Returns a formatted time
+ * @param {DateLike} timestamp - The timestamp for the date
+ * @returns {string} - returns a formatted string for the time
+ */
+export function getTime(timestamp: DateLike) {
+    return format(timestamp, timeFormat);
+}
+
+export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
     if (!key || !list.length || !list[0][key]) {
         return null;
     }
 
-    return list.reduce((acc, item) => {
+    return list.reduce((acc: T | null, item) => {
         const nextDate = item[key] && Date.parse(item[key]);
 
         if (!acc || nextDate > Date.parse(acc[key])) {
@@ -36,18 +48,26 @@ export function getLatestDatedItemByKey(key, list = []) {
     }, null);
 }
 
-export function addBrandedTimestampToString(str) {
-    return `StackRox:${str as string}-${format(new Date(), dateFormat)}`;
+export function addBrandedTimestampToString(str: string) {
+    return `StackRox:${str}-${format(new Date(), dateFormat)}`;
 }
 
-const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const daysOfWeek = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+] as const;
 
 /**
  * Given an ISO 8601 string, return the day of the week.
  *
  * date-fns@2: replace new Date(timestamp).getDay() with getDay(parseISO(timestamp))
  */
-export const getDayOfWeek = (timestamp) => daysOfWeek[new Date(timestamp).getDay()];
+export const getDayOfWeek = (timestamp: DateLike) => daysOfWeek[new Date(timestamp).getDay()];
 
 /*
  * Given an ISO 8601 string and Date instance, return the time difference.
@@ -55,8 +75,11 @@ export const getDayOfWeek = (timestamp) => daysOfWeek[new Date(timestamp).getDay
  * Specify rounding method explicitly because default changes to 'round' in date-fns@2.
  * formatDistanceStrict(currentDatetime, parseISO(dataDatetime), { roundingMethod: 'floor' });
  */
-export const getDistanceStrict = (dataDatetime, currentDatetime, options) =>
-    distanceInWordsStrict(dataDatetime, currentDatetime, options);
+export const getDistanceStrict: typeof distanceInWordsStrict = (
+    dataDatetime,
+    currentDatetime,
+    options
+) => distanceInWordsStrict(dataDatetime, currentDatetime, options);
 //
 /*
  * Given an ISO 8601 string and Date instance, return the time difference:
@@ -67,13 +90,13 @@ export const getDistanceStrict = (dataDatetime, currentDatetime, options) =>
  * Also the order of the arguments is reversed in date-fns@2
  * formatDistanceStrict(parseISO(dataDatetime), currentDatetime, { roundingMethod: 'floor', addSuffix: true });
  */
-export const getDistanceStrictAsPhrase = (dataDatetime, currentDatetime) =>
+export const getDistanceStrictAsPhrase = (dataDatetime: DateLike, currentDatetime: DateLike) =>
     distanceInWordsStrict(currentDatetime, dataDatetime, {
         addSuffix: true,
         partialMethod: 'floor',
     });
 
-export const addDaysToDate = (date, amount: number) => {
+export const addDaysToDate = (date: DateLike, amount: number) => {
     return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSSSSS[Z]');
 };
 
@@ -92,7 +115,9 @@ const monthDays = [
     { key: 15, dayName: 'the middle of the month' },
 ];
 
-export function getDayList(dayListType, days) {
+// TODO The type of `days` is always `number[]` but it can't be annotated here due
+// to some type mismatches elsewhere.
+export function getDayList(dayListType: IntervalType, days) {
     const dayNameConstants = dayListType === 'WEEKLY' ? weekDays : monthDays;
 
     const dayNameArray = dayNameConstants.reduce((acc: string[], constant) => {

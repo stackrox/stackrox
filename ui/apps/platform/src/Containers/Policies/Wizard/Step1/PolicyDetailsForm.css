@@ -1,0 +1,15 @@
+.attach-notifiers-section {
+    width: 100%;
+    border-top: 1px var(--pf-global--BorderColor--100) solid;
+    padding-top: var(--pf-global--spacer--lg);
+    padding-bottom: var(--pf-global--spacer--lg);
+}
+
+/* for med size screens, change the attach notifier section to wrap */
+@media (min-width: 768px) {
+    .attach-notifiers-section {
+        width: 33%;
+        border: none;
+        padding: 0;
+    }
+}

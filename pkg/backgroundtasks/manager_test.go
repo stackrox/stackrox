@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 //lint:file-ignore U1000 Unused functions are due to test skip.
@@ -58,7 +58,7 @@ func addWithContext(nums ...int) Task {
 	}
 }
 
-func addFunc(nums ...int) (res int) {
+func add(nums ...int) (res int) {
 	for _, n := range nums {
 		res += n
 	}
@@ -74,11 +74,11 @@ func TestPendingTaskQueueSize(t *testing.T) {
 
 	// Should run immediately.
 	_, err := m.AddTask(nil, simpleTask())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// Should add to pending queue.
 	_, err = m.AddTask(nil, simpleTask())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	// Should not be added to pending queue.
 	_, err = m.AddTask(nil, simpleTask())
@@ -92,13 +92,13 @@ func TestTaskExpirationCleanup(t *testing.T) {
 	m.Start()
 
 	id, err := m.AddTask(nil, simpleTask(3*time.Millisecond))
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	metadata, res, completed, err := m.GetTaskStatusAndMetadata(id)
 	t.Log("[CHECK] Job should not have completed.")
-	assert.NilError(t, err)
-	assert.Equal(t, completed, false)
-	assert.Equal(t, res, nil)
-	assert.Equal(t, len(metadata), 0)
+	assert.NoError(t, err)
+	assert.False(t, completed)
+	assert.Nil(t, res)
+	assert.Empty(t, metadata)
 	t.Log("Passed..")
 
 	// Let job to complete.
@@ -107,10 +107,10 @@ func TestTaskExpirationCleanup(t *testing.T) {
 
 	metadata, res, completed, err = m.GetTaskStatusAndMetadata(id)
 	t.Log("[CHECK] Job should have completed by now.")
-	assert.Equal(t, completed, true)
-	assert.NilError(t, err)
-	assert.Equal(t, res, nil)
-	assert.Equal(t, len(metadata), 0)
+	assert.True(t, completed)
+	assert.NoError(t, err)
+	assert.Nil(t, res)
+	assert.Empty(t, metadata)
 	t.Log("Passed..")
 
 	// Let job to expire.
@@ -120,10 +120,10 @@ func TestTaskExpirationCleanup(t *testing.T) {
 	// Let completed job to have expired and cleaned up.
 	metadata, res, completed, err = m.GetTaskStatusAndMetadata(id)
 	t.Log("[CHECK] Job should have been cleaned up by now.")
-	assert.Equal(t, completed, false)
+	assert.False(t, completed)
 	assert.ErrorContains(t, err, "id does not exist.")
-	assert.Equal(t, res, nil)
-	assert.Equal(t, len(metadata), 0)
+	assert.Nil(t, res)
+	assert.Empty(t, metadata)
 	t.Log("Passed..")
 }
 
@@ -137,7 +137,7 @@ func TestBackgroundTasksManager(t *testing.T) {
 	t.Log("[CHECK] Validating task panic...")
 	testArg := "test"
 	id, err := m.AddTask(nil, panicTask(testArg))
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 
 	for {
 		_, _, completed, err := m.GetTaskStatusAndMetadata(id)
@@ -151,29 +151,29 @@ func TestBackgroundTasksManager(t *testing.T) {
 	// Valid input.
 	t.Log("[CHECK] Validating valid inputs...")
 	testArgs := []int{1, 2, 3}
-	testRes := addFunc(testArgs...)
+	testRes := add(testArgs...)
 	meta := make(map[string]interface{})
 	testKey := "K"
 	testVal := "V"
 	meta[testKey] = testVal
 	c := func(ctx concurrency.ErrorWaitable) (interface{}, error) {
 		time.Sleep(4 * time.Millisecond)
-		return addFunc(testArgs...), nil
+		return add(testArgs...), nil
 	}
 
 	id, err = m.AddTask(meta, c)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	for {
 		metadata, res, completed, err := m.GetTaskStatusAndMetadata(id)
-		assert.NilError(t, err)
-		assert.Equal(t, len(metadata), 1)
-		assert.Equal(t, metadata[testKey], testVal)
+		assert.NoError(t, err)
+		assert.Len(t, metadata, 1)
+		assert.Equal(t, testVal, metadata[testKey])
 		if completed {
-			assert.Equal(t, res.(int), testRes)
+			assert.Equal(t, testRes, res.(int))
 			break
-		} else {
-			assert.Equal(t, res, nil)
 		}
+
+		assert.Nil(t, res)
 	}
 	t.Log("Passed.")
 }
@@ -190,18 +190,18 @@ func TestTaskCancellation(t *testing.T) {
 	time.Sleep(2 * time.Millisecond)
 	// Check task hasnt completed yet.
 	_, res, completed, err := m.GetTaskStatusAndMetadata(id)
-	assert.NilError(t, err)
-	assert.Equal(t, completed, false)
-	assert.Equal(t, res, nil)
+	assert.NoError(t, err)
+	assert.False(t, completed)
+	assert.Nil(t, res)
 
 	err = m.CancelTask(id)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	time.Sleep(3 * time.Millisecond)
 	// Task should be cancelled, with nil results.
 	for {
 		_, res, completed, err = m.GetTaskStatusAndMetadata(id)
 		if completed {
-			assert.Equal(t, res, nil)
+			assert.Nil(t, res)
 			assert.ErrorContains(t, err, "context canceled")
 			break
 		}
@@ -213,9 +213,9 @@ func TestTaskCancellation(t *testing.T) {
 	// Check for completion of task.
 	for {
 		_, res, completed, err = m.GetTaskStatusAndMetadata(id)
-		assert.NilError(t, err)
+		assert.NoError(t, err)
 		if completed {
-			assert.Equal(t, res, addFunc(testArgs...))
+			assert.Equal(t, add(testArgs...), res)
 			break
 		}
 
@@ -223,36 +223,36 @@ func TestTaskCancellation(t *testing.T) {
 	}
 
 	err = m.CancelTask(id)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	time.Sleep(3 * time.Millisecond)
-	// Cancellation shouldnt affect anything.
+	// Cancellation shouldn't affect anything.
 	_, res, completed, err = m.GetTaskStatusAndMetadata(id)
-	assert.Equal(t, completed, true)
-	assert.Equal(t, res, addFunc(testArgs...))
-	assert.NilError(t, err)
+	assert.True(t, completed)
+	assert.Equal(t, add(testArgs...), res)
+	assert.NoError(t, err)
 	t.Log("Passed.")
 
 	t.Log("[CHECK] Validate cancellation of task before task has started running.")
 	testArgs = []int{1, 2, 3, 4, 5}
 
 	_, err = m.AddTask(nil, simpleTask())
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	id, err = m.AddTask(nil, addWithContext(testArgs...))
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	// Check task hasnt completed yet.
 	_, res, completed, err = m.GetTaskStatusAndMetadata(id)
-	assert.NilError(t, err)
-	assert.Equal(t, completed, false)
-	assert.Equal(t, res, nil)
+	assert.NoError(t, err)
+	assert.False(t, completed)
+	assert.Nil(t, res)
 
 	err = m.CancelTask(id)
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	time.Sleep(3 * time.Millisecond)
 	// Task should be cancelled, without results.
 	for {
 		_, res, completed, err = m.GetTaskStatusAndMetadata(id)
 		if completed {
-			assert.Equal(t, res, nil)
+			assert.Nil(t, res)
 			assert.ErrorContains(t, err, "context canceled")
 			break
 		}

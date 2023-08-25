@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/pkg/sac"
+	"go.uber.org/mock/gomock"
 )
 
 type contextWithAccessMatcher struct {

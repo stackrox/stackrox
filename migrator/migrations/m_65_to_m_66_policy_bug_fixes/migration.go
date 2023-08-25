@@ -16,7 +16,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 65,
-		VersionAfter:   storage.Version{SeqNum: 66},
+		VersionAfter:   &storage.Version{SeqNum: 66},
 		Run: func(databases *types.Databases) error {
 			err := updatePolicies(databases.BoltDB)
 			if err != nil {
@@ -111,7 +111,7 @@ func updateK8sDashPolicy(bucket *bolt.Bucket) error {
 	}
 
 	section.PolicyGroups[0].Values[0].Value = k8sDashNewCriteria
-	if err := putPolicy(policy, bucket); err != nil {
+	if err := putPolicy(&policy, bucket); err != nil {
 		return err
 	}
 
@@ -144,7 +144,7 @@ func updateCurlPolicy(bucket *bolt.Bucket) error {
 	}
 
 	policy.Remediation = curlNewRemediation
-	if err := putPolicy(policy, bucket); err != nil {
+	if err := putPolicy(&policy, bucket); err != nil {
 		return err
 	}
 
@@ -176,7 +176,7 @@ func updateIptablesPolicy(bucket *bolt.Bucket) error {
 		return nil
 	}
 
-	if err := putPolicy(policy, bucket); err != nil {
+	if err := putPolicy(&policy, bucket); err != nil {
 		return err
 	}
 
@@ -207,8 +207,8 @@ func getPolicySectionIfUnmodified(policy *storage.Policy, existingPolicyGroups [
 	return section
 }
 
-func putPolicy(policy storage.Policy, bucket *bolt.Bucket) error {
-	policyBytes, err := proto.Marshal(&policy)
+func putPolicy(policy *storage.Policy, bucket *bolt.Bucket) error {
+	policyBytes, err := proto.Marshal(policy)
 	if err != nil {
 		return errors.Wrapf(err, "marshaling migrated policy %q with id %q", policy.GetName(), policy.GetId())
 	}

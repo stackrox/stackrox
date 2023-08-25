@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,20 +21,11 @@ func TestGetSecretRenewalTime(t *testing.T) {
 
 type getSecretRenewalTimeSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *getSecretRenewalTimeSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 }
 
 func (s *getSecretRenewalTimeSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
-}
-
-func (s *getSecretRenewalTimeSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
@@ -68,15 +58,23 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.LessOrEqual(certDuration, afterOffset/2)
 }
 
-func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
+func issueCertificate(serviceType storage.ServiceType, issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
 	ca, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, err
 	}
-	subject := mtls.NewSubject("clusterId", storage.ServiceType_SCANNER_SERVICE)
+	subject := mtls.NewSubject("clusterId", serviceType)
 	cert, err := ca.IssueCertForSubject(subject, issueOption)
 	if err != nil {
 		return nil, err
 	}
-	return cert.CertPEM, err
+	return cert, err
+}
+
+func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
+	cert, err := issueCertificate(storage.ServiceType_SCANNER_SERVICE, issueOption)
+	if err != nil {
+		return nil, err
+	}
+	return cert.CertPEM, nil
 }

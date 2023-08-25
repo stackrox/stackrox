@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "storage/user.proto";
+import "storage/report_configuration.proto";
+import "storage/schedule.proto";
+
+package storage;
+
+// ReportSnapshot stores the snapshot of a report job. It stores a projection of ReportConfiguration, collection,
+// vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
+message ReportSnapshot {
+    enum ReportType {
+        VULNERABILITY = 0;
+    }
+
+    string                          report_id                = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string                          report_configuration_id  = 2 [(gogoproto.moretags) = 'search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"'];
+    string                          name                     = 3 [(gogoproto.moretags) = 'search:"Report Name"'];
+    string                          description              = 4;
+    ReportType                      type                     = 5;
+    oneof filter {
+        VulnerabilityReportFilters  vuln_report_filters      = 6;
+    }
+    CollectionSnapshot              collection                = 7;
+    storage.Schedule                schedule                  = 8;
+    ReportStatus                    report_status             = 9;
+    repeated NotifierSnapshot       notifiers                 = 10;
+    SlimUser                        requester                 = 11;
+}
+
+message CollectionSnapshot {
+    string id   = 1;
+    string name = 2;
+}
+
+message NotifierSnapshot {
+    oneof notifier_config {
+        EmailNotifierConfiguration email_config = 1;
+    }
+    string notifier_name = 2;
+}
+
+message ReportStatus {
+    // TODO: @charmik adjust RunState and postgres/pruning.go
+
+    enum RunState {
+        WAITING   = 0;
+        PREPARING = 1;
+        GENERATED = 2;
+        DELIVERED = 3;
+        FAILURE   = 4;
+    }
+
+    enum NotificationMethod {
+        EMAIL = 0;
+        DOWNLOAD = 1;
+    }
+
+    enum RunMethod {
+        ON_DEMAND = 0;
+        SCHEDULED = 1;
+    }
+
+    RunState                   run_state                  = 1 [(gogoproto.moretags) = 'search:"Report State"'];
+    google.protobuf.Timestamp  queued_at                  = 2 [(gogoproto.moretags) = 'search:"Report Init Time"'];
+    google.protobuf.Timestamp  completed_at               = 3 [(gogoproto.moretags) = 'search:"Report Completion Time"'];
+    string                     error_msg                  = 4;
+    RunMethod                  report_request_type        = 5 [(gogoproto.moretags) = 'search:"Report Request Type"'];
+    NotificationMethod         report_notification_method = 6 [(gogoproto.moretags) = 'search:"Report Notification Method"'];
+}
+
+

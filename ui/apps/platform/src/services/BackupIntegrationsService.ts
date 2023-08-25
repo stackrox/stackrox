@@ -1,6 +1,7 @@
 import axios from './instance';
 
 import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
+import { Empty } from './types';
 
 const backupIntegrationsUrl = '/v1/externalbackups';
 
@@ -55,7 +56,7 @@ export function fetchBackupIntegrations(): Promise<BackupIntegrationBase[]> {
 export function saveBackupIntegration(
     integration: BackupIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const { id } = integration;
 
     if (!id) {
@@ -84,7 +85,7 @@ export function saveBackupIntegration(
 export function testBackupIntegration(
     integration: BackupIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     if (typeof updatePassword === 'boolean') {
         return axios.post(`${backupIntegrationsUrl}/test/updated`, {
             [updateIntegrationKey]: integration,
@@ -98,20 +99,20 @@ export function testBackupIntegration(
 /*
  * Delete integration (singular).
  */
-export function deleteBackupIntegration(id: string): Promise<Record<string, never>> {
+export function deleteBackupIntegration(id: string): Promise<Empty> {
     return axios.delete(`${backupIntegrationsUrl}/${id}`);
 }
 
 /*
  * Delete integrations (plural).
  */
-export function deleteBackupIntegrations(ids: string[]): Promise<Record<string, never>[]> {
+export function deleteBackupIntegrations(ids: string[]): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteBackupIntegration(id)));
 }
 
 /*
  * Trigger external backup.
  */
-export function triggerBackup(id: string): Promise<Record<string, never>> {
+export function triggerBackup(id: string): Promise<Empty> {
     return axios.post(`${backupIntegrationsUrl}/${id}`);
 }

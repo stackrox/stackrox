@@ -7,29 +7,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPaginationWrapper(t *testing.T) {
+func TestPagination(t *testing.T) {
 	stuff := []int{1, 2}
-	result, _ := paginationWrapper{pv: &v1.QueryPagination{Offset: 0, Limit: 2}}.paginate(stuff, nil)
-	rs := result.([]int)
-	assert.Equal(t, []int{1, 2}, rs)
+	result, _ := paginate(&v1.QueryPagination{Offset: 0, Limit: 2}, stuff, nil)
+	assert.Equal(t, []int{1, 2}, result)
 
 	stuff = []int{1, 2, 3}
-	result, _ = paginationWrapper{pv: &v1.QueryPagination{Offset: 1, Limit: 2}}.paginate(stuff, nil)
-	rs = result.([]int)
-	assert.Equal(t, []int{2, 3}, rs)
+	result, _ = paginate(&v1.QueryPagination{Offset: 1, Limit: 2}, stuff, nil)
+	assert.Equal(t, []int{2, 3}, result)
 
 	stuff = []int{1, 2, 3}
-	result, _ = paginationWrapper{pv: &v1.QueryPagination{Offset: 2, Limit: 2}}.paginate(stuff, nil)
-	rs = result.([]int)
-	assert.Equal(t, []int{3}, rs)
+	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	assert.Equal(t, []int{3}, result)
 
 	stuff = []int{1, 2}
-	result, _ = paginationWrapper{pv: &v1.QueryPagination{Offset: 2, Limit: 2}}.paginate(stuff, nil)
-	rs = result.([]int)
-	assert.Equal(t, ([]int)(nil), rs)
+	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	assert.Equal(t, ([]int)(nil), result)
 
 	stuff = []int{}
-	result, _ = paginationWrapper{pv: &v1.QueryPagination{Offset: 2, Limit: 2}}.paginate(stuff, nil)
-	rs = result.([]int)
-	assert.Equal(t, []int{}, rs)
+	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
+	assert.Equal(t, []int{}, result)
 }

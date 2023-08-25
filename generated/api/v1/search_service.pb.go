@@ -27,43 +27,69 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
-// Next available tag: 32
+// Next available tag: 60
 type SearchCategory int32
 
 const (
-	SearchCategory_SEARCH_UNSET             SearchCategory = 0
-	SearchCategory_ALERTS                   SearchCategory = 1
-	SearchCategory_IMAGES                   SearchCategory = 2
-	SearchCategory_IMAGE_COMPONENTS         SearchCategory = 20
-	SearchCategory_IMAGE_VULN_EDGE          SearchCategory = 27
-	SearchCategory_IMAGE_COMPONENT_EDGE     SearchCategory = 23
-	SearchCategory_POLICIES                 SearchCategory = 3
-	SearchCategory_DEPLOYMENTS              SearchCategory = 4
-	SearchCategory_ACTIVE_COMPONENT         SearchCategory = 30
-	SearchCategory_PODS                     SearchCategory = 25
-	SearchCategory_SECRETS                  SearchCategory = 5
-	SearchCategory_PROCESS_INDICATORS       SearchCategory = 6
-	SearchCategory_COMPLIANCE               SearchCategory = 7
-	SearchCategory_CLUSTERS                 SearchCategory = 8
-	SearchCategory_NAMESPACES               SearchCategory = 9
-	SearchCategory_NODES                    SearchCategory = 10
-	SearchCategory_NODE_VULN_EDGE           SearchCategory = 28
-	SearchCategory_NODE_COMPONENT_EDGE      SearchCategory = 29
-	SearchCategory_COMPLIANCE_STANDARD      SearchCategory = 11
-	SearchCategory_COMPLIANCE_CONTROL_GROUP SearchCategory = 12
-	SearchCategory_COMPLIANCE_CONTROL       SearchCategory = 13
-	SearchCategory_SERVICE_ACCOUNTS         SearchCategory = 14
-	SearchCategory_ROLES                    SearchCategory = 15
-	SearchCategory_ROLEBINDINGS             SearchCategory = 16
-	SearchCategory_REPORT_CONFIGURATIONS    SearchCategory = 33
-	SearchCategory_PROCESS_BASELINES        SearchCategory = 17
-	SearchCategory_SUBJECTS                 SearchCategory = 18
-	SearchCategory_RISKS                    SearchCategory = 19
-	SearchCategory_VULNERABILITIES          SearchCategory = 21
-	SearchCategory_COMPONENT_VULN_EDGE      SearchCategory = 22
-	SearchCategory_CLUSTER_VULN_EDGE        SearchCategory = 24
-	SearchCategory_NETWORK_ENTITY           SearchCategory = 26
-	SearchCategory_VULN_REQUEST             SearchCategory = 32
+	SearchCategory_SEARCH_UNSET              SearchCategory = 0
+	SearchCategory_ALERTS                    SearchCategory = 1
+	SearchCategory_IMAGES                    SearchCategory = 2
+	SearchCategory_IMAGE_COMPONENTS          SearchCategory = 20
+	SearchCategory_IMAGE_VULN_EDGE           SearchCategory = 27
+	SearchCategory_IMAGE_COMPONENT_EDGE      SearchCategory = 23
+	SearchCategory_POLICIES                  SearchCategory = 3
+	SearchCategory_DEPLOYMENTS               SearchCategory = 4
+	SearchCategory_ACTIVE_COMPONENT          SearchCategory = 30
+	SearchCategory_PODS                      SearchCategory = 25
+	SearchCategory_SECRETS                   SearchCategory = 5
+	SearchCategory_PROCESS_INDICATORS        SearchCategory = 6
+	SearchCategory_COMPLIANCE                SearchCategory = 7
+	SearchCategory_CLUSTERS                  SearchCategory = 8
+	SearchCategory_NAMESPACES                SearchCategory = 9
+	SearchCategory_NODES                     SearchCategory = 10
+	SearchCategory_NODE_COMPONENTS           SearchCategory = 38
+	SearchCategory_NODE_VULN_EDGE            SearchCategory = 28
+	SearchCategory_NODE_COMPONENT_EDGE       SearchCategory = 29
+	SearchCategory_NODE_COMPONENT_CVE_EDGE   SearchCategory = 33
+	SearchCategory_COMPLIANCE_STANDARD       SearchCategory = 11
+	SearchCategory_COMPLIANCE_CONTROL_GROUP  SearchCategory = 12
+	SearchCategory_COMPLIANCE_CONTROL        SearchCategory = 13
+	SearchCategory_SERVICE_ACCOUNTS          SearchCategory = 14
+	SearchCategory_ROLES                     SearchCategory = 15
+	SearchCategory_ROLEBINDINGS              SearchCategory = 16
+	SearchCategory_REPORT_CONFIGURATIONS     SearchCategory = 37
+	SearchCategory_PROCESS_BASELINES         SearchCategory = 17
+	SearchCategory_SUBJECTS                  SearchCategory = 18
+	SearchCategory_RISKS                     SearchCategory = 19
+	SearchCategory_VULNERABILITIES           SearchCategory = 21
+	SearchCategory_CLUSTER_VULNERABILITIES   SearchCategory = 34
+	SearchCategory_IMAGE_VULNERABILITIES     SearchCategory = 35
+	SearchCategory_NODE_VULNERABILITIES      SearchCategory = 36
+	SearchCategory_COMPONENT_VULN_EDGE       SearchCategory = 22
+	SearchCategory_CLUSTER_VULN_EDGE         SearchCategory = 24
+	SearchCategory_NETWORK_ENTITY            SearchCategory = 26
+	SearchCategory_VULN_REQUEST              SearchCategory = 32
+	SearchCategory_NETWORK_BASELINE          SearchCategory = 39
+	SearchCategory_NETWORK_POLICIES          SearchCategory = 40
+	SearchCategory_PROCESS_BASELINE_RESULTS  SearchCategory = 41
+	SearchCategory_COMPLIANCE_METADATA       SearchCategory = 42
+	SearchCategory_COMPLIANCE_RESULTS        SearchCategory = 43
+	SearchCategory_COMPLIANCE_DOMAIN         SearchCategory = 44
+	SearchCategory_CLUSTER_HEALTH            SearchCategory = 45
+	SearchCategory_POLICY_CATEGORIES         SearchCategory = 46
+	SearchCategory_IMAGE_INTEGRATIONS        SearchCategory = 47
+	SearchCategory_COLLECTIONS               SearchCategory = 48
+	SearchCategory_POLICY_CATEGORY_EDGE      SearchCategory = 49
+	SearchCategory_PROCESS_LISTENING_ON_PORT SearchCategory = 50
+	SearchCategory_API_TOKEN                 SearchCategory = 51
+	SearchCategory_REPORT_METADATA           SearchCategory = 52
+	SearchCategory_REPORT_SNAPSHOT           SearchCategory = 53
+	SearchCategory_COMPLIANCE_INTEGRATIONS   SearchCategory = 54
+	SearchCategory_COMPLIANCE_SCAN_SETTINGS  SearchCategory = 55
+	SearchCategory_COMPLIANCE_SCAN           SearchCategory = 56
+	SearchCategory_COMPLIANCE_CHECK_RESULTS  SearchCategory = 57
+	SearchCategory_BLOB                      SearchCategory = 58
+	SearchCategory_PRODUCT_USAGE             SearchCategory = 59
 )
 
 var SearchCategory_name = map[int32]string{
@@ -83,59 +109,111 @@ var SearchCategory_name = map[int32]string{
 	8:  "CLUSTERS",
 	9:  "NAMESPACES",
 	10: "NODES",
+	38: "NODE_COMPONENTS",
 	28: "NODE_VULN_EDGE",
 	29: "NODE_COMPONENT_EDGE",
+	33: "NODE_COMPONENT_CVE_EDGE",
 	11: "COMPLIANCE_STANDARD",
 	12: "COMPLIANCE_CONTROL_GROUP",
 	13: "COMPLIANCE_CONTROL",
 	14: "SERVICE_ACCOUNTS",
 	15: "ROLES",
 	16: "ROLEBINDINGS",
-	33: "REPORT_CONFIGURATIONS",
+	37: "REPORT_CONFIGURATIONS",
 	17: "PROCESS_BASELINES",
 	18: "SUBJECTS",
 	19: "RISKS",
 	21: "VULNERABILITIES",
+	34: "CLUSTER_VULNERABILITIES",
+	35: "IMAGE_VULNERABILITIES",
+	36: "NODE_VULNERABILITIES",
 	22: "COMPONENT_VULN_EDGE",
 	24: "CLUSTER_VULN_EDGE",
 	26: "NETWORK_ENTITY",
 	32: "VULN_REQUEST",
+	39: "NETWORK_BASELINE",
+	40: "NETWORK_POLICIES",
+	41: "PROCESS_BASELINE_RESULTS",
+	42: "COMPLIANCE_METADATA",
+	43: "COMPLIANCE_RESULTS",
+	44: "COMPLIANCE_DOMAIN",
+	45: "CLUSTER_HEALTH",
+	46: "POLICY_CATEGORIES",
+	47: "IMAGE_INTEGRATIONS",
+	48: "COLLECTIONS",
+	49: "POLICY_CATEGORY_EDGE",
+	50: "PROCESS_LISTENING_ON_PORT",
+	51: "API_TOKEN",
+	52: "REPORT_METADATA",
+	53: "REPORT_SNAPSHOT",
+	54: "COMPLIANCE_INTEGRATIONS",
+	55: "COMPLIANCE_SCAN_SETTINGS",
+	56: "COMPLIANCE_SCAN",
+	57: "COMPLIANCE_CHECK_RESULTS",
+	58: "BLOB",
+	59: "PRODUCT_USAGE",
 }
 
 var SearchCategory_value = map[string]int32{
-	"SEARCH_UNSET":             0,
-	"ALERTS":                   1,
-	"IMAGES":                   2,
-	"IMAGE_COMPONENTS":         20,
-	"IMAGE_VULN_EDGE":          27,
-	"IMAGE_COMPONENT_EDGE":     23,
-	"POLICIES":                 3,
-	"DEPLOYMENTS":              4,
-	"ACTIVE_COMPONENT":         30,
-	"PODS":                     25,
-	"SECRETS":                  5,
-	"PROCESS_INDICATORS":       6,
-	"COMPLIANCE":               7,
-	"CLUSTERS":                 8,
-	"NAMESPACES":               9,
-	"NODES":                    10,
-	"NODE_VULN_EDGE":           28,
-	"NODE_COMPONENT_EDGE":      29,
-	"COMPLIANCE_STANDARD":      11,
-	"COMPLIANCE_CONTROL_GROUP": 12,
-	"COMPLIANCE_CONTROL":       13,
-	"SERVICE_ACCOUNTS":         14,
-	"ROLES":                    15,
-	"ROLEBINDINGS":             16,
-	"REPORT_CONFIGURATIONS":    33,
-	"PROCESS_BASELINES":        17,
-	"SUBJECTS":                 18,
-	"RISKS":                    19,
-	"VULNERABILITIES":          21,
-	"COMPONENT_VULN_EDGE":      22,
-	"CLUSTER_VULN_EDGE":        24,
-	"NETWORK_ENTITY":           26,
-	"VULN_REQUEST":             32,
+	"SEARCH_UNSET":              0,
+	"ALERTS":                    1,
+	"IMAGES":                    2,
+	"IMAGE_COMPONENTS":          20,
+	"IMAGE_VULN_EDGE":           27,
+	"IMAGE_COMPONENT_EDGE":      23,
+	"POLICIES":                  3,
+	"DEPLOYMENTS":               4,
+	"ACTIVE_COMPONENT":          30,
+	"PODS":                      25,
+	"SECRETS":                   5,
+	"PROCESS_INDICATORS":        6,
+	"COMPLIANCE":                7,
+	"CLUSTERS":                  8,
+	"NAMESPACES":                9,
+	"NODES":                     10,
+	"NODE_COMPONENTS":           38,
+	"NODE_VULN_EDGE":            28,
+	"NODE_COMPONENT_EDGE":       29,
+	"NODE_COMPONENT_CVE_EDGE":   33,
+	"COMPLIANCE_STANDARD":       11,
+	"COMPLIANCE_CONTROL_GROUP":  12,
+	"COMPLIANCE_CONTROL":        13,
+	"SERVICE_ACCOUNTS":          14,
+	"ROLES":                     15,
+	"ROLEBINDINGS":              16,
+	"REPORT_CONFIGURATIONS":     37,
+	"PROCESS_BASELINES":         17,
+	"SUBJECTS":                  18,
+	"RISKS":                     19,
+	"VULNERABILITIES":           21,
+	"CLUSTER_VULNERABILITIES":   34,
+	"IMAGE_VULNERABILITIES":     35,
+	"NODE_VULNERABILITIES":      36,
+	"COMPONENT_VULN_EDGE":       22,
+	"CLUSTER_VULN_EDGE":         24,
+	"NETWORK_ENTITY":            26,
+	"VULN_REQUEST":              32,
+	"NETWORK_BASELINE":          39,
+	"NETWORK_POLICIES":          40,
+	"PROCESS_BASELINE_RESULTS":  41,
+	"COMPLIANCE_METADATA":       42,
+	"COMPLIANCE_RESULTS":        43,
+	"COMPLIANCE_DOMAIN":         44,
+	"CLUSTER_HEALTH":            45,
+	"POLICY_CATEGORIES":         46,
+	"IMAGE_INTEGRATIONS":        47,
+	"COLLECTIONS":               48,
+	"POLICY_CATEGORY_EDGE":      49,
+	"PROCESS_LISTENING_ON_PORT": 50,
+	"API_TOKEN":                 51,
+	"REPORT_METADATA":           52,
+	"REPORT_SNAPSHOT":           53,
+	"COMPLIANCE_INTEGRATIONS":   54,
+	"COMPLIANCE_SCAN_SETTINGS":  55,
+	"COMPLIANCE_SCAN":           56,
+	"COMPLIANCE_CHECK_RESULTS":  57,
+	"BLOB":                      58,
+	"PRODUCT_USAGE":             59,
 }
 
 func (x SearchCategory) String() string {
@@ -338,6 +416,7 @@ type QuerySortOption struct {
 	// Types that are valid to be assigned to SearchAfterOpt:
 	//	*QuerySortOption_SearchAfter
 	SearchAfterOpt       isQuerySortOption_SearchAfterOpt `protobuf_oneof:"search_after_opt"`
+	AggregateBy          *AggregateBy                     `protobuf:"bytes,4,opt,name=aggregate_by,json=aggregateBy,proto3" json:"aggregate_by,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
 	XXX_unrecognized     []byte                           `json:"-"`
 	XXX_sizecache        int32                            `json:"-"`
@@ -426,6 +505,13 @@ func (m *QuerySortOption) GetSearchAfter() string {
 	return ""
 }
 
+func (m *QuerySortOption) GetAggregateBy() *AggregateBy {
+	if m != nil {
+		return m.AggregateBy
+	}
+	return nil
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*QuerySortOption) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
@@ -446,6 +532,286 @@ func (m *QuerySortOption) Clone() *QuerySortOption {
 	if m.SearchAfterOpt != nil {
 		cloned.SearchAfterOpt = m.SearchAfterOpt.Clone()
 	}
+	cloned.AggregateBy = m.AggregateBy.Clone()
+	return cloned
+}
+
+type QueryField struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	AggregateFunc        string   `protobuf:"bytes,2,opt,name=aggregate_func,json=aggregateFunc,proto3" json:"aggregate_func,omitempty"`
+	Distinct             bool     `protobuf:"varint,3,opt,name=distinct,proto3" json:"distinct,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QueryField) Reset()         { *m = QueryField{} }
+func (m *QueryField) String() string { return proto.CompactTextString(m) }
+func (*QueryField) ProtoMessage()    {}
+func (*QueryField) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c4215e5dded92b40, []int{3}
+}
+func (m *QueryField) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryField) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryField.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryField) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryField.Merge(m, src)
+}
+func (m *QueryField) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryField) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryField.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryField proto.InternalMessageInfo
+
+func (m *QueryField) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *QueryField) GetAggregateFunc() string {
+	if m != nil {
+		return m.AggregateFunc
+	}
+	return ""
+}
+
+func (m *QueryField) GetDistinct() bool {
+	if m != nil {
+		return m.Distinct
+	}
+	return false
+}
+
+func (m *QueryField) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *QueryField) Clone() *QueryField {
+	if m == nil {
+		return nil
+	}
+	cloned := new(QueryField)
+	*cloned = *m
+
+	return cloned
+}
+
+type QuerySelectFilter struct {
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Query                *Query   `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QuerySelectFilter) Reset()         { *m = QuerySelectFilter{} }
+func (m *QuerySelectFilter) String() string { return proto.CompactTextString(m) }
+func (*QuerySelectFilter) ProtoMessage()    {}
+func (*QuerySelectFilter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c4215e5dded92b40, []int{4}
+}
+func (m *QuerySelectFilter) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySelectFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySelectFilter.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySelectFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySelectFilter.Merge(m, src)
+}
+func (m *QuerySelectFilter) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySelectFilter) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySelectFilter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySelectFilter proto.InternalMessageInfo
+
+func (m *QuerySelectFilter) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *QuerySelectFilter) GetQuery() *Query {
+	if m != nil {
+		return m.Query
+	}
+	return nil
+}
+
+func (m *QuerySelectFilter) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *QuerySelectFilter) Clone() *QuerySelectFilter {
+	if m == nil {
+		return nil
+	}
+	cloned := new(QuerySelectFilter)
+	*cloned = *m
+
+	cloned.Query = m.Query.Clone()
+	return cloned
+}
+
+type QuerySelect struct {
+	Field                *QueryField        `protobuf:"bytes,1,opt,name=field,proto3" json:"field,omitempty"`
+	Filter               *QuerySelectFilter `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
+}
+
+func (m *QuerySelect) Reset()         { *m = QuerySelect{} }
+func (m *QuerySelect) String() string { return proto.CompactTextString(m) }
+func (*QuerySelect) ProtoMessage()    {}
+func (*QuerySelect) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c4215e5dded92b40, []int{5}
+}
+func (m *QuerySelect) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QuerySelect) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QuerySelect.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QuerySelect) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QuerySelect.Merge(m, src)
+}
+func (m *QuerySelect) XXX_Size() int {
+	return m.Size()
+}
+func (m *QuerySelect) XXX_DiscardUnknown() {
+	xxx_messageInfo_QuerySelect.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QuerySelect proto.InternalMessageInfo
+
+func (m *QuerySelect) GetField() *QueryField {
+	if m != nil {
+		return m.Field
+	}
+	return nil
+}
+
+func (m *QuerySelect) GetFilter() *QuerySelectFilter {
+	if m != nil {
+		return m.Filter
+	}
+	return nil
+}
+
+func (m *QuerySelect) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *QuerySelect) Clone() *QuerySelect {
+	if m == nil {
+		return nil
+	}
+	cloned := new(QuerySelect)
+	*cloned = *m
+
+	cloned.Field = m.Field.Clone()
+	cloned.Filter = m.Filter.Clone()
+	return cloned
+}
+
+type QueryGroupBy struct {
+	Fields               []string `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *QueryGroupBy) Reset()         { *m = QueryGroupBy{} }
+func (m *QueryGroupBy) String() string { return proto.CompactTextString(m) }
+func (*QueryGroupBy) ProtoMessage()    {}
+func (*QueryGroupBy) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c4215e5dded92b40, []int{6}
+}
+func (m *QueryGroupBy) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *QueryGroupBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_QueryGroupBy.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *QueryGroupBy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryGroupBy.Merge(m, src)
+}
+func (m *QueryGroupBy) XXX_Size() int {
+	return m.Size()
+}
+func (m *QueryGroupBy) XXX_DiscardUnknown() {
+	xxx_messageInfo_QueryGroupBy.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_QueryGroupBy proto.InternalMessageInfo
+
+func (m *QueryGroupBy) GetFields() []string {
+	if m != nil {
+		return m.Fields
+	}
+	return nil
+}
+
+func (m *QueryGroupBy) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *QueryGroupBy) Clone() *QueryGroupBy {
+	if m == nil {
+		return nil
+	}
+	cloned := new(QueryGroupBy)
+	*cloned = *m
+
+	if m.Fields != nil {
+		cloned.Fields = make([]string, len(m.Fields))
+		copy(cloned.Fields, m.Fields)
+	}
 	return cloned
 }
 
@@ -462,7 +828,7 @@ func (m *QueryPagination) Reset()         { *m = QueryPagination{} }
 func (m *QueryPagination) String() string { return proto.CompactTextString(m) }
 func (*QueryPagination) ProtoMessage()    {}
 func (*QueryPagination) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{3}
+	return fileDescriptor_c4215e5dded92b40, []int{7}
 }
 func (m *QueryPagination) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -543,7 +909,7 @@ func (m *BooleanQuery) Reset()         { *m = BooleanQuery{} }
 func (m *BooleanQuery) String() string { return proto.CompactTextString(m) }
 func (*BooleanQuery) ProtoMessage()    {}
 func (*BooleanQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{4}
+	return fileDescriptor_c4215e5dded92b40, []int{8}
 }
 func (m *BooleanQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -601,6 +967,7 @@ func (m *BooleanQuery) Clone() *BooleanQuery {
 	return cloned
 }
 
+// next tag: 9
 type Query struct {
 	// Types that are valid to be assigned to Query:
 	//	*Query_Conjunction
@@ -608,6 +975,8 @@ type Query struct {
 	//	*Query_BaseQuery
 	//	*Query_BooleanQuery
 	Query                isQuery_Query    `protobuf_oneof:"query"`
+	Selects              []*QuerySelect   `protobuf:"bytes,8,rep,name=selects,proto3" json:"selects,omitempty"`
+	GroupBy              *QueryGroupBy    `protobuf:"bytes,7,opt,name=group_by,json=groupBy,proto3" json:"group_by,omitempty"`
 	Pagination           *QueryPagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
@@ -618,7 +987,7 @@ func (m *Query) Reset()         { *m = Query{} }
 func (m *Query) String() string { return proto.CompactTextString(m) }
 func (*Query) ProtoMessage()    {}
 func (*Query) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{5}
+	return fileDescriptor_c4215e5dded92b40, []int{9}
 }
 func (m *Query) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -747,6 +1116,20 @@ func (m *Query) GetBooleanQuery() *BooleanQuery {
 	return nil
 }
 
+func (m *Query) GetSelects() []*QuerySelect {
+	if m != nil {
+		return m.Selects
+	}
+	return nil
+}
+
+func (m *Query) GetGroupBy() *QueryGroupBy {
+	if m != nil {
+		return m.GroupBy
+	}
+	return nil
+}
+
 func (m *Query) GetPagination() *QueryPagination {
 	if m != nil {
 		return m.Pagination
@@ -777,6 +1160,13 @@ func (m *Query) Clone() *Query {
 	if m.Query != nil {
 		cloned.Query = m.Query.Clone()
 	}
+	if m.Selects != nil {
+		cloned.Selects = make([]*QuerySelect, len(m.Selects))
+		for idx, v := range m.Selects {
+			cloned.Selects[idx] = v.Clone()
+		}
+	}
+	cloned.GroupBy = m.GroupBy.Clone()
 	cloned.Pagination = m.Pagination.Clone()
 	return cloned
 }
@@ -794,7 +1184,7 @@ func (m *StringQuery) Reset()         { *m = StringQuery{} }
 func (m *StringQuery) String() string { return proto.CompactTextString(m) }
 func (*StringQuery) ProtoMessage()    {}
 func (*StringQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{6}
+	return fileDescriptor_c4215e5dded92b40, []int{10}
 }
 func (m *StringQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -858,7 +1248,7 @@ func (m *MatchFieldQuery) Reset()         { *m = MatchFieldQuery{} }
 func (m *MatchFieldQuery) String() string { return proto.CompactTextString(m) }
 func (*MatchFieldQuery) ProtoMessage()    {}
 func (*MatchFieldQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{7}
+	return fileDescriptor_c4215e5dded92b40, []int{11}
 }
 func (m *MatchFieldQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -934,7 +1324,7 @@ func (m *MatchLinkedFieldsQuery) Reset()         { *m = MatchLinkedFieldsQuery{}
 func (m *MatchLinkedFieldsQuery) String() string { return proto.CompactTextString(m) }
 func (*MatchLinkedFieldsQuery) ProtoMessage()    {}
 func (*MatchLinkedFieldsQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{8}
+	return fileDescriptor_c4215e5dded92b40, []int{12}
 }
 func (m *MatchLinkedFieldsQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1001,7 +1391,7 @@ func (m *DocIDQuery) Reset()         { *m = DocIDQuery{} }
 func (m *DocIDQuery) String() string { return proto.CompactTextString(m) }
 func (*DocIDQuery) ProtoMessage()    {}
 func (*DocIDQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{9}
+	return fileDescriptor_c4215e5dded92b40, []int{13}
 }
 func (m *DocIDQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1070,7 +1460,7 @@ func (m *BaseQuery) Reset()         { *m = BaseQuery{} }
 func (m *BaseQuery) String() string { return proto.CompactTextString(m) }
 func (*BaseQuery) ProtoMessage()    {}
 func (*BaseQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{10}
+	return fileDescriptor_c4215e5dded92b40, []int{14}
 }
 func (m *BaseQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1236,7 +1626,7 @@ func (m *ConjunctionQuery) Reset()         { *m = ConjunctionQuery{} }
 func (m *ConjunctionQuery) String() string { return proto.CompactTextString(m) }
 func (*ConjunctionQuery) ProtoMessage()    {}
 func (*ConjunctionQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{11}
+	return fileDescriptor_c4215e5dded92b40, []int{15}
 }
 func (m *ConjunctionQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1302,7 +1692,7 @@ func (m *DisjunctionQuery) Reset()         { *m = DisjunctionQuery{} }
 func (m *DisjunctionQuery) String() string { return proto.CompactTextString(m) }
 func (*DisjunctionQuery) ProtoMessage()    {}
 func (*DisjunctionQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{12}
+	return fileDescriptor_c4215e5dded92b40, []int{16}
 }
 func (m *DisjunctionQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1367,7 +1757,7 @@ func (m *MatchNoneQuery) Reset()         { *m = MatchNoneQuery{} }
 func (m *MatchNoneQuery) String() string { return proto.CompactTextString(m) }
 func (*MatchNoneQuery) ProtoMessage()    {}
 func (*MatchNoneQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{13}
+	return fileDescriptor_c4215e5dded92b40, []int{17}
 }
 func (m *MatchNoneQuery) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1430,7 +1820,7 @@ func (m *SearchResult) Reset()         { *m = SearchResult{} }
 func (m *SearchResult) String() string { return proto.CompactTextString(m) }
 func (*SearchResult) ProtoMessage()    {}
 func (*SearchResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{14}
+	return fileDescriptor_c4215e5dded92b40, []int{18}
 }
 func (m *SearchResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1531,7 +1921,7 @@ func (m *SearchResult_Matches) Reset()         { *m = SearchResult_Matches{} }
 func (m *SearchResult_Matches) String() string { return proto.CompactTextString(m) }
 func (*SearchResult_Matches) ProtoMessage()    {}
 func (*SearchResult_Matches) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{14, 0}
+	return fileDescriptor_c4215e5dded92b40, []int{18, 0}
 }
 func (m *SearchResult_Matches) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1596,7 +1986,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{15}
+	return fileDescriptor_c4215e5dded92b40, []int{19}
 }
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1676,7 +2066,7 @@ func (m *SearchResponse_Count) Reset()         { *m = SearchResponse_Count{} }
 func (m *SearchResponse_Count) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse_Count) ProtoMessage()    {}
 func (*SearchResponse_Count) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{15, 0}
+	return fileDescriptor_c4215e5dded92b40, []int{19, 0}
 }
 func (m *SearchResponse_Count) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1743,7 +2133,7 @@ func (m *SearchOptionsRequest) Reset()         { *m = SearchOptionsRequest{} }
 func (m *SearchOptionsRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchOptionsRequest) ProtoMessage()    {}
 func (*SearchOptionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{16}
+	return fileDescriptor_c4215e5dded92b40, []int{20}
 }
 func (m *SearchOptionsRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1807,7 +2197,7 @@ func (m *SearchOptionsResponse) Reset()         { *m = SearchOptionsResponse{} }
 func (m *SearchOptionsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchOptionsResponse) ProtoMessage()    {}
 func (*SearchOptionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{17}
+	return fileDescriptor_c4215e5dded92b40, []int{21}
 }
 func (m *SearchOptionsResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1871,7 +2261,7 @@ func (m *AutocompleteResponse) Reset()         { *m = AutocompleteResponse{} }
 func (m *AutocompleteResponse) String() string { return proto.CompactTextString(m) }
 func (*AutocompleteResponse) ProtoMessage()    {}
 func (*AutocompleteResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c4215e5dded92b40, []int{18}
+	return fileDescriptor_c4215e5dded92b40, []int{22}
 }
 func (m *AutocompleteResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1930,6 +2320,10 @@ func init() {
 	proto.RegisterType((*RawQuery)(nil), "v1.RawQuery")
 	proto.RegisterType((*RawSearchRequest)(nil), "v1.RawSearchRequest")
 	proto.RegisterType((*QuerySortOption)(nil), "v1.QuerySortOption")
+	proto.RegisterType((*QueryField)(nil), "v1.QueryField")
+	proto.RegisterType((*QuerySelectFilter)(nil), "v1.QuerySelectFilter")
+	proto.RegisterType((*QuerySelect)(nil), "v1.QuerySelect")
+	proto.RegisterType((*QueryGroupBy)(nil), "v1.QueryGroupBy")
 	proto.RegisterType((*QueryPagination)(nil), "v1.QueryPagination")
 	proto.RegisterType((*BooleanQuery)(nil), "v1.BooleanQuery")
 	proto.RegisterType((*Query)(nil), "v1.Query")
@@ -1954,106 +2348,133 @@ func init() {
 func init() { proto.RegisterFile("api/v1/search_service.proto", fileDescriptor_c4215e5dded92b40) }
 
 var fileDescriptor_c4215e5dded92b40 = []byte{
-	// 1578 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x57, 0x4d, 0x6f, 0xdb, 0xc8,
-	0x19, 0xd6, 0xf7, 0xc7, 0x2b, 0x59, 0x9e, 0x8c, 0x15, 0x47, 0x56, 0xb2, 0xae, 0x97, 0xe9, 0xc1,
-	0xcd, 0x41, 0xae, 0xbd, 0x40, 0x77, 0xd1, 0x43, 0x01, 0x8a, 0x9a, 0xd8, 0xcc, 0x4a, 0xa4, 0x76,
-	0x86, 0xca, 0x76, 0xbb, 0x05, 0x04, 0x5a, 0xa2, 0x6d, 0x36, 0x12, 0x47, 0x2b, 0xd2, 0x4e, 0x03,
-	0x14, 0x05, 0xda, 0xbf, 0xd0, 0x4b, 0x2f, 0xbd, 0xf5, 0xd0, 0x3f, 0xd1, 0x7b, 0x8f, 0x05, 0xfa,
-	0x07, 0x8a, 0x74, 0x7f, 0x48, 0x31, 0x33, 0xa4, 0x44, 0xc9, 0x4e, 0x90, 0x93, 0x67, 0xde, 0x79,
-	0x9e, 0xe7, 0xfd, 0x9c, 0xa1, 0x05, 0x4f, 0xdd, 0x85, 0x7f, 0x72, 0x77, 0x7a, 0x12, 0x7a, 0xee,
-	0x72, 0x72, 0x33, 0x0e, 0xbd, 0xe5, 0x9d, 0x3f, 0xf1, 0x3a, 0x8b, 0x25, 0x8f, 0x38, 0xce, 0xdd,
-	0x9d, 0xb6, 0x9f, 0x5d, 0x73, 0x7e, 0x3d, 0xf3, 0x4e, 0x04, 0xce, 0x0d, 0x02, 0x1e, 0xb9, 0x91,
-	0xcf, 0x83, 0x50, 0x21, 0xda, 0x7b, 0x31, 0x7d, 0xc2, 0xe7, 0x73, 0x1e, 0xc4, 0xc6, 0x27, 0xb1,
-	0x71, 0xe1, 0x5e, 0xfb, 0x81, 0x84, 0xab, 0x03, 0x6d, 0x08, 0x15, 0xea, 0xbe, 0xfd, 0xe6, 0xd6,
-	0x5b, 0xbe, 0xc3, 0x4d, 0x28, 0xfe, 0x20, 0x16, 0xad, 0xec, 0x51, 0xf6, 0xb8, 0x4a, 0xd5, 0x06,
-	0x77, 0x00, 0xd6, 0xac, 0x56, 0xee, 0x28, 0x7b, 0x5c, 0x3b, 0x6b, 0x74, 0xee, 0x4e, 0x3b, 0xc3,
-	0x95, 0x95, 0xa6, 0x10, 0xda, 0x6f, 0x01, 0x51, 0xf7, 0x2d, 0x93, 0xc1, 0x53, 0xef, 0x87, 0x5b,
-	0x2f, 0x8c, 0x3e, 0xa0, 0x7c, 0x06, 0x30, 0x71, 0x23, 0xef, 0x9a, 0x2f, 0x7d, 0x2f, 0x6c, 0xe5,
-	0x8e, 0xf2, 0xc7, 0x8d, 0x33, 0x2c, 0x94, 0x15, 0xd9, 0x50, 0x67, 0xef, 0x68, 0x0a, 0xa5, 0xfd,
-	0x01, 0x76, 0x65, 0xb0, 0x8c, 0x2f, 0x23, 0x7b, 0x21, 0x1c, 0x0a, 0xf1, 0x2b, 0xdf, 0x9b, 0x4d,
-	0x13, 0x71, 0xb9, 0xc1, 0x6d, 0xa8, 0x2c, 0xbd, 0x3b, 0x6f, 0x19, 0x7a, 0x53, 0x19, 0x74, 0x85,
-	0xae, 0xf6, 0xf8, 0x39, 0xd4, 0xe3, 0xe2, 0xba, 0x57, 0x91, 0xb7, 0x6c, 0xe5, 0x05, 0xf1, 0x22,
-	0x43, 0x6b, 0xca, 0xaa, 0x0b, 0x63, 0x17, 0x03, 0x4a, 0x83, 0xc6, 0x7c, 0x11, 0x69, 0x6f, 0x63,
-	0xef, 0xeb, 0xd4, 0x85, 0xf7, 0x99, 0x3f, 0xf7, 0x23, 0xe9, 0xbd, 0x48, 0xd5, 0x06, 0xef, 0x43,
-	0x89, 0x5f, 0x5d, 0x85, 0x5e, 0x24, 0x7d, 0x17, 0x69, 0xbc, 0xc3, 0xbf, 0x80, 0x7a, 0xc8, 0x97,
-	0x91, 0x10, 0x13, 0x2d, 0x6b, 0xe5, 0x8f, 0xf2, 0xc7, 0xb5, 0xb3, 0x3d, 0x91, 0xf4, 0x56, 0x5a,
-	0xb4, 0x16, 0xae, 0xd6, 0xa1, 0xe6, 0x43, 0xbd, 0xcb, 0xf9, 0xcc, 0x73, 0x03, 0xd5, 0xaa, 0x63,
-	0x28, 0xcc, 0x6f, 0x43, 0xe5, 0xb4, 0x76, 0xd6, 0x14, 0x7c, 0x83, 0x07, 0xbf, 0xbb, 0x0d, 0x26,
-	0x02, 0x2f, 0x31, 0x54, 0x22, 0xf0, 0x09, 0x54, 0xc4, 0xdf, 0x71, 0xc0, 0xa3, 0xb8, 0x79, 0x12,
-	0xdd, 0xf3, 0xc3, 0x4d, 0x74, 0x59, 0xa0, 0x2c, 0x1e, 0x69, 0xff, 0xc8, 0x41, 0x51, 0x39, 0xf9,
-	0x0a, 0x6a, 0x93, 0xb5, 0xe8, 0xc7, 0x7c, 0x89, 0xda, 0xa5, 0xa0, 0x82, 0x39, 0x5d, 0x3b, 0xf8,
-	0x98, 0x5f, 0xc1, 0x4c, 0x41, 0xc5, 0xb4, 0x5d, 0xba, 0xa1, 0x37, 0x56, 0xe3, 0x92, 0x97, 0xc4,
-	0x1d, 0x41, 0xec, 0xba, 0xa1, 0x97, 0x30, 0xaa, 0x97, 0xc9, 0x06, 0x7f, 0x09, 0x3b, 0x97, 0xaa,
-	0x30, 0x31, 0xa5, 0x24, 0x29, 0x48, 0x52, 0x52, 0x15, 0xbb, 0xc8, 0xd0, 0xfa, 0x65, 0xba, 0x82,
-	0x5f, 0x6c, 0x8c, 0x75, 0x41, 0xb2, 0xd6, 0x7d, 0x78, 0x78, 0xb6, 0xbb, 0xe5, 0x78, 0x8e, 0x5f,
-	0x15, 0x2a, 0x45, 0x54, 0xd2, 0x9e, 0x43, 0x8d, 0x45, 0x4b, 0x3f, 0xb8, 0xfe, 0xc8, 0xfd, 0xd1,
-	0xbe, 0x87, 0xdd, 0x81, 0x1b, 0x4d, 0x6e, 0x5e, 0x8a, 0xb1, 0x5c, 0x01, 0x1f, 0x98, 0xd8, 0x26,
-	0x14, 0xef, 0xdc, 0xd9, 0xad, 0x27, 0xcb, 0x55, 0xa5, 0x6a, 0x83, 0x9f, 0x41, 0xf5, 0xc6, 0xbf,
-	0xbe, 0x99, 0xf9, 0xd7, 0x37, 0x91, 0xac, 0x47, 0x85, 0xae, 0x0d, 0x9a, 0x01, 0xfb, 0x52, 0xbc,
-	0xef, 0x07, 0x6f, 0xbc, 0xa9, 0x74, 0x11, 0x2a, 0x1f, 0x3f, 0x5b, 0x07, 0xb3, 0x1a, 0xb1, 0xad,
-	0x38, 0x92, 0x08, 0x0f, 0x01, 0x7a, 0x7c, 0x62, 0xf6, 0x14, 0x11, 0x41, 0xde, 0x9f, 0x86, 0x92,
-	0x56, 0xa5, 0x62, 0xa9, 0xfd, 0x3d, 0x07, 0xd5, 0x55, 0xf9, 0xb1, 0x0e, 0x8f, 0xe6, 0x42, 0x67,
-	0x2c, 0xa3, 0x8e, 0xab, 0x9e, 0x5b, 0xd7, 0x6f, 0xcb, 0xc9, 0x45, 0x86, 0xee, 0xce, 0xb7, 0xf2,
-	0xff, 0x16, 0x0e, 0x94, 0xc4, 0x4c, 0x86, 0xad, 0x94, 0xc2, 0x8d, 0x9e, 0xb7, 0x57, 0x52, 0xf7,
-	0x52, 0xbb, 0xc8, 0xd0, 0xfd, 0xf9, 0xc3, 0x49, 0x9f, 0x41, 0x7d, 0xca, 0x27, 0x63, 0x3f, 0x09,
-	0xab, 0xb0, 0x7e, 0xad, 0xd6, 0x19, 0x5e, 0x64, 0x28, 0x4c, 0xf9, 0xc4, 0x8c, 0x83, 0xf9, 0x15,
-	0x20, 0x15, 0x4c, 0xc0, 0x83, 0x64, 0xee, 0x8a, 0x92, 0x87, 0x57, 0x31, 0x58, 0x3c, 0x58, 0x0d,
-	0x5f, 0x63, 0xbe, 0x61, 0x59, 0xcd, 0x84, 0xf6, 0x25, 0xa0, 0xed, 0x7b, 0x81, 0x9f, 0x43, 0x59,
-	0x1c, 0x8a, 0xf7, 0x4d, 0xf5, 0xa1, 0xba, 0x1a, 0x31, 0x9a, 0x9c, 0x08, 0xe2, 0xf6, 0xb5, 0xf8,
-	0x34, 0x22, 0x82, 0xc6, 0x66, 0x78, 0xda, 0x8f, 0x39, 0xa8, 0x27, 0x4f, 0x6f, 0x78, 0x3b, 0x8b,
-	0x70, 0x03, 0x72, 0x7e, 0x32, 0x67, 0x39, 0x7f, 0x8a, 0x31, 0x14, 0x02, 0x77, 0x9e, 0xcc, 0x98,
-	0x5c, 0xe3, 0x0e, 0x54, 0xe2, 0x17, 0x56, 0x55, 0xff, 0xe1, 0x57, 0x78, 0x85, 0xc1, 0x16, 0x20,
-	0xd5, 0xfb, 0x88, 0x8f, 0x65, 0x31, 0xbc, 0xb0, 0x55, 0x90, 0x41, 0xfe, 0x74, 0xcd, 0x53, 0xfe,
-	0x3b, 0xb2, 0x3b, 0x0e, 0x1f, 0x28, 0x18, 0x09, 0xa2, 0xe5, 0x3b, 0xda, 0xb8, 0xda, 0x30, 0x8a,
-	0xc1, 0x0f, 0x27, 0x7c, 0xe9, 0xc9, 0xb2, 0x67, 0xa9, 0xda, 0x88, 0x07, 0x7c, 0xc6, 0x27, 0xea,
-	0x7a, 0x96, 0x64, 0xb4, 0xab, 0x7d, 0xfb, 0x73, 0x28, 0x27, 0xe4, 0x7d, 0x28, 0xc9, 0x8b, 0x92,
-	0x4c, 0x6c, 0xbc, 0x6b, 0x7f, 0x0f, 0x7b, 0x0f, 0xf8, 0x16, 0xd3, 0xfd, 0xc6, 0x4b, 0x6e, 0xa8,
-	0x58, 0xe2, 0x4e, 0xfa, 0xda, 0xd5, 0xce, 0x5a, 0xf7, 0x52, 0x88, 0xf9, 0xf1, 0x85, 0xfc, 0x65,
-	0xee, 0xab, 0xac, 0xf6, 0xcf, 0x2c, 0x34, 0x56, 0x98, 0x05, 0x0f, 0x42, 0x0f, 0xbf, 0x80, 0xf2,
-	0x52, 0xe2, 0x93, 0x86, 0xa1, 0x6d, 0x21, 0x9a, 0x00, 0xf0, 0xcf, 0xa1, 0x34, 0xe1, 0xb7, 0x41,
-	0xa4, 0x3e, 0x7a, 0xdb, 0x3e, 0xa5, 0x5e, 0xc7, 0x10, 0x00, 0x1a, 0xe3, 0xda, 0x03, 0x28, 0x4a,
-	0xc3, 0x46, 0xaf, 0xb2, 0x9f, 0xd0, 0xab, 0x26, 0x14, 0xa5, 0x84, 0xcc, 0x2e, 0x4f, 0xd5, 0x46,
-	0x7b, 0x05, 0x4d, 0xc5, 0x88, 0xbf, 0x2f, 0xc9, 0x77, 0x7a, 0xf3, 0x8b, 0x9c, 0xfd, 0xa4, 0x2f,
-	0xf2, 0x29, 0x3c, 0xde, 0xd2, 0x8a, 0x2b, 0xd2, 0x82, 0x72, 0xf2, 0x99, 0x53, 0xad, 0x49, 0xb6,
-	0x5a, 0x07, 0x9a, 0xfa, 0x6d, 0xc4, 0x27, 0x7c, 0xbe, 0x98, 0x79, 0x91, 0xb7, 0x62, 0x7c, 0xa0,
-	0x97, 0x2f, 0xfe, 0x54, 0x4c, 0xca, 0x9d, 0x44, 0x80, 0x11, 0xd4, 0x19, 0xd1, 0xa9, 0x71, 0x31,
-	0x1e, 0x59, 0x8c, 0x38, 0x28, 0x83, 0x01, 0x4a, 0x7a, 0x9f, 0x50, 0x87, 0xa1, 0xac, 0x58, 0x9b,
-	0x03, 0xfd, 0x9c, 0x30, 0x94, 0xc3, 0x4d, 0x40, 0x72, 0x3d, 0x36, 0xec, 0xc1, 0xd0, 0xb6, 0x88,
-	0xe5, 0x30, 0xd4, 0xc4, 0x7b, 0xb0, 0xab, 0xac, 0xaf, 0x47, 0x7d, 0x6b, 0x4c, 0x7a, 0xe7, 0x04,
-	0x3d, 0xc5, 0x2d, 0x68, 0x6e, 0x41, 0xd5, 0xc9, 0x13, 0x5c, 0x87, 0xca, 0xd0, 0xee, 0x9b, 0x86,
-	0x49, 0x18, 0xca, 0xe3, 0x5d, 0xa8, 0xf5, 0xc8, 0xb0, 0x6f, 0x7f, 0x37, 0x90, 0x6a, 0x05, 0xe1,
-	0x43, 0x37, 0x1c, 0xf3, 0x75, 0x8a, 0x89, 0x0e, 0x71, 0x05, 0x0a, 0x43, 0xbb, 0xc7, 0xd0, 0x01,
-	0xae, 0x41, 0x99, 0x11, 0x83, 0x12, 0x87, 0xa1, 0x22, 0xde, 0x07, 0x3c, 0xa4, 0xb6, 0x41, 0x18,
-	0x1b, 0x9b, 0x56, 0xcf, 0x34, 0x74, 0xc7, 0xa6, 0x0c, 0x95, 0x70, 0x03, 0x40, 0xb0, 0xfb, 0xa6,
-	0x6e, 0x19, 0x04, 0x95, 0x85, 0x4f, 0xa3, 0x3f, 0x62, 0x0e, 0xa1, 0x0c, 0x55, 0xc4, 0xa9, 0xa5,
-	0x0f, 0x08, 0x1b, 0xea, 0x06, 0x61, 0xa8, 0x8a, 0xab, 0x50, 0xb4, 0xec, 0x1e, 0x61, 0x08, 0x30,
-	0x86, 0x86, 0x58, 0xa6, 0x52, 0x79, 0x86, 0x9f, 0xc0, 0x9e, 0xb4, 0x6d, 0x65, 0xf2, 0x99, 0x38,
-	0x58, 0x7b, 0x19, 0x33, 0x47, 0xb7, 0x7a, 0x3a, 0xed, 0xa1, 0x1a, 0x7e, 0x06, 0xad, 0xd4, 0x81,
-	0x61, 0x5b, 0x0e, 0xb5, 0xfb, 0xe3, 0x73, 0x6a, 0x8f, 0x86, 0xa8, 0x2e, 0x82, 0xbe, 0x7f, 0x8a,
-	0x76, 0x44, 0xe6, 0x8c, 0xd0, 0xd7, 0xa6, 0x41, 0xc6, 0xba, 0x61, 0xd8, 0x23, 0x51, 0x8f, 0x86,
-	0x08, 0x8e, 0xda, 0x7d, 0xc2, 0xd0, 0xae, 0x68, 0x94, 0x58, 0x76, 0x45, 0xaa, 0xd6, 0x39, 0x43,
-	0x08, 0x1f, 0xc0, 0x63, 0x4a, 0x86, 0x36, 0x75, 0x84, 0xcc, 0x4b, 0xf3, 0x7c, 0x44, 0x75, 0xc7,
-	0xb4, 0x2d, 0x86, 0x3e, 0xc7, 0x8f, 0xe1, 0x51, 0x52, 0x9a, 0xae, 0xce, 0x48, 0xdf, 0xb4, 0x08,
-	0x43, 0x8f, 0x44, 0x25, 0xd8, 0xa8, 0xfb, 0x8a, 0x18, 0x0e, 0x43, 0x58, 0x8a, 0x9b, 0xec, 0x6b,
-	0x86, 0xf6, 0x44, 0x17, 0x45, 0xd2, 0x84, 0xea, 0x5d, 0xb3, 0x6f, 0x3a, 0xa2, 0x3b, 0x8f, 0x93,
-	0x0c, 0x55, 0xd6, 0xeb, 0x9a, 0xec, 0x0b, 0xf5, 0xb8, 0xa0, 0x29, 0x73, 0x4b, 0x96, 0x8f, 0x38,
-	0xdf, 0xda, 0xf4, 0xeb, 0x31, 0xb1, 0x1c, 0xd3, 0xf9, 0x0e, 0xb5, 0x45, 0xd4, 0x12, 0x42, 0xc9,
-	0x37, 0x23, 0xc2, 0x1c, 0x74, 0xf4, 0xe2, 0x8f, 0xc9, 0x08, 0xf6, 0xdc, 0xc8, 0x75, 0xde, 0x2d,
-	0x3c, 0x31, 0x05, 0xf1, 0x08, 0x76, 0x6d, 0xbb, 0x8f, 0x32, 0x42, 0x28, 0x36, 0x58, 0xa3, 0x01,
-	0xa1, 0xa6, 0x81, 0xb2, 0xf8, 0x11, 0xec, 0xc4, 0x36, 0xe6, 0x50, 0xd3, 0x3a, 0x47, 0x39, 0x11,
-	0x74, 0x6c, 0xea, 0xe9, 0x0e, 0x71, 0xcc, 0x01, 0x41, 0x79, 0xd1, 0xde, 0xd8, 0x38, 0xd0, 0x87,
-	0xa8, 0x90, 0x12, 0x27, 0xd6, 0x68, 0x80, 0x8a, 0x67, 0x7f, 0xcb, 0xc1, 0x8e, 0x0a, 0x80, 0xa9,
-	0x1f, 0x04, 0xf8, 0x25, 0x94, 0x94, 0x01, 0xcb, 0xff, 0xac, 0xb6, 0xff, 0xe9, 0x6e, 0xe3, 0xfb,
-	0xaf, 0x8a, 0x86, 0xff, 0xfc, 0x9f, 0x1f, 0xff, 0x92, 0xab, 0x63, 0x58, 0xff, 0xc0, 0xc0, 0x13,
-	0x28, 0xc7, 0x57, 0x17, 0xa7, 0x1e, 0xa2, 0xcd, 0x97, 0xa1, 0x7d, 0xf0, 0xc0, 0x49, 0xac, 0xf9,
-	0x5c, 0x6a, 0x7e, 0x86, 0x9f, 0xae, 0x35, 0x4f, 0xe6, 0x5e, 0xe4, 0x4e, 0xdd, 0xc8, 0x3d, 0x89,
-	0xaf, 0x3c, 0x1e, 0x43, 0x3d, 0x7d, 0xe5, 0x3f, 0x10, 0xb2, 0xf4, 0xff, 0xd0, 0xd3, 0xa0, 0xfd,
-	0x44, 0x3a, 0x39, 0xc0, 0x4f, 0x52, 0x4e, 0xdc, 0x14, 0xb0, 0xdb, 0xf9, 0xd7, 0xfb, 0xc3, 0xec,
-	0xbf, 0xdf, 0x1f, 0x66, 0xff, 0xfb, 0xfe, 0x30, 0xfb, 0xd7, 0xff, 0x1d, 0x66, 0xa0, 0xe5, 0xf3,
-	0x4e, 0x18, 0xb9, 0x93, 0x37, 0x4b, 0xfe, 0x7b, 0xf5, 0x6b, 0xa7, 0xe3, 0x2e, 0xfc, 0xce, 0xdd,
-	0xe9, 0x6f, 0x72, 0x77, 0xa7, 0xbf, 0xce, 0x5c, 0x96, 0xa4, 0xed, 0x8b, 0xff, 0x07, 0x00, 0x00,
-	0xff, 0xff, 0xa0, 0xf9, 0x6e, 0x24, 0x70, 0x0d, 0x00, 0x00,
+	// 2004 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x58, 0xdd, 0x72, 0xdb, 0xc6,
+	0x15, 0x16, 0x49, 0x51, 0x24, 0x0f, 0x29, 0x6a, 0xbd, 0x96, 0x65, 0x4a, 0x76, 0x14, 0x05, 0x76,
+	0x52, 0xc5, 0x69, 0xa8, 0x48, 0x6e, 0x63, 0x37, 0x9d, 0xe9, 0x0c, 0x08, 0xae, 0x49, 0xd8, 0x24,
+	0xc0, 0xec, 0x82, 0x4e, 0xdd, 0x74, 0x06, 0x03, 0x51, 0x10, 0x8d, 0x9a, 0x22, 0x18, 0x02, 0x94,
+	0xab, 0x9b, 0x4e, 0xa7, 0xaf, 0xd0, 0x9b, 0xde, 0xf4, 0xae, 0x0f, 0xd0, 0x17, 0xe8, 0x7d, 0x2f,
+	0x3b, 0xd3, 0x17, 0xe8, 0xb8, 0xb9, 0xe8, 0x63, 0x74, 0x76, 0x17, 0x7f, 0xa4, 0x65, 0x8f, 0xaf,
+	0xb4, 0x7b, 0x7e, 0xbf, 0xf3, 0x9d, 0xb3, 0xbb, 0x10, 0xe1, 0x8e, 0x33, 0xf3, 0x8e, 0x2e, 0x8f,
+	0x8f, 0x02, 0xd7, 0x99, 0x8f, 0x5e, 0xda, 0x81, 0x3b, 0xbf, 0xf4, 0x46, 0x6e, 0x73, 0x36, 0xf7,
+	0x43, 0x1f, 0xe7, 0x2f, 0x8f, 0xf7, 0xee, 0x8e, 0x7d, 0x7f, 0x3c, 0x71, 0x8f, 0xb8, 0x9d, 0x33,
+	0x9d, 0xfa, 0xa1, 0x13, 0x7a, 0xfe, 0x34, 0x90, 0x16, 0x7b, 0xb7, 0x23, 0xf7, 0x99, 0x33, 0xf6,
+	0xa6, 0x42, 0x23, 0x15, 0xca, 0x00, 0xca, 0xd4, 0x79, 0xfd, 0xed, 0xc2, 0x9d, 0x5f, 0xe1, 0x6d,
+	0x28, 0xfe, 0xc0, 0x17, 0x8d, 0xdc, 0x41, 0xee, 0xb0, 0x42, 0xe5, 0x06, 0x37, 0x01, 0x52, 0xaf,
+	0x46, 0xfe, 0x20, 0x77, 0x58, 0x3d, 0xa9, 0x37, 0x2f, 0x8f, 0x9b, 0x83, 0x44, 0x4a, 0x33, 0x16,
+	0xca, 0x6f, 0x01, 0x51, 0xe7, 0x35, 0x13, 0x38, 0xa9, 0xfb, 0xc3, 0xc2, 0x0d, 0xc2, 0x77, 0x44,
+	0x3e, 0x01, 0x18, 0x39, 0xa1, 0x3b, 0xf6, 0xe7, 0x9e, 0x1b, 0x34, 0xf2, 0x07, 0x85, 0xc3, 0xfa,
+	0x09, 0xe6, 0x91, 0xa5, 0xb3, 0x26, 0x75, 0x57, 0x34, 0x63, 0xa5, 0xfc, 0x3d, 0x07, 0x5b, 0x02,
+	0x2d, 0xf3, 0xe7, 0xa1, 0x39, 0xe3, 0x19, 0x79, 0xf4, 0x73, 0xcf, 0x9d, 0x9c, 0xc5, 0xd1, 0xc5,
+	0x06, 0xef, 0x41, 0x79, 0xee, 0x5e, 0xba, 0xf3, 0xc0, 0x3d, 0x13, 0xa8, 0xcb, 0x34, 0xd9, 0xe3,
+	0x7b, 0x50, 0x8b, 0x88, 0x74, 0xce, 0x43, 0x77, 0xde, 0x28, 0x70, 0xc7, 0xee, 0x1a, 0xad, 0x4a,
+	0xa9, 0xca, 0x85, 0xf8, 0x04, 0x6a, 0xce, 0x78, 0x3c, 0x77, 0xc7, 0x4e, 0xe8, 0xda, 0xa7, 0x57,
+	0x8d, 0x75, 0x51, 0xfa, 0x16, 0x07, 0xa8, 0xc6, 0xf2, 0xd6, 0x15, 0xad, 0x3a, 0xe9, 0xa6, 0x85,
+	0x01, 0x65, 0x03, 0xdb, 0xfe, 0x2c, 0x54, 0x46, 0x00, 0x02, 0xf1, 0x13, 0x01, 0x0b, 0xc3, 0xfa,
+	0xd4, 0xb9, 0x70, 0x23, 0xac, 0x62, 0x8d, 0x3f, 0x85, 0x7a, 0x9a, 0xe9, 0x7c, 0x31, 0x1d, 0x09,
+	0xc0, 0x15, 0xba, 0x99, 0x48, 0x9f, 0x2c, 0xa6, 0x23, 0x5e, 0xd1, 0x99, 0x17, 0x84, 0xde, 0x74,
+	0x14, 0x0a, 0xc4, 0x65, 0x9a, 0xec, 0x95, 0x2e, 0xdc, 0x90, 0xb4, 0xb8, 0x13, 0x77, 0x14, 0x3e,
+	0xf1, 0x26, 0xbc, 0x82, 0xeb, 0x72, 0x7d, 0x1c, 0xb7, 0x42, 0x76, 0xb2, 0xc2, 0xcb, 0x11, 0x9e,
+	0x51, 0x57, 0x94, 0x53, 0xa8, 0x66, 0x22, 0xe1, 0xfb, 0x59, 0x72, 0xa3, 0xce, 0xa7, 0xe5, 0xc4,
+	0x64, 0x7f, 0x09, 0x1b, 0xe7, 0x22, 0x67, 0x14, 0xf6, 0x56, 0x62, 0x96, 0x05, 0x44, 0x23, 0x23,
+	0xe5, 0x33, 0xa8, 0x09, 0x65, 0x67, 0xee, 0x2f, 0x66, 0xad, 0x2b, 0xbc, 0xc3, 0xdd, 0xdd, 0xc9,
+	0x59, 0xd0, 0xc8, 0x1d, 0x14, 0x0e, 0x2b, 0x34, 0xda, 0x29, 0xaf, 0xa3, 0x66, 0xa7, 0xa3, 0xc6,
+	0x9b, 0x3d, 0xf1, 0x2e, 0xbc, 0x50, 0xe0, 0x29, 0x52, 0xb9, 0xe1, 0x01, 0xfc, 0xf3, 0xf3, 0xc0,
+	0x0d, 0x45, 0xfe, 0x22, 0x8d, 0x76, 0xf8, 0x6b, 0xa8, 0x05, 0xfe, 0x3c, 0xe4, 0x7d, 0xe0, 0xa7,
+	0xa1, 0x51, 0x38, 0x28, 0x1c, 0x56, 0x4f, 0x6e, 0xa6, 0xe8, 0x92, 0x29, 0xa2, 0xd5, 0x20, 0x59,
+	0x07, 0x8a, 0x07, 0xb5, 0x96, 0xef, 0x4f, 0x5c, 0x67, 0x2a, 0x8f, 0xc6, 0x21, 0xac, 0x5f, 0x2c,
+	0x82, 0x30, 0x22, 0x61, 0x9b, 0xfb, 0x6b, 0xfe, 0xf4, 0x77, 0x8b, 0xe9, 0x88, 0xdb, 0x4b, 0xfe,
+	0x84, 0x05, 0x3e, 0x82, 0x32, 0xff, 0x6b, 0x4f, 0xfd, 0x30, 0xe2, 0x42, 0x58, 0xb7, 0xbd, 0x60,
+	0xd9, 0xba, 0xc4, 0xad, 0x0c, 0x3f, 0x54, 0xfe, 0x58, 0x80, 0xa2, 0x4c, 0xf2, 0x18, 0xaa, 0xa3,
+	0x34, 0xe8, 0xfb, 0x72, 0xf1, 0x51, 0xcd, 0x98, 0x72, 0xcf, 0xb3, 0x34, 0xc1, 0xfb, 0xf2, 0x72,
+	0xcf, 0x8c, 0x29, 0x3f, 0xdd, 0xa7, 0x4e, 0xe0, 0xda, 0x72, 0x26, 0x0a, 0xc2, 0x71, 0x93, 0x3b,
+	0xb6, 0x9c, 0xc0, 0x8d, 0x3d, 0x2a, 0xa7, 0xf1, 0x06, 0x3f, 0x82, 0xcd, 0x53, 0x49, 0x4c, 0xe4,
+	0xb2, 0x21, 0x5c, 0x90, 0x70, 0xc9, 0x30, 0xd6, 0x5d, 0xa3, 0xb5, 0xd3, 0x2c, 0x83, 0x9f, 0x43,
+	0x29, 0x10, 0xa3, 0x10, 0x34, 0xca, 0xa2, 0x09, 0x5b, 0x2b, 0x23, 0x42, 0x63, 0x3d, 0xfe, 0x02,
+	0xca, 0x63, 0x3e, 0x18, 0xfc, 0xd0, 0x95, 0xd2, 0xf0, 0xd9, 0x89, 0xa1, 0xa5, 0x71, 0x34, 0x3a,
+	0x0f, 0x97, 0xae, 0x27, 0x79, 0x46, 0xd3, 0xfe, 0x5e, 0x7f, 0x47, 0xb5, 0x4a, 0xd1, 0x21, 0x78,
+	0xba, 0x5e, 0x2e, 0xa2, 0x0d, 0xe5, 0x1e, 0x54, 0x59, 0x38, 0xf7, 0xa6, 0xe3, 0xf7, 0xdc, 0x83,
+	0xca, 0xf7, 0xb0, 0xd5, 0x77, 0xc2, 0xd1, 0x4b, 0x31, 0xf7, 0x89, 0xe1, 0x35, 0x17, 0xcf, 0x36,
+	0x14, 0x2f, 0x9d, 0xc9, 0xc2, 0x8d, 0x0e, 0xb1, 0xdc, 0xe0, 0xbb, 0x50, 0x79, 0xe9, 0x8d, 0x5f,
+	0x4e, 0xbc, 0xf1, 0xcb, 0xf8, 0xf4, 0xa6, 0x02, 0x45, 0x83, 0x1d, 0x11, 0xbc, 0xe7, 0x4d, 0x5f,
+	0xb9, 0x67, 0x22, 0x45, 0x10, 0xf3, 0x96, 0x80, 0x49, 0x46, 0x77, 0x05, 0x47, 0x8c, 0x70, 0x1f,
+	0xa0, 0xed, 0x8f, 0xf4, 0xb6, 0x74, 0x44, 0x50, 0xf0, 0x92, 0x03, 0xc5, 0x97, 0xca, 0xdf, 0xf2,
+	0x50, 0x49, 0xda, 0x8a, 0x55, 0xb8, 0x71, 0xc1, 0xe3, 0xd8, 0x02, 0xb5, 0x9d, 0xbd, 0x14, 0xae,
+	0x4b, 0xd2, 0x5d, 0xa3, 0x5b, 0x17, 0x2b, 0xf5, 0x7f, 0x07, 0xbb, 0x32, 0xc4, 0x44, 0xc0, 0x96,
+	0x91, 0x82, 0xa5, 0x59, 0xda, 0x4b, 0x42, 0xbd, 0x55, 0x5a, 0x77, 0x8d, 0xee, 0x5c, 0x5c, 0x5f,
+	0xf4, 0x09, 0xd4, 0xce, 0xfc, 0x91, 0xed, 0xc5, 0xb0, 0xd6, 0xd3, 0xbb, 0x27, 0xad, 0xb0, 0xbb,
+	0x46, 0xe1, 0xcc, 0x1f, 0xe9, 0x11, 0x98, 0x5f, 0x01, 0x92, 0x60, 0xa6, 0xfe, 0x34, 0x9e, 0xe7,
+	0xa2, 0xf0, 0xc3, 0x09, 0x06, 0xc3, 0x9f, 0x26, 0x43, 0x5d, 0xbf, 0x58, 0x92, 0x24, 0x33, 0xa1,
+	0x3c, 0x02, 0xb4, 0x7a, 0xde, 0xf0, 0x3d, 0x28, 0x71, 0x25, 0x7f, 0xa7, 0x64, 0x1f, 0x32, 0xf7,
+	0x66, 0xac, 0xe1, 0x8e, 0xab, 0xc7, 0xed, 0xc3, 0x1c, 0x11, 0xd4, 0x97, 0xe1, 0x29, 0x3f, 0xe6,
+	0xa1, 0x16, 0x3f, 0xa1, 0xc1, 0x62, 0x12, 0xe2, 0x3a, 0xe4, 0xbd, 0x78, 0xce, 0xf2, 0x5e, 0xfa,
+	0x8c, 0xe4, 0x33, 0x57, 0x7b, 0x13, 0xca, 0xd1, 0x4b, 0x29, 0xd9, 0xbf, 0xfe, 0x35, 0x4d, 0x6c,
+	0xb0, 0x01, 0x48, 0xf6, 0x3e, 0xf4, 0x6d, 0x41, 0x86, 0x1b, 0x34, 0xd6, 0x05, 0xc8, 0xfb, 0xa9,
+	0x9f, 0xcc, 0xdf, 0x14, 0xdd, 0xb1, 0xfc, 0xbe, 0x34, 0x23, 0xd3, 0x70, 0x7e, 0x45, 0xeb, 0xe7,
+	0x4b, 0x42, 0x3e, 0xf8, 0xc1, 0xc8, 0x9f, 0xbb, 0x82, 0xf6, 0x1c, 0x95, 0x1b, 0xfe, 0x6a, 0x4d,
+	0xfc, 0x91, 0x3c, 0x9e, 0x1b, 0x02, 0x6d, 0xb2, 0xdf, 0xfb, 0x04, 0x4a, 0xb1, 0xf3, 0x0e, 0x6c,
+	0x88, 0x83, 0x92, 0x3c, 0x01, 0x72, 0xb7, 0xf7, 0x3d, 0xdc, 0xbc, 0x26, 0x37, 0x9f, 0xee, 0x57,
+	0x6e, 0x7c, 0x42, 0xf9, 0x12, 0x37, 0xb3, 0xc7, 0xae, 0x7a, 0xd2, 0x78, 0xab, 0x84, 0xc8, 0x3f,
+	0x3a, 0x90, 0xdf, 0xe4, 0x1f, 0xe7, 0x94, 0x7f, 0xe4, 0xa0, 0x9e, 0xd8, 0xcc, 0xfc, 0x69, 0xe0,
+	0xe2, 0x07, 0x50, 0x9a, 0x0b, 0xfb, 0xb8, 0x61, 0x68, 0x35, 0x10, 0x8d, 0x0d, 0xf0, 0x57, 0xb0,
+	0x31, 0xf2, 0x17, 0xd3, 0x50, 0x7e, 0xbc, 0xac, 0xe6, 0x14, 0xf1, 0x9a, 0x1a, 0x37, 0xa0, 0x91,
+	0xdd, 0x5e, 0x1f, 0x8a, 0x42, 0xb0, 0xd4, 0xab, 0xdc, 0x07, 0xf4, 0x6a, 0x1b, 0x8a, 0x22, 0x84,
+	0xa8, 0xae, 0x40, 0xe5, 0x46, 0x79, 0x0a, 0xdb, 0xd2, 0x23, 0x7a, 0xb7, 0xe2, 0xef, 0xad, 0xe5,
+	0x2f, 0xab, 0xdc, 0x07, 0x7d, 0x59, 0x1d, 0xc3, 0xad, 0x95, 0x58, 0x11, 0x23, 0x0d, 0x28, 0xc5,
+	0xcf, 0xa7, 0x6c, 0x4d, 0xbc, 0x55, 0x9a, 0xb0, 0xad, 0x2e, 0x42, 0x7f, 0xe4, 0x5f, 0xcc, 0x26,
+	0x6e, 0xe8, 0x26, 0x1e, 0xef, 0xe8, 0xe5, 0x83, 0xff, 0x55, 0x62, 0xba, 0x63, 0x04, 0x18, 0x41,
+	0x8d, 0x11, 0x95, 0x6a, 0x5d, 0x7b, 0x68, 0x30, 0x62, 0xa1, 0x35, 0x0c, 0xb0, 0xa1, 0xf6, 0x08,
+	0xb5, 0x18, 0xca, 0xf1, 0xb5, 0xde, 0x57, 0x3b, 0x84, 0xa1, 0x3c, 0xde, 0x06, 0x24, 0xd6, 0xb6,
+	0x66, 0xf6, 0x07, 0xa6, 0x41, 0x0c, 0x8b, 0xa1, 0x6d, 0x7c, 0x13, 0xb6, 0xa4, 0xf4, 0xf9, 0xb0,
+	0x67, 0xd8, 0xa4, 0xdd, 0x21, 0xe8, 0x0e, 0x6e, 0xc0, 0xf6, 0x8a, 0xa9, 0xd4, 0xdc, 0xc6, 0x35,
+	0x28, 0x0f, 0xcc, 0x9e, 0xae, 0xe9, 0x84, 0xa1, 0x02, 0xde, 0x82, 0x6a, 0x9b, 0x0c, 0x7a, 0xe6,
+	0x8b, 0xbe, 0x88, 0xb6, 0xce, 0x73, 0xa8, 0x9a, 0xa5, 0x3f, 0xcf, 0x78, 0xa2, 0x7d, 0x5c, 0x86,
+	0xf5, 0x81, 0xd9, 0x66, 0x68, 0x17, 0x57, 0xa1, 0xc4, 0x88, 0x46, 0x89, 0xc5, 0x50, 0x11, 0xef,
+	0x00, 0x1e, 0x50, 0x53, 0x23, 0x8c, 0xd9, 0xba, 0xd1, 0xd6, 0x35, 0xd5, 0x32, 0x29, 0x43, 0x1b,
+	0xb8, 0x0e, 0xc0, 0xbd, 0x7b, 0xba, 0x6a, 0x68, 0x04, 0x95, 0x78, 0x4e, 0xad, 0x37, 0x64, 0x16,
+	0xa1, 0x0c, 0x95, 0xb9, 0xd6, 0x50, 0xfb, 0x84, 0x0d, 0x54, 0x8d, 0x30, 0x54, 0xc1, 0x15, 0x28,
+	0x1a, 0x66, 0x9b, 0x30, 0x04, 0xbc, 0x16, 0xbe, 0xcc, 0x16, 0xf8, 0x19, 0xc6, 0x50, 0x17, 0xc2,
+	0xb4, 0xbe, 0xbb, 0xf8, 0x36, 0xdc, 0x5c, 0x36, 0x94, 0x8a, 0x8f, 0xf0, 0x1d, 0xb8, 0xbd, 0xa2,
+	0xd0, 0x9e, 0x13, 0xa9, 0xfc, 0x84, 0x7b, 0xa5, 0xb8, 0x6c, 0x66, 0xa9, 0x46, 0x5b, 0xa5, 0x6d,
+	0x54, 0xc5, 0x77, 0xa1, 0x91, 0x51, 0x68, 0xa6, 0x61, 0x51, 0xb3, 0x67, 0x77, 0xa8, 0x39, 0x1c,
+	0xa0, 0x1a, 0x2f, 0xf3, 0x6d, 0x2d, 0xda, 0xe4, 0x5c, 0x31, 0x42, 0x9f, 0xeb, 0x1a, 0xb1, 0x55,
+	0x4d, 0x33, 0x87, 0x1c, 0x6e, 0x9d, 0x97, 0x43, 0xcd, 0x1e, 0x61, 0x68, 0x8b, 0xb7, 0x96, 0x2f,
+	0x5b, 0x9c, 0x1c, 0xa3, 0xc3, 0x10, 0xc2, 0xbb, 0x70, 0x8b, 0x92, 0x81, 0x49, 0x2d, 0x1e, 0xe6,
+	0x89, 0xde, 0x19, 0x52, 0xd5, 0xd2, 0x4d, 0x83, 0xa1, 0x4f, 0xf1, 0x2d, 0xb8, 0x11, 0x93, 0xd9,
+	0x52, 0x19, 0xe9, 0xe9, 0x06, 0x61, 0xe8, 0x06, 0xe7, 0x8e, 0x0d, 0x5b, 0x4f, 0x89, 0x66, 0x31,
+	0x84, 0x45, 0x70, 0x9d, 0x3d, 0x63, 0xe8, 0x26, 0xe7, 0x8a, 0x33, 0x42, 0xa8, 0xda, 0xd2, 0x7b,
+	0xba, 0xc5, 0xfb, 0x79, 0x8b, 0x97, 0x1f, 0x31, 0x6d, 0xaf, 0x2a, 0x15, 0x9e, 0x3c, 0x9d, 0x94,
+	0xac, 0xea, 0x1e, 0x9f, 0x97, 0x84, 0xe3, 0xac, 0xe6, 0x7e, 0xcc, 0x99, 0xe4, 0x32, 0x6d, 0xc1,
+	0x0e, 0xc7, 0x9b, 0x4d, 0x25, 0xc5, 0x0d, 0xd1, 0x2d, 0x62, 0x7d, 0x67, 0xd2, 0x67, 0x36, 0x31,
+	0x2c, 0xdd, 0x7a, 0x81, 0xf6, 0x38, 0x0f, 0xc2, 0x84, 0x92, 0x6f, 0x87, 0x84, 0x59, 0xe8, 0x80,
+	0x53, 0x17, 0x5b, 0xc5, 0xc5, 0xa2, 0x9f, 0x64, 0xa5, 0xc9, 0x8c, 0x1e, 0xf2, 0xe6, 0xac, 0x12,
+	0x63, 0x53, 0xc2, 0x86, 0x3d, 0x8b, 0xa1, 0xcf, 0x57, 0x7a, 0xda, 0x27, 0x96, 0xda, 0x56, 0x2d,
+	0x15, 0x3d, 0x58, 0xe9, 0x5a, 0xec, 0xf0, 0x85, 0xc0, 0x9d, 0xca, 0xdb, 0x66, 0x5f, 0xd5, 0x0d,
+	0xf4, 0x53, 0x8e, 0x3b, 0x2e, 0xa7, 0x4b, 0xd4, 0x9e, 0xd5, 0x45, 0x5f, 0x8a, 0x96, 0x70, 0x1c,
+	0x2f, 0x6c, 0x4d, 0xb5, 0x48, 0xc7, 0xa4, 0x1c, 0x50, 0x93, 0x47, 0x96, 0x3c, 0xea, 0x86, 0x45,
+	0x3a, 0x71, 0x07, 0x8f, 0xf8, 0x61, 0xd2, 0xcc, 0x5e, 0x8f, 0x68, 0x52, 0xf0, 0x15, 0x67, 0x75,
+	0xd9, 0xff, 0x85, 0x64, 0xe9, 0x18, 0x7f, 0x04, 0xbb, 0x71, 0x4d, 0x3d, 0x9d, 0x59, 0xc4, 0xd0,
+	0x8d, 0x8e, 0x6d, 0x1a, 0x36, 0x1f, 0x0d, 0x74, 0x82, 0x37, 0xa1, 0xa2, 0x0e, 0x74, 0xdb, 0x32,
+	0x9f, 0x11, 0x03, 0x3d, 0xe4, 0xad, 0x8e, 0xa6, 0x26, 0xa9, 0xef, 0x67, 0x19, 0x21, 0x33, 0xd4,
+	0x01, 0xeb, 0x9a, 0x16, 0xfa, 0xb9, 0xe8, 0x7f, 0x5a, 0xdc, 0x12, 0xbe, 0xaf, 0x57, 0xa6, 0x9c,
+	0x69, 0xaa, 0x61, 0x33, 0x62, 0x59, 0x62, 0x34, 0x1f, 0xf1, 0x78, 0x2b, 0x5a, 0xf4, 0x78, 0xf5,
+	0x60, 0x74, 0x89, 0xf6, 0x2c, 0xa1, 0xf2, 0x17, 0xfc, 0x5a, 0x68, 0xf5, 0xcc, 0x16, 0xfa, 0x06,
+	0xdf, 0x80, 0xcd, 0x01, 0x35, 0xdb, 0x43, 0xcd, 0xb2, 0x87, 0x4c, 0xed, 0x10, 0xf4, 0xcb, 0x07,
+	0x7f, 0x88, 0x6f, 0xba, 0xb6, 0x13, 0x3a, 0xd6, 0xd5, 0xcc, 0xe5, 0xfc, 0x44, 0x37, 0x5d, 0xcb,
+	0x34, 0x7b, 0x68, 0x8d, 0x73, 0x1e, 0x09, 0x8c, 0x61, 0x9f, 0x50, 0x5d, 0x43, 0x39, 0x1e, 0x29,
+	0x92, 0x31, 0x8b, 0xea, 0x46, 0x07, 0xe5, 0x39, 0xb2, 0x48, 0xd4, 0x56, 0x2d, 0x62, 0xe9, 0x7d,
+	0x82, 0x0a, 0xfc, 0x16, 0x89, 0x84, 0x7d, 0x75, 0x80, 0xd6, 0x33, 0xc1, 0x89, 0x31, 0xec, 0xa3,
+	0xe2, 0xc9, 0x5f, 0xf3, 0xb0, 0x29, 0x01, 0x30, 0xf9, 0x53, 0x01, 0x7e, 0x02, 0x1b, 0x52, 0x80,
+	0xc5, 0x3f, 0x06, 0xab, 0xff, 0xa3, 0xef, 0xe1, 0xb7, 0x1f, 0x2f, 0x05, 0xff, 0xe9, 0xdf, 0x3f,
+	0xfe, 0x39, 0x5f, 0xc3, 0x90, 0xfe, 0xf4, 0x80, 0x47, 0x50, 0x8a, 0x5e, 0x08, 0x9c, 0x79, 0xef,
+	0x96, 0x1f, 0xa0, 0xbd, 0xdd, 0x6b, 0x34, 0x51, 0xcc, 0x7b, 0x22, 0xe6, 0x47, 0xf8, 0x4e, 0x1a,
+	0xf3, 0xe8, 0xc2, 0x0d, 0x9d, 0x33, 0x27, 0x74, 0x8e, 0xa2, 0x97, 0x05, 0xdb, 0x50, 0xcb, 0xbe,
+	0x2c, 0xef, 0x80, 0x2c, 0xf2, 0x5f, 0xf7, 0x02, 0x29, 0x1f, 0x8b, 0x24, 0xbb, 0xf8, 0x76, 0x26,
+	0x89, 0x93, 0x31, 0x6c, 0x35, 0xff, 0xf9, 0x66, 0x3f, 0xf7, 0xaf, 0x37, 0xfb, 0xb9, 0xff, 0xbc,
+	0xd9, 0xcf, 0xfd, 0xe5, 0xbf, 0xfb, 0x6b, 0xd0, 0xf0, 0xfc, 0x66, 0x10, 0x3a, 0xa3, 0x57, 0x73,
+	0xff, 0xf7, 0xf2, 0xc7, 0x91, 0xa6, 0x33, 0xf3, 0x9a, 0x97, 0xc7, 0xbf, 0xc9, 0x5f, 0x1e, 0xff,
+	0x7a, 0xed, 0x74, 0x43, 0xc8, 0x1e, 0xfe, 0x3f, 0x00, 0x00, 0xff, 0xff, 0x79, 0xfc, 0xaf, 0x4c,
+	0x8a, 0x11, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -2330,6 +2751,18 @@ func (m *QuerySortOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.AggregateBy != nil {
+		{
+			size, err := m.AggregateBy.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSearchService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.SearchAfterOpt != nil {
 		{
 			size := m.SearchAfterOpt.Size()
@@ -2373,6 +2806,190 @@ func (m *QuerySortOption_SearchAfter) MarshalToSizedBuffer(dAtA []byte) (int, er
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
+func (m *QueryField) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryField) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryField) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Distinct {
+		i--
+		if m.Distinct {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.AggregateFunc) > 0 {
+		i -= len(m.AggregateFunc)
+		copy(dAtA[i:], m.AggregateFunc)
+		i = encodeVarintSearchService(dAtA, i, uint64(len(m.AggregateFunc)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintSearchService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySelectFilter) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySelectFilter) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySelectFilter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Query != nil {
+		{
+			size, err := m.Query.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSearchService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintSearchService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QuerySelect) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QuerySelect) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QuerySelect) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Filter != nil {
+		{
+			size, err := m.Filter.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSearchService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Field != nil {
+		{
+			size, err := m.Field.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSearchService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *QueryGroupBy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *QueryGroupBy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *QueryGroupBy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Fields) > 0 {
+		for iNdEx := len(m.Fields) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Fields[iNdEx])
+			copy(dAtA[i:], m.Fields[iNdEx])
+			i = encodeVarintSearchService(dAtA, i, uint64(len(m.Fields[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *QueryPagination) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -2498,6 +3115,32 @@ func (m *Query) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Selects) > 0 {
+		for iNdEx := len(m.Selects) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Selects[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintSearchService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if m.GroupBy != nil {
+		{
+			size, err := m.GroupBy.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintSearchService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
 	}
 	if m.Query != nil {
 		{
@@ -3236,20 +3879,20 @@ func (m *SearchOptionsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
 	if len(m.Categories) > 0 {
-		dAtA17 := make([]byte, len(m.Categories)*10)
-		var j16 int
+		dAtA22 := make([]byte, len(m.Categories)*10)
+		var j21 int
 		for _, num := range m.Categories {
 			for num >= 1<<7 {
-				dAtA17[j16] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA22[j21] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j16++
+				j21++
 			}
-			dAtA17[j16] = uint8(num)
-			j16++
+			dAtA22[j21] = uint8(num)
+			j21++
 		}
-		i -= j16
-		copy(dAtA[i:], dAtA17[:j16])
-		i = encodeVarintSearchService(dAtA, i, uint64(j16))
+		i -= j21
+		copy(dAtA[i:], dAtA22[:j21])
+		i = encodeVarintSearchService(dAtA, i, uint64(j21))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -3398,6 +4041,10 @@ func (m *QuerySortOption) Size() (n int) {
 	if m.SearchAfterOpt != nil {
 		n += m.SearchAfterOpt.Size()
 	}
+	if m.AggregateBy != nil {
+		l = m.AggregateBy.Size()
+		n += 1 + l + sovSearchService(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -3414,6 +4061,87 @@ func (m *QuerySortOption_SearchAfter) Size() (n int) {
 	n += 1 + l + sovSearchService(uint64(l))
 	return n
 }
+func (m *QueryField) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	l = len(m.AggregateFunc)
+	if l > 0 {
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.Distinct {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *QuerySelectFilter) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.Query != nil {
+		l = m.Query.Size()
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *QuerySelect) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Field != nil {
+		l = m.Field.Size()
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.Filter != nil {
+		l = m.Filter.Size()
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *QueryGroupBy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Fields) > 0 {
+		for _, s := range m.Fields {
+			l = len(s)
+			n += 1 + l + sovSearchService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *QueryPagination) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3470,6 +4198,16 @@ func (m *Query) Size() (n int) {
 	if m.Pagination != nil {
 		l = m.Pagination.Size()
 		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if m.GroupBy != nil {
+		l = m.GroupBy.Size()
+		n += 1 + l + sovSearchService(uint64(l))
+	}
+	if len(m.Selects) > 0 {
+		for _, e := range m.Selects {
+			l = e.Size()
+			n += 1 + l + sovSearchService(uint64(l))
+		}
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -4259,6 +4997,502 @@ func (m *QuerySortOption) Unmarshal(dAtA []byte) error {
 			}
 			m.SearchAfterOpt = &QuerySortOption_SearchAfter{string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AggregateBy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AggregateBy == nil {
+				m.AggregateBy = &AggregateBy{}
+			}
+			if err := m.AggregateBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSearchService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryField) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSearchService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryField: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryField: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AggregateFunc", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AggregateFunc = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Distinct", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Distinct = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSearchService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySelectFilter) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSearchService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySelectFilter: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySelectFilter: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Query == nil {
+				m.Query = &Query{}
+			}
+			if err := m.Query.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSearchService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QuerySelect) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSearchService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QuerySelect: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QuerySelect: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Field", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Field == nil {
+				m.Field = &QueryField{}
+			}
+			if err := m.Field.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Filter == nil {
+				m.Filter = &QuerySelectFilter{}
+			}
+			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipSearchService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *QueryGroupBy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowSearchService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: QueryGroupBy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: QueryGroupBy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fields", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Fields = append(m.Fields, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipSearchService(dAtA[iNdEx:])
@@ -4731,6 +5965,76 @@ func (m *Query) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			m.Query = &Query_BooleanQuery{v}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GroupBy", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.GroupBy == nil {
+				m.GroupBy = &QueryGroupBy{}
+			}
+			if err := m.GroupBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Selects", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowSearchService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthSearchService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Selects = append(m.Selects, &QuerySelect{})
+			if err := m.Selects[len(m.Selects)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

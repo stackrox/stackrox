@@ -70,10 +70,16 @@ func (s *PolicyValueValidator) TestRegex() {
 			r:       stringValueRegex,
 		},
 		{
-			name:    "capabilities",
+			name:    "addCapabilities",
 			valid:   []string{"SYS_ADMIN"},
 			invalid: []string{"", "CAP_N_CRUNCH", "CAP_SYS_ADMIN", "N_CRUNCH"},
-			r:       capabilitiesValueRegex,
+			r:       addCapabilitiesValueRegex,
+		},
+		{
+			name:    "dropCapabilities",
+			valid:   []string{"ALL"},
+			invalid: []string{"", "CAP_N_CRUNCH", "CAP_SYS_ADMIN", "N_CRUNCH"},
+			r:       dropCapabilitiesValueRegex,
 		},
 		{
 			name:    "cve",
@@ -122,13 +128,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					Value:        "value",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -148,12 +147,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -180,13 +173,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.Error(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					Value:        "value",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -206,12 +192,6 @@ func (s *PolicyValueValidator) TestEnvKeyValuePolicyValidation() {
 		assert.NoError(s.T(), Validate(&storage.Policy{
 			Name:          "some-policy",
 			PolicyVersion: policyversion.CurrentVersion().String(),
-			Fields: &storage.PolicyFields{
-				Env: &storage.KeyValuePolicy{
-					Key:          "key",
-					EnvVarSource: p,
-				},
-			},
 			PolicySections: []*storage.PolicySection{
 				{
 					PolicyGroups: []*storage.PolicyGroup{
@@ -597,4 +577,23 @@ func (s *PolicyValueValidator) TestValidatePolicyValueRegexForAuditEventSource()
 			}
 		})
 	}
+}
+
+func (s *PolicyValueValidator) TestValidatePolicyHasCorrectVersion() {
+	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
+	s.NoError(Validate(&storage.Policy{Name: "name", PolicyVersion: policyversion.CurrentVersion().String(), PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "1", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+
+	s.Error(Validate(&storage.Policy{Name: "name", PolicyVersion: "x.y.z", PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
 }

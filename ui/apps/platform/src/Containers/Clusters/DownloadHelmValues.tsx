@@ -1,6 +1,7 @@
 import React, { useState, ReactElement } from 'react';
 import { connect } from 'react-redux';
-import { SuccessButton } from '@stackrox/ui-components';
+import { Button } from '@patternfly/react-core';
+import { DownloadIcon } from '@patternfly/react-icons';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -38,15 +39,20 @@ const DownloadHelmValues = ({
             cardClassName="flex-grow border border-base-400 md:self-start"
             isCollapsible={false}
             title="Download helm values"
-            titleClassName="border-b px-1 border-primary-300 leading-normal cursor-pointer flex justify-between items-center bg-primary-200 hover:border-primary-400"
         >
             <div className="w-full p-3 leading-normal border-b pb-3 border-primary-300">
                 {description}
             </div>
             <div className="flex justify-center items-center p-4">
-                <SuccessButton type="button" onClick={downloadValues} isDisabled={isFetchingValues}>
+                <Button
+                    variant="secondary"
+                    icon={<DownloadIcon />}
+                    onClick={downloadValues}
+                    isDisabled={isFetchingValues}
+                    isLoading={isFetchingValues}
+                >
                     Download Helm values
-                </SuccessButton>
+                </Button>
             </div>
         </CollapsibleCard>
     );

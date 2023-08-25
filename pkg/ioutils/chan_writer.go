@@ -44,7 +44,7 @@ func (w *chanWriter) Write(buf []byte) (int, error) {
 	}
 
 	select {
-	case w.ch <- sliceutils.ByteClone(buf):
+	case w.ch <- sliceutils.ShallowClone(buf):
 		return len(buf), nil
 	case <-w.ctx.Done():
 		w.err = w.ctx.Err()

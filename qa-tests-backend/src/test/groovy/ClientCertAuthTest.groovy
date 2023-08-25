@@ -1,21 +1,22 @@
-import groups.BAT
+import java.nio.file.Files
+import java.nio.file.Paths
+
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 
-import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
 import services.GroupService
-import spock.lang.Shared
-import spock.lang.Stepwise
-import spock.lang.Unroll
 import util.Env
 
-import java.nio.file.Files
-import java.nio.file.Paths
+import spock.lang.Shared
+import spock.lang.Stepwise
+import spock.lang.Tag
+import spock.lang.Unroll
 
-@Category(BAT)
+@Tag("BAT")
 @Stepwise
 class ClientCertAuthTest extends BaseSpecification {
 
@@ -26,7 +27,6 @@ class ClientCertAuthTest extends BaseSpecification {
 
     def setupSpec() {
         BaseService.useBasicAuth()
-        disableAuthzPlugin()
 
         String caPath = Env.mustGetClientCAPath()
         byte[] encoded = Files.readAllBytes(Paths.get(caPath))
@@ -37,10 +37,10 @@ class ClientCertAuthTest extends BaseSpecification {
         for (int i = 0; i < 2; i++) {
             providerIDs[i] = AuthProviderService.createAuthProvider(
                     "Test Client CA Auth ${i}", "userpki", ["keys": cert])
-            println "Client cert auth provider ID is ${providerIDs[i]}"
+            log.info "Client cert auth provider ID is ${providerIDs[i]}"
             GroupService.addDefaultMapping(providerIDs[i], "Continuous Integration")
             certTokens[i] = AuthProviderService.getAuthProviderLoginToken(providerIDs[i])
-            println "Certificate token is ${certTokens[i]}"
+            log.info "Certificate token is ${certTokens[i]}"
         }
     }
 
@@ -54,20 +54,20 @@ class ClientCertAuthTest extends BaseSpecification {
         }
     }
 
-    private static getAuthProviderType() {
+    private getAuthProviderType() {
         try {
             return AuthService.getAuthStatus().authProvider.type
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex}"
+            log.error("Error getting auth status", ex)
             return "error"
         }
     }
 
-    private static getAuthProviderID() {
+    private getAuthProviderID() {
         try {
             return AuthService.getAuthStatus().authProvider.id
         } catch (StatusRuntimeException ex) {
-            println "Error getting auth status: ${ex}"
+            log.error("Error getting auth status", ex)
             return ""
         }
     }

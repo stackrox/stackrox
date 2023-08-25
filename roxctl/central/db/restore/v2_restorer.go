@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -48,7 +49,7 @@ const (
 
 var (
 	defaultSpinner = []string{"⠇", "⠏", "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"}
-	waitingSpinner = sliceutils.ConcatStringSlices(defaultSpinner, sliceutils.Reversed(defaultSpinner).([]string))
+	waitingSpinner = sliceutils.Concat(defaultSpinner, sliceutils.Reversed(defaultSpinner))
 )
 
 type v2Restorer struct {
@@ -160,13 +161,13 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 	r.statusLine.SetSpinner(waitingSpinner)
 	r.statusLine.SetTextStatic("Initiating restore ...")
 
-	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd()))
+	termWidth, _, err := terminal.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
 	if err == nil && termWidth > 40 {
 		if termWidth > 120 {
 			termWidth = 120
 		}
 
-		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(os.Stderr), mpb.WithWidth(termWidth))
+		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(r.env.InputOutput().ErrOut()), mpb.WithWidth(termWidth))
 		defer progressBarContainer.Wait()
 		defer cancel() // canceling twice doesn't hurt, but we need to ensure this gets called before Wait() above.
 
@@ -217,7 +218,7 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			r.errorLine.SetTextStatic(err.Error())
 
 			if !r.retryDeadline.IsZero() && time.Now().After(r.retryDeadline) {
-				return nil, errors.New("absolute retry deadline has passed, please restart roxctl to resume the restore")
+				return nil, errox.InvariantViolation.New("absolute retry deadline has passed, please restart roxctl to resume the restore")
 			}
 
 			if r.transferProgressBar == nil {
@@ -306,7 +307,7 @@ func (r *v2Restorer) initResume(ctx context.Context, file *os.File, activeStatus
 			}
 			resumeInfo = interruptResp.GetResumeInfo()
 		} else {
-			return nil, errors.Errorf("active restore process %s is not currently in resumable state. If you believe this process is stuck, use the `--interrupt` flag", activeStatus.GetMetadata().GetId())
+			return nil, errox.InvariantViolation.Newf("active restore process %s is not currently in resumable state. If you believe this process is stuck, use the `--interrupt` flag", activeStatus.GetMetadata().GetId())
 		}
 	}
 
@@ -409,7 +410,7 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 	if pos, err := r.dataReader.Seek(resumeInfo.GetPos(), io.SeekStart); err != nil {
 		return nil, err
 	} else if pos != resumeInfo.GetPos() {
-		return nil, errors.Errorf("could not seek to resume position %d in data: data ends at position %d", resumeInfo.GetPos(), pos)
+		return nil, errox.NotFound.Newf("could not seek to resume position %d in data: data ends at position %d", resumeInfo.GetPos(), pos)
 	} else if r.transferProgressBar != nil {
 		// Interestingly, `SetCurrent` on a progress bar does not work as expected. It only works if it is used without
 		// ever using `Incr` beforehand.
@@ -451,7 +452,7 @@ func (r *v2Restorer) resumeAfterError(ctx context.Context) (*http.Request, error
 	activeProcess := resp.GetActiveStatus()
 
 	if activeProcess.GetMetadata().GetId() != r.processID {
-		return nil, errors.Errorf("active restore process has changed: expected %s, got %s", r.processID, activeProcess.GetMetadata().GetId())
+		return nil, errox.InvariantViolation.Newf("active restore process has changed: expected %s, got %s", r.processID, activeProcess.GetMetadata().GetId())
 	}
 
 	resumeInfo := activeProcess.GetResumeInfo()

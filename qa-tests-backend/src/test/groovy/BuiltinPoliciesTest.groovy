@@ -1,15 +1,16 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 
-import groups.BAT
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
+
 import objects.Deployment
 import objects.SecretKeyRef
 import objects.Volume
-import org.junit.experimental.categories.Category
-import spock.lang.Shared
-import spock.lang.Unroll
 import services.PolicyService
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
@@ -42,13 +43,13 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private List<Deployment> NO_WAIT_DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_DOCKER_MOUNT)
-                    .setImage("nginx:latest")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "docker-sock",
                             hostPath: "/var/run/docker.sock",
                             mountPath: "/var/run/docker.sock")),
             new Deployment()
                     .setName(TRIGGER_CRIO_MOUNT)
-                    .setImage("nginx:latest")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "crio-sock",
                             hostPath: "/run/crio/crio.sock",
                             mountPath: "/run/crio/crio.sock")),
@@ -65,7 +66,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         getPolicies().forEach {
             policy ->
             if (policy.disabled) {
-                println "Temporarily enabling a disabled policy for testing: ${policy.name}"
+                log.info "Temporarily enabling a disabled policy for testing: ${policy.name}"
                 PolicyService.patchPolicy(
                         PatchPolicyRequest.newBuilder().setId(policy.id).setDisabled(false).build()
                 )
@@ -76,13 +77,13 @@ class BuiltinPoliciesTest extends BaseSpecification {
         orchestrator.createSecret(TEST_PASSWORD)
 
         for (Deployment deployment : NO_WAIT_DEPLOYMENTS) {
-            println("Starting ${deployment.name} without waiting for deployment")
+            log.info("Starting ${deployment.name} without waiting for deployment")
             orchestrator.createDeploymentNoWait(deployment)
         }
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
-            println("Waiting for ${deployment.name}")
+            log.info("Waiting for ${deployment.name}")
             assert Services.waitForDeployment(deployment)
         }
     }
@@ -90,7 +91,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     def cleanupSpec() {
         disabledPolicyIds.forEach {
             id ->
-            println "Re-disabling a policy after test"
+            log.info "Re-disabling a policy after test"
             PolicyService.patchPolicy(
                     PatchPolicyRequest.newBuilder().setId(id).setDisabled(true).build()
             )
@@ -104,7 +105,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify policy '#policyName' is triggered"(String policyName, String deploymentName) {
         when:
         "An existing policy"

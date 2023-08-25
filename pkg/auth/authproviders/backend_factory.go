@@ -8,7 +8,18 @@ import (
 // BackendFactory is responsible for creating Backends.
 type BackendFactory interface {
 	// CreateBackend creates a new backend instance for the given auth provider, using the specified configuration.
-	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (Backend, error)
+	//
+	// `mappings` specify claims from IdP token that will be copied to Rox token attributes.
+	// Each key in mappings contains a path in IdP token we want to map. Path is separated by "." symbol.
+	// For example, if IdP token payload looks like:
+	// {
+	//      "a": { "b" : "c"}
+	// }
+	// then "a.b" would be a valid key and "a.z" is not.
+	// Each value in this map contains a Rox token attribute name we want to add claim to.
+	// If, for example, value is "groups", claim would be found in "external_user.Attributes.groups" in token.
+	// Note: we only support `mappings` for OIDC auth provider.
+	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, mappings map[string]string) (Backend, error)
 
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
 	// workflow consists of extracting the specific auth provider ID and clientState from the request, usually via a

@@ -1,0 +1,44 @@
+name: Add any new Pull Request to OSS Triaging project
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+env:
+  EXTERNAL_PR_LABEL: external-contributor
+  PROJECT_URL: https://github.com/orgs/stackrox/projects/2 # OSS Triaging board
+
+jobs:
+  check-pr-if-external:
+    name: Add external label to pull request if outside StackRox
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BASE_REPO: ${{ github.repository }}
+      HEAD_REPO: ${{ github.event.pull_request.head.user.login }}/${{ github.event.pull_request.head.repo.name }}
+    outputs:
+      is_external_pr: ${{ steps.check-external-pr.outputs.is_external_pr }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - id: check-external-pr
+        run: |
+          set -uo pipefail
+          if [[ "$BASE_REPO" != "$HEAD_REPO" ]]; then
+            echo "is_external_pr=true" >> "$GITHUB_OUTPUT"
+            gh pr edit \
+              "${{ github.event.pull_request.number }}" \
+              --add-label "${EXTERNAL_PR_LABEL}"
+          else
+            echo "is_external_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  add-to-project:
+    name: Add pull request to project
+    runs-on: ubuntu-latest
+    needs: [check-pr-if-external]
+    if: needs.check-pr-if-external.outputs.is_external_pr == 'true'
+    steps:
+      - uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: ${{ env.PROJECT_URL }}
+          github-token: ${{ secrets.ADD_TO_PROJECT_TOKEN }}

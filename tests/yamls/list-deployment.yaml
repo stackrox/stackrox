@@ -1,3 +1,5 @@
+# Will be used within roxctl_verification.sh.
+# Contains a list of deployments.
 apiVersion: v1
 items:
 - apiVersion: apps/v1

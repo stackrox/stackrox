@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,6 +44,10 @@ func TestAuditLogCollectionManager(t *testing.T) {
 
 type AuditLogCollectionManagerTestSuite struct {
 	suite.Suite
+}
+
+func (s *AuditLogCollectionManagerTestSuite) TearDownTest() {
+	defer assertNoGoroutineLeaks(s.T())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[string]sensor.ComplianceService_CommunicateServer, map[string]*storage.AuditLogFileState) {
@@ -83,8 +89,9 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 		updateInterval:          updateInterval,
 		stopSig:                 concurrency.NewSignal(),
 		forceUpdateSig:          concurrency.NewSignal(),
+		centralReady:            concurrency.NewSignal(),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance, 5), // Buffered for the test only
-		fileStateUpdates:        make(chan *central.MsgFromSensor),
+		fileStateUpdates:        make(chan *message.ExpiringMessage),
 	}
 }
 
@@ -441,6 +448,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -468,6 +476,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 	manager.updateInterval = 1 * time.Minute
 
 	manager.receivedInitialStateFromCentral.Set(true)
+	manager.Notify(common.SensorComponentEventCentralReachable)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -493,4 +502,45 @@ func (s *AuditLogCollectionManagerTestSuite) getUpdaterStatusMsg(updater updater
 	}
 
 	return status
+}
+
+// This tests simulates Sensor loosing connection to Central, followed by a reconnect.
+// On entering Offline mode, Sensor must not try to send updates to Central.
+// As soon as Central comes online, Sensor must run on regular intervals again.
+func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
+	servers, _ := s.getFakeServersAndStates()
+	manager := s.getManager(servers, nil)
+	manager.auditEventMsgs = make(chan *sensor.MsgFromCompliance)
+	defer close(manager.auditEventMsgs)
+	manager.receivedInitialStateFromCentral.Set(true)
+	s.NoError(manager.Start())
+
+	centralC := manager.ResponsesC()
+	complianceC := manager.AuditMessagesChan()
+
+	states := [3]common.SensorComponentEvent{common.SensorComponentEventCentralReachable, common.SensorComponentEventOfflineMode, common.SensorComponentEventCentralReachable}
+
+	for i, state := range states {
+		manager.Notify(state)
+		complianceC <- s.getMsgFromCompliance(fmt.Sprintf("Node-%d", i), s.getAsProtoTime(time.Now().Add(1*time.Second)))
+		select {
+		case <-centralC:
+			s.T().Logf("Received message on centralC (state: %s)", state)
+			if state == common.SensorComponentEventOfflineMode {
+				s.Fail("Must not receive messages to central in offline mode")
+			}
+		case <-time.After(500 * time.Millisecond):
+			s.T().Logf("Timeout waiting for a message on centralC (state: %s)", state)
+			if state == common.SensorComponentEventCentralReachable {
+				s.Fail("CentralC msg didn't arrive within deadline")
+				// The message was sent, so we must wait until it finally arrives,
+				// otherwise the next iteration may receive it
+				s.T().Logf("Timeout happened on %s state, so we must wait for the message", state)
+				<-centralC
+			}
+		}
+
+	}
+
+	manager.Stop(nil)
 }

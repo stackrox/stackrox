@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/message"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +37,7 @@ type configMapPersister struct {
 
 	client v1client.ConfigMapInterface
 
-	settingsStreamIt concurrency.ValueStreamIter
+	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
@@ -60,15 +61,17 @@ func (p *configMapPersister) Stop(err error) {
 	p.stopSig.SignalWithError(err)
 }
 
+func (p *configMapPersister) Notify(common.SensorComponentEvent) {}
+
 func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (p *configMapPersister) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *configMapPersister) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (p *configMapPersister) ResponsesC() <-chan *central.MsgFromSensor {
+func (p *configMapPersister) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -181,6 +184,6 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 }
 
 func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
-	settings, _ := p.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
+	settings := p.settingsStreamIt.Value()
 	return settingsToConfigMap(settings)
 }

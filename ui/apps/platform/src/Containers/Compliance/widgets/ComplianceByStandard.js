@@ -9,61 +9,30 @@ import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
-import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
+import {
+    COMPLIANCE_PASS_COLOR,
+    CRITICAL_SEVERITY_COLOR,
+    IMPORTANT_HIGH_SEVERITY_COLOR,
+    MODERATE_MEDIUM_SEVERITY_COLOR,
+    noViolationsColor,
+} from 'constants/severityColors';
+import { COMPLIANCE_STANDARDS } from 'queries/standard';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
 
-const passColor = 'var(--tertiary-400)';
-const warningColor = 'var(--warning-400)';
-const cautionColor = 'var(--caution-400)';
-const skippedColor = 'var(--base-300)';
-const alertColor = 'var(--alert-400)';
+import { getColor } from './colorsForCompliance';
 
-const passTextColor = 'var(--tertiary-500)';
-const warningTextColor = 'var(--warning-500)';
-const cautionTextColor = 'var(--caution-500)';
-const skippedTextColor = 'var(--base-500)';
-const alertTextColor = 'var(--alert-500)';
+const linkColor = 'var(--base-600)';
+const textColor = 'var(--base-600)';
 
-const getColor = (value) => {
-    if (value === 100) {
-        return passColor;
-    }
-    if (value >= 70) {
-        return warningColor;
-    }
-    if (value >= 50) {
-        return cautionColor;
-    }
-    if (Number.isNaN(value)) {
-        return skippedColor;
-    }
-    return alertColor;
-};
-
-const getTextColor = (value) => {
-    if (value === 100) {
-        return passTextColor;
-    }
-    if (value >= 70) {
-        return warningTextColor;
-    }
-    if (value >= 50) {
-        return cautionTextColor;
-    }
-    if (Number.isNaN(value)) {
-        return skippedTextColor;
-    }
-    return alertTextColor;
-};
-
+// Consistent with getColor helper function.
 const sunburstLegendData = [
-    { title: '100%', color: passColor },
-    { title: '> 70%', color: warningColor },
-    { title: '> 50%', color: cautionColor },
-    { title: '< 50%', color: alertColor },
-    { title: 'Skipped', color: skippedColor },
+    { title: '100%', color: COMPLIANCE_PASS_COLOR },
+    { title: '> 70%', color: MODERATE_MEDIUM_SEVERITY_COLOR },
+    { title: '> 50%', color: IMPORTANT_HIGH_SEVERITY_COLOR },
+    { title: '< 50%', color: CRITICAL_SEVERITY_COLOR },
+    { title: 'Skipped', color: noViolationsColor },
 ];
 
 const processSunburstData = (match, location, data, standard) => {
@@ -107,7 +76,7 @@ const processSunburstData = (match, location, data, standard) => {
             groupMapping[datum.id] = {
                 name: `${datum?.name}. ${datum?.description}`,
                 color: getColor(value),
-                textColor: getTextColor(value),
+                textColor,
                 value,
                 children: [],
             };
@@ -129,7 +98,7 @@ const processSunburstData = (match, location, data, standard) => {
                 group.children.push({
                     name: `${datum?.name} - ${datum?.description}`,
                     color: getColor(value),
-                    textColor: getTextColor(value),
+                    textColor,
                     link: url,
                     value,
                 });
@@ -196,7 +165,7 @@ const ComplianceByStandard = ({
     };
 
     return (
-        <Query query={QUERY} variables={variables}>
+        <Query query={COMPLIANCE_STANDARDS(standardId)} variables={variables}>
             {({ loading, data }) => {
                 let contents = null;
                 let viewStandardLink = null;
@@ -225,7 +194,7 @@ const ComplianceByStandard = ({
                         {
                             text: `${getNumControls(sunburstData)} Controls`,
                             link: url,
-                            color: 'var(--tertiary-700)',
+                            color: linkColor,
                         },
                     ];
 

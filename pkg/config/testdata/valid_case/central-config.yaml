@@ -1,0 +1,6 @@
+maintenance:
+  safeMode: false
+  compaction:
+    enabled: false
+    bucketFillFraction: .5
+    freeFractionThreshold: 0.75

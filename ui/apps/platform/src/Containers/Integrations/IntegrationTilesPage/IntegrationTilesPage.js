@@ -4,9 +4,10 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { PageSection, Title } from '@patternfly/react-core';
 
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { integrationsPath } from 'routePaths';
 import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 import integrationsList from '../utils/integrationsList';
 
 import IntegrationTile from './IntegrationTile';
@@ -15,29 +16,32 @@ import IntegrationsSection from './IntegrationsSection';
 const IntegrationTilesPage = ({
     apiTokens,
     clusterInitBundles,
-    authProviders,
-    authPlugins,
     backups,
     imageIntegrations,
     notifiers,
-    featureFlags,
+    signatureIntegrations,
 }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+
     function findIntegrations(source, type) {
         const typeLowerMatches = (integration) =>
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins': {
-                return authPlugins;
-            }
             case 'authProviders': {
+                // Integrations Authentication Tokens differ from Access Control Auth providers.
                 if (type === 'apitoken') {
                     return apiTokens;
                 }
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
                 }
-                return authProviders.filter(typeLowerMatches);
+                return [];
             }
             case 'notifiers': {
                 return notifiers.filter(typeLowerMatches);
@@ -48,17 +52,13 @@ const IntegrationTilesPage = ({
             case 'imageIntegrations': {
                 return imageIntegrations.filter(typeLowerMatches);
             }
+            case 'signatureIntegrations': {
+                return signatureIntegrations;
+            }
             default: {
                 throw new Error(`Unknown source ${source}`);
             }
         }
-    }
-
-    function getIsIntegrationFeatureFlagEnabled(integration) {
-        if (integration.featureFlagDependency) {
-            return isBackendFeatureFlagEnabled(featureFlags, integration.featureFlagDependency);
-        }
-        return true;
     }
 
     function renderIntegrationTiles(source) {
@@ -66,19 +66,12 @@ const IntegrationTilesPage = ({
             integrationsList[source]
                 // filter out non-visible integrations
                 .filter((integration) => {
-                    const isIntegrationFeatureFlagEnabled =
-                        getIsIntegrationFeatureFlagEnabled(integration);
-                    if (!isIntegrationFeatureFlagEnabled) {
-                        return false;
+                    if (typeof integration.featureFlagDependency === 'string') {
+                        if (!isFeatureFlagEnabled(integration.featureFlagDependency)) {
+                            return false;
+                        }
                     }
-                    if (source !== 'authPlugins') {
-                        return true;
-                    }
-                    const numIntegrations = findIntegrations(
-                        integration.source,
-                        integration.type
-                    ).length;
-                    return numIntegrations !== 0;
+                    return true;
                 })
                 // get a list of rendered integration tiles
                 .map((integration) => {
@@ -102,9 +95,9 @@ const IntegrationTilesPage = ({
 
     const imageIntegrationTiles = renderIntegrationTiles('imageIntegrations');
     const notifierTiles = renderIntegrationTiles('notifiers');
-    const authPluginTiles = renderIntegrationTiles('authPlugins');
     const authProviderTiles = renderIntegrationTiles('authProviders');
     const backupTiles = renderIntegrationTiles('backups');
+    const signatureTiles = renderIntegrationTiles('signatureIntegrations');
 
     return (
         <>
@@ -116,41 +109,34 @@ const IntegrationTilesPage = ({
                     {imageIntegrationTiles}
                 </IntegrationsSection>
                 <IntegrationsSection
+                    headerName="Signature Integrations"
+                    testId="signature-integrations"
+                >
+                    {signatureTiles}
+                </IntegrationsSection>
+                <IntegrationsSection
                     headerName="Notifier Integrations"
                     testId="notifier-integrations"
                 >
                     {notifierTiles}
                 </IntegrationsSection>
-                <IntegrationsSection headerName="Backup Integrations" testId="backup-integrations">
-                    {backupTiles}
-                </IntegrationsSection>
+                {canUseCloudBackupIntegrations && (
+                    <IntegrationsSection
+                        headerName="Backup Integrations"
+                        testId="backup-integrations"
+                    >
+                        {backupTiles}
+                    </IntegrationsSection>
+                )}
                 <IntegrationsSection headerName="Authentication Tokens" testId="token-integrations">
                     {authProviderTiles}
                 </IntegrationsSection>
-                {authPluginTiles.length !== 0 && (
-                    <IntegrationsSection
-                        headerName="Authorization Plugins"
-                        testId="auth-integrations"
-                    >
-                        {authPluginTiles}
-                    </IntegrationsSection>
-                )}
             </PageSection>
         </>
     );
 };
 
 IntegrationTilesPage.propTypes = {
-    authPlugins: PropTypes.arrayOf(
-        PropTypes.shape({
-            endpoint: PropTypes.string.isRequired,
-        })
-    ).isRequired,
-    authProviders: PropTypes.arrayOf(
-        PropTypes.shape({
-            name: PropTypes.string.isRequired,
-        })
-    ).isRequired,
     apiTokens: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -169,23 +155,16 @@ IntegrationTilesPage.propTypes = {
     ).isRequired,
     notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
     imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
-    featureFlags: PropTypes.arrayOf(
-        PropTypes.shape({
-            envVar: PropTypes.string.isRequired,
-            enabled: PropTypes.bool.isRequired,
-        })
-    ).isRequired,
+    signatureIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    authPlugins: selectors.getAuthPlugins,
-    authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags,
+    signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
 export default connect(mapStateToProps)(IntegrationTilesPage);

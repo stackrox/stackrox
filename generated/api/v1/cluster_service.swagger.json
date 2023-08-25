@@ -11,6 +11,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/cluster-defaults": {
+      "get": {
+        "operationId": "ClustersService_GetClusterDefaultValues",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ClusterDefaultsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ClustersService"
+        ]
+      }
+    },
     "/v1/clusters": {
       "get": {
         "operationId": "ClustersService_GetClusters",
@@ -71,30 +93,9 @@
         ]
       }
     },
-    "/v1/clusters-env/cluster-defaults": {
-      "get": {
-        "operationId": "ClustersService_GetClusterDefaults",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1ClusterResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "tags": [
-          "ClustersService"
-        ]
-      }
-    },
     "/v1/clusters-env/kernel-support-available": {
       "get": {
+        "summary": "GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.",
         "operationId": "ClustersService_GetKernelSupportAvailable",
         "responses": {
           "200": {
@@ -296,7 +297,7 @@
       "properties": {
         "typeUrl": {
           "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
         },
         "value": {
           "type": "string",
@@ -304,7 +305,7 @@
           "description": "Must be a valid serialized protocol buffer of the above specified type."
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "runtimeError": {
       "type": "object",
@@ -488,17 +489,28 @@
         "sensorCertExpiry": {
           "type": "string",
           "format": "date-time"
+        },
+        "sensorCertNotBefore": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
     "storageClusterHealthStatus": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "collectorHealthInfo": {
           "$ref": "#/definitions/storageCollectorHealthInfo"
         },
         "admissionControlHealthInfo": {
           "$ref": "#/definitions/storageAdmissionControlHealthInfo"
+        },
+        "scannerHealthInfo": {
+          "$ref": "#/definitions/storageScannerHealthInfo",
+          "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
         },
         "sensorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
@@ -511,6 +523,9 @@
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
         "admissionControlHealthStatus": {
+          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
+        },
+        "scannerHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
         },
         "lastContact": {
@@ -580,7 +595,8 @@
         "UNSET_COLLECTION",
         "NO_COLLECTION",
         "KERNEL_MODULE",
-        "EBPF"
+        "EBPF",
+        "CORE_BPF"
       ],
       "default": "UNSET_COLLECTION"
     },
@@ -646,7 +662,8 @@
         "disableAuditLogs": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
     },
     "storageGoogleProviderMetadata": {
       "type": "object",
@@ -713,6 +730,35 @@
         }
       }
     },
+    "storageScannerHealthInfo": {
+      "type": "object",
+      "properties": {
+        "totalDesiredAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyAnalyzerPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalDesiredDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalReadyDbPods": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "statusErrors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Collection of errors that occurred while trying to obtain scanner health info."
+        }
+      },
+      "description": "ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called \"local scanner\").\nWhen the scanner is deployed on a central cluster, the following message is NOT used.\nScannerHealthInfo carries data about scanner deployment but does not include scanner health status\nderived from this data.\nAggregated scanner health status is not included because it is derived in central and not in the component that\nfirst reports ScannerHealthInfo (sensor)."
+    },
     "storageSensorDeploymentIdentification": {
       "type": "object",
       "properties": {
@@ -770,7 +816,8 @@
         "admissionControllerEvents": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."
     },
     "storageTolerationsConfig": {
       "type": "object",
@@ -795,11 +842,28 @@
         }
       }
     },
+    "v1ClusterDefaultsResponse": {
+      "type": "object",
+      "properties": {
+        "mainImageRepository": {
+          "type": "string"
+        },
+        "collectorImageRepository": {
+          "type": "string"
+        },
+        "kernelSupportAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1ClusterResponse": {
       "type": "object",
       "properties": {
         "cluster": {
           "$ref": "#/definitions/storageCluster"
+        },
+        "clusterRetentionInfo": {
+          "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
         }
       }
     },
@@ -811,8 +875,30 @@
           "items": {
             "$ref": "#/definitions/storageCluster"
           }
+        },
+        "clusterIdToRetentionInfo": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
+          },
+          "title": "Maps 'UNHEALTHY' clusters' IDs to their retention info"
         }
       }
+    },
+    "v1DecommissionedClusterRetentionInfo": {
+      "type": "object",
+      "properties": {
+        "isExcluded": {
+          "type": "boolean",
+          "title": "indicates whether a cluster is protected from deletion"
+        },
+        "daysUntilDeletion": {
+          "type": "integer",
+          "format": "int32",
+          "title": "days after which cluster will be deleted if sensor health remains UNHEALTHY"
+        }
+      },
+      "title": "next available tag: 3"
     },
     "v1Empty": {
       "type": "object"

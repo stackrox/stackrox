@@ -5,6 +5,7 @@ api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
+  # shellcheck source=../../../../scripts/k8s/export-basic-auth-creds.sh
   source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
 fi
 
@@ -26,12 +27,15 @@ if [[ -n "${UI_BASE_URL}" ]]; then
   export CYPRESS_BASE_URL="${UI_BASE_URL}"
 fi
 
+# be able to skip tests that are not relevant, for example: openshift
+export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
+
 if [ $2 == "--spec" ]; then
     if [ $# -ne 3 ]; then
         echo "usage: yarn cypress-spec <spec-file>"
         exit 1
     fi
     cypress run --spec "cypress/integration/$3"
-else 
-    DEBUG="cypress:*" cypress "$@" 2> /dev/null
+else
+    DEBUG="*" NO_COLOR=1 cypress "$@" 2> /dev/null
 fi

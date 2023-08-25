@@ -3,7 +3,6 @@ package images
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -16,12 +15,9 @@ func TestToValues(t *testing.T) {
 		ScannerDB: "scanner.dbImage.fullRef",
 	}
 
-	ei := envisolator.NewEnvIsolator(t)
-	defer ei.RestoreAll()
-
-	ei.Setenv(Main.EnvVar(), "override-main")
-	ei.Unsetenv(Scanner.EnvVar())
-	ei.Setenv(ScannerDB.EnvVar(), "")
+	t.Setenv(Main.EnvVar(), "override-main")
+	t.Setenv(Scanner.EnvVar(), "")
+	t.Setenv(ScannerDB.EnvVar(), "")
 
 	vals, err := testOverrides.ToValues()
 	require.NoError(t, err)

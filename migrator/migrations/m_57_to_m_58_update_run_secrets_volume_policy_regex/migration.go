@@ -13,7 +13,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 57,
-		VersionAfter:   storage.Version{SeqNum: 58},
+		VersionAfter:   &storage.Version{SeqNum: 58},
 		Run: func(databases *types.Databases) error {
 			err := updateRunSecretsVolumePolicy(databases.BoltDB)
 			if err != nil {

@@ -30,7 +30,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 		return "", nil
 	}
 	fields := strings.Split(tag, ",")
-	if !FieldLabelSet.Contains(fields[0]) {
+	if !IsValidFieldLabel(fields[0]) {
 		log.Panicf("Field %q is not a valid FieldLabel. You may need to add it to pkg/search/options.go", fields[0])
 	}
 
@@ -130,6 +130,9 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		if searchField == nil {
 			continue
 		}
+		if searchDataType < 0 {
+			panic(fmt.Sprintf("SearchDataType for field %s is invalid", fieldName))
+		}
 		searchField.Type = searchDataType
 		s.fields[FieldLabel(fieldName)] = searchField
 	}
@@ -159,8 +162,8 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		enumregistry.Add(prefix, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
-	default:
-		panic(fmt.Sprintf("Type %s for field %s is not currently handled", original.Kind(), prefix))
+		return v1.SearchDataType_SEARCH_STRING
 	}
-	return v1.SearchDataType_SEARCH_STRING
+	// TODO(ROX-9291): Add unknown SearchDataType to the enum, move enum definition to go struct.
+	return v1.SearchDataType(-1)
 }

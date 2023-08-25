@@ -5,6 +5,7 @@ import (
 	"text/template"
 
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -36,6 +37,7 @@ const (
 
 	// passedTemplate is a (raw) template for displaying when there are no
 	// failed policies.
+	//#nosec G101 -- This is a false positive
 	passedTemplate = `✔ The scanned resources passed all policies
 `
 
@@ -60,10 +62,10 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	}
 	marshaler := jsonpb.Marshaler{Indent: "  "}
 	if err := marshaler.Marshal(output, bdr); err != nil {
-		return err
+		return errors.Wrap(err, "could not marshal alerts")
 	}
 	if _, err := output.Write([]byte{'\n'}); err != nil {
-		return err
+		return errors.Wrap(err, "could not write alerts")
 	}
 	return nil
 }
@@ -89,7 +91,7 @@ func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforceme
 	} else {
 		t = template.Must(template.New("failed").Funcs(funcMap).Parse(failedTemplate))
 	}
-	return t.Execute(output, templateMap)
+	return errors.Wrap(t.Execute(output, templateMap), "could not render alert policies")
 }
 
 // Pretty is a wrapper around PrettyWithResourceName that gets called with an empty resource name

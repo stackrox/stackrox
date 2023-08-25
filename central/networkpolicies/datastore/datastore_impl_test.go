@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	timestamp "github.com/gogo/protobuf/types"
 	storeMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/mocks"
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNetPolDataStore(t *testing.T) {
@@ -67,7 +68,7 @@ func (s *netPolDataStoreTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.undoStorage = undoStoreMocks.NewMockUndoStore(s.mockCtrl)
 	s.undoDeploymentStorage = undoDeploymentStoreMocks.NewMockUndoDeploymentStore(s.mockCtrl)
-	s.dataStore = New(s.storage, s.undoStorage, s.undoDeploymentStorage)
+	s.dataStore = New(s.storage, nil, s.undoStorage, s.undoDeploymentStorage)
 }
 
 func (s *netPolDataStoreTestSuite) TearDownTest() {
@@ -75,7 +76,7 @@ func (s *netPolDataStoreTestSuite) TearDownTest() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceGet() {
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	netPol, found, err := s.dataStore.GetNetworkPolicy(s.hasNoneCtx, FakeID1)
 	s.NoError(err, "expected an error trying to write without permissions")
@@ -84,12 +85,12 @@ func (s *netPolDataStoreTestSuite) TestEnforceGet() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().AddNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.AddNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
+	err := s.dataStore.UpsertNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.AddNetworkPolicy(s.hasNS1ReadCtx, &storage.NetworkPolicy{})
+	err = s.dataStore.UpsertNetworkPolicy(s.hasNS1ReadCtx, &storage.NetworkPolicy{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
@@ -108,7 +109,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	}
 
 	// Test we can get with NS1 permissions
-	s.storage.EXPECT().GetNetworkPolicy(FakeID1).Return(netPolNm1, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), FakeID1).Return(netPolNm1, true, nil)
 
 	result, found, err := s.dataStore.GetNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.NoError(err)
@@ -116,7 +117,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	s.Equal(result, netPolNm1)
 
 	// Test we can get with NS2 permissions.
-	s.storage.EXPECT().GetNetworkPolicy(FakeID2).Return(netPolNm2, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), FakeID2).Return(netPolNm2, true, nil)
 
 	result, found, err = s.dataStore.GetNetworkPolicy(s.hasNS2ReadCtx, FakeID2)
 	s.NoError(err)
@@ -124,13 +125,13 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	s.Equal(result, netPolNm2)
 
 	// Test we cannot do the opposite.
-	s.storage.EXPECT().GetNetworkPolicies(FakeClusterID, FakeNamespace2).Return([]*storage.NetworkPolicy{netPolNm2}, nil)
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	netPols, err := s.dataStore.GetNetworkPolicies(s.hasNS1ReadCtx, FakeClusterID, FakeNamespace2)
 	s.NoError(err)
 	s.Equal(0, len(netPols))
 
-	s.storage.EXPECT().GetNetworkPolicies(FakeClusterID, FakeNamespace1).Return([]*storage.NetworkPolicy{netPolNm1}, nil)
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 	netPols, err = s.dataStore.GetNetworkPolicies(s.hasNS2ReadCtx, FakeClusterID, FakeNamespace1)
 	s.NoError(err)
@@ -138,49 +139,49 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesUpdate() {
-	s.storage.EXPECT().UpdateNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpdateNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
+	err := s.dataStore.UpsertNetworkPolicy(s.hasNoneCtx, &storage.NetworkPolicy{})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpdateNetworkPolicy(s.hasNS1ReadCtx, &storage.NetworkPolicy{})
+	err = s.dataStore.UpsertNetworkPolicy(s.hasNS1ReadCtx, &storage.NetworkPolicy{})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowsUpdate() {
-	s.storage.EXPECT().UpdateNetworkPolicy(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpdateNetworkPolicy(s.hasWriteCtx, &storage.NetworkPolicy{})
+	err := s.dataStore.UpsertNetworkPolicy(s.hasWriteCtx, &storage.NetworkPolicy{})
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforcesRemove() {
 	// None should be removed...
-	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Times(0)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Times(0)
 
 	// ...whether we have no access...
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	err := s.dataStore.RemoveNetworkPolicy(s.hasNoneCtx, FakeID1)
 	s.Error(err, "expected an error trying to write without permissions")
 
 	// ...or we only have read access.
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
 
 	err = s.dataStore.RemoveNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowsRemove() {
-	s.storage.EXPECT().GetNetworkPolicy(gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
-	s.storage.EXPECT().RemoveNetworkPolicy(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicy{}, true, nil)
+	s.storage.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := s.dataStore.RemoveNetworkPolicy(s.hasWriteCtx, FakeID1)
 	s.NoError(err, "expected no error, should return nil without access")
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
-	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Times(0)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasNoneCtx, FakeID1)
 	s.NoError(err, "expected no error trying to read without permissions")
@@ -192,7 +193,7 @@ func (s *netPolDataStoreTestSuite) TestEnforceGetUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
-	s.undoStorage.EXPECT().GetUndoRecord(gomock.Any()).Return(&storage.NetworkPolicyApplicationUndoRecord{}, true, nil)
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.NetworkPolicyApplicationUndoRecord{}, true, nil)
 
 	_, found, err := s.dataStore.GetUndoRecord(s.hasWriteCtx, FakeClusterID)
 	s.NoError(err, "expected an error trying to write without permissions")
@@ -200,18 +201,40 @@ func (s *netPolDataStoreTestSuite) TestAllowGetUndo() {
 }
 
 func (s *netPolDataStoreTestSuite) TestEnforceUpdateUndo() {
-	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Times(0)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Times(0)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err := s.dataStore.UpsertUndoRecord(s.hasNoneCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.Error(err, "expected an error trying to write without permissions")
 
-	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err = s.dataStore.UpsertUndoRecord(s.hasNS1ReadCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.Error(err, "expected an error trying to write without permissions")
 }
 
 func (s *netPolDataStoreTestSuite) TestAllowUpdateUndo() {
-	s.undoStorage.EXPECT().UpsertUndoRecord(gomock.Any(), gomock.Any()).Return(nil)
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
 
-	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, FakeClusterID, &storage.NetworkPolicyApplicationUndoRecord{})
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID})
 	s.NoError(err, "expected an error trying to write without permissions")
+}
+
+func (s *netPolDataStoreTestSuite) TestAllowUpdateUndoNewer() {
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()}
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
+	s.undoStorage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil)
+
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: timestamp.TimestampNow()})
+	s.NoError(err, "expected an error trying to write without permissions")
+}
+
+func (s *netPolDataStoreTestSuite) TestDisallowUpdateUndoOlder() {
+	oldTS := timestamp.TimestampNow()
+	newTS := timestamp.TimestampNow()
+	// Ensure the timestamps differ
+	newTS.Nanos += 1000
+	oldCluster := &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: newTS}
+	s.undoStorage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(oldCluster, true, nil)
+
+	err := s.dataStore.UpsertUndoRecord(s.hasWriteCtx, &storage.NetworkPolicyApplicationUndoRecord{ClusterId: FakeClusterID, ApplyTimestamp: oldTS})
+	s.Error(err, "expected an error trying to write without permissions")
 }

@@ -1,0 +1,7 @@
+/*
+Removes the right padding in OptionsMenu Popover dropdowns to clear out
+extraneous whitespace
+*/
+.widget-options-menu {
+  --pf-c-popover--c-button--sibling--PaddingRight: 0;
+}

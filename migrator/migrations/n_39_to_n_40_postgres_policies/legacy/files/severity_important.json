@@ -1,0 +1,44 @@
+{
+  "id": "a919ccaf-6b43-4160-ac5d-a405e1440a41",
+  "name": "Fixable Severity at least Important",
+  "description": "Alert on deployments with fixable vulnerabilities with a Severity Rating at least Important",
+  "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
+  "remediation": "Use your package manager to update to a fixed version in future builds or speak with your security team to mitigate the vulnerabilities.",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ],
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Fixed By",
+          "values": [
+            {
+              "value": ".*"
+            }
+          ]
+        },
+        {
+          "fieldName": "Severity",
+          "values": [
+            {
+              "value": ">= IMPORTANT"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

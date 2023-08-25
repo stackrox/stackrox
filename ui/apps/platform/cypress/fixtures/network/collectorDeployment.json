@@ -27,7 +27,7 @@
                         "value": "{\"tlsConfig\":{\"caCertPath\":\"/var/run/secrets/stackrox.io/certs/ca.pem\",\"clientCertPath\":\"/var/run/secrets/stackrox.io/certs/cert.pem\",\"clientKeyPath\":\"/var/run/secrets/stackrox.io/certs/key.pem\"}}",
                         "envVarSource": "RAW"
                     },
-                    { "key": "COLLECTION_METHOD", "value": "KERNEL_MODULE", "envVarSource": "RAW" },
+                    { "key": "COLLECTION_METHOD", "value": "EBPF", "envVarSource": "RAW" },
                     { "key": "GRPC_SERVER", "value": "sensor.stackrox:443", "envVarSource": "RAW" },
                     { "key": "ROX_COMPLIANCE_IN_ROCKSDB", "value": "true", "envVarSource": "RAW" },
                     { "key": "ROX_CSV_EXPORT", "value": "false", "envVarSource": "RAW" },

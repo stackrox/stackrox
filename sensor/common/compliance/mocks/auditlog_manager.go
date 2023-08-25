@@ -7,11 +7,13 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockAuditLogCollectionManager is a mock of AuditLogCollectionManager interface.
@@ -113,6 +115,18 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) ForceUpdate() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForceUpdate", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ForceUpdate))
 }
 
+// Notify mocks base method.
+func (m *MockAuditLogCollectionManager) Notify(arg0 common.SensorComponentEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Notify", arg0)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockAuditLogCollectionManagerMockRecorder) Notify(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Notify), arg0)
+}
+
 // ProcessMessage mocks base method.
 func (m *MockAuditLogCollectionManager) ProcessMessage(arg0 *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
@@ -140,10 +154,10 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) RemoveEligibleComplianceNod
 }
 
 // ResponsesC mocks base method.
-func (m *MockAuditLogCollectionManager) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockAuditLogCollectionManager) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 

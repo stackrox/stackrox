@@ -99,21 +99,49 @@ func (VulnerabilityReportFilters_Fixability) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_541201f82fe9caab, []int{2, 0}
 }
 
+type VulnerabilityReportFilters_ImageType int32
+
+const (
+	VulnerabilityReportFilters_DEPLOYED VulnerabilityReportFilters_ImageType = 0
+	VulnerabilityReportFilters_WATCHED  VulnerabilityReportFilters_ImageType = 1
+)
+
+var VulnerabilityReportFilters_ImageType_name = map[int32]string{
+	0: "DEPLOYED",
+	1: "WATCHED",
+}
+
+var VulnerabilityReportFilters_ImageType_value = map[string]int32{
+	"DEPLOYED": 0,
+	"WATCHED":  1,
+}
+
+func (x VulnerabilityReportFilters_ImageType) String() string {
+	return proto.EnumName(VulnerabilityReportFilters_ImageType_name, int32(x))
+}
+
+func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_541201f82fe9caab, []int{2, 1}
+}
+
 type ReportConfiguration struct {
-	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`
 	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"`
 	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"`
 	// Types that are valid to be assigned to Filter:
 	//	*ReportConfiguration_VulnReportFilters
 	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty"`
+	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"`
 	// Types that are valid to be assigned to NotifierConfig:
 	//	*ReportConfiguration_EmailConfig
 	NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
 	Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
 	LastSuccessfulRunTime *types.Timestamp                     `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
+	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
+	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`
 	XXX_NoUnkeyedLiteral  struct{}                             `json:"-"`
 	XXX_unrecognized      []byte                               `json:"-"`
 	XXX_sizecache         int32                                `json:"-"`
@@ -278,6 +306,27 @@ func (m *ReportConfiguration) GetLastSuccessfulRunTime() *types.Timestamp {
 	return nil
 }
 
+func (m *ReportConfiguration) GetResourceScope() *ResourceScope {
+	if m != nil {
+		return m.ResourceScope
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetNotifiers() []*NotifierConfiguration {
+	if m != nil {
+		return m.Notifiers
+	}
+	return nil
+}
+
+func (m *ReportConfiguration) GetCreator() *SlimUser {
+	if m != nil {
+		return m.Creator
+	}
+	return nil
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*ReportConfiguration) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
@@ -305,6 +354,14 @@ func (m *ReportConfiguration) Clone() *ReportConfiguration {
 	cloned.Schedule = m.Schedule.Clone()
 	cloned.LastRunStatus = m.LastRunStatus.Clone()
 	cloned.LastSuccessfulRunTime = m.LastSuccessfulRunTime.Clone()
+	cloned.ResourceScope = m.ResourceScope.Clone()
+	if m.Notifiers != nil {
+		cloned.Notifiers = make([]*NotifierConfiguration, len(m.Notifiers))
+		for idx, v := range m.Notifiers {
+			cloned.Notifiers[idx] = v.Clone()
+		}
+	}
+	cloned.Creator = m.Creator.Clone()
 	return cloned
 }
 
@@ -386,12 +443,19 @@ func (m *ReportLastRunStatus) Clone() *ReportLastRunStatus {
 }
 
 type VulnerabilityReportFilters struct {
-	Fixability           VulnerabilityReportFilters_Fixability `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
-	SinceLastReport      bool                                  `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport,proto3" json:"since_last_report,omitempty"`
-	Severities           []VulnerabilitySeverity               `protobuf:"varint,3,rep,packed,name=severities,proto3,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
-	XXX_unrecognized     []byte                                `json:"-"`
-	XXX_sizecache        int32                                 `json:"-"`
+	Fixability      VulnerabilityReportFilters_Fixability  `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	SinceLastReport bool                                   `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport,proto3" json:"since_last_report,omitempty"`
+	Severities      []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,proto3,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
+	ImageTypes      []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
+	// Types that are valid to be assigned to CvesSince:
+	//	*VulnerabilityReportFilters_AllVuln
+	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
+	//	*VulnerabilityReportFilters_SinceStartDate
+	CvesSince            isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	AccessScopeRules     []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                               `json:"-"`
+	XXX_unrecognized     []byte                                 `json:"-"`
+	XXX_sizecache        int32                                  `json:"-"`
 }
 
 func (m *VulnerabilityReportFilters) Reset()         { *m = VulnerabilityReportFilters{} }
@@ -427,6 +491,63 @@ func (m *VulnerabilityReportFilters) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_VulnerabilityReportFilters proto.InternalMessageInfo
 
+type isVulnerabilityReportFilters_CvesSince interface {
+	isVulnerabilityReportFilters_CvesSince()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isVulnerabilityReportFilters_CvesSince
+}
+
+type VulnerabilityReportFilters_AllVuln struct {
+	AllVuln bool `protobuf:"varint,5,opt,name=all_vuln,json=allVuln,proto3,oneof" json:"all_vuln,omitempty"`
+}
+type VulnerabilityReportFilters_SinceLastSentScheduledReport struct {
+	SinceLastSentScheduledReport bool `protobuf:"varint,6,opt,name=since_last_sent_scheduled_report,json=sinceLastSentScheduledReport,proto3,oneof" json:"since_last_sent_scheduled_report,omitempty"`
+}
+type VulnerabilityReportFilters_SinceStartDate struct {
+	SinceStartDate *types.Timestamp `protobuf:"bytes,7,opt,name=since_start_date,json=sinceStartDate,proto3,oneof" json:"since_start_date,omitempty"`
+}
+
+func (*VulnerabilityReportFilters_AllVuln) isVulnerabilityReportFilters_CvesSince() {}
+func (m *VulnerabilityReportFilters_AllVuln) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_AllVuln)
+	*cloned = *m
+
+	return cloned
+}
+func (*VulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityReportFilters_CvesSince() {
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_SinceLastSentScheduledReport)
+	*cloned = *m
+
+	return cloned
+}
+func (*VulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
+func (m *VulnerabilityReportFilters_SinceStartDate) Clone() isVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityReportFilters_SinceStartDate)
+	*cloned = *m
+
+	cloned.SinceStartDate = m.SinceStartDate.Clone()
+	return cloned
+}
+
+func (m *VulnerabilityReportFilters) GetCvesSince() isVulnerabilityReportFilters_CvesSince {
+	if m != nil {
+		return m.CvesSince
+	}
+	return nil
+}
+
 func (m *VulnerabilityReportFilters) GetFixability() VulnerabilityReportFilters_Fixability {
 	if m != nil {
 		return m.Fixability
@@ -448,6 +569,50 @@ func (m *VulnerabilityReportFilters) GetSeverities() []VulnerabilitySeverity {
 	return nil
 }
 
+func (m *VulnerabilityReportFilters) GetImageTypes() []VulnerabilityReportFilters_ImageType {
+	if m != nil {
+		return m.ImageTypes
+	}
+	return nil
+}
+
+func (m *VulnerabilityReportFilters) GetAllVuln() bool {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_AllVuln); ok {
+		return x.AllVuln
+	}
+	return false
+}
+
+func (m *VulnerabilityReportFilters) GetSinceLastSentScheduledReport() bool {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceLastSentScheduledReport); ok {
+		return x.SinceLastSentScheduledReport
+	}
+	return false
+}
+
+func (m *VulnerabilityReportFilters) GetSinceStartDate() *types.Timestamp {
+	if x, ok := m.GetCvesSince().(*VulnerabilityReportFilters_SinceStartDate); ok {
+		return x.SinceStartDate
+	}
+	return nil
+}
+
+func (m *VulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_Rules {
+	if m != nil {
+		return m.AccessScopeRules
+	}
+	return nil
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*VulnerabilityReportFilters) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*VulnerabilityReportFilters_AllVuln)(nil),
+		(*VulnerabilityReportFilters_SinceLastSentScheduledReport)(nil),
+		(*VulnerabilityReportFilters_SinceStartDate)(nil),
+	}
+}
+
 func (m *VulnerabilityReportFilters) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -461,6 +626,269 @@ func (m *VulnerabilityReportFilters) Clone() *VulnerabilityReportFilters {
 	if m.Severities != nil {
 		cloned.Severities = make([]VulnerabilitySeverity, len(m.Severities))
 		copy(cloned.Severities, m.Severities)
+	}
+	if m.ImageTypes != nil {
+		cloned.ImageTypes = make([]VulnerabilityReportFilters_ImageType, len(m.ImageTypes))
+		copy(cloned.ImageTypes, m.ImageTypes)
+	}
+	if m.CvesSince != nil {
+		cloned.CvesSince = m.CvesSince.Clone()
+	}
+	if m.AccessScopeRules != nil {
+		cloned.AccessScopeRules = make([]*SimpleAccessScope_Rules, len(m.AccessScopeRules))
+		for idx, v := range m.AccessScopeRules {
+			cloned.AccessScopeRules[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type ResourceScope struct {
+	// Types that are valid to be assigned to ScopeReference:
+	//	*ResourceScope_CollectionId
+	ScopeReference       isResourceScope_ScopeReference `protobuf_oneof:"scope_reference"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *ResourceScope) Reset()         { *m = ResourceScope{} }
+func (m *ResourceScope) String() string { return proto.CompactTextString(m) }
+func (*ResourceScope) ProtoMessage()    {}
+func (*ResourceScope) Descriptor() ([]byte, []int) {
+	return fileDescriptor_541201f82fe9caab, []int{3}
+}
+func (m *ResourceScope) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResourceScope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResourceScope.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResourceScope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResourceScope.Merge(m, src)
+}
+func (m *ResourceScope) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResourceScope) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResourceScope.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResourceScope proto.InternalMessageInfo
+
+type isResourceScope_ScopeReference interface {
+	isResourceScope_ScopeReference()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isResourceScope_ScopeReference
+}
+
+type ResourceScope_CollectionId struct {
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3,oneof" json:"collection_id,omitempty" search:"Collection ID"`
+}
+
+func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
+func (m *ResourceScope_CollectionId) Clone() isResourceScope_ScopeReference {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ResourceScope_CollectionId)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *ResourceScope) GetScopeReference() isResourceScope_ScopeReference {
+	if m != nil {
+		return m.ScopeReference
+	}
+	return nil
+}
+
+func (m *ResourceScope) GetCollectionId() string {
+	if x, ok := m.GetScopeReference().(*ResourceScope_CollectionId); ok {
+		return x.CollectionId
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*ResourceScope) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*ResourceScope_CollectionId)(nil),
+	}
+}
+
+func (m *ResourceScope) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ResourceScope) Clone() *ResourceScope {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ResourceScope)
+	*cloned = *m
+
+	if m.ScopeReference != nil {
+		cloned.ScopeReference = m.ScopeReference.Clone()
+	}
+	return cloned
+}
+
+type NotifierConfiguration struct {
+	// Types that are valid to be assigned to NotifierConfig:
+	//	*NotifierConfiguration_EmailConfig
+	NotifierConfig isNotifierConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
+	// oneof is only used to work around the postgres store limitation. The oneof wrapper can be removed in future
+	// without any impact on the wiring.
+	//
+	// @mandar: "It appears that the DB upserts are encountering failures when handling unset string foreign keys.
+	// My educated assumption is that this might be attributed to the distinction between empty strings and null
+	// values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
+	// unset value, which is a requirement within SQL."
+	//
+	// Types that are valid to be assigned to Ref:
+	//	*NotifierConfiguration_Id
+	Ref                  isNotifierConfiguration_Ref `protobuf_oneof:"ref"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
+}
+
+func (m *NotifierConfiguration) Reset()         { *m = NotifierConfiguration{} }
+func (m *NotifierConfiguration) String() string { return proto.CompactTextString(m) }
+func (*NotifierConfiguration) ProtoMessage()    {}
+func (*NotifierConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_541201f82fe9caab, []int{4}
+}
+func (m *NotifierConfiguration) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NotifierConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NotifierConfiguration.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NotifierConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotifierConfiguration.Merge(m, src)
+}
+func (m *NotifierConfiguration) XXX_Size() int {
+	return m.Size()
+}
+func (m *NotifierConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotifierConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NotifierConfiguration proto.InternalMessageInfo
+
+type isNotifierConfiguration_NotifierConfig interface {
+	isNotifierConfiguration_NotifierConfig()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isNotifierConfiguration_NotifierConfig
+}
+type isNotifierConfiguration_Ref interface {
+	isNotifierConfiguration_Ref()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isNotifierConfiguration_Ref
+}
+
+type NotifierConfiguration_EmailConfig struct {
+	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,1,opt,name=email_config,json=emailConfig,proto3,oneof" json:"email_config,omitempty"`
+}
+type NotifierConfiguration_Id struct {
+	Id string `protobuf:"bytes,2,opt,name=id,proto3,oneof" json:"id,omitempty" sql:"fk(Notifier:id),restrict-delete"`
+}
+
+func (*NotifierConfiguration_EmailConfig) isNotifierConfiguration_NotifierConfig() {}
+func (m *NotifierConfiguration_EmailConfig) Clone() isNotifierConfiguration_NotifierConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotifierConfiguration_EmailConfig)
+	*cloned = *m
+
+	cloned.EmailConfig = m.EmailConfig.Clone()
+	return cloned
+}
+func (*NotifierConfiguration_Id) isNotifierConfiguration_Ref() {}
+func (m *NotifierConfiguration_Id) Clone() isNotifierConfiguration_Ref {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotifierConfiguration_Id)
+	*cloned = *m
+
+	return cloned
+}
+
+func (m *NotifierConfiguration) GetNotifierConfig() isNotifierConfiguration_NotifierConfig {
+	if m != nil {
+		return m.NotifierConfig
+	}
+	return nil
+}
+func (m *NotifierConfiguration) GetRef() isNotifierConfiguration_Ref {
+	if m != nil {
+		return m.Ref
+	}
+	return nil
+}
+
+func (m *NotifierConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
+	if x, ok := m.GetNotifierConfig().(*NotifierConfiguration_EmailConfig); ok {
+		return x.EmailConfig
+	}
+	return nil
+}
+
+func (m *NotifierConfiguration) GetId() string {
+	if x, ok := m.GetRef().(*NotifierConfiguration_Id); ok {
+		return x.Id
+	}
+	return ""
+}
+
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*NotifierConfiguration) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
+		(*NotifierConfiguration_EmailConfig)(nil),
+		(*NotifierConfiguration_Id)(nil),
+	}
+}
+
+func (m *NotifierConfiguration) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NotifierConfiguration) Clone() *NotifierConfiguration {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotifierConfiguration)
+	*cloned = *m
+
+	if m.NotifierConfig != nil {
+		cloned.NotifierConfig = m.NotifierConfig.Clone()
+	}
+	if m.Ref != nil {
+		cloned.Ref = m.Ref.Clone()
 	}
 	return cloned
 }
@@ -477,7 +905,7 @@ func (m *EmailNotifierConfiguration) Reset()         { *m = EmailNotifierConfigu
 func (m *EmailNotifierConfiguration) String() string { return proto.CompactTextString(m) }
 func (*EmailNotifierConfiguration) ProtoMessage()    {}
 func (*EmailNotifierConfiguration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_541201f82fe9caab, []int{3}
+	return fileDescriptor_541201f82fe9caab, []int{5}
 }
 func (m *EmailNotifierConfiguration) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -541,9 +969,12 @@ func init() {
 	proto.RegisterEnum("storage.ReportConfiguration_ReportType", ReportConfiguration_ReportType_name, ReportConfiguration_ReportType_value)
 	proto.RegisterEnum("storage.ReportLastRunStatus_RunStatus", ReportLastRunStatus_RunStatus_name, ReportLastRunStatus_RunStatus_value)
 	proto.RegisterEnum("storage.VulnerabilityReportFilters_Fixability", VulnerabilityReportFilters_Fixability_name, VulnerabilityReportFilters_Fixability_value)
+	proto.RegisterEnum("storage.VulnerabilityReportFilters_ImageType", VulnerabilityReportFilters_ImageType_name, VulnerabilityReportFilters_ImageType_value)
 	proto.RegisterType((*ReportConfiguration)(nil), "storage.ReportConfiguration")
 	proto.RegisterType((*ReportLastRunStatus)(nil), "storage.ReportLastRunStatus")
 	proto.RegisterType((*VulnerabilityReportFilters)(nil), "storage.VulnerabilityReportFilters")
+	proto.RegisterType((*ResourceScope)(nil), "storage.ResourceScope")
+	proto.RegisterType((*NotifierConfiguration)(nil), "storage.NotifierConfiguration")
 	proto.RegisterType((*EmailNotifierConfiguration)(nil), "storage.EmailNotifierConfiguration")
 }
 
@@ -552,54 +983,81 @@ func init() {
 }
 
 var fileDescriptor_541201f82fe9caab = []byte{
-	// 750 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xd1, 0x6e, 0x32, 0x45,
-	0x14, 0x66, 0x81, 0xbf, 0xc0, 0xa1, 0x14, 0x98, 0x56, 0xb3, 0x45, 0x03, 0x64, 0x1b, 0x95, 0x18,
-	0x5d, 0x92, 0xda, 0x2b, 0x2f, 0x9a, 0x94, 0x4a, 0x03, 0x11, 0x69, 0x32, 0x0b, 0x8d, 0x7a, 0xb3,
-	0x59, 0x96, 0x61, 0x3b, 0x71, 0xd9, 0x25, 0x33, 0xb3, 0x4d, 0x79, 0x09, 0xe3, 0xa5, 0x8f, 0xe4,
-	0xa5, 0x4f, 0x60, 0x4c, 0x4d, 0x7c, 0x00, 0x9f, 0xc0, 0xec, 0xec, 0xec, 0x42, 0x9b, 0x56, 0xff,
-	0x3b, 0xe6, 0x3b, 0xe7, 0x7c, 0xe7, 0x7c, 0xe7, 0x7c, 0x2c, 0x18, 0x5c, 0x84, 0xcc, 0xf1, 0x48,
-	0x9f, 0x91, 0x4d, 0xc8, 0x84, 0xed, 0x86, 0xc1, 0x8a, 0x7a, 0x11, 0x73, 0x04, 0x0d, 0x03, 0x73,
-	0xc3, 0x42, 0x11, 0xa2, 0x92, 0xca, 0x69, 0x35, 0xd3, 0x64, 0xf7, 0x81, 0x24, 0xb1, 0xd6, 0x87,
-	0x29, 0xc4, 0xdd, 0x7b, 0xb2, 0x8c, 0xfc, 0x14, 0x3f, 0xf1, 0x42, 0x2f, 0x94, 0x3f, 0xfb, 0xf1,
-	0x2f, 0x85, 0x76, 0xbc, 0x30, 0xf4, 0x7c, 0xd2, 0x97, 0xaf, 0x45, 0xb4, 0xea, 0x0b, 0xba, 0x26,
-	0x5c, 0x38, 0xeb, 0x4d, 0x92, 0x60, 0xfc, 0xf2, 0x0e, 0x8e, 0xb1, 0x9c, 0xe4, 0x7a, 0x7f, 0x10,
-	0x74, 0x04, 0x79, 0xba, 0xd4, 0xb5, 0xae, 0xd6, 0xab, 0xe0, 0x3c, 0x5d, 0xa2, 0x2f, 0xa0, 0x18,
-	0x38, 0x6b, 0xa2, 0xe7, 0x63, 0x64, 0xa0, 0xff, 0xf3, 0x47, 0xe7, 0x84, 0x13, 0x87, 0xb9, 0xf7,
-	0x5f, 0x1b, 0x49, 0x79, 0x77, 0xea, 0xac, 0x89, 0x81, 0x65, 0x16, 0xea, 0x42, 0x75, 0x49, 0xb8,
-	0xcb, 0xe8, 0x26, 0x26, 0xd3, 0x0b, 0x92, 0x66, 0x1f, 0x42, 0x73, 0x28, 0x8a, 0xed, 0x86, 0xe8,
-	0xc5, 0xae, 0xd6, 0x3b, 0x3a, 0xff, 0xcc, 0x54, 0xaa, 0xcc, 0x57, 0x66, 0x51, 0xd8, 0x6c, 0xbb,
-	0x21, 0xaf, 0x36, 0x8e, 0x03, 0x06, 0x96, 0x74, 0x68, 0x0e, 0xc7, 0x0f, 0x91, 0x1f, 0xd8, 0x6a,
-	0xb9, 0x2b, 0xea, 0x0b, 0xc2, 0xb8, 0xfe, 0xae, 0xab, 0xf5, 0xaa, 0xe7, 0x67, 0x59, 0x97, 0xbb,
-	0xc8, 0x0f, 0x08, 0x73, 0x16, 0xd4, 0xa7, 0x62, 0x9b, 0xd0, 0xdc, 0x24, 0xa9, 0xa3, 0x1c, 0x6e,
-	0xc6, 0x0c, 0xcf, 0x40, 0x74, 0x0a, 0x65, 0xee, 0x86, 0x1b, 0x62, 0xd3, 0xa5, 0x7e, 0x20, 0xc5,
-	0x94, 0xe4, 0x7b, 0xbc, 0x44, 0x23, 0x38, 0x24, 0x6b, 0x87, 0xfa, 0xea, 0x90, 0x7a, 0xe9, 0x45,
-	0xab, 0x61, 0x1c, 0x9c, 0x86, 0x82, 0xae, 0x28, 0x61, 0xcf, 0x74, 0x8d, 0x34, 0x5c, 0x95, 0xa5,
-	0x09, 0x8a, 0xbe, 0x8c, 0x9b, 0x24, 0x37, 0xd5, 0xcb, 0x92, 0xa5, 0x99, 0xb1, 0x58, 0x2a, 0x80,
-	0xb3, 0x14, 0xf4, 0x0d, 0xd4, 0x7d, 0x87, 0x0b, 0x9b, 0x45, 0x81, 0xcd, 0x85, 0x23, 0x22, 0xae,
-	0x57, 0x64, 0xd5, 0xc7, 0x2f, 0x96, 0x39, 0x71, 0xb8, 0xc0, 0x51, 0x60, 0xc9, 0x1c, 0x5c, 0xf3,
-	0xf7, 0x9f, 0xc8, 0x02, 0x5d, 0xb2, 0xf0, 0xc8, 0x75, 0x09, 0xe7, 0xab, 0xc8, 0x97, 0x84, 0xb1,
-	0x4d, 0x74, 0x90, 0x74, 0x2d, 0x33, 0xf1, 0x90, 0x99, 0x7a, 0xc8, 0x9c, 0xa5, 0x1e, 0xc2, 0x1f,
-	0xc4, 0xb5, 0x56, 0x56, 0x8a, 0xa3, 0x20, 0x8e, 0x19, 0x1d, 0x80, 0xdd, 0xcd, 0x50, 0x13, 0x6a,
-	0x77, 0xf3, 0xc9, 0x74, 0x88, 0xaf, 0x06, 0xe3, 0xc9, 0x78, 0xf6, 0x43, 0x23, 0x37, 0x28, 0xc3,
-	0x41, 0x72, 0x9a, 0x41, 0x13, 0xea, 0x81, 0x5a, 0x8e, 0xda, 0xa0, 0xf1, 0xb7, 0x96, 0x5a, 0xf2,
-	0xd9, 0xe4, 0xe8, 0x5b, 0xa8, 0xa9, 0xb3, 0x2a, 0xb9, 0x9a, 0xf4, 0xce, 0xa7, 0xff, 0x25, 0xd7,
-	0xdc, 0x09, 0x3f, 0x4c, 0x8a, 0x15, 0xd9, 0x25, 0xd4, 0xb2, 0xed, 0x49, 0xb1, 0xf9, 0xff, 0x15,
-	0x5b, 0x55, 0x9b, 0x8b, 0x11, 0xf4, 0x11, 0x54, 0x08, 0x63, 0x21, 0xb3, 0xd7, 0xdc, 0x53, 0xfe,
-	0x2e, 0x4b, 0xe0, 0x3b, 0xee, 0x19, 0x9f, 0x40, 0x65, 0x37, 0x76, 0x15, 0x4a, 0xd6, 0xfc, 0xfa,
-	0x7a, 0x68, 0x59, 0x8d, 0x5c, 0xfc, 0xb8, 0xb9, 0x1a, 0x4f, 0xe6, 0x78, 0xd8, 0xd0, 0x8c, 0x9f,
-	0xf3, 0xd0, 0x7a, 0xdb, 0x89, 0x68, 0x0a, 0xb0, 0xa2, 0x8f, 0x2a, 0xa4, 0xc4, 0x9a, 0xef, 0x61,
-	0x61, 0xf3, 0x26, 0xab, 0xc2, 0x7b, 0x0c, 0xe8, 0x73, 0x68, 0x72, 0x1a, 0xb8, 0xc4, 0x4e, 0x84,
-	0xcb, 0x12, 0x29, 0xbb, 0x8c, 0xeb, 0x32, 0x20, 0x37, 0x27, 0x61, 0x74, 0x09, 0xc0, 0xc9, 0x03,
-	0x61, 0x54, 0x50, 0xc2, 0xf5, 0x42, 0xb7, 0xd0, 0x3b, 0x3a, 0x6f, 0xbf, 0xde, 0xdb, 0x4a, 0xf2,
-	0xb6, 0x78, 0xaf, 0xc2, 0xb8, 0x00, 0xd8, 0x4d, 0x81, 0xca, 0x50, 0x1c, 0xdc, 0xce, 0x46, 0x4a,
-	0xff, 0xf8, 0xfb, 0xab, 0xc1, 0x64, 0xd8, 0xd0, 0x50, 0x1d, 0xaa, 0xd3, 0xdb, 0x99, 0x9d, 0x02,
-	0x79, 0x63, 0x01, 0xad, 0xb7, 0xff, 0x2e, 0xa8, 0x03, 0xd5, 0xcc, 0x2a, 0xd9, 0xb7, 0x09, 0x52,
-	0x68, 0xbc, 0x44, 0x67, 0x50, 0x8b, 0xab, 0x69, 0xe0, 0xd9, 0x3e, 0xe5, 0x82, 0xeb, 0xf9, 0x6e,
-	0xa1, 0x57, 0xc1, 0x87, 0x0a, 0x9c, 0xc4, 0xd8, 0xe0, 0xe2, 0xb7, 0xa7, 0xb6, 0xf6, 0xfb, 0x53,
-	0x5b, 0xfb, 0xf3, 0xa9, 0xad, 0xfd, 0xfa, 0x57, 0x3b, 0x07, 0xa7, 0x34, 0x34, 0xb9, 0x70, 0xdc,
-	0x9f, 0x58, 0xf8, 0x98, 0xdc, 0x3d, 0x15, 0xfa, 0x63, 0xfa, 0x21, 0x5e, 0x1c, 0x48, 0xfc, 0xab,
-	0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x8c, 0xe4, 0x13, 0x48, 0xbe, 0x05, 0x00, 0x00,
+	// 1175 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x56, 0xdd, 0x6e, 0xdb, 0x46,
+	0x13, 0x15, 0x6d, 0xc7, 0x92, 0x46, 0x92, 0x2d, 0x6f, 0x7e, 0xc0, 0xcf, 0x31, 0x2c, 0x82, 0x41,
+	0xf2, 0x29, 0x45, 0x22, 0x03, 0x69, 0xae, 0xd2, 0x36, 0x80, 0x65, 0xc9, 0x90, 0x50, 0x45, 0x29,
+	0x56, 0x76, 0xda, 0xf4, 0x86, 0xa0, 0xc9, 0x91, 0xb2, 0x08, 0x45, 0xaa, 0xbb, 0x4b, 0x23, 0x7e,
+	0x8a, 0x5e, 0xf4, 0xa6, 0x8f, 0xd2, 0x47, 0xe8, 0x65, 0x9f, 0xc0, 0x28, 0x52, 0xa0, 0x0f, 0xa0,
+	0x27, 0x28, 0x76, 0xf9, 0x23, 0xc9, 0x75, 0x52, 0xdf, 0x89, 0x33, 0x73, 0xce, 0xce, 0xce, 0x9c,
+	0x99, 0x15, 0xd8, 0x42, 0x46, 0xdc, 0x9d, 0xe0, 0x01, 0xc7, 0x59, 0xc4, 0xa5, 0xe3, 0x45, 0xe1,
+	0x98, 0x4d, 0x62, 0xee, 0x4a, 0x16, 0x85, 0xad, 0x19, 0x8f, 0x64, 0x44, 0x8a, 0x69, 0xcc, 0xee,
+	0x4e, 0x16, 0xec, 0x9d, 0x63, 0xe2, 0xdb, 0xbd, 0x97, 0x99, 0x84, 0xf7, 0x0e, 0xfd, 0x38, 0xc8,
+	0xec, 0x77, 0x26, 0xd1, 0x24, 0xd2, 0x3f, 0x0f, 0xd4, 0xaf, 0xd4, 0xda, 0x98, 0x44, 0xd1, 0x24,
+	0xc0, 0x03, 0xfd, 0x75, 0x16, 0x8f, 0x0f, 0x24, 0x9b, 0xa2, 0x90, 0xee, 0x74, 0x96, 0x06, 0x90,
+	0x8c, 0x2e, 0x16, 0xc8, 0xaf, 0xda, 0x78, 0x94, 0xd1, 0xdb, 0x3f, 0x17, 0xe1, 0x36, 0xd5, 0x19,
+	0x1f, 0x2d, 0x27, 0x4c, 0xf6, 0x60, 0x8d, 0xf9, 0xa6, 0x61, 0x19, 0xcd, 0x72, 0xbb, 0x3a, 0xbf,
+	0x6c, 0x94, 0xc4, 0x4f, 0xc1, 0x0b, 0x7b, 0xf6, 0xde, 0xa6, 0x6b, 0xcc, 0x27, 0x4f, 0x60, 0x23,
+	0x74, 0xa7, 0x68, 0xae, 0x69, 0xbf, 0x39, 0xbf, 0x6c, 0xdc, 0x11, 0xe8, 0x72, 0xef, 0xdd, 0x0b,
+	0x3b, 0x21, 0xb3, 0x86, 0xee, 0x14, 0x6d, 0xaa, 0xa3, 0x88, 0x05, 0x15, 0x1f, 0x85, 0xc7, 0xd9,
+	0x4c, 0x51, 0x9b, 0xeb, 0x0a, 0x44, 0x97, 0x4d, 0xe4, 0x14, 0x36, 0xe4, 0xc5, 0x0c, 0xcd, 0x0d,
+	0xcb, 0x68, 0x6e, 0x3d, 0xfb, 0x7f, 0x2b, 0x4d, 0xb4, 0x75, 0x4d, 0x66, 0xa9, 0xed, 0xe4, 0x62,
+	0x86, 0xd7, 0x1e, 0xac, 0x1c, 0x36, 0xd5, 0x74, 0xe4, 0x14, 0x6e, 0x9f, 0xc7, 0x41, 0xe8, 0xa4,
+	0x2d, 0x19, 0xb3, 0x40, 0x22, 0x17, 0xe6, 0x2d, 0xcb, 0x68, 0x56, 0x9e, 0x3d, 0xc8, 0x4f, 0x79,
+	0x13, 0x07, 0x21, 0x72, 0xf7, 0x8c, 0x05, 0x4c, 0x5e, 0x24, 0x34, 0xc7, 0x49, 0x68, 0xaf, 0x40,
+	0x77, 0x14, 0xc3, 0x8a, 0x91, 0xbc, 0x84, 0x92, 0xf0, 0xa2, 0x19, 0x3a, 0xcc, 0x37, 0x37, 0x75,
+	0x05, 0x1e, 0xcc, 0x2f, 0x1b, 0x8d, 0x2c, 0x91, 0xee, 0xf4, 0x0c, 0x7d, 0x1f, 0x7d, 0xeb, 0x28,
+	0x0a, 0x02, 0xf4, 0x54, 0xd2, 0x56, 0xbf, 0x63, 0xd3, 0xa2, 0x06, 0xf5, 0x7d, 0xd2, 0x83, 0x2a,
+	0x4e, 0x5d, 0x16, 0xa4, 0x1a, 0x31, 0x8b, 0x57, 0xf2, 0xe9, 0x2a, 0xe7, 0x30, 0x92, 0x6c, 0xcc,
+	0x90, 0xaf, 0x5c, 0xbe, 0x67, 0xd0, 0x8a, 0x86, 0x26, 0x56, 0xf2, 0x54, 0x65, 0x92, 0xc8, 0xc5,
+	0x2c, 0x69, 0x96, 0x9d, 0x9c, 0x65, 0x94, 0x3a, 0x68, 0x1e, 0x42, 0x3a, 0xb0, 0x1d, 0xb8, 0x42,
+	0x3a, 0x3c, 0x0e, 0x1d, 0x21, 0x5d, 0x19, 0x0b, 0xb3, 0xac, 0x51, 0x7b, 0x57, 0x2a, 0x3e, 0x70,
+	0x85, 0xa4, 0x71, 0x38, 0xd2, 0x31, 0xb4, 0x16, 0x2c, 0x7f, 0x92, 0x11, 0x98, 0x9a, 0x45, 0xc4,
+	0x9e, 0x87, 0x42, 0x8c, 0xe3, 0x40, 0x13, 0x2a, 0x05, 0x9a, 0xa0, 0xe9, 0x76, 0x5b, 0x89, 0x3c,
+	0x5b, 0x99, 0x3c, 0x5b, 0x27, 0x99, 0x3c, 0xe9, 0x5d, 0x85, 0x1d, 0xe5, 0x50, 0x1a, 0x87, 0xca,
+	0x47, 0xbe, 0x81, 0x2d, 0x8e, 0x22, 0x8a, 0xb9, 0x87, 0x8e, 0xae, 0x93, 0x59, 0xd1, 0x54, 0xf7,
+	0x96, 0x32, 0x4b, 0xdc, 0x23, 0xe5, 0xa5, 0x35, 0xbe, 0xfc, 0x49, 0xbe, 0x86, 0x72, 0x98, 0x16,
+	0x4c, 0x98, 0x55, 0x6b, 0xbd, 0x59, 0x79, 0xb6, 0x9f, 0x23, 0xaf, 0x2d, 0x25, 0x5d, 0x00, 0xc8,
+	0x2b, 0x28, 0x7a, 0x1c, 0x5d, 0x19, 0x71, 0xb3, 0x76, 0xb5, 0x8a, 0x01, 0x9b, 0x9e, 0x0a, 0xe4,
+	0x6d, 0x6b, 0x7e, 0xd9, 0xd8, 0xd3, 0x43, 0xc0, 0x26, 0x61, 0xc4, 0xd1, 0x09, 0xdc, 0x33, 0x0c,
+	0x44, 0x53, 0x39, 0xad, 0x7e, 0xe7, 0xb1, 0x4d, 0x33, 0x0e, 0xbb, 0x01, 0xb0, 0x10, 0x29, 0xd9,
+	0x81, 0xda, 0x9b, 0xd3, 0xc1, 0xb0, 0x4b, 0x0f, 0xdb, 0xfd, 0x41, 0xff, 0xe4, 0x6d, 0xbd, 0xd0,
+	0x2e, 0xc1, 0x66, 0xa2, 0xc5, 0xf6, 0x0e, 0x6c, 0x67, 0x69, 0xa4, 0x6a, 0xb0, 0xff, 0x36, 0xb2,
+	0x89, 0x5c, 0xe9, 0x02, 0xf9, 0x16, 0x6a, 0xa9, 0x8e, 0xd3, 0xd6, 0x19, 0x7a, 0x58, 0x1e, 0x7d,
+	0xae, 0x75, 0xad, 0x45, 0x13, 0xab, 0x09, 0x38, 0x25, 0x7b, 0x09, 0xb5, 0x5c, 0x09, 0xba, 0x71,
+	0x6b, 0xff, 0xd9, 0xb8, 0x4a, 0xaa, 0x02, 0xdd, 0xae, 0xfb, 0x50, 0x46, 0xce, 0x23, 0xee, 0x4c,
+	0xc5, 0x24, 0x1d, 0xe8, 0x92, 0x36, 0xbc, 0x12, 0x13, 0xfb, 0x21, 0x94, 0x17, 0x69, 0x57, 0xa0,
+	0x38, 0x3a, 0x3d, 0x3a, 0xea, 0x8e, 0x46, 0xf5, 0x82, 0xfa, 0x38, 0x3e, 0xec, 0x0f, 0x4e, 0x69,
+	0xb7, 0x6e, 0xd8, 0xbf, 0xdc, 0x82, 0xdd, 0x4f, 0x8f, 0x1e, 0x19, 0x02, 0x8c, 0xd9, 0x87, 0xd4,
+	0x95, 0x5e, 0xb6, 0x75, 0x83, 0x99, 0x6d, 0x1d, 0xe7, 0x28, 0xba, 0xc4, 0x40, 0xbe, 0x80, 0x1d,
+	0xc1, 0x42, 0x4f, 0x35, 0x4e, 0x5d, 0x5c, 0x43, 0xf4, 0xb5, 0x4b, 0x74, 0x5b, 0x3b, 0x74, 0xe5,
+	0xb4, 0x99, 0xbc, 0x04, 0x10, 0x78, 0x8e, 0x9c, 0x49, 0x86, 0xc2, 0x5c, 0xb7, 0xd6, 0x9b, 0x5b,
+	0x4b, 0x7a, 0x5a, 0x39, 0x7b, 0x94, 0xc4, 0x5d, 0xd0, 0x25, 0x04, 0x19, 0x42, 0x85, 0x4d, 0xdd,
+	0x09, 0x3a, 0x6a, 0x0d, 0x09, 0x73, 0x43, 0x13, 0x3c, 0xbd, 0x49, 0xf2, 0x7d, 0x05, 0x53, 0xba,
+	0xa1, 0xc0, 0xb2, 0x9f, 0x82, 0xdc, 0x87, 0x92, 0x1b, 0x04, 0x8e, 0x5a, 0x45, 0x7a, 0x7b, 0x95,
+	0x7a, 0x05, 0x5a, 0x74, 0x83, 0x40, 0x11, 0x91, 0x1e, 0x58, 0x4b, 0x17, 0x13, 0x18, 0x4a, 0x27,
+	0x9b, 0x78, 0x3f, 0xbb, 0xe7, 0x66, 0x0a, 0xda, 0xcb, 0x6f, 0x3a, 0xc2, 0x50, 0x66, 0x2b, 0xc2,
+	0x4f, 0xaf, 0x7d, 0x0c, 0xf5, 0x84, 0x49, 0x48, 0x97, 0x4b, 0xc7, 0x77, 0x25, 0xa6, 0xcb, 0xe9,
+	0x33, 0xc2, 0xe8, 0x15, 0xe8, 0x96, 0x46, 0x8d, 0x14, 0xa8, 0xe3, 0x4a, 0x24, 0x43, 0x20, 0xae,
+	0x1e, 0xf0, 0x64, 0x94, 0x1d, 0x1e, 0x07, 0x28, 0xcc, 0x92, 0x1e, 0x4b, 0x6b, 0x31, 0x5a, 0x6c,
+	0x3a, 0x0b, 0xf0, 0x50, 0x07, 0xea, 0x29, 0x6e, 0x51, 0x15, 0x47, 0xeb, 0xee, 0xc2, 0xa4, 0x2d,
+	0xf6, 0x73, 0x80, 0x45, 0x53, 0x49, 0x09, 0x36, 0xda, 0xaf, 0x4f, 0x7a, 0xa9, 0x9c, 0xfa, 0x3f,
+	0x1c, 0xb6, 0x07, 0xdd, 0xba, 0x41, 0xb6, 0xa1, 0x32, 0x7c, 0x7d, 0xe2, 0x64, 0x86, 0x35, 0xfb,
+	0x11, 0x94, 0xf3, 0x6a, 0x92, 0x2a, 0x94, 0x3a, 0xdd, 0xef, 0x06, 0xaf, 0xdf, 0x76, 0x3b, 0x09,
+	0xf0, 0xfb, 0xc3, 0x93, 0xa3, 0x5e, 0xb7, 0x53, 0x37, 0xda, 0x55, 0x00, 0xef, 0x1c, 0x85, 0xa3,
+	0x2f, 0x61, 0x23, 0xd4, 0x56, 0x36, 0x0d, 0x39, 0x84, 0x9a, 0x97, 0x2f, 0x72, 0x27, 0x7f, 0x14,
+	0x77, 0xe7, 0x97, 0x8d, 0x7b, 0xd9, 0xca, 0x5f, 0xdd, 0xf4, 0xbd, 0x02, 0xad, 0x2e, 0x20, 0x7d,
+	0x5f, 0x4d, 0x79, 0x5a, 0x08, 0x1c, 0x23, 0x47, 0x75, 0xcc, 0x6f, 0x06, 0xdc, 0xbd, 0x76, 0x2f,
+	0xfd, 0xeb, 0x75, 0x30, 0x6e, 0xfe, 0x3a, 0x14, 0x56, 0x5f, 0x87, 0xaf, 0xf4, 0x1b, 0x9e, 0xbc,
+	0xd1, 0x8f, 0xe7, 0x97, 0x8d, 0x87, 0x7a, 0x7d, 0x8d, 0xdf, 0x37, 0x33, 0xf4, 0x0b, 0xe6, 0x3f,
+	0x7e, 0xc2, 0x51, 0x48, 0xce, 0x3c, 0xf9, 0xd4, 0xc7, 0x00, 0x25, 0xda, 0x3d, 0x43, 0x3d, 0xf1,
+	0xd7, 0x6c, 0xa6, 0xf6, 0x2d, 0x58, 0xe7, 0x38, 0xb6, 0xcf, 0x60, 0xf7, 0xd3, 0x39, 0x90, 0x06,
+	0x54, 0x72, 0x5c, 0x56, 0x2c, 0x0a, 0x99, 0xa9, 0xef, 0x93, 0x07, 0x50, 0x53, 0x68, 0x16, 0x4e,
+	0x9c, 0x80, 0x09, 0x29, 0xcc, 0x35, 0x6b, 0xbd, 0x59, 0xa6, 0xd5, 0xd4, 0x38, 0x50, 0xb6, 0xf6,
+	0xf3, 0xdf, 0x3f, 0xee, 0x1b, 0x7f, 0x7c, 0xdc, 0x37, 0xfe, 0xfc, 0xb8, 0x6f, 0xfc, 0xfa, 0xd7,
+	0x7e, 0x01, 0xfe, 0xc7, 0xa2, 0x96, 0x90, 0xae, 0xf7, 0x9e, 0x47, 0x1f, 0x12, 0x15, 0x66, 0x15,
+	0xf9, 0x31, 0xfb, 0x5b, 0x75, 0xb6, 0xa9, 0xed, 0x5f, 0xfe, 0x13, 0x00, 0x00, 0xff, 0xff, 0xf5,
+	0xfe, 0x57, 0xa8, 0x8c, 0x09, 0x00, 0x00,
 }
 
 func (m *ReportConfiguration) Marshal() (dAtA []byte, err error) {
@@ -625,6 +1083,44 @@ func (m *ReportConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Creator != nil {
+		{
+			size, err := m.Creator.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x6a
+	}
+	if len(m.Notifiers) > 0 {
+		for iNdEx := len(m.Notifiers) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Notifiers[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x62
+		}
+	}
+	if m.ResourceScope != nil {
+		{
+			size, err := m.ResourceScope.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x5a
 	}
 	if m.LastSuccessfulRunTime != nil {
 		{
@@ -833,21 +1329,62 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if len(m.AccessScopeRules) > 0 {
+		for iNdEx := len(m.AccessScopeRules) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.AccessScopeRules[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x42
+		}
+	}
+	if m.CvesSince != nil {
+		{
+			size := m.CvesSince.Size()
+			i -= size
+			if _, err := m.CvesSince.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if len(m.ImageTypes) > 0 {
+		dAtA10 := make([]byte, len(m.ImageTypes)*10)
+		var j9 int
+		for _, num := range m.ImageTypes {
+			for num >= 1<<7 {
+				dAtA10[j9] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j9++
+			}
+			dAtA10[j9] = uint8(num)
+			j9++
+		}
+		i -= j9
+		copy(dAtA[i:], dAtA10[:j9])
+		i = encodeVarintReportConfiguration(dAtA, i, uint64(j9))
+		i--
+		dAtA[i] = 0x22
+	}
 	if len(m.Severities) > 0 {
-		dAtA8 := make([]byte, len(m.Severities)*10)
-		var j7 int
+		dAtA12 := make([]byte, len(m.Severities)*10)
+		var j11 int
 		for _, num := range m.Severities {
 			for num >= 1<<7 {
-				dAtA8[j7] = uint8(uint64(num)&0x7f | 0x80)
+				dAtA12[j11] = uint8(uint64(num)&0x7f | 0x80)
 				num >>= 7
-				j7++
+				j11++
 			}
-			dAtA8[j7] = uint8(num)
-			j7++
+			dAtA12[j11] = uint8(num)
+			j11++
 		}
-		i -= j7
-		copy(dAtA[i:], dAtA8[:j7])
-		i = encodeVarintReportConfiguration(dAtA, i, uint64(j7))
+		i -= j11
+		copy(dAtA[i:], dAtA12[:j11])
+		i = encodeVarintReportConfiguration(dAtA, i, uint64(j11))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -869,6 +1406,191 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
+func (m *VulnerabilityReportFilters_AllVuln) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_AllVuln) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.AllVuln {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x28
+	return len(dAtA) - i, nil
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.SinceLastSentScheduledReport {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x30
+	return len(dAtA) - i, nil
+}
+func (m *VulnerabilityReportFilters_SinceStartDate) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityReportFilters_SinceStartDate) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SinceStartDate != nil {
+		{
+			size, err := m.SinceStartDate.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ResourceScope) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResourceScope) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResourceScope) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ScopeReference != nil {
+		{
+			size := m.ScopeReference.Size()
+			i -= size
+			if _, err := m.ScopeReference.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResourceScope_CollectionId) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResourceScope_CollectionId) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.CollectionId)
+	copy(dAtA[i:], m.CollectionId)
+	i = encodeVarintReportConfiguration(dAtA, i, uint64(len(m.CollectionId)))
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+func (m *NotifierConfiguration) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NotifierConfiguration) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotifierConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Ref != nil {
+		{
+			size := m.Ref.Size()
+			i -= size
+			if _, err := m.Ref.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	if m.NotifierConfig != nil {
+		{
+			size := m.NotifierConfig.Size()
+			i -= size
+			if _, err := m.NotifierConfig.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NotifierConfiguration_EmailConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotifierConfiguration_EmailConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.EmailConfig != nil {
+		{
+			size, err := m.EmailConfig.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintReportConfiguration(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+func (m *NotifierConfiguration_Id) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotifierConfiguration_Id) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Id)
+	copy(dAtA[i:], m.Id)
+	i = encodeVarintReportConfiguration(dAtA, i, uint64(len(m.Id)))
+	i--
+	dAtA[i] = 0x12
+	return len(dAtA) - i, nil
+}
 func (m *EmailNotifierConfiguration) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -966,6 +1688,20 @@ func (m *ReportConfiguration) Size() (n int) {
 		l = m.LastSuccessfulRunTime.Size()
 		n += 1 + l + sovReportConfiguration(uint64(l))
 	}
+	if m.ResourceScope != nil {
+		l = m.ResourceScope.Size()
+		n += 1 + l + sovReportConfiguration(uint64(l))
+	}
+	if len(m.Notifiers) > 0 {
+		for _, e := range m.Notifiers {
+			l = e.Size()
+			n += 1 + l + sovReportConfiguration(uint64(l))
+		}
+	}
+	if m.Creator != nil {
+		l = m.Creator.Size()
+		n += 1 + l + sovReportConfiguration(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -1038,12 +1774,123 @@ func (m *VulnerabilityReportFilters) Size() (n int) {
 		}
 		n += 1 + sovReportConfiguration(uint64(l)) + l
 	}
+	if len(m.ImageTypes) > 0 {
+		l = 0
+		for _, e := range m.ImageTypes {
+			l += sovReportConfiguration(uint64(e))
+		}
+		n += 1 + sovReportConfiguration(uint64(l)) + l
+	}
+	if m.CvesSince != nil {
+		n += m.CvesSince.Size()
+	}
+	if len(m.AccessScopeRules) > 0 {
+		for _, e := range m.AccessScopeRules {
+			l = e.Size()
+			n += 1 + l + sovReportConfiguration(uint64(l))
+		}
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
 
+func (m *VulnerabilityReportFilters_AllVuln) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
+func (m *VulnerabilityReportFilters_SinceLastSentScheduledReport) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
+func (m *VulnerabilityReportFilters_SinceStartDate) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SinceStartDate != nil {
+		l = m.SinceStartDate.Size()
+		n += 1 + l + sovReportConfiguration(uint64(l))
+	}
+	return n
+}
+func (m *ResourceScope) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ScopeReference != nil {
+		n += m.ScopeReference.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ResourceScope_CollectionId) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.CollectionId)
+	n += 1 + l + sovReportConfiguration(uint64(l))
+	return n
+}
+func (m *NotifierConfiguration) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NotifierConfig != nil {
+		n += m.NotifierConfig.Size()
+	}
+	if m.Ref != nil {
+		n += m.Ref.Size()
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NotifierConfiguration_EmailConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.EmailConfig != nil {
+		l = m.EmailConfig.Size()
+		n += 1 + l + sovReportConfiguration(uint64(l))
+	}
+	return n
+}
+func (m *NotifierConfiguration_Id) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	n += 1 + l + sovReportConfiguration(uint64(l))
+	return n
+}
 func (m *EmailNotifierConfiguration) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1426,6 +2273,112 @@ func (m *ReportConfiguration) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceScope", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ResourceScope == nil {
+				m.ResourceScope = &ResourceScope{}
+			}
+			if err := m.ResourceScope.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notifiers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Notifiers = append(m.Notifiers, &NotifierConfiguration{})
+			if err := m.Notifiers[len(m.Notifiers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Creator", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Creator == nil {
+				m.Creator = &SlimUser{}
+			}
+			if err := m.Creator.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipReportConfiguration(dAtA[iNdEx:])
@@ -1723,6 +2676,387 @@ func (m *VulnerabilityReportFilters) Unmarshal(dAtA []byte) error {
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Severities", wireType)
 			}
+		case 4:
+			if wireType == 0 {
+				var v VulnerabilityReportFilters_ImageType
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportConfiguration
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VulnerabilityReportFilters_ImageType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.ImageTypes = append(m.ImageTypes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowReportConfiguration
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthReportConfiguration
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthReportConfiguration
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.ImageTypes) == 0 {
+					m.ImageTypes = make([]VulnerabilityReportFilters_ImageType, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v VulnerabilityReportFilters_ImageType
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowReportConfiguration
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VulnerabilityReportFilters_ImageType(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.ImageTypes = append(m.ImageTypes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageTypes", wireType)
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllVuln", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &VulnerabilityReportFilters_AllVuln{b}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SinceLastSentScheduledReport", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &VulnerabilityReportFilters_SinceLastSentScheduledReport{b}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SinceStartDate", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &types.Timestamp{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.CvesSince = &VulnerabilityReportFilters_SinceStartDate{v}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportConfiguration(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResourceScope) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportConfiguration
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResourceScope: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResourceScope: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectionId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScopeReference = &ResourceScope_CollectionId{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipReportConfiguration(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NotifierConfiguration) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowReportConfiguration
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NotifierConfiguration: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NotifierConfiguration: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EmailConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &EmailNotifierConfiguration{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.NotifierConfig = &NotifierConfiguration_EmailConfig{v}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowReportConfiguration
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthReportConfiguration
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ref = &NotifierConfiguration_Id{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipReportConfiguration(dAtA[iNdEx:])

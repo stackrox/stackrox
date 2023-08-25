@@ -8,8 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -30,15 +31,16 @@ var _ Provider = (*providerImpl)(nil)
 type providerImpl struct {
 	mutex sync.RWMutex
 
-	storedInfo     storage.AuthProvider
+	storedInfo     *storage.AuthProvider
 	backendFactory BackendFactory
 
 	backend                    Backend
 	backendCreationDone        concurrency.ErrorSignal
 	lastBackendCreationAttempt time.Time
 
-	roleMapper permissions.RoleMapper
-	issuer     tokens.Issuer
+	roleMapper        permissions.RoleMapper
+	issuer            tokens.Issuer
+	attributeVerifier user.AttributeVerifier
 
 	doNotStore bool
 
@@ -59,14 +61,14 @@ func (p *providerImpl) Type() string {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	return p.storedInfo.Type
+	return p.storedInfo.GetType()
 }
 
 func (p *providerImpl) Name() string {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	return p.storedInfo.Name
+	return p.storedInfo.GetName()
 }
 
 func (p *providerImpl) Enabled() bool {
@@ -87,13 +89,16 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	result := p.storedInfo
+	result := p.storedInfo.Clone()
+	if result == nil {
+		result = &storage.AuthProvider{}
+	}
 	if p.backendFactory != nil {
-		result.Config = p.backendFactory.RedactConfig(result.Config)
+		result.Config = p.backendFactory.RedactConfig(result.GetConfig())
 	} else {
 		result.Config = nil
 	}
-	return &result
+	return result
 }
 
 func (p *providerImpl) BackendFactory() BackendFactory {
@@ -117,7 +122,7 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 
 	// Backend factories are not guaranteed to survive product upgrades or restarts.
 	if p.backendFactory == nil {
-		return nil, errorhelpers.NewErrInvariantViolation(
+		return nil, errox.InvariantViolation.CausedBy(
 			"the backend for this authentication provider cannot be instantiated;" +
 				" this is probably because of a recent upgrade or a configuration change")
 	}
@@ -133,7 +138,8 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		// Calling reset on the default value of an ErrorSignal returns true
 		// so this works even in the default case
 		if p.backendCreationDone.Reset() {
-			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(&p.storedInfo), p.storedInfo.GetConfig())
+			go p.createBackendAsync(p.backendFactory, p.storedInfo.GetId(), AllUIEndpoints(p.storedInfo), p.storedInfo.GetConfig(),
+				p.storedInfo.GetClaimMappings())
 
 			p.lastBackendCreationAttempt = time.Now()
 			doneErrSig = p.backendCreationDone.Snapshot()
@@ -154,16 +160,16 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		backend = p.backend
 	})
 	if backend == nil {
-		return nil, utils.Should(errors.New("unexpected: backend was nil"))
+		return nil, utils.ShouldErr(errors.New("unexpected: backend was nil"))
 	}
 	return backend, nil
 }
 
-func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, allUIEndpoints []string, config map[string]string) {
+func (p *providerImpl) createBackendAsync(factory BackendFactory, id string, allUIEndpoints []string, config map[string]string, mappings map[string]string) {
 	ctx, cancel := context.WithTimeout(context.Background(), asyncBackendCreationTimeout)
 	defer cancel()
 
-	backend, err := factory.CreateBackend(ctx, id, allUIEndpoints, config)
+	backend, err := factory.CreateBackend(ctx, id, allUIEndpoints, config, mappings)
 	if err != nil {
 		backend = nil
 	} else if backend == nil {
@@ -198,6 +204,13 @@ func (p *providerImpl) Issuer() tokens.Issuer {
 	return p.issuer
 }
 
+func (p *providerImpl) AttributeVerifier() user.AttributeVerifier {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.attributeVerifier
+}
+
 // Modifier functions.
 //////////////////////
 
@@ -206,10 +219,15 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 		return errProviderDisabled
 	}
 
+	if err := validateTokenProviderUpdate(p.StorageView(), claims); err != nil {
+		return errors.Wrap(err, "token issued prior to provider update cannot be used")
+	}
+
 	backend, err := p.GetOrCreateBackend(ctx)
 	if err != nil {
 		return errors.Wrap(err, "provider is unavailable")
 	}
+
 	return backend.Validate(ctx, claims)
 }
 
@@ -250,7 +268,7 @@ func (p *providerImpl) MergeConfigInto(newCfg map[string]string) map[string]stri
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.
 func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 	return &providerImpl{
-		storedInfo:     *pr.storedInfo.Clone(),
+		storedInfo:     pr.storedInfo.Clone(),
 		backendFactory: pr.backendFactory,
 		backend:        pr.backend,
 		roleMapper:     pr.roleMapper,
@@ -260,7 +278,7 @@ func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 
 // No need to do a deep copy of the 'storedInfo' field here since the 'from' input was created with a deep copy.
 func copyWithoutMutex(to *providerImpl, from *providerImpl) {
-	to.storedInfo = from.storedInfo
+	to.storedInfo = from.storedInfo.Clone()
 	to.backendFactory = from.backendFactory
 	to.backend = from.backend
 	to.roleMapper = from.roleMapper

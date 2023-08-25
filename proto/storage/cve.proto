@@ -23,13 +23,11 @@ enum VulnerabilitySeverity {
     CRITICAL_VULNERABILITY_SEVERITY  = 4;
 }
 
-// Next Tag: 19
+// ******************************
+// This proto is deprecated.
+// ******************************
+// Next Tag: 23
 message CVE {
-    enum ScoreVersion {
-        V2 = 0; // No unset for automatic backwards compatibility
-        V3 = 1;
-        UNKNOWN = 2;
-    }
     enum CVEType {
         UNKNOWN_CVE   = 0;
         IMAGE_CVE     = 1;
@@ -38,34 +36,6 @@ message CVE {
         NODE_CVE      = 4;
         OPENSHIFT_CVE = 5;
     }
-
-    message Reference {
-        string          URI  = 1;
-        repeated string tags = 2;
-    }
-
-    string                    id                    = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
-    float                     cvss                  = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
-    float                     impact_score          = 14 [(gogoproto.moretags) = "search:\"Impact Score\""];
-    // For internal purposes only. This will only be populated prior to upsert into datastore.
-    CVEType                   type                  = 3;
-    repeated CVEType          types                 = 18 [(gogoproto.moretags) = "search:\"CVE Type,store\""];
-    string                    summary               = 4;
-    string                    link                  = 5;
-    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = "search:\"CVE Published On\""];
-    // Time when the CVE was first seen in the system.
-    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = "search:\"CVE Created Time\""];
-    google.protobuf.Timestamp last_modified         = 7;
-    repeated Reference        references            = 8;
-
-    ScoreVersion              score_version         = 9;
-    CVSSV2                    cvss_v2               = 10;
-    CVSSV3                    cvss_v3               = 11;
-
-    bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed\""];
-    google.protobuf.Timestamp suppress_activation   = 16;
-    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = "search:\"CVE Snooze Expiry,hidden\""];
-
     message DistroSpecific {
         VulnerabilitySeverity     severity              = 1;
         float                     cvss                  = 2;
@@ -73,8 +43,120 @@ message CVE {
         CVSSV2                    cvss_v2               = 4;
         CVSSV3                    cvss_v3               = 5;
     }
+    enum ScoreVersion {
+        V2 = 0; // No unset for automatic backwards compatibility
+        V3 = 1;
+        UNKNOWN = 2;
+    }
+    message Reference {
+        string          URI  = 1;
+        repeated string tags = 2;
+    }
+
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE,store"'];
+    // This was CVE which was added as a part of postgres migration.
+    reserved 22;
+    // This was operating system which was added as a part of postgres migration.
+    reserved 21;
+    float                     cvss                  = 2 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    float                     impact_score          = 14 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    // For internal purposes only. This will only be populated prior to upsert into datastore.
+    // Cluster cves are split between k8s and istio. The type info is a relationship attribute and not a property of cve itself.
+    // TODO: Move type to relationship objects.
+
+    CVEType                   type                  = 3 [(gogoproto.moretags) = 'sql:"-"'];
+    repeated CVEType          types                 = 18 [(gogoproto.moretags) = 'search:"CVE Type"'];
+
+    string                    summary               = 4;
+    string                    link                  = 5;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
+    google.protobuf.Timestamp published_on          = 6 [(gogoproto.moretags) = 'search:"CVE Published On"'];
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp created_at            = 15 [(gogoproto.moretags) = 'search:"CVE Created Time"'];
+    google.protobuf.Timestamp last_modified         = 7;
+    repeated Reference        references            = 8;
+
+    ScoreVersion              score_version         = 9;
+    CVSSV2                    cvss_v2               = 10;
+    CVSSV3                    cvss_v3               = 11;
+
+    // TODO: Move suppression field out of CVE object. Maybe create equivalent dummy vulnerability requests.
+    // Unfortunately, although there exists image SAC check on legacy suppress APIs,
+    // one can snooze node and cluster type vulns, so we will have to carry over the support for node and cluster cves.
+
+    bool                      suppressed            = 12 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp suppress_activation   = 16;
+    google.protobuf.Timestamp suppress_expiry       = 17 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+
     map<string, DistroSpecific> distro_specifics    = 19;
-    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = "search:\"Severity\""];
+    VulnerabilitySeverity       severity            = 20 [(gogoproto.moretags) = 'search:"Severity"'];
+}
+
+message CVEInfo {
+    message Reference {
+        string          URI  = 1;
+        repeated string tags = 2;
+    }
+    enum ScoreVersion {
+        V2      = 0; // No unset for automatic backwards compatibility
+        V3      = 1;
+        UNKNOWN = 2;
+    }
+    string                    cve                   = 1 [(gogoproto.moretags) = 'search:"CVE,store" sql:"index=hash"'];
+    string                    summary               = 2;
+    string                    link                  = 3;
+    // This indicates the timestamp when the cve was first published in the cve feeds.
+    google.protobuf.Timestamp published_on          = 4 [(gogoproto.moretags) = 'search:"CVE Published On"'];
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp created_at            = 5 [(gogoproto.moretags) = 'search:"CVE Created Time"'];
+    google.protobuf.Timestamp last_modified         = 6;
+    ScoreVersion              score_version         = 7;
+    CVSSV2                    cvss_v2               = 8;
+    CVSSV3                    cvss_v3               = 9;
+    repeated Reference        references            = 10;
+}
+
+message ImageCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and operating system.
+    CVEInfo                   cve_base_info         = 2;
+    string                    operating_system      = 3 [(gogoproto.moretags) = 'search:"Operating System"'];
+
+    float                     cvss                  = 4 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];
+    float                     impact_score          = 6 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    bool                      snoozed               = 7 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 8;
+    google.protobuf.Timestamp snooze_expiry         = 9 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+}
+
+message NodeCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and operating system.
+    CVEInfo                   cve_base_info         = 2;
+    string                    operating_system      = 3 [(gogoproto.moretags) = 'search:"Operating System"'];
+
+    float                     cvss                  = 4 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    VulnerabilitySeverity     severity              = 5 [(gogoproto.moretags) = 'search:"Severity"'];
+    float                     impact_score          = 6 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    bool                      snoozed               = 7 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 8;
+    google.protobuf.Timestamp snooze_expiry         = 9 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+}
+
+message ClusterCVE {
+    string                    id                    = 1 [(gogoproto.moretags) = 'search:"CVE ID,hidden" sql:"pk,id"'];  // This field is composite of cve and type.
+    CVEInfo                   cve_base_info         = 2;
+
+    float                     cvss                  = 3 [(gogoproto.moretags) = 'search:"CVSS,store"'];
+    VulnerabilitySeverity     severity              = 4 [(gogoproto.moretags) = 'search:"Severity"'];
+    float                     impact_score          = 5 [(gogoproto.moretags) = 'search:"Impact Score"'];
+
+    bool                      snoozed               = 6 [(gogoproto.moretags) = 'search:"CVE Snoozed"'];
+    google.protobuf.Timestamp snooze_start          = 7;
+    google.protobuf.Timestamp snooze_expiry         = 8 [(gogoproto.moretags) = 'search:"CVE Snooze Expiry,hidden"'];
+    CVE.CVEType               type                  = 9 [(gogoproto.moretags) = 'search:"CVE Type"'];
 }
 
 message CVSSV2 {

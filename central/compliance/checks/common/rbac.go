@@ -166,7 +166,7 @@ func hasRBACAPI(cluster *storage.Cluster) bool {
 	return false
 }
 
-// IsABACEnabled checks if ABAC is available.
+// isABACEnabled checks if ABAC is available.
 func isABACEnabled(cluster *storage.Cluster, authorizationMode []string) bool {
 	return hasABACAPI(cluster) && setPkg.NewStringSet(authorizationMode...).Contains("ABAC")
 }

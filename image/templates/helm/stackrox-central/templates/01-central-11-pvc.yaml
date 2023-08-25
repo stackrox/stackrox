@@ -54,7 +54,7 @@ metadata:
 spec:
   {{- if $storageClassName }}
   storageClassName: {{ $storageClassName }}
-  {{- end}}
+  {{- end }}
   accessModes:
     - ReadWriteOnce
   resources:

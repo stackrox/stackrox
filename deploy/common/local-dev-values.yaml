@@ -5,11 +5,23 @@
 central:
   resources:
     requests:
-      cpu: 1
+      cpu: 500m
       memory: 1Gi
     limits:
       cpu: 1
       memory: 4Gi
+
+  db:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+
+  telemetry:
+    enabled: false
 
 scanner:
   replicas: 1

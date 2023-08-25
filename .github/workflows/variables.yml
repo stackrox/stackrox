@@ -1,0 +1,116 @@
+name: Parse Version
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version (A.B.C[-N][-rc.D])
+        type: string
+        required: true
+      assert-format:
+        description: Check for presence of the given version parts
+        type: string
+        default: A.B.C[-N][-rc.D]
+        required: false
+
+    outputs:
+      release:
+        description: Release number (A.B)
+        value: ${{jobs.parse.outputs.release}}
+      patch:
+        description: Patch number (C)
+        value: ${{jobs.parse.outputs.patch}}
+      rc:
+        description: RC number (D)
+        value: ${{jobs.parse.outputs.rc}}
+      name:
+        description: Release name (N)
+        value: ${{jobs.parse.outputs.name}}
+      named-release:
+        description: Release name and minor version (A.B[-N])
+        value: ${{format('{0}{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
+      named-release-patch:
+        description: Release.patch-name (A.B.C[-N])
+        value: ${{format('{0}.{1}{2}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name)}}
+      branch:
+        description: Release branch name (release-A.B[-N])
+        value: ${{format('release-{0}{1}', jobs.parse.outputs.release, jobs.parse.outputs.dash-name)}}
+      docs-branch:
+        description: Documentation branch name
+        value: ${{format('rhacs-docs-{0}.{1}', jobs.parse.outputs.release, jobs.parse.outputs.patch)}}
+      milestone:
+        description: Milestone (A.B.C[-N]-rc.D)
+        value: ${{format('{0}.{1}{2}-rc.{3}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name, jobs.parse.outputs.rc)}}
+      next-milestone:
+        description: Next milestone (A.B.C[-N]-rc.`D+1`)
+        value: ${{format('{0}.{1}{2}-rc.{3}', jobs.parse.outputs.release, jobs.parse.outputs.patch, jobs.parse.outputs.dash-name, jobs.parse.outputs.next-rc)}}
+
+jobs:
+  parse:
+    name: Parse ${{inputs.version}}
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{steps.parse.outputs.release}}
+      patch: ${{steps.parse.outputs.patch}}
+      rc: ${{steps.parse.outputs.rc}}
+      name: ${{steps.parse.outputs.name}}
+      next-rc: ${{steps.parse.outputs.next-rc}}
+      dash-name: ${{steps.parse.outputs.dash-name}}
+    steps:
+      - name: Parse version
+        id: parse
+        shell: python
+        # Allowed versions examples:
+        # 1.2.3
+        # 1.2.3-rc.4
+        # 1.2.3-alnum
+        # 1.2.3-alnum-alnum
+        # 1.2.3-alnum-rc.4
+        run: |
+          import os
+          import re
+          import sys
+
+          RELEASE=r'(?P<release>\d+\.\d+)'
+          PATCH=r'(?P<patch>\d+)'
+          NAME=r'(-(?P<name>\w+(-\w+)*))'
+          RC=r'(-rc\.(?P<rc>\d+))'
+
+          f = '${{ inputs.assert-format }}'
+
+          EXPR = {
+              'A.B.C':            rf'{RELEASE}\.{PATCH}$',
+              'A.B.C-N':          rf'{RELEASE}\.{PATCH}{NAME}$',
+              'A.B.C[-N]':        rf'{RELEASE}\.{PATCH}{NAME}?$',
+              'A.B.C-N-rc.D':     rf'{RELEASE}\.{PATCH}{NAME}{RC}$',
+              'A.B.C-N[-rc.D]':   rf'{RELEASE}\.{PATCH}{NAME}{RC}?$',
+              'A.B.C[-N]-rc.D':   rf'{RELEASE}\.{PATCH}{NAME}?{RC}$',
+              'A.B.C[-N][-rc.D]': rf'{RELEASE}\.{PATCH}{NAME}?{RC}?$',
+              'A.B.0':            rf'{RELEASE}\.0$',
+              'A.B.0-N':          rf'{RELEASE}\.0{NAME}$',
+              'A.B.0[-N]':        rf'{RELEASE}\.0{NAME}?$',
+              'A.B.0-N-rc.D':     rf'{RELEASE}\.0{NAME}{RC}$',
+              'A.B.0-N[-rc.D]':   rf'{RELEASE}\.0{NAME}{RC}?$',
+              'A.B.0[-N]-rc.D':   rf'{RELEASE}\.0{NAME}?{RC}$',
+              'A.B.0[-N][-rc.D]': rf'{RELEASE}\.0{NAME}?{RC}?$',
+          }[f]
+
+          version = '${{ inputs.version }}'
+          m = re.match(EXPR, version)
+          if not m:
+              print(f'::error::Cannot parse "{version}": should be in a form of `{f}`.')
+              exit(1)
+
+          rc = int(m.group('rc') or 1) if '-rc.D' in f else 0
+          name = (m.group('name') if '-N' in f else '') or ''
+
+          data = {
+              'release': m.group('release'),
+              'patch': m.group('patch') if '.C' in f else 0,
+              'name': name,
+              'dash-name': f'-{name}' if name else '',
+              'rc': rc,
+              'next-rc': rc+1
+          }
+
+          with open(os.environ.get('GITHUB_OUTPUT'), mode='a') as f:
+              print('\n'.join(f'{k}={v}' for k,v in data.items()), file=f)

@@ -5,8 +5,12 @@ import orchestratormanager.OrchestratorTypes
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class Env {
+
+    private static final Logger LOG = LoggerFactory.getLogger(this.getClass())
 
     private static final PROPERTIES_FILE = "qa-test-settings.properties"
 
@@ -16,9 +20,19 @@ class Env {
             "ROX_USERNAME": "admin",
     ]
 
-    static final IN_CI = (System.getenv("CI") != null)
-    static final CI_JOBNAME = System.getenv("CIRCLE_JOB")
-    static final CI_TAG = System.getenv("CIRCLE_TAG")
+    static final IN_CI = (System.getenv("CI") == "true")
+    static final CI_JOB_NAME = System.getenv("CI_JOB_NAME")
+    static final BUILD_TAG = System.getenv("BUILD_TAG")
+    static final GATHER_QA_TEST_DEBUG_LOGS = (System.getenv("GATHER_QA_TEST_DEBUG_LOGS") == "true")
+    static final QA_TEST_DEBUG_LOGS = System.getenv("QA_TEST_DEBUG_LOGS") ?: ""
+
+    // REMOTE_CLUSTER_ARCH specifies architecture of a remote cluster on which tests are to be executed
+    // the remote cluster arch can be ppc64le or s390x, default is x86_64
+    static final REMOTE_CLUSTER_ARCH = System.getenv("REMOTE_CLUSTER_ARCH") ?: "x86_64"
+
+    // ONLY_SECURED_CLUSTER specifies that the remote cluster being used to execute tests
+    // only has secured-cluster deployed and connects to a remote central
+    static final ONLY_SECURED_CLUSTER = System.getenv("ONLY_SECURED_CLUSTER") ?: "false"
 
     private static final Env INSTANCE = new Env()
 
@@ -50,7 +64,7 @@ class Env {
         try {
             envVars.load(new FileInputStream(PROPERTIES_FILE))
         } catch (Exception ex) {
-            print "Failed to load extra properties file: ${ex}"
+            LOG.error( "Failed to load extra properties file", ex)
         }
     }
 
@@ -95,7 +109,7 @@ class Env {
                     mostRecent = modTime
                 }
             } catch (Exception ex) {
-                print "" // no-op
+                LOG.debug("error inferOrchestratorType", ex) // no-op
             }
         }
 
@@ -108,7 +122,7 @@ class Env {
                 envVars.put(entry.key, entry.value)
             }
         }
-        println System.getenv()
+        LOG.debug System.getenv().toMapString()
 
         if (isEnvVarEmpty("ROX_PASSWORD")) {
             if (isEnvVarEmpty("CLUSTER")) {
@@ -121,7 +135,7 @@ class Env {
                 BufferedReader br = new BufferedReader(new FileReader(passwordPath))
                 password = br.readLine()
             } catch (Exception ex) {
-                println "Failed to load password for current deployment: ${ex}"
+                LOG.warn("Failed to load password for current deployment", ex)
             }
 
             if (password != null) {
@@ -178,10 +192,6 @@ class Env {
 
     static String mustGetClientCAPath() {
         return mustGet("CLIENT_CA_PATH")
-    }
-
-    static String mustGetCiJobName() {
-        return mustGet("CI_JOB_NAME")
     }
 
     static String mustGetImageTag() {

@@ -1,0 +1,52 @@
+{
+  "id": "9a91b4de-d52e-4d4d-a65e-1e785c3501b1",
+  "name": "Docker CIS 4.7: Alert on Update Instruction",
+  "description": "Ensure update instructions are not used alone in the Dockerfile",
+  "rationale": "Adding update instructions in a single line on the Dockerfile will cause the update layer to be cached. When you then build any image later using the same instruction, this will cause the previously cached update layer to be used, potentially preventing any fresh updates from being applied to later builds.",
+  "remediation": "Use update instructions together with install instructions and version pinning for packages while installing them. This prevents caching and forces the extraction of the required versions.",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox services",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Dockerfile Line",
+          "values": [
+            {
+              "value": "RUN=(/bin/sh -c)?\\s*apk update\\s*"
+            },
+            {
+              "value": "RUN=(/bin/sh -c)?\\s*apt update\\s*"
+            },
+            {
+              "value": "RUN=(/bin/sh -c)?\\s*apt-get update\\s*"
+            },
+            {
+              "value": "RUN=(/bin/sh -c)?\\s*yum update\\s*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

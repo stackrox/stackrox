@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
@@ -22,6 +23,7 @@ import (
 const (
 	rateLimitDuration            = 10 * time.Second
 	indicatorFlushTickerDuration = 1 * time.Minute
+	baselineFlushTickerDuration  = 5 * time.Second
 )
 
 var (
@@ -29,6 +31,7 @@ var (
 )
 
 // A Manager manages deployment/policy lifecycle updates.
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	IndicatorAdded(indicator *storage.ProcessIndicator) error
@@ -37,6 +40,7 @@ type Manager interface {
 	HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 	DeploymentRemoved(deploymentID string) error
 	RemovePolicy(policyID string) error
+	RemoveDeploymentFromObservation(deploymentID string)
 }
 
 // newManager returns a new manager with the injected dependencies.
@@ -55,15 +59,18 @@ func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.
 		deletedDeploymentsCache: deletedDeploymentsCache,
 		processFilter:           filter,
 
-		queuedIndicators: make(map[string]*storage.ProcessIndicator),
+		queuedIndicators:           make(map[string]*storage.ProcessIndicator),
+		deploymentObservationQueue: queue.New(),
 
 		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
 		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
+		baselineFlushTicker:  time.NewTicker(baselineFlushTickerDuration),
 
 		removedOrDisabledPolicies: set.NewStringSet(),
 		processAggregator:         processAggregator,
 	}
 
 	go m.flushQueuePeriodically()
+	go m.flushBaselineQueuePeriodically()
 	return m
 }

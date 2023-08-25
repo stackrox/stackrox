@@ -1,10 +1,13 @@
-import services.SecretService
-import org.junit.experimental.categories.Category
-import groups.BAT
-import objects.Deployment
+import static util.Helpers.withRetry
+
 import io.stackrox.proto.storage.SecretOuterClass.Secret
-import spock.lang.Unroll
+
+import objects.Deployment
+import services.SecretService
 import util.Timer
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class SecretsTest extends BaseSpecification {
 
@@ -12,7 +15,7 @@ class SecretsTest extends BaseSpecification {
         Deployment deploy = new Deployment()
                 .setName (deploymentName)
                 .setNamespace("qa")
-                .setImage ("quay.io/rhacs-eng/qa:busybox")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                 .addLabel ( "app", "test" )
                 .setCommand(["sleep", "600"])
         if (fromEnv) {
@@ -24,7 +27,8 @@ class SecretsTest extends BaseSpecification {
         return deploy
     }
 
-    @Category(BAT)
+    @Tag("BAT")
+    @Tag("COMPATIBILITY")
     def "Verify the secret api can return the secret's information when adding a new secret"() {
         when:
         "Create a Secret"
@@ -41,7 +45,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify the secret item should show the binding deployments (from env var: #fromEnv)"() {
         when:
         "Create a Secret"
@@ -71,7 +75,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify the secret should not show the deleted binding deployment (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
@@ -123,7 +127,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify the secret information should not be infected by the previous secrets (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
@@ -161,7 +165,7 @@ class SecretsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify secrets page should not be messed up when a deployment's secret changed (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"

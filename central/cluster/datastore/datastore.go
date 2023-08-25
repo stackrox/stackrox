@@ -6,39 +6,40 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/role/resources"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/logging"
+	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/simplecache"
 )
 
 var (
-	log        = logging.LoggerForModule()
-	cleanupCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Node, resources.Cluster)))
+	log = logging.LoggerForModule()
 )
 
 // DataStore is the entry point for modifying Cluster data.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
@@ -68,58 +69,62 @@ type DataStore interface {
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
 	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
-	GetClusterDefaults(ctx context.Context) (*storage.Cluster, error)
 }
 
 // New returns an instance of DataStore.
 func New(
-	clusterStorage store.ClusterStore,
-	clusterHealthStorage store.ClusterHealthStore,
-	indexer index.Indexer,
+	clusterStorage clusterStore.Store,
+	clusterHealthStorage clusterHealthStore.Store,
+	clusterCVEs clusterCVEDS.DataStore,
 	ads alertDataStore.DataStore,
+	imageIntegrationStore imageIntegrationDataStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
-	ns nodeDataStore.GlobalDataStore,
+	ns nodeDataStore.DataStore,
 	pods podDataStore.DataStore,
 	ss secretDataStore.DataStore,
 	flows netFlowsDataStore.ClusterDataStore,
 	netEntities netEntityDataStore.EntityDataStore,
+	sads serviceAccountDataStore.DataStore,
+	rds roleDataStore.DataStore,
+	rbds roleBindingDataStore.DataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor,
-	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker,
+	indexer index.Indexer,
 	networkBaselineMgr networkBaselineManager.Manager,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
-		clusterStorage:       clusterStorage,
-		clusterHealthStorage: clusterHealthStorage,
-		indexer:              indexer,
-		searcher:             search.New(clusterStorage, indexer, graphProvider, clusterRanker),
-		alertDataStore:       ads,
-		namespaceDataStore:   namespaceDS,
-		deploymentDataStore:  dds,
-		nodeDataStore:        ns,
-		podDataStore:         pods,
-		secretsDataStore:     ss,
-		netFlowsDataStore:    flows,
-		netEntityDataStore:   netEntities,
-		cm:                   cm,
-		notifier:             notifier,
-		clusterRanker:        clusterRanker,
-		networkBaselineMgr:   networkBaselineMgr,
-
-		idToNameCache: simplecache.New(),
-		nameToIDCache: simplecache.New(),
+		clusterStorage:            clusterStorage,
+		clusterHealthStorage:      clusterHealthStorage,
+		clusterCVEDataStore:       clusterCVEs,
+		alertDataStore:            ads,
+		imageIntegrationDataStore: imageIntegrationStore,
+		namespaceDataStore:        namespaceDS,
+		deploymentDataStore:       dds,
+		nodeDataStore:             ns,
+		podDataStore:              pods,
+		secretsDataStore:          ss,
+		netFlowsDataStore:         flows,
+		netEntityDataStore:        netEntities,
+		serviceAccountDataStore:   sads,
+		roleDataStore:             rds,
+		roleBindingDataStore:      rbds,
+		cm:                        cm,
+		notifier:                  notifier,
+		clusterRanker:             clusterRanker,
+		networkBaselineMgr:        networkBaselineMgr,
+		idToNameCache:             simplecache.New(),
+		nameToIDCache:             simplecache.New(),
 	}
 
-	if err := ds.buildIndex(); err != nil {
+	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
+	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}
 
 	if err := ds.registerClusterForNetworkGraphExtSrcs(); err != nil {
 		return ds, err
 	}
-
-	go ds.cleanUpNodeStore(cleanupCtx)
 	return ds, nil
 }

@@ -68,11 +68,6 @@ const Image = ({ id, entityListType, entityId1, query, entityContext, pagination
                         name
                         layerIndex
                         version
-                        license {
-                            name
-                            type
-                            url
-                        }
                         vulns {
                             cve
                             cvss

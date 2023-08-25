@@ -7,9 +7,10 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDispatcher is a mock of Dispatcher interface.
@@ -36,10 +37,10 @@ func (m *MockDispatcher) EXPECT() *MockDispatcherMockRecorder {
 }
 
 // ProcessEvent mocks base method.
-func (m *MockDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (m *MockDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEvent", obj, oldObj, action)
-	ret0, _ := ret[0].([]*central.SensorEvent)
+	ret0, _ := ret[0].(*component.ResourceEvent)
 	return ret0
 }
 
@@ -266,6 +267,20 @@ func (m *MockDispatcherRegistry) ForRBAC() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForRBAC() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForRBAC", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForRBAC))
+}
+
+// ForRegistryMirrors mocks base method.
+func (m *MockDispatcherRegistry) ForRegistryMirrors() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForRegistryMirrors")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForRegistryMirrors indicates an expected call of ForRegistryMirrors.
+func (mr *MockDispatcherRegistryMockRecorder) ForRegistryMirrors() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForRegistryMirrors", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForRegistryMirrors))
 }
 
 // ForSecrets mocks base method.

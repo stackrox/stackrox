@@ -13,6 +13,12 @@ func SetCurrentDBSequenceNumber(t *testing.T, seqNum int) {
 	internal.CurrentDBVersionSeqNum = seqNum
 }
 
+// SetCurrentMinDBSequenceNumber is used in unit test only
+func SetCurrentMinDBSequenceNumber(t *testing.T, minSeqNum int) {
+	testutils.MustBeInTest(t)
+	internal.MinimumSupportedDBVersionSeqNum = minSeqNum
+}
+
 // SetDBMountPath is used for unit test only
 func SetDBMountPath(t *testing.T, dbPath string) {
 	testutils.MustBeInTest(t)

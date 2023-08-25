@@ -1,50 +1,55 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import { SearchFilter } from 'types/search';
+import queryService from 'utils/queryService';
+import useTableSort from 'hooks/patternfly/useTableSort';
+import { SortOption } from 'types/table';
 import FalsePositiveCVEsTable from './FalsePositiveCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type FalsePositiveCVEsProps = {
     imageId: string;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 };
 
-function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
+const sortFields = ['Severity'];
+const defaultSortOption: SortOption = {
+    field: 'Severity',
+    direction: 'desc',
+};
+
+function FalsePositiveCVEs({
+    imageId,
+    showComponentDetails,
+}: FalsePositiveCVEsProps): ReactElement {
+    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { sortOption, getSortParams } = useTableSort({
+        sortFields,
+        defaultSortOption,
+    });
+
+    const vulnsQuery = queryService.objectToWhereClause({
+        ...searchFilter,
+        'Vulnerability State': 'FALSE_POSITIVE',
+    });
+
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
-        vulnsQuery: 'Vulnerability State:FALSE_POSITIVE',
+        vulnsQuery,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
-            sortOption: {
-                field: 'Severity',
-                reversed: true,
-            },
+            sortOption,
         },
     });
 
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="sm" />
-            </Bullseye>
-        );
-    }
-
     const itemCount = data?.image?.vulnCount || 0;
     const rows = data?.image?.vulns || [];
-
-    if (!isLoading && rows && rows.length === 0) {
-        return (
-            <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No false positive requests were approved." />
-            </PageSection>
-        );
-    }
 
     return (
         <FalsePositiveCVEsTable
@@ -56,6 +61,10 @@ function FalsePositiveCVEs({ imageId }: FalsePositiveCVEsProps): ReactElement {
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
             updateTable={refetchQuery}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
+            getSortParams={getSortParams}
+            showComponentDetails={showComponentDetails}
         />
     );
 }

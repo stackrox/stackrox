@@ -4,15 +4,15 @@
             "id": "f10c2b1c-e6b5-c507-ed6a-a1df642019ff",
             "name": "alpha-amsterdam-1",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "",
                 "providerMetadata": null,
@@ -28,19 +28,20 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "2",
             "healthStatus": {
-                "admissionControlHealthInfo": null,
-                "admissionControlHealthStatus": "UNINITIALIZED",
                 "collectorHealthInfo": null,
+                "admissionControlHealthInfo": null,
                 "sensorHealthStatus": "UNINITIALIZED",
                 "collectorHealthStatus": "UNINITIALIZED",
                 "overallHealthStatus": "UNINITIALIZED",
+                "admissionControlHealthStatus": "UNINITIALIZED",
                 "lastContact": null,
                 "healthInfoComplete": false
             },
@@ -92,7 +93,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {
@@ -123,15 +124,15 @@
             "id": "f342ca31-9271-081c-c40d-4e4cd442707a",
             "name": "epsilon-edison-5",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.48.0",
                 "providerMetadata": {
@@ -159,26 +160,27 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "HEALTHY",
-                "admissionControlHealthInfo": {
-                    "totalReadyPods": 3,
-                    "totalDesiredPods": 3
-                },
                 "collectorHealthInfo": {
-                    "totalReadyPods": 10,
                     "totalDesiredPods": 10,
+                    "totalReadyPods": 10,
                     "totalRegisteredNodes": 12
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 3
                 },
                 "sensorHealthStatus": "UNHEALTHY",
                 "collectorHealthStatus": "HEALTHY",
                 "overallHealthStatus": "UNHEALTHY",
+                "admissionControlHealthStatus": "HEALTHY",
                 "lastContact": "2020-08-31T12:01:00Z",
                 "healthInfoComplete": true
             },
@@ -190,15 +192,15 @@
             "id": "2a226ad1-9f7a-eb6d-b0e5-a0db4ad68161",
             "name": "eta-7",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
@@ -226,26 +228,27 @@
                     "scanInline": false,
                     "disableBypass": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "UNHEALTHY",
-                "admissionControlHealthInfo": {
-                    "totalReadyPods": 1,
-                    "totalDesiredPods": 3
-                },
                 "collectorHealthInfo": {
-                    "totalReadyPods": 3,
                     "totalDesiredPods": 5,
+                    "totalReadyPods": 3,
                     "totalRegisteredNodes": 6
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 1
                 },
                 "sensorHealthStatus": "HEALTHY",
                 "collectorHealthStatus": "UNHEALTHY",
                 "overallHealthStatus": "UNHEALTHY",
+                "admissionControlHealthStatus": "UNHEALTHY",
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
@@ -297,7 +300,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {
@@ -328,15 +331,15 @@
             "id": "e3a8407f-db07-3d01-5371-aeb7159779dd",
             "name": "kappa-kilogramme-10",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
@@ -365,26 +368,27 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "HEALTHY",
-                "admissionControlHealthInfo": {
-                    "totalReadyPods": 3,
-                    "totalDesiredPods": 3
-                },
                 "collectorHealthInfo": {
-                    "totalReadyPods": 10,
                     "totalDesiredPods": 10,
+                    "totalReadyPods": 10,
                     "totalRegisteredNodes": 12
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 3
                 },
                 "sensorHealthStatus": "DEGRADED",
                 "collectorHealthStatus": "HEALTHY",
                 "overallHealthStatus": "DEGRADED",
+                "admissionControlHealthStatus": "HEALTHY",
                 "lastContact": "2020-08-31T12:59:00Z",
                 "healthInfoComplete": true
             },
@@ -436,7 +440,7 @@
                     }
                 },
                 "collector": {
-                    "collectionMethod": "KERNEL_MODULE",
+                    "collectionMethod": "EBPF",
                     "disableTaintTolerations": false,
                     "slimMode": true,
                     "resources": {
@@ -467,15 +471,15 @@
             "id": "4dd3f266-f78c-2cff-788e-4b0e26d5f585",
             "name": "lambda-liverpool-11",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
@@ -511,26 +515,27 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "HEALTHY",
-                "admissionControlHealthInfo": {
-                    "totalReadyPods": 3,
-                    "totalDesiredPods": 3
-                },
                 "collectorHealthInfo": {
-                    "totalReadyPods": 8,
                     "totalDesiredPods": 10,
+                    "totalReadyPods": 8,
                     "totalRegisteredNodes": 12
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 3
                 },
                 "sensorHealthStatus": "HEALTHY",
                 "collectorHealthStatus": "DEGRADED",
                 "overallHealthStatus": "DEGRADED",
+                "admissionControlHealthStatus": "HEALTHY",
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
@@ -542,15 +547,15 @@
             "id": "196eab32-b03a-972a-938e-2cbf265b7490",
             "name": "mu-madegascar-12",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.47.0",
                 "providerMetadata": {
@@ -578,19 +583,20 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "UNAVAILABLE",
-                "admissionControlHealthInfo": null,
                 "collectorHealthInfo": null,
+                "admissionControlHealthInfo": null,
                 "sensorHealthStatus": "HEALTHY",
                 "collectorHealthStatus": "UNAVAILABLE",
                 "overallHealthStatus": "HEALTHY",
+                "admissionControlHealthStatus": "UNAVAILABLE",
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": false
             },
@@ -602,15 +608,15 @@
             "id": "8996128e-e999-ce19-bd68-8eda43ef1d8b",
             "name": "nu-york-13",
             "type": "KUBERNETES_CLUSTER",
+            "labels": {},
             "mainImage": "stackrox/main:latest",
             "collectorImage": "stackrox/collector",
             "centralApiEndpoint": "central.stackrox:443",
             "runtimeSupport": false,
-            "collectionMethod": "KERNEL_MODULE",
-            "DEPRECATEDProviderMetadata": null,
+            "collectionMethod": "EBPF",
             "admissionController": false,
             "admissionControllerUpdates": false,
-            "DEPRECATEDOrchestratorMetadata": null,
+            "admissionControllerEvents": true,
             "status": {
                 "sensorVersion": "3.0.50.0",
                 "providerMetadata": {
@@ -645,26 +651,27 @@
                     "disableBypass": false,
                     "enforceOnUpdates": false
                 },
-                "registryOverride": ""
+                "registryOverride": "",
+                "disableAuditLogs": true
             },
             "tolerationsConfig": {
                 "disabled": false
             },
             "priority": "1",
             "healthStatus": {
-                "admissionControlHealthStatus": "HEALTHY",
-                "admissionControlHealthInfo": {
-                    "totalReadyPods": 3,
-                    "totalDesiredPods": 3
-                },
                 "collectorHealthInfo": {
-                    "totalReadyPods": 7,
                     "totalDesiredPods": 7,
+                    "totalReadyPods": 7,
                     "totalRegisteredNodes": 7
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 3
                 },
                 "sensorHealthStatus": "HEALTHY",
                 "collectorHealthStatus": "HEALTHY",
                 "overallHealthStatus": "HEALTHY",
+                "admissionControlHealthStatus": "HEALTHY",
                 "lastContact": "2020-08-31T13:00:59Z",
                 "healthInfoComplete": true
             },
@@ -672,5 +679,10 @@
             "helmConfig": null,
             "managedBy": "MANAGER_TYPE_MANUAL"
         }
-    ]
+    ],
+    "clusterIdToRetentionInfo": {
+        "f342ca31-9271-081c-c40d-4e4cd442707a": {
+            "daysUntilDeletion": 90
+        }
+    }
 }

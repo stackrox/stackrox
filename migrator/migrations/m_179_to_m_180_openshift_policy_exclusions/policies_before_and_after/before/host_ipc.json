@@ -1,0 +1,33 @@
+{
+  "id": "47cb9e0a-879a-417b-9a8f-de644d7c8a77",
+  "name": "Docker CIS 5.16: Ensure that the host's IPC namespace is not shared",
+  "description": "IPC (POSIX/SysV IPC) namespace provides separation of named shared memory segments, semaphores and message queues. The IPC namespace on the host should therefore not be shared with containers and should remain isolated.",
+  "rationale": "The IPC namespace provides separation of IPC between the host and containers. If the host's IPC namespace is shared with the container, it would allow processes within the container to see all of IPC communications on the host system. This would remove the benefit of IPC level isolation between host and containers. An attacker with access to a container could get access to the host at this level with major consequences. The IPC namespace should therefore not be shared between the host and its containers.",
+  "remediation": "You should not create a deployment with `hostIPC: true`",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Host IPC",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

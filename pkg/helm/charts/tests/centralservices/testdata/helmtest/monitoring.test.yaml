@@ -1,11 +1,15 @@
+values:
+  central:
+    persistence:
+      none: true
 tests:
-- name: monitoring should not be exposed by default
+- name: Central monitoring should not be exposed by default
   expect: |
     [.deployments.central.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)] | assertThat(length == 0)
     [.services.central.spec.ports[] | select(.port == 9090)] | assertThat(length == 0)
     .networkpolicys["central-monitoring"] | assertThat(. == null)
 
-- name: monitoring should be exposed when enabled
+- name: Central monitoring should be exposed when enabled
   set:
     central.exposeMonitoring: true
   expect: |
@@ -16,3 +20,21 @@ tests:
         assertThat(.name == "monitoring")
       ]
     .networkpolicys["central-monitoring"] | assertThat(. != null)
+
+- name: Scanner monitoring should not be exposed by default
+  expect: |
+    [.deployments.scanner.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)] | assertThat(length == 0)
+    [.services.scanner.spec.ports[] | select(.port == 9090)] | assertThat(length == 0)
+    .networkpolicys["scanner-monitoring"] | assertThat(. == null)
+
+- name: Scanner monitoring should be exposed when enabled
+  set:
+    scanner.exposeMonitoring: true
+  expect: |
+    .deployments.scanner.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)
+      | assertThat(.name == "monitoring")
+    .services.scanner.spec.ports[] | select(.port == 9090) | [
+        assertThat(.targetPort == "monitoring"),
+        assertThat(.name == "monitoring")
+      ]
+    .networkpolicys["scanner-monitoring"] | assertThat(. != null)

@@ -5,15 +5,14 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
-	gNodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -50,7 +49,6 @@ type clusterGathererTestSuite struct {
 
 	gatherer                *ClusterGatherer
 	mockClusterDatastore    *clusterMocks.MockDataStore
-	mockGlobalDatastore     *gNodeMocks.MockGlobalDataStore
 	mockNodeDatastore       *nodeMocks.MockDataStore
 	mockNamespaceDatastore  *namespaceMocks.MockDataStore
 	mockConnectionManager   *connectionMocks.MockManager
@@ -61,12 +59,11 @@ type clusterGathererTestSuite struct {
 func (s *clusterGathererTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.mockClusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
-	s.mockGlobalDatastore = gNodeMocks.NewMockGlobalDataStore(s.mockCtrl)
 	s.mockNodeDatastore = nodeMocks.NewMockDataStore(s.mockCtrl)
 	s.mockNamespaceDatastore = namespaceMocks.NewMockDataStore(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
 	s.mockDeploymentDatastore = deploymentMocks.NewMockDataStore(s.mockCtrl)
-	s.gatherer = newClusterGatherer(s.mockClusterDatastore, s.mockGlobalDatastore, s.mockNamespaceDatastore, s.mockConnectionManager, s.mockDeploymentDatastore)
+	s.gatherer = newClusterGatherer(s.mockClusterDatastore, s.mockNodeDatastore, s.mockNamespaceDatastore, s.mockConnectionManager, s.mockDeploymentDatastore)
 }
 
 func (s *clusterGathererTestSuite) TearDownTest() {
@@ -77,9 +74,8 @@ func (s *clusterGathererTestSuite) TearDownTest() {
 // don't have much business logic.  Testing that each field was set is essentially a change detector test.
 func (s *clusterGathererTestSuite) TestGather() {
 	s.mockClusterDatastore.EXPECT().GetClusters(gomock.Any()).Return(mockClusters, nil)
-	s.mockGlobalDatastore.EXPECT().GetClusterNodeStore(gomock.Any(), gomock.Any(), gomock.Any()).Return(s.mockNodeDatastore, nil)
-	s.mockNodeDatastore.EXPECT().ListNodes().Return(nil, nil)
 	s.mockNamespaceDatastore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil)
+	s.mockNodeDatastore.EXPECT().SearchRawNodes(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().GetActiveConnections().Return(nil)
 	clusters := s.gatherer.Gather(context.Background(), true)
 	s.Len(clusters, 1)

@@ -5,13 +5,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -81,24 +82,44 @@ func TestNIST414_Success(t *testing.T) {
 	envSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
-		Fields: &storage.PolicyFields{
-			Env: &storage.KeyValuePolicy{
-				Key:   "FOO_SECRET",
-				Value: "34463",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.EnvironmentVariable,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "=FOO_SECRET=34463",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 	envLowerSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
-		Fields: &storage.PolicyFields{
-			Env: &storage.KeyValuePolicy{
-				Key:   "FOO_Secret_Blah",
-				Value: "34463",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.EnvironmentVariable,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "=FOO_Secret_Blah=34463",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
@@ -179,24 +200,44 @@ func TestNIST414_FAIL(t *testing.T) {
 	envSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
-		Fields: &storage.PolicyFields{
-			Env: &storage.KeyValuePolicy{
-				Key:   "FOO_SECRET",
-				Value: "34463",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.EnvironmentVariable,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "FOO_SECRET=34463",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 	envLowerSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
-		Fields: &storage.PolicyFields{
-			Env: &storage.KeyValuePolicy{
-				Key:   "FOO_secret_Blah",
-				Value: "34463",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.EnvironmentVariable,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "FOO_secret_Blah=34463",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}

@@ -47,6 +47,7 @@ const ListFrontendPaginated = ({
     }
 
     const categories = [searchCategoryTypes[entityType]];
+    const placeholder = `Filter ${pluralize(entityLabels[entityType])}`;
 
     function getRenderComponents(headerComponents, tableRows) {
         const header = `${tableRows.length} ${pluralize(
@@ -57,7 +58,7 @@ const ListFrontendPaginated = ({
         return (
             <PanelNew testid="panel">
                 <PanelHead>
-                    <PanelTitle isUpperCase testid="panel-header" text={header} />
+                    <PanelTitle testid="panel-header" text={header} />
                     <PanelHeadEnd>{headerComponents}</PanelHeadEnd>
                 </PanelHead>
                 <PanelBody>
@@ -89,6 +90,7 @@ const ListFrontendPaginated = ({
                                     : [];
                             return (
                                 <URLSearchInput
+                                    placeholder={placeholder}
                                     className="w-full"
                                     categoryOptions={searchOptions}
                                     categories={categories}

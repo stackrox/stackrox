@@ -11,10 +11,9 @@ var (
 
 func init() {
 	// general
+
 	prometheus.MustRegister(
-		boltOperationHistogramVec,
-		rocksDBOperationHistogramVec,
-		dackboxOperationHistogramVec,
+		pipelinePanicCounter,
 		graphQLOperationHistogramVec,
 		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,
@@ -29,5 +28,12 @@ func init() {
 		datastoreFunctionDurationHistogramVec,
 		functionSegmentDurationHistogramVec,
 		k8sObjectProcessingDuration,
+		postgresOperationHistogramVec,
+		acquireDBConnHistogramVec,
+		clusterMetricsNodeCountGaugeVec,
+		clusterMetricsCPUCapacityGaugeVec,
+		totalOrphanedPLOPCounter,
+		processQueueLengthGauge,
+		sensorEventsDeduperCounter,
 	)
 }

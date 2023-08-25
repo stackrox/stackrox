@@ -1,21 +1,23 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	rocksdbStore "github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,14 +28,14 @@ func TestRiskDataStore(t *testing.T) {
 type RiskDataStoreTestSuite struct {
 	suite.Suite
 
-	bleveIndex bleve.Index
-
-	db *rocksdb.RocksDB
-
 	indexer   index.Indexer
 	searcher  search.Searcher
 	storage   store.Store
 	datastore DataStore
+
+	pool postgres.DB
+
+	optionsMap searchPkg.OptionsMap
 
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
@@ -41,33 +43,26 @@ type RiskDataStoreTestSuite struct {
 
 func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	var err error
-	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
 	suite.Require().NoError(err)
 
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
-
-	suite.db = db
-
-	suite.storage = rocksdbStore.New(db)
-	suite.indexer = index.New(suite.bleveIndex)
-	suite.searcher = search.New(suite.storage, suite.indexer)
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
-	suite.Require().NoError(err)
+	suite.optionsMap = schema.RisksSchema.OptionsMap
 
 	suite.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 	suite.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk)))
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 }
 
 func (suite *RiskDataStoreTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
-	rocksdbtest.TearDownRocksDB(suite.db)
+	suite.pool.Close()
 }
 
 func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
@@ -103,21 +98,22 @@ func (suite *RiskDataStoreTestSuite) TestRiskDataStore() {
 			suite.Require().NoError(err)
 			suite.Require().False(found)
 			suite.Require().Nil(result)
+
 		})
 	}
 
 	scopedAccess := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-			sac.ClusterScopeKeys("FakeClusterID"),
-			sac.NamespaceScopeKeys("FakeNS")))
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
+			sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+			sac.NamespaceScopeKeys(fixtureconsts.Namespace1)))
 
 	scopedAccessForDifferentNamespace := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-			sac.ClusterScopeKeys("FakeClusterID"),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
+			sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 			sac.NamespaceScopeKeys("DifferentNS")))
 
 	suite.Run("GetRiskForDeployment with scoped access", func() {

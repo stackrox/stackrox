@@ -1,11 +1,14 @@
 package debug
 
 import (
+	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -14,7 +17,7 @@ import (
 )
 
 const (
-	diagnosticBundleDownloadTimeout = 20 * time.Second
+	diagnosticBundleDownloadTimeout = 300 * time.Second
 )
 
 // downloadDiagnosticsCommand allows downloading the diagnostics bundle.
@@ -24,11 +27,42 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	var since string
 
 	c := &cobra.Command{
-		Use: "download-diagnostics",
+		Use:   "download-diagnostics",
+		Short: "Download a bundle containing a snapshot of diagnostic information about the platform.",
+		Long:  "Download a bundle containing a snapshot of diagnostic information such as logs from Central and Secured Clusters and other non-sensitive configuration data about the platform.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Downloading diagnostic bundle...")
-			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir,
-				clusters, since)
+			path := "/api/extensions/diagnostics"
+
+			values := url.Values{}
+			for _, cluster := range clusters {
+				values.Add("cluster", cluster)
+			}
+			if since != "" {
+				values.Add("since", since)
+			}
+
+			urlParams := values.Encode()
+			if urlParams != "" {
+				path = fmt.Sprintf("%s?%s", path, urlParams)
+			}
+			err := zipdownload.GetZip(zipdownload.GetZipOptions{
+				Path:       path,
+				Method:     http.MethodGet,
+				Timeout:    flags.Timeout(c),
+				BundleType: "diagnostic",
+				ExpandZip:  false,
+				OutputDir:  outputDir,
+			}, cliEnvironment)
+			if isTimeoutError(err) {
+				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle. 
+Timeout value used was %s, while default timeout value is %s. 
+If your timeout value is less than the default value, use the default value. 
+If your timeout value is more or equal to default value, increase timeout value twice in size.
+To specify timeout, run  'roxctl' command:
+'roxctl central debug download-diagnostics --timeout=<timeout> <other parameters'`, flags.Timeout(c), diagnosticBundleDownloadTimeout)
+			}
+			return err
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
@@ -39,28 +73,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	return c
 }
 
-func retrieveDiagnosticBundle(timeout time.Duration, outputDir string, clusters []string, since string) error {
-	path := "/api/extensions/diagnostics"
-
-	values := url.Values{}
-	for _, cluster := range clusters {
-		values.Add("cluster", cluster)
-	}
-	if since != "" {
-		values.Add("since", since)
-	}
-
-	urlParams := values.Encode()
-	if urlParams != "" {
-		path = fmt.Sprintf("%s?%s", path, urlParams)
-	}
-
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
-		Path:       path,
-		Method:     http.MethodGet,
-		Timeout:    timeout,
-		BundleType: "diagnostic",
-		ExpandZip:  false,
-		OutputDir:  outputDir,
-	})
+func isTimeoutError(err error) bool {
+	var netErr net.Error
+	return (errors.As(err, &netErr) && netErr.Timeout()) || errors.Is(err, context.DeadlineExceeded)
 }

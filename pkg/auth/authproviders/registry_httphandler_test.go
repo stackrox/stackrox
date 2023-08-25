@@ -13,15 +13,14 @@ import (
 	"testing"
 	"time"
 
-	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	perm "github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -37,15 +36,11 @@ type registryProviderCallbackTestSuite struct {
 	suite.Suite
 
 	registry *registryImpl
-	err      error
 	ctx      context.Context
 	writer   *httptest.ResponseRecorder
-	assert   *assert.Assertions
 }
 
 func (s *registryProviderCallbackTestSuite) SetupTest() {
-	s.err = nil
-	s.assert = assert.New(s.T())
 	testAuthProviderStore := &tstAuthProviderStore{}
 	testRoleMapperFactory := &tstRoleMapperFactory{}
 	testTokenIssuerFactory := &tstTokenIssuerFactory{}
@@ -62,10 +57,12 @@ func (s *registryProviderCallbackTestSuite) SetupTest() {
 		roleMapperFactory: testRoleMapperFactory,
 	}
 	s.ctx = context.Background()
-	s.err = s.registry.RegisterBackendFactory(s.ctx, dummyProviderType, newTestAuthProviderBackendFactory)
-	s.assert.Equal(nil, s.err, "backend registration at SetupTest should not trigger errors")
-	s.err = s.registry.Init()
-	s.assert.Equal(nil, s.err, "registry initialization at SetupTest should not trigger errors")
+	err := s.registry.RegisterBackendFactory(s.ctx, dummyProviderType, newTestAuthProviderBackendFactory)
+	s.Require().NoError(err, "backend registration at SetupTest should not trigger errors")
+	err = s.registry.RegisterBackendFactory(s.ctx, dummyAttributeVerifierProviderType, newTestAuthProviderBackendFactory)
+	s.Require().NoError(err, "backend registration at SetupTest should not trigger errors")
+	err = s.registry.Init()
+	s.Require().NoError(err, "registry initialization at SetupTest should not trigger errors")
 	s.writer = httptest.NewRecorder()
 }
 
@@ -76,112 +73,128 @@ func (s *registryProviderCallbackTestSuite) TearDownTest() {
 }
 
 func (s *registryProviderCallbackTestSuite) TestBadCallbackURL() {
-	req, _ := http.NewRequest(http.MethodGet, "some/bad/URL/path", strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, "some/bad/URL/path", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(404, s.writer.Code, "bad path should trigger NotFound error")
+	s.Equal(http.StatusNotFound, s.writer.Code, "bad path should trigger NotFound error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestMissingProviderCallbackURL() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix, strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, urlPrefix, strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(404, s.writer.Code, "missing provider callback request should trigger NotFound error")
+	s.Equal(http.StatusNotFound, s.writer.Code, "missing provider callback request should trigger NotFound error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestNotRegisteredProviderCallbackURL() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+"someotherprovider/callback", strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+"someotherprovider/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(404, s.writer.Code, "provider callback request to not registered provider type "+
+	s.Equal(http.StatusNotFound, s.writer.Code, "provider callback request to not registered provider type "+
 		"should trigger NotFound error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestInvalidProviderIDInRequest() {
 	providerTypeID := "otherprovider"
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	testAuthProviderBackendFactory.registerProcessResponse(providerTypeID, "", nil)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "provider callback request to wrong registered provider type "+
+	s.Equal(http.StatusSeeOther, s.writer.Code, "provider callback request to wrong registered provider type "+
 		"should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "provider callback request to wrong registered "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "provider callback request to wrong registered "+
 		"provider type should redirect to the registry redirect URL")
-	s.assert.Equal(fmt.Sprintf("invalid auth provider ID %q", providerTypeID), redirectURLFragments.Get("error"),
+	s.Equal(fmt.Sprintf("invalid auth provider ID %q", providerTypeID), redirectURLFragments.Get("error"),
 		"provider callback request to wrong registered provider type should issue an explicit error message")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseError() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, "", nil)
 	parsingError := errors.New("authprovider backend parsing error message for test")
 	testAuthProviderBackend.registerProcessHTTPResponse(nil, parsingError)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "error in provider backend request parsing should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "error in provider backend request parsing should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "error in provider backend request parsing "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "error in provider backend request parsing "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(parsingError.Error(), redirectURLFragments.Get("error"),
+	s.Equal(parsingError.Error(), redirectURLFragments.Get("error"),
 		"provider callback should propagate the provider backend parsing error if any")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendParseReturnsEmptyResponse() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, "", nil)
-	// Explicitely generate an empty auth response to trigger identity creation error
+	// Explicitly generate an empty auth response to trigger identity creation error.
 	var authResponse *AuthResponse
 	testAuthProviderBackend.registerProcessHTTPResponse(authResponse, nil)
-	identityCreationError := errors.New("authentication response is empty")
-	identityCreationError = pkgErrors.Wrap(identityCreationError, "cannot create role based identity")
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "invalid input for identity creation should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "invalid input for identity creation should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "invalid input for identity creation "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "invalid input for identity creation "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(identityCreationError.Error(), redirectURLFragments.Get("error"),
+	s.Equal(errox.NoCredentials.CausedBy("authentication response is empty").Error(), redirectURLFragments.Get("error"),
 		"provider callback should propagate the identity creation error if any")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLError() {
 	loginURL := s.registry.loginURL(dummyProviderType)
-	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	testAuthProviderBackend.registerLoginURL("some.url", errors.New("some error"))
 	s.registry.loginHTTPHandler(s.writer, req)
-	s.assert.Equal(500, s.writer.Code, "login URL should return error")
+	s.Equal(http.StatusInternalServerError, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
 	defer func() {
 		_ = body.Close()
 	}()
-	b, _ := io.ReadAll(body)
-	s.assert.Equal("could not get login URL: some error\n", string(b), "login URL should return error")
+	b, err := io.ReadAll(body)
+	s.Require().NoError(err, "error reading body")
+	s.Equal("could not get login URL: some error\n", string(b), "login URL should return error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthProviderBackendLoginURLEmpty() {
 	loginURL := s.registry.loginURL(dummyProviderType)
-	req, _ := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	req, err := http.NewRequest(http.MethodGet, loginURL, strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
 	testAuthProviderBackend.registerLoginURL("", nil)
 	s.registry.loginHTTPHandler(s.writer, req)
-	s.assert.Equal(500, s.writer.Code, "login URL should return error")
+	s.Equal(http.StatusInternalServerError, s.writer.Code, "login URL should return error")
 	body := s.writer.Result().Body
 	defer func() {
 		_ = body.Close()
 	}()
-	b, _ := io.ReadAll(body)
-	s.assert.Equal("empty login URL\n", string(b), "login URL should return error")
+	b, err := io.ReadAll(body)
+	s.Require().NoError(err, "error reading body")
+	s.Equal("empty login URL\n", string(b), "login URL should return error")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithoutRole() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
-	clientState := idputil.AttachTestStateOrEmpty("", true)
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", true, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithoutRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -189,42 +202,50 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithou
 	rolemapping[testUserWithoutRole] = []perm.ResolvedRole{}
 	testRoleMapper.registerRoleMapping(rolemapping)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "callback activated with test mode should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated with test mode should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated with test mode "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated with test mode "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(strconv.FormatBool(true), redirectURLFragments.Get("test"),
+	s.Equal(strconv.FormatBool(true), redirectURLFragments.Get("test"),
 		"callback activated with test mode should have test set to true in the redirect URL metadata")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationTestModeUserWithRoles() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
-	clientState := idputil.AttachTestStateOrEmpty("", true)
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", true, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
-	adminRole := roletest.NewResolvedRoleWithGlobalScope(testUserWithAdminRole, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
 	rolemapping := make(map[string][]perm.ResolvedRole)
 	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
 	testRoleMapper.registerRoleMapping(rolemapping)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "callback activated with test mode should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated with test mode should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated with test mode "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated with test mode "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(strconv.FormatBool(true), redirectURLFragments.Get("test"),
+	s.Equal(strconv.FormatBool(true), redirectURLFragments.Get("test"),
 		"callback activated with test mode should have test set to true in the redirect URL metadata")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithoutRole() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithoutRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
@@ -232,38 +253,98 @@ func (s *registryProviderCallbackTestSuite) TestAuthenticationRejectsUserWithout
 	rolemapping[testUserWithoutRole] = []perm.ResolvedRole{}
 	testRoleMapper.registerRoleMapping(rolemapping)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "callback activated for user without role should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated for user without role should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
 		"should redirect to the registry redirect URL")
-	callbackError := fmt.Errorf("access for this user is not authorized: %w, please contact your system administrator",
-		errorhelpers.ErrNoValidRole)
-	s.assert.Equal(callbackError.Error(), redirectURLFragments.Get("error"),
+	s.Equal(auth.ErrNoValidRole.Error(), redirectURLFragments.Get("error"),
 		"callback activated for user without role should issue an explicit message")
 }
 
 func (s *registryProviderCallbackTestSuite) TestAuthenticationIssuesTokenForUserWithRoles() {
 	urlPrefix := s.registry.providersURLPrefix()
-	req, _ := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
-	clientState := idputil.AttachTestStateOrEmpty("", false)
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
 	testAuthProviderBackendFactory.registerProcessResponse(dummyProviderType, clientState, nil)
 	authRsp := generateAuthResponse(testUserWithAdminRole, nil)
 	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
-	adminRole := roletest.NewResolvedRoleWithGlobalScope(testUserWithAdminRole, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
 	rolemapping := make(map[string][]perm.ResolvedRole)
 	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
 	testRoleMapper.registerRoleMapping(rolemapping)
 	s.registry.providersHTTPHandler(s.writer, req)
-	s.assert.Equal(303, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
 	responseHeaders := s.writer.Header()
-	redirectURL, _ := url.Parse(responseHeaders.Get("Location"))
-	redirectURLFragments, _ := url.ParseQuery(redirectURL.Fragment)
-	s.assert.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user with valid roles "+
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user with valid roles "+
 		"should redirect to the registry redirect URL")
-	s.assert.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
+	s.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
 		"callback activated for user with valid roles should issue a token")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthenticationVerifyRequiredAttributes() {
+	urlPrefix := s.registry.providersURLPrefix()
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
+	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
+	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
+		"name": {"something"},
+	})
+	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
+	rolemapping := make(map[string][]perm.ResolvedRole)
+	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
+	testRoleMapper.registerRoleMapping(rolemapping)
+	s.registry.providersHTTPHandler(s.writer, req)
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	responseHeaders := s.writer.Header()
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user without role "+
+		"should redirect to the registry redirect URL")
+	s.Equal(testDummyTokenData, redirectURLFragments.Get("token"),
+		"callback activated for user with valid roles should issue a token")
+}
+
+func (s *registryProviderCallbackTestSuite) TestAuthenticationMissingRequiredAttributes() {
+	urlPrefix := s.registry.providersURLPrefix()
+	req, err := http.NewRequest(http.MethodGet, urlPrefix+dummyAttributeVerifierProviderType+"/callback", strings.NewReader(""))
+	s.Require().NoError(err, "error creating http request")
+	clientState, err := idputil.AttachStateOrEmpty("", false, "")
+	s.Require().NoError(err, "error attaching state")
+	testAuthProviderBackendFactory.registerProcessResponse(dummyAttributeVerifierProviderType, clientState, nil)
+	authRsp := generateAuthResponse(testUserWithAdminRole, map[string][]string{
+		"name": {"something-else"},
+	})
+	testAuthProviderBackend.registerProcessHTTPResponse(authRsp, nil)
+	adminRole := roletest.NewResolvedRoleWithDenyAll(testUserWithAdminRole, nil)
+	rolemapping := make(map[string][]perm.ResolvedRole)
+	rolemapping[testUserWithAdminRole] = []perm.ResolvedRole{adminRole}
+	testRoleMapper.registerRoleMapping(rolemapping)
+	s.registry.providersHTTPHandler(s.writer, req)
+	s.Equal(http.StatusSeeOther, s.writer.Code, "callback activated for user with valid roles should trigger redirect")
+	responseHeaders := s.writer.Header()
+	redirectURL, err := url.Parse(responseHeaders.Get("Location"))
+	s.Require().NoErrorf(err, "error parsing query %s", responseHeaders.Get("Location"))
+	redirectURLFragments, err := url.ParseQuery(redirectURL.Fragment)
+	s.Require().NoErrorf(err, "error parsing query %s", redirectURL.Fragment)
+	s.Equal(s.registry.redirectURL, redirectURL.Path, "callback activated for user with valid roles "+
+		"should redirect to the registry redirect URL")
+	s.Equal(errox.NoCredentials.CausedBy("required attribute \"name\" did not have the required value").Error(), redirectURLFragments.Get("error"),
+		"callback activated for user without role should issue an explicit message")
 }
 
 /*****************************************************
@@ -276,6 +357,26 @@ const dummyProviderType = "dummy"
 const testUserWithoutRole = "testUserWithoutRole"
 const testUserWithAdminRole = "testUserWithAdminRole"
 const testDummyTokenData = "dummy test token"
+const dummyAttributeVerifierProviderType = "dummyAttributeVerifier"
+
+var mockAuthProviderWithAttributes = &storage.AuthProvider{
+	Id:               dummyAttributeVerifierProviderType,
+	Name:             "dummy auth provider with attribute verifier",
+	Type:             dummyAttributeVerifierProviderType,
+	UiEndpoint:       "",
+	Enabled:          true,
+	Config:           nil,
+	LoginUrl:         "",
+	Validated:        true,
+	ExtraUiEndpoints: []string{},
+	RequiredAttributes: []*storage.AuthProvider_RequiredAttribute{
+		{
+			AttributeKey:   "name",
+			AttributeValue: "something",
+		},
+	},
+	Active: true,
+}
 
 var mockAuthProvider = &storage.AuthProvider{
 	Id:               dummyProviderType,
@@ -290,6 +391,11 @@ var mockAuthProvider = &storage.AuthProvider{
 	Active:           true,
 }
 
+var mockedAuthProviders = []*storage.AuthProvider{
+	mockAuthProvider,
+	mockAuthProviderWithAttributes,
+}
+
 func generateAuthResponse(user string, userAttr map[string][]string) *AuthResponse {
 	return &AuthResponse{
 		Claims: &tokens.ExternalUserClaim{
@@ -302,11 +408,26 @@ func generateAuthResponse(user string, userAttr map[string][]string) *AuthRespon
 	}
 }
 
-// Authprovider store (needed for NewStoreBackedRegistry)
+var _ Store = (*tstAuthProviderStore)(nil)
+
+// AuthProvider store (needed for NewStoreBackedRegistry)
 type tstAuthProviderStore struct{}
 
-func (*tstAuthProviderStore) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
-	return []*storage.AuthProvider{mockAuthProvider}, nil
+func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*storage.AuthProvider, bool, error) {
+	for _, ap := range mockedAuthProviders {
+		if ap.GetId() == id {
+			return ap, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
+func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
+	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
+}
+
+func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
+	return nil, nil
 }
 
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {
@@ -317,7 +438,7 @@ func (*tstAuthProviderStore) UpdateAuthProvider(_ context.Context, _ *storage.Au
 	return nil
 }
 
-func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string) error {
+func (*tstAuthProviderStore) RemoveAuthProvider(_ context.Context, _ string, _ bool) error {
 	return nil
 }
 
@@ -387,7 +508,7 @@ func (*tstAuthProviderBackend) Config() map[string]string {
 	return nil
 }
 
-func (b *tstAuthProviderBackend) LoginURL(_ string, r *requestinfo.RequestInfo) (string, error) {
+func (b *tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return b.loginURL, b.err
 }
 
@@ -395,9 +516,9 @@ func (*tstAuthProviderBackend) RefreshURL() string {
 	return "refresh"
 }
 
-func (*tstAuthProviderBackend) OnEnable(provider Provider) {}
+func (*tstAuthProviderBackend) OnEnable(_ Provider) {}
 
-func (*tstAuthProviderBackend) OnDisable(provider Provider) {}
+func (*tstAuthProviderBackend) OnDisable(_ Provider) {}
 
 func (b *tstAuthProviderBackend) ProcessHTTPRequest(_ http.ResponseWriter,
 	_ *http.Request) (*AuthResponse, error) {
@@ -431,8 +552,7 @@ func (f *tstAuthProviderBackendFactory) registerProcessResponse(providerID strin
 	f.err = err
 }
 
-func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string,
-	_ map[string]string) (Backend, error) {
+func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string, _ []string, _ map[string]string, _ map[string]string) (Backend, error) {
 	return testAuthProviderBackend, nil
 }
 

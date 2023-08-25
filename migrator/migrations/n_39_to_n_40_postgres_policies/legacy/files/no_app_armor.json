@@ -1,0 +1,33 @@
+{
+  "id": "7448b475-8e80-4ece-bc9b-b9845c003a6f",
+  "name": "Docker CIS 5.1 Ensure that, if applicable, an AppArmor Profile is enabled",
+  "description": "AppArmor is an effective and easy-to-use Linux application security system. It is available on some Linux distributions by default, for example, on Debian and Ubuntu.",
+  "rationale": "AppArmor protects the Linux OS and applications from various threats by enforcing a security policy which is also known as an AppArmor profile. You can create your own AppArmor profile for containers or use Docker's default profile. Enabling this feature enforces security policies on containers as defined in the profile.",
+  "remediation": "If AppArmor is applicable for your Linux OS, you should enable it.  Verify AppArmor is installed, create or import an AppArmor profile for your containers, enable enforcement of the policy, and add the appropriate AppArmor annotations to your deployment.",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "AppArmor Profile",
+          "values": [
+            {
+              "value": "unconfined"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

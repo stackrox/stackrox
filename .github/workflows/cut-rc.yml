@@ -1,0 +1,323 @@
+name: Cut RC
+on:
+  milestone:
+    types:
+      - closed
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Full RC version (A.B.C[-N]-rc.D)
+        required: true
+        default: 0.0.0-test-rc.1
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
+      create-k8s-cluster:
+        description: Create a GKE demo cluster
+        required: true
+        default: true
+        type: boolean
+      create-os4-cluster:
+        description: Create an Openshift 4 demo cluster
+        required: true
+        default: true
+        type: boolean
+      create-long-cluster:
+        description: Create a long-running cluster on RC1
+        required: true
+        default: true
+        type: boolean
+      check-jira-issues:
+        description: Check Jira issues for current release
+        required: true
+        default: true
+        type: boolean
+
+env:
+  main_branch: ${{github.event.repository.default_branch}}
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
+
+run-name: >-
+  ${{
+    format('Cut {0}{1}{2}',
+      github.event.milestone.title,
+      inputs.version,
+      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+    )
+  }}
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
+jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
+      jira-projects: ${{ steps.fetch.outputs.jira-projects }}
+    steps:
+      - name: Read workflow properties file
+        id: fetch
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          echo "Event: ${{github.event_name}}" >>"$GITHUB_STEP_SUMMARY"
+          if [ "${{github.event_name}}" = "workflow_dispatch" ]; then
+            cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{toJSON(inputs)}}
+          \`\`\`
+          EOF
+          fi
+
+  variables:
+    name: Setup variables
+    uses: ./.github/workflows/variables.yml
+    with:
+      version: ${{format('{0}{1}', github.event.milestone.title, github.event.inputs.version)}}
+      assert-format: A.B.C[-N]-rc.D
+
+  check-jira:
+    name: Check Jira tickets for release
+    needs: [variables, properties]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query JIRA
+        if: github.event.inputs.check-jira-issues == 'true'
+        env:
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-issues \
+            "${{needs.properties.outputs.jira-projects}}" \
+            "${{needs.variables.outputs.release}}" \
+            "${{needs.variables.outputs.patch}}" \
+            "${{needs.variables.outputs.named-release-patch}}"
+
+  postpone-prs:
+    name: Postpone open PRs
+    needs: variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check open PRs
+        id: check
+        run: |
+          set -u
+          PRs=$(gh pr list -s open \
+          --repo "${{github.repository}}" \
+          --search "milestone:${{needs.variables.outputs.milestone}}" \
+          --json number \
+          --jq length)
+          if [ "$PRs" -gt 0 ]; then
+            echo "open-issues=$PRs" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create next milestone
+        if: env.DRY_RUN == 'false' && steps.check.outputs.open-issues != ''
+        run: |
+          set -u
+          if ! RESPONSE=$(gh api -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f title="${{needs.variables.outputs.next-milestone}}" \
+            2>&1); then
+            if grep "HTTP 422" <<< "$RESPONSE"; then
+              echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $RESPONSE"
+              exit 1
+            fi
+          else
+            NEXT_MILESTONE_URL=$(echo "${RESPONSE}" | jq -r '.html_url')
+            echo ":arrow_right: Close the newly created [milestone ${{ needs.variables.outputs.next-milestone }}](${NEXT_MILESTONE_URL}) when ready, or delete it when finishing the release." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Move open PRs
+        run: |
+          set -u
+          PRS=$(gh pr list -s open \
+            --repo "${{github.repository}}" \
+            --search "milestone:${{needs.variables.outputs.milestone}}" \
+            --json number \
+            --jq ".[] | .number")
+
+          echo "The following PRs are still open: $PRS"
+
+          for PR in $PRS; do
+            [ "$DRY_RUN" = "false" ] && \
+            gh pr edit "$PR" \
+              --milestone "${{needs.variables.outputs.next-milestone}}" \
+              --repo "${{github.repository}}"
+
+            echo "PR $PR has been moved to milestone ${{needs.variables.outputs.next-milestone}}." >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  cut-rc:
+    name: Tag RC for milestone ${{needs.variables.outputs.milestone}}
+    runs-on: ubuntu-latest
+    needs: [variables, properties, postpone-prs, check-jira]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{needs.variables.outputs.branch}}
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+      - run: |
+          # Could be optimized: done only if there are closed PRs to cherry-pick
+          git fetch origin ${{env.main_branch}}:${{env.main_branch}} --unshallow
+      - name: Cherry-pick commits from the main branch
+        id: cherry-pick
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            cherry-pick \
+            "${{needs.variables.outputs.milestone}}" \
+            "${{needs.variables.outputs.branch}}" \
+            "${{needs.variables.outputs.named-release-patch}}"
+
+      - name: Post to Slack about picked cherries
+        if: failure() && steps.cherry-pick.outputs.bad-cherries != ''
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            {
+              "text": "Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>. See workflow run <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> for details.",
+
+              "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}:
+            *Couldn't close upstream milestone ${{needs.variables.outputs.milestone}} on <${{github.server_url}}/${{github.repository}}|${{github.repository}}>.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            "*Couldn't cherry-pick the following PRs
+            to the release branch:*\n\n${{steps.cherry-pick.outputs.bad-cherries}}" }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: *Please assist the PR assignees in merging their changes to `${{needs.variables.outputs.branch}}` branch
+            and then re-run failed jobs of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|workflow run>.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ">
+            Repository: <${{github.server_url}}/${{github.repository}}|${{github.repository}}>\n>
+            Milestone: <${{github.event.milestone.html_url}}|${{needs.variables.outputs.milestone}}>\n>
+            Workflow: <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}>" }}
+            ]}
+
+      - name: Tag release branch with "${{needs.variables.outputs.milestone}}"
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            tag-rc \
+            "${{needs.variables.outputs.milestone}}"
+
+      - name: Create next milestone
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -u
+          if ! http_code=$(gh api --silent -X POST \
+            "repos/${{github.repository}}/milestones" \
+            -f title="${{needs.variables.outputs.next-milestone}}" \
+            2>&1); then
+
+            if grep "HTTP 422" <<< "$http_code"; then
+              echo "Milestone ${{needs.variables.outputs.next-milestone}} already exists." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Couldn't create milestone ${{needs.variables.outputs.next-milestone}}: $http_code"
+              exit 1
+            fi
+          else
+            echo ":arrow_right: Close the newly created milestone [${{needs.variables.outputs.next-milestone}}](${{github.event.milestone.html_url}}) when ready." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create GitHub Pre-release
+        id: pre-release
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            create-release \
+            "${{ needs.variables.outputs.milestone }}" \
+            "true"
+
+      - run: |
+          echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            {
+              "text": "Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub",
+
+              "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
+            *Upstream release candidate <${{steps.pre-release.outputs.url}}|${{needs.variables.outputs.milestone}}>
+            of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub*" }},
+
+            { "type": "divider" },
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: Once all checks pass and you're ready for release,
+            run the <${{ github.server_url }}/${{ github.repository }}/actions/workflows/finish-release.yml|Finish Release>
+            workflow and delete the `${{ needs.variables.outputs.next-milestone }}`
+            milestone to avoid confusion." }}
+            ]}
+
+  clusters:
+    name: Setup demo clusters
+    secrets: inherit
+    needs: [variables, cut-rc]
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    if: >- # Skip if no clusters are going to be created.
+      github.event.inputs.create-k8s-cluster != 'false' ||
+      github.event.inputs.create-os4-cluster != 'false' ||
+      needs.variables.outputs.rc == '1' &&
+      github.event.inputs.create-long-cluster != 'false'
+    with:
+      version: ${{needs.variables.outputs.milestone}}
+      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster == 'true'}}
+      create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
+      create-long-cluster: ${{needs.variables.outputs.rc == '1' && github.event.inputs.create-long-cluster == 'true'}}
+      dry-run: ${{github.event.inputs.dry-run == 'true'}}
+      workflow-ref: v1
+      kube-burner-config-ref: ${{needs.variables.outputs.milestone}}
+      kube-burner-config-repo: stackrox
+      cluster-with-fake-load-name: gke-long-running-fake-load-${{needs.variables.outputs.milestone}}
+      cluster-with-real-load-name: gke-long-running-real-load-${{needs.variables.outputs.milestone}}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,19 +14,10 @@ func TestIdentity(t *testing.T) {
 
 type identityTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *identityTestSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *identityTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *identityTestSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 

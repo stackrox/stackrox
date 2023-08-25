@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/golang/mock/gomock"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	mockImagesDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
 	mockNamespaceDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCVEMatcher(t *testing.T) {

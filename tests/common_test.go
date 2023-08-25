@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -32,7 +33,7 @@ var (
 
 //lint:ignore U1000 Ignore unused code check since this function could be useful in future.
 func assumeFeatureFlagHasValue(t *testing.T, featureFlag features.FeatureFlag, assumedValue bool) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	featureService := v1.NewFeatureFlagServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -71,8 +72,40 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
+func waitForDeploymentCount(t testutils.T, query string, count int) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	service := v1.NewDeploymentServiceClient(conn)
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			deploymentCount, err := service.CountDeployments(ctx, &v1.RawQuery{Query: query})
+			cancel()
+			if err != nil {
+				log.Errorf("Error listing deployments: %s", err)
+				continue
+			}
+			if deploymentCount.GetCount() == int32(count) {
+				return
+			}
+
+		case <-timer.C:
+			t.Fatalf("Timed out waiting for deployments %q", query)
+		}
+	}
+
+}
+
 func waitForDeployment(t testutils.T, deploymentName string) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -118,7 +151,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 }
 
 func waitForTermination(t testutils.T, deploymentName string) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -152,12 +185,15 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-// The deploymentName must be copied form the file path passed in
-func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
+func applyFile(t testutils.T, path string) {
 	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
+}
 
+// The deploymentName must be copied form the file path passed in
+func setupDeploymentFromFile(t testutils.T, deploymentName, path string) {
+	applyFile(t, path)
 	waitForDeployment(t, deploymentName)
 }
 
@@ -181,7 +217,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	cmd := exec.Command(`kubectl`, `set`, `image`, fmt.Sprintf("deployment/%s", deploymentName), fmt.Sprintf("%s=%s", containerName, image))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDeploymentServiceClient(conn)
 
 	waitForCondition(t, func() bool {
@@ -201,11 +237,14 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
+func teardownFile(t testutils.T, path string) {
 	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
+}
 
+func teardownDeploymentFromFile(t testutils.T, deploymentName, path string) {
+	teardownFile(t, path)
 	waitForTermination(t, deploymentName)
 }
 
@@ -215,6 +254,14 @@ func teardownDeployment(t *testing.T, deploymentName string) {
 	require.NoError(t, err, string(output))
 
 	waitForTermination(t, deploymentName)
+}
+
+func scaleDeployment(t testutils.T, deploymentName, replicas string) {
+	cmd := exec.Command(`kubectl`, `scale`, `deployment`, deploymentName, `--replicas`, replicas)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	waitForDeployment(t, deploymentName)
 }
 
 func teardownNginxLatestTagDeployment(t *testing.T) {

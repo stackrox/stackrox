@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 30s
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - {{ .Release.Name }}-alertmanager:9093
+
+    rule_files:
+      - /etc/prometheus/rules_*.yml
+
+    scrape_configs:
+      - job_name: "kubernetes-pods"
+        tls_config:
+          insecure_skip_verify: false
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              own_namespace: true
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            action: replace
+            target_label: node_name
+
+      - job_name: stackrox
+        tls_config:
+          insecure_skip_verify: false
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              own_namespace: true
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: monitoring
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            action: replace
+            target_label: job
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_endpoint_node_name]
+            action: replace
+            target_label: node_name
+
+  rules_alerts_kubernetes.yml: |-
+    groups:
+    - name: Kubernetes
+      rules:
+        - alert: KubernetesContainerOomKiller
+          expr: (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m >= 1) and ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[10m]) == 1
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes container OOM killer (pod {{ "{{" }} $labels.exported_pod {{ "}}" }})
+            description: "Container {{ "{{" }} $labels.container {{ "}}" }} in pod {{ "{{" }} $labels.exported_namespace {{ "}}" }}/{{ "{{" }} $labels.exported_pod {{ "}}" }} has been OOMKilled {{ "{{" }} $value {{ "}}" }} times in the last 10 minutes."
+
+        - alert: KubernetesPodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total[5m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes pod crash looping (pod {{ "{{" }} $labels.exported_pod {{ "}}" }})
+            description: "Pod {{ "{{" }} $labels.exported_namespace {{ "}}" }}/{{ "{{" }} $labels.exported_pod {{ "}}" }} is crash looping."
+
+        - alert: KubernetesReplicaSetMismatch
+          expr: kube_replicaset_spec_replicas != kube_replicaset_status_ready_replicas
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Kubernetes ReplicaSet mismatch (replicaset {{ "{{" }} $labels.replicaset {{ "}}" }})
+            description: "Replicas mismatch in ReplicaSet {{ "{{" }} $labels.exported_namespace {{ "}}" }}/{{ "{{" }} $labels.replicaset {{ "}}" }}"

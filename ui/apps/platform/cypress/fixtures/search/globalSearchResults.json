@@ -44,5 +44,55 @@
             "score": 0,
             "location": ""
         }
+    ],
+    "counts": [
+        {
+            "category": "ALERTS",
+            "count": "1"
+        },
+        {
+            "category": "IMAGES",
+            "count": "1"
+        },
+        {
+            "category": "POLICIES",
+            "count": "1"
+        },
+        {
+            "category": "DEPLOYMENTS",
+            "count": "1"
+        },
+        {
+            "category": "SECRETS",
+            "count": "0"
+        },
+        {
+            "category": "CLUSTERS",
+            "count": "0"
+        },
+        {
+            "category": "NAMESPACES",
+            "count": "0"
+        },
+        {
+            "category": "NODES",
+            "count": "0"
+        },
+        {
+            "category": "SERVICE_ACCOUNTS",
+            "count": "0"
+        },
+        {
+            "category": "ROLES",
+            "count": "0"
+        },
+        {
+            "category": "ROLEBINDINGS",
+            "count": "0"
+        },
+        {
+            "category": "SUBJECTS",
+            "count": "0"
+        }
     ]
 }

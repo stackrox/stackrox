@@ -15,6 +15,8 @@ const (
 	username = "_json_key"
 )
 
+var _ types.Registry = (*googleRegistry)(nil)
+
 type googleRegistry struct {
 	types.Registry
 	project string
@@ -32,7 +34,15 @@ func (g *googleRegistry) Match(image *storage.ImageName) bool {
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "google", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		return NewRegistry(integration)
+		return NewRegistry(integration, false)
+	}
+}
+
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "google", func(integration *storage.ImageIntegration) (types.Registry, error) {
+		return NewRegistry(integration, true)
 	}
 }
 
@@ -49,7 +59,7 @@ func validate(google *storage.GoogleConfig) error {
 
 // NewRegistry creates an image integration based on the GoogleConfig that also checks against
 // the specified Google project as a part of the registry
-func NewRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
+func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool) (types.Registry, error) {
 	config := integration.GetGoogle()
 	if config == nil {
 		return nil, errors.New("Google configuration required")
@@ -58,9 +68,10 @@ func NewRegistry(integration *storage.ImageIntegration) (types.Registry, error) 
 		return nil, err
 	}
 	cfg := docker.Config{
-		Username: username,
-		Password: config.GetServiceAccount(),
-		Endpoint: config.GetEndpoint(),
+		Username:        username,
+		Password:        config.GetServiceAccount(),
+		Endpoint:        config.GetEndpoint(),
+		DisableRepoList: disableRepoList,
 	}
 	reg, err := docker.NewDockerRegistryWithConfig(cfg, integration)
 	if err != nil {

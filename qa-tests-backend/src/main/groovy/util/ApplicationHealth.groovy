@@ -1,17 +1,20 @@
 package util
 
 import common.Constants
+import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.KubernetesClientException
 import objects.DaemonSet
 import objects.Deployment
 import orchestratormanager.OrchestratorMain
 
+@Slf4j
 class ApplicationHealth {
     OrchestratorMain client
     Integer waitTimeForHealthiness
     final Integer delayBetweenChecks = 5
     final Map<String, String> readyLogMessages = [
-            "collector": "GRPC server connectivity is successful",
+            "admission-control": "Applied new admission control settings",
+            "collector": "Sensor connectivity is successful",
             "sensor": "TLS-enabled multiplexed HTTP/gRPC server listening on",
     ]
 
@@ -28,6 +31,12 @@ class ApplicationHealth {
     void waitForCollectorHealthiness() {
         Deployment collector = new DaemonSet().setNamespace(Constants.STACKROX_NAMESPACE).setName("collector")
         waitForHealthiness(collector)
+    }
+
+    void waitForAdmissionControllerHealthiness() {
+        Deployment admissionController = new Deployment().setNamespace(Constants.STACKROX_NAMESPACE)
+            .setName("admission-control")
+        waitForHealthiness(admissionController)
     }
 
     void waitForHealthiness(Deployment deployment) {
@@ -50,13 +59,16 @@ class ApplicationHealth {
                 else {
                     throw new RuntimeException("Expect DaemonSet or Deployment")
                 }
-                println "${replicaCount} ${deployment.name} pods expected"
+                if (replicaCount == null) {
+                    throw new RuntimeException("Expected to get replica count")
+                }
+                log.debug "${replicaCount} ${deployment.name} pods expected"
                 return replicaCount
             }
             catch (Exception e) {
                 Long timeLeft = endAt - System.currentTimeSeconds()
                 Long thisWait = timeLeft < delayBetweenChecks ? timeLeft : delayBetweenChecks
-                println "Cannot get ${deployment.name} replica count: ${e}, will retry in ${thisWait} seconds"
+                log.debug("Cannot get ${deployment.name} replica count: ${e}, will retry in ${thisWait} seconds", e)
                 sleep(thisWait * 1000)
             }
         }
@@ -74,31 +86,31 @@ class ApplicationHealth {
         while (endAt > System.currentTimeSeconds()) {
             healthyPods = 0
             client.getPods(Constants.STACKROX_NAMESPACE, deployment.name).each {
-                String log
+                String logs
                 try {
-                    log = client.getContainerlogs(Constants.STACKROX_NAMESPACE, it.metadata.name, deployment.name)
+                    logs = client.getContainerlogs(Constants.STACKROX_NAMESPACE, it.metadata.name, deployment.name)
                 }
                 catch (KubernetesClientException e) {
-                    println "Cannot get container log: ${e}"
+                    log.error("Cannot get container logs", e)
                     return
                 }
-                if (log.contains(readyLogMessage)) {
-                    println "${deployment.name} ${it.metadata.name} is in the desired state"
+                if (logs.contains(readyLogMessage)) {
+                    log.debug "${deployment.name} ${it.metadata.name} is in the desired state"
                     healthyPods++
                 }
                 else {
-                    println "${deployment.name} ${it.metadata.name} is not in the desired state"
+                    log.debug "${deployment.name} ${it.metadata.name} is not in the desired state"
                 }
             }
 
             if (healthyPods == replicaCount) {
-                println "${deployment.name} is healthy"
+                log.debug "${deployment.name} is healthy"
                 return
             }
 
             Long timeLeft = endAt - System.currentTimeSeconds()
             Long thisWait = timeLeft < delayBetweenChecks ? timeLeft : delayBetweenChecks
-            println "${deployment.name} has yet to reach an operable state, "+
+            log.debug "${deployment.name} has yet to reach an operable state, "+
                     "will try again in ${thisWait} seconds, ${timeLeft} seconds remain"
             sleep(thisWait * 1000)
         }

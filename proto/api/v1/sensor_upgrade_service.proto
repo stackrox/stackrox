@@ -15,7 +15,17 @@ message UpdateSensorUpgradeConfigRequest {
 }
 
 message GetSensorUpgradeConfigResponse {
-    storage.SensorUpgradeConfig config = 1;
+    enum SensorAutoUpgradeFeatureStatus {
+        NOT_SUPPORTED = 0;
+        SUPPORTED = 1;
+    }
+
+    message UpgradeConfig {
+        bool enable_auto_upgrade = 1;
+        SensorAutoUpgradeFeatureStatus auto_upgrade_feature = 2;
+    }
+
+    UpgradeConfig config = 1;
 }
 
 service SensorUpgradeService {

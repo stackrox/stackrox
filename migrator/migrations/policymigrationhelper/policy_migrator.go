@@ -1,20 +1,19 @@
 package policymigrationhelper
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
 	bolt "go.etcd.io/bbolt"
 )
@@ -188,7 +187,7 @@ func ReadPolicyFromFile(fs embed.FS, filePath string) (*storage.Policy, error) {
 		return nil, errors.Wrapf(err, "unable to read file %s", filePath)
 	}
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = jsonutil.JSONBytesToProto(contents, &policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to unmarshal policy json at path %s", filePath)
 	}
@@ -273,7 +272,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 }
 
 func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Policy, updates *PolicyUpdates) {
-	matchedAfterExclusionsIdxs := set.NewIntSet()
+	matchedAfterExclusionsIdxs := set.NewSet[int]()
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
@@ -307,6 +306,7 @@ const (
 // 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
 // 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
 // This function then automatically computes the diff for each policy, and executes the migration.
+// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
 func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []PolicyDiff) error {
 	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
 	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
@@ -335,6 +335,7 @@ func MigratePoliciesWithDiffs(db *bolt.DB, policyDiffFS embed.FS, policyDiffs []
 // MigratePoliciesWithPreMigrationFS is a variant of MigratePolicies that takes in an embed.FS with the pre migration policies.
 // `preMigFS` is expected to have a directory called `preMigDirName`, which has one JSON file per policy.
 // Each JSON file is expected to have the filename <policy_id>.json.
+// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
 func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, preMigFS embed.FS, preMigDirName string) error {
 	comparisonPolicies := make(map[string]*storage.Policy)
 	for policyID := range policiesToMigrate {
@@ -350,6 +351,7 @@ func MigratePoliciesWithPreMigrationFS(db *bolt.DB, policiesToMigrate map[string
 
 // MigratePolicies will migrate all policies in the db as specified by policiesToMigrate assuming the policies in the db
 // matches the policies within comparisonPolicies.
+// Deprecated: This relies on boltDB. Remove once we no longer support ACS <4.0
 func MigratePolicies(db *bolt.DB, policiesToMigrate map[string]PolicyChanges, comparisonPolicies map[string]*storage.Policy) error {
 	if exists, err := bolthelpers.BucketExists(db, policyBucketName); err != nil {
 		return errors.Wrapf(err, "getting bucket with name %q", policyBucketName)

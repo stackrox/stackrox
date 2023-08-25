@@ -14,21 +14,24 @@ var (
 )
 
 // NodeEnricher provides functions for enriching nodes with vulnerability data.
+//
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
+	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error
 	EnrichNode(node *storage.Node) error
 	CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error)
 	UpsertNodeIntegration(integration *storage.NodeIntegration) error
 	RemoveNodeIntegration(id string)
 }
 
-type cveSuppressor interface {
-	EnrichNodeWithSuppressedCVEs(node *storage.Node)
+// CVESuppressor provides enrichment for suppressed CVEs for an node's components.
+type CVESuppressor interface {
+	EnrichNodeWithSuppressedCVEs(image *storage.Node)
 }
 
 // New returns a new NodeEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cves cveSuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
+func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
 	enricher := &enricherImpl{
 		cves: cves,
 

@@ -7,6 +7,8 @@ import "storage/cve.proto";
 import "storage/schedule.proto";
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
+import "storage/user.proto";
+import "storage/role.proto";
 
 package storage;
 
@@ -14,20 +16,24 @@ message ReportConfiguration {
     enum ReportType {
         VULNERABILITY = 0;
     }
-    string                    id                           = 1;
-    string                    name                         = 2 [(gogoproto.moretags) = "search:\"Report Name\""];
-    string                    description                  = 3;
-    ReportType                type                         = 4 [(gogoproto.moretags) = "search:\"Report Type\""];
-    oneof                    filter {
-        VulnerabilityReportFilters  vuln_report_filters    = 5;
+
+    string                           id                         = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                           name                       = 2 [(gogoproto.moretags) = 'search:"Report Name"'];
+    string                           description                = 3;
+    ReportType                       type                       = 4 [(gogoproto.moretags) = 'search:"Report Type"'];
+    oneof filter {
+        VulnerabilityReportFilters   vuln_report_filters        = 5;
     }
-    string                    scope_id                     = 6;
+    string                           scope_id                   = 6 [(gogoproto.moretags) = 'search:"Embedded Collection ID"'];
     oneof  notifier_config {
-        EmailNotifierConfiguration email_config            = 7;
+        EmailNotifierConfiguration   email_config               = 7;
     }
-    storage.Schedule           schedule                    = 8;
-    ReportLastRunStatus        last_run_status             = 9;
-    google.protobuf.Timestamp  last_successful_run_time    = 10;
+    storage.Schedule                schedule                    = 8;
+    ReportLastRunStatus             last_run_status             = 9;
+    google.protobuf.Timestamp       last_successful_run_time    = 10;
+    ResourceScope                   resource_scope              = 11;
+    repeated NotifierConfiguration  notifiers                   = 12;
+    SlimUser                        creator                     = 13 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
 message ReportLastRunStatus {
@@ -41,18 +47,53 @@ message ReportLastRunStatus {
 }
 
 message VulnerabilityReportFilters {
-  enum Fixability {
-      BOTH = 0;
-      FIXABLE = 1;
-      NOT_FIXABLE = 2;
-  }
-  Fixability                        fixability             = 1;
-  bool                              since_last_report      = 2;
-  repeated VulnerabilitySeverity    severities             = 3;
+    enum Fixability {
+        BOTH = 0;
+        FIXABLE = 1;
+        NOT_FIXABLE = 2;
+    }
+
+    enum ImageType {
+        DEPLOYED = 0;
+        WATCHED  = 1;
+    }
+
+    Fixability                       fixability                       = 1;
+    bool                             since_last_report                = 2;
+    repeated VulnerabilitySeverity   severities                       = 3;
+    repeated ImageType               image_types                      = 4;
+    oneof cves_since {
+        bool                         all_vuln                         = 5;
+        bool                         since_last_sent_scheduled_report = 6;
+        google.protobuf.Timestamp    since_start_date                 = 7;
+    }
+    repeated SimpleAccessScope.Rules access_scope_rules                = 8;
 }
 
+message ResourceScope {
+    oneof scope_reference {
+        string collection_id = 1 [(gogoproto.moretags) = 'search:"Collection ID"'];
+    }
+}
+
+message NotifierConfiguration {
+    oneof notifier_config {
+        EmailNotifierConfiguration email_config = 1;
+    }
+
+    // oneof is only used to work around the postgres store limitation. The oneof wrapper can be removed in future
+    // without any impact on the wiring.
+    //
+    // @mandar: "It appears that the DB upserts are encountering failures when handling unset string foreign keys.
+    // My educated assumption is that this might be attributed to the distinction between empty strings and null
+    // values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
+    // unset value, which is a requirement within SQL."
+    oneof ref {
+        string                         id           = 2 [(gogoproto.moretags) = 'sql:"fk(Notifier:id),restrict-delete"'];
+    }
+}
 
 message EmailNotifierConfiguration  {
-  string                 notifier_id           = 1;
-  repeated string        mailing_lists         = 2;
+    string                 notifier_id           = 1;
+    repeated string        mailing_lists         = 2;
 }

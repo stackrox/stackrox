@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/joshdk/go-junit"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -202,20 +202,20 @@ func TestValidateJUnitSuiteData(t *testing.T) {
 			failedTcNames:  []string{"a", "b"},
 			failedTcErrMsg: []string{"a", "b"},
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 		},
 		"should fail if overall test cases < skipped test cases": {
 			tcNames:        []string{"a"},
 			skippedTcNames: []string{"a", "b"},
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 		},
 		"should fail if failed test cases != error messages": {
 			tcNames:        []string{"a", "b", "c"},
 			failedTcNames:  []string{"a", "b"},
 			failedTcErrMsg: []string{"a", "b", "c"},
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 		},
 	}
 
@@ -253,7 +253,7 @@ func TestCreateFailedTestCaseMap(t *testing.T) {
 			failedTc:       []string{"a", "b", "b", "c"},
 			failedTcErrMsg: []string{"aa", "bb", "cc", "dd"},
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvariantViolation,
+			error:          errox.InvariantViolation,
 			expectedOutput: nil,
 		},
 	}

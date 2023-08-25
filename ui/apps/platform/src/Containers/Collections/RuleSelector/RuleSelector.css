@@ -1,0 +1,66 @@
+.rule-selector {
+  --rule-selector-spacer: var(--pf-global--spacer--md);
+  padding: var(--pf-global--spacer--lg);
+  border: 1px solid var(--pf-global--BorderColor--100);
+}
+
+/* Allows rule form elements to shrink further to avoid overlap in constrained screen sizes */
+.rule-selector .pf-c-select__toggle-typeahead {
+  flex-basis: unset;
+  min-width: unset;
+}
+
+.rule-selector .rule-selector-match-type-select {
+  width: 180px;
+}
+
+.rule-selector .rule-selector-name-value-input {
+  flex: 1;
+}
+
+.rule-selector .rule-selector-name-value-input  * {
+  width: 100% !important;
+}
+
+.rule-selector-list {
+  border-left: solid 1px var(--pf-global--BorderColor--100);
+  margin-left: var(--rule-selector-spacer);
+}
+
+.rule-selector-list-item {
+  position: relative;
+  display: flex;
+  padding: var(--rule-selector-spacer) 0 0 var(--rule-selector-spacer);
+  align-items: flex-start;
+}
+
+.rule-selector-list-item:before {
+  position: absolute;
+  content: "";
+  left: 0;
+  bottom: var(--rule-selector-spacer);
+  height: 1px;
+  width: var(--rule-selector-spacer);
+  background-color: var(--pf-global--BorderColor--100);
+}
+
+.rule-selector-delete-value-button {
+  margin-top: var(--pf-global--spacer--xs);
+}
+
+.rule-selector-add-value-button {
+  margin: var(--rule-selector-spacer) 0 0 var(--rule-selector-spacer);
+}
+
+.rule-selector-label-rule-separator {
+  display: flex;
+  align-items: center;
+  padding: var(--rule-selector-spacer) 0;
+}
+
+.rule-selector-label-rule-separator:after {
+  border-bottom: 2px dashed var(--pf-global--Color--light-300);
+  flex: 1 1 0;
+  content: "";
+  display: inline-block;
+}

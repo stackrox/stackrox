@@ -7,38 +7,63 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeGlobalDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
+	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/reports/common"
+	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timeutil"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
 	pruneInterval      = 1 * time.Hour
 	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
+	clusterGCFreq      = 24 * time.Hour
+	logImbueGCFreq     = 24 * time.Hour
+	logImbueWindow     = 24 * 7 * time.Hour
+
+	alertQueryTimeout = 10 * time.Minute
+
+	flowsSemaphoreWeight = 5
 )
 
 var (
-	log        = logging.LoggerForModule()
-	pruningCtx = sac.WithAllAccess(context.Background())
+	log                   = logging.LoggerForModule()
+	pruningCtx            = sac.WithAllAccess(context.Background())
+	lastClusterPruneTime  time.Time
+	lastLogImbuePruneTime time.Time
 )
 
 // GarbageCollector implements a generic garbage collection mechanism
@@ -48,18 +73,25 @@ type GarbageCollector interface {
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
-	nodes nodeGlobalDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	images imageDatastore.DataStore,
 	clusters clusterDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
 	pods podDatastore.DataStore,
 	processes processDatastore.DataStore,
+	plops plopDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore,
-	vulnReqs vulnReqDataStore.DataStore) GarbageCollector {
+	vulnReqs vulnReqDataStore.DataStore,
+	serviceAccts serviceAccountDataStore.DataStore,
+	k8sRoles k8sRoleDataStore.DataStore,
+	k8sRoleBindings roleBindingDataStore.DataStore,
+	logimbueStore logimbueDataStore.Store,
+	reportSnapshotDS snapshotDS.DataStore,
+	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
 		clusters:        clusters,
@@ -69,32 +101,47 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		deployments:     deployments,
 		pods:            pods,
 		processes:       processes,
+		plops:           plops,
 		processbaseline: processbaseline,
 		networkflows:    networkflows,
 		config:          config,
 		risks:           risks,
 		vulnReqs:        vulnReqs,
-		stopSig:         concurrency.NewSignal(),
-		stoppedSig:      concurrency.NewSignal(),
+		serviceAccts:    serviceAccts,
+		k8sRoles:        k8sRoles,
+		k8sRoleBindings: k8sRoleBindings,
+		logimbueStore:   logimbueStore,
+		stopper:         concurrency.NewStopper(),
+		postgres:        globaldb.GetPostgres(),
+		reportSnapshot:  reportSnapshotDS,
+		blobStore:       blobStore,
 	}
 }
 
 type garbageCollectorImpl struct {
+	postgres pgPkg.DB
+
 	alerts          alertDatastore.DataStore
 	clusters        clusterDatastore.DataStore
-	nodes           nodeGlobalDatastore.GlobalDataStore
+	nodes           nodeDatastore.DataStore
 	images          imageDatastore.DataStore
 	imageComponents imageComponentDatastore.DataStore
 	deployments     deploymentDatastore.DataStore
 	pods            podDatastore.DataStore
 	processes       processDatastore.DataStore
+	plops           plopDatastore.DataStore
 	processbaseline processBaselineDatastore.DataStore
 	networkflows    networkFlowDatastore.ClusterDataStore
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
 	vulnReqs        vulnReqDataStore.DataStore
-	stopSig         concurrency.Signal
-	stoppedSig      concurrency.Signal
+	serviceAccts    serviceAccountDataStore.DataStore
+	k8sRoles        k8sRoleDataStore.DataStore
+	k8sRoleBindings roleBindingDataStore.DataStore
+	logimbueStore   logimbueDataStore.Store
+	stopper         concurrency.Stopper
+	reportSnapshot  snapshotDS.DataStore
+	blobStore       blobDatastore.Datastore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -117,13 +164,25 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
-	if features.VulnRiskManagement.Enabled() {
-		g.removeExpiredVulnRequests()
+	g.removeExpiredVulnRequests()
+	g.collectClusters(pvtConfig)
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		g.removeOldReportHistory(pvtConfig)
+		g.removeOldReportBlobs(pvtConfig)
 	}
+	postgres.PruneActiveComponents(pruningCtx, g.postgres)
+	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
+
+	g.pruneLogImbues()
+
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
 
 func (g *garbageCollectorImpl) runGC() {
+	defer g.stopper.Flow().ReportStopped()
+
+	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
+	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -131,8 +190,7 @@ func (g *garbageCollectorImpl) runGC() {
 		select {
 		case <-t.C:
 			g.pruneBasedOnConfig()
-		case <-g.stopSig.Done():
-			g.stoppedSig.Signal()
+		case <-g.stopper.Flow().StopRequested():
 			return
 		}
 	}
@@ -162,32 +220,82 @@ func (g *garbageCollectorImpl) removeExpiredVulnRequests() {
 }
 
 // Remove pods where the cluster has been deleted.
-func (g *garbageCollectorImpl) removeOrphanedPods(clusters set.FrozenStringSet) {
-	var podIDsToRemove []string
-	staleClusterIDsFound := set.NewStringSet()
-	err := g.pods.WalkAll(pruningCtx, func(pod *storage.Pod) error {
-		if !clusters.Contains(pod.GetClusterId()) {
-			podIDsToRemove = append(podIDsToRemove, pod.GetId())
-			staleClusterIDsFound.Add(pod.GetClusterId())
-		}
-		return nil
-	})
+func (g *garbageCollectorImpl) removeOrphanedPods() {
+	podIDsToRemove, err := postgres.GetOrphanedPodIDs(pruningCtx, g.postgres)
 	if err != nil {
-		log.Errorf("Error walking pods to find orphaned pods: %v", err)
+		log.Errorf("Error finding orphaned pods: %v", err)
 		return
 	}
+
 	if len(podIDsToRemove) == 0 {
 		log.Info("[Pruning] Found no orphaned pods...")
 		return
 	}
-	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters: %v). Deleting...",
-		len(podIDsToRemove), staleClusterIDsFound.AsSlice())
+	log.Infof("[Pruning] Found %d orphaned pods (from formerly deleted clusters). Deleting...",
+		len(podIDsToRemove))
 
 	for _, id := range podIDsToRemove {
 		if err := g.pods.RemovePod(pruningCtx, id); err != nil {
 			log.Errorf("Failed to remove pod with id %s: %v", id, err)
 		}
 	}
+}
+
+// Remove nodes where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedNodes() {
+	nodesToRemove, err := postgres.GetOrphanedNodeIDs(pruningCtx, g.postgres)
+	if err != nil {
+		log.Errorf("Error finding orphaned nodes: %v", err)
+		return
+	}
+
+	if len(nodesToRemove) == 0 {
+		log.Info("[Pruning] Found no orphaned nodes...")
+		return
+	}
+	log.Infof("[Pruning] Found %d orphaned nodes (from formerly deleted clusters). Deleting...",
+		len(nodesToRemove))
+
+	for _, id := range nodesToRemove {
+		if err := g.nodes.DeleteNodes(pruningCtx, id); err != nil {
+			log.Errorf("Failed to remove node with id %s: %v", id, err)
+		}
+	}
+}
+
+func removeOrphanedObjectsBySearch(searchQuery *v1.Query, name string, searchFn func(ctx context.Context, query *v1.Query) ([]search.Result, error), removeFn func(ctx context.Context, id string) error) {
+	searchRes, err := searchFn(pruningCtx, searchQuery)
+	if err != nil {
+		log.Errorf("Error finding orphaned %s: %v", name, err)
+		return
+	}
+	if len(searchRes) == 0 {
+		log.Infof("[Pruning] Found no orphaned %s...", name)
+		return
+	}
+
+	log.Infof("[Pruning] Found %d orphaned %s. Deleting...", len(searchRes), name)
+
+	for _, res := range searchRes {
+		if err := removeFn(pruningCtx, res.ID); err != nil {
+			log.Errorf("Failed to remove %s with id %s: %v", name, res.ID, err)
+		}
+	}
+}
+
+// Remove ServiceAccounts where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedServiceAccounts(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "service accounts", g.serviceAccts.Search, g.serviceAccts.RemoveServiceAccount)
+}
+
+// Remove K8SRoles where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoles(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "K8S roles", g.k8sRoles.Search, g.k8sRoles.RemoveRole)
+}
+
+// Remove K8SRoleBinding where the cluster has been deleted.
+func (g *garbageCollectorImpl) removeOrphanedK8SRoleBindings(searchQuery *v1.Query) {
+	removeOrphanedObjectsBySearch(searchQuery, "K8S role bindings", g.k8sRoleBindings.Search, g.k8sRoleBindings.RemoveRoleBinding)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedResources() {
@@ -202,48 +310,62 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	}
 	clusterIDSet := set.NewFrozenStringSet(clusterIDs...)
 
-	deploymentIDs, err := g.deployments.GetDeploymentIDs()
+	deploymentIDs, err := g.deployments.GetDeploymentIDs(pruningCtx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to fetch deployment IDs in pruning"))
 		return
 	}
 	deploymentSet := set.NewFrozenStringSet(deploymentIDs...)
-	podIDs, err := g.pods.GetPodIDs()
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to fetch pod IDs in pruning"))
-		return
-	}
-	g.removeOrphanedProcesses(deploymentSet, set.NewFrozenStringSet(podIDs...))
+
+	g.markOrphanedAlertsAsResolved()
+	g.removeOrphanedNetworkFlows(clusterIDSet)
+
+	g.removeOrphanedPods()
+	g.removeOrphanedNodes()
+
+	// The deletion of pods can trigger the deletion of indicators.  So in theory there could
+	// be fewer indicators to delete if we process orphaned pods first.
+	g.removeOrphanedProcesses()
 	g.removeOrphanedProcessBaselines(deploymentSet)
-	g.markOrphanedAlertsAsResolved(deploymentSet)
-	g.removeOrphanedNetworkFlows(deploymentSet, clusterIDSet)
-	g.removeOrphanedPods(clusterIDSet)
+	g.removeOrphanedPLOP()
+
+	q := clusterIDsToNegationQuery(clusterIDSet)
+	g.removeOrphanedServiceAccounts(q)
+	g.removeOrphanedK8SRoles(q)
+	g.removeOrphanedK8SRoleBindings(q)
 }
 
-func (g *garbageCollectorImpl) removeOrphanedProcesses(deploymentIDs, podIDs set.FrozenStringSet) {
-	var processesToPrune []string
-	now := types.TimestampNow()
-	err := g.processes.WalkAll(pruningCtx, func(pi *storage.ProcessIndicator) error {
-		if pi.GetPodUid() != "" && podIDs.Contains(pi.GetPodUid()) {
-			return nil
-		}
-		if pi.GetPodUid() == "" && deploymentIDs.Contains(pi.GetDeploymentId()) {
-			return nil
-		}
-		if protoutils.Sub(now, pi.GetSignal().GetTime()) < orphanWindow {
-			return nil
-		}
-		processesToPrune = append(processesToPrune, pi.GetId())
-		return nil
-	})
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
-		return
+func clusterIDsToNegationQuery(clusterIDSet set.FrozenStringSet) *v1.Query {
+	// TODO: When searching can be done with SQL, this should be refactored to a simple `NOT IN...` query. This current one is inefficent
+	// with a large number of clusters and because of the required conjunction query that is taking a hit being a regex query to do nothing
+	// Bleve/booleanquery requires a conjunction so it can't be removed
+	var mustNot *v1.DisjunctionQuery
+	if clusterIDSet.Cardinality() > 1 {
+		mustNot = search.DisjunctionQuery(search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()).GetDisjunction()
+	} else {
+		// Manually generating a disjunction because search.DisjunctionQuery returns a v1.Query if there's only thing it's matching on
+		// which then results in a nil disjunction inside boolean query. That means this search will match everything.
+		mustNot = (&v1.Query{
+			Query: &v1.Query_Disjunction{Disjunction: &v1.DisjunctionQuery{
+				Queries: []*v1.Query{search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDSet.AsSlice()...).ProtoQuery()},
+			}},
+		}).GetDisjunction()
 	}
-	log.Infof("[Process pruning] Found %d orphaned processes", len(processesToPrune))
-	if err := g.processes.RemoveProcessIndicators(pruningCtx, processesToPrune); err != nil {
-		log.Error(errors.Wrap(err, "error removing process indicators"))
-	}
+
+	must := (&v1.Query{
+		// Similar to disjunction, conjunction needs multiple queries, or it has to be manually created
+		// Unlike disjunction, if there's only one query when the boolean query is used it will panic
+		Query: &v1.Query_Conjunction{Conjunction: &v1.ConjunctionQuery{
+			Queries: []*v1.Query{search.NewQueryBuilder().AddStrings(search.ClusterID, search.WildcardString).ProtoQuery()},
+		}},
+	}).GetConjunction()
+
+	return search.NewBooleanQuery(must, mustNot)
+}
+
+func (g *garbageCollectorImpl) removeOrphanedProcesses() {
+	postgres.PruneOrphanedProcessIndicators(pruningCtx, g.postgres, orphanWindow)
+	log.Info("[Process pruning] Pruning of orphaned processes complete")
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {
@@ -304,66 +426,100 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 	log.Infof("[Process baseline pruning] Removed %d process baselines", prunedProcessBaselines)
 }
 
-func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved(deployments set.FrozenStringSet) {
-	var alertsToResolve []string
+// removeOrphanedPLOP: cleans up ProcessListeningOnPort objects that do not
+// have correct process indicator reference. Such objects could not be cleaned
+// on per-deployment basis, since the deployment and cluster info is taken from
+// the process indicator, so clean without such filtering in batches.
+func (g *garbageCollectorImpl) removeOrphanedPLOP() {
+	var plopToPrune []string
 	now := types.TimestampNow()
-	err := g.alerts.WalkAll(pruningCtx, func(alert *storage.ListAlert) error {
-		// We should only remove orphaned deploy time alerts as they are not cleaned up by retention policies
-		// This will only happen when there is data inconsistency
-		if alert.GetLifecycleStage() != storage.LifecycleStage_DEPLOY {
+
+	// This walk seems unnecessary, but ClosedTimestamp is a part of serialized
+	// column, not visible to Postgres. So if we would like to keep using
+	// orphanWindow, unfortunately it has to be this way, at least for now.
+	walkRun := func() error {
+		plopToPrune = plopToPrune[:0]
+		return g.plops.WalkAll(pruningCtx, func(plop *storage.ProcessListeningOnPortStorage) error {
+			if protoutils.Sub(now, plop.GetCloseTimestamp()) < orphanWindow {
+				return nil
+			}
+			plopToPrune = append(plopToPrune, plop.GetId())
 			return nil
-		}
-		if alert.GetState() != storage.ViolationState_ACTIVE {
-			return nil
-		}
-		if deployments.Contains(alert.GetDeployment().GetId()) {
-			return nil
-		}
-		if protoutils.Sub(now, alert.GetTime()) < orphanWindow {
-			return nil
-		}
-		alertsToResolve = append(alertsToResolve, alert.GetId())
-		return nil
-	})
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to walk alerts and mark for pruning"))
+		})
+	}
+
+	if err := pgutils.RetryIfPostgres(walkRun); err != nil {
+		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
 		return
 	}
+
+	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
+		len(plopToPrune))
+
+	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
+		log.Error(errors.Wrap(err, "error removing PLOP"))
+	}
+}
+
+func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {
+	return postgres.GetOrphanedAlertIDs(ctx, g.postgres, orphanWindow)
+}
+
+func (g *garbageCollectorImpl) markOrphanedAlertsAsResolved() {
+	alertsToResolve, err := g.getOrphanedAlerts(pruningCtx)
+	if err != nil {
+		log.Errorf("[Alert pruning] error getting orphaned alert ids: %v", err)
+		return
+	}
+
 	log.Infof("[Alert pruning] Found %d orphaned alerts", len(alertsToResolve))
-	for _, a := range alertsToResolve {
-		if err := g.alerts.MarkAlertStale(pruningCtx, a); err != nil {
-			log.Error(errors.Wrapf(err, "error marking alert %q as stale", a))
-		}
+	if _, err := g.alerts.MarkAlertsResolvedBatch(pruningCtx, alertsToResolve...); err != nil {
+		log.Error(errors.Wrap(err, "error marking alert as resolved"))
 	}
 }
 
-func isOrphanedDeployment(deployments set.FrozenStringSet, info *storage.NetworkEntityInfo) bool {
-	return info.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deployments.Contains(info.GetId())
-}
+func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStringSet) {
+	var wg sync.WaitGroup
+	sema := semaphore.NewWeighted(flowsSemaphoreWeight)
 
-func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(deployments, clusters set.FrozenStringSet) {
+	orphanTime := time.Now().UTC().Add(-1 * orphanWindow)
+
+	// Each cluster has a separate store thus we can take advantage of doing these deletions concurrently.  If we don't
+	// the entire prune job will be stuck waiting on processing the network flows deletions in cluster sequence.
 	for _, c := range clusters.AsSlice() {
-		store, err := g.networkflows.GetFlowStore(pruningCtx, c)
-		if err != nil {
-			log.Errorf("error getting flow store for cluster %q: %v", c, err)
-			continue
-		} else if store == nil {
-			continue
+		if err := sema.Acquire(pruningCtx, 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
 		}
-		now := types.TimestampNow()
 
-		keyMatchFn := func(props *storage.NetworkFlowProperties) bool {
-			return isOrphanedDeployment(deployments, props.GetSrcEntity()) ||
-				isOrphanedDeployment(deployments, props.GetDstEntity())
-		}
-		valueMatchFn := func(flow *storage.NetworkFlow) bool {
-			return flow.LastSeenTimestamp != nil && protoutils.Sub(now, flow.LastSeenTimestamp) > orphanWindow
-		}
-		err = store.RemoveMatchingFlows(pruningCtx, keyMatchFn, valueMatchFn)
-		if err != nil {
-			log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
-		}
+		log.Debugf("[Network Flow pruning] for cluster %q", c)
+		wg.Add(1)
+		go func(c string) {
+			defer sema.Release(1)
+			defer wg.Done()
+			store, err := g.networkflows.GetFlowStore(pruningCtx, c)
+			if err != nil {
+				log.Errorf("error getting flow store for cluster %q: %v", c, err)
+				return
+			} else if store == nil {
+				return
+			}
+
+			err = store.RemoveOrphanedFlows(pruningCtx, &orphanTime)
+			if err != nil {
+				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
+			}
+
+			// Second remove stale network flows
+			err = store.RemoveStaleFlows(pruningCtx)
+			if err != nil {
+				log.Errorf("error removing stale flows for cluster %q: %v", c, err)
+			}
+		}(c)
 	}
+	wg.Wait()
+
+	log.Info("[Network Flow pruning] Completed")
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
@@ -405,6 +561,181 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	}
 }
 
+func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateConfig) {
+	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
+	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
+	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
+}
+
+func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
+	blobRetentionDays := config.GetReportRetentionConfig().GetDownloadableReportRetentionDays()
+	cutOffTime, err := types.TimestampProto(time.Now().Add(-time.Duration(blobRetentionDays) * 24 * time.Hour))
+	if err != nil {
+		log.Errorf("Failed to determine downloadable report retention %v", err)
+		return
+	}
+
+	// Sort reversely by modification time
+	query := search.NewQueryBuilder().AddRegexes(search.BlobName, common.ReportBlobRegex).WithPagination(
+		search.NewPagination().AddSortOption(search.NewSortOption(search.BlobModificationTime).Reversed(true)))
+	blobs, err := g.blobStore.SearchMetadata(pruningCtx, query.ProtoQuery())
+	if err != nil {
+		log.Errorf("Failed to fetch downloadable report metadata: %v", err)
+		return
+	}
+
+	remainingQuota := int64(config.GetReportRetentionConfig().GetDownloadableReportGlobalRetentionBytes())
+	var bytesFreed int64
+	var blobsRemoved int
+	var toFree bool
+	for _, blob := range blobs {
+		if !toFree {
+			if remainingQuota > blob.GetLength() && blob.GetModifiedTime().Compare(cutOffTime) > 0 {
+				remainingQuota = remainingQuota - blob.GetLength()
+				continue
+			}
+			toFree = true
+		}
+		if err = g.blobStore.Delete(pruningCtx, blob.GetName()); err != nil {
+			log.Errorf("Failed to delete blob %+v, will try next time", blob)
+			continue
+		}
+		bytesFreed += blob.GetLength()
+		blobsRemoved++
+	}
+	log.Infof("[Downloadable Report Pruning] Removed %d blobs and freed %d bytes", blobsRemoved, bytesFreed)
+}
+
+func (g *garbageCollectorImpl) collectClusters(config *storage.PrivateConfig) {
+	// Check to see if pruning is enabled
+	clusterRetention := config.GetDecommissionedClusterRetention()
+	retentionDays := int64(clusterRetention.GetRetentionDurationDays())
+	if retentionDays == 0 {
+		log.Info("[Cluster Pruning] pruning is disabled.")
+		return
+	}
+
+	// Check to see if enough time has elapsed to run again
+	if lastClusterPruneTime.Add(clusterGCFreq).After(time.Now()) {
+		// Only cluster pruning if it's been at least clusterGCFreq since last run
+		return
+	}
+	defer func() {
+		lastClusterPruneTime = time.Now()
+	}()
+
+	// Allow 24hrs grace period after the config changes
+	lastUpdateTime, err := types.TimestampFromProto(clusterRetention.GetLastUpdated())
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if timeutil.TimeDiffDays(time.Now(), lastUpdateTime) < 1 {
+		// Allow 24 hr grace period after a change in config
+		log.Info("[Cluster Pruning] skipping pruning to allow 24 hr grace period after a recent change in cluster retention config.")
+		return
+	}
+
+	// Retention should start counting _after_ the config is created (which is basically when upgraded to 71)
+	configCreationTime, err := types.TimestampFromProto(clusterRetention.GetCreatedAt())
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	if timeutil.TimeDiffDays(time.Now(), configCreationTime) < int(retentionDays) {
+		// In this case, the clusters that became unhealthy after config creation would also be unhealthy for fewer than retention days
+		// and pruning can be skipped
+		log.Info("[Cluster Pruning] skipping pruning as retention period only starts after upgrade to version 3.71.0.")
+		return
+	}
+
+	allClusterCount, err := g.clusters.CountClusters(pruningCtx)
+	if err != nil {
+		log.Errorf("[Cluster Pruning] error counting clusters: %v", err)
+	}
+
+	if allClusterCount == 0 {
+		log.Info("[Cluster Pruning] skipping pruning because no clusters were found.")
+		return
+	}
+
+	query := search.NewQueryBuilder().
+		AddDays(search.LastContactTime, retentionDays).
+		AddExactMatches(search.SensorStatus, storage.ClusterHealthStatus_UNHEALTHY.String()).ProtoQuery()
+	clusters, err := g.clusters.SearchRawClusters(pruningCtx, query)
+	if err != nil {
+		log.Errorf("[Cluster Pruning] error searching for clusters: %v", err)
+		return
+	}
+
+	log.Infof("[Cluster Pruning] found %d cluster(s) that haven't been active in over %d days", len(clusters), retentionDays)
+
+	clustersToPrune := make([]string, 0)
+	for _, cluster := range clusters {
+		if sliceutils.MapsIntersect(clusterRetention.GetIgnoreClusterLabels(), cluster.GetLabels()) {
+			log.Infof("[Cluster Pruning] skipping excluded cluster with id %s", cluster.GetId())
+			continue
+		}
+
+		// Don't delete if the cluster contains central
+		hasCentral, err := g.checkIfClusterContainsCentral(cluster)
+		if err != nil {
+			log.Errorf("[Cluster Pruning] error searching for deployements in cluster: %v", err)
+			return
+		}
+		if hasCentral {
+			// Warning because it's important to know that your central cluster is unhealthy
+			log.Warnf("[Cluster Pruning] skipping pruning cluster with id %s because this cluster contains the central deployment.", cluster.GetId())
+			continue
+		}
+		clustersToPrune = append(clustersToPrune, cluster.GetId())
+	}
+
+	if allClusterCount == len(clustersToPrune) {
+		log.Warnf("[Cluster Pruning] skipping pruning because all %d cluster(s) are unhealthy and this is an abnormal state. Please remove any manually if desired.", allClusterCount)
+		return
+	}
+
+	if len(clustersToPrune) == 0 {
+		// Debug log as it's be noisy, but is helpful if debugging
+		log.Debug("[Cluster Pruning] no inactive, non excluded clusters found.")
+		return
+	}
+
+	for _, clusterID := range clustersToPrune {
+		log.Infof("[Cluster Pruning] Removing cluster with ID %s", clusterID)
+		if err := g.clusters.RemoveCluster(pruningCtx, clusterID, nil); err != nil {
+			log.Error(err)
+			return
+		}
+	}
+}
+
+func (g *garbageCollectorImpl) checkIfClusterContainsCentral(cluster *storage.Cluster) (bool, error) {
+	// This query could be expensive, but it's a rare occurrence. It only happens if there is a cluster that has been unhealthy for a long time (configurable)
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, cluster.GetId()).
+		AddExactMatches(search.DeploymentName, "central")
+	deploys, err := g.deployments.SearchRawDeployments(pruningCtx, query.ProtoQuery())
+	if err != nil {
+		return false, err
+	}
+
+	// As long as we find at least one deployment that matches the criteria
+	// This is meant to be tolerant of false positives while extremely intolerant of false negatives. Rather not delete a cluster than to delete one with central in it.
+	for _, d := range deploys {
+		// While this could be done via the searcher, this was moved out to reduce complexity of the search.
+		// The search might run more often, but this manual grep only happens if the cluster is unhealthy AND has >= 1 deployment with name central.
+		if d.GetLabels()["app"] == "central" && d.GetAnnotations()["owner"] == "stackrox" {
+			return true, nil
+		}
+	}
+
+	// TODO: We need to mark a cluster as having central going forward. Perhaps the above heuristic can be used to tag from within sensor.
+
+	return false, nil
+}
+
 func getConfigValues(config *storage.PrivateConfig) (pruneResolvedDeployAfter, pruneAllRuntimeAfter, pruneDeletedRuntimeAfter, pruneAttemptedDeployAfter, pruneAttemptedRuntimeAfter int32) {
 	alertRetention := config.GetAlertRetention()
 	if val, ok := alertRetention.(*storage.PrivateConfig_DEPRECATEDAlertRetentionDurationDays); ok {
@@ -438,8 +769,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneResolvedDeployAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 			AddDays(search.ViolationTime, int64(pruneResolvedDeployAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -447,7 +778,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAllRuntimeAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneAllRuntimeAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -455,7 +786,7 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneDeletedRuntimeAfter > 0 && pruneAllRuntimeAfter != pruneDeletedRuntimeAfter {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
 			AddDays(search.ViolationTime, int64(pruneDeletedRuntimeAfter)).
 			AddBools(search.Inactive, true).
 			ProtoQuery()
@@ -464,8 +795,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAttemptedDeployAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedDeployAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -473,8 +804,8 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 
 	if pruneAttemptedRuntimeAfter > 0 {
 		q := search.NewQueryBuilder().
-			AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
-			AddStrings(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
+			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ATTEMPTED.String()).
 			AddDays(search.ViolationTime, int64(pruneAttemptedRuntimeAfter)).
 			ProtoQuery()
 		queries = append(queries, q)
@@ -485,7 +816,10 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	alertResults, err := g.alerts.Search(pruningCtx, search.DisjunctionQuery(queries...))
+	ctx, cancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
+	defer cancel()
+
+	alertResults, err := g.alerts.Search(ctx, search.DisjunctionQuery(queries...))
 	if err != nil {
 		log.Error(err)
 		return
@@ -587,7 +921,41 @@ func (g *garbageCollectorImpl) removeRisks(riskType storage.RiskSubjectType, ids
 	}
 }
 
+func (g *garbageCollectorImpl) pruneLogImbues() {
+	// Check to see if enough time has elapsed to run again
+	if lastLogImbuePruneTime.Add(logImbueGCFreq).After(time.Now()) {
+		// Only log imbue pruning if it's been at least logImbueGCFreq since last time those were pruned
+		return
+	}
+	defer func() {
+		lastLogImbuePruneTime = time.Now()
+	}()
+
+	var logImbuesToPrune []string
+	now := types.TimestampNow()
+	walkFn := func() error {
+		logImbuesToPrune = logImbuesToPrune[:0]
+		return g.logimbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
+			if protoutils.Sub(now, li.Timestamp) < logImbueWindow {
+				return nil
+			}
+			logImbuesToPrune = append(logImbuesToPrune, li.GetId())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		log.Error(errors.Wrap(err, "unable to walk log imbues and mark for pruning"))
+		return
+	}
+
+	// call DeleteMany or whatever with the IDs.
+	err := g.logimbueStore.DeleteMany(pruningCtx, logImbuesToPrune)
+	if err != nil {
+		log.Error(errors.Wrap(err, "error removing process indicators"))
+	}
+}
+
 func (g *garbageCollectorImpl) Stop() {
-	g.stopSig.Signal()
-	<-g.stoppedSig.Done()
+	g.stopper.Client().Stop()
+	_ = g.stopper.Client().Stopped().Wait()
 }

@@ -1,50 +1,52 @@
 /* eslint-disable no-nested-ternary */
 /* eslint-disable react/no-array-index-key */
-import React, { ReactElement } from 'react';
-import { Bullseye, PageSection, PageSectionVariants, Spinner } from '@patternfly/react-core';
+import React, { ReactElement, useState } from 'react';
 
 import usePagination from 'hooks/patternfly/usePagination';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import { SearchFilter } from 'types/search';
+import { SortOption } from 'types/table';
+import queryService from 'utils/queryService';
+import useTableSort from 'hooks/patternfly/useTableSort';
 import DeferredCVEsTable from './DeferredCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
+import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
 type DeferredCVEsProps = {
     imageId: string;
+    showComponentDetails: (components: EmbeddedImageScanComponent[], cveName: string) => void;
 };
 
-function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
+const sortFields = ['Severity'];
+const defaultSortOption: SortOption = {
+    field: 'Severity',
+    direction: 'desc',
+};
+
+function DeferredCVEs({ imageId, showComponentDetails }: DeferredCVEsProps): ReactElement {
+    const [searchFilter, setSearchFilter] = useState<SearchFilter>({});
     const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
+    const { sortOption, getSortParams } = useTableSort({
+        sortFields,
+        defaultSortOption,
+    });
+
+    const vulnsQuery = queryService.objectToWhereClause({
+        ...searchFilter,
+        'Vulnerability State': 'DEFERRED',
+    });
+
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
-        vulnsQuery: 'Vulnerability State:DEFERRED',
+        vulnsQuery,
         pagination: {
             limit: perPage,
             offset: (page - 1) * perPage,
-            sortOption: {
-                field: 'Severity',
-                reversed: true,
-            },
+            sortOption,
         },
     });
 
-    if (isLoading) {
-        return (
-            <Bullseye>
-                <Spinner isSVG size="sm" />
-            </Bullseye>
-        );
-    }
-
     const itemCount = data?.image?.vulnCount || 0;
     const rows = data?.image?.vulns || [];
-
-    if (!isLoading && rows && rows.length === 0) {
-        return (
-            <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No deferral requests were approved." />
-            </PageSection>
-        );
-    }
 
     return (
         <DeferredCVEsTable
@@ -56,6 +58,10 @@ function DeferredCVEs({ imageId }: DeferredCVEsProps): ReactElement {
             onSetPage={onSetPage}
             onPerPageSelect={onPerPageSelect}
             updateTable={refetchQuery}
+            searchFilter={searchFilter}
+            setSearchFilter={setSearchFilter}
+            getSortParams={getSortParams}
+            showComponentDetails={showComponentDetails}
         />
     );
 }

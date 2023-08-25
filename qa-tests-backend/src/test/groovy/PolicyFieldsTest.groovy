@@ -1,15 +1,7 @@
-
 import static Services.waitForViolation
 
-import common.Constants
-import groups.BAT
-import objects.ConfigMapKeyRef
-import objects.Deployment
-import objects.SecretKeyRef
-import objects.Volume
 import orchestratormanager.OrchestratorTypes
-import org.junit.Assume
-import org.junit.experimental.categories.Category
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -18,12 +10,24 @@ import io.stackrox.proto.storage.PolicyOuterClass.PolicyGroup
 import io.stackrox.proto.storage.PolicyOuterClass.PolicySection
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyValue
 import io.stackrox.proto.storage.ScopeOuterClass
+
+import common.Constants
+import objects.ConfigMapKeyRef
+import objects.Deployment
+import objects.SecretKeyRef
+import objects.Volume
 import services.AlertService
 import services.PolicyService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 
+import org.junit.Assume
+import spock.lang.IgnoreIf
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+
+// TODO(ROX-12814): re-enable the test on all platforms. Scanner OOMs on this test in some Openshift jobs.
+@IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 class PolicyFieldsTest extends BaseSpecification {
 
     // NOTE: this is populated by registerDeployments call, do not manually
@@ -243,7 +247,7 @@ class PolicyFieldsTest extends BaseSpecification {
             "some_configuration": "a value",
     ]
 
-    // https://stack-rox.atlassian.net/browse/ROX-6891
+    // ROX-6891
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
                 isRaceBuild() ? 450 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 30)
 
@@ -252,7 +256,7 @@ class PolicyFieldsTest extends BaseSpecification {
             .addCategories("Test")
             .setDisabled(false)
             .setSeverityValue(2)
-            // https://stack-rox.atlassian.net/browse/ROX-6891
+            // ROX-6891
             // limiting the scope of the test policies to the test namespaces reduces the workload that
             // causes slow alert triggers.
             .addAllScope(["qa", "qa-policyfieldstest-.*"].collect
@@ -530,7 +534,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private IS_BASED_ON_ALPINE = setPolicyFieldANDValues(
             BASE_POLICY.clone().setName("AAA_BASED_ON_ALPINE"),
             "Image OS",
-            ["alpine"]
+            ["alpine.*"]
     )
 
     // "Image Registry"
@@ -842,7 +846,7 @@ class PolicyFieldsTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             if (deployment.namespace != Constants.ORCHESTRATOR_NAMESPACE &&
                     !newNamespaces.contains(deployment.namespace)) {
-                println "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
+                log.info "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
                 orchestrator.ensureNamespaceExists(deployment.namespace)
                 addStackroxImagePullSecret(deployment.namespace)
                 addGCRImagePullSecret(deployment.namespace)
@@ -881,7 +885,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify expected violations are triggered"
@@ -967,7 +971,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Expect no violation for policy field '#fieldName' - #testName"() {
         expect:
         "Verify unexpected violations are not triggered"
@@ -1065,7 +1069,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Route exposure works as expected - #shouldMatch"() {
         given:
         "Running on an OpenShift 4 cluster"

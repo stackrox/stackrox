@@ -1,12 +1,11 @@
 package plan
 
 import (
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	appsV1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -20,67 +19,104 @@ var (
 	daemonSetGVK  = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"}
 )
 
-func mergeResourceList(into *v1.ResourceList, from v1.ResourceList) {
+func mergeResourceList(into *map[string]interface{}, from map[string]interface{}) {
 	if *into == nil {
-		*into = from.DeepCopy()
+		*into = runtime.DeepCopyJSON(from)
 		return
 	}
-	*into = into.DeepCopy()
+	*into = runtime.DeepCopyJSON(*into)
 	for k, v := range from {
-		(*into)[k] = v.DeepCopy()
+		(*into)[k] = runtime.DeepCopyJSONValue(v)
 	}
 }
 
-func applyOldResourcesConfig(newSpec, oldSpec *v1.PodSpec) {
-	containerResourceReqs := make(map[string]*v1.ResourceRequirements)
+func applyOldResourcesConfig(newPodSpec, oldPodSpec map[string]interface{}) error {
+	containerResourceReqs := make(map[string]map[string]interface{})
 
-	for i, ctr := range oldSpec.Containers {
-		containerResourceReqs[ctr.Name] = &oldSpec.Containers[i].Resources
+	oldContainers, err := nestedValueNoCopyOrError[[]interface{}](oldPodSpec, "containers")
+	if err != nil {
+		return errors.Wrap(err, "retrieving containers field from old pod spec")
+	}
+	for _, ctrRaw := range oldContainers {
+		ctr, _ := ctrRaw.(map[string]interface{})
+		if ctr == nil {
+			return errors.New("non-map entry in old pod spec containers")
+		}
+		ctrName, err := nestedNonZeroValueNoCopyOrError[string](ctr, "name")
+		if err != nil {
+			return errors.Wrap(err, "getting container name in old pod spec")
+		}
+		resources := nestedValueNoCopyOrDefault[map[string]interface{}](ctr, nil, "resources")
+		if resources != nil {
+			containerResourceReqs[ctrName] = resources
+		}
 	}
 
-	for i, ctr := range newSpec.Containers {
-		oldReqs := containerResourceReqs[ctr.Name]
-		if oldReqs == nil {
+	newContainers, err := nestedValueNoCopyOrError[[]interface{}](newPodSpec, "containers")
+	if err != nil {
+		return errors.Wrap(err, "retrieving containers field from new pod spec")
+	}
+	for _, ctrRaw := range newContainers {
+		ctr, _ := ctrRaw.(map[string]interface{})
+		if ctr == nil {
+			return errors.New("non-map entry in new pod spec containers")
+		}
+		ctrName, err := nestedNonZeroValueNoCopyOrError[string](ctr, "name")
+		if err != nil {
+			return errors.Wrap(err, "getting container name in new pod spec")
+		}
+		oldResources := containerResourceReqs[ctrName]
+		if oldResources == nil {
 			continue
 		}
-		mergeResourceList(&newSpec.Containers[i].Resources.Requests, oldReqs.Requests)
-		mergeResourceList(&newSpec.Containers[i].Resources.Limits, oldReqs.Limits)
+		newResources := nestedValueNoCopyOrDefault[map[string]interface{}](ctr, nil, "resources")
+		if newResources == nil {
+			newResources = make(map[string]interface{})
+		}
+		oldRequests := nestedValueNoCopyOrDefault[map[string]interface{}](oldResources, nil, "requests")
+		if oldRequests != nil {
+			newRequests := nestedValueNoCopyOrDefault[map[string]interface{}](newResources, nil, "requests")
+			mergeResourceList(&newRequests, oldRequests)
+			if err := unstructured.SetNestedField(newResources, newRequests, "requests"); err != nil {
+				return errors.Wrapf(err, "could not set new resource requests for container %s", ctrName)
+			}
+		}
+		oldLimits := nestedValueNoCopyOrDefault[map[string]interface{}](oldResources, nil, "limits")
+		if oldLimits != nil {
+			newLimits := nestedValueNoCopyOrDefault[map[string]interface{}](newResources, nil, "limits")
+			mergeResourceList(&newLimits, oldLimits)
+			if err := unstructured.SetNestedField(newResources, newLimits, "limits"); err != nil {
+				return errors.Wrapf(err, "could not set new resource limits for container %s", ctrName)
+			}
+		}
+		if err := unstructured.SetNestedField(ctr, newResources, "resources"); err != nil {
+			return errors.Wrapf(err, "could not set new resources for container %s", ctrName)
+		}
 	}
+	return nil
 }
 
-func getPodSpec(scheme *runtime.Scheme, obj k8sutil.Object) (k8sutil.Object, *v1.PodSpec, error) {
-	var newObj k8sutil.Object
+func getPodSpec(obj *unstructured.Unstructured) (map[string]interface{}, error) {
+	var podSpecPath []string
 	switch obj.GetObjectKind().GroupVersionKind() {
-	case deploymentGVK:
-		if _, ok := obj.(*appsV1.Deployment); !ok {
-			newObj = &appsV1.Deployment{}
-		}
-	case daemonSetGVK:
-		if _, ok := obj.(*appsV1.DaemonSet); !ok {
-			newObj = &appsV1.DaemonSet{}
-		}
+	case deploymentGVK, daemonSetGVK:
+		podSpecPath = []string{"spec", "template", "spec"}
 	default:
-		return nil, nil, errors.Errorf("workload object of type %T with GVK %v is not recognized", obj, obj.GetObjectKind().GroupVersionKind())
+		return nil, errors.Errorf("workload object of type %T with GVK %v is not recognized", obj, obj.GetObjectKind().GroupVersionKind())
 	}
 
-	if newObj != nil {
-		if err := convert(scheme, obj, newObj); err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to convert workload object of type %T with GVK %v to strongly typed", obj, obj.GetObjectKind().GroupVersionKind())
-		}
-		obj = newObj
+	podSpecRaw, _, err := unstructured.NestedFieldNoCopy(obj.Object, podSpecPath...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "locating pod spec in object %s", k8sobjects.RefOf(obj))
 	}
-
-	switch o := obj.(type) {
-	case *appsV1.Deployment:
-		return o, &o.Spec.Template.Spec, nil
-	case *appsV1.DaemonSet:
-		return o, &o.Spec.Template.Spec, nil
-	default:
-		return nil, nil, errors.Errorf("workload object of type %T with GVK %v is not recognized", obj, obj.GetObjectKind().GroupVersionKind())
+	podSpec, _ := podSpecRaw.(map[string]interface{})
+	if podSpec == nil {
+		return nil, errors.Errorf("did not find pod spec in object %s", k8sobjects.RefOf(obj))
 	}
+	return podSpec, nil
 }
 
-func applyPreservedResources(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+func applyPreservedResources(newObj, oldObj *unstructured.Unstructured) error {
 	newAnns := newObj.GetAnnotations()
 	if newAnns == nil {
 		newAnns = make(map[string]string)
@@ -88,73 +124,76 @@ func applyPreservedResources(scheme *runtime.Scheme, newObj, oldObj k8sutil.Obje
 	newAnns[common.PreserveResourcesAnnotationKey] = "true"
 	newObj.SetAnnotations(newAnns)
 
-	_, oldPodSpec, err := getPodSpec(scheme, oldObj)
+	oldPodSpec, err := getPodSpec(oldObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from old object")
+		return errors.Wrap(err, "failed to extract pod spec from old object")
 	}
-	newObjWithPodSpec, newPodSpec, err := getPodSpec(scheme, newObj)
+	newPodSpec, err := getPodSpec(newObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from new object")
+		return errors.Wrap(err, "failed to extract pod spec from new object")
 	}
 
-	applyOldResourcesConfig(newPodSpec, oldPodSpec)
+	if err := applyOldResourcesConfig(newPodSpec, oldPodSpec); err != nil {
+		return errors.Wrap(err, "failed to preserve resources")
+	}
 
-	return newObjWithPodSpec, nil
+	return nil
 }
 
-func applyPreservedTolerations(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
-	_, oldPodSpec, err := getPodSpec(scheme, oldObj)
+func applyPreservedTolerations(newObj, oldObj *unstructured.Unstructured) error {
+	oldPodSpec, err := getPodSpec(oldObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from old object")
+		return errors.Wrap(err, "failed to extract pod spec from old object")
 	}
-	newObjWithPodSpec, newPodSpec, err := getPodSpec(scheme, newObj)
+	newPodSpec, err := getPodSpec(newObj)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract pod spec from new object")
+		return errors.Wrap(err, "failed to extract pod spec from new object")
 	}
 
-	newPodSpec.Tolerations = oldPodSpec.Tolerations
-	return newObjWithPodSpec, nil
+	if tolerations := nestedValueNoCopyOrDefault[[]interface{}](oldPodSpec, nil, "tolerations"); tolerations != nil {
+		if err := unstructured.SetNestedField(newPodSpec, tolerations, "tolerations"); err != nil {
+			return errors.Wrap(err, "failed to preserve tolerations from old pod spec")
+		}
+	}
+	return nil
 }
 
-func applyServicePreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
-	var newSvc, oldSvc v1.Service
-	if err := convert(scheme, newObj, &newSvc); err != nil {
-		return nil, errors.Wrap(err, "failed to convert new object to service")
+func applyServicePreservedProperties(newObj, oldObj *unstructured.Unstructured) error {
+	clusterIP := nestedValueNoCopyOrDefault[string](oldObj.Object, "", "spec", "clusterIP")
+	if clusterIP != "" {
+		if err := unstructured.SetNestedField(newObj.Object, clusterIP, "spec", "clusterIP"); err != nil {
+			return errors.Wrap(err, "setting cluster IP")
+		}
 	}
-	if err := convert(scheme, oldObj, &oldSvc); err != nil {
-		return nil, errors.Wrap(err, "failed to convert old object to service")
-	}
-
-	newSvc.Spec.ClusterIP = oldSvc.Spec.ClusterIP
-	return &newSvc, nil
+	return nil
 }
 
-func applyPreservedProperties(scheme *runtime.Scheme, newObj, oldObj k8sutil.Object) (k8sutil.Object, error) {
+func applyPreservedProperties(newObj, oldObj *unstructured.Unstructured) error {
+	var overallErr *multierror.Error
 	if newObj.GetObjectKind().GroupVersionKind() == serviceGVK {
-		var err error
-		newObj, err = applyServicePreservedProperties(scheme, newObj, oldObj)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to preserve properties for object %v", k8sobjects.RefOf(newObj))
+		if err := applyServicePreservedProperties(newObj, oldObj); err != nil {
+			overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve service properties"))
 		}
 	}
 	if oldObj.GetAnnotations()[common.PreserveResourcesAnnotationKey] == "true" {
-		var err error
-		newObj, err = applyPreservedResources(scheme, newObj, oldObj)
-		if err != nil {
-			return nil, err
+		if err := applyPreservedResources(newObj, oldObj); err != nil {
+			overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve resources"))
 		}
 	}
 
 	switch newObj.GetObjectKind().GroupVersionKind() {
 	case deploymentGVK, daemonSetGVK:
 	default:
-		return newObj, nil
+		return overallErr.ErrorOrNil()
 	}
 
 	// Ignore collector because tolerations are explicitly set
-	if newObj.GetObjectKind().GroupVersionKind() != daemonSetGVK && newObj.GetName() == collectorName {
-		return newObj, nil
+	if newObj.GetObjectKind().GroupVersionKind() == daemonSetGVK && newObj.GetName() == collectorName {
+		return overallErr.ErrorOrNil()
 	}
 
-	return applyPreservedTolerations(scheme, newObj, oldObj)
+	if err := applyPreservedTolerations(newObj, oldObj); err != nil {
+		overallErr = multierror.Append(overallErr, errors.Wrap(err, "failed to preserve tolerations"))
+	}
+	return overallErr.ErrorOrNil()
 }

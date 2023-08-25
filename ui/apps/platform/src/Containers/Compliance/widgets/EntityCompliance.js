@@ -3,21 +3,22 @@ import PropTypes from 'prop-types';
 import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
 
 import Widget from 'Components/Widget';
-import VerticalBarChart from 'Components/visuals/VerticalBarChart';
 import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
 import queryService from 'utils/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
 
+import { entityNounSentenceCaseSingular } from '../entitiesForCompliance';
+import VerticalBarChart from './VerticalBarChart';
+
 const EntityCompliance = ({ entityType, entityName, clusterName }) => {
-    const entityTypeLabel = resourceLabels[entityType];
+    const entityTypeLabel = entityNounSentenceCaseSingular[entityType];
     const searchParam = useContext(searchContext);
     const match = useRouteMatch();
     const location = useLocation();
@@ -69,7 +70,13 @@ const EntityCompliance = ({ entityType, entityName, clusterName }) => {
             {({ loading, data }) => {
                 let contents = <Loader />;
                 if (!loading && data && data.results) {
-                    const { results } = data.results;
+                    // Frontend filtering of results.
+                    const { complianceStandards } = data;
+                    const results = data.results.results.filter((result) => {
+                        const standardId = result.aggregationKeys[0].id;
+                        return complianceStandards.some(({ id }) => id === standardId);
+                    });
+
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />

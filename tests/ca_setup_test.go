@@ -7,7 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -27,7 +27,7 @@ func centralIsReleaseBuild(conn *grpc.ClientConn, t *testing.T) bool {
 func TestCASetup(t *testing.T) {
 	t.Parallel()
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := central.NewDevelopmentServiceClient(conn)
 
 	isReleaseBuild := centralIsReleaseBuild(conn, t)
@@ -75,7 +75,9 @@ func TestCASetup(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.url, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			internalServiceTimeout := 20 * time.Second
+			testTimeoutPadding := 500 * time.Millisecond
+			ctx, cancel := context.WithTimeout(context.Background(), internalServiceTimeout+testTimeoutPadding)
 			defer cancel()
 			resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{Url: c.url})
 			require.NoError(t, err)

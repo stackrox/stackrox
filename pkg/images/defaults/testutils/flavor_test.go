@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -12,13 +11,13 @@ import (
 )
 
 func TestFlavorsDontHaveEmptyFields(t *testing.T) {
-	testbuildinfo.SetForTest(t)
 	testutils.SetExampleVersion(t)
 
 	flavors := []defaults.ImageFlavor{
 		defaults.DevelopmentBuildImageFlavor(),
 		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
+		defaults.OpenSourceImageFlavor(),
 		MakeImageFlavorForTest(t),
 	}
 

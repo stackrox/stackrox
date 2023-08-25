@@ -14,7 +14,7 @@ export const CLUSTERS_QUERY = gql`
                     scope
                 }
                 keys {
-                    ... on Cluster {
+                    ... on ComplianceDomain_Cluster {
                         name
                     }
                     ... on ComplianceStandardMetadata {
@@ -80,7 +80,7 @@ export const NODES_QUERY = gql`
                     scope
                 }
                 keys {
-                    ... on Node {
+                    ... on ComplianceDomain_Node {
                         name
                         clusterName
                     }
@@ -113,7 +113,7 @@ export const DEPLOYMENTS_QUERY = gql`
                     scope
                 }
                 keys {
-                    ... on Deployment {
+                    ... on ComplianceDomain_Deployment {
                         name
                         id
                         namespace

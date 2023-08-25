@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/scancomponent"
 )
@@ -51,9 +50,6 @@ func ProcessComponent(component scancomponent.ScanComponent) (min, max Component
 		Value: -math.MaxFloat32,
 	}
 	for _, vuln := range component.GetVulns() {
-		if cve.IsCVESnoozed(vuln) {
-			continue
-		}
 		// Exclude vulnerabilities with unknown severity rating.
 		if vuln.GetSeverity() == storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY {
 			continue
@@ -85,13 +81,12 @@ func ProcessComponent(component scancomponent.ScanComponent) (min, max Component
 // so we use the severity instead.
 // For example, given a vulnerability with CVSSv3.1 score of 9.0 and severity rating Low,
 // this will return 2.0 as the score.
-func vulnScore(vuln *storage.EmbeddedVulnerability) float32 {
+func vulnScore(vuln cvss.VulnI) float32 {
 	severity := cvss.VulnToSeverity(vuln)
 
-	if vuln.GetScoreVersion() == storage.EmbeddedVulnerability_V2 {
+	if vuln.GetScoreVersion() == storage.CVEInfo_V2 {
 		return cvss2Score(severity)
 	}
-
 	return cvss3Score(severity)
 }
 

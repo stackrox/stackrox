@@ -2,9 +2,48 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners
 # This will automatically assign a team / people as reviewers for PRs based on the files changed within the PR.
 
+# Core Workflows team's main responsibilities include policies including default policies and policy management workflows,
+# detection and alerting, integrations and notifiers, risk, vulnerability management and reporting.
+pkg/detection/**/*                  @stackrox/core-workflows
+pkg/booleanpolicy/**/*              @stackrox/core-workflows
+pkg/defaults/policies/**/*          @stackrox/core-workflows
+central/policy/**/*                 @stackrox/core-workflows
+central/reports/**/*                @stackrox/core-workflows
+central/reportconfiguration/**/*    @stackrox/core-workflows
+central/vulnerabilityrequest/**/*   @stackrox/core-workflows
+proto/storage/policy.proto          @stackrox/core-workflows
+proto/storage/image.proto           @stackrox/core-workflows
+proto/storage/cve.proto             @stackrox/core-workflows
+proto/storage/alert.proto           @stackrox/core-workflows
+proto/storage/risk.proto            @stackrox/core-workflows
+
 # Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC).
 roxctl/**/*     @stackrox/merlin
 pkg/auth/**/*   @stackrox/merlin
 pkg/sac/**/*    @stackrox/merlin
+*/declarativeconfig/**/* @stackrox/merlin
+tests/performance @stackrox/merlin
 
 pkg/images/defaults/**/* @stackrox/maple
+
+# Data Shepherds team's responsibilities include migrator and interactions with Postgres
+migrator/**/*       @stackrox/data-shepherds
+pkg/postgres/**/*   @stackrox/data-shepherds
+tests/upgrade/*     @stackrox/data-shepherds
+
+operator/**/* @stackrox/draco
+
+# Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
+# such as vulnerability uploading and image integrations.
+/central/scannerdefinitions/                          @stackrox/scanner
+/central/sensor/service/pipeline/imageintegrations/   @stackrox/scanner
+/pkg/images/enricher/                                 @stackrox/scanner
+/pkg/nodes/                                           @stackrox/scanner
+/pkg/registries/                                      @stackrox/scanner
+/pkg/scanners/                                        @stackrox/scanner
+/pkg/scans/                                           @stackrox/scanner
+/scanner/                                             @stackrox/scanner
+/sensor/common/scannerdefinitions/                    @stackrox/scanner
+/sensor/kubernetes/listener/resources/secrets.go      @stackrox/scanner
+/sensor/kubernetes/listener/resources/secrets_test.go @stackrox/scanner
+/SCANNER_VERSION                                      @stackrox/scanner

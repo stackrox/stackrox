@@ -14,7 +14,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 76,
-		VersionAfter:   storage.Version{SeqNum: 77},
+		VersionAfter:   &storage.Version{SeqNum: 77},
 		Run: func(databases *types.Databases) error {
 			err := migrateRoles(databases.BoltDB, databases.RocksDB)
 			if err != nil {

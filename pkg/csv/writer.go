@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // Header represents a CSV's header line.
@@ -88,11 +86,10 @@ func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 		})
 	}
 
-	header := sliceutils.StringClone(c.header)
-	header[0] = "\uFEFF" + header[0]
+	_, _ = w.Write([]byte("\uFEFF")) // UTF-8 BOM.
 	cw := csv.NewWriter(w)
 	cw.UseCRLF = true
-	_ = cw.Write(header)
+	_ = cw.Write(c.header)
 	for _, v := range c.values {
 		_ = cw.Write(v)
 	}

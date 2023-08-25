@@ -1,17 +1,22 @@
 import com.google.protobuf.util.JsonFormat
-import com.jayway.restassured.RestAssured
 import groovy.json.JsonSlurper
-import groups.BAT
+import io.restassured.RestAssured
+
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
-import org.junit.experimental.categories.Category
+
 import services.NotifierService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Env
 import util.Timer
 
-@Category(BAT)
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
+import spock.lang.IgnoreIf
+
+@Tag("BAT")
+// ROX-14228 skipping tests for 1st release on power & z
+@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class AuditScrubbingTest extends BaseSpecification {
 
     static private final String BASIC_AUTH_PROVIDER_ID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
@@ -28,7 +33,7 @@ class AuditScrubbingTest extends BaseSpecification {
         sleep 3000
     }
 
-    private static getAuditEntry(String attemptId) {
+    private getAuditEntry(String attemptId) {
         def timer = new Timer(30, 1)
         while (timer.IsValid()) {
             def get = new URL("http://localhost:8080").openConnection()
@@ -39,7 +44,8 @@ class AuditScrubbingTest extends BaseSpecification {
                     def data = it["data"]["audit"]
                     return data["request"]["endpoint"] == ENDPOINT &&
                             (data["request"]["payload"]["state"] as String).endsWith(attemptId)
-                } catch (Exception _) {
+                } catch (Exception e) {
+                    log.warn("exception", e)
                     return false
                 }
             }
@@ -92,7 +98,7 @@ class AuditScrubbingTest extends BaseSpecification {
         where:
         "Data inputs are"
         username              | password              | expectedStatusCode | scenario
-        "foo"                 | "bar"                 | 500                | "invalid basic auth password"
+        "foo"                 | "bar"                 | 403                | "invalid basic auth password"
         Env.mustGetUsername() | Env.mustGetPassword() | 200                | "valid basic auth credentials"
     }
 

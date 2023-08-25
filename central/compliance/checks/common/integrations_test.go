@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"go.uber.org/mock/gomock"
 )
 
 type prefixMatcher struct {

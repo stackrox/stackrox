@@ -18,9 +18,9 @@ var (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	DetectForDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
-	DetectForDeploymentAndKubeEvent(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
-	DetectForDeploymentAndNetworkFlow(deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
+	DetectForDeploymentAndProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) ([]*storage.Alert, error)
+	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
 }
 
@@ -35,7 +35,7 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet returns set of policies.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
@@ -53,34 +53,30 @@ func (d *detectorImpl) DetectForAuditEvents(auditEvents []*storage.KubernetesEve
 }
 
 func (d *detectorImpl) DetectForDeploymentAndProcess(
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(deployment, images, process, processNotInBaseline, nil, nil)
+	return d.detectForDeployment(enhancedDeployment, process, processNotInBaseline, nil, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndKubeEvent(
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	kubeEvent *storage.KubernetesEvent,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(deployment, images, nil, false, kubeEvent, nil)
+	return d.detectForDeployment(enhancedDeployment, nil, false, kubeEvent, nil)
 }
 
 func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
-	return d.detectForDeployment(deployment, images, nil, false, nil, flow)
+	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
 }
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.
 func (d *detectorImpl) detectForDeployment(
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	process *storage.ProcessIndicator,
 	processNotInBaseline bool,
 	kubeEvent *storage.KubernetesEvent,
@@ -88,8 +84,9 @@ func (d *detectorImpl) detectForDeployment(
 ) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptable booleanpolicy.CacheReceptacle
+	deployment := enhancedDeployment.Deployment
 
-	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, images)
+	augmentedDeploy, err := augmentedobjs.ConstructDeployment(deployment, enhancedDeployment.Images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +102,8 @@ func (d *detectorImpl) detectForDeployment(
 		}
 
 		if process != nil {
-			violation, err := compiled.MatchAgainstDeploymentAndProcess(&cacheReceptable, deployment, images, process, processNotInBaseline)
+
+			violation, err := compiled.MatchAgainstDeploymentAndProcess(&cacheReceptable, enhancedDeployment, process, processNotInBaseline)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; deployment %s/%s",
 					compiled.Policy().GetName(), deployment.GetNamespace(), deployment.GetName())
@@ -127,9 +125,8 @@ func (d *detectorImpl) detectForDeployment(
 				alerts = append(alerts, alert)
 			}
 		}
-
 		if flow != nil {
-			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, deployment, images, flow)
+			violation, err := compiled.MatchAgainstDeploymentAndNetworkFlow(&cacheReceptable, enhancedDeployment, flow)
 			if err != nil {
 				return errors.Wrapf(err, "evaluating violations for policy %q; network flow %+v",
 					compiled.Policy().GetName(), flow)
@@ -139,7 +136,6 @@ func (d *detectorImpl) detectForDeployment(
 				alerts = append(alerts, alert)
 			}
 		}
-
 		return nil
 	})
 	if err != nil {

@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
+
 import { addDeleteProcesses } from 'services/ProcessesService';
 
 const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setProcessEpoch }) => {
@@ -26,16 +27,15 @@ const ProcessBaselineElementList = ({ baselineKey, elements, processEpoch, setPr
             {elements.map(({ element }) => (
                 <li
                     key={element.processName}
-                    className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 flex justify-between items-center"
+                    className="py-3 pb-2 leading-normal border-b border-base-300 flex justify-between items-center"
                 >
                     <span>{element.processName}</span>
-                    <Tooltip
-                        content={<TooltipOverlay>Remove process from baseline</TooltipOverlay>}
-                    >
+                    <Tooltip content="Remove process from baseline">
                         <button
                             className="flex p-1 rounded border content-center hover:bg-base-300"
                             type="button"
                             onClick={deleteCurrentProcess(element)}
+                            aria-label="Remove process from baseline"
                         >
                             <Icon.Minus className="h-4 w-4" />
                         </button>

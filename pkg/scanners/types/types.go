@@ -3,6 +3,7 @@ package types
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
 // Scanner is the interface that all scanners must implement
@@ -20,35 +21,33 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
-// ImageScanner adds a DataSource function to Scanner that describes which
-// integration formed the interface
-type ImageScanner interface {
-	Scanner
+// ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
+// a DataSource function to describe which integration formed the interface.
+type ImageScannerWithDataSource interface {
+	GetScanner() Scanner
 	DataSource() *storage.DataSource
 }
 
-// AsyncScanner is an image scanner that can be accessed asynchronously.
-type AsyncScanner interface {
-	Scanner
-	// GetOrTriggerScan does a non-blocking request to the scanner.
-	// It gets the scan for the given image if it exists;
-	// if not, implementations trigger a new one and instantly return.
-	GetOrTriggerScan(image *storage.Image) (*storage.ImageScan, error)
+// ImageVulnerabilityGetter is a scanner which can retrieve vulnerabilities
+// which exist in the given image components and the scan notes for the given image.
+type ImageVulnerabilityGetter interface {
+	GetVulnerabilities(image *storage.Image, components *scannerV1.Components, notes []scannerV1.Note) (*storage.ImageScan, error)
 }
 
 // NodeScanner is the interface all node scanners must implement
 type NodeScanner interface {
 	NodeScanSemaphore
 	Name() string
+	GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error)
 	GetNodeScan(node *storage.Node) (*storage.NodeScan, error)
 	TestNodeScanner() error
 	Type() string
 }
 
-// NodeScannerWithDataSource adds a DataSource function to NodeScanner that describes which
-// integration formed the interface
+// NodeScannerWithDataSource provides a GetNodeScanner to retrieve the underlying NodeScanner and
+// a DataSource function to describe which integration formed the interface.
 type NodeScannerWithDataSource interface {
-	NodeScanner
+	GetNodeScanner() NodeScanner
 	DataSource() *storage.DataSource
 }
 
@@ -59,4 +58,5 @@ type OrchestratorScanner interface {
 	Type() string
 	KubernetesScan(string) (map[string][]*storage.EmbeddedVulnerability, error)
 	OpenShiftScan(string) ([]*storage.EmbeddedVulnerability, error)
+	IstioScan(string) ([]*storage.EmbeddedVulnerability, error)
 }

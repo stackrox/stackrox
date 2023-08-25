@@ -1,115 +1,83 @@
-const getNodeErrorMessage = (node) => `Could not find node "${node.name}" of type "${node.type}"`;
+import * as api from '../constants/apiEndpoints';
+import { interactAndWaitForResponses } from './request';
 
-const getEdgeErrorMessage = (sourceNode, targetNode) =>
-    `Could not find an edge between "${sourceNode.name}" and "${targetNode.name}"`;
+const networkGraphClusterAlias = 'networkgraph/cluster/id';
+const networkPoliciesClusterAlias = 'networkpolicies/cluster/id';
 
-const getEdgePresentErrorMessage = (sourceNode, targetNode) =>
-    `Found an edge between "${sourceNode.name}" and "${targetNode.name}" when there wasn't supposed to be one`;
+const routeMatcherMapForClusterInNetworkGraph = {
+    [networkGraphClusterAlias]: {
+        method: 'GET',
+        url: '/v1/networkgraph/cluster/*',
+    },
+    [networkPoliciesClusterAlias]: {
+        method: 'GET',
+        url: '/v1/networkpolicies/cluster/*',
+    },
+};
 
-// Network Graph Interaction-based Commands
+export const notifiersAlias = 'notifiers';
+export const clustersAlias = 'clusters';
+export const networkPoliciesGraphEpochAlias = 'networkpolicies/graph/epoch';
+export const searchMetadataOptionsAlias = 'search/metadata/options';
+export const namespaceAlias = 'namespaces';
 
-export function clickOnNodeById(cytoscape, node) {
-    const element = cytoscape.getElementById(node.id);
-    if (!element) {
-        throw Error(getNodeErrorMessage(node));
-    }
-    element.emit('click');
-}
+const routeMatcherMapToVisitNetworkGraph = {
+    [notifiersAlias]: {
+        method: 'GET',
+        url: '/v1/notifiers',
+    },
+    [clustersAlias]: {
+        method: 'GET',
+        url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
+    },
+    [networkPoliciesGraphEpochAlias]: {
+        method: 'GET',
+        url: '/v1/networkpolicies/graph/epoch?clusterId=*', // either id or null if no cluster selected
+    },
+    [searchMetadataOptionsAlias]: {
+        method: 'GET',
+        url: api.search.optionsCategories('DEPLOYMENTS'),
+    },
+    [namespaceAlias]: {
+        method: 'GET',
+        url: '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment',
+    },
+};
 
-export function clickOnNodeByName(cytoscape, node) {
-    const filteredNodes = cytoscape.nodes().filter(filterByNodeName(node));
-    if (filteredNodes.length === 0) {
-        throw Error(getNodeErrorMessage(node));
-    }
-    filteredNodes.emit('click');
-}
+export const deploymentAlias = 'deployments/id';
 
-export function mouseOverNodeById(cytoscape, node) {
-    const element = cytoscape.getElementById(node.id);
-    if (!element) {
-        throw Error(getNodeErrorMessage(node));
-    }
-    element.emit('mouseover');
-}
+const routeMatcherMapToVisitNetworkGraphWithDeploymentSelected = {
+    ...routeMatcherMapToVisitNetworkGraph,
+    [deploymentAlias]: {
+        method: 'GET',
+        url: '/v1/deployments/*',
+    },
+    ...routeMatcherMapForClusterInNetworkGraph,
+};
 
-export function mouseOverNodeByName(cytoscape, node) {
-    const filteredNodes = cytoscape.nodes().filter(filterByNodeName(node));
-    if (filteredNodes.length === 0) {
-        throw Error(getNodeErrorMessage(node));
-    }
-    filteredNodes.emit('mouseover');
-}
+export const basePath = '/main/network';
 
-export function mouseOverEdgeByNames(cytoscape, sourceNode, targetNode) {
-    const edges = cytoscape.edges().filter(filterBySourceTarget(sourceNode, targetNode));
-    if (edges.length === 0) {
-        throw Error(getEdgeErrorMessage(sourceNode, targetNode));
-    }
-    edges.emit('mouseover');
-}
+const title = 'Network Graph';
 
-export function ensureEdgeNotPresent(cytoscape, sourceNode, targetNode) {
-    const edges = cytoscape.edges().filter(filterBySourceTarget(sourceNode, targetNode));
-    if (edges.length !== 0) {
-        throw Error(getEdgePresentErrorMessage(sourceNode, targetNode));
-    }
-}
+/**
+ * Visit network graph deployment by interaction from another container.
+ * For example, click View Deployment in Network Graph button from Risk.
+ *
+ * @param {function} interactionCallback
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function interactAndVisitNetworkGraphWithDeploymentSelected(
+    interactionCallback,
+    staticResponseMap
+) {
+    interactAndWaitForResponses(
+        () => {
+            interactionCallback();
+        },
+        routeMatcherMapToVisitNetworkGraphWithDeploymentSelected,
+        staticResponseMap
+    );
 
-// Filter Functions
-
-export function filterDeployments(element) {
-    return element.data('type') === 'DEPLOYMENT';
-}
-
-export function filterNamespaces(element) {
-    return element.data('type') === 'NAMESPACE';
-}
-
-export function filterClusters(element) {
-    return element.data('type') === 'CLUSTER';
-}
-export function filterInternet(element) {
-    return element.data('type') === 'INTERNET';
-}
-
-export function filterByNodeName(node) {
-    return (element) => {
-        return element.data('type') === node.type && element.data('name') === node.name;
-    };
-}
-
-export function filterBySourceTarget(sourceNode, targetNode) {
-    return (element) => {
-        if (sourceNode.type === 'DEPLOYMENT' && targetNode.type === 'DEPLOYMENT') {
-            return (
-                element.data('type') === 'NODE_TO_NODE_EDGE' &&
-                element.data('sourceNodeName') === sourceNode.name &&
-                element.data('targetNodeName') === targetNode.name
-            );
-        }
-        if (sourceNode.type === 'NAMESPACE' && targetNode.type === 'NAMESPACE') {
-            return (
-                element.data('type') === 'NAMESPACE_EDGE' &&
-                element.data('sourceNodeNamespace') === sourceNode.name &&
-                element.data('targetNodeNamespace') === targetNode.name
-            );
-        }
-        if (sourceNode.type === 'DEPLOYMENT' && targetNode.type === 'NAMESPACE') {
-            return (
-                element.data('type') === 'NODE_TO_NAMESPACE_EDGE' &&
-                element.data('sourceNodeName') === sourceNode.name &&
-                element.data('target').startsWith(targetNode.name)
-            );
-        }
-        if (sourceNode.type === 'NAMESPACE' && targetNode.type === 'DEPLOYMENT') {
-            return (
-                element.data('type') === 'NODE_TO_NAMESPACE_EDGE' &&
-                element.data('source').startsWith(sourceNode.name) &&
-                element.data('targetNodeName') === targetNode.name
-            );
-        }
-        throw Error(
-            `An edge type between a (${sourceNode.type}) and (${targetNode.type}) does not exist`
-        );
-    };
+    cy.location('pathname').should('contain', basePath); // contain because pathname has id
+    cy.get(`h1:contains("${title}")`);
 }

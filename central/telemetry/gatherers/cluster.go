@@ -8,7 +8,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +32,7 @@ var (
 
 // newClusterGatherer returns a new ClusterGatherer which will query connected Sensors for telemetry info and collect
 // the latest info for offline sensors using the given datastores
-func newClusterGatherer(clusterDatastore clusterDatastore.DataStore, nodeDatastore nodeDatastore.GlobalDataStore, namespaceDatastore namespaceDatastore.DataStore, sensorConnMgr connection.Manager, deploymentDatastore deploymentDatastore.DataStore) *ClusterGatherer {
+func newClusterGatherer(clusterDatastore clusterDatastore.DataStore, nodeDatastore nodeDatastore.DataStore, namespaceDatastore namespaceDatastore.DataStore, sensorConnMgr connection.Manager, deploymentDatastore deploymentDatastore.DataStore) *ClusterGatherer {
 	nodeGatherer := newNodeGatherer(nodeDatastore)
 	namespaceGatherer := newNamespaceGatherer(namespaceDatastore, deploymentDatastore)
 	return &ClusterGatherer{
@@ -76,7 +76,7 @@ func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*d
 		case ret := <-clusterRetC:
 			outstanding--
 			if ret.err != nil {
-				log.Errorf("Error pulling telemetry data from cluster %s: %v", ret.clusterID, err)
+				log.Errorf("Error pulling telemetry data from cluster %s: %v", ret.clusterID, ret.err)
 				continue
 			}
 			clusterList = append(clusterList, ret.clusterInfo)

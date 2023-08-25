@@ -4,63 +4,70 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
-import "storage/risk.proto";
-import "storage/cve.proto";
 import "storage/vulnerability.proto";
-import "storage/vuln_requests.proto";
 import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 17
+// Next Tag: 19
 message Image {
-    string                          id                          = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
+    string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
+    // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with
+    // different locations.
+    // TODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise.
+    repeated ImageName              names                       = 18 [(gogoproto.moretags) = 'search:"-"'];
 
     ImageMetadata                   metadata                    = 2;
-    ImageScan                       scan                        = 3 [(gogoproto.moretags) = "policy:\"Image Scan\""];
+    ImageScan                       scan                        = 3 [(gogoproto.moretags) = 'policy:"Image Scan"'];
 
     ImageSignatureVerificationData  signature_verification_data = 15;
 
     ImageSignature                  signature                   = 16;
 
     oneof set_components {
-        int32 components                                        = 7 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
+        int32 components                                        = 7 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
     }
     oneof set_cves {
-        int32 cves                                              = 8 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
+        int32 cves                                              = 8 [(gogoproto.moretags) = 'search:"CVE Count,store,hidden"'];
     }
     oneof set_fixable {
-        int32 fixable_cves                                      = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
+        int32 fixable_cves                                      = 9 [(gogoproto.moretags) = 'search:"Fixable CVE Count,store,hidden"'];
     }
 
-    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
 
     bool                            not_pullable                = 10;
+    bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
-    int64                           priority                    = 11;
-    float                           risk_score                  = 12 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+    int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden"'];
+    float                           risk_score                  = 12 [(gogoproto.moretags) = 'search:"Image Risk Score,hidden"'];
     oneof set_top_cvss {
-        float                       top_cvss                    = 13 [(gogoproto.moretags) = "search:\"Image Top CVSS,store\""];
+        float                       top_cvss                    = 13 [(gogoproto.moretags) = 'search:"Image Top CVSS,store"'];
     }
 
     enum Note {
-        MISSING_METADATA    = 0;
-        MISSING_SCAN_DATA   = 1;
+        MISSING_METADATA                    = 0;
+        MISSING_SCAN_DATA                   = 1;
+        MISSING_SIGNATURE                   = 2;
+        MISSING_SIGNATURE_VERIFICATION_DATA = 3;
     }
     repeated Note                   notes                       = 14;
 }
 
 message DataSource {
-    string id   = 1;
-    string name = 2;
+    string id     = 1;
+    string name   = 2;
+    string mirror = 3;
 }
 
+// Next tag: 7
 message ImageScan {
-    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
-    repeated EmbeddedImageScanComponent components       = 2;
-    string                              operating_system = 4 [(gogoproto.moretags) = "search:\"Image OS,store\""];
+    string                              scanner_version  = 6;
+    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = 'search:"Image Scan Time,store"'];
+    repeated EmbeddedImageScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
+    string                              operating_system = 4 [(gogoproto.moretags) = 'search:"Image OS,store"'];
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
     enum Note {
@@ -79,7 +86,7 @@ message ImageSignatureVerificationData {
     repeated ImageSignatureVerificationResult results = 1;
 }
 
-// Next Tag: 4
+// Next Tag: 6
 message ImageSignatureVerificationResult {
     google.protobuf.Timestamp verification_time = 1;
     // verifier_id correlates to the ID of the signature integration used to verify the signature.
@@ -95,14 +102,21 @@ message ImageSignatureVerificationResult {
         INVALID_SIGNATURE_ALGO = 3;
         // CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.
         CORRUPTED_SIGNATURE    = 4;
+        // GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific
+        // status.
+        GENERIC_ERROR          = 5;
     }
     Status status                               = 3;
+    // description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
+    string description                          = 4;
+    // The full image names that are verified by this specific signature integration ID.
+    repeated string verified_image_references   = 5;
 }
 
 // Next Tag: 13
 message EmbeddedImageScanComponent {
-    string                         name        = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version     = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
+    string                         name        = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version     = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     License                        license     = 3;
     repeated EmbeddedVulnerability vulns       = 4;
     oneof has_layer_index {
@@ -114,7 +128,7 @@ message EmbeddedImageScanComponent {
     oneof set_top_cvss {
         float                      top_cvss    = 9;
     }
-    float                          risk_score  = 10;
+    float                          risk_score  = 10 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by    = 11;
     message Executable {
@@ -161,7 +175,8 @@ message ImageMetadata {
 }
 
 message ImageSignature {
-    repeated Signature signatures = 1;
+    repeated Signature signatures                  = 1;
+    google.protobuf.Timestamp fetched              = 2 [(gogoproto.moretags) = 'search:"Image Signature Fetched Time,hidden"'];
 }
 
 message Signature {
@@ -171,7 +186,8 @@ message Signature {
 }
 
 message CosignSignature {
-    string raw_signature_base64_enc = 1;
+    bytes raw_signature      = 1;
+    bytes signature_payload  = 2;
 }
 
 message V2Metadata {
@@ -180,19 +196,19 @@ message V2Metadata {
 
 message V1Metadata {
     string                    digest     = 1;
-    google.protobuf.Timestamp created    = 2 [(gogoproto.moretags) = "search:\"Image Created Time,store\""];
+    google.protobuf.Timestamp created    = 2 [(gogoproto.moretags) = 'search:"Image Created Time,store"'];
     string                    author     = 3;
     repeated ImageLayer       layers     = 4;
-    string                    user       = 5 [(gogoproto.moretags) = "search:\"Image User\""];
-    repeated string           command    = 6 [(gogoproto.moretags) = "search:\"Image Command\""];
-    repeated string           entrypoint = 7 [(gogoproto.moretags) = "search:\"Image Entrypoint\""];
-    repeated string           volumes    = 8 [(gogoproto.moretags) = "search:\"Image Volumes\""];
-    map<string, string>       labels     = 9 [(gogoproto.moretags) = "search:\"Image Label,store\""];
+    string                    user       = 5 [(gogoproto.moretags) = 'search:"Image User"'];
+    repeated string           command    = 6 [(gogoproto.moretags) = 'search:"Image Command"'];
+    repeated string           entrypoint = 7 [(gogoproto.moretags) = 'search:"Image Entrypoint"'];
+    repeated string           volumes    = 8 [(gogoproto.moretags) = 'search:"Image Volumes"'];
+    map<string, string>       labels     = 9 [(gogoproto.moretags) = 'search:"Image Label,store"'];
 }
 
 message ImageLayer {
-    string instruction                     = 1 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Keyword,store\""];
-    string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
+    string instruction                     = 1 [(gogoproto.moretags) = 'search:"Dockerfile Instruction Keyword,store"'];
+    string value                           = 2 [(gogoproto.moretags) = 'search:"Dockerfile Instruction Value,store"'];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
     reserved 5; // formerly embedded components
@@ -200,10 +216,10 @@ message ImageLayer {
 }
 
 message ImageName {
-    string registry                         = 1 [(gogoproto.moretags) = "search:\"Image Registry,store\""];
-    string remote                           = 2 [(gogoproto.moretags) = "search:\"Image Remote,store\""];
-    string tag                              = 3 [(gogoproto.moretags) = "search:\"Image Tag,store\""];
-    string full_name                        = 4 [(gogoproto.moretags) = "search:\"Image,store,analyzer=standard\""];
+    string registry                         = 1 [(gogoproto.moretags) = 'search:"Image Registry,store"'];
+    string remote                           = 2 [(gogoproto.moretags) = 'search:"Image Remote,store"'];
+    string tag                              = 3 [(gogoproto.moretags) = 'search:"Image Tag,store"'];
+    string full_name                        = 4 [(gogoproto.moretags) = 'search:"Image,store,analyzer=standard"'];
 }
 
 message ListImage {
@@ -225,25 +241,6 @@ message ListImage {
     int64 priority                         = 10;
 }
 
-message ImageComponentEdge {
-    // base 64 encoded Image:Component ids.
-    string    id          = 1;
-
-    /// Layer that contains this component
-    oneof has_layer_index {
-        int32 layer_index = 2;
-    }
-
-    string    location    = 3 [(gogoproto.moretags) = "search:\"Component Location,store,hidden\""];
-}
-
-message ImageCVEEdge {
-    // base 64 encoded Image:CVE ids.
-    string                    id                     = 1;
-    google.protobuf.Timestamp first_image_occurrence = 2 [(gogoproto.moretags) = "search:\"First Image Occurrence Timestamp,hidden\""];
-    VulnerabilityState        state                  = 3 [(gogoproto.moretags) = "search:\"Vulnerability State\""];
-}
-
 message WatchedImage {
-  string name            = 1;
+  string name            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
 }

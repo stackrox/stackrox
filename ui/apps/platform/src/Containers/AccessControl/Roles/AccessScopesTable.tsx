@@ -22,29 +22,12 @@ function AccessScopesTable({
         <TableComposable variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Th />
+                    <Td />
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>
                 </Tr>
             </Thead>
             <Tbody>
-                <Tr className="pf-u-background-color-200">
-                    <Td className="pf-c-table__check">
-                        <input
-                            type="radio"
-                            name={fieldId}
-                            value=""
-                            onChange={handleChange}
-                            aria-label="Unrestricted"
-                            checked={accessScopeId.length === 0}
-                            disabled={isDisabled}
-                        />
-                    </Td>
-                    <Td dataLabel="Name" modifier="nowrap">
-                        Unrestricted
-                    </Td>
-                    <Td dataLabel="Description">Access to all clusters and namespaces</Td>
-                </Tr>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
                         <Td className="pf-c-table__check">

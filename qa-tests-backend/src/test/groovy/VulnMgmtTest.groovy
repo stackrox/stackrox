@@ -1,12 +1,12 @@
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
+
 import services.GraphQLService
-import groups.BAT
-import org.junit.experimental.categories.Category
-import services.ImageIntegrationService
 import services.ImageService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
-@Category(BAT)
+@Tag("BAT")
 class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =
             "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
@@ -34,11 +34,32 @@ class VulnMgmtTest extends BaseSpecification {
       }
     }
 
-    fragment cveFields on EmbeddedVulnerability {
-      cvss
-      severity
+fragment cveFields on EmbeddedVulnerability {
+  cve
+  cvss
+  severity
+}
+"""
+
+    private static final EMBEDDED_IMAGE_POSTGRES_QUERY = """
+    query getImage(\$id: ID!, \$query: String) {
+      result: fullImage(id: \$id) {
+        scan {
+          components(query: \$query) {
+            vulns(query: \$query) {
+              ...cveFields
+            }
+          }
+        }
+      }
     }
-    """
+
+fragment cveFields on EmbeddedVulnerability {
+  cve
+  cvss
+  severity
+}
+"""
 
     private static final TOPLEVEL_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
@@ -50,6 +71,21 @@ class VulnMgmtTest extends BaseSpecification {
     }
 
     fragment cveFields on EmbeddedVulnerability {
+      cvss
+      severity
+    }
+    """
+
+    private static final TOPLEVEL_IMAGE_POSTGRES_QUERY = """
+    query getImage(\$id: ID!, \$query: String) {
+      result: image(id: \$id) {
+        vulns: imageVulnerabilities(query: \$query) {
+          ...cveFields
+        }
+      }
+    }
+
+    fragment cveFields on ImageVulnerability {
       cvss
       severity
     }
@@ -76,6 +112,26 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
+    private static final IMAGE_FIXABLE_CVE_POSTGRES_QUERY = """
+query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
+  result: image(id: \$id) {
+    vulnerabilities: imageVulnerabilities(
+      query: \$vulnQuery
+      scopeQuery: \$scopeQuery
+    ) {
+      ...cveFields
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment cveFields on ImageVulnerability {
+  cvss
+  severity
+}
+"""
+
     private static final COMPONENT_FIXABLE_CVE_QUERY = """
 query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
   result: component(id: \$id) {
@@ -91,6 +147,27 @@ query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: Stri
 }
 
 fragment cveFields on EmbeddedVulnerability {
+  cve
+  cvss
+  severity
+}
+"""
+
+    private static final COMPONENT_FIXABLE_CVE_POSTGRES_QUERY = """
+query getFixableCvesForEntity(\$id: ID!, \$scopeQuery: String, \$vulnQuery: String) {
+  result: imageComponent(id: \$id) {
+    vulnerabilities: imageVulnerabilities(
+      query: \$vulnQuery
+      scopeQuery: \$scopeQuery
+    ) {
+      ...cveFields
+      __typename
+    }
+    __typename
+  }
+}
+
+fragment cveFields on ImageVulnerability {
   cve
   cvss
   severity
@@ -113,14 +190,57 @@ fragment cveFields on EmbeddedVulnerability {
 }
 """
 
+    private static final COMPONENT_SUBCVE_POSTGRES_QUERY = """
+query getComponentSubEntityCVE(\$id: ID!, \$query: String, \$scopeQuery: String) {
+  result: imageComponent(id: \$id) {
+    vulns: imageVulnerabilities(query: \$query, scopeQuery: \$scopeQuery) {
+      ...cveFields
+    }
+    __typename
+  }
+}
+
+fragment cveFields on ImageVulnerability {
+  cvss
+  severity
+}
+"""
+
     def setupSpec() {
-        ImageIntegrationService.addStackroxScannerIntegration()
         ImageService.scanImage(RHEL_IMAGE)
         ImageService.scanImage(UBUNTU_IMAGE)
     }
 
-    def cleanupSpec() {
-        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+    def getEmbeddedImageQuery() {
+        return isPostgresRun() ? EMBEDDED_IMAGE_POSTGRES_QUERY : EMBEDDED_IMAGE_QUERY
+    }
+
+    def getTopLevelImageQuery() {
+        return isPostgresRun() ? TOPLEVEL_IMAGE_POSTGRES_QUERY : TOPLEVEL_IMAGE_QUERY
+    }
+
+    def getImageFixableCVEQuery() {
+        return isPostgresRun() ? IMAGE_FIXABLE_CVE_POSTGRES_QUERY : IMAGE_FIXABLE_CVE_QUERY
+    }
+
+    def getComponentFixableCVEQuery() {
+        return isPostgresRun() ? COMPONENT_FIXABLE_CVE_POSTGRES_QUERY : COMPONENT_FIXABLE_CVE_QUERY
+    }
+
+    def getComponentSubCVEQuery() {
+        return isPostgresRun() ? COMPONENT_SUBCVE_POSTGRES_QUERY : COMPONENT_SUBCVE_QUERY
+    }
+
+    def getRHELComponentID() {
+        return isPostgresRun() ?
+            "ncurses-base#5.9-14.20130511.el7_4#centos:7" :
+            "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180"
+    }
+
+    def getUbuntuComponentID() {
+        return isPostgresRun() ?
+            "ncurses#5.9+20140118-1ubuntu1#ubuntu:14.04" :
+            "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"
     }
 
     @Unroll
@@ -128,28 +248,35 @@ fragment cveFields on EmbeddedVulnerability {
         when:
         def gqlService = new GraphQLService()
 
-        def embeddedImageRes = gqlService.Call(EMBEDDED_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10685"])
-        assert embeddedImageRes.hasNoErrors()
+        def embeddedImageRes = gqlService.Call(getEmbeddedImageQuery(),
+                [id: imageDigest, query: "CVE:CVE-2017-10684"])
+
+        // Expanded instead of using hasErrors() for easier debugging if there are errors
+        // as the test framework will actually print out the errors now
+        assert embeddedImageRes.code == 200
+        if (embeddedImageRes.getErrors() != null) {
+            assert embeddedImageRes.getErrors().size() == 0
+        }
+
         def embeddedImageResVuln = embeddedImageRes.value.result.scan.components[0].vulns[0]
 
-        def topLevelImageRes = gqlService.Call(TOPLEVEL_IMAGE_QUERY,
-                [id: imageDigest, query: "CVE:CVE-2017-10685"])
+        def topLevelImageRes = gqlService.Call(getTopLevelImageQuery(),
+                [id: imageDigest, query: "CVE:CVE-2017-10684"])
         assert topLevelImageRes.hasNoErrors()
-        def topLevelImageResVuln = topLevelImageRes.value.result.vulns[0]
+        def topLevelImageResVuln =  topLevelImageRes.value.result.vulns[0]
 
-        def fixableCVEImageRes = gqlService.Call(IMAGE_FIXABLE_CVE_QUERY,
-                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+        def fixableCVEImageRes = gqlService.Call(getImageFixableCVEQuery(),
+                [id: imageDigest, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEImageRes.hasNoErrors()
         def fixableCVEImageResVuln = fixableCVEImageRes.value.result.vulnerabilities[0]
 
-        def fixableCVEComponentRes = gqlService.Call(COMPONENT_FIXABLE_CVE_QUERY,
-                [id: componentB64, vulnQuery: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+        def fixableCVEComponentRes = gqlService.Call(getComponentFixableCVEQuery(),
+                [id: componentID, vulnQuery: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert fixableCVEComponentRes.hasNoErrors()
         def fixableCVEComponentResVuln = fixableCVEComponentRes.value.result.vulnerabilities[0]
 
-        def subCVEComponentRes = gqlService.Call(COMPONENT_SUBCVE_QUERY,
-                [id: componentB64, query: "CVE:CVE-2017-10685", scopeQuery: "Image SHA:${imageDigest}"])
+        def subCVEComponentRes = gqlService.Call(getComponentSubCVEQuery(),
+                [id: componentID, query: "CVE:CVE-2017-10684", scopeQuery: "Image SHA:${imageDigest}"])
         assert subCVEComponentRes.hasNoErrors()
         def subCVEComponentResVuln = subCVEComponentRes.value.result.vulns[0]
 
@@ -171,10 +298,10 @@ fragment cveFields on EmbeddedVulnerability {
 
         where:
         "Data inputs are: "
-        imageDigest | component | componentB64 | severity | cvss
-        RHEL_IMAGE_DIGEST   | "ncurses-base" | "bmN1cnNlcy1iYXNl:NS45LTE0LjIwMTMwNTExLmVsN180" |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 7.0
-        UBUNTU_IMAGE_DIGEST | "ncurses"      | "bmN1cnNlcw:NS45KzIwMTQwMTE4LTF1YnVudHUx"       |
+        imageDigest | component | componentID | severity | cvss
+        RHEL_IMAGE_DIGEST   | "ncurses-base" | getRHELComponentID()   |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 5.3
+        UBUNTU_IMAGE_DIGEST | "ncurses"      | getUbuntuComponentID() |
                 VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY      | 9.8
     }
 }

@@ -1,0 +1,32 @@
+.policy-section-card {
+    width: 100%;
+}
+
+.policy-section-card-header {
+    border-bottom: 1px solid var(--pf-global--BorderColor--100);
+}
+
+.policy-section-card-body {
+    overflow: auto;
+    padding-top: var(--pf-global--spacer--md);
+}
+
+#policy-sections article.pf-c-card.policy-section-card {
+    width: 100%;
+}
+
+/* for large size screens, change the policy sections to be width limited */
+@media (min-width: 992px) {
+    .policy-section-card {
+        min-width: 450px;
+        max-width: 450px;
+        height: 100%;
+    }
+
+    .policy-section-card-header {
+        background-color: var(--pf-global--BackgroundColor--100);
+        position: sticky;
+        top: 0;
+        z-index: 101;
+    }
+}

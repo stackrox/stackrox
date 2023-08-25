@@ -35,8 +35,8 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
             job_pattern=$(echo "$pattern" | jq -r '.job')
             logfile_pattern=$(echo "$pattern" | jq -r '.logfile')
             logline_pattern=$(echo "$pattern" | jq -r '.logline')
-            if [[ "${job}" =~ ${job_pattern} ]] && 
-               [[ "${logfile}" =~ ${logfile_pattern} ]] && 
+            if [[ "${job}" =~ ${job_pattern} ]] &&
+               [[ "${logfile}" =~ ${logfile_pattern} ]] &&
                egrep -q "${logline_pattern}" "${logfile}"
             then
                 echo "Ignoring this restart due to: ${comment}"
@@ -46,6 +46,10 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
         done
         if ! ${this_log_is_ok}; then
             echo "This restart does not match any ignore patterns"
+            if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+                cp "${logfile}" "${ARTIFACT_DIR}" || true
+                echo "$(basename "${logfile}") copied to Artifacts"
+            fi
             all_ok=false
         fi
     done
@@ -55,4 +59,3 @@ patterns=$(jq -c '.[]' "$DIR/restart-ok-patterns.json")
 )
 
 exit 0
-

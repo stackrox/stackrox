@@ -1,11 +1,9 @@
 package datastore
 
 import (
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/imagecomponentedge/index"
+	"github.com/stackrox/rox/central/globaldb"
+	pgStore "github.com/stackrox/rox/central/imagecomponentedge/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
-	"github.com/stackrox/rox/central/imagecomponentedge/store/dackbox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -17,12 +15,10 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox())
-	utils.CrashOnError(err)
-
-	searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()))
-
-	ad, err = New(globaldb.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	var err error
+	storage := pgStore.New(globaldb.GetPostgres())
+	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	ad, err = New(storage, searcher)
 	utils.CrashOnError(err)
 }
 

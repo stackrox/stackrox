@@ -11,7 +11,10 @@ package storage;
 message NetworkFlow {
     NetworkFlowProperties props                     = 1;
 
-    google.protobuf.Timestamp last_seen_timestamp   = 2;
+    google.protobuf.Timestamp last_seen_timestamp   = 2 [(gogoproto.moretags) = 'sql:"index=brin"'];
+
+    // Need the clusterID as that is part of the key in RocksDB
+    string cluster_id = 3 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 }
 
 message NetworkFlowProperties {
@@ -20,8 +23,8 @@ message NetworkFlowProperties {
     // The destination deployment ID of the network flow
     NetworkEntityInfo dst_entity = 2;
     // may be 0 if not applicable (e.g., icmp).
-    uint32 dst_port              = 3;
-    L4Protocol l4protocol        = 4;
+    uint32 dst_port              = 3 [(gogoproto.moretags) = 'sql:"pk"'];
+    L4Protocol l4protocol        = 4 [(gogoproto.moretags) = 'sql:"pk"'];
 }
 
 message NetworkEndpoint {
@@ -77,11 +80,11 @@ message NetworkEntityInfo {
             string cidr     = 2;
         }
         // `default` indicates whether the external source is user-generated or system-generated.
-        bool       default  = 3 [(gogoproto.moretags) = "search:\"Default External Source,hidden\""];
+        bool       default  = 3 [(gogoproto.moretags) = 'search:"Default External Source,hidden"'];
     }
 
-    Type               type            = 1;
-    string             id              = 2;
+    Type               type            = 1 [(gogoproto.moretags) = 'sql:"index"'];
+    string             id              = 2 [(gogoproto.moretags) = 'sql:"pk"'];
 
     oneof desc {
         Deployment     deployment      = 3;

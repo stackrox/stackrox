@@ -1,0 +1,93 @@
+.pf-ri__topology-section {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pf-ri__topology-section .pf-c-tab-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.pf-ri__topology-section .pf-c-tab-content:focus {
+    outline: none;
+}
+
+.pf-ri__topology-section .pf-c-toolbar {
+    --pf-c-toolbar__expandable-content--lg--PaddingBottom: 0;
+    --pf-c-toolbar--PaddingBottom: 0;
+}
+
+.pf-ri__topology-section .pf-c-toolbar__item .pf-l-flex {
+    --pf-l-flex--FlexWrap: no-wrap;
+}
+
+.pf-ri__topology-section .pf-c-toolbar__item .pf-l-flex>* {
+    --pf-l-flex--spacer: 8px;
+}
+
+.pf-ri__topology-section .pf-c-toolbar__item .pf-c-form-control {
+    width: 85px;
+}
+
+.pf-ri-topology-context-menu {
+    z-index: 1050;
+}
+
+.pf-ri-topology-context-menu__kebab-wrapper.pf-c-dropdown__menu-item {
+    padding: 0;
+}
+
+.pf-ri__topology-section__package-input {
+    width: 75px;
+}
+
+.pf-ri-topology__node__background {
+    fill: var(--pf-global--palette--black-400);
+    stroke-width: 1px;
+    stroke: var(--pf-global--palette--black-1000);
+}
+
+.pf-ri-topology__node__background.pf-m-selected {
+    fill: var(--pf-global--active-color--100);
+}
+
+.pf-ri-topology__node__background.pf-m-hover {
+    fill: var(--pf-global--palette--green-300);
+}
+
+.pf-ri-topology__node__background.pf-m-drop-target {
+    fill: var(--pf-global--palette--light-blue-200);
+}
+
+.pf-c-page__main-section#\/topology-section-page-section,
+.pf-c-page__main-section#\/topology-pipelines-demo-page-section,
+.pf-c-page__main-section#\/topology-sidepanel-demo-page-section {
+    --pf-c-page__main-section--PaddingTop: 0;
+    --pf-c-page__main-section--PaddingRight: 0;
+    --pf-c-page__main-section--PaddingLeft: 0;
+    --pf-c-page__main-section--PaddingBottom: 0;
+}
+
+.pf-c-tab-content[hidden] {
+    display: none !important;
+}
+
+g.pf-topology__edge {
+    cursor: default;
+}
+
+.pf-topology-control-bar .pf-c-toolbar__group {
+    display: flex;
+    align-self: stretch;
+}
+
+.pf-topology-control-bar .pf-c-toolbar__item, .pf-topology-control-bar button {
+    height: 100%;
+}
+
+ul#edge-state-select {
+    width: 270px;
+}

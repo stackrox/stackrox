@@ -21,13 +21,14 @@ const Metadata = ({
     annotations,
     exclusions,
     secrets,
+    description,
     className,
     ...rest
 }) => {
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="flex border-b border-base-300 py-3" key={key}>
             <span className="text-base-600 font-700 mr-2">{key}:</span>
-            <span className="flex-grow font-600" data-testid={`${key}-value`}>
+            <span className="min-w-0" data-testid={`${key}-value`}>
                 {value}
             </span>
         </li>
@@ -41,7 +42,7 @@ const Metadata = ({
         <Widget header={title} className={className} {...rest}>
             <div className="flex flex-col w-full">
                 {statTiles && statTiles.length > 0 && <MetadataStatsList statTiles={statTiles} />}
-                <div className="flex w-full h-full">
+                <div className="flex">
                     <ul className={keyValueClasses}>{keyValueList}</ul>
                     <ul>
                         {labels && (
@@ -84,6 +85,11 @@ const Metadata = ({
                         )}
                     </ul>
                 </div>
+                {description && (
+                    <div className="p-4" data-testid="metadata-description">
+                        {description}
+                    </div>
+                )}
             </div>
         </Widget>
     );
@@ -102,6 +108,7 @@ Metadata.propTypes = {
     annotations: PropTypes.arrayOf(PropTypes.shape({})),
     exclusions: PropTypes.arrayOf(PropTypes.shape({})),
     secrets: PropTypes.arrayOf(PropTypes.shape({})),
+    description: PropTypes.string,
     className: PropTypes.string,
 };
 
@@ -112,6 +119,7 @@ Metadata.defaultProps = {
     annotations: null,
     exclusions: null,
     secrets: null,
+    description: null,
     className: '',
 };
 

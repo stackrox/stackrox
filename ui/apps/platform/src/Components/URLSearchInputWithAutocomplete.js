@@ -17,10 +17,15 @@ const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
 const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
+// Render readonly input with placeholder instead of span to prevent insufficient color contrast.
 export const placeholderCreator = (placeholderText) => () =>
     (
-        <span className="text-base-500 flex h-full items-center pointer-events-none">
-            <span className="font-600 absolute text-lg">{placeholderText}</span>
+        <span className="flex h-full items-center pointer-events-none">
+            <input
+                className="bg-base-100 text-base-600 absolute"
+                placeholder={placeholderText}
+                readOnly
+            />
         </span>
     );
 
@@ -280,6 +285,7 @@ const URLSearchInputWithAutocomplete = ({
     const hideDropdown = options.length ? '' : 'hide-dropdown';
     const isFocused = document.activeElement.id === 'url-search-input';
     const creatableProps = {
+        'aria-label': placeholder,
         className: `${className} ${hideDropdown}`,
         components: { ValueContainer, Option, Placeholder, MultiValue },
         options,
@@ -302,7 +308,7 @@ const URLSearchInputWithAutocomplete = ({
 
 URLSearchInputWithAutocomplete.propTypes = {
     className: PropTypes.string,
-    placeholder: PropTypes.string,
+    placeholder: PropTypes.string.isRequired,
     categoryOptions: PropTypes.arrayOf(PropTypes.string),
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
     location: ReactRouterPropTypes.location.isRequired,
@@ -319,7 +325,6 @@ URLSearchInputWithAutocomplete.propTypes = {
 
 URLSearchInputWithAutocomplete.defaultProps = {
     className: '',
-    placeholder: 'Add one or more filters',
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,

@@ -1,11 +1,10 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 )
 
@@ -61,42 +60,53 @@ func (j *JUnitPrinterFactory) SupportedFormats() []string {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and an example for the map of JSON Path expressions
 // JSON structure:
-// type data struct {
-//		Policies []policy `json:"policies"`
-//		FailedPolicies []failedPolicy `json:"failedPolicies"`
-// }
-// type policy struct {
-//		name string `json:"name"`
-//		severity string `json:"severity"`
-// }
-// type failedPolicy struct {
-//		name string `json:"name"`
-//		error string `json:"error"`
-// }
+//
+//	type data struct {
+//			Policies []policy `json:"policies"`
+//			FailedPolicies []failedPolicy `json:"failedPolicies"`
+//	}
+//
+//	type policy struct {
+//			name string `json:"name"`
+//			severity string `json:"severity"`
+//	}
+//
+//	type failedPolicy struct {
+//			name string `json:"name"`
+//			error string `json:"error"`
+//	}
+//
 // Data:
-// data := &data{Policies: []policy{
-//								{name: "policy1", severity: "HIGH"},
-//								{name: "policy2", severity: "LOW"},
-//								{name: "policy3", severity: "MEDIUM"}
-//								},
-//				 FailedPolicies: []failedPolicy{
-//								{name: "policy1", error: "error msg1"}},
-//				}
+//
+//	data := &data{Policies: []policy{
+//									{name: "policy1", severity: "HIGH"},
+//									{name: "policy2", severity: "LOW"},
+//									{name: "policy3", severity: "MEDIUM"}
+//									},
+//					 FailedPolicies: []failedPolicy{
+//									{name: "policy1", error: "error msg1"}},
+//					}
+//
 // Map of GJSON expressions:
-//	- specify "#" to visit each element of an array
-//	- the expressions for failed test cases and error messages MUST be equal and correlated
-// expressions := map[string]{
-//					JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
-//					JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
-//					JUnitTestCasesExpressionKey: "data.policies.#.name",
-//				}
+//
+//   - specify "#" to visit each element of an array
+//
+//   - the expressions for failed test cases and error messages MUST be equal and correlated
+//
+// Example:
+//
+//	expressions := map[string]{
+//	JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
+//	JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
+//	JUnitTestCasesExpressionKey: "data.policies.#.name",
+//	}
 //
 // This would result in the following test cases and failed test cases:
 // Amount of test cases: 3
 // Testcases:
-//		- Name: policy1, Failed: "error msg1"
-//		- Name: policy2, Successful
-//		- Name: policy3, Successful
+//   - Name: policy1, Failed: "error msg1"
+//   - Name: policy2, Successful
+//   - Name: policy3, Successful
 func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error) {
 	if err := j.validate(); err != nil {
 		return nil, err
@@ -106,8 +116,7 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 	case "junit":
 		return printers.NewJUnitPrinter(j.suiteName, j.jsonPathExpressions), nil
 	default:
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"JUnit Printer: %q", format))
+		return nil, errox.InvalidArgs.Newf("invalid output format used for JUnit Printer %q", format)
 	}
 }
 
@@ -116,7 +125,7 @@ func (j *JUnitPrinterFactory) CreatePrinter(format string) (ObjectPrinter, error
 func (j *JUnitPrinterFactory) validate() error {
 	// ensure that the suite name is not empty
 	if j.suiteName == "" {
-		return errorhelpers.NewErrInvalidArgs("empty JUnit test suite name given, " +
+		return errox.InvalidArgs.New("empty JUnit test suite name given, " +
 			"please provide a meaningful name")
 	}
 
@@ -124,8 +133,7 @@ func (j *JUnitPrinterFactory) validate() error {
 		if _, exists := j.jsonPathExpressions[key]; !exists {
 			// since the jsonPathExpression map is NOT expected to be set by the user, return an ErrInvariantViolation
 			// instead
-			return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("missing required JSON Path expression "+
-				"for key %q", key))
+			return errox.InvariantViolation.Newf("missing required JSON Path expression for key %q", key)
 		}
 	}
 

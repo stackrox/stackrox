@@ -3,29 +3,31 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import pluralize from 'pluralize';
-import toLower from 'lodash/toLower';
 import merge from 'lodash/merge';
 
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
 import URLService from 'utils/URLService';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
-import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounOrdinaryCasePlural } from '../entitiesForCompliance';
+import HorizontalBarChart from './HorizontalBarChart';
 
 function formatAsPercent(x) {
     return `${x}%`;
 }
 
-function setStandardsMapping(data, type) {
+function setStandardsMapping(data, key, type) {
     const mapping = {};
-    data.results.forEach((result) => {
+    data[key].results.forEach((result) => {
         const standardId = result.aggregationKeys[0].id;
+        if (!data.complianceStandards.some(({ id }) => id === standardId)) {
+            return; // because it implies standardId has hideScanResults: true
+        }
         const { numPassing, numFailing } = result;
         if (numPassing === 0 && numFailing === 0) {
             return;
@@ -50,23 +52,20 @@ function setStandardsMapping(data, type) {
 
 const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const headerText = `Passing standards across ${entityType}s`;
+    const headerText = `Passing standards across ${entityNounOrdinaryCasePlural[entityType]}`;
 
     function processData(data, type) {
         if (!data || !data.results || !data.results.results.length) {
             return [];
         }
-        const { complianceStandards } = data;
         const standardsMapping = merge(
             {},
-            setStandardsMapping(data.results, 'checks'),
-            setStandardsMapping(data.controls, 'controls')
+            setStandardsMapping(data, 'results', 'checks'),
+            setStandardsMapping(data, 'controls', 'controls')
         );
 
         const barData = Object.keys(standardsMapping).map((standardId) => {
-            const standard = complianceStandards.find((cs) => cs.id === standardId);
-            const { controls, checks } = standardsMapping[standardId];
-            const { passing: passingControls, total: totalControls } = controls;
+            const { checks } = standardsMapping[standardId];
             const { passing: passingChecks, total: totalChecks } = checks;
             const percentagePassing = Math.round((passingChecks / totalChecks) * 100) || 0;
             const link = URLService.getURL(match, location)
@@ -81,12 +80,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             const dataPoint = {
                 y: standardBaseTypes[standardId] || standardId,
                 x: percentagePassing,
-                hint: {
-                    title: `${standard?.name} Standard - ${percentagePassing}% Passing`,
-                    body: `${
-                        totalControls - passingControls
-                    } failing controls across all ${pluralize(resourceLabels[type])}`,
-                },
                 link,
             };
             return dataPoint;
@@ -98,7 +91,7 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK,
     };
-    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITY, {
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_ACROSS_ENTITY(entityType), {
         variables,
     });
 
@@ -107,7 +100,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             <Widget
                 className={`s-2 ${className}`}
                 header={headerText}
-                id={`standards-across-${toLower(entityType)}`}
                 bodyClassName={`graph-bottom-border ${bodyClassName}`}
             >
                 <div>
@@ -133,7 +125,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
         <Widget
             className={`s-2 ${className}`}
             header={headerText}
-            id={`standards-across-${toLower(entityType)}`}
             bodyClassName={`graph-bottom-border ${bodyClassName}`}
         >
             {contents}

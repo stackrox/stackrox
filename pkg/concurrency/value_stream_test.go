@@ -68,7 +68,7 @@ func TestValueStream_SequentialAsync(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func receive(ctx context.Context, t *testing.T, start ValueStreamIter, num int, store map[int]struct{}, wg *sync.WaitGroup) {
+func receive(ctx context.Context, t *testing.T, start ValueStreamIter[int], num int, store map[int]struct{}, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	it := start
@@ -78,7 +78,7 @@ func receive(ctx context.Context, t *testing.T, start ValueStreamIter, num int, 
 		if !assert.NoError(t, err) {
 			return
 		}
-		store[it.Value().(int)] = struct{}{}
+		store[it.Value()] = struct{}{}
 	}
 }
 
@@ -143,7 +143,7 @@ func TestValueStream_NonStrict(t *testing.T) {
 
 	lastEvenVal := 0
 	for {
-		value := it.Value().(int)
+		value := it.Value()
 		assert.GreaterOrEqual(t, value, lastEvenVal)
 
 		if value >= 10 {
@@ -164,44 +164,6 @@ func TestValueStream_SubscribeChan(t *testing.T) {
 
 	vs := NewValueStream(0)
 
-	ch := make(chan interface{})
-	errSig := NewErrorSignal()
-	defer errSig.Signal()
-
-	go errSig.SignalWithErrorWhen(context.DeadlineExceeded, TimeoutOr(1*time.Second, &errSig), &errSig)
-
-	subscribeErrC := make(chan error)
-	startIt := vs.Iterator(true)
-	go func() {
-		subscribeErrC <- SubscribeChan(&errSig, ch, startIt)
-	}()
-
-	go func() {
-		for i := 1; i <= 10; i++ {
-			time.Sleep(10 * time.Millisecond)
-			vs.Push(i)
-		}
-	}()
-
-	for i := 0; i <= 10; i++ {
-		select {
-		case val := <-ch:
-			assert.Equal(t, i, val)
-		case <-errSig.Done():
-			assert.Fail(t, "error signal should not expire")
-		}
-	}
-	errSig.Signal()
-
-	subscribeErr := <-subscribeErrC
-	assert.NoError(t, subscribeErr)
-}
-
-func TestValueStream_SubscribeChanTyped(t *testing.T) {
-	t.Parallel()
-
-	vs := NewValueStream(0)
-
 	ch := make(chan int)
 	errSig := NewErrorSignal()
 	defer errSig.Signal()
@@ -211,7 +173,7 @@ func TestValueStream_SubscribeChanTyped(t *testing.T) {
 	subscribeErrC := make(chan error)
 	startIt := vs.Iterator(true)
 	go func() {
-		subscribeErrC <- SubscribeChanTyped(&errSig, ch, startIt)
+		subscribeErrC <- SubscribeChan(&errSig, ch, startIt)
 	}()
 
 	go func() {

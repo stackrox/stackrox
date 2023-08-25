@@ -5,9 +5,10 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
+
+	gomock "go.uber.org/mock/gomock"
+	storage "github.com/stackrox/rox/generated/storage"
 )
 
 // MockStore is a mock of Store interface

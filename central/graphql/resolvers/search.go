@@ -29,6 +29,11 @@ type PaginatedQuery struct {
 	Pagination *inputtypes.Pagination
 }
 
+// PaginationWrapper represents pagination without any query
+type PaginationWrapper struct {
+	Pagination *inputtypes.Pagination
+}
+
 // AsV1QueryOrEmpty returns a proto query or empty proto query if pagination query is empty
 func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	var q *v1.Query
@@ -116,21 +121,25 @@ func (r RawQuery) IsEmpty() bool {
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore,
-		v1.SearchCategory_CLUSTERS:         resolver.ClusterDataStore,
-		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore,
-		v1.SearchCategory_IMAGES:           resolver.ImageDataStore,
-		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore,
-		v1.SearchCategory_SECRETS:          resolver.SecretsDataStore,
-		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore,
-		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore,
-		v1.SearchCategory_COMPLIANCE:       resolver.ComplianceAggregator,
-		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore,
-		v1.SearchCategory_ROLES:            resolver.K8sRoleStore,
-		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore,
-		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore,
-		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore,
-		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
+		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore,
+		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore,
+		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore,
+		v1.SearchCategory_IMAGES:                  resolver.ImageDataStore,
+		v1.SearchCategory_POLICIES:                resolver.PolicyDataStore,
+		v1.SearchCategory_SECRETS:                 resolver.SecretsDataStore,
+		v1.SearchCategory_NAMESPACES:              resolver.NamespaceDataStore,
+		v1.SearchCategory_NODES:                   resolver.NodeDataStore,
+		v1.SearchCategory_COMPLIANCE:              resolver.ComplianceAggregator,
+		v1.SearchCategory_SERVICE_ACCOUNTS:        resolver.ServiceAccountsDataStore,
+		v1.SearchCategory_ROLES:                   resolver.K8sRoleStore,
+		v1.SearchCategory_ROLEBINDINGS:            resolver.K8sRoleBindingStore,
+		v1.SearchCategory_IMAGE_COMPONENTS:        resolver.ImageComponentDataStore,
+		v1.SearchCategory_SUBJECTS:                service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
+		v1.SearchCategory_IMAGE_VULNERABILITIES:   resolver.ImageCVEDataStore,
+		v1.SearchCategory_NODE_VULNERABILITIES:    resolver.NodeCVEDataStore,
+		v1.SearchCategory_CLUSTER_VULNERABILITIES: resolver.ClusterCVEDataStore,
+		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore,
+		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore,
 	}
 
 	return searchers
@@ -139,20 +148,24 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
 
 	searchfuncs := map[v1.SearchCategory]searchService.SearchFunc{
-		v1.SearchCategory_ALERTS:           resolver.ViolationsDataStore.SearchAlerts,
-		v1.SearchCategory_CLUSTERS:         resolver.ClusterDataStore.SearchResults,
-		v1.SearchCategory_DEPLOYMENTS:      resolver.DeploymentDataStore.SearchDeployments,
-		v1.SearchCategory_IMAGES:           resolver.ImageDataStore.SearchImages,
-		v1.SearchCategory_POLICIES:         resolver.PolicyDataStore.SearchPolicies,
-		v1.SearchCategory_SECRETS:          resolver.SecretsDataStore.SearchSecrets,
-		v1.SearchCategory_NAMESPACES:       resolver.NamespaceDataStore.SearchResults,
-		v1.SearchCategory_NODES:            resolver.NodeGlobalDataStore.SearchResults,
-		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore.SearchServiceAccounts,
-		v1.SearchCategory_ROLES:            resolver.K8sRoleStore.SearchRoles,
-		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
-		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore.SearchImageComponents,
-		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore.SearchCVEs,
-		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
+		v1.SearchCategory_ALERTS:                  resolver.ViolationsDataStore.SearchAlerts,
+		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore.SearchResults,
+		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore.SearchDeployments,
+		v1.SearchCategory_IMAGES:                  resolver.ImageDataStore.SearchImages,
+		v1.SearchCategory_POLICIES:                resolver.PolicyDataStore.SearchPolicies,
+		v1.SearchCategory_SECRETS:                 resolver.SecretsDataStore.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:              resolver.NamespaceDataStore.SearchResults,
+		v1.SearchCategory_NODES:                   resolver.NodeDataStore.SearchNodes,
+		v1.SearchCategory_SERVICE_ACCOUNTS:        resolver.ServiceAccountsDataStore.SearchServiceAccounts,
+		v1.SearchCategory_ROLES:                   resolver.K8sRoleStore.SearchRoles,
+		v1.SearchCategory_ROLEBINDINGS:            resolver.K8sRoleBindingStore.SearchRoleBindings,
+		v1.SearchCategory_IMAGE_COMPONENTS:        resolver.ImageComponentDataStore.SearchImageComponents,
+		v1.SearchCategory_SUBJECTS:                service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
+		v1.SearchCategory_IMAGE_VULNERABILITIES:   resolver.ImageCVEDataStore.SearchImageCVEs,
+		v1.SearchCategory_NODE_VULNERABILITIES:    resolver.NodeCVEDataStore.SearchNodeCVEs,
+		v1.SearchCategory_CLUSTER_VULNERABILITIES: resolver.ClusterCVEDataStore.SearchClusterCVEs,
+		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore.SearchNodeComponents,
+		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore.SearchPolicyCategories,
 	}
 
 	return searchfuncs

@@ -31,27 +31,27 @@ type PolicyCounterResolver struct {
 }
 
 // Total returns the total number of violated policies.
-func (evr *PolicyCounterResolver) Total(ctx context.Context) int32 {
+func (evr *PolicyCounterResolver) Total(_ context.Context) int32 {
 	return evr.total
 }
 
 // Low returns the total number of low severity violated policies.
-func (evr *PolicyCounterResolver) Low(ctx context.Context) int32 {
+func (evr *PolicyCounterResolver) Low(_ context.Context) int32 {
 	return evr.low
 }
 
 // Medium returns the total number of moderate severity violated policies.
-func (evr *PolicyCounterResolver) Medium(ctx context.Context) int32 {
+func (evr *PolicyCounterResolver) Medium(_ context.Context) int32 {
 	return evr.medium
 }
 
 // High returns the total number of important severity violated policies.
-func (evr *PolicyCounterResolver) High(ctx context.Context) int32 {
+func (evr *PolicyCounterResolver) High(_ context.Context) int32 {
 	return evr.high
 }
 
 // Critical returns the total number of critical severity violated policies.
-func (evr *PolicyCounterResolver) Critical(ctx context.Context) int32 {
+func (evr *PolicyCounterResolver) Critical(_ context.Context) int32 {
 	return evr.critical
 }
 

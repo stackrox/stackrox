@@ -98,7 +98,7 @@ func (p *networkDataParser) parse(sources *common.ExternalNetworkSources) []*sto
 	return ret
 }
 
-func (p *networkDataParser) generateEntity(provider, region, service, cidr string) *networkEntity {
+func (p *networkDataParser) generateEntity(provider, region, _, cidr string) *networkEntity {
 	// Validation failures logging is skipped to avoid log spam. Further validation is done at datastore upsert.
 	if stringutils.AtLeastOneEmpty(provider, cidr) {
 		return nil

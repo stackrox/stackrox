@@ -203,11 +203,3 @@ func (c *cacheImpl) DeleteMany(ids []string) error {
 	}
 	return nil
 }
-
-func (c *cacheImpl) AckKeysIndexed(keys ...string) error {
-	return c.db.AckKeysIndexed(keys...)
-}
-
-func (c *cacheImpl) GetKeysToIndex() ([]string, error) {
-	return c.db.GetKeysToIndex()
-}

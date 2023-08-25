@@ -1,0 +1,352 @@
+{
+    "clusters": [
+        {
+            "id": "2a226ad1-9f7a-eb6d-b0e5-a0db4ad68161",
+            "name": "degraded-kubectl-1",
+            "type": "KUBERNETES_CLUSTER",
+            "labels": {},
+            "mainImage": "stackrox/main:latest",
+            "collectorImage": "stackrox/collector",
+            "centralApiEndpoint": "central.stackrox:443",
+            "runtimeSupport": false,
+            "collectionMethod": "EBPF",
+            "admissionController": false,
+            "admissionControllerUpdates": false,
+            "admissionControllerEvents": true,
+            "status": {
+                "sensorVersion": "3.0.50.0",
+                "providerMetadata": {
+                    "region": "us-west1",
+                    "google": {}
+                },
+                "orchestratorMetadata": {
+                    "version": "v1.14.8",
+                    "buildDate": "2019-10-15T12:02:12Z",
+                    "apiVersions": []
+                },
+                "upgradeStatus": {
+                    "upgradability": "UP_TO_DATE",
+                    "upgradabilityStatusReason": "sensor is running the same version as Central",
+                    "mostRecentProcess": null
+                },
+                "certExpiryStatus": {
+                    "sensorCertExpiry": "2020-09-29T13:01:00Z"
+                }
+            },
+            "dynamicConfig": {
+                "admissionControllerConfig": {
+                    "enabled": false,
+                    "timeoutSeconds": 3,
+                    "scanInline": false,
+                    "disableBypass": false
+                },
+                "registryOverride": "",
+                "disableAuditLogs": true
+            },
+            "tolerationsConfig": {
+                "disabled": false
+            },
+            "priority": "1",
+            "healthStatus": {
+                "collectorHealthInfo": {
+                    "totalDesiredPods": 5,
+                    "totalReadyPods": 3,
+                    "totalRegisteredNodes": 6
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 1
+                },
+                "sensorHealthStatus": "HEALTHY",
+                "collectorHealthStatus": "UNHEALTHY",
+                "overallHealthStatus": "UNHEALTHY",
+                "admissionControlHealthStatus": "UNHEALTHY",
+                "lastContact": "2020-08-31T13:00:59Z",
+                "healthInfoComplete": true
+            },
+            "slimCollector": false,
+            "helmConfig": null,
+            "managedBy": "MANAGER_TYPE_UNKNOWN"
+        },
+        {
+            "id": "e3a8407f-db07-3d01-5371-aeb7159779dd",
+            "name": "degraded-helm-1",
+            "type": "KUBERNETES_CLUSTER",
+            "labels": {},
+            "mainImage": "stackrox/main:latest",
+            "collectorImage": "stackrox/collector",
+            "centralApiEndpoint": "central.stackrox:443",
+            "runtimeSupport": false,
+            "collectionMethod": "EBPF",
+            "admissionController": false,
+            "admissionControllerUpdates": false,
+            "admissionControllerEvents": true,
+            "status": {
+                "sensorVersion": "3.0.50.0",
+                "providerMetadata": {
+                    "region": "us-central1",
+                    "aws": {}
+                },
+                "orchestratorMetadata": {
+                    "version": "v1.14.8",
+                    "buildDate": "2019-10-15T12:02:12Z",
+                    "apiVersions": []
+                },
+                "upgradeStatus": {
+                    "upgradability": "UP_TO_DATE",
+                    "upgradabilityStatusReason": "sensor is running the same version as Central",
+                    "mostRecentProcess": null
+                },
+                "certExpiryStatus": {
+                    "sensorCertExpiry": "2020-09-29T13:01:00Z"
+                }
+            },
+            "dynamicConfig": {
+                "admissionControllerConfig": {
+                    "enabled": false,
+                    "timeoutSeconds": 3,
+                    "scanInline": false,
+                    "disableBypass": false,
+                    "enforceOnUpdates": false
+                },
+                "registryOverride": "",
+                "disableAuditLogs": true
+            },
+            "tolerationsConfig": {
+                "disabled": false
+            },
+            "priority": "1",
+            "healthStatus": {
+                "collectorHealthInfo": {
+                    "totalDesiredPods": 10,
+                    "totalReadyPods": 10,
+                    "totalRegisteredNodes": 12
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 3
+                },
+                "sensorHealthStatus": "DEGRADED",
+                "collectorHealthStatus": "HEALTHY",
+                "overallHealthStatus": "DEGRADED",
+                "admissionControlHealthStatus": "HEALTHY",
+                "lastContact": "2020-08-31T12:59:00Z",
+                "healthInfoComplete": true
+            },
+            "slimCollector": false,
+            "helmConfig": {
+                "clusterName": "degraded-helm",
+                "initToken": null,
+                "centralEndpoint": "central.stackrox:443",
+                "imagePullSecrets": {
+                    "useExisting": ["stackrox"]
+                },
+                "image": {
+                    "registry": "stackrox.io"
+                },
+                "env": {
+                    "openshift": true
+                },
+                "sensor": {
+                    "resources": {
+                        "requests": {
+                            "memory": "1Gi",
+                            "cpu": "1"
+                        },
+                        "limits": {
+                            "memory": "4Gi",
+                            "cpu": "2"
+                        }
+                    }
+                },
+                "admissionControl": {
+                    "enable": false,
+                    "listenOnUpdates": false,
+                    "enforceOnUpdates": false,
+                    "dynamic": {
+                        "enforce": false,
+                        "scanInline": false,
+                        "disableBypass": false,
+                        "timeout": 3
+                    },
+                    "resources": {
+                        "requests": {
+                            "memory": "100Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "500Mi",
+                            "cpu": "500m"
+                        }
+                    }
+                },
+                "collector": {
+                    "collectionMethod": "EBPF",
+                    "disableTaintTolerations": false,
+                    "slimMode": true,
+                    "resources": {
+                        "requests": {
+                            "memory": "320Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "1Gi",
+                            "cpu": "750m"
+                        }
+                    },
+                    "complianceResources": {
+                        "requests": {
+                            "memory": "10Mi",
+                            "cpu": "10m"
+                        },
+                        "limits": {
+                            "memory": "2Gi",
+                            "cpu": "1"
+                        }
+                    }
+                }
+            },
+            "managedBy": "MANAGER_TYPE_UNKNOWN"
+        },
+        {
+            "id": "ab6f16fd-1a6c-4701-9b38-4ad2ce56109d",
+            "name": "degraded-operator-1",
+            "type": "KUBERNETES_CLUSTER",
+            "labels": {},
+            "mainImage": "stackrox/main:latest",
+            "collectorImage": "stackrox/collector",
+            "centralApiEndpoint": "central.stackrox:443",
+            "runtimeSupport": false,
+            "collectionMethod": "EBPF",
+            "admissionController": false,
+            "admissionControllerUpdates": false,
+            "admissionControllerEvents": true,
+            "status": {
+                "sensorVersion": "3.0.50.0",
+                "providerMetadata": {
+                    "region": "us-west1",
+                    "google": {}
+                },
+                "orchestratorMetadata": {
+                    "version": "v1.14.8",
+                    "buildDate": "2019-10-15T12:02:12Z",
+                    "apiVersions": []
+                },
+                "upgradeStatus": {
+                    "upgradability": "UP_TO_DATE",
+                    "upgradabilityStatusReason": "sensor is running the same version as Central",
+                    "mostRecentProcess": null
+                },
+                "certExpiryStatus": {
+                    "sensorCertExpiry": "2020-09-29T13:01:00Z"
+                }
+            },
+            "dynamicConfig": {
+                "admissionControllerConfig": {
+                    "enabled": false,
+                    "timeoutSeconds": 3,
+                    "scanInline": false,
+                    "disableBypass": false
+                },
+                "registryOverride": "",
+                "disableAuditLogs": true
+            },
+            "tolerationsConfig": {
+                "disabled": false
+            },
+            "priority": "1",
+            "healthStatus": {
+                "collectorHealthInfo": {
+                    "totalDesiredPods": 5,
+                    "totalReadyPods": 3,
+                    "totalRegisteredNodes": 6
+                },
+                "admissionControlHealthInfo": {
+                    "totalDesiredPods": 3,
+                    "totalReadyPods": 1
+                },
+                "sensorHealthStatus": "HEALTHY",
+                "collectorHealthStatus": "UNHEALTHY",
+                "overallHealthStatus": "UNHEALTHY",
+                "admissionControlHealthStatus": "UNHEALTHY",
+                "lastContact": "2020-08-31T13:00:59Z",
+                "healthInfoComplete": true
+            },
+            "slimCollector": false,
+            "helmConfig": {
+                "clusterName": "degraded-operator-1",
+                "initToken": null,
+                "centralEndpoint": "central.stackrox:443",
+                "imagePullSecrets": {
+                    "useExisting": ["stackrox"]
+                },
+                "image": {
+                    "registry": "stackrox.io"
+                },
+                "env": {
+                    "openshift": true
+                },
+                "sensor": {
+                    "resources": {
+                        "requests": {
+                            "memory": "1Gi",
+                            "cpu": "1"
+                        },
+                        "limits": {
+                            "memory": "4Gi",
+                            "cpu": "2"
+                        }
+                    }
+                },
+                "admissionControl": {
+                    "enable": false,
+                    "listenOnUpdates": false,
+                    "enforceOnUpdates": false,
+                    "dynamic": {
+                        "enforce": false,
+                        "scanInline": false,
+                        "disableBypass": false,
+                        "timeout": 3
+                    },
+                    "resources": {
+                        "requests": {
+                            "memory": "100Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "500Mi",
+                            "cpu": "500m"
+                        }
+                    }
+                },
+                "collector": {
+                    "collectionMethod": "EBPF",
+                    "disableTaintTolerations": false,
+                    "slimMode": true,
+                    "resources": {
+                        "requests": {
+                            "memory": "320Mi",
+                            "cpu": "50m"
+                        },
+                        "limits": {
+                            "memory": "1Gi",
+                            "cpu": "750m"
+                        }
+                    },
+                    "complianceResources": {
+                        "requests": {
+                            "memory": "10Mi",
+                            "cpu": "10m"
+                        },
+                        "limits": {
+                            "memory": "2Gi",
+                            "cpu": "1"
+                        }
+                    }
+                }
+            },
+            "managedBy": "MANAGER_TYPE_KUBERNETES_OPERATOR"
+        }
+    ],
+    "clusterIdToRetentionInfo": {}
+}

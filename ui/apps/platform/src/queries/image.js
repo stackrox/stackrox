@@ -33,11 +33,6 @@ export const IMAGE_FRAGMENT = gql`
                 name
                 layerIndex
                 version
-                license {
-                    name
-                    type
-                    url
-                }
                 vulns {
                     cve
                     cvss

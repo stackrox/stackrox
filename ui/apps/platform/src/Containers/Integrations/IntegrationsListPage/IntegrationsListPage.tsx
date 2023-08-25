@@ -7,10 +7,11 @@ import {
     BreadcrumbItem,
     Divider,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
 import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
@@ -20,6 +21,7 @@ import {
     getIsAPIToken,
     getIsClusterInitBundle,
     getIntegrationLabel,
+    getIsSignatureIntegration,
 } from 'Containers/Integrations/utils/integrationUtils';
 
 import PageTitle from 'Components/PageTitle';
@@ -35,6 +37,7 @@ import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleC
 
 function IntegrationsListPage({
     deleteIntegrations,
+    triggerBackup,
     fetchClusterInitBundles,
     revokeAPITokens,
 }): ReactElement {
@@ -42,9 +45,20 @@ function IntegrationsListPage({
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
+    const history = useHistory();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+    if (!canUseCloudBackupIntegrations && source === 'backups') {
+        history.replace(integrationsPath);
+    }
+
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
     const isClusterInitBundle = getIsClusterInitBundle(source, type);
+    const isSignatureIntegration = getIsSignatureIntegration(source);
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);
@@ -76,22 +90,27 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection variant={PageSectionVariants.light}>
-                <div className="pf-u-mb-sm">
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
-                    </Breadcrumb>
-                </div>
-                <Title headingLevel="h1">Integrations</Title>
+            <PageSection variant={PageSectionVariants.light} className="pf-u-py-md">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
+                </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <IntegrationsTable
-                title={typeLabel}
-                integrations={integrations}
-                hasMultipleDelete={!isClusterInitBundle}
-                onDeleteIntegrations={onDeleteIntegrations}
-            />
+            <PageSection variant="light">
+                <Title headingLevel="h1">
+                    {isSignatureIntegration ? 'Signature' : ''} Integrations
+                </Title>
+                {!isSignatureIntegration && <Title headingLevel="h2">{typeLabel}</Title>}
+            </PageSection>
+            <PageSection variant="default">
+                <IntegrationsTable
+                    integrations={integrations}
+                    hasMultipleDelete={!isClusterInitBundle}
+                    onDeleteIntegrations={onDeleteIntegrations}
+                    onTriggerBackup={triggerBackup}
+                />
+            </PageSection>
             {isAPIToken && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
@@ -99,6 +118,7 @@ function IntegrationsListPage({
                     isOpen={deletingIntegrationIds.length !== 0}
                     onConfirm={onConfirmDeletingIntegrationIds}
                     onCancel={onCancelDeleteIntegrationIds}
+                    title="Delete API token"
                 >
                     <DeleteAPITokensConfirmationText
                         numIntegrations={deletingIntegrationIds.length}
@@ -137,6 +157,7 @@ function IntegrationsListPage({
 
 const mapDispatchToProps = {
     deleteIntegrations: integrationsActions.deleteIntegrations,
+    triggerBackup: integrationsActions.triggerBackup,
     fetchClusterInitBundles: clusterInitBundlesActions.fetchClusterInitBundles.request,
     revokeAPITokens: apitokensActions.revokeAPITokens,
 };

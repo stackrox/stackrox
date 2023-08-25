@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/scans/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -38,7 +38,7 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(scan *storage.Complian
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan read")
 	}
-	return d.store.Walk(fn)
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) Upsert(ctx context.Context, scan *storage.ComplianceOperatorScan) error {
@@ -47,7 +47,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, scan *storage.ComplianceOper
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan write")
 	}
-	return d.store.Upsert(scan)
+	return d.store.Upsert(ctx, scan)
 }
 
 func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
@@ -56,5 +56,5 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator scan delete")
 	}
-	return d.store.Delete(id)
+	return d.store.Delete(ctx, id)
 }

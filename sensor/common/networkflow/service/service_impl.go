@@ -34,6 +34,8 @@ func NewService(networkFlowManager manager.Manager) Service {
 }
 
 type serviceImpl struct {
+	sensor.UnimplementedNetworkConnectionInfoServiceServer
+
 	manager manager.Manager
 }
 
@@ -43,7 +45,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 // RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for network connection info service
 	return nil
 }
@@ -85,14 +87,14 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 	go s.runRecv(stream, recvdMsgC, recvErrC)
 
-	var publicIPsIterator concurrency.ValueStreamIter
+	var publicIPsIterator concurrency.ValueStreamIter[*sensor.IPAddressList]
 	if capsSet.Contains(publicIPsUpdateCap) {
 		publicIPsIterator = s.manager.PublicIPsValueStream().Iterator(false)
 		if err := s.sendPublicIPList(stream, publicIPsIterator); err != nil {
 			return err
 		}
 	}
-	var externalSrcsIterator concurrency.ValueStreamIter
+	var externalSrcsIterator concurrency.ValueStreamIter[*sensor.IPNetworkList]
 	if capsSet.Contains(networkGraphExtSrcsCap) {
 		// Non-strict allows us to skip to the most recent element using `TryNext()` and this is fine since each element in the stream
 		// is a full network list that we want to monitor.
@@ -168,8 +170,8 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 	}
 }
 
-func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter) error {
-	listProto, _ := iter.Value().(*sensor.IPAddressList)
+func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPAddressList]) error {
+	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}
@@ -184,8 +186,8 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 	return nil
 }
 
-func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter) error {
-	listProto, _ := iter.Value().(*sensor.IPNetworkList)
+func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPNetworkList]) error {
+	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}

@@ -6,7 +6,7 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )

@@ -49,6 +49,12 @@ the login page, and log in with username "admin" and the password found in the
      - Run scanner/scripts/setup.sh
      - Run {{.K8sConfig.Command}} create -R -f scanner
 `
+	kubectlCentralDBTemplate = `
+  - Deploy Central DB
+     To deploy Postgres Central DB and prepare for Central upgrade:
+     - Run scripts/setup.sh
+     - Run ./deploy-central-db.sh
+`
 	recommendHelmInstallationTemplate = `
 PLEASE NOTE: The recommended way to deploy StackRox is by using Helm. If you have
 Helm 3.1+ installed, please consider choosing this deployment route instead. For your
@@ -80,6 +86,8 @@ a README file detailing the Helm-based deployment process.`
     - Run
         helm install -n stackrox --create-namespace stackrox-central-services {{ $chartRef }}
       passing any additional arguments per the above instructions.
+      For installation of 4.1 and laster, it is required to add --set central.persistence.none=true to stop creating
+      new persistent storage to attach to Central.
 {{- if eq .K8sConfig.DeploymentFormat.String "HELM_VALUES" }}
       If you prefer reading the Helm chart from a directory on your local disk instead of from
       the stackrox upstream repository, replace {{ $chartRef }} with the path to the
@@ -100,6 +108,8 @@ func instructions(c Config, mode mode) (string, error) {
 	} else if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL {
 		if mode == scannerOnly {
 			template = kubectlScannerTemplate
+		} else if mode == centralDBOnly {
+			template = kubectlCentralDBTemplate
 		} else {
 			template = kubectlInstructionTemplate + kubectlScannerTemplate + recommendHelmInstallationTemplate
 		}
@@ -109,11 +119,11 @@ func instructions(c Config, mode mode) (string, error) {
 
 	tpl, err := helmTemplate.InitTemplate("temp").Parse(template)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 	data, err := templates.ExecuteToBytes(tpl, &c)
 	if err != nil {
-		return "", utils.Should(err)
+		return "", utils.ShouldErr(err)
 	}
 
 	instructions := string(data)

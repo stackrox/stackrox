@@ -3,9 +3,9 @@ package initbundles
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"text/tabwriter"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -13,11 +13,12 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-func listInitBundles(cliEnvironment environment.Environment) error {
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), contextTimeout)
+func listInitBundles(cliEnvironment environment.Environment, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
 	conn, err := cliEnvironment.GRPCConnection()
@@ -27,7 +28,7 @@ func listInitBundles(cliEnvironment environment.Environment) error {
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	tabWriter := tabwriter.NewWriter(os.Stdout, 4, 8, 2, '\t', 0)
+	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
 
 	rsp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
@@ -59,9 +60,11 @@ func listInitBundles(cliEnvironment environment.Environment) error {
 // listCommand implements the command for listing init bundles.
 func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "List cluster init bundles",
+		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return listInitBundles(cliEnvironment)
+			return listInitBundles(cliEnvironment, flags.Timeout(c))
 		}),
 	}
 	return c

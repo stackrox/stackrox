@@ -44,17 +44,15 @@ func getOpNames(methods map[string]methodGenerator) []string {
 }
 
 // GenerateInterfaceAndImplementation generates the interface definition and the implementation for the given DB operation.
-func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]Code, []Code) {
+func GenerateInterfaceAndImplementation(props GeneratorProperties) []Code {
 	interfaceMethods := make([]Code, 0, len(supportedMethods))
-	implementations := make([]Code, 0, len(supportedMethods))
 	for _, opName := range getOpNames(supportedMethods) {
 		method, ok := supportedMethods[opName]
 		if !ok {
 			panic(fmt.Sprintf("UNEXPECTED: method %s not found", opName))
 		}
-		interfaceMethod, implementation := method(props)
+		interfaceMethod, _ := method(props)
 		interfaceMethods = append(interfaceMethods, interfaceMethod)
-		implementations = append(implementations, implementation)
 	}
 	if props.NeedsTxManager {
 		for _, opName := range getOpNames(supportedTxnMethods) {
@@ -62,17 +60,10 @@ func GenerateInterfaceAndImplementation(props GeneratorProperties) ([]Code, []Co
 			if !ok {
 				panic(fmt.Sprintf("UNEXPECTED: method %s not found", opName))
 			}
-			interfaceMethod, implementation := method(props)
+			interfaceMethod, _ := method(props)
 			interfaceMethods = append(interfaceMethods, interfaceMethod)
-			implementations = append(implementations, implementation)
 		}
 	}
 
-	return interfaceMethods, implementations
-}
-
-// IsSupported returns whether the given opName is supported.
-func IsSupported(opName string) bool {
-	_, ok := supportedMethods[opName]
-	return ok
+	return interfaceMethods
 }

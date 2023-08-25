@@ -1,6 +1,7 @@
 package store
 
 import (
+	pgStore "github.com/stackrox/rox/central/externalbackups/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,7 +15,7 @@ var (
 // Singleton returns the global external backup store
 func Singleton() Store {
 	once.Do(func() {
-		s = New(globaldb.GetGlobalDB())
+		s = pgStore.New(globaldb.GetPostgres())
 	})
 	return s
 }

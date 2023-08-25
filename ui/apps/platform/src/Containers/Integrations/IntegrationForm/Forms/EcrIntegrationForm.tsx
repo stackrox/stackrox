@@ -6,13 +6,14 @@ import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type EcrIntegration = {
@@ -117,7 +118,7 @@ export const defaultValues: EcrIntegrationFormValues = {
             registryId: '',
             endpoint: '',
             region: '',
-            useIam: true,
+            useIam: false,
             accessKeyId: '',
             secretAccessKey: '',
             useAssumeRole: false,
@@ -138,12 +139,21 @@ function EcrIntegrationForm({
     isEditable = false,
 }: IntegrationFormProps<EcrIntegration>): ReactElement {
     const formInitialValues = { ...defaultValues, ...initialValues };
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseContainerIamRoleForEcr = isCentralCapabilityAvailable(
+        'centralScanningCanUseContainerIamRoleForEcr'
+    );
+
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.ecr.accessKeyId = '';
         formInitialValues.config.ecr.secretAccessKey = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -265,17 +275,23 @@ function EcrIntegrationForm({
                             />
                         </FormLabelGroup>
                     )}
-                    <FormLabelGroup fieldId="config.ecr.useIam" touched={touched} errors={errors}>
-                        <Checkbox
-                            label="Use container IAM role"
-                            id="config.ecr.useIam"
-                            aria-label="use container iam role"
-                            isChecked={values.config.ecr.useIam}
-                            onChange={onChange}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable}
-                        />
-                    </FormLabelGroup>
+                    {canUseContainerIamRoleForEcr && (
+                        <FormLabelGroup
+                            fieldId="config.ecr.useIam"
+                            touched={touched}
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Use container IAM role"
+                                id="config.ecr.useIam"
+                                aria-label="use container iam role"
+                                isChecked={values.config.ecr.useIam}
+                                onChange={onChange}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                    )}
                     {!values.config.ecr.useIam && (
                         <>
                             <FormLabelGroup

@@ -1,0 +1,49 @@
+name: Update collector version
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: 0 5 * * 1-5
+jobs:
+  update-collector:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: master # this is our target branch
+        fetch-depth: 0 # we need to fetch all branches
+    - name: Checkout collector repo
+      uses: actions/checkout@v3
+      with:
+        repository: stackrox/collector
+        path: deps/collector
+        fetch-depth: 0 # we need to fetch tags
+    - name: Update version
+      run: make -sC deps/collector tag | tee COLLECTOR_VERSION
+    - name: Create Pull Request
+      id: cpr
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: '${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}'
+        commit-message: Update COLLECTOR_VERSION
+        committer: RoxBot <roxbot@stackrox.com>
+        author: RoxBot <roxbot@stackrox.com>
+        branch: update_collector_version
+        signoff: false
+        delete-branch: true
+        title: 'chore(collector): Update COLLECTOR_VERSION'
+        body: |
+          Daily update of COLLECTOR_VERSION to latest master version
+        labels: |
+          ci-all-qa-tests
+          dependencies
+        team-reviewers: |
+          collector-team
+          backend-dep-updaters
+        draft: false
+    - name: Enable Pull Request Automerge
+      if: steps.cpr.outputs.pull-request-operation == 'created'
+      uses: peter-evans/enable-pull-request-automerge@v3
+      with:
+        token: '${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}'
+        pull-request-number: '${{ steps.cpr.outputs.pull-request-number }}'
+        merge-method: squash

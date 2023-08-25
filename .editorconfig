@@ -1,2 +1,7 @@
 [{Makefile,**.mk}]
 indent_style = tab
+
+[**.{proto,sh}]
+indent_style = space
+indent_size = 4
+

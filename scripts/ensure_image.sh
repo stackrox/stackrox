@@ -29,23 +29,17 @@ set -e
 echo "Building the image since it doesn't exist"
 docker build -t "${image}" -f "${dockerfile}" "${dir}"
 if [[ -n "${CI}" ]]; then
-  docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-  docker login -u  "${QUAY_RHACS_ENG_RW_USERNAME}" -p "${QUAY_RHACS_ENG_RW_PASSWORD}" quay.io
-  docker push "${image}" | cat
-
-  if [[ $image == docker* || $image == stackrox* ]]; then
-    repo=${image#docker.io/}
-    repo=${repo#stackrox/}
-
-    quay_image="quay.io/rhacs-eng/${repo}"
-    docker tag ${image} ${quay_image}
-    docker push ${quay_image} | cat
-  elif [[ $image == quay* ]]; then
-    docker_image="docker.io/stackrox/${image#quay.io/rhacs-eng/}"
-    docker tag ${image} ${docker_image}
-    docker push ${docker_image} | cat
-  fi
-
+    case "$image" in
+        quay.io/rhacs-eng/*)
+            docker login -u "$QUAY_RHACS_ENG_RW_USERNAME" --password-stdin <<<"$QUAY_RHACS_ENG_RW_PASSWORD" quay.io
+            ;;
+        quay.io/stackrox-io/*)
+            docker login -u "$QUAY_STACKROX_IO_RW_USERNAME" --password-stdin <<<"$QUAY_STACKROX_IO_RW_PASSWORD" quay.io
+            ;;
+        *)
+            die "Unsupported registry of image: $image"
+    esac
+    docker push "${image}" | cat
 else
   echo "Not in CI, not pushing the new image..."
 fi

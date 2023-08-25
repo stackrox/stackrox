@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/logimbue/store"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type handlerImpl struct {
@@ -22,7 +25,7 @@ func (l handlerImpl) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// Post handles accepting new logs from the frontend.
+// post handles accepting new logs from the frontend.
 func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 	// If we panic unpacking the contents, we want to return an HTTP error for a bad request.
 	panicked := true
@@ -49,7 +52,12 @@ func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := l.storage.AddLog(buff.String()); err != nil {
+	log := &storage.LogImbue{
+		Id:        uuid.NewV4().String(),
+		Timestamp: types.TimestampNow(),
+		Log:       buff.Bytes(),
+	}
+	if err := l.storage.Upsert(req.Context(), log); err != nil {
 		resp.WriteHeader(http.StatusInternalServerError)
 		return
 	}

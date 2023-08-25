@@ -1,21 +1,19 @@
-import groups.BAT
-import groups.RUNTIME
 import io.stackrox.proto.storage.Cve
 import io.stackrox.proto.storage.VulnRequests
+
 import objects.Deployment
-import org.junit.Assume
-import org.junit.experimental.categories.Category
-import services.FeatureFlagService
 import services.VulnRequestService
+
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
-    static final private NGINX_1_10_2_IMAGE = "us.gcr.io/stackrox-ci/nginx:1.10.2"
+    static final private NGINX_1_12_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName("vulnerable-deploy")
-            .setImage(NGINX_1_10_2_IMAGE)
+            .setImage(NGINX_1_12_IMAGE)
             .addLabel("app", "test")
 
     static final private String CVE_TO_DEFER = "CVE-2005-2541"
@@ -30,12 +28,9 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
-        given:
-        "Vuln Management Feature is enabled"
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_VULN_RISK_MANAGEMENT"))
-
         when:
         "A user requests a vuln be deferred or marked as FP"
         VulnRequests.VulnerabilityRequest vulnReq
@@ -74,8 +69,8 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
         } else {
             assert req.getExpired()
         }
-        assert req.getCves().getIdsCount() == 1
-        assert req.getCves().getIds(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
+        assert req.getCves().getCvesCount() == 1
+        assert req.getCves().getCves(0) == (requestType == "defer" ? CVE_TO_DEFER: CVE_TO_MARK_FP)
         assert req.getCommentsCount() == 2
         assert req.getComments(0).getMessage() == "${requestType} me" &&
                 req.getComments(1).getMessage() == "actioned"

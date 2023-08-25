@@ -1,4 +1,5 @@
 UI_BASE_URL ?= https://localhost:8000
+YARN_NETWORK_TIMEOUT ?= 60000
 
 .PHONY: all
 all: deps lint test build
@@ -10,8 +11,10 @@ SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 # tracking package.json files of monorepo packages is the easiest way to discover such situations
 PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -false -o -name package.json)
 
+export REACT_APP_ROX_PRODUCT_BRANDING := $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
+
 deps: yarn.lock $(PACKAGE_JSON_FILES)
-	yarn install --frozen-lockfile
+	yarn install --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
 	@touch deps
 
 .PHONY: printsrcs
@@ -27,16 +30,12 @@ lint: deps $(SOURCES)
 build: deps $(SOURCES)
 	@echo "+ $@"
 	yarn build
+	@touch build
 
 .PHONY: start
 start: deps
 	@echo "+ $@"
 	yarn start
-
-.PHONY: start-coverage
-start-coverage: deps
-	@echo "+ $@"
-	yarn start:coverage
 
 .PHONY: test
 test: deps $(SOURCES)
@@ -47,16 +46,6 @@ test: deps $(SOURCES)
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
 	yarn test-e2e
-
-.PHONY: test-e2e-coverage
-test-e2e-coverage: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e:coverage
-
-.PHONY: test-e2e-demo
-test-e2e-demo: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e-demo
 
 .PHONY: clean
 clean:

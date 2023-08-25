@@ -22,5 +22,9 @@ func init() {
 		k8sObjectCounts,
 		k8sObjectProcessingDuration,
 		k8sObjectIngestionToSendDuration,
+		resolverChannelSize,
+		outputChannelSize,
+		telemetrySecuredNodes,
+		telemetrySecuredVCPU,
 	)
 }

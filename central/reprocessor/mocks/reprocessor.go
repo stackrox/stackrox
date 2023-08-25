@@ -7,7 +7,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockLoop is a mock of Loop interface.
@@ -47,6 +47,18 @@ func (m *MockLoop) ReprocessRiskForDeployments(deploymentIDs ...string) {
 func (mr *MockLoopMockRecorder) ReprocessRiskForDeployments(deploymentIDs ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessRiskForDeployments", reflect.TypeOf((*MockLoop)(nil).ReprocessRiskForDeployments), deploymentIDs...)
+}
+
+// ReprocessSignatureVerifications mocks base method.
+func (m *MockLoop) ReprocessSignatureVerifications() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ReprocessSignatureVerifications")
+}
+
+// ReprocessSignatureVerifications indicates an expected call of ReprocessSignatureVerifications.
+func (mr *MockLoopMockRecorder) ReprocessSignatureVerifications() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessSignatureVerifications", reflect.TypeOf((*MockLoop)(nil).ReprocessSignatureVerifications))
 }
 
 // ShortCircuit mocks base method.

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
@@ -53,7 +52,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
 	require.NotNil(t, vs)
-	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv4Networks(), 5)
+	assert.Len(t, vs.Value().GetIpv4Networks(), 5)
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
@@ -95,7 +94,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
 	require.NotNil(t, vs)
-	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv4Networks(), 10)
+	assert.Len(t, vs.Value().GetIpv4Networks(), 10)
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
@@ -174,8 +173,8 @@ func TestExternalSrcsHandler(t *testing.T) {
 	assert.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
 	require.NotNil(t, vs)
-	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv4Networks(), 5)
-	assert.Len(t, vs.Value().(*sensor.IPNetworkList).GetIpv6Networks(), 17)
+	assert.Len(t, vs.Value().GetIpv4Networks(), 5)
+	assert.Len(t, vs.Value().GetIpv6Networks(), 17)
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())

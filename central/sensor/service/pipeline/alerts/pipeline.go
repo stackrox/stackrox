@@ -40,7 +40,7 @@ type pipelineImpl struct {
 	deployments      deploymentDataStore.DataStore
 }
 
-func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
 	return nil
 }
 
@@ -49,7 +49,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Alert)
 
 	clusterName, exists, err := s.clusters.GetClusterName(ctx, clusterID)
@@ -73,13 +73,19 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	for _, a := range alertResults.GetAlerts() {
+		a.ClusterId = clusterID
+		a.ClusterName = clusterName
 		if deployment := a.GetDeployment(); deployment != nil {
 			deployment.ClusterId = clusterID
 			deployment.ClusterName = clusterName
+			a.Namespace = deployment.Namespace
+			a.NamespaceId = deployment.NamespaceId
 		}
 		if resource := a.GetResource(); resource != nil {
 			resource.ClusterId = clusterID
 			resource.ClusterName = clusterName
+			a.Namespace = resource.Namespace
+			a.NamespaceId = resource.NamespaceId
 		}
 	}
 

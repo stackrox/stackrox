@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
 
@@ -16,7 +16,7 @@ import InfoWidget from 'Components/InfoWidget';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Loader from 'Components/Loader';
-import ResourceTabs from 'Components/ResourceTabs';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -25,7 +25,9 @@ import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPag
 import useCases from 'constants/useCaseTypes';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data) {
     if (!data || !data.node) {
@@ -54,6 +56,7 @@ const NodePage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
@@ -199,7 +202,11 @@ const NodePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.NODE} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.NODE}
+                                />
                             </div>
                         </div>
                     );
@@ -214,6 +221,8 @@ const NodePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -228,6 +237,7 @@ const NodePage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

@@ -3,14 +3,14 @@ package deny
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 // AuthFunc denies all access. It is meant to be used as a default gRPC AuthFunc
 // to enforce that services create meaningful ones.
 func AuthFunc(ctx context.Context) (context.Context, error) {
-	return ctx, errorhelpers.ErrNoAuthzConfigured
+	return ctx, errox.NoAuthzConfigured
 }
 
 // Everyone returns an Authorizer that denies all access, even if the client
@@ -25,5 +25,5 @@ type everyone struct{}
 
 // Authorized denies all access, even if the client has been authenticated.
 func (everyone) Authorized(context.Context, string) error {
-	return errorhelpers.ErrNoAuthzConfigured
+	return errox.NoAuthzConfigured
 }

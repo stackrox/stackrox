@@ -12,7 +12,7 @@ func (labelsCheck) Name() string {
 	return "Required labels"
 }
 
-func (labelsCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
+func (labelsCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
 	for _, act := range execPlan.Actions() {
 		if act.Object == nil {
 			continue

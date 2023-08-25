@@ -1,10 +1,54 @@
 import { gql } from '@apollo/client';
 
-export const CLUSTER_LIST_FRAGMENT = gql`
+export const CLUSTER_LIST_FRAGMENT_UPDATED = gql`
     fragment clusterFields on Cluster {
         id
         name
-        vulnCounter {
+        imageVulnerabilityCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        nodeVulnerabilityCounter {
+            all {
+                fixable
+                total
+            }
+            critical {
+                fixable
+                total
+            }
+            important {
+                fixable
+                total
+            }
+            moderate {
+                fixable
+                total
+            }
+            low {
+                fixable
+                total
+            }
+        }
+        clusterVulnerabilityCounter {
             all {
                 fixable
                 total
@@ -45,7 +89,7 @@ export const CLUSTER_LIST_FRAGMENT = gql`
 `;
 
 export const VULN_CVE_ONLY_FRAGMENT = gql`
-    fragment cveFields on EmbeddedVulnerability {
+    fragment cveFields on ImageVulnerability {
         id
         cve
         cvss
@@ -57,39 +101,281 @@ export const VULN_CVE_ONLY_FRAGMENT = gql`
     }
 `;
 
-export const VULN_CVE_LIST_FRAGMENT = gql`
+// TODO: remove this fragment after switch to Image/Node/Cluster vuln types
+export const VULN_CVE_DETAIL_FRAGMENT = gql`
     fragment cveFields on EmbeddedVulnerability {
-        id: cve
+        id
         cve
-        cvss
         vulnerabilityTypes
-        scoreVersion
         envImpact
-        impactScore
+        cvss
+        scoreVersion
+        link # for View on NVD website
+        vectors {
+            __typename
+            ... on CVSSV2 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+            ... on CVSSV3 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+        }
+        publishedOn
+        lastModified
         summary
-        severity
         fixedByVersion
         isFixable(query: $scopeQuery)
         createdAt
-        discoveredAtImage(query: $scopeQuery)
-        publishedOn
-        deploymentCount(query: $query)
-        imageCount(query: $query)
         componentCount(query: $query)
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        nodeCount(query: $query)
+    }
+`;
+
+export const IMAGE_CVE_DETAIL_FRAGMENT = gql`
+    fragment cveFields on ImageVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        scoreVersion
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        vectors {
+            __typename
+            ... on CVSSV2 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+            ... on CVSSV3 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+        }
+        vulnerabilityState
+        activeState {
+            state
+            activeContexts {
+                containerName
+                imageId
+            }
+        }
+        imageComponentCount(query: $query)
+        deploymentCount(query: $query)
+        discoveredAtImage(query: $query)
+        imageCount(query: $query)
+        operatingSystem
+    }
+`;
+
+export const NODE_CVE_DETAIL_FRAGMENT = gql`
+    fragment cveFields on NodeVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        scoreVersion
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        vectors {
+            __typename
+            ... on CVSSV2 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+            ... on CVSSV3 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+        }
+        nodeComponentCount(query: $query)
+        nodeCount(query: $query)
+        operatingSystem
+    }
+`;
+
+export const CLUSTER_CVE_DETAIL_FRAGMENT = gql`
+    fragment cveFields on ClusterVulnerability {
+        clusterCount(query: $query)
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        scoreVersion
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        unusedVarSink(query: $query)
+        vectors {
+            __typename
+            ... on CVSSV2 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+            ... on CVSSV3 {
+                impactScore
+                exploitabilityScore
+                vector
+            }
+        }
+        vulnerabilityType
+        vulnerabilityTypes
+    }
+`;
+
+export const IMAGE_CVE_LIST_FRAGMENT = gql`
+    fragment imageCVEFields on ImageVulnerability {
+        createdAt
+        cve
+        cvss
+        scoreVersion
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        operatingSystem
+        publishedOn
+        severity
+        summary
         activeState(query: $query) {
             state
             activeContexts {
                 containerName
             }
         }
+        discoveredAtImage(query: $scopeQuery)
+        deploymentCount(query: $query)
+        imageCount(query: $query)
+        componentCount: imageComponentCount(query: $query)
     }
 `;
 
-export const DEPLOYMENT_LIST_FRAGMENT = gql`
+export const CLUSTER_CVE_LIST_FRAGMENT = gql`
+    fragment clusterCVEFields on ClusterVulnerability {
+        clusterCount(query: $query)
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        vulnerabilityType
+        vulnerabilityTypes
+    }
+`;
+
+export const NODE_CVE_LIST_FRAGMENT = gql`
+    fragment nodeCVEFields on NodeVulnerability {
+        createdAt
+        cve
+        cvss
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        componentCount: nodeComponentCount
+        nodeCount
+        operatingSystem
+    }
+`;
+
+export const VULN_IMAGE_CVE_LIST_FRAGMENT = gql`
+    fragment imageCVEFields on ImageVulnerability {
+        createdAt
+        cve
+        cvss
+        discoveredAtImage
+        envImpact
+        fixedByVersion
+        id
+        impactScore
+        isFixable(query: $scopeQuery)
+        lastModified
+        lastScanned
+        link
+        operatingSystem
+        publishedOn
+        scoreVersion
+        severity
+        summary
+        suppressActivation
+        suppressExpiry
+        suppressed
+        vulnerabilityState
+        componentCount: imageComponentCount
+        imageCount
+        deploymentCount
+    }
+`;
+
+export const DEPLOYMENT_LIST_FRAGMENT_UPDATED = gql`
     fragment deploymentFields on Deployment {
         id
         name
-        vulnCounter {
+        imageVulnerabilityCounter {
             all {
                 total
                 fixable
@@ -135,11 +421,11 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
     }
 `;
 
-export const NODE_LIST_FRAGMENT = gql`
+export const NODE_LIST_FRAGMENT_UPDATED = gql`
     fragment nodeFields on Node {
         id
         name
-        vulnCounter {
+        vulnCounter: nodeVulnerabilityCounter {
             all {
                 total
                 fixable
@@ -161,12 +447,14 @@ export const NODE_LIST_FRAGMENT = gql`
                 fixable
             }
         }
-        topVuln {
+        topVuln: topNodeVulnerability {
             cvss
             scoreVersion
         }
+        notes
         scan {
             scanTime
+            notes
         }
         osImage
         containerRuntimeVersion
@@ -186,7 +474,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
         watchStatus
         deploymentCount(query: $query)
         priority
-        topVuln {
+        topVuln: topImageVulnerability {
             cvss
             scoreVersion
         }
@@ -195,14 +483,12 @@ export const IMAGE_LIST_FRAGMENT = gql`
                 created
             }
         }
-        componentCount(query: $query)
+        componentCount: imageComponentCount(query: $query)
         notes
-        scan {
-            scanTime
-            operatingSystem
-            notes
-        }
-        vulnCounter {
+        scanTime
+        operatingSystem
+        scanNotes
+        vulnCounter: imageVulnerabilityCounter {
             all {
                 total
                 fixable
@@ -268,15 +554,14 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
     }
 `;
 
-export const VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
-    fragment componentFields on EmbeddedImageScanComponent {
+export const VULN_NODE_COMPONENT_LIST_FRAGMENT = gql`
+    fragment nodeComponentFields on NodeComponent {
         id
         name
         version
         location
         source
-        fixedIn
-        vulnCounter {
+        vulnCounter: nodeVulnerabilityCounter {
             all {
                 total
                 fixable
@@ -298,7 +583,88 @@ export const VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
                 fixable
             }
         }
-        topVuln {
+        topVuln: topNodeVulnerability {
+            cvss
+            scoreVersion
+        }
+        nodeCount(query: $query)
+        priority
+        operatingSystem
+    }
+`;
+
+export const VULN_IMAGE_COMPONENT_LIST_FRAGMENT = gql`
+    fragment imageComponentFields on ImageComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter: imageVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topImageVulnerability {
+            cvss
+            scoreVersion
+        }
+        imageCount(query: $query)
+        deploymentCount(query: $query)
+        priority
+        operatingSystem
+    }
+`;
+
+export const VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
+    fragment imageComponentFields on ImageComponent {
+        id
+        name
+        version
+        location
+        source
+        fixedIn
+        vulnCounter: imageVulnerabilityCounter {
+            all {
+                total
+                fixable
+            }
+            low {
+                total
+                fixable
+            }
+            moderate {
+                total
+                fixable
+            }
+            important {
+                total
+                fixable
+            }
+            critical {
+                total
+                fixable
+            }
+        }
+        topVuln: topImageVulnerability {
             cvss
             scoreVersion
         }
@@ -310,12 +676,12 @@ export const VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT = gql`
         }
         imageCount(query: $query)
         deploymentCount(query: $query)
-        nodeCount(query: $query)
+        operatingSystem
         priority
     }
 `;
 
-export const NAMESPACE_LIST_FRAGMENT = gql`
+export const NAMESPACE_LIST_FRAGMENT_UPDATED = gql`
     fragment namespaceFields on Namespace {
         metadata {
             id
@@ -324,7 +690,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
             priority
             name
         }
-        vulnCounter {
+        imageVulnerabilityCounter {
             all {
                 fixable
                 total
@@ -346,47 +712,12 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
                 total
             }
         }
-        deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
+        deploymentCount
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatusOnly(query: $policyQuery)
         latestViolation(query: $policyQuery)
     }
-`;
-
-export const POLICY_LIST_FRAGMENT_CORE = gql`
-    fragment corePolicyFields on Policy {
-        id
-        disabled
-        notifiers
-        name
-        description
-        lastUpdated
-        severity
-        lifecycleStages
-        enforcementActions
-        isDefault
-    }
-`;
-
-export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
-    fragment unscopedPolicyFields on Policy {
-        ...corePolicyFields
-        deploymentCount: failingDeploymentCount(query: $scopeQuery) # field changed to failingDeploymentCount to improve performance
-        latestViolation
-        policyStatus
-    }
-    ${POLICY_LIST_FRAGMENT_CORE}
-`;
-
-export const POLICY_LIST_FRAGMENT = gql`
-    fragment policyFields on Policy {
-        ...corePolicyFields
-        deploymentCount: failingDeploymentCount(query: $scopeQuery) # field changed to failingDeploymentCount to improve performance
-        latestViolation
-        policyStatus
-    }
-    ${POLICY_LIST_FRAGMENT_CORE}
 `;
 
 export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`

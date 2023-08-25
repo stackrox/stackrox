@@ -85,11 +85,11 @@ func (idl *deploymentLoaderImpl) FromQuery(ctx context.Context, query *v1.Query)
 
 // CountFromQuery returns the number of deployments that match a given query.
 func (idl *deploymentLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	results, err := idl.ds.Search(ctx, query)
+	count, err := idl.ds.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // CountFromQuery returns the total number of deployments.

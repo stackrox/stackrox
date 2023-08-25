@@ -1,7 +1,8 @@
+import static util.Helpers.withRetry
+
 import java.util.concurrent.TimeUnit
 
 import io.grpc.StatusRuntimeException
-import org.apache.commons.lang.RandomStringUtils
 
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
@@ -9,10 +10,6 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 import common.Constants
-import groups.BAT
-import groups.Integration
-import groups.Notifiers
-import objects.AnchoreScannerIntegration
 import objects.AzureRegistryIntegration
 import objects.ClairScannerIntegration
 import objects.Deployment
@@ -32,17 +29,17 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
-import services.NotifierService
 import services.PolicyService
 import util.Env
+import util.MailServer
 import util.SplunkUtil
+import util.SyslogServer
 
 import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.Rule
-import org.junit.experimental.categories.Category
 import org.junit.rules.Timeout
-import spock.lang.Ignore
+import spock.lang.IgnoreIf
+import spock.lang.Tag
 import spock.lang.Unroll
 
 class IntegrationsTest extends BaseSpecification {
@@ -51,7 +48,7 @@ class IntegrationsTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(NOTIFIERDEPLOYMENT)
-                    .setImage("nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                     .addLabel("app", NOTIFIERDEPLOYMENT),
     ]
 
@@ -64,68 +61,97 @@ class IntegrationsTest extends BaseSpecification {
     Timeout globalTimeout = new Timeout(1000, TimeUnit.SECONDS)
 
     def setupSpec() {
-        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         DEPLOYMENTS.each { Services.waitForDeployment(it) }
     }
 
     def cleanupSpec() {
-        ImageIntegrationService.addStackroxScannerIntegration()
         DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
     }
 
+    @SuppressWarnings('LineLength')
     @Unroll
-    @Category([BAT])
-    @Ignore("ROX-8113 - email tests are broken")
-    def "Verify create Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
+    @Tag("BAT")
+    def "Verify create Email Integration (disableTLS=#disableTLS, startTLS=#startTLS, authenticated=#authenticated, sendCreds=#sendCreds)"() {
         given:
+        "mailserver is running"
+        def mailServer = MailServer.createMailServer(orchestrator, authenticated, !disableTLS)
+        sleep 30 * 1000 // wait 30s for service to start
+
+        and:
         "a configuration that is expected to work"
-        EmailNotifier notifier = new EmailNotifier("Email Test", disableTLS, startTLS, port)
+        EmailNotifier notifier = new EmailNotifier("Email Test",
+                mailServer.smtpUrl(),
+                sendCreds, disableTLS, startTLS)
 
         when:
         "the integration is tested"
-        Boolean response = notifier.testNotifier()
+        assert notifier.testNotifier() == shouldSucceed
 
         then:
-        "the API should return an empty message or an error, depending on the config"
-        assert response == shouldSucceed
+        "Can get the email contents from the mail server, depending on the config"
+
+        if (shouldSucceed) {
+            def emails = mailServer.findEmails(Constants.EMAIL_NOTIFER_SENDER)
+            assert emails.size() == 1
+
+            def email = emails[0]
+            assert email["subject"] == "StackRox Test Email"
+            assert email["from"][0]["address"] == Constants.EMAIL_NOTIFER_SENDER
+            assert email["to"][0]["address"] == Constants.EMAIL_NOTIFIER_RECIPIENT
+            assert email["text"] == "This is a test email created to test integration with StackRox.\n\n"
+
+            log.info "Found email with body:\n${email["text"]}"
+        }
+
+        cleanup:
+        "Remove mailserver"
+        if (mailServer) {
+            mailServer.teardown(orchestrator)
+        }
 
         where:
         "data"
 
-        port | disableTLS | startTLS | shouldSucceed
+        disableTLS | startTLS | authenticated | sendCreds | shouldSucceed
 
-        // Port 465 tests
-        // This port speaks TLS from the start.
-        // (Also test null, since 465 is the default.)
-        /////////////////
-        // Speaking TLS should work
-        465  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED   | true
-        null | false      | NotifierOuterClass.Email.AuthMethod.DISABLED   | true
+        // No TLS && authenticated
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | true | true
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | false | false
 
-        // Speaking non-TLS to a TLS port should fail and not time out, regardless of STARTTLS (see ROX-366)
-        465  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
-        465  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
-        null | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
-        null | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+        // No TLS && unauthenticated
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | false | false | true
+        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | false | true | false
 
-        // Port 587 tests
-        // At MailGun, this port begins unencrypted and supports STARTTLS.
-        /////////////////
-        // Starting unencrypted and _not_ using STARTTLS should work
-        587  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true
-        // Starting unencrypted and using STARTTLS should work
-        587  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true
-        587  | true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true
-        // Speaking TLS to a non-TLS port should fail whether you use STARTTLS or not.
-        587  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED | false
+        // At the moment maildev doesn't support tLS. Will need to do a tunnel or use a different server.
+        // TODO: Enable TLS tests https://issues.redhat.com/browse/ROX-12417
 
-        // Cannot add port 25 tests since GCP blocks outgoing
-        // connections to port 25
+//        // TLS && authenticated
+//        false      | NotifierOuterClass.Email.AuthMethod.DISABLED | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.DISABLED | true | false | false
+//
+//        // Starting unencrypted and using STARTTLS should work
+//        true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true | true | true
+//        true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true | false | true
+//        true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true | false | true
+//
+//        // Starting unencrypted and _not_ using STARTTLS should work
+//        587  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN    | true
+//        587  | true       | NotifierOuterClass.Email.AuthMethod.LOGIN    | true
+//
+//        // Speaking non-TLS to a TLS port should fail and not time out, regardless of STARTTLS (see ROX-366)
+//        465  | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
+//        465  | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+//        null | true       | NotifierOuterClass.Email.AuthMethod.DISABLED   | false
+//        null | true       | NotifierOuterClass.Email.AuthMethod.PLAIN      | false
+//
+//        // Speaking TLS to a non-TLS port should fail whether you use STARTTLS or not.
+//        587  | false      | NotifierOuterClass.Email.AuthMethod.DISABLED | false
     }
 
     @Unroll
-    @Category(BAT)
+    @Tag("BAT")
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
@@ -157,7 +183,9 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
+    // splunk is not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
         "the integration is tested"
@@ -167,11 +195,7 @@ class IntegrationsTest extends BaseSpecification {
         when:
         "call the grpc API for the splunk integration."
         SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create Splunk notifier. Skipping test!", e)
-        }
+        notifier.createNotifier()
 
         and:
         "Edit the policy with the latest keyword."
@@ -192,7 +216,7 @@ class IntegrationsTest extends BaseSpecification {
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
                         .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
@@ -220,7 +244,10 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
+    // slack notifications are not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -261,7 +288,7 @@ class IntegrationsTest extends BaseSpecification {
 
         type                    | notifierTypes
         "SLACK"                 | [new SlackNotifier()]
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         // "EMAIL"                 | [new EmailNotifier()]
         // "JIRA"                  | [new JiraNotifier()] TODO(ROX-7460)
         // ROX-8145 - Teams tests are broken
@@ -269,7 +296,7 @@ class IntegrationsTest extends BaseSpecification {
         "GENERIC"               | [new GenericNotifier()]
 
         // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        // ROX-8113, ROX-8145 - Email and teams tests are broken
+        // ROX-12418, ROX-8145 - Email and teams tests are broken
         // "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
 
         // Using Slack and Generic to verify multiple notifiers
@@ -277,7 +304,8 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -336,13 +364,13 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
         /*
@@ -351,17 +379,18 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -447,13 +476,13 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        ROX-8113 - Email tests are broken
+        ROX-12418 - Email tests are broken
         "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification"))
                         .addLabel("app", "policy-violation-email-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
 
          /*
@@ -462,17 +491,17 @@ class IntegrationsTest extends BaseSpecification {
                 new Deployment()
                         .setName("policy-violation-pagerduty-notification")
                         .addLabel("app", "policy-violation-pagerduty-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         */
         "GENERIC"   | [new GenericNotifier()]     |
                 new Deployment()
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -502,7 +531,10 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Notifiers])
+    @Tag("BAT")
+    @Tag("Notifiers")
+    // slack notifications are not supported on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -572,7 +604,7 @@ class IntegrationsTest extends BaseSpecification {
                 deployment
 
         /*
-        // ROX-8113 - Email tests are broken
+        // ROX-12418 - Email tests are broken
         "Email deploy override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt1@gmail.com")   |
@@ -582,7 +614,7 @@ class IntegrationsTest extends BaseSpecification {
                         .setName(uniqueName("policy-violation-email-notification-deploy-override"))
                         .addLabel("app", "policy-violation-email-notification-deploy-override")
                         .addAnnotation("mailgun", "stackrox.qa+alt1@gmail.com")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Email namespace override"     |
                 new EmailNotifier("Email Test", false,
                         NotifierOuterClass.Email.AuthMethod.DISABLED, null, "stackrox.qa+alt2@gmail.com")   |
@@ -591,28 +623,31 @@ class IntegrationsTest extends BaseSpecification {
                         // add random id to name to make it easier to search for when validating
                         .setName(uniqueName("policy-violation-email-notification-ns-override"))
                         .addLabel("app", "policy-violation-email-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
          */
         "Slack deploy override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                null   |
+                null                                                    |
                 new Deployment()
                         .setName("policy-violation-generic-notification-deploy-override")
                         .addLabel("app", "policy-violation-generic-notification-deploy-override")
-                        .addAnnotation("slack-key", NotifierService.SLACK_ALT_WEBHOOK)
-                        .setImage("nginx:latest")
+                        .addAnnotation("slack-key", Env.mustGetSlackAltWebhook())
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
         "Slack namespace override"   |
                 new SlackNotifier("slack test", "slack-key")   |
-                [key: "slack-key", value: NotifierService.SLACK_ALT_WEBHOOK] |
+                [key: "slack-key", value: Env.mustGetSlackAltWebhook()] |
                 new Deployment()
                         .setName("policy-violation-generic-notification-ns-override")
                         .addLabel("app", "policy-violation-generic-notification-ns-override")
-                        .setImage("nginx:latest")
+                        .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify #imageIntegration.name() integration - #testAspect"() {
+        setup:
+        ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
+
         Assume.assumeTrue(imageIntegration.isTestable())
         Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
 
@@ -626,12 +661,14 @@ class IntegrationsTest extends BaseSpecification {
         "verify test integration outcome"
         assert outcome
 
+        cleanup:
+        ImageIntegrationService.addStackroxScannerIntegration()
+
         where:
         "tests are:"
 
         imageIntegration                 | customArgs      | testAspect
         new StackroxScannerIntegration() | [:]             | "default config"
-        new AnchoreScannerIntegration()  | [:]             | "default config"
         new ClairScannerIntegration()    | [:]             | "default config"
         new QuayImageIntegration()       | [:]             | "default config"
         new GCRImageIntegration()        | [:]             | "default config"
@@ -642,7 +679,7 @@ class IntegrationsTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(Integration)
+    @Tag("Integration")
     def "Verify improper #imageIntegration.name() integration - #testAspect"() {
         Assume.assumeTrue(imageIntegration.isTestable())
 
@@ -664,15 +701,6 @@ class IntegrationsTest extends BaseSpecification {
                 | expectedError          | expectedMessage      | testAspect
 
         new StackroxScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
-        }       | StatusRuntimeException |
-        /invalid endpoint: endpoint cannot reference localhost/ |
-        "invalid endpoint"
-
-        new AnchoreScannerIntegration() | { [username: Env.mustGet("ANCHORE_USERNAME") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect user"
-        new AnchoreScannerIntegration() | { [password: Env.mustGet("ANCHORE_PASSWORD") + "WRONG",]
-        }       | StatusRuntimeException | /401 UNAUTHORIZED/   | "incorrect password"
-        new AnchoreScannerIntegration() | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
@@ -731,36 +759,31 @@ class IntegrationsTest extends BaseSpecification {
         }       | StatusRuntimeException | /PermissionDenied/ | "incorrect project"
     }
 
-    @Category(Integration)
+    @Tag("Integration")
+    @Tag("BAT")
+    // syslog test image is not multi-arch, docker files have x86 only dependencies
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify syslog notifier"() {
         given:
-        "the some syslog receiver is created"
-        // Change the local port numbers so we don't conflict with any other splunk instances
-        SplunkUtil.SplunkDeployment splunkDeployment = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+        "syslog server is created"
+        def syslog = SyslogServer.createRsyslog(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        sleep 15 * 1000 // wait 15s for service to start
 
         when:
-        "call the grpc API for the syslog integration."
-        SyslogNotifier notifier = new SyslogNotifier(splunkDeployment.syslogSvc.name, 514,
-                splunkDeployment.splunkPortForward.localPort)
-        try {
-            notifier.createNotifier()
-        } catch (Exception e) {
-            throw new AssumptionViolatedException("Could not create syslog notifier. Skipping test!", e)
-        }
+        "call the grpc API for the syslog notifier integration."
+        SyslogNotifier notifier = new SyslogNotifier(syslog.syslogSvc.name, syslog.SYSLOG_PORT)
 
         then:
-        "Verify the messages are seen in the json"
-        // We should have at least one audit log for the message which created the syslog integration.
-        notifier.validateViolationNotification(null, null, false)
+        "Verify syslog connection is successful"
+        withRetry(3, 10) {
+            assert notifier.testNotifier()
+        }
+        def msg = syslog.fetchLastMsg()
+        assert msg.contains("app_name:stackRoxKubernetesSecurityPlatform")
 
         cleanup:
-        "remove splunk and syslog notifier integration"
-        SplunkUtil.tearDownSplunk(orchestrator, splunkDeployment)
-        notifier.deleteNotifier()
+        "remove syslog notifier integration"
+        syslog.tearDown(orchestrator)
     }
 
-    def uniqueName(String name) {
-        return name + RandomStringUtils.randomAlphanumeric(5).toLowerCase()
-    }
 }

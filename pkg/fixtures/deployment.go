@@ -3,10 +3,12 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	types2 "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
-// LightweightDeploymentImage returns the full images referenced by GetLightweightDeployment
+// LightweightDeploymentImage returns the full images referenced by GetLightweightDeployment.
 func LightweightDeploymentImage() *storage.Image {
 	return &storage.Image{
 		Id: "sha256:SHA1",
@@ -43,7 +45,7 @@ func LightweightDeploymentImage() *storage.Image {
 	}
 }
 
-// DeploymentImages returns the full images referenced by GetDeployment
+// DeploymentImages returns the full images referenced by GetDeployment.
 func DeploymentImages() []*storage.Image {
 	return []*storage.Image{
 		LightweightDeploymentImage(),
@@ -55,8 +57,8 @@ func DeploymentImages() []*storage.Image {
 func LightweightDeployment() *storage.Deployment {
 	return &storage.Deployment{
 		Name:        "nginx_server",
-		Id:          "s79mdvmb6dsl",
-		ClusterId:   "prod cluster",
+		Id:          fixtureconsts.Deployment1,
+		ClusterId:   fixtureconsts.Cluster1,
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
 		Annotations: map[string]string{
@@ -109,9 +111,30 @@ func LightweightDeployment() *storage.Deployment {
 	}
 }
 
-// GetDeployment returns a Mock Deployment
+// GetDeployment returns a Mock Deployment.
 func GetDeployment() *storage.Deployment {
 	dep := LightweightDeployment()
 	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(GetImage())})
+	return dep
+}
+
+// GetScopedDeployment returns a Mock Deployment with the provided ID and scoping info for testing purposes.
+func GetScopedDeployment(ID string, clusterID string, namespace string) *storage.Deployment {
+	deployment := LightweightDeployment()
+	deployment.Id = ID
+	deployment.ClusterId = clusterID
+	deployment.Namespace = namespace
+	return deployment
+}
+
+// GetDeploymentWithImage returns a Mock Deployment with specified image.
+func GetDeploymentWithImage(cluster, namespace string, image *storage.Image) *storage.Deployment {
+	dep := LightweightDeployment()
+	dep.Id = uuid.NewV4().String()
+	dep.ClusterName = cluster
+	dep.ClusterId = cluster
+	dep.Namespace = namespace
+	dep.NamespaceId = cluster + namespace
+	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: types2.ToContainerImage(image)})
 	return dep
 }

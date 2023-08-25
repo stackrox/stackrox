@@ -3,14 +3,12 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -20,6 +18,7 @@ var (
 )
 
 // SacFilter provides the filtering abilities needed by the compliance datastore.
+//
 //go:generate mockgen-wrapper
 type SacFilter interface {
 	FilterRunResults(ctx context.Context, results *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error)
@@ -36,6 +35,9 @@ type sacFilterImpl struct{}
 // FilterRunResults filters the deployments and nodes contained in a single ComplianceRunResults to only those that
 // the input context has access to.
 func (ds *sacFilterImpl) FilterRunResults(ctx context.Context, runResults *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error) {
+	if runResults == nil {
+		return nil, nil
+	}
 	filteredDomain, filtered, err := ds.filterDomain(ctx, runResults.Domain)
 	if err != nil {
 		return nil, err
@@ -104,31 +106,13 @@ func (ds *sacFilterImpl) filterClusters(ctx context.Context, clusters set.String
 	resourceScopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS).Resource(resources.Compliance)
 
 	// Filter the compliance results by cluster.
-	allowed, maybe := ds.tryFilterClusters(resourceScopeChecker, clusters)
-	if maybe.Cardinality() > 0 {
-		if err := resourceScopeChecker.PerformChecks(ctx); err != nil {
-			return set.StringSet{}, err
+	allowed := set.NewStringSet()
+	for cluster := range clusters {
+		if resourceScopeChecker.IsAllowed(sac.ClusterScopeKey(cluster)) {
+			allowed.Add(cluster)
 		}
-		extraAllowed, maybe := ds.tryFilterClusters(resourceScopeChecker, maybe)
-		if maybe.Cardinality() > 0 {
-			utils.Should(errors.Errorf("still %d maybe results after PerformChecks", maybe.Cardinality()))
-		}
-		allowed.Union(extraAllowed)
 	}
 	return allowed, nil
-}
-
-func (ds *sacFilterImpl) tryFilterClusters(resourceScopeChecker sac.ScopeChecker, clusters set.StringSet) (set.StringSet, set.StringSet) {
-	allowed := set.NewStringSet()
-	maybe := set.NewStringSet()
-	for cluster := range clusters {
-		if res := resourceScopeChecker.TryAllowed(sac.ClusterScopeKey(cluster)); res == sac.Allow {
-			allowed.Add(cluster)
-		} else if res == sac.Unknown {
-			maybe.Add(cluster)
-		}
-	}
-	return allowed, maybe
 }
 
 func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.ComplianceDomain) (*storage.ComplianceDomain, bool, error) {
@@ -154,20 +138,12 @@ func (ds *sacFilterImpl) filterDomain(ctx context.Context, domain *storage.Compl
 	}
 
 	deploymentsInClusterChecker := deploymentsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, sac.ClusterScopeKey(domain.Cluster.Id))
-	ok, err = deploymentsInClusterChecker.Allowed(ctx)
-	if err != nil {
-		return nil, false, err
-	} else if ok {
+	if deploymentsInClusterChecker.IsAllowed() {
 		newDomain.Deployments = domain.Deployments
 	} else {
-		filteredMap, err := sac.FilterMapReflect(ctx, deploymentsInClusterChecker, domain.Deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+		newDomain.Deployments = sac.FilterMap(deploymentsInClusterChecker, domain.Deployments, func(_ string, deployment *storage.ComplianceDomain_Deployment) sac.ScopePredicate {
 			return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 		})
-		if err != nil {
-			return nil, false, err
-		}
-
-		newDomain.Deployments = filteredMap.(map[string]*storage.Deployment)
 		if len(newDomain.Deployments) < len(domain.Deployments) {
 			filtered = true
 		}

@@ -2,7 +2,9 @@ package manager
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -15,8 +17,8 @@ import (
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -29,6 +31,9 @@ var (
 
 	// errConditionMet is used to short-circuit a walk in the database
 	errConditionMet = errors.New("condition met")
+
+	ocpAnnotationSuffix     = "CIS-OCP"
+	ocpControlAnnotationKey = "control.compliance.openshift.io/" + ocpAnnotationSuffix
 )
 
 // Manager helps manage the dynamic profiles from the compliance operator
@@ -44,6 +49,7 @@ type Manager interface {
 
 	IsStandardActive(standardID string) bool
 	IsStandardActiveForCluster(standardID, clusterID string) bool
+	IsStandardHidden(ctx context.Context, standardID string) bool
 
 	GetMachineConfigs(clusterID string) (map[string][]string, error)
 }
@@ -72,6 +78,7 @@ func NewManager(registry *standards.Registry, profiles profileDatastore.DataStor
 		rules:               rules,
 		results:             results,
 	}
+	// Postgres retries in addProfileNoLock(...)
 	err := profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
 		return mgr.addProfileNoLock(profile)
 	})
@@ -103,10 +110,15 @@ func getRuleName(rule *storage.ComplianceOperatorRule) string {
 
 func createControlFromRule(rule *storage.ComplianceOperatorRule) metadata.Control {
 	ruleName := getRuleName(rule)
+
+	title := rule.GetTitle()
+	if value, ok := rule.GetAnnotations()[ocpControlAnnotationKey]; ok {
+		title += fmt.Sprintf(" (%s %s)", ocpAnnotationSuffix, value)
+	}
 	return metadata.Control{
 		ID:          ruleName,
 		Name:        ruleName,
-		Description: rule.GetTitle(),
+		Description: title,
 	}
 }
 
@@ -156,15 +168,19 @@ func (m *managerImpl) AddProfile(profile *storage.ComplianceOperatorProfile) err
 }
 
 func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfile) error {
-	existingProfiles := []*storage.ComplianceOperatorProfile{
-		profile,
-	}
-	if err := m.profiles.Walk(allAccessCtx, func(existingProfile *storage.ComplianceOperatorProfile) error {
-		if existingProfile.GetClusterId() != profile.GetClusterId() && existingProfile.GetName() == profile.GetName() {
-			existingProfiles = append(existingProfiles, existingProfile)
+	var existingProfiles []*storage.ComplianceOperatorProfile
+	walkFn := func() error {
+		existingProfiles = []*storage.ComplianceOperatorProfile{
+			profile,
 		}
-		return nil
-	}); err != nil {
+		return m.profiles.Walk(allAccessCtx, func(existingProfile *storage.ComplianceOperatorProfile) error {
+			if existingProfile.GetClusterId() != profile.GetClusterId() && existingProfile.GetName() == profile.GetName() {
+				existingProfiles = append(existingProfiles, existingProfile)
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 
@@ -315,19 +331,31 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 	}
 
 	var found bool
-	if err := m.scanSettingBindings.Walk(allAccessCtx, func(binding *storage.ComplianceOperatorScanSettingBinding) error {
-		for _, p := range binding.GetProfiles() {
-			if standardID == p.GetName() {
-				found = true
-				return errConditionMet
+	walkFn := func() error {
+		found = false
+		return m.scanSettingBindings.Walk(allAccessCtx, func(binding *storage.ComplianceOperatorScanSettingBinding) error {
+			for _, p := range binding.GetProfiles() {
+				if standardID == p.GetName() {
+					found = true
+					return errConditionMet
+				}
 			}
-		}
-		return nil
-	}); err != nil && err != errConditionMet {
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil && err != errConditionMet {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
 	return found
+}
+
+func (m *managerImpl) IsStandardHidden(ctx context.Context, standardID string) bool {
+	standard, exists, _ := m.compliance.GetConfig(ctx, standardID)
+	if exists {
+		return standard.GetHideScanResults()
+	}
+	return false
 }
 
 func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) bool {
@@ -344,17 +372,21 @@ func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) b
 	}
 
 	var found bool
-	if err := m.scanSettingBindings.Walk(allAccessCtx, func(binding *storage.ComplianceOperatorScanSettingBinding) error {
-		if binding.GetClusterId() == clusterID {
-			for _, p := range binding.GetProfiles() {
-				if standardID == p.GetName() {
-					found = true
-					return errConditionMet
+	walkFn := func() error {
+		found = false
+		return m.scanSettingBindings.Walk(allAccessCtx, func(binding *storage.ComplianceOperatorScanSettingBinding) error {
+			if binding.GetClusterId() == clusterID {
+				for _, p := range binding.GetProfiles() {
+					if standardID == p.GetName() {
+						found = true
+						return errConditionMet
+					}
 				}
 			}
-		}
-		return nil
-	}); err != nil && err != errConditionMet {
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil && err != errConditionMet {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
@@ -374,27 +406,33 @@ func (m *managerImpl) getRule(name string) (*storage.ComplianceOperatorRule, err
 
 func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, error) {
 	profileIDsToNames := make(map[string]string)
-	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
-			profileIDsToNames[profile.GetProfileId()] = profile.GetName()
-		}
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		profileIDsToNames = make(map[string]string)
+		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+			if profile.GetClusterId() == clusterID && profile.Annotations[v1alpha1.ProductTypeAnnotation] == string(v1alpha1.ScanTypeNode) {
+				profileIDsToNames[profile.GetProfileId()] = profile.GetName()
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 
 	profilesToScan := make(map[string][]string)
-	err = m.scans.Walk(allAccessCtx, func(scan *storage.ComplianceOperatorScan) error {
-		if scan.GetClusterId() != clusterID {
+	walkFn = func() error {
+		profilesToScan = make(map[string][]string)
+		return m.scans.Walk(allAccessCtx, func(scan *storage.ComplianceOperatorScan) error {
+			if scan.GetClusterId() != clusterID {
+				return nil
+			}
+			if profileName, ok := profileIDsToNames[scan.GetProfileId()]; ok {
+				profilesToScan[profileName] = append(profilesToScan[profileName], scan.GetName())
+			}
 			return nil
-		}
-		if profileName, ok := profileIDsToNames[scan.GetProfileId()]; ok {
-			profilesToScan[profileName] = append(profilesToScan[profileName], scan.GetName())
-		}
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return profilesToScan, nil
@@ -402,16 +440,19 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 
 func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.ComplianceOperatorProfile, error) {
 	var profiles []*storage.ComplianceOperatorProfile
-	err := m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
-		for _, rule := range profile.GetRules() {
-			if rule.GetName() == ruleName {
-				profiles = append(profiles, profile)
-				break
+	walkFn := func() error {
+		profiles = profiles[:0]
+		return m.profiles.Walk(allAccessCtx, func(profile *storage.ComplianceOperatorProfile) error {
+			for _, rule := range profile.GetRules() {
+				if rule.GetName() == ruleName {
+					profiles = append(profiles, profile)
+					break
+				}
 			}
-		}
-		return nil
-	})
-	if err != nil {
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	return profiles, nil

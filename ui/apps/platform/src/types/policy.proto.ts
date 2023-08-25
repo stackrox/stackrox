@@ -1,5 +1,3 @@
-import { PermissionLevel } from './rbac.proto';
-
 export type ListPolicy = {
     id: string;
     name: string;
@@ -14,37 +12,46 @@ export type ListPolicy = {
 };
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
-export type PolicySeverity =
-    | 'LOW_SEVERITY'
-    | 'MEDIUM_SEVERITY'
-    | 'HIGH_SEVERITY'
-    | 'CRITICAL_SEVERITY';
+export const policySeverities = [
+    'LOW_SEVERITY',
+    'MEDIUM_SEVERITY',
+    'HIGH_SEVERITY',
+    'CRITICAL_SEVERITY',
+] as const;
+export type PolicySeverity = (typeof policySeverities)[number];
 
 // TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
-export type Policy = {
+type BasePolicy = {
     rationale: string;
     remediation: string;
     categories: string[];
-    fields: PolicyFields | null;
-    // whitelists is deprecated and superseded by exlusions
     exclusions: PolicyExclusion[];
     scope: PolicyScope[];
     enforcementActions: EnforcementAction[];
-    excludedImageNames: string[]; // For internal use only.
-    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
-    SORT_name: string; // For internal use only.
-    SORT_lifecycleStage: string; // For internal use only.
-    SORT_enforcement: boolean; // For internal use only.
+    SORTName: string; // For internal use only.
+    SORTLifecycleStage: string; // For internal use only.
+    SORTEnforcement: boolean; // For internal use only.
     policyVersion: string;
-    policySections: PolicySection[];
     mitreAttackVectors: PolicyMitreAttackVector[];
     readonly criteriaLocked: boolean; // If true, the policy's criteria fields are rendered read-only.
     readonly mitreVectorsLocked: boolean; // If true, the policy's MITRE ATT&CK fields are rendered read-only.
 } & ListPolicy;
+
+// the policy object we use client side for ease of form manipulation
+export type ClientPolicy = {
+    excludedImageNames: string[]; // For internal use only.
+    excludedDeploymentScopes: PolicyExcludedDeployment[]; // For internal use only.
+    serverPolicySections: PolicySection[]; // For internal use only.
+    policySections: ClientPolicySection[]; // value strings converted into objects
+} & BasePolicy;
+
+export type Policy = {
+    policySections: PolicySection[]; // values are strings
+} & BasePolicy;
 
 export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
@@ -103,6 +110,18 @@ export type PolicySection = {
     policyGroups: PolicyGroup[];
 };
 
+type ClientPolicySection = {
+    sectionName: string;
+    policyGroups: ClientPolicyGroup[];
+};
+
+type ClientPolicyGroup = {
+    fieldName: string;
+    booleanOperator: PolicyBooleanOperator;
+    negate: boolean;
+    values: ClientPolicyValue[];
+};
+
 export type PolicyGroup = {
     fieldName: string;
     booleanOperator: PolicyBooleanOperator;
@@ -116,143 +135,27 @@ export type PolicyValue = {
     value: string;
 };
 
+export type ValueObj = {
+    source?: string;
+    key?: string;
+    value?: string;
+};
+
+export type ClientPolicyValue = {
+    value?: ValueObj;
+    arrayValue?: string[];
+};
+
 // TODO supersedes MitreAttackVectorId in src/services/MitreService.ts
 export type PolicyMitreAttackVector = {
     tactic: string; // tactic id
     techniques: string[]; // technique ids
 };
 
-export type PolicyFields = {
-    imageName: PolicyImageName | null;
-
-    // Registry metadata
-    imageAgeDays?: string; // int64
-    lineRule: DockerfileLineRuleField | null;
-
-    // Scan Metadata
-    cvss: NumericalPolicy | null;
-    cve: string;
-
-    component: PolicyComponent | null;
-    scanAgeDays?: string; // int64
-
-    noScanExists?: boolean; // Whether to alert if no scan exists for an image.
-
-    env: PolicyKeyValue | null;
-    command: string;
-    args: string;
-    directory: string;
-    user: string;
-
-    volumePolicy: VolumePolicy | null;
-
-    portPolicy: PortPolicy | null;
-    requiredLabel: PolicyKeyValue | null;
-    requiredAnnotation: PolicyKeyValue | null;
-    disallowedAnnotation: PolicyKeyValue | null;
-
-    privileged?: boolean;
-    dropCapabilities: string[];
-    addCapabilities: string[];
-
-    containerResourcePolicy: ResourcePolicy | null;
-    processPolicy: ProcessPolicy | null;
-
-    readOnlyRootFs?: boolean;
-    fixedBy: string;
-
-    portExposurePolicy: PortExposurePolicy | null;
-    permissionPolicy: PermissionPolicy | null;
-    hostMountPolicy: HostMountPolicy | null;
-    whitelistEnabled?: boolean;
-
-    requiredImageLabel: PolicyKeyValue | null;
-    disallowedImageLabel: PolicyKeyValue | null;
-};
-
-export type PolicyImageName = {
-    registry: string; // e.g. docker.io
-    remote: string; // e.g. stackrox/container-summarizer
-    tag: string; // e.g. latest
-};
-
-export type DockerfileLineRuleField = {
-    instruction: string;
-    value: string;
-};
-
-export type NumericalPolicy = {
-    op: PolicyComparator;
-    value: number; // float
-};
-
-export type PolicyComparator =
-    | 'LESS_THAN'
-    | 'LESS_THAN_OR_EQUALS'
-    | 'EQUALS'
-    | 'GREATER_THAN_OR_EQUALS'
-    | 'GREATER_THAN';
-
-export type PolicyComponent = {
+export type PolicyCategory = {
+    id: string;
+    // central/policycategory/service/service_impl.go
+    // policy category must have a name between 5 and 128 characters long with no new lines or dollar signs
     name: string;
-    version: string;
-};
-
-export type PolicyKeyValue = {
-    key: string;
-    value: string;
-    envVarSource: EnvVarSource;
-};
-
-// TODO import from types/deployment.proto.ts
-export type EnvVarSource =
-    | 'UNSET'
-    | 'RAW'
-    | 'SECRET_KEY'
-    | 'CONFIG_MAP_KEY'
-    | 'FIELD'
-    | 'RESOURCE_FIELD'
-    | 'UNKNOWN';
-
-export type VolumePolicy = {
-    name: string;
-    source: string;
-    destination: string;
-    readOnly?: boolean;
-    type: string;
-};
-
-export type PortPolicy = {
-    port: number; // int32
-    protocol: string;
-};
-
-export type ResourcePolicy = {
-    cpuResourceRequest: NumericalPolicy | null;
-    cpuResourceLimit: NumericalPolicy | null;
-    memoryResourceRequest: NumericalPolicy | null;
-    memoryResourceLimit: NumericalPolicy | null;
-};
-
-export type ProcessPolicy = {
-    name: string;
-    args: string;
-    ancestor: string;
-    uid: string;
-};
-
-export type PortExposurePolicy = {
-    exposureLevels: PortExposureLevel[];
-};
-
-// TODO import from types/deployment.proto.ts
-export type PortExposureLevel = 'UNSET' | 'EXTERNAL' | 'NODE' | 'INTERNAL' | 'HOST';
-
-// K8S RBAC Permission level configuration.
-export type PermissionPolicy = {
-    permissionLevel: PermissionLevel;
-};
-
-export type HostMountPolicy = {
-    readOnly?: boolean;
+    isDefault: boolean;
 };

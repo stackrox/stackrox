@@ -13,7 +13,7 @@ import (
 func IssueSelfSignedCert(t *testing.T, commonName string, dnsNames ...string) tls.Certificate {
 	req := csr.CertificateRequest{
 		CN:         commonName,
-		KeyRequest: csr.NewBasicKeyRequest(),
+		KeyRequest: csr.NewKeyRequest(),
 		Hosts:      dnsNames,
 	}
 

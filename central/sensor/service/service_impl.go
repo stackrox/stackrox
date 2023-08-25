@@ -6,20 +6,25 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
+	installationStore "github.com/stackrox/rox/central/installation/store"
+	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -33,17 +38,21 @@ var (
 )
 
 type serviceImpl struct {
-	manager  connection.Manager
-	pf       pipeline.Factory
-	clusters clusterDataStore.DataStore
+	central.UnimplementedSensorServiceServer
+
+	manager      connection.Manager
+	pf           pipeline.Factory
+	clusters     clusterDataStore.DataStore
+	installation installationStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore) Service {
+func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
 	return &serviceImpl{
-		manager:  manager,
-		pf:       pf,
-		clusters: clusters,
+		manager:      manager,
+		pf:           pf,
+		clusters:     clusters,
+		installation: installation,
 	}
 }
 
@@ -51,7 +60,7 @@ func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterSensorServiceServer(server, s)
 }
 
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 
@@ -69,7 +78,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	svc := identity.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return errorhelpers.NewErrNotAuthorized("only sensor may access this API")
+		return errox.NotAuthorized.CausedBy("only sensor may access this API")
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
@@ -84,9 +93,13 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	if sensorSupportsHello {
+		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
+		utils.Should(err)
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId: cluster.GetId(),
+			ClusterId:      cluster.GetId(),
+			ManagedCentral: env.ManagedCentral.BooleanSetting(),
+			CentralId:      installInfo.GetId(),
 		}
 
 		if err := safe.RunE(func() error {
@@ -105,14 +118,13 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 	}
 
-	if expiry := identity.Expiry(); !expiry.IsZero() {
-		converted, err := types.TimestampProto(expiry)
-		if err != nil {
-			log.Warnf("Failed to convert expiry of sensor cert (%v) from cluster %s to proto: %v", expiry, cluster.GetId(), err)
-		} else {
-			if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), &storage.ClusterCertExpiryStatus{SensorCertExpiry: converted}); err != nil {
-				log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
-			}
+	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
+		notBefore, notAfter := identity.ValidityPeriod()
+		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
+			notBefore, notAfter, cluster.GetId(), err)
+	} else if expiryStatus != nil {
+		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
+			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
 		}
 	}
 
@@ -127,12 +139,42 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }
 
+func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {
+	notBefore, notAfter := identity.ValidityPeriod()
+
+	if notAfter.IsZero() && notBefore.IsZero() {
+		return nil, nil
+	}
+
+	expiryStatus := &storage.ClusterCertExpiryStatus{}
+
+	var multiErr error
+
+	if !notAfter.IsZero() {
+		expiryTimestamp, err := types.TimestampProto(notAfter)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		} else {
+			expiryStatus.SensorCertExpiry = expiryTimestamp
+		}
+	}
+	if !notBefore.IsZero() {
+		notBeforeTimestamp, err := types.TimestampProto(notBefore)
+		if err != nil {
+			multiErr = multierror.Append(multiErr, err)
+		} else {
+			expiryStatus.SensorCertNotBefore = notBeforeTimestamp
+		}
+	}
+	return expiryStatus, multiErr
+}
+
 func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
 	helmConfigInit := sensorHello.GetHelmManagedConfigInit()
 
 	clusterIDFromCert := serviceID.GetId()
 	if helmConfigInit == nil && centralsensor.IsInitCertClusterID(clusterIDFromCert) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
+		return nil, errors.Wrap(errox.InvalidArgs, "sensor using cluster init certificate must transmit a helm-managed configuration")
 	}
 
 	clusterID := helmConfigInit.GetClusterId()
@@ -140,7 +182,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		var err error
 		clusterID, err = centralsensor.GetClusterID(clusterID, clusterIDFromCert)
 		if err != nil {
-			return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
+			return nil, errors.Wrapf(errox.InvalidArgs, "incompatible cluster IDs in config init and certificate: %v", err)
 		}
 	}
 

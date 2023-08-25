@@ -1,12 +1,11 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
-import { List } from 'react-feather';
+import { Button } from '@patternfly/react-core';
 
-import PanelButton from 'Components/PanelButton';
+import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
 import TopCvssLabel from 'Components/TopCvssLabel';
-import TableCountLink from 'Components/workflow/TableCountLink';
-import StatusChip from 'Components/StatusChip';
+import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
 import {
@@ -16,15 +15,17 @@ import {
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { imageWatchStatuses } from 'Containers/VulnMgmt/VulnMgmt.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
+import usePermissions from 'hooks/usePermissions';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultImageSort = [
     {
@@ -51,14 +52,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                 sortField: imageSortFields.NAME,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: 'Image CVEs',
+                entityType: entityTypes.IMAGE_CVE,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { vulnCounter, id, scan, notes } = original;
+                    const { vulnCounter, id, scanTime, scanNotes, notes } = original;
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
@@ -67,9 +68,10 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                             vulnCounter={vulnCounter}
                             url={url}
                             fixableUrl={fixableUrl}
+                            entityName="Image"
                             hideLink={pdf}
-                            imageNotes={notes}
-                            scan={scan}
+                            scanTime={scanTime}
+                            scanMessage={getImageScanMessage(notes || [], scanNotes || [])}
                         />
                     );
                 },
@@ -79,16 +81,12 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
             },
             {
                 Header: `Top CVSS`,
-                headerClassName: `w-1/12 text-center ${defaultHeaderClassName}`,
+                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
                     const { topVuln } = original;
                     if (!topVuln) {
-                        return (
-                            <div className="mx-auto flex flex-col">
-                                <span>–</span>
-                            </div>
-                        );
+                        return 'N/A';
                     }
                     const { cvss, scoreVersion } = topVuln;
                     return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
@@ -117,14 +115,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { scan } = original;
-                    if (!scan) {
+                    const { scanTime } = original;
+                    if (!scanTime) {
                         return '–';
                     }
-                    return <DateTimeField date={scan.scanTime} asString={pdf} />;
+                    return <DateTimeField date={scanTime} asString={pdf} />;
                 },
                 id: imageSortFields.SCAN_TIME,
-                accessor: 'scan.scanTime',
+                accessor: 'scanTime',
                 sortField: imageSortFields.SCAN_TIME,
             },
             {
@@ -132,14 +130,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
                 Cell: ({ original }) => {
-                    const { scan } = original;
-                    if (!scan?.operatingSystem) {
+                    const { operatingSystem } = original;
+                    if (!operatingSystem) {
                         return '–';
                     }
-                    return <span>{scan.operatingSystem}</span>;
+                    return <span>{operatingSystem}</span>;
                 },
                 id: imageSortFields.IMAGE_OS,
-                accessor: 'scan.operatingSystem',
+                accessor: 'operatingSystem',
                 sortField: imageSortFields.IMAGE_OS,
             },
             {
@@ -148,11 +146,11 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                 className: `w-1/10 ${defaultColumnClassName} content-center`,
                 Cell: ({ original, pdf }) => {
                     const { deploymentCount, watchStatus } = original;
-                    const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
+                    const isActive = deploymentCount !== 0;
                     const isWatched = watchStatus === imageWatchStatuses.WATCHED;
                     return (
                         <div className="flex-col justify-center items-center w-full">
-                            <StatusChip status={imageStatus} asString={pdf} />
+                            <ImageActiveIconText isActive={isActive} isTextOnly={pdf} />
                             {isWatched && (
                                 <button
                                     type="button"
@@ -171,38 +169,13 @@ export function getCurriedImageTableColumns(watchedImagesTrigger) {
                 sortable: false,
             },
             {
-                Header: `Deployments`,
+                Header: `Entities`,
                 entityType: entityTypes.DEPLOYMENT,
                 headerClassName: `w-1/12 ${defaultHeaderClassName}`,
                 className: `w-1/12 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.DEPLOYMENT}
-                        count={original.deploymentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: imageSortFields.DEPLOYMENT_COUNT,
-                accessor: 'deploymentCount',
-                sortField: imageSortFields.DEPLOYMENT_COUNT,
-            },
-            {
-                Header: `Components`,
-                entityType: entityTypes.COMPONENT,
-                headerClassName: `w-1/12 ${defaultHeaderClassName}`,
-                className: `w-1/12 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.COMPONENT}
-                        count={original.componentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: imageSortFields.COMPONENT_COUNT,
-                accessor: 'componentCount',
-                sortField: imageSortFields.COMPONENT_COUNT,
+                Cell: ({ original, pdf }) => <ImageTableCountLinks row={original} textOnly={pdf} />,
+                accessor: 'entities',
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,
@@ -227,8 +200,12 @@ const VulnMgmtImages = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+
     const [showWatchedImagesDialog, setShowWatchedImagesDialog] = useState(false);
     const workflowState = useContext(workflowStateContext);
+    const fragmentToUse = IMAGE_LIST_FRAGMENT;
 
     const inactiveImageScanningEnabled = workflowState.isBaseList(entityTypes.IMAGE);
 
@@ -239,7 +216,7 @@ const VulnMgmtImages = ({
             }
             count: imageCount(query: $query)
         }
-        ${IMAGE_LIST_FRAGMENT}
+        ${fragmentToUse}
     `;
 
     const tableSort = sort || defaultImageSort;
@@ -263,17 +240,12 @@ const VulnMgmtImages = ({
 
         setShowWatchedImagesDialog(!showWatchedImagesDialog);
     }
-    const tableHeaderComponents = inactiveImageScanningEnabled ? (
-        <PanelButton
-            icon={<List className="h-4 w-4" />}
-            className="btn-icon btn-tertiary"
-            onClick={toggleWatchedImagesDialog}
-            tooltip="Manage Scanning of Watched Images"
-            dataTestId="panel-button-manage-inactive-images"
-        >
-            Manage Watches
-        </PanelButton>
-    ) : null;
+    const tableHeaderComponents =
+        hasWriteAccessForWatchedImage && inactiveImageScanningEnabled ? (
+            <Button variant="secondary" onClick={toggleWatchedImagesDialog}>
+                Manage watches
+            </Button>
+        ) : null;
 
     const getImageTableColumns = getCurriedImageTableColumns(toggleWatchedImagesDialog);
 

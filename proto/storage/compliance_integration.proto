@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+// Next Tag: 7
+message ComplianceIntegration {
+    string id                     = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string version                = 2 [(gogoproto.moretags) = 'search:"Compliance Operator Version,hidden,store"'];
+    string cluster_id             = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator"'];
+    string namespace              = 4 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+    string namespace_id           = 6 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"'];
+    // Collection of errors that occurred while trying to obtain collector health info.
+    repeated string status_errors = 5;
+}

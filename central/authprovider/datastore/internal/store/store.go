@@ -1,29 +1,19 @@
 package store
 
 import (
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	bolt "go.etcd.io/bbolt"
-)
+	"context"
 
-var (
-	authProviderBucket = []byte("authProviders")
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store stores and retrieves providers from the KV storage mechanism.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAllAuthProviders() ([]*storage.AuthProvider, error)
+	GetAll(ctx context.Context) ([]*storage.AuthProvider, error)
+	Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error)
 
-	AddAuthProvider(authProvider *storage.AuthProvider) error
-	UpdateAuthProvider(authProvider *storage.AuthProvider) error
-	RemoveAuthProvider(d string) error
-}
-
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, authProviderBucket)
-	return &storeImpl{
-		db: db,
-	}
+	Exists(ctx context.Context, id string) (bool, error)
+	Upsert(ctx context.Context, obj *storage.AuthProvider) error
+	Delete(ctx context.Context, id string) error
 }

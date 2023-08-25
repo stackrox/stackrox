@@ -1,9 +1,10 @@
 package dispatchers
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -17,7 +18,7 @@ func NewScanDispatcher() *ScanDispatcher {
 }
 
 // ProcessEvent processes a compliance operator scan
-func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	var complianceScan v1alpha1.ComplianceScan
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -38,7 +39,7 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		Labels:      complianceScan.Labels,
 		Annotations: complianceScan.Annotations,
 	}
-	return []*central.SensorEvent{
+	events := []*central.SensorEvent{
 		{
 			Id:     protoScan.GetId(),
 			Action: action,
@@ -47,4 +48,5 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			},
 		},
 	}
+	return component.NewEvent(events...)
 }

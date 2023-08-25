@@ -1,0 +1,52 @@
+/*
+* This is a transitional stylesheet to make the classic search component 
+* look closer to the PatternFly style. This should be removed when an equivalent
+* PatternFly component can be built.
+*/
+
+.pf-search-shim.react-select--is-disabled {
+  /* 
+  * Note that this opacity change is a result of Tailwind styles that are applied
+  * throughout the app and *not* something that comes from PatternFly. When we are 
+  * fully migrated to PatternFly this rule should be removed.
+  */
+  opacity: 0.5;
+}
+
+.pf-search-shim.react-select--is-disabled > div {
+  background-color: var(--pf-global--disabled-color--300) !important;
+}
+
+.pf-search-shim * {
+  font-family: var(--pf-global--FontFamily--sans-serif) !important;
+}
+
+.pf-search-shim > div > span,
+.pf-search-shim > div .react-select__value-container * {
+  color: var(--pf-global--Color--100) !important;
+  font-weight: var(--pf-global--FontWeight--normal) !important;
+}
+
+.pf-search-shim > div .react-select__value-container span {
+  font-size: var(--pf-global--FontSize--md) !important;
+}
+
+.pf-search-shim svg {
+  fill: var(--pf-global--Color--100);
+}
+
+.pf-search-shim > .react-select__control {
+  border-radius: 0 !important;
+  border-width: var(--pf-global--BorderWidth--sm) !important;
+  border-bottom-color: var(	--pf-global--BorderColor--200) !important;
+  min-height: 36px !important;
+}
+
+.pf-search-shim .react-select__indicator-separator {
+  display: none;
+}
+
+.pf-search-shim .react-select__multi-value__label {
+  color: var(--pf-global--Color--100) !important;
+  font-size: var(--pf-global--FontSize--xs) !important;
+}

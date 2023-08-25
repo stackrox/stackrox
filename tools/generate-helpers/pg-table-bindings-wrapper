@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+SCRIPT="$(python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "${BASH_SOURCE[0]}")"
+
+go run "$(dirname "${SCRIPT}")/pg-table-bindings" "$@" --schema-directory "$(dirname "${SCRIPT}")/../../pkg/postgres/schema"

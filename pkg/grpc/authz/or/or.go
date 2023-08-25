@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 )
@@ -21,7 +22,7 @@ func (o *or) Authorized(ctx context.Context, fullMethodName string) error {
 		}
 		errors = append(errors, err)
 	}
-	return errorhelpers.NewErrNotAuthorized(errorhelpers.NewErrorListWithErrors("no authorizer could authorize this request:", errors).String())
+	return errox.NotAuthorized.CausedBy(errorhelpers.NewErrorListWithErrors("no authorizer could authorize this request:", errors).String())
 }
 
 // Or creates an Authorizer that succeeds if any of the provided Authorizers succeed.
@@ -31,9 +32,9 @@ func Or(authorizers ...authz.Authorizer) authz.Authorizer {
 	}
 }
 
-// SensorOrAuthorizer returns an Authorizer that allows authorizes any
-// sensor, or anything that the passed authorizer authorizes.
-func SensorOrAuthorizer(authorizer authz.Authorizer) authz.Authorizer {
+// SensorOr returns an Authorizer that authorizes any sensor,
+// or anything that the passed authorizer authorizes.
+func SensorOr(authorizer authz.Authorizer) authz.Authorizer {
 	return Or(
 		idcheck.SensorsOnly(),
 		authorizer,

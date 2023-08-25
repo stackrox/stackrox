@@ -1,12 +1,10 @@
 //go:build !release || test
-// +build !release test
 
 package testutils
 
 import (
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/version"
@@ -42,28 +40,12 @@ func SetVersion(t *testing.T, version version.Versions) {
 func GetExampleVersion(t *testing.T) version.Versions {
 	testutils.MustBeInTest(t)
 	return version.Versions{
-		BuildDate:        time.Unix(0, 0),
 		CollectorVersion: "99.9.9",
 		GitCommit:        "45b4a8ac",
 		GoVersion:        runtime.Version(),
 		MainVersion:      "3.0.99.0",
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   "99.9.9",
-		ChartVersion:     "3.99.0",
-	}
-}
-
-// GetExampleVersionUnified returns an example version where scanner and collector are unified with main, only intended for usage in testing.
-func GetExampleVersionUnified(t *testing.T) version.Versions {
-	testutils.MustBeInTest(t)
-	return version.Versions{
-		BuildDate:        time.Unix(0, 0),
-		CollectorVersion: "3.0.99.0",
-		GitCommit:        "45b4a8ac",
-		GoVersion:        runtime.Version(),
-		MainVersion:      "3.0.99.0",
-		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
-		ScannerVersion:   "3.0.99.0",
 		ChartVersion:     "3.99.0",
 	}
 }

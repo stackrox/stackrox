@@ -1,28 +1,19 @@
 package store
 
 import (
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	bolt "go.etcd.io/bbolt"
 )
 
-var notifierBucket = []byte("notifiers")
-
 // Store provides storage functionality for alerts.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	GetNotifier(id string) (*storage.Notifier, bool, error)
-	GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.Notifier, error)
-	AddNotifier(notifier *storage.Notifier) (string, error)
-	UpdateNotifier(notifier *storage.Notifier) error
-	RemoveNotifier(id string) error
-}
-
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, notifierBucket)
-	return &storeImpl{
-		DB: db,
-	}
+	Get(ctx context.Context, id string) (*storage.Notifier, bool, error)
+	GetAll(ctx context.Context) ([]*storage.Notifier, error)
+	GetMany(ctx context.Context, identifiers []string) ([]*storage.Notifier, []int, error)
+	Exists(ctx context.Context, id string) (bool, error)
+	Upsert(ctx context.Context, obj *storage.Notifier) error
+	Delete(ctx context.Context, id string) error
 }

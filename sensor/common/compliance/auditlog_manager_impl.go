@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 const (
@@ -27,10 +29,11 @@ type auditLogCollectionManagerImpl struct {
 	eligibleComplianceNodes         map[string]sensor.ComplianceService_CommunicateServer
 
 	auditEventMsgs   chan *sensor.MsgFromCompliance
-	fileStateUpdates chan *central.MsgFromSensor
+	fileStateUpdates chan *message.ExpiringMessage
 
 	stopSig        concurrency.Signal
 	forceUpdateSig concurrency.Signal
+	centralReady   concurrency.Signal
 
 	updateInterval time.Duration
 
@@ -48,11 +51,21 @@ func (a *auditLogCollectionManagerImpl) Stop(_ error) {
 	a.stopSig.Signal()
 }
 
+func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		a.centralReady.Signal()
+	case common.SensorComponentEventOfflineMode:
+		a.centralReady.Reset()
+	}
+}
+
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
 }
 
-func (a *auditLogCollectionManagerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
 	// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
 	// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls
@@ -60,7 +73,7 @@ func (a *auditLogCollectionManagerImpl) ProcessMessage(msg *central.MsgToSensor)
 	return nil
 }
 
-func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return a.fileStateUpdates
 }
 
@@ -112,6 +125,8 @@ func (a *auditLogCollectionManagerImpl) runUpdater() {
 
 	for !a.stopSig.IsDone() {
 		select {
+		case <-a.stopSig.Done():
+			return
 		case <-a.forceUpdateSig.Done():
 			a.sendUpdate()
 			a.forceUpdateSig.Reset()
@@ -133,8 +148,8 @@ func (a *auditLogCollectionManagerImpl) sendUpdate() {
 }
 
 func (a *auditLogCollectionManagerImpl) shouldSendUpdateToCentral(fileStates map[string]*storage.AuditLogFileState) bool {
-	// No point in updating if the central communication hasn't started or there are no states
-	return a.receivedInitialStateFromCentral.Get() && len(fileStates) > 0
+	// No point in updating if the central communication hasn't started, isn't available, or there are no states
+	return a.receivedInitialStateFromCentral.Get() && a.centralReady.IsDone() && len(fileStates) > 0
 }
 
 // getLatestFileStates returns a copy of the latest state of audit log collection at each compliance node
@@ -150,14 +165,14 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 	return nodeStates
 }
 
-func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
+func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
+	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
 			},
 		},
-	}
+	})
 }
 
 // AddEligibleComplianceNode adds the specified node and it's connection to the list of nodes whose audit log collection lifecycle will be managed

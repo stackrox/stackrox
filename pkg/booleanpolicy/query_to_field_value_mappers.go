@@ -18,7 +18,7 @@ var (
 		search.EnvironmentKey:                newMapper(fieldnames.EnvironmentVariable, envKeyCompoundMap),
 		search.EnvironmentValue:              newMapper(fieldnames.EnvironmentVariable, envValCompoundMap),
 		search.EnvironmentVarSrc:             newMapper(fieldnames.EnvironmentVariable, envSrcCompoundMap),
-		search.Annotation:                    newMapper(fieldnames.DisallowedAnnotation, leftRightCompoundMap),
+		search.DeploymentAnnotation:          newMapper(fieldnames.DisallowedAnnotation, leftRightCompoundMap),
 		search.ImageLabel:                    newMapper(fieldnames.DisallowedImageLabel, leftRightCompoundMap),
 		search.VolumeReadonly:                newMapper(fieldnames.WritableMountedVolume, invertBooleanMap),
 		search.ImageCreatedTime:              newMapper(fieldnames.ImageAge, numberOfDaysSinceMap),

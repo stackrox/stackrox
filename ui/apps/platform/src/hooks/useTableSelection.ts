@@ -12,6 +12,7 @@ export type UseTableSelection = {
     ) => void;
     onSelectAll: (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => void;
     onClearAll: () => void;
+    onResetAll: () => void;
     getSelectedIds: () => string[];
 };
 
@@ -19,51 +20,44 @@ type Base = {
     id: string;
 };
 
-function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
-    const [allRowsSelected, setAllRowsSelected] = React.useState(false);
-    const [selected, setSelected] = React.useState(data.map(() => false));
+const defaultPreSelectedFunc = () => false;
+
+function useTableSelection<T extends Base>(
+    data: T[],
+    // determines whether value should be pre-selected or not
+    preSelectedFunc: (T) => boolean = defaultPreSelectedFunc
+): UseTableSelection {
+    const [selected, setSelected] = React.useState(data.map(preSelectedFunc));
+    const allRowsSelected = selected.length !== 0 && selected.every((val) => val);
     const numSelected = selected.reduce((acc, sel) => (sel ? acc + 1 : acc), 0);
     const hasSelections = numSelected > 0;
 
     React.useEffect(() => {
-        setSelected(data.map(() => false));
-    }, [data]);
+        setSelected(data.map(preSelectedFunc));
+    }, [data, preSelectedFunc]);
 
     const onClearAll = () => {
         setSelected(data.map(() => false));
-        setAllRowsSelected(false);
+    };
+
+    const onResetAll = () => {
+        setSelected(data.map(preSelectedFunc));
     };
 
     const onSelect = (event, isSelected: boolean, rowId: number) => {
         setSelected(
             selected.map((sel: boolean, index: number) => (index === rowId ? isSelected : sel))
         );
-        if (!isSelected && allRowsSelected) {
-            setAllRowsSelected(false);
-        } else if (isSelected && !allRowsSelected) {
-            let allSelected = true;
-            for (let i = 0; i < selected.length; i += 1) {
-                if (i !== rowId) {
-                    if (!selected[i]) {
-                        allSelected = false;
-                    }
-                }
-            }
-            if (allSelected) {
-                setAllRowsSelected(true);
-            }
-        }
     };
 
     function onSelectAll(event, isSelected: boolean) {
-        setAllRowsSelected(isSelected);
         setSelected(selected.map(() => isSelected));
     }
 
     function getSelectedIds() {
         const ids: string[] = [];
         for (let i = 0; i < selected.length; i += 1) {
-            if (selected[i]) {
+            if (selected[i] && data[i]?.id) {
                 ids.push(data[i].id);
             }
         }
@@ -78,6 +72,7 @@ function useTableSelection<T extends Base>(data: T[]): UseTableSelection {
         onSelect,
         onSelectAll,
         onClearAll,
+        onResetAll,
         getSelectedIds,
     };
 }

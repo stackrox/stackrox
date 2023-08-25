@@ -6,20 +6,18 @@ import queryService from 'utils/queryService';
 
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
-import ViewAllButton from 'Components/ViewAllButton';
 import Sunburst from 'Components/visuals/Sunburst';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import workflowStateContext from 'Containers/workflowStateContext';
-import {
-    cvssSeverityColorMap,
-    cvssSeverityTextColorMap,
-    cvssSeverityColorLegend,
-} from 'constants/severityColors';
+import { vulnerabilitySeverityColorMap } from 'constants/severityColors';
+import { vulnerabilitySeverityLabels } from 'messages/common';
 import { getScopeQuery } from 'Containers/VulnMgmt/Entity/VulnMgmtPolicyQueryUtil';
 
-const CVES_QUERY = gql`
-    query getCvesByCVSS($query: String, $scopeQuery: String) {
-        results: vulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+import ViewAllButton from './ViewAllButton';
+
+const IMAGE_CVES_QUERY = gql`
+    query getImageCvesByCVSS($query: String, $scopeQuery: String) {
+        results: imageVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
             cve
             cvss
             severity
@@ -28,10 +26,53 @@ const CVES_QUERY = gql`
     }
 `;
 
-const vulnerabilitySeveritySuffix = '_VULNERABILITY_SEVERITY';
+const NODE_CVES_QUERY = gql`
+    query getNodeCvesByCVSS($query: String, $scopeQuery: String) {
+        results: nodeVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+            cve
+            cvss
+            severity
+            summary
+        }
+    }
+`;
+
+const CLUSTER_CVES_QUERY = gql`
+    query getClusterCvesByCVSS($query: String, $scopeQuery: String) {
+        results: clusterVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
+            cve
+            cvss
+            severity
+            summary
+        }
+    }
+`;
+
+const vulnerabilitySeverities = [
+    'LOW_VULNERABILITY_SEVERITY',
+    'MODERATE_VULNERABILITY_SEVERITY',
+    'IMPORTANT_VULNERABILITY_SEVERITY',
+    'CRITICAL_VULNERABILITY_SEVERITY',
+];
 
 const CvesByCvssScore = ({ entityContext, parentContext }) => {
-    const { loading, data = {} } = useQuery(CVES_QUERY, {
+    let queryToUse = IMAGE_CVES_QUERY;
+    let linkTypeToUse = entityTypes.IMAGE_CVE;
+
+    if (entityContext[entityTypes.CLUSTER]) {
+        queryToUse = CLUSTER_CVES_QUERY;
+        linkTypeToUse = entityTypes.CLUSTER_CVE;
+    } else if (
+        entityContext[entityTypes.NODE] ||
+        entityContext[entityTypes.NODE_COMPONENT] ||
+        parentContext[entityTypes.NODE] ||
+        parentContext[entityTypes.NODE_COMPONENT]
+    ) {
+        queryToUse = NODE_CVES_QUERY;
+        linkTypeToUse = entityTypes.NODE_CVE;
+    }
+
+    const { loading, data = {} } = useQuery(queryToUse, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             scopeQuery: getScopeQuery(parentContext),
@@ -43,51 +84,45 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
 
     const workflowState = useContext(workflowStateContext);
     const viewAllURL = workflowState
-        .pushList(entityTypes.CVE)
+        .pushList(linkTypeToUse)
         .setSort([{ id: 'cvss', desc: true }])
         .toUrl();
 
     function getChildren(vulns, severity) {
         return vulns
-            .filter(
-                (vuln) =>
-                    vuln.severity === `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`
-            )
+            .filter((vuln) => vuln.severity === severity)
             .map(({ cve, cvss, summary }) => {
-                const severityString = `${severity.toUpperCase()}${vulnerabilitySeveritySuffix}`;
                 return {
-                    severity,
+                    // severity, // generic Sunburst does not expect this data-specific property
                     name: `${cve} -- ${summary}`,
-                    color: cvssSeverityColorMap[severityString],
-                    labelColor: cvssSeverityTextColorMap[severityString],
-                    textColor: cvssSeverityTextColorMap[severityString],
+                    color: vulnerabilitySeverityColorMap[severity],
+                    labelColor: 'var(--base-600)',
+                    textColor: 'var(--base-600)',
                     value: cvss,
-                    link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl(),
+                    link: workflowState.pushRelatedEntity(linkTypeToUse, cve).toUrl(),
                 };
             });
     }
 
     function getSunburstData(vulns) {
-        return cvssSeverityColorLegend.map(({ title, color, textColor }) => {
-            const severity = title.toUpperCase();
+        return vulnerabilitySeverities.map((severity) => {
             return {
-                name: title,
-                color,
+                name: vulnerabilitySeverityLabels[severity],
+                color: vulnerabilitySeverityColorMap[severity],
                 children: getChildren(vulns, severity),
-                textColor,
+                textColor: 'var(--base-600)',
                 value: 0,
             };
         });
     }
 
     function getSidePanelData(vulns) {
-        return cvssSeverityColorLegend.map(({ title, textColor }) => {
-            const severity = `${title.toUpperCase()}${vulnerabilitySeveritySuffix}`;
+        return vulnerabilitySeverities.map((severity) => {
             const category = vulns.filter((vuln) => vuln.severity === severity);
-            const text = `${category.length} rated as ${title}`;
+            const text = `${category.length} rated as ${vulnerabilitySeverityLabels[severity]}`;
             return {
                 text,
-                textColor,
+                textColor: 'var(--base-600)',
             };
         });
     }
@@ -115,7 +150,7 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
     }
 
     return (
-        <Widget className="h-full pdf-page" header="CVEs by CVSS Score" headerComponents={header}>
+        <Widget className="h-full pdf-page" header="CVEs by CVSS score" headerComponents={header}>
             {content}
         </Widget>
     );

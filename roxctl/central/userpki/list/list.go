@@ -2,7 +2,6 @@ package list
 
 import (
 	"context"
-	"os"
 	"time"
 
 	"github.com/cloudflare/cfssl/helpers"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 type centralUserPkiListCommand struct {
@@ -30,7 +30,9 @@ type centralUserPkiListCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralUserPkiListCmd := &centralUserPkiListCommand{env: cliEnvironment}
 	c := &cobra.Command{
-		Use: "list",
+		Use:   "list",
+		Short: "Display all user certificate authentication providers.",
+		Long:  "Display all configured user certificate authentication providers in a human-readable or JSON format.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := centralUserPkiListCmd.construct(cmd); err != nil {
 				return err
@@ -66,7 +68,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 	}
 	if cmd.json {
 		m := jsonpb.Marshaler{Indent: "  "}
-		err = m.Marshal(os.Stdout, providers)
+		err = m.Marshal(cmd.env.InputOutput().Out(), providers)
 		if err == nil {
 			cmd.env.Logger().PrintfLn("")
 		}
@@ -95,7 +97,7 @@ func (cmd *centralUserPkiListCommand) listProviders() error {
 }
 
 // PrintProviderDetails print the details of a provider.
-func PrintProviderDetails(logger environment.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
+func PrintProviderDetails(logger logger.Logger, p *storage.AuthProvider, defaultRoles map[string]string) {
 	logger.PrintfLn("Provider: %s", p.GetName())
 	logger.PrintfLn("  ID: %s", p.GetId())
 	logger.PrintfLn("  Enabled: %t", p.GetEnabled())

@@ -41,7 +41,7 @@ func RunSettingsPersister(mgr manager.Manager) error {
 
 type persister struct {
 	ctx              concurrency.Waitable
-	settingsStreamIt concurrency.ValueStreamIter
+	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
 	outC             chan<- *sensor.AdmissionControlSettings
 }
 
@@ -89,16 +89,7 @@ func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
 }
 
 func (p *persister) persistCurrent() error {
-	val := p.settingsStreamIt.Value()
-	if val == nil {
-		return nil // initial value
-	}
-
-	settings, ok := val.(*sensor.AdmissionControlSettings)
-	if !ok {
-		log.Warnf("Received invalid value of type %T in settings stream", val)
-	}
-
+	settings := p.settingsStreamIt.Value()
 	if settings == nil {
 		if err := os.Remove(settingsPath); err != nil {
 			return errors.Wrapf(err, "removing existing settings path %s", settingsPath)

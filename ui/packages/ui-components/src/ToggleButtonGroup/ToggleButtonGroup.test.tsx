@@ -26,12 +26,12 @@ describe('ToggleButtonGroup', () => {
         expect(container).toMatchSnapshot();
     });
 
-    test('toggles the active button when clicking the inactive button', () => {
+    test('toggles the active button when clicking the inactive button', async () => {
         render(<Component />);
 
         expect(screen.getByTestId('active-toggle-button')).toHaveTextContent('Lock');
 
-        userEvent.click(screen.getByText('Unlock'));
+        await userEvent.click(screen.getByText('Unlock'));
 
         expect(screen.getByTestId('active-toggle-button')).toHaveTextContent('Unlock');
     });

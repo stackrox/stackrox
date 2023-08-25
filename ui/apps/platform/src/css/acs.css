@@ -30,9 +30,22 @@
 }
 
 /*
- * Disabled primary Dropdown needs same colors as Button.
+ * ToggleGroupItem button that is disabled needs lighter background like any other form control.
  */
-.pf-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-global--disabled-color--200);
-    color: var(--pf-global--disabled-color--100);
+ button.pf-c-toggle-group__button:disabled {
+    background-color: var(--pf-global--disabled-color--300);
+}
+
+/*
+ * ToggleGroupItem button that is disabled and selected needs more contrast to distinguish from unselected button.
+ */
+button.pf-c-toggle-group__button.pf-m-selected:disabled {
+    background-color: var(--pf-c-toggle-group__button--m-selected--BackgroundColor);
+}
+
+/*
+ * Inherit same color as rest of masthead, instead of blue.
+ */
+a[href="/main/search"] {
+    color: inherit;
 }

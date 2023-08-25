@@ -1,50 +1,86 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.5
+ARG BASE_IMAGE=ubi8-minimal
+ARG RPMS_BASE_IMAGE=ubi8
+ARG BASE_TAG=8.6
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS extracted_bundle
+FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS downloads
 
-COPY bundle.tar.gz /
-WORKDIR /bundle
-RUN tar -zxf /bundle.tar.gz
+ARG DEBUG_BUILD=no
+
+WORKDIR /
+COPY download.sh /download.sh
+RUN /download.sh
+
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
+
+RUN mkdir /stackrox-data
+RUN microdnf upgrade --nobest && microdnf install openssl zip
+
+WORKDIR /
+COPY fetch-stackrox-data.sh .
+RUN /fetch-stackrox-data.sh
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+
+ARG LABEL_VERSION
+ARG LABEL_RELEASE
+ARG QUAY_TAG_EXPIRATION
+ARG ROX_IMAGE_FLAVOR
+ARG ROX_PRODUCT_BRANDING
+ARG TARGET_ARCH=amd64
 
 LABEL name="main" \
       vendor="StackRox" \
       maintainer="support@stackrox.com" \
       summary="The StackRox Kubernetes Security Platform" \
-      description="This image contains components required to operate the StackRox Kubernetes Security Platform."
-
-ARG ROX_IMAGE_FLAVOR
+      description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
+      version="${LABEL_VERSION}" \
+      release="${LABEL_RELEASE}" \
+      quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
+    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
+    ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
-COPY scripts /stackrox/
-COPY --from=extracted_bundle /bundle/assets/ /assets/
-COPY --from=extracted_bundle /bundle/stackrox/ /stackrox/
-COPY --from=extracted_bundle /bundle/THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
-COPY --from=extracted_bundle /bundle/ui/ /ui/
-COPY --from=extracted_bundle /bundle/usr/local/bin/ldb /usr/local/bin/
-COPY --from=extracted_bundle /bundle/snappy.rpm /tmp/
-COPY --from=extracted_bundle /bundle/go/ /go/
+COPY static-bin /stackrox/
 
+COPY bin/central            /stackrox/central
+COPY bin/migrator           /stackrox/bin/migrator
+COPY bin/compliance         /stackrox/bin/compliance
+COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY bin/admission-control  /stackrox/bin/admission-control
+COPY bin/roxctl*            /assets/downloads/cli/
+
+COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
+COPY ui /ui
+
+COPY --from=downloads /output/rpms/ /tmp/
+COPY --from=downloads /output/go/ /go/
+
+COPY --from=stackrox_data /stackrox-data /stackrox/static-data
+COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+
+RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/snappy.rpm; fi
 RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s entrypoint-wrapper.sh /stackrox/compliance && \
     ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
     ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
-    ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
-    dnf upgrade -y && \
-    dnf install -y lz4 bzip2 /tmp/snappy.rpm && \
-    dnf clean all && \
-    rm /tmp/snappy.rpm RPM-GPG-KEY-CentOS-Official && \
+    microdnf upgrade && \
+    rpm -i --nodeps /tmp/postgres-libs.rpm && \
+    rpm -i --nodeps /tmp/postgres.rpm && \
+    microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs lz4 bzip2 util-linux && \
+    microdnf clean all && \
+    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf && \
+    # TODO(ROX-13934): Potentially add *RPM* to this list again
+    rpm -e --nodeps $(rpm -qa curl '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum && \
     # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
     # by the script `save-dir-contents` during the image build. The directory
     # contents are then restored by the script `restore-all-dir-contents`
@@ -59,6 +95,6 @@ EXPOSE 8443
 
 USER 4000:4000
 
-ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
+ENTRYPOINT ["/stackrox/roxctl"]
 
 HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping

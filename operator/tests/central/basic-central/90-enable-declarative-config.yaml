@@ -1,0 +1,13 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  central:
+    declarativeConfiguration:
+      configMaps:
+      - name: "config-map-1"
+      - name: "config-map-2"
+      secrets:
+      - name: "secret-1"
+      - name: "secret-2"

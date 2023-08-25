@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "api/v1/search_service.proto";
+
+package v1;
+
+
+message PolicyCategory {
+    string id       = 1 ;
+    string name     = 2 ;
+    bool isDefault  = 3 ;
+}
+
+message PostPolicyCategoryRequest {
+    v1.PolicyCategory policyCategory = 1;
+}
+message GetPolicyCategoriesResponse {
+    repeated v1.PolicyCategory categories = 1;
+}
+
+
+message RenamePolicyCategoryRequest {
+    string id = 1;
+    string new_category_name = 2;
+}
+
+message DeletePolicyCategoryRequest {
+    string id = 1;
+}
+
+// PolicyCategoryService APIs can be used to manage policy categories.
+service PolicyCategoryService {
+
+    // GetPolicyCategory returns the requested policy category by ID.
+    rpc GetPolicyCategory (ResourceByID) returns (v1.PolicyCategory) {
+        option (google.api.http) = {
+            get: "/v1/policycategories/{id}"
+        };
+    }
+
+    // GetPolicyCategories returns the list of policy categories
+    rpc GetPolicyCategories (RawQuery) returns (GetPolicyCategoriesResponse) {
+        option (google.api.http) = {
+            get: "/v1/policycategories"
+        };
+    }
+
+    // PostPolicyCategory creates a new policy category
+    rpc PostPolicyCategory (PostPolicyCategoryRequest) returns (v1.PolicyCategory) {
+        option (google.api.http) = {
+            post: "/v1/policycategories"
+            body: "policyCategory"
+        };
+    }
+
+    // RenamePolicyCategory renames the given policy category.
+    rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (v1.PolicyCategory) {
+        option (google.api.http) = {
+            put: "/v1/policycategories"
+            body: "*"
+        };
+    }
+
+    // DeletePolicyCategory removes the given policy category.
+    rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/policycategories/{id}"
+        };
+    }
+
+}

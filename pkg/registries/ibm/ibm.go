@@ -19,7 +19,15 @@ const (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "ibm", func(integration *storage.ImageIntegration) (types.Registry, error) {
-		return newRegistry(integration)
+		return newRegistry(integration, false)
+	}
+}
+
+// CreatorWithoutRepoList provides the type and registries.Creator to add to the registries Registry.
+// Populating the internal repo list will be disabled.
+func CreatorWithoutRepoList() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "ibm", func(integration *storage.ImageIntegration) (types.Registry, error) {
+		return newRegistry(integration, true)
 	}
 }
 
@@ -34,7 +42,7 @@ func validate(ibm *storage.IBMRegistryConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error) {
+func newRegistry(integration *storage.ImageIntegration, disableRepoList bool) (*docker.Registry, error) {
 	ibmConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ibm)
 	if !ok {
 		return nil, errors.New("IBM configuration required")
@@ -44,9 +52,10 @@ func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error
 		return nil, err
 	}
 	cfg := docker.Config{
-		Username: username,
-		Password: config.GetApiKey(),
-		Endpoint: config.GetEndpoint(),
+		Username:        username,
+		Password:        config.GetApiKey(),
+		Endpoint:        config.GetEndpoint(),
+		DisableRepoList: disableRepoList,
 	}
 	registry, err := docker.NewDockerRegistryWithConfig(cfg, integration)
 	if err != nil {

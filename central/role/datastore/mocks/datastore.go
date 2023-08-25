@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	permissions "github.com/stackrox/rox/pkg/auth/permissions"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -34,6 +34,21 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
+}
+
+// AccessScopeExists mocks base method.
+func (m *MockDataStore) AccessScopeExists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccessScopeExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccessScopeExists indicates an expected call of AccessScopeExists.
+func (mr *MockDataStoreMockRecorder) AccessScopeExists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccessScopeExists", reflect.TypeOf((*MockDataStore)(nil).AccessScopeExists), ctx, id)
 }
 
 // AddAccessScope mocks base method.
@@ -78,6 +93,51 @@ func (mr *MockDataStoreMockRecorder) AddRole(ctx, role interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRole", reflect.TypeOf((*MockDataStore)(nil).AddRole), ctx, role)
 }
 
+// CountAccessScopes mocks base method.
+func (m *MockDataStore) CountAccessScopes(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAccessScopes", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAccessScopes indicates an expected call of CountAccessScopes.
+func (mr *MockDataStoreMockRecorder) CountAccessScopes(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAccessScopes", reflect.TypeOf((*MockDataStore)(nil).CountAccessScopes), ctx)
+}
+
+// CountPermissionSets mocks base method.
+func (m *MockDataStore) CountPermissionSets(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountPermissionSets", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountPermissionSets indicates an expected call of CountPermissionSets.
+func (mr *MockDataStoreMockRecorder) CountPermissionSets(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountPermissionSets", reflect.TypeOf((*MockDataStore)(nil).CountPermissionSets), ctx)
+}
+
+// CountRoles mocks base method.
+func (m *MockDataStore) CountRoles(ctx context.Context) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountRoles", ctx)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountRoles indicates an expected call of CountRoles.
+func (mr *MockDataStoreMockRecorder) CountRoles(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountRoles", reflect.TypeOf((*MockDataStore)(nil).CountRoles), ctx)
+}
+
 // GetAccessScope mocks base method.
 func (m *MockDataStore) GetAccessScope(ctx context.Context, id string) (*storage.SimpleAccessScope, bool, error) {
 	m.ctrl.T.Helper()
@@ -92,6 +152,21 @@ func (m *MockDataStore) GetAccessScope(ctx context.Context, id string) (*storage
 func (mr *MockDataStoreMockRecorder) GetAccessScope(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessScope", reflect.TypeOf((*MockDataStore)(nil).GetAccessScope), ctx, id)
+}
+
+// GetAccessScopesFiltered mocks base method.
+func (m *MockDataStore) GetAccessScopesFiltered(ctx context.Context, filter func(*storage.SimpleAccessScope) bool) ([]*storage.SimpleAccessScope, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccessScopesFiltered", ctx, filter)
+	ret0, _ := ret[0].([]*storage.SimpleAccessScope)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccessScopesFiltered indicates an expected call of GetAccessScopesFiltered.
+func (mr *MockDataStoreMockRecorder) GetAccessScopesFiltered(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccessScopesFiltered", reflect.TypeOf((*MockDataStore)(nil).GetAccessScopesFiltered), ctx, filter)
 }
 
 // GetAllAccessScopes mocks base method.
@@ -170,6 +245,21 @@ func (mr *MockDataStoreMockRecorder) GetPermissionSet(ctx, id interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPermissionSet", reflect.TypeOf((*MockDataStore)(nil).GetPermissionSet), ctx, id)
 }
 
+// GetPermissionSetsFiltered mocks base method.
+func (m *MockDataStore) GetPermissionSetsFiltered(ctx context.Context, filter func(*storage.PermissionSet) bool) ([]*storage.PermissionSet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPermissionSetsFiltered", ctx, filter)
+	ret0, _ := ret[0].([]*storage.PermissionSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPermissionSetsFiltered indicates an expected call of GetPermissionSetsFiltered.
+func (mr *MockDataStoreMockRecorder) GetPermissionSetsFiltered(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPermissionSetsFiltered", reflect.TypeOf((*MockDataStore)(nil).GetPermissionSetsFiltered), ctx, filter)
+}
+
 // GetRole mocks base method.
 func (m *MockDataStore) GetRole(ctx context.Context, name string) (*storage.Role, bool, error) {
 	m.ctrl.T.Helper()
@@ -184,6 +274,21 @@ func (m *MockDataStore) GetRole(ctx context.Context, name string) (*storage.Role
 func (mr *MockDataStoreMockRecorder) GetRole(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRole", reflect.TypeOf((*MockDataStore)(nil).GetRole), ctx, name)
+}
+
+// GetRolesFiltered mocks base method.
+func (m *MockDataStore) GetRolesFiltered(ctx context.Context, filter func(*storage.Role) bool) ([]*storage.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRolesFiltered", ctx, filter)
+	ret0, _ := ret[0].([]*storage.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRolesFiltered indicates an expected call of GetRolesFiltered.
+func (mr *MockDataStoreMockRecorder) GetRolesFiltered(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRolesFiltered", reflect.TypeOf((*MockDataStore)(nil).GetRolesFiltered), ctx, filter)
 }
 
 // RemoveAccessScope mocks base method.
@@ -268,4 +373,46 @@ func (m *MockDataStore) UpdateRole(ctx context.Context, role *storage.Role) erro
 func (mr *MockDataStoreMockRecorder) UpdateRole(ctx, role interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRole", reflect.TypeOf((*MockDataStore)(nil).UpdateRole), ctx, role)
+}
+
+// UpsertAccessScope mocks base method.
+func (m *MockDataStore) UpsertAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertAccessScope", ctx, scope)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertAccessScope indicates an expected call of UpsertAccessScope.
+func (mr *MockDataStoreMockRecorder) UpsertAccessScope(ctx, scope interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAccessScope", reflect.TypeOf((*MockDataStore)(nil).UpsertAccessScope), ctx, scope)
+}
+
+// UpsertPermissionSet mocks base method.
+func (m *MockDataStore) UpsertPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertPermissionSet", ctx, permissionSet)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertPermissionSet indicates an expected call of UpsertPermissionSet.
+func (mr *MockDataStoreMockRecorder) UpsertPermissionSet(ctx, permissionSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPermissionSet", reflect.TypeOf((*MockDataStore)(nil).UpsertPermissionSet), ctx, permissionSet)
+}
+
+// UpsertRole mocks base method.
+func (m *MockDataStore) UpsertRole(ctx context.Context, role *storage.Role) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertRole", ctx, role)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertRole indicates an expected call of UpsertRole.
+func (mr *MockDataStoreMockRecorder) UpsertRole(ctx, role interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertRole", reflect.TypeOf((*MockDataStore)(nil).UpsertRole), ctx, role)
 }

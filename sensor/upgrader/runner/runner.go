@@ -2,7 +2,6 @@ package runner
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var (
@@ -25,7 +25,7 @@ type Runner interface {
 	// Err() is guaranteed to be non-nil.
 	MostRecentStage() sensorupgrader.Stage
 	// RunNextStage runs the next stage of the runner.
-	// Callers MUST check r.Finished() and r.Err() before calling this.
+	// Callers MUST check r.Finished() and r.Error() before calling this.
 	RunNextStage()
 }
 
@@ -41,10 +41,10 @@ type runner struct {
 	// "Status" fields.
 	mostRecentlyExecutedStageIdx int
 	err                          error
-	preUpgradeObjs               []k8sutil.Object
-	preUpgradeState              map[k8sobjects.ObjectRef]k8sutil.Object
+	preUpgradeObjs               []*unstructured.Unstructured
+	preUpgradeState              map[k8sobjects.ObjectRef]*unstructured.Unstructured
 	bundleContents               bundle.Contents
-	postUpgradeObjs              []k8sutil.Object
+	postUpgradeObjs              []*unstructured.Unstructured
 	executionPlan                *plan.ExecutionPlan
 }
 

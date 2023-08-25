@@ -2,9 +2,7 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/secret/internal/index"
-	"github.com/stackrox/rox/central/secret/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
 	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,10 +17,9 @@ var (
 )
 
 func initialize() {
-	storage := rocksdb.New(globaldb.GetRocksDB())
-	indexer := index.New(globalindex.GetGlobalTmpIndex())
+	storage := pgStore.New(globaldb.GetPostgres())
 	var err error
-	ad, err = New(storage, indexer, search.New(storage, indexer))
+	ad, err = New(storage, search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres())))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

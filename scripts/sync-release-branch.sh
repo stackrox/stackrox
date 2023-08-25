@@ -48,6 +48,7 @@ if [[ -z "$GH_TOKEN" ]]; then
   if [[ -x "$roxhelp_bin" ]]; then
     workflow_root="$(dirname "$roxhelp_bin")/.."
     if [[ -f "${workflow_root}/lib/github.sh" ]]; then
+      # shellcheck source=/dev/null
       source "${workflow_root}/lib/github.sh"
       if [[ -n "$GITHUB_TOKEN" ]]; then
         GH_TOKEN="$GITHUB_TOKEN"

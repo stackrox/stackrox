@@ -37,7 +37,7 @@ class StackroxScannerIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION,
-                endpoint: "https://scanner.stackrox:8080",
+                endpoint: "https://scanner.stackrox.svc:8080",
         ]
         Map args = defaultArgs + customArgs
 
@@ -56,38 +56,6 @@ class StackroxScannerIntegration implements ImageIntegration {
                 .clearCategories()
                 .addAllCategories(categories)
                 .setClairify(config)
-    }
-}
-
-class AnchoreScannerIntegration implements ImageIntegration {
-
-    static String name() { "Anchore Scanner" }
-
-    static Boolean isTestable() {
-        return Env.get("ANCHORE_ENDPOINT") != null
-    }
-
-    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
-        Map defaultArgs = [
-                name: "anchore",
-                endpoint: Env.get("ANCHORE_ENDPOINT", ""),
-                username: Env.get("ANCHORE_USERNAME", ""),
-                password: Env.get("ANCHORE_PASSWORD", ""),
-        ]
-        Map args = defaultArgs + customArgs
-
-        ImageIntegrationOuterClass.AnchoreConfig.Builder config =
-                ImageIntegrationOuterClass.AnchoreConfig.newBuilder()
-                        .setUsername(args.username as String)
-                        .setPassword(args.password as String)
-                        .setEndpoint(args.endpoint as String)
-
-        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                .setName(args.name as String)
-                .setType("anchore")
-                .clearCategories()
-                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
-                .setAnchore(config)
     }
 }
 
@@ -116,6 +84,36 @@ class ClairScannerIntegration implements ImageIntegration {
                 .clearCategories()
                 .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
                 .setClair(config)
+    }
+}
+
+class ClairV4ScannerIntegration implements ImageIntegration {
+
+    static String name() { "Clair v4 Scanner" }
+
+    static Boolean isTestable() {
+        return Env.get("CLAIR_V4_ENDPOINT") != null
+    }
+
+    static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
+        Map defaultArgs = [
+                name: "clairv4",
+                endpoint: Env.get("CLAIR_V4_ENDPOINT", ""),
+                insecure: true,
+        ]
+        Map args = defaultArgs + customArgs
+
+        ImageIntegrationOuterClass.ClairV4Config.Builder config =
+                ImageIntegrationOuterClass.ClairV4Config.newBuilder()
+                        .setEndpoint(args.endpoint as String)
+                        .setInsecure(args.insecure as boolean)
+
+        return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                .setName(args.name as String)
+                .setType("clairV4")
+                .clearCategories()
+                .addAllCategories([ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER])
+                .setClairV4(config)
     }
 }
 
@@ -228,7 +226,7 @@ class QuayImageIntegration implements ImageIntegration {
                 endpoint: "quay.io",
                 includeScanner: true,
                 insecure: false,
-                oauthToken: Env.mustGet("QUAY_BEARER_TOKEN"),
+                oauthToken: Env.mustGet("QUAY_RHACS_ENG_BEARER_TOKEN"),
         ]
         Map args = defaultArgs + customArgs
 
@@ -237,6 +235,14 @@ class QuayImageIntegration implements ImageIntegration {
                         .setEndpoint(args.endpoint as String)
                         .setOauthToken(args.oauthToken as String)
                         .setInsecure(args.insecure as Boolean)
+
+        if (args.useRobotCreds) {
+            config.setRegistryRobotCredentials(
+                    ImageIntegrationOuterClass.QuayConfig.RobotAccount.newBuilder()
+                        .setUsername(Env.mustGet("QUAY_RHACS_ENG_RO_USERNAME"))
+                        .setPassword(Env.mustGet("QUAY_RHACS_ENG_RO_PASSWORD"))
+            )
+        }
 
         return ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                 .setName(args.name as String)

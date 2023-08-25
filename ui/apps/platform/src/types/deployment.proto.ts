@@ -45,7 +45,6 @@ export type Deployment = {
     ports: PortConfig[];
     stateTimestamp: string; // int64
     riskScore: number; // float
-    processTags: string[];
 };
 
 export type Container = {

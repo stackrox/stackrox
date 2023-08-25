@@ -1,0 +1,25 @@
+central:
+  resources:
+    requests:
+      memory: 8Gi
+      cpu: 5
+    limits:
+      memory: 16Gi
+      cpu: 8
+
+  db:
+    enabled: true
+    resources:
+      requests:
+        memory: 8Gi
+        cpu: 5
+      limits:
+        memory: 16Gi
+        cpu: 8
+
+customize:
+  # Custom environment variables that will be applied to all containers
+  # of all workloads.
+  envVars:
+    ROX_SCALE_TEST: "true"
+    MUTEX_WATCHDOG_TIMEOUT_SECS: "0"

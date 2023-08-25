@@ -1,0 +1,13 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-https
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+  - ports:
+    - port: 443
+  policyTypes:
+  - Ingress

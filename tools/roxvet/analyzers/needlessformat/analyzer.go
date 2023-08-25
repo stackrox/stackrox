@@ -3,10 +3,9 @@ package needlessformat
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
-	"regexp"
 
+	"github.com/stackrox/rox/tools/roxvet/common"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/astutil"
@@ -14,12 +13,10 @@ import (
 	"golang.org/x/tools/go/types/typeutil"
 )
 
-const doc = `check for use of format methodsToReplacementByPackage without format arguments`
-
 // Analyzer is the analyzer.
 var Analyzer = &analysis.Analyzer{
 	Name:     "needlessformat",
-	Doc:      doc,
+	Doc:      "check for use of format methodsToReplacementByPackage without format arguments",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
 }
@@ -52,8 +49,6 @@ var (
 			"Errorf": "Error",
 		},
 	}
-
-	generatedCodeRegex = regexp.MustCompile(`// Code generated .* DO NOT EDIT\.$`)
 )
 
 func isNeedlessVarArgsCall(fun *types.Func, call *ast.CallExpr) (bool, string, string) {
@@ -81,19 +76,6 @@ func isNeedlessVarArgsCall(fun *types.Func, call *ast.CallExpr) (bool, string, s
 	return match, fmt.Sprintf("\"%s\".%s", fun.Pkg().Path(), name), replacement
 }
 
-func isGeneratedFile(fset *token.FileSet, f *ast.File) bool {
-	if len(f.Comments) == 0 {
-		return false
-	}
-	firstComment := f.Comments[0].List[0]
-
-	if fset.Position(firstComment.Pos()).Offset != 0 {
-		// comment is not at beginning of file
-		return false
-	}
-	return generatedCodeRegex.MatchString(firstComment.Text)
-}
-
 func checkCall(pass *analysis.Pass, call *ast.CallExpr) {
 	fun := astutil.Unparen(call.Fun)
 
@@ -115,24 +97,11 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 
 	nodeFilter := []ast.Node{
-		(*ast.File)(nil),
 		(*ast.CallExpr)(nil),
 	}
 
-	inspectResult.Nodes(nodeFilter, func(n ast.Node, push bool) bool {
-		if !push {
-			return false
-		}
-
-		switch t := n.(type) {
-		case *ast.File:
-			return !isGeneratedFile(pass.Fset, t)
-		case *ast.CallExpr:
-			checkCall(pass, t)
-			return true
-		default:
-			return false // should not happen
-		}
+	common.FilteredPreorder(inspectResult, common.Not(common.IsGeneratedFile), nodeFilter, func(n ast.Node) {
+		checkCall(pass, n.(*ast.CallExpr))
 	})
 	return nil, nil
 }

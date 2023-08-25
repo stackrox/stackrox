@@ -43,7 +43,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
     }
 `;
 export const SERVICE_ACCOUNTS_QUERY = gql`
-    query serviceAccounts($query: String, $pagination: Pagination) {
+    query serviceaccounts($query: String, $pagination: Pagination) {
         results: serviceAccounts(query: $query, pagination: $pagination) {
             id
             name

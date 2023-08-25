@@ -3,7 +3,7 @@ package generate
 import (
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 )
 
@@ -18,7 +18,8 @@ func (w istioSupportWrapper) String() string {
 func (w istioSupportWrapper) Set(input string) error {
 	_, err := istioutils.GetAPIResourcesByVersion(input)
 	if err != nil {
-		return errors.Errorf("invalid Istio version %q. Valid versions are: %s (or leave empty for no Istio support)", input, strings.Join(istioutils.ListKnownIstioVersions(), ", "))
+		return errox.InvalidArgs.Newf("invalid Istio version %q. Valid versions are: %s (or leave empty "+
+			"for no Istio support)", input, strings.Join(istioutils.ListKnownIstioVersions(), ", "))
 	}
 	*w.istioSupport = input
 	return nil

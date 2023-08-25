@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	acConverter "github.com/stackrox/rox/central/activecomponent/converter"
 	acMocks "github.com/stackrox/rox/central/activecomponent/datastore/mocks"
 	aggregatorPkg "github.com/stackrox/rox/central/activecomponent/updater/aggregator"
@@ -17,17 +16,17 @@ import (
 	piMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type indicatorModel struct {
@@ -79,15 +78,17 @@ var (
 		Id: "image1",
 		Scan: &storage.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			// leaving empty initially so the test will cover backwards compatibility for scans with no version
+			ScannerVersion: "",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "image1_component1",
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
-						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1")}},
+						{Path: "/root/bin/image1_component1_match_file1", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
+						{Path: "/root/bin/image1_component1_nonmatch_file3", Dependencies: []string{scancomponent.ComponentID("image1_component1", "1", "")}},
 					},
 				},
 				{
@@ -95,9 +96,9 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
-						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
-						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2")}},
+						{Path: "/root/bin/image1_component2_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
+						{Path: "/root/bin/image1_component2_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
+						{Path: "/root/bin/image1_component2_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component2", "2", "")}},
 					},
 				},
 				{
@@ -110,14 +111,15 @@ var (
 					Version: "2",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
-						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
-						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2")}},
+						{Path: "/root/bin/image1_component4_nonmatch_file1", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
+						{Path: "/root/bin/image1_component4_nonmatch_file2", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
+						{Path: "/root/bin/image1_component4_match_file3", Dependencies: []string{scancomponent.ComponentID("image1_component4", "2", "")}},
 					},
 				},
 			},
 		},
 	}
+
 	mockIndicators = []indicatorModel{
 		{
 			DeploymentID:  "depA",
@@ -144,6 +146,7 @@ var (
 )
 
 func TestActiveComponentUpdater(t *testing.T) {
+	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
 	suite.Run(t, new(acUpdaterTestSuite))
 }
 
@@ -154,7 +157,6 @@ type acUpdaterTestSuite struct {
 	mockDeploymentDatastore       *deploymentMocks.MockDataStore
 	mockActiveComponentDataStore  *acMocks.MockDataStore
 	mockProcessIndicatorDataStore *piMocks.MockDataStore
-	envIsolator                   *envisolator.EnvIsolator
 	mockImageDataStore            *imageMocks.MockDataStore
 	executableCache               simplecache.Cache
 	mockAggregator                *mocks.MockProcessAggregator
@@ -167,19 +169,22 @@ func (s *acUpdaterTestSuite) SetupTest() {
 	s.mockProcessIndicatorDataStore = piMocks.NewMockDataStore(s.mockCtrl)
 	s.mockImageDataStore = imageMocks.NewMockDataStore(s.mockCtrl)
 	s.executableCache = simplecache.New()
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-	s.envIsolator.Setenv(features.ActiveVulnManagement.EnvVar(), "true")
 	s.mockAggregator = mocks.NewMockProcessAggregator(s.mockCtrl)
-
-	if !features.ActiveVulnManagement.Enabled() {
-		s.T().Skip("Skip active component updater test")
-		s.T().SkipNow()
-	}
 }
 
 func (s *acUpdaterTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
+}
+
+func (s *acUpdaterTestSuite) assertHasContainer(contexts []*storage.ActiveComponent_ActiveContext, container string) {
+	var found bool
+	for _, ctx := range contexts {
+		if ctx.GetContainerName() == container {
+			found = true
+			break
+		}
+	}
+	s.True(found)
 }
 
 func (s *acUpdaterTestSuite) TestUpdater() {
@@ -200,7 +205,7 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 			}
 		}
 	}
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return(deploymentIDs, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return(deploymentIDs, nil)
 	s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
 		func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
@@ -238,40 +243,39 @@ func (s *acUpdaterTestSuite) TestUpdater() {
 		func(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 			return []search.Result{{ID: imageID}}, nil
 		})
-	s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(_ context.Context, acs []*acConverter.CompleteActiveComponent) {
+	s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
 		s.Assert().Equal(2, len(acs))
 		for _, ac := range acs {
-			deploymentID, componentID, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
-			s.Assert().NoError(err)
 			// Deployment C does not have image1.
-			s.Assert().NotEqual(deploymentID, mockDeployments[2].GetId())
-			imageComponent, err := edges.FromString(componentID)
-			s.Assert().NoError(err)
-			s.Assert().True(strings.HasPrefix(imageComponent.ParentID, mockImage.GetId()))
-			s.Assert().NotEqual(imageComponent.ParentID, mockImage.GetScan().GetComponents()[2].GetName())
-			s.Assert().Len(ac.ActiveComponent.ActiveContexts, 1)
+			s.Assert().NotEqual(ac.GetDeploymentId(), mockDeployments[2].GetId())
+
+			imageComponent := pgSearch.IDToParts(ac.GetComponentId())[0]
+
+			s.Assert().True(strings.HasPrefix(imageComponent, mockImage.GetId()))
+			s.Assert().NotEqual(imageComponent, mockImage.GetScan().GetComponents()[2].GetName())
+			s.Assert().Len(ac.GetActiveContextsSlice(), 1)
 
 			var expectedComponent *storage.EmbeddedImageScanComponent
 			var expectedContainer string
-			if deploymentID == mockDeployments[0].Id {
+			if ac.GetDeploymentId() == mockDeployments[0].Id {
 				expectedContainer = mockIndicators[0].ContainerName
 				// Component 1 or 2
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
-				if imageComponent.ParentID != mockImage.GetScan().GetComponents()[0].GetName() {
+				if imageComponent != mockImage.GetScan().GetComponents()[0].GetName() {
 					expectedComponent = mockImage.GetScan().GetComponents()[1]
 				}
 			} else {
-				s.Assert().Equal(deploymentID, mockDeployments[1].Id)
+				s.Assert().Equal(ac.GetDeploymentId(), mockDeployments[1].Id)
 				expectedContainer = mockIndicators[1].ContainerName
 				// Component 1 or 4
 				expectedComponent = mockImage.GetScan().GetComponents()[0]
-				if imageComponent.ParentID != mockImage.GetScan().GetComponents()[0].GetName() {
+				if imageComponent != mockImage.GetScan().GetComponents()[0].GetName() {
 					expectedComponent = mockImage.GetScan().GetComponents()[3]
 				}
 			}
-			s.Assert().Contains(ac.ActiveComponent.ActiveContexts, expectedContainer)
-			s.Assert().True(strings.HasSuffix(imageComponent.ParentID, expectedComponent.GetName()))
-			s.Assert().Equal(componentID, scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion()))
+			s.assertHasContainer(ac.GetActiveContextsSlice(), expectedContainer)
+			s.Assert().True(strings.HasSuffix(imageComponent, expectedComponent.GetName()))
+			s.Assert().Equal(ac.GetComponentId(), scancomponent.ComponentID(expectedComponent.GetName(), expectedComponent.GetVersion(), ""))
 		}
 	})
 
@@ -293,7 +297,9 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 	}
 
 	// Initial population
+	// scanner version is empty to test backward compatibility
 	image := mockImage.Clone()
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), "")
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
 	s.verifyExecutableCache(updater, mockImage)
 
@@ -308,7 +314,8 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 	// New update without the first component
 	image = mockImage.Clone()
-	image.GetScan().ScanTime = protoconv.ConvertTimeToTimestamp(time.Now().Add(1))
+	// update the scanner version to make sure cache gets re-populated
+	image.GetScan().ScannerVersion = "2.22.0"
 	image.GetScan().Components = image.GetScan().GetComponents()[1:]
 	imageForVerify := image.Clone()
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image))
@@ -317,15 +324,19 @@ func (s *acUpdaterTestSuite) TestUpdater_PopulateExecutableCache() {
 
 func (s *acUpdaterTestSuite) verifyExecutableCache(updater *updaterImpl, image *storage.Image) {
 	s.Assert().Len(updater.executableCache.Keys(), 1)
+
 	result, ok := updater.executableCache.Get(image.GetId())
 	s.Assert().True(ok)
+
+	// ensure the scanner version is updated and matches
+	s.Assert().Equal(image.GetScan().GetScannerVersion(), result.(*imageExecutable).scannerVersion)
 	execToComponents := result.(*imageExecutable).execToComponents
 	allExecutables := set.NewStringSet()
 	for _, component := range image.GetScan().GetComponents() {
 		if component.Source != storage.SourceType_OS {
 			continue
 		}
-		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion())
+		componentID := scancomponent.ComponentID(component.GetName(), component.GetVersion(), "")
 		for _, exec := range component.Executables {
 			s.Assert().Contains(execToComponents, exec.GetPath())
 			s.Assert().Len(execToComponents[exec.GetPath()], 1)
@@ -347,19 +358,20 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	image := &storage.Image{
 		Id: "image1",
 		Scan: &storage.ImageScan{
-			ScanTime: protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScanTime:       protoconv.ConvertTimeToTimestamp(time.Now()),
+			ScannerVersion: "2.22.0",
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:    "component1",
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
-						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1")}},
+						{Path: "/usr/bin/component1_file1", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
+						{Path: "/usr/bin/component1_file2", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component1", "1", "")}},
 						{Path: "/usr/bin/component1_file4", Dependencies: []string{
-							scancomponent.ComponentID("component1", "1"),
-							scancomponent.ComponentID("component2", "1"),
+							scancomponent.ComponentID("component1", "1", ""),
+							scancomponent.ComponentID("component2", "1", ""),
 						}},
 					},
 				},
@@ -368,9 +380,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					Version: "1",
 					Source:  storage.SourceType_OS,
 					Executables: []*storage.EmbeddedImageScanComponent_Executable{
-						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
-						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
-						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1")}},
+						{Path: "/usr/bin/component2_file1", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
+						{Path: "/usr/bin/component2_file2", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
+						{Path: "/usr/bin/component1and2_file3", Dependencies: []string{scancomponent.ComponentID("component2", "1", "")}},
 					},
 				},
 			},
@@ -381,7 +393,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	deployment := mockDeployments[0]
 	var componentsIDs []string
 	for _, component := range components {
-		componentsIDs = append(componentsIDs, scancomponent.ComponentID(component.GetName(), component.GetVersion()))
+		componentsIDs = append(componentsIDs, scancomponent.ComponentID(component.GetName(), component.GetVersion(), ""))
 	}
 
 	var containerNames []string
@@ -394,7 +406,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			return []search.Result{{ID: image.GetId()}}, nil
 		})
 	s.Assert().NoError(updater.PopulateExecutableCache(updaterCtx, image.Clone()))
-	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs().AnyTimes().Return([]string{deployment.GetId()}, nil)
+	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
 	var testCases = []struct {
@@ -874,11 +886,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					for componentID, containerNames := range testCase.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						ac := &storage.ActiveComponent{
-							Id:             acID,
-							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
+							Id:           acID,
+							ComponentId:  componentID,
+							DeploymentId: deployment.GetId(),
 						}
 						for containerName := range containerNames {
-							ac.ActiveContexts[containerName] = &storage.ActiveComponent_ActiveContext{ContainerName: containerName, ImageId: existingImageID}
+							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{ContainerName: containerName, ImageId: existingImageID})
 						}
 						ret = append(ret, ac)
 					}
@@ -898,14 +911,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 							continue
 						}
 						ac := &storage.ActiveComponent{
-							Id:             acID,
-							ActiveContexts: make(map[string]*storage.ActiveComponent_ActiveContext),
+							Id:           acID,
+							ComponentId:  componentID,
+							DeploymentId: deployment.GetId(),
 						}
 						for containerName := range containerNames {
-							ac.ActiveContexts[containerName] = &storage.ActiveComponent_ActiveContext{
+							ac.ActiveContextsSlice = append(ac.ActiveContextsSlice, &storage.ActiveComponent_ActiveContext{
 								ContainerName: containerName,
 								ImageId:       existingImageID,
-							}
+							})
 						}
 						ret = append(ret, ac)
 					}
@@ -925,26 +939,25 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					})
 			}
 			if len(testCase.acsToUpdate) > 0 {
-				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*acConverter.CompleteActiveComponent) {
+				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
 					// Verify active components
 					assert.Equal(t, len(testCase.acsToUpdate), len(acs))
-					actualAcs := make(map[string]*acConverter.CompleteActiveComponent, len(acs))
+					actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
 					for _, ac := range acs {
-						_, _, err := acConverter.DecomposeID(ac.ActiveComponent.GetId())
+						_, _, err := acConverter.DecomposeID(ac.GetId())
 						assert.NoError(t, err)
-						actualAcs[ac.ActiveComponent.GetId()] = ac
+						actualAcs[ac.GetId()] = ac
 					}
 
 					for componentID, expectedContexts := range testCase.acsToUpdate {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						assert.Contains(t, actualAcs, acID)
-						assert.Equal(t, deployment.GetId(), actualAcs[acID].DeploymentID)
-						assert.Equal(t, componentID, actualAcs[acID].ComponentID)
-						assert.Equal(t, acID, actualAcs[acID].ActiveComponent.GetId())
-						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveComponent.ActiveContexts))
-						for containerName, activeContext := range actualAcs[acID].ActiveComponent.ActiveContexts {
-							assert.Contains(t, expectedContexts, containerName)
-							assert.Equal(t, containerName, activeContext.GetContainerName())
+						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
+						assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
+						assert.Equal(t, acID, actualAcs[acID].GetId())
+						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveContextsSlice))
+						for _, activeContext := range actualAcs[acID].ActiveContextsSlice {
+							assert.Contains(t, expectedContexts, activeContext.GetContainerName())
 							assert.Equal(t, image.GetId(), activeContext.GetImageId())
 						}
 					}

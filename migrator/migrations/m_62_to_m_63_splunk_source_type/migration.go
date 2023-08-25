@@ -19,7 +19,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 62,
-		VersionAfter:   storage.Version{SeqNum: 63},
+		VersionAfter:   &storage.Version{SeqNum: 63},
 		Run: func(databases *types.Databases) error {
 			return migrateSplunkSourceType(databases.BoltDB)
 		},

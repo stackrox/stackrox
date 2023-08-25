@@ -3,22 +3,26 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
+
 package storage;
 
 message ServiceIdentity {
+    string      serial_str = 4 [(gogoproto.moretags) = 'sql:"pk"']; // The serial number in decimal representation.
     oneof srl {
         int64       serial     = 1 [deprecated = true];
-        string      serial_str = 4;  // The serial number in decimal representation.
     }
     string      id             = 2;
     ServiceType type           = 3;
     string      init_bundle_id = 5;
 }
 
+// Next available tag: 13
 enum ServiceType {
     UNKNOWN_SERVICE           = 0;
     SENSOR_SERVICE            = 1;
     CENTRAL_SERVICE           = 2;
+    CENTRAL_DB_SERVICE        = 12;
     REMOTE_SERVICE            = 3;
     COLLECTOR_SERVICE         = 4;
     MONITORING_UI_SERVICE     = 5;

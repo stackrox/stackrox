@@ -1,0 +1,169 @@
+name: Style
+on:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+env:
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
+
+jobs:
+  check-generated-files:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Check Generated
+      run: scripts/ci/jobs/check-generated.sh
+
+  misc-checks:
+    env:
+      ARTIFACT_DIR: junit-reports/
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Create artifacts dir
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Ensure no trailing whitespaces
+      if: github.event_name == 'pull_request'
+      # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
+      run: git diff --check "${{ github.event.pull_request.base.sha }}" ':(exclude)*.md'
+
+    - name: Check PR fixes
+      run: scripts/ci/jobs/check-pr-fixes.sh
+
+    - name: Check TODOs
+      run: scripts/ci/jobs/check-todos.sh
+
+    - name: Check Policies
+      run: scripts/ci/jobs/policy-checks.sh
+
+  style-check:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Ignore dubious repository ownership
+        run: |
+          # Prevent fatal error "detected dubious ownership in repository" from recent git.
+          git config --global --add safe.directory "$(pwd)"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
+
+      - name: Cache UI dependencies
+        uses: ./.github/actions/cache-ui-dependencies
+
+      - name: Cache QA Test dependencies
+        uses: ./.github/actions/cache-gradle-dependencies
+
+      - name: Fetch UI deps
+        run: make -C ui deps
+
+      - name: make style-slim
+        run: make style-slim
+
+  golangci-lint:
+    timeout-minutes: 240
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Check Cache golangci-lint
+      run: make golangci-lint-cache-status
+
+    - name: Cache golangci-lint
+      uses: actions/cache@v3
+      with:
+        path: /github/home/.cache/golangci-lint
+        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-lint-v2-${{ hashFiles('**/go.sum') }}
+          go-lint-v2-
+
+    - name: Check cache golangci-lint
+      run: make golangci-lint-cache-status
+
+    - name: make golangci-lint
+      run: make golangci-lint
+
+    - name: Check Cache golangci-lint
+      run: make golangci-lint-cache-status
+
+  slack-on-style-failure:
+    if: github.event_name == 'push' && failure()
+    name: Post failure message to Slack
+    runs-on: ubuntu-latest
+    needs:
+      - check-generated-files
+      - misc-checks
+      - style-check
+      - golangci-lint
+    permissions:
+      actions: read
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@26a36836c887f260477432e4314ec3490a84f309
+        with:
+          include_commit_message: true
+          include_jobs: on-failure
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.TEST_FAILURES_NOTIFY_WEBHOOK}}

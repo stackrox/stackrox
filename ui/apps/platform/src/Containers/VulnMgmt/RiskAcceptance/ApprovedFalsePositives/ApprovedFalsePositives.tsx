@@ -1,15 +1,16 @@
 import React, { ReactElement } from 'react';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import useSearch from 'hooks/useSearch';
-import { PageSection, PageSectionVariants } from '@patternfly/react-core';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import { getHasSearchApplied } from 'utils/searchUtils';
+import useURLSearch from 'hooks/useURLSearch';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 import ApprovedFalsePositivesTable from './ApprovedFalsePositivesTable';
 
 function ApprovedFalsePositives(): ReactElement {
-    const { searchFilter, setSearchFilter } = useSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     let modifiedSearchObject = { ...searchFilter };
     modifiedSearchObject = {
@@ -38,11 +39,15 @@ function ApprovedFalsePositives(): ReactElement {
 
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
-    if (!isLoading && rows && rows.length === 0) {
+    if (!isLoading && rows && rows.length === 0 && !hasSearchApplied) {
         return (
             <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No false positive requests were approved." />
+                <EmptyStateTemplate
+                    title="No false positive requests were approved."
+                    headingLevel="h2"
+                />
             </PageSection>
         );
     }

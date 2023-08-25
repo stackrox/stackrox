@@ -1,0 +1,67 @@
+// This contains protobuf types in pair with ClairCore's types, with
+// minimal differences. See https://github.com/quay/claircore for comments
+// on the fields.
+
+syntax = "proto3";
+
+package scanner.v4;
+
+option go_package = "v4";
+
+message Contents {
+    repeated Package              packages      = 1;
+    repeated Distribution         distributions = 2;
+    repeated Repository           repositories  = 3;
+    map<string, Environment.List> environments  = 4;
+}
+
+message Package {
+    string            id                 = 1;
+    string            name               = 2;
+    string            version            = 3;
+    NormalizedVersion normalized_version = 4;
+    string            kind               = 5;
+    Package           source             = 6;
+    string            package_db         = 8;
+    string            repository_hint    = 9;
+    string            module             = 10;
+    string            arch               = 11;
+    string            cpe                = 12;
+}
+
+message NormalizedVersion {
+    string         kind = 1;
+    repeated int32 v    = 2;
+}
+
+message Distribution {
+    string id                = 1;
+    string did               = 2;
+    string name              = 3;
+    string version           = 4;
+    string version_code_name = 5;
+    string version_id        = 6;
+    string arch              = 7;
+    string cpe               = 8;
+    string pretty_name       = 9;
+}
+
+message Repository {
+    string id   = 1;
+    string name = 2;
+    string key  = 3;
+    string uri  = 4;
+    string cpe  = 5;
+}
+
+// Environment describes the surrounding environment a package was
+// discovered in.
+message Environment {
+    message List {
+        repeated Environment environments = 1;
+    }
+    string          package_db              = 1;
+    string          introduced_in           = 2;
+    string          distribution_id         = 3;
+    repeated string repository_ids          = 4;
+}

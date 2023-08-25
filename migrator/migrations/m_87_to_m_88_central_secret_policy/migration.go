@@ -14,7 +14,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 87,
-		VersionAfter:   storage.Version{SeqNum: 88},
+		VersionAfter:   &storage.Version{SeqNum: 88},
 		Run: func(databases *types.Databases) error {
 			err := updatePolicies(databases.BoltDB)
 			if err != nil {

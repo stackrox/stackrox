@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -19,6 +21,11 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	// digestPrefixes lists the prefixes for valid, OCI-compliant image digests.
+	// Please see https://github.com/opencontainers/image-spec/blob/main/descriptor.md#registered-algorithms
+	// for more information.
+	digestPrefixes = []string{"sha256:", "sha512:"}
 )
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
@@ -48,7 +55,7 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 }
 
 // GenerateImageNameFromString generated an ImageName from a common string format and returns an error if there was an
-// issure parsing it.
+// issue parsing it.
 func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference.Reference, error) {
 	name := &storage.ImageName{
 		FullName: imageStr,
@@ -119,18 +126,13 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 	return image, nil
 }
 
-// GetSHA returns the SHA of the image if it exists
+// GetSHA returns the SHA of the image, if it exists.
 func GetSHA(img *storage.Image) string {
-	if img.GetId() != "" {
-		return img.GetId()
-	}
-	if d := img.GetMetadata().GetV2().GetDigest(); d != "" {
-		return d
-	}
-	if d := img.GetMetadata().GetV1().GetDigest(); d != "" {
-		return d
-	}
-	return ""
+	return stringutils.FirstNonEmpty(
+		img.GetId(),
+		img.GetMetadata().GetV2().GetDigest(),
+		img.GetMetadata().GetV1().GetDigest(),
+	)
 }
 
 // Reference returns what to use as the reference when talking to registries
@@ -144,7 +146,7 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
-// IsPullable returns whether or not Kubernetes things the image is pullable
+// IsPullable returns whether Kubernetes thinks the image is pullable.
 func IsPullable(imageStr string) bool {
 	parts := strings.SplitN(imageStr, "://", 2)
 	if len(parts) == 2 {
@@ -166,13 +168,23 @@ func IsValidImageString(imageStr string) error {
 	return err
 }
 
-// ExtractImageDigest returns the image sha if it exists within the string.
+// ExtractImageDigest returns the image sha, if it exists, within the string.
+// Otherwise, the empty string is returned.
 func ExtractImageDigest(imageStr string) string {
-	if idx := strings.Index(imageStr, "sha256:"); idx != -1 {
-		return imageStr[idx:]
+	for _, prefix := range digestPrefixes {
+		if idx := strings.Index(imageStr, prefix); idx != -1 {
+			return imageStr[idx:]
+		}
 	}
 
 	return ""
+}
+
+// ExtractOpenShiftProject returns the name of the OpenShift project in which the given image is stored.
+// Images stored in the OpenShift Internal Registry are identified as: <registry>/<project>/<name>:<tag>.
+func ExtractOpenShiftProject(imgName *storage.ImageName) string {
+	// Use the image name's "remote" field, as it encapsulates <project>/<name>.
+	return stringutils.GetUpTo(imgName.GetRemote(), "/")
 }
 
 type nameHolder interface {
@@ -189,11 +201,6 @@ func GetFullyQualifiedFullName(holder nameHolder) string {
 		return holder.GetName().GetFullName()
 	}
 	return fmt.Sprintf("%s@%s", holder.GetName().GetFullName(), holder.GetId())
-}
-
-// GetImageID returns the id of the image based on the currently set values
-func GetImageID(img *storage.Image) string {
-	return stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
 }
 
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs
@@ -230,4 +237,15 @@ func FilterSuppressedCVEsNoClone(img *storage.Image) {
 			Cves: int32(len(cveSet)),
 		}
 	}
+}
+
+// UniqueImageNames returns the unique image names from the two given slices of image names.
+func UniqueImageNames(a, b []*storage.ImageName) []*storage.ImageName {
+	uniqueImageNames := sliceutils.ShallowClone(a)
+	for _, imageName := range b {
+		if !protoutils.SliceContains(imageName, uniqueImageNames) {
+			uniqueImageNames = append(uniqueImageNames, imageName)
+		}
+	}
+	return uniqueImageNames
 }

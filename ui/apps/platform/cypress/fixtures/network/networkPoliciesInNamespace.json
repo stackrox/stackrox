@@ -1,0 +1,411 @@
+{
+  "networkPolicies": [
+      {
+          "id": "981649e5-b0ed-4e9e-8cd5-cd2671cc4cdd",
+          "name": "central-db",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "central",
+              "app.kubernetes.io/instance": "stackrox-central-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-central-services",
+              "app.kubernetes.io/version": "4.1.x-337-g9d0cc4bed1",
+              "helm.sh/chart": "stackrox-central-services-400.1.0-337-g9d0cc4bed1"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-central-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "central-db"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 5432
+                          }
+                      ],
+                      "from": [
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "app": "central"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          }
+                      ]
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE",
+                  "EGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-central-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:14:21Z\"\n  labels:\n    app.kubernetes.io/component: central\n    app.kubernetes.io/instance: stackrox-central-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-central-services\n    app.kubernetes.io/version: 4.1.x-337-g9d0cc4bed1\n    helm.sh/chart: stackrox-central-services-400.1.0-337-g9d0cc4bed1\n  name: central-db\n  namespace: stackrox\n  uid: 981649e5-b0ed-4e9e-8cd5-cd2671cc4cdd\nspec:\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: central\n    ports:\n    - port: 5432\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: central-db\n  policyTypes:\n  - Ingress\n  - Egress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:14:21Z"
+      },
+      {
+          "id": "39f239fe-a3f9-44eb-8ccf-5be823a60105",
+          "name": "sensor",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "sensor",
+              "app.kubernetes.io/instance": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/version": "4.1.x-367-g81deadcf0f",
+              "auto-upgrade.stackrox.io/component": "sensor",
+              "helm.sh/chart": "stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-secured-cluster-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "sensor"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 8443
+                          }
+                      ],
+                      "from": [
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "app": "collector"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          },
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "service": "collector"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          },
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "app": "admission-control"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          }
+                      ]
+                  },
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 9443
+                          }
+                      ],
+                      "from": []
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-secured-cluster-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:15:47Z\"\n  labels:\n    app.kubernetes.io/component: sensor\n    app.kubernetes.io/instance: stackrox-secured-cluster-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-secured-cluster-services\n    app.kubernetes.io/version: 4.1.x-367-g81deadcf0f\n    auto-upgrade.stackrox.io/component: sensor\n    helm.sh/chart: stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f\n  name: sensor\n  namespace: stackrox\n  uid: 39f239fe-a3f9-44eb-8ccf-5be823a60105\nspec:\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: collector\n    - podSelector:\n        matchLabels:\n          service: collector\n    - podSelector:\n        matchLabels:\n          app: admission-control\n    ports:\n    - port: 8443\n      protocol: TCP\n  - ports:\n    - port: 9443\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: sensor\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:15:47Z"
+      },
+      {
+          "id": "f0b3784c-0a2b-4230-8d9a-683dac9b420d",
+          "name": "scanner-db",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "scanner",
+              "app.kubernetes.io/instance": "stackrox-central-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-central-services",
+              "app.kubernetes.io/version": "4.1.x-337-g9d0cc4bed1",
+              "helm.sh/chart": "stackrox-central-services-400.1.0-337-g9d0cc4bed1"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-central-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "scanner-db"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 5432
+                          }
+                      ],
+                      "from": [
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "app": "scanner"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          }
+                      ]
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-central-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:14:25Z\"\n  labels:\n    app.kubernetes.io/component: scanner\n    app.kubernetes.io/instance: stackrox-central-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-central-services\n    app.kubernetes.io/version: 4.1.x-337-g9d0cc4bed1\n    helm.sh/chart: stackrox-central-services-400.1.0-337-g9d0cc4bed1\n  name: scanner-db\n  namespace: stackrox\n  uid: f0b3784c-0a2b-4230-8d9a-683dac9b420d\nspec:\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: scanner\n    ports:\n    - port: 5432\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: scanner-db\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:14:25Z"
+      },
+      {
+          "id": "c28f68d7-ec89-4977-b74f-5a44eaa1dedf",
+          "name": "collector-no-ingress",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "collector",
+              "app.kubernetes.io/instance": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/version": "4.1.x-367-g81deadcf0f",
+              "auto-upgrade.stackrox.io/component": "sensor",
+              "helm.sh/chart": "stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-secured-cluster-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "collector"
+                  },
+                  "requirements": []
+              },
+              "ingress": [],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-secured-cluster-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:15:47Z\"\n  labels:\n    app.kubernetes.io/component: collector\n    app.kubernetes.io/instance: stackrox-secured-cluster-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-secured-cluster-services\n    app.kubernetes.io/version: 4.1.x-367-g81deadcf0f\n    auto-upgrade.stackrox.io/component: sensor\n    helm.sh/chart: stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f\n  name: collector-no-ingress\n  namespace: stackrox\n  uid: c28f68d7-ec89-4977-b74f-5a44eaa1dedf\nspec:\n  podSelector:\n    matchLabels:\n      app: collector\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:15:47Z"
+      },
+      {
+          "id": "b2a9b680-3702-4b08-9580-ab12bd85073e",
+          "name": "allow-ext-to-central",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "central",
+              "app.kubernetes.io/instance": "stackrox-central-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-central-services",
+              "app.kubernetes.io/version": "4.1.x-337-g9d0cc4bed1",
+              "helm.sh/chart": "stackrox-central-services-400.1.0-337-g9d0cc4bed1"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-central-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "central"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 8443
+                          }
+                      ],
+                      "from": []
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-central-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:14:21Z\"\n  labels:\n    app.kubernetes.io/component: central\n    app.kubernetes.io/instance: stackrox-central-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-central-services\n    app.kubernetes.io/version: 4.1.x-337-g9d0cc4bed1\n    helm.sh/chart: stackrox-central-services-400.1.0-337-g9d0cc4bed1\n  name: allow-ext-to-central\n  namespace: stackrox\n  uid: b2a9b680-3702-4b08-9580-ab12bd85073e\nspec:\n  ingress:\n  - ports:\n    - port: 8443\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: central\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:14:21Z"
+      },
+      {
+          "id": "94b6c5d7-efcb-43d0-ba39-047797676a42",
+          "name": "admission-control-no-ingress",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "admission-control",
+              "app.kubernetes.io/instance": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-secured-cluster-services",
+              "app.kubernetes.io/version": "4.1.x-367-g81deadcf0f",
+              "auto-upgrade.stackrox.io/component": "sensor",
+              "helm.sh/chart": "stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-secured-cluster-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "admission-control"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 8443
+                          }
+                      ],
+                      "from": []
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-secured-cluster-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:15:47Z\"\n  labels:\n    app.kubernetes.io/component: admission-control\n    app.kubernetes.io/instance: stackrox-secured-cluster-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-secured-cluster-services\n    app.kubernetes.io/version: 4.1.x-367-g81deadcf0f\n    auto-upgrade.stackrox.io/component: sensor\n    helm.sh/chart: stackrox-secured-cluster-services-400.1.0-367-g81deadcf0f\n  name: admission-control-no-ingress\n  namespace: stackrox\n  uid: 94b6c5d7-efcb-43d0-ba39-047797676a42\nspec:\n  ingress:\n  - ports:\n    - port: 8443\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: admission-control\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:15:47Z"
+      },
+      {
+          "id": "aea30e8e-dff3-45c1-be11-c7734e5e56b2",
+          "name": "scanner",
+          "clusterId": "a1f6cc4e-24d0-4c98-a0cc-22f79643d26b",
+          "clusterName": "remote",
+          "namespace": "stackrox",
+          "labels": {
+              "app.kubernetes.io/component": "scanner",
+              "app.kubernetes.io/instance": "stackrox-central-services",
+              "app.kubernetes.io/managed-by": "Helm",
+              "app.kubernetes.io/name": "stackrox",
+              "app.kubernetes.io/part-of": "stackrox-central-services",
+              "app.kubernetes.io/version": "4.1.x-337-g9d0cc4bed1",
+              "helm.sh/chart": "stackrox-central-services-400.1.0-337-g9d0cc4bed1"
+          },
+          "annotations": {
+              "email": "support@stackrox.com",
+              "meta.helm.sh/release-name": "stackrox-central-services",
+              "meta.helm.sh/release-namespace": "stackrox",
+              "owner": "stackrox"
+          },
+          "spec": {
+              "podSelector": {
+                  "matchLabels": {
+                      "app": "scanner"
+                  },
+                  "requirements": []
+              },
+              "ingress": [
+                  {
+                      "ports": [
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 8080
+                          },
+                          {
+                              "protocol": "TCP_PROTOCOL",
+                              "port": 8443
+                          }
+                      ],
+                      "from": [
+                          {
+                              "podSelector": {
+                                  "matchLabels": {
+                                      "app": "central"
+                                  },
+                                  "requirements": []
+                              },
+                              "namespaceSelector": null,
+                              "ipBlock": null
+                          }
+                      ]
+                  }
+              ],
+              "egress": [],
+              "policyTypes": [
+                  "INGRESS_NETWORK_POLICY_TYPE"
+              ]
+          },
+          "yaml": "kind: NetworkPolicy\nmetadata:\n  annotations:\n    email: support@stackrox.com\n    meta.helm.sh/release-name: stackrox-central-services\n    meta.helm.sh/release-namespace: stackrox\n    owner: stackrox\n  creationTimestamp: \"2023-07-11T12:14:25Z\"\n  labels:\n    app.kubernetes.io/component: scanner\n    app.kubernetes.io/instance: stackrox-central-services\n    app.kubernetes.io/managed-by: Helm\n    app.kubernetes.io/name: stackrox\n    app.kubernetes.io/part-of: stackrox-central-services\n    app.kubernetes.io/version: 4.1.x-337-g9d0cc4bed1\n    helm.sh/chart: stackrox-central-services-400.1.0-337-g9d0cc4bed1\n  name: scanner\n  namespace: stackrox\n  uid: aea30e8e-dff3-45c1-be11-c7734e5e56b2\nspec:\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: central\n    ports:\n    - port: 8080\n      protocol: TCP\n    - port: 8443\n      protocol: TCP\n  podSelector:\n    matchLabels:\n      app: scanner\n  policyTypes:\n  - Ingress\n",
+          "apiVersion": "",
+          "created": "2023-07-11T12:14:25Z"
+      }
+  ]
+}

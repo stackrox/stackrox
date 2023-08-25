@@ -1,18 +1,18 @@
 package generate
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 var (
 	humanReadableToEnum = map[string]storage.CollectionMethod{
-		"default":       storage.CollectionMethod_UNSET_COLLECTION,
-		"none":          storage.CollectionMethod_NO_COLLECTION,
-		"kernel-module": storage.CollectionMethod_KERNEL_MODULE,
-		"ebpf":          storage.CollectionMethod_EBPF,
+		"default":  storage.CollectionMethod_UNSET_COLLECTION,
+		"none":     storage.CollectionMethod_NO_COLLECTION,
+		"ebpf":     storage.CollectionMethod_EBPF,
+		"core_bpf": storage.CollectionMethod_CORE_BPF,
 	}
 
 	enumToHumanReadable = func() map[storage.CollectionMethod]string {
@@ -42,7 +42,7 @@ func (f *collectionTypeWrapper) Set(input string) error {
 	}
 	pt, ok := humanReadableToEnum[inputNormalized]
 	if !ok {
-		return fmt.Errorf("Invalid collection method: %s", input)
+		return errox.InvalidArgs.Newf("invalid collection method: %s", input)
 	}
 	*f.CollectionMethod = pt
 	return nil

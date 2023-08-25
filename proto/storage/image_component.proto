@@ -9,28 +9,17 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ImageComponent {
-    string                         id           = 1 [(gogoproto.moretags) = "search:\"Component ID,store\""];
-    string                         name         = 2 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version      = 3 [(gogoproto.moretags) = "search:\"Component Version,store\""];
-    License                        license      = 4;
-    int64                          priority     = 5;
-    SourceType                     source       = 6 [(gogoproto.moretags) = "search:\"Component Source,store\""];
-    float                          risk_score   = 7 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+    string                         id               = 1 [(gogoproto.moretags) = 'search:"Component ID,store,hidden" sql:"pk,id"']; // This field is composite id over name, version, and operating system.
+    string                         name             = 2 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version          = 3 [(gogoproto.moretags) = 'search:"Component Version,store"'];
+    License                        license          = 4;
+    int64                          priority         = 5 [(gogoproto.moretags) = 'search:"Component Risk Priority,hidden"'];
+    SourceType                     source           = 6 [(gogoproto.moretags) = 'search:"Component Source,store"'];
+    float                          risk_score       = 7 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
     oneof set_top_cvss {
-        float                      top_cvss     = 8 [(gogoproto.moretags) = "search:\"Component Top CVSS,store\""];
+        float                      top_cvss         = 8 [(gogoproto.moretags) = 'search:"Component Top CVSS,store"'];
     }
     // Component version that fixes all the fixable vulnerabilities in this component.
-    string                         fixed_by     = 9;
-}
-
-message ComponentCVEEdge {
-    // base 64 encoded Component:CVE ids.
-    string     id         = 1;
-
-    bool       is_fixable = 2 [(gogoproto.moretags) = "search:\"Fixable,store\""];
-
-    // Whether there is a version the CVE is fixed in the component.
-    oneof has_fixed_by {
-        string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
-    }
+    string                         fixed_by         = 9;
+    string                         operating_system = 10 [(gogoproto.moretags) = 'search:"Operating System"'];
 }

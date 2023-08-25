@@ -1,0 +1,28 @@
+licenseKey: "my license key"
+additionalCAs:
+  ca.crt: |
+    Extra CA certificate
+env:
+  platform: gke
+  openshift: 4
+  istio: true
+  proxyConfig: "proxy config"
+imagePullSecrets:
+  username: myuser
+  password: mypass
+central:
+  defaultTLS:
+    cert: "central default tls cert pem"
+    key: "central default tls key pem"
+  exposure:
+    loadBalancer:
+      enabled: true
+  db:
+    enabled: true
+  persistence:
+    none: true
+monitoring:
+  openshift:
+    enabled: true
+system:
+  enablePodSecurityPolicies: true

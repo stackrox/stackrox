@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 const (
@@ -29,7 +28,7 @@ type publicIPsManager struct {
 	publicIPs          map[net.IPAddress]struct{}
 	publicIPDeletions  map[net.IPAddress]time.Time
 
-	publicIPListProtoStream *concurrency.ValueStream
+	publicIPListProtoStream *concurrency.ValueStream[*sensor.IPAddressList]
 
 	lastSentIPAddrList *sensor.IPAddressList
 }
@@ -40,11 +39,11 @@ func newPublicIPsManager() *publicIPsManager {
 		publicIPs:          make(map[net.IPAddress]struct{}),
 		publicIPDeletions:  make(map[net.IPAddress]time.Time),
 
-		publicIPListProtoStream: concurrency.NewValueStream(nil),
+		publicIPListProtoStream: concurrency.NewValueStream[*sensor.IPAddressList](nil),
 	}
 }
 
-func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities *clusterentities.Store) {
+func (m *publicIPsManager) Run(ctx concurrency.Waitable, clusterEntities EntityStore) {
 	clusterEntities.RegisterPublicIPsListener(m)
 	defer clusterEntities.UnregisterPublicIPsListener(m)
 
@@ -98,7 +97,7 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 
 		if ipV4 := netIP.To4(); ipV4 != nil {
 			publicIPsList.Ipv4Addresses = append(publicIPsList.Ipv4Addresses, binary.BigEndian.Uint32(ipV4))
-		} else if netIP != nil && len(netIP) == 16 { // Genuine IPv6 address
+		} else if len(netIP) == 16 { // Genuine IPv6 address
 			high := binary.BigEndian.Uint64(netIP[:8])
 			low := binary.BigEndian.Uint64(netIP[8:])
 			publicIPsList.Ipv6Addresses = append(publicIPsList.Ipv6Addresses, high, low)
@@ -115,7 +114,7 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 	m.lastSentIPAddrList = publicIPsList
 }
 
-func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
+func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
 	return m.publicIPListProtoStream
 }
 
@@ -138,11 +137,11 @@ func (s sortableIPv6Slice) Swap(i, j int) {
 }
 
 func normalizeIPsList(listProto *sensor.IPAddressList) {
-	sliceutils.Uint32Sort(listProto.Ipv4Addresses)
+	sliceutils.NaturalSort(listProto.Ipv4Addresses)
 	sort.Sort(sortableIPv6Slice(listProto.Ipv6Addresses))
 }
 
 func ipsListsEqual(a, b *sensor.IPAddressList) bool {
-	return sliceutils.Uint32Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
-		sliceutils.Uint64Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
+	return sliceutils.Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) &&
+		sliceutils.Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
 }

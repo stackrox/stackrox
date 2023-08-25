@@ -29,6 +29,41 @@ imagePullSecrets:
 
 sensor:
   endpoint: "sensor.{{ required "unknown namespace" ._rox._namespace }}.svc:443"
+  localImageScanning:
+    enabled: false
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        # Sensor is single-homed, so avoid preemptible nodes.
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
 
 admissionControl:
   listenOnCreates: false
@@ -38,12 +73,40 @@ admissionControl:
     enforceOnCreates: false
     scanInline: false
     disableBypass: false
-    timeout: 3
+    timeout: 20
     enforceOnUpdates: false
+  replicas: 3
+
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
+        # of k8s. We apply both to be compatible with any k8s version.
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: Exists
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 60
+          podAffinityTerm:
+            topologyKey: "kubernetes.io/hostname"
+            labelSelector:
+              matchLabels:
+                app: admission-control
 
 collector:
-  collectionMethod: "KERNEL_MODULE"
+  collectionMethod: "EBPF"
   disableTaintTolerations: false
+  nodescanningEndpoint: "127.0.0.1:8444"
+  tolerations:
+  - operator: "Exists"
 
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}

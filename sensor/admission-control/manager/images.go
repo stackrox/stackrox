@@ -29,13 +29,12 @@ func (m *manager) getCachedImage(img *storage.ContainerImage) *storage.Image {
 		return nil
 	}
 
-	cachedEntry, ok := m.imageCache.Get(img.GetId())
+	cachedImg, ok := m.imageCache.Get(img.GetId())
 	if !ok {
 		return nil
 	}
-	cachedImg := cachedEntry.(imageCacheEntry)
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
-		m.imageCache.RemoveIf(img.GetId(), func(entry interface{}) bool { return entry == cachedEntry })
+		m.imageCache.RemoveIf(img.GetId(), func(entry imageCacheEntry) bool { return entry == cachedImg })
 		return nil
 	}
 
@@ -61,9 +60,10 @@ type fetchImageResult struct {
 	img *storage.Image
 }
 
-func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage) (*storage.Image, error) {
+func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img *storage.ContainerImage, deployment *storage.Deployment) (*storage.Image, error) {
 	// Talk to central if we know its endpoint (and the client connection is not shutting down), and if we are not
 	// currently connected to sensor.
+	// Note: Sensor is required to scan images in the local registry.
 	if !m.sensorConnStatus.Get() && s.centralConn != nil && s.centralConn.GetState() != connectivity.Shutdown {
 		// Central route
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
@@ -80,6 +80,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
 		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+		Namespace:  deployment.GetNamespace(),
 	})
 	if err != nil {
 		return nil, err
@@ -87,14 +88,14 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	return resp.GetImage(), nil
 }
 
-func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage) {
+func (m *manager) fetchImage(ctx context.Context, s *state, resultChan chan<- fetchImageResult, pendingCount *int32, idx int, image *storage.ContainerImage, deployment *storage.Deployment) {
 	defer func() {
 		if atomic.AddInt32(pendingCount, -1) == 0 {
 			close(resultChan)
 		}
 	}()
 
-	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image)
+	scannedImg, err := m.getImageFromSensorOrCentral(ctx, s, image, deployment)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", image.GetName().GetFullName(), err)
 		resultChan <- fetchImageResult{
@@ -130,7 +131,7 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
 			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
-				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image)
+				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 			}
 		}
 		if images[idx] == nil {

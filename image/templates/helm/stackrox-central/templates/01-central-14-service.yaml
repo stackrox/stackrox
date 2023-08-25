@@ -1,0 +1,43 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: central
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "central") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "central") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: central-monitoring-tls
+    {{- end }}
+spec:
+  ports:
+    {{- toYaml ._rox.central._servicePorts | nindent 4 }}
+  selector:
+    app: central
+  type: ClusterIP
+
+{{ if ._rox.env.istio }}
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: central-internal-no-istio-mtls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "destinationrule" "central-internal-no-istio-mtls") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "destinationrule" "central-internal-no-istio-mtls") | nindent 4 }}
+    stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
+spec:
+  host: central.{{ .Release.Namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: DISABLE
+{{ end }}

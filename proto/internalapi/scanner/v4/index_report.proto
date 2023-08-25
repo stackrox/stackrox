@@ -1,0 +1,18 @@
+// This contains protobuf types in pair with ClairCore's types. See
+// https://github.com/quay/claircore for comments on the fields.
+
+syntax = "proto3";
+
+package scanner.v4;
+
+import "internalapi/scanner/v4/common.proto";
+
+option go_package = "v4";
+
+message IndexReport {
+    string   hash_id  = 1;
+    string   state    = 2;
+    bool     success  = 3;
+    string   err      = 4;
+    Contents contents = 5;
+}

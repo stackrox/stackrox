@@ -2,8 +2,8 @@ package dackbox
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
@@ -217,7 +217,7 @@ func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix [
 		if err != nil {
 			return err
 		}
-		initial.SetRefs(sliceutils.ByteClone(k), sk)
+		initial.SetRefs(sliceutils.ShallowClone(k), sk)
 		return nil
 	})
 	if err != nil {

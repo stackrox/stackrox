@@ -31,7 +31,7 @@ var (
 func TestTrimAnnotations(t *testing.T) {
 	obj := v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Annotations: maputil.CloneStringStringMap(untrimmedAnnotations),
+			Annotations: maputil.ShallowClone(untrimmedAnnotations),
 		},
 	}
 
@@ -43,7 +43,7 @@ func TestTrimAnnotations(t *testing.T) {
 func TestTrimAnnotationsRace(t *testing.T) {
 	obj := v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Annotations: maputil.CloneStringStringMap(untrimmedAnnotations),
+			Annotations: maputil.ShallowClone(untrimmedAnnotations),
 		},
 	}
 

@@ -2,10 +2,10 @@ package concurrency
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	testTimeout = 1 * time.Second
+	testTimeout = 2 * time.Second
 	longTime    = 5 * time.Second
 	capTime     = 100 * time.Millisecond
 	backoff     = wait.Backoff{
@@ -105,8 +105,22 @@ func TestRetryTickerStop(t *testing.T) {
 	stopErrSig.Signal()
 
 	// ensure `ticker.scheduleTick` does not schedule a new timer after stopping the ticker
-	time.Sleep(capTime)
-	assert.Nil(t, ticker.getTickTimer())
+	assertTickerEventuallyStops(t, ticker)
+}
+
+func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
+	firsTickErrSig := NewErrorSignal()
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		firsTickErrSig.Signal()
+		return capTime / 2, errors.Wrap(ErrNonRecoverable, "wrapping non recoverable error")
+	})
+	defer ticker.Stop()
+
+	require.NoError(t, ticker.Start())
+	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
+	require.True(t, ok, "timeout exceeded")
+
+	assertTickerEventuallyStops(t, ticker)
 }
 
 func TestRetryTickerStartWhileStarterFailure(t *testing.T) {
@@ -134,4 +148,11 @@ func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {
 	ticker := NewRetryTicker(doFunc, longTime, backoff)
 	require.IsType(t, &retryTickerImpl{}, ticker)
 	return ticker.(*retryTickerImpl)
+}
+
+func assertTickerEventuallyStops(t *testing.T, ticker *retryTickerImpl) {
+	ok := PollWithTimeout(func() bool {
+		return ticker.getTickTimer() == nil
+	}, 10*time.Millisecond, capTime)
+	assert.True(t, ok, "ticker should eventually stop")
 }

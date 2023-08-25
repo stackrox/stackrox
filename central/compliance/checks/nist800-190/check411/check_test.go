@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -43,26 +44,48 @@ var (
 		Id:              uuid.NewV4().String(),
 		Name:            "Foo",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+		PolicyVersion:      "1.1",
 	}
 
 	buildPolicyEnforced = &storage.Policy{
 		Id:              uuid.NewV4().String(),
 		Name:            "Sample Build time",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
+		PolicyVersion:      "1.1",
 	}
 
 	cvssPolicyDisabled = &storage.Policy{
@@ -70,25 +93,47 @@ var (
 		Name:            "Foo",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		Disabled:        true,
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+		PolicyVersion:      "1.1",
 	}
 
 	buildPolicyDisabled = &storage.Policy{
 		Id:              uuid.NewV4().String(),
 		Name:            "Sample Build time",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
+		PolicyVersion:      "1.1",
 	}
 
 	imageIntegration = storage.ImageIntegration{

@@ -1,23 +1,26 @@
 package util
 
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import groovy.transform.TupleConstructor
+import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.LocalPortForward
+import io.restassured.response.Response
+import orchestratormanager.OrchestratorMain
+
 import objects.Deployment
 import objects.Service
 import objects.SplunkAlert
 import objects.SplunkAlertRaw
 import objects.SplunkAlerts
 import objects.SplunkSearch
-import orchestratormanager.OrchestratorMain
 
 import org.junit.AssumptionViolatedException
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.jayway.restassured.response.Response
-
+@Slf4j
 class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     private static final Gson GSON = new GsonBuilder().create()
@@ -118,7 +121,7 @@ class SplunkUtil {
 
     static String createSearch(int port, String search = "search") {
         Response response = null
-        withRetry(20, 3) {
+        withRetry(6, 15) {
             response = given()
                     .auth()
                     .basic("admin", SPLUNK_ADMIN_PASSWORD)
@@ -127,13 +130,13 @@ class SplunkUtil {
                     .post("https://127.0.0.1:${port}/services/search/jobs")
         }
 
-        println response?.asString() //printout the response for debugging purposes
+        log.debug response?.asString()
         def searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
         if (searchId == null) {
-            println "Failed to generate new search. SearchId is null..."
+            log.debug "Failed to generate new search. SearchId is null..."
             throw new AssumptionViolatedException("Failed to create new Splunk search!")
         } else {
-            println "New Search created: ${searchId}"
+            log.debug "New Search created: ${searchId}"
             return searchId
         }
     }
@@ -152,7 +155,7 @@ class SplunkUtil {
                             .setName(deploymentName)
                             .setImage(useLegacySplunk ?
                                     "quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2" :
-                                    "splunk/splunk:8.1.2")
+                                    "quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
@@ -175,7 +178,7 @@ class SplunkUtil {
 
             splunkPortForward = orchestrator.createPortForward(8089, deployment)
         } catch (Exception e) {
-            println("Something bad happened (${e.message}), will run cleanup before failing")
+            log.info("Something bad happened, will run cleanup before failing", e)
             if (syslogSvc) {
                 orchestrator.deleteService(syslogSvc.name, syslogSvc.namespace)
             }
@@ -201,7 +204,7 @@ class SplunkUtil {
     }
 
     static void postToSplunk(int port, String path, Map<String, String> parameters) {
-        withRetry(200, 3) {
+        withRetry(20, 30) {
             given().auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
                     .relaxedHTTPSValidation()
                     .params(parameters)

@@ -1,0 +1,136 @@
+name: Release CI
+on:
+  push:
+    branches:
+    - 'release-*'
+    tags-ignore:
+    - '*-nightly-*'
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yaml
+    secrets: inherit
+
+  check-is-release:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.is_release_check.outputs.is_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - id: is_release_check
+        run: |
+          source scripts/ci/lib.sh
+          if is_release_version "${{ github.ref_name }}"; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  check-scanner-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Check scanner version
+        run: |
+          scripts/ci/lib.sh \
+            check_scanner_version
+
+  check-collector-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Check collector version
+        run: |
+          scripts/ci/lib.sh \
+            check_collector_version
+
+  update-collector-released-versions:
+    needs: [check-scanner-version, check-collector-version, check-is-release]
+    if: needs.check-is-release.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Patch RELEASED_VERSIONS
+        env:
+          STACKROX_TAG: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          scripts/ci/lib.sh \
+            mark_collector_release "${STACKROX_TAG}"
+
+  publish-helm-charts:
+    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+    if: needs.check-is-release.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: cli-build
+      - name: Publish Helm charts to stackrox/release-artifacts
+        env:
+          STACKROX_TAG: ${{ github.ref_name }}
+          GITHUB_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
+          RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
+        run: |
+          tar xzf cli-build.tgz
+          mkdir -p "${HOME}/.local/bin"
+          mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
+          scripts/ci/lib.sh \
+            push_helm_charts "${STACKROX_TAG}"
+
+  publish-roxctl:
+    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+    if: needs.check-is-release.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v1'
+      - uses: actions/download-artifact@v3
+        with:
+          name: cli-build
+      - name: Publish roxctl to Google Cloud storage
+        env:
+          STACKROX_TAG: ${{ github.ref_name }}
+        run: |
+          tar xzf cli-build.tgz
+          scripts/ci/lib.sh \
+            publish_roxctl "${STACKROX_TAG}"

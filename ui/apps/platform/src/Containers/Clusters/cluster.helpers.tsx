@@ -1,18 +1,20 @@
 import React from 'react';
-import { differenceInDays, distanceInWordsStrict } from 'date-fns';
+import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
     CheckCircleIcon,
-    TimesCircleIcon,
     ExclamationCircleIcon,
-    MinusCircleIcon,
-    ResourcesEmptyIcon,
+    ExclamationTriangleIcon,
     InfoCircleIcon,
     InProgressIcon,
+    MinusCircleIcon,
+    ResourcesEmptyIcon,
 } from '@patternfly/react-icons';
 
+import { ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate } from 'utils/dateUtils';
+import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -21,9 +23,9 @@ export const runtimeOptions = [
         value: 'NO_COLLECTION',
     },
     {
-        label: 'Kernel Module',
-        tableDisplay: 'Kernel Module',
-        value: 'KERNEL_MODULE',
+        label: 'CORE BPF',
+        tableDisplay: 'CORE BPF',
+        value: 'CORE_BPF',
     },
     {
         label: 'eBPF Program',
@@ -60,7 +62,7 @@ export const clusterTablePollingInterval = 5000; // milliseconds
 export const clusterDetailPollingInterval = 3000; // milliseconds
 
 const defaultNewClusterType = 'KUBERNETES_CLUSTER';
-const defaultCollectionMethod = 'KERNEL_MODULE';
+const defaultCollectionMethod = 'EBPF';
 
 export const newClusterDefault = {
     id: undefined,
@@ -108,50 +110,21 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
 
 export const styleUninitialized = {
     Icon: MinusCircleRotate45,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 export const styleHealthy = {
     Icon: CheckCircleIcon,
-    bgColor: 'bg-success-200',
-    fgColor: 'text-success-700',
-};
-
-export const styleDegraded = {
-    Icon: ExclamationCircleIcon,
-    bgColor: 'bg-warning-200',
-    fgColor: 'text-warning-700',
-};
-
-export const styleUnhealthy = {
-    Icon: TimesCircleIcon,
-    bgColor: 'bg-alert-200',
-    fgColor: 'text-alert-700',
-};
-
-// PatternFly versions of cluster style constants
-export const styleUninitializedPF = {
-    Icon: MinusCircleRotate45,
-    bgColor: 'pf-u-background-color-100',
-    fgColor: 'pf-u-default-color-300',
-};
-
-export const styleHealthyPF = {
-    Icon: CheckCircleIcon,
-    bgColor: 'pf-u-background-color-success',
     fgColor: 'pf-u-success-color-100',
 };
 
-export const styleDegradedPF = {
-    Icon: ExclamationCircleIcon,
-    bgColor: 'pf-u-background-color-warning',
+export const styleDegraded = {
+    Icon: ExclamationTriangleIcon,
     fgColor: 'pf-u-warning-color-100',
 };
 
-export const styleUnhealthyPF = {
-    Icon: TimesCircleIcon,
-    bgColor: 'pf-u-background-color-danger',
+export const styleUnhealthy = {
+    Icon: ExclamationCircleIcon,
     fgColor: 'pf-u-danger-color-100',
 };
 
@@ -161,8 +134,7 @@ export const healthStatusStyles = {
     UNINITIALIZED: styleUninitialized,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
-        bgColor: 'bg-secondary-200',
-        fgColor: 'text-secondary-700',
+        fgColor: '',
     },
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
@@ -172,28 +144,30 @@ export const healthStatusStyles = {
 // Special case for Collector when Sensor is UNHEALTHY or DELAYED.
 export const delayedCollectorStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
 };
 
 // Special case for Admission Control when Sensor is UNHEALTHY or DELAYED.
 export const delayedAdmissionControlStatusStyle = {
     Icon: InfoCircleIcon,
-    bgColor: 'bg-base-200',
-    fgColor: 'text-base-700',
+    fgColor: '',
+};
+
+// Special case for Scanner when Sensor is UNHEALTHY or DELAYED.
+export const delayedScannerStatusStyle = {
+    Icon: InfoCircleIcon,
+    fgColor: '',
 };
 
 export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
         Icon: InProgressIcon,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-u-primary-color-100',
     },
     download: {
         Icon: DownloadCloud,
-        bgColor: 'bg-tertiary-200',
-        fgColor: 'text-tertiary-700',
+        fgColor: 'pf-u-link-color',
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,
@@ -285,85 +259,97 @@ const upgradeStates: UpgradeStates = {
 };
 
 export function formatKubernetesVersion(orchestratorMetadata: { version: string }) {
-    return orchestratorMetadata?.version || 'Not applicable';
+    return orchestratorMetadata?.version || 'Not available';
 }
 
 export function formatBuildDate(orchestratorMetadata) {
     return orchestratorMetadata?.buildDate
         ? getDate(orchestratorMetadata.buildDate)
-        : 'Not applicable';
+        : 'Not available';
 }
 
-type ProviderMetadata = {
-    region: string;
-    aws?: any;
-    azure?: any;
-    google?: any;
-};
-
-export function formatCloudProvider(providerMetadata: ProviderMetadata) {
+export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
-        if (providerMetadata.aws) {
+        if ('aws' in providerMetadata) {
             return `AWS ${region}`;
         }
 
-        if (providerMetadata.azure) {
+        if ('azure' in providerMetadata) {
             return `Azure ${region}`;
         }
 
-        if (providerMetadata.google) {
+        if ('google' in providerMetadata) {
             return `GCP ${region}`;
         }
     }
 
-    return 'Not applicable';
+    return 'Not available';
 }
 
-const diffDegradedMin = 7; // Unhealthy if less than a week in the future
-const diffHealthyMin = 30; // Degraded if less than a month in the future
+const shortLivedCertMaxDays = 14;
+
+const longLivedCertThresholds = {
+    thresholdDegradedMinutes: 7 * 24 * 60, // Unhealthy if less than a week before expiry
+    thresholdHealthyMinutes: 30 * 24 * 60, // Degraded if less than a month before expiry
+};
+
+const shortLivedCertThresholds = {
+    thresholdDegradedMinutes: 15, // Unhealthy if less than 15 minutes before expiry
+    thresholdHealthyMinutes: 59, // Degraded if less than an hour before expiry
+};
+
+const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
+    const certDurationDays = differenceInDays(
+        expiryStatus.sensorCertExpiry,
+        expiryStatus.sensorCertNotBefore
+    );
+    return certDurationDays <= shortLivedCertMaxDays
+        ? shortLivedCertThresholds
+        : longLivedCertThresholds;
+};
 
 /*
  * Adapt health status categories to certificate expiration.
  */
-export const getCredentialExpirationStatus = (sensorCertExpiry, currentDatetime) => {
-    // date-fns@2: differenceInDays(parseISO(sensorCertExpiry, currentDatetime))
-    const diffInDays = differenceInDays(sensorCertExpiry, currentDatetime);
+export const getClusterDeletionStatus = (daysUntilDeletion: number) => {
+    if (daysUntilDeletion < 7) {
+        return 'UNHEALTHY';
+    }
+    if (daysUntilDeletion < 30) {
+        return 'DEGRADED';
+    }
+    return 'UNINITIALIZED';
+};
 
-    if (diffInDays < diffDegradedMin) {
+/*
+ * Adapt health status categories to certificate expiration.
+ */
+export const getCredentialExpirationStatus = (
+    sensorCertExpiryStatus: CertExpiryStatus,
+    currentDatetime
+) => {
+    const { sensorCertExpiry } = sensorCertExpiryStatus;
+    const diffInMinutes = differenceInMinutes(sensorCertExpiry, currentDatetime);
+    const { thresholdDegradedMinutes, thresholdHealthyMinutes } =
+        resolveThresholds(sensorCertExpiryStatus);
+
+    if (diffInMinutes < thresholdDegradedMinutes) {
         return 'UNHEALTHY';
     }
 
-    if (diffInDays < diffHealthyMin) {
+    if (diffInMinutes < thresholdHealthyMinutes) {
         return 'DEGRADED';
     }
 
     return 'HEALTHY';
 };
 
-export const isCertificateExpiringSoon = (sensorCertExpiry, currentDatetime) =>
-    getCredentialExpirationStatus(sensorCertExpiry, currentDatetime) !== 'HEALTHY';
-
-export function getCredentialExpirationProps(certExpiryStatus) {
-    if (certExpiryStatus?.sensorCertExpiry) {
-        const { sensorCertExpiry } = certExpiryStatus;
-        const now = new Date();
-        const diffInWords = distanceInWordsStrict(sensorCertExpiry, now);
-        const diffInDays = differenceInDays(sensorCertExpiry, now);
-        const showExpiringSoon = diffInDays < diffHealthyMin;
-        let messageType;
-        if (diffInDays < diffDegradedMin) {
-            messageType = 'error';
-        } else if (diffInDays < diffHealthyMin) {
-            messageType = 'warn';
-        } else {
-            messageType = 'info';
-        }
-        return { messageType, showExpiringSoon, sensorCertExpiry, diffInWords };
-    }
-    return null;
-}
+export const isCertificateExpiringSoon = (
+    sensorCertExpiryStatus: CertExpiryStatus,
+    currentDatetime
+) => getCredentialExpirationStatus(sensorCertExpiryStatus, currentDatetime) !== 'HEALTHY';
 
 export function formatSensorVersion(sensorVersion: string) {
     return sensorVersion || 'Not Running';
@@ -514,11 +500,6 @@ export function getUpgradeableClusters(clusters = []) {
     });
 }
 
-export const wizardSteps = Object.freeze({
-    FORM: 'FORM',
-    DEPLOYMENT: 'DEPLOYMENT',
-});
-
 export default {
     runtimeOptions,
     clusterTypeOptions,
@@ -527,5 +508,4 @@ export default {
     newClusterDefault,
     findUpgradeState,
     isUpToDateStateObject,
-    wizardSteps,
 };

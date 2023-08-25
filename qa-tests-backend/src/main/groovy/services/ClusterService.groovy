@@ -1,7 +1,7 @@
 package services
 
 import groovy.transform.CompileStatic
-
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
@@ -11,6 +11,7 @@ import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
 @CompileStatic
+@Slf4j
 class ClusterService extends BaseService {
     static final DEFAULT_CLUSTER_NAME = "remote"
 
@@ -30,21 +31,16 @@ class ClusterService extends BaseService {
     static getClusterId(String name = DEFAULT_CLUSTER_NAME) {
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
-            ).clustersList.find { it.name == name }?.id
+        ).clustersList.find { it.name == name }?.id
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {
-        try {
-            return getClusterServiceClient().postCluster(Cluster.newBuilder()
-                    .setName(name)
-                    .setMainImage(mainImage)
-                    .setCentralApiEndpoint(centralEndpoint)
-                    .build()
-            )
-        } catch (Exception e) {
-            println "Error creating cluster: ${e}"
-            return e
-        }
+        return getClusterServiceClient().postCluster(Cluster.newBuilder()
+                .setName(name)
+                .setMainImage(mainImage)
+                .setCentralApiEndpoint(centralEndpoint)
+                .build()
+        )
     }
 
     static Boolean updateAdmissionController(AdmissionControllerConfig.Builder builder) {
@@ -83,12 +79,12 @@ class ClusterService extends BaseService {
         return updateCluster(cluster)
     }
 
-    static Boolean updateCluster(Cluster cluster)  {
+    static Boolean updateCluster(Cluster cluster) {
         try {
             getClusterServiceClient().putCluster(cluster)
             return true
         } catch (Exception e) {
-            println "Error updating cluster: ${e}"
+            log.error("Error updating cluster", e)
             return false
         }
     }
@@ -97,7 +93,7 @@ class ClusterService extends BaseService {
         try {
             getClusterServiceClient().deleteCluster(Common.ResourceByID.newBuilder().setId(clusterId).build())
         } catch (Exception e) {
-            println "Error deleting cluster: ${e}"
+            log.error("Error deleting cluster", e)
         }
     }
 
@@ -105,11 +101,12 @@ class ClusterService extends BaseService {
         Boolean isEKS = false
         try {
             isEKS = clusters.every {
-                Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAws() &&
-                                   cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
+                Cluster cluster ->
+                    cluster.getStatus().getProviderMetadata().hasAws() &&
+                            cluster.getStatus().getOrchestratorMetadata().getVersion().contains("eks")
             }
         } catch (Exception e) {
-            println "Error getting cluster info: ${e}"
+            log.error("Error getting cluster info", e)
         }
         isEKS
     }
@@ -121,10 +118,11 @@ class ClusterService extends BaseService {
                 Cluster cluster -> cluster.getStatus().getProviderMetadata().hasAzure()
             }
         } catch (Exception e) {
-            println "Error getting cluster info: ${e}"
+            log.error("Error getting cluster info", e)
         }
         isAKS
     }
+
     static Boolean isOpenShift3() {
         return getCluster().getType() == ClusterOuterClass.ClusterType.OPENSHIFT_CLUSTER
     }

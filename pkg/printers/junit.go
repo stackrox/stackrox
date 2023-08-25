@@ -2,10 +2,9 @@ package printers
 
 import (
 	"encoding/xml"
-	"fmt"
 	"io"
 
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -52,42 +51,53 @@ type JUnitPrinter struct {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and an example for the map of JSON Path expressions
 // JSON structure:
-// type data struct {
-//		Policies []policy `json:"policies"`
-//		FailedPolicies []failedPolicy `json:"failedPolicies"`
-// }
-// type policy struct {
-//		name string `json:"name"`
-//		severity string `json:"severity"`
-// }
-// type failedPolicy struct {
-//		name string `json:"name"`
-//		error string `json:"error"`
-// }
+//
+//	type data struct {
+//			Policies []policy `json:"policies"`
+//			FailedPolicies []failedPolicy `json:"failedPolicies"`
+//	}
+//
+//	type policy struct {
+//			name string `json:"name"`
+//			severity string `json:"severity"`
+//	}
+//
+//	type failedPolicy struct {
+//			name string `json:"name"`
+//			error string `json:"error"`
+//	}
+//
 // Data:
-// data := &data{Policies: []policy{
-//								{name: "policy1", severity: "HIGH"},
-//								{name: "policy2", severity: "LOW"},
-//								{name: "policy3", severity: "MEDIUM"}
-//								},
-//				 FailedPolicies: []failedPolicy{
-//								{name: "policy1", error: "error msg1"}},
-//				}
+//
+//	data := &data{Policies: []policy{
+//									{name: "policy1", severity: "HIGH"},
+//									{name: "policy2", severity: "LOW"},
+//									{name: "policy3", severity: "MEDIUM"}
+//									},
+//					 FailedPolicies: []failedPolicy{
+//									{name: "policy1", error: "error msg1"}},
+//					}
+//
 // Map of GJSON expressions:
-//	- specify "#" to visit each element of an array
-//	- the expressions for failed test cases and error messages MUST be equal and correlated
-// expressions := map[string]{
-//					JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
-//					JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
-//					JUnitTestCasesExpressionKey: "data.policies.#.name",
-//				}
+//
+//   - specify "#" to visit each element of an array
+//
+//   - the expressions for failed test cases and error messages MUST be equal and correlated
+//
+// Example:
+//
+//	expressions := map[string] {
+//	JUnitFailedTestCasesExpressionKey: "data.failedPolicies.#.name",
+//	JUnitFailedTestCaseErrMsgExpressionKey: "data.failedPolicies.#.error",
+//	JUnitTestCasesExpressionKey: "data.policies.#.name",
+//	}
 //
 // This would result in the following test cases and failed test cases:
 // Amount of test cases: 3
 // Testcases:
-//		- Name: policy1, Failed: "error msg1"
-//		- Name: policy2, Successful
-//		- Name: policy3, Successful
+//   - Name: policy1, Failed: "error msg1"
+//   - Name: policy2, Successful
+//   - Name: policy3, Successful
 func NewJUnitPrinter(suiteName string, jsonPathExpressions map[string]string) *JUnitPrinter {
 	return &JUnitPrinter{suiteName: suiteName, jsonPathExpressions: jsonPathExpressions}
 }
@@ -143,13 +153,13 @@ func validateJUnitSuiteData(testCaseNames, failedTestCaseNames, failedTestCaseEr
 	amountSkippedTestCases := len(skippedTestCaseNames)
 
 	if amountTestCases < amountFailedTestCases+amountSkippedTestCases {
-		return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases are greater "+
-			"than %d overall test cases", amountTestCases, amountFailedTestCases))
+		return errox.InvariantViolation.CausedByf("%d failed test cases are greater "+
+			"than %d overall test cases", amountTestCases, amountFailedTestCases)
 	}
 
 	if len(failedTestCaseNames) != len(failedTestCaseErrorMessages) {
-		return errorhelpers.NewErrInvariantViolation(fmt.Sprintf("%d failed test cases and %d error "+
-			"messages are not matching", amountFailedTestCases, amountFailedTestCaseErrorMessages))
+		return errox.InvariantViolation.CausedByf("%d failed test cases and %d error "+
+			"messages are not matching", amountFailedTestCases, amountFailedTestCaseErrorMessages)
 	}
 	return nil
 }
@@ -191,8 +201,8 @@ func createFailedTestCaseMap(failedTestCases []string, failedTestCaseErrorMessag
 	failedTestCaseMap := make(map[string]string, len(failedTestCases))
 	for i, name := range failedTestCases {
 		if _, exists := failedTestCaseMap[name]; exists {
-			return nil, errorhelpers.NewErrInvariantViolation(fmt.Sprintf("duplicate failed test "+
-				"case %q found", name))
+			return nil, errox.InvariantViolation.CausedByf("duplicate failed test "+
+				"case %q found", name)
 		}
 		failedTestCaseMap[name] = failedTestCaseErrorMessages[i]
 	}

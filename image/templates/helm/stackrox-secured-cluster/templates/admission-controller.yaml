@@ -12,7 +12,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "deployment" "admission-control") | nindent 4 }}
 spec:
-  replicas: 3
+  replicas: {{ ._rox.admissionControl.replicas }}
   minReadySeconds: 0
   selector:
     matchLabels:
@@ -33,31 +33,16 @@ spec:
         {{- toYaml ._rox.admissionControl.tolerations | nindent 8 }}
       {{- end }}
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: In
-                    values:
-                      - "true"
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 60
-              podAffinityTerm:
-                namespaces: ["stackrox"]
-                topologyKey: "kubernetes.io/hostname"
-                labelSelector:
-                  matchLabels:
-                    app: admission-control
+        {{- toYaml ._rox.admissionControl.affinity | nindent 8 }}
       {{- if ._rox.admissionControl._nodeSelector }}
       nodeSelector:
         {{- ._rox.admissionControl._nodeSelector | nindent 8 }}
       {{- end}}
+      {{- if not ._rox.env.openshift }}
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
+      {{- end }}
       serviceAccountName: admission-control
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
@@ -82,6 +67,14 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
+          - name: GOMEMLIMIT
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.memory
+          - name: GOMAXPROCS
+            valueFrom:
+              resourceFieldRef:
+                resource: limits.cpu
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
@@ -104,6 +97,7 @@ spec:
             - name: additional-cas
               mountPath: /usr/local/share/ca-certificates/
               readOnly: true
+            {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
         - name: certs
           secret:
@@ -134,6 +128,7 @@ spec:
           secret:
             secretName: additional-ca-sensor
             optional: true
+        {{- include "srox.injectedCABundleVolume" . | nindent 8 }}
 ---
 
 apiVersion: v1
@@ -179,7 +174,7 @@ webhooks:
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
     admissionReviewVersions: [ "v1", "v1beta1" ]
-    timeoutSeconds: 27
+    timeoutSeconds: {{ add 2 ._rox.admissionControl.dynamic.timeout }}
     {{- end }}
     rules:
       - apiGroups:
@@ -227,7 +222,7 @@ webhooks:
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
     admissionReviewVersions: [ "v1", "v1beta1" ]
-    timeoutSeconds: 27
+    timeoutSeconds: {{ add 2 ._rox.admissionControl.dynamic.timeout }}
     {{- end }}
     rules:
       - apiGroups:
@@ -238,7 +233,6 @@ webhooks:
         - CONNECT
         resources:
           - pods
-          - pods/attach
           - pods/exec
           - pods/portforward
     failurePolicy: Ignore

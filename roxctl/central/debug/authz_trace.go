@@ -27,7 +27,10 @@ const (
 // authzTraceCommand allows to download authz trace from Central.
 func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "authz-trace",
+		Use:   "authz-trace",
+		Short: "Stream built-in authorizer traces for all incoming requests.",
+		Long: `Stream built-in authorizer traces for all incoming requests.
+The command blocks for the given number of minutes and collects the authorization trace log for all incoming API requests to the Central service.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			timeout := flags.Timeout(c)
 			return writeAuthzTraces(cliEnvironment, timeout)
@@ -40,7 +43,7 @@ func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
-	traceOutput := os.Stdout
+	traceOutput := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
 	toSync := false
 	if traceOutput.Sync() == nil {
 		toSync = true

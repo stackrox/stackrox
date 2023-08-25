@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 )
 
 // An Provider is an authenticator which is based on an external service, like auth0.
@@ -38,6 +39,11 @@ type Provider interface {
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
 
+	// AttributeVerifier is optional. If it is set, external user attributes MUST be verified
+	// with the set user.AttributeVerifier. Otherwise, it would lead to authenticating principals that should be denied
+	// authentication.
+	AttributeVerifier() user.AttributeVerifier
+
 	ApplyOptions(options ...ProviderOption) error
 	Active() bool
 	MarkAsActive() error
@@ -45,7 +51,9 @@ type Provider interface {
 
 // NewProvider creates a new provider with the input options.
 func NewProvider(options ...ProviderOption) (Provider, error) {
-	provider := &providerImpl{}
+	provider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
 	if err := applyOptions(provider, options...); err != nil {
 		return nil, err
 	}
@@ -67,10 +75,10 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 
 // Input provider must be locked when run.
 func validateProvider(provider *providerImpl) error {
-	if provider.storedInfo.Id == "" {
+	if provider.storedInfo.GetId() == "" {
 		return errors.New("auth providers must have an id")
 	}
-	if provider.storedInfo.Name == "" {
+	if provider.storedInfo.GetName() == "" {
 		return errors.New("auth providers must have a name")
 	}
 	return nil

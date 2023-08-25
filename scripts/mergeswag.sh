@@ -12,22 +12,12 @@ folder="$1"
 export TITLE="API Reference"
 export VERSION="1"
 export DESCRIPTION="API reference for the StackRox Security Platform"
-export CONTACT_EMAIL="support@stackrox.com"
-export LICENSE_NAME="All Rights Reserved"
-export LICENSE_URL="https://www.stackrox.com/"
 
 metadata='{
   "info": {
     "title": env.TITLE,
     "version": env.VERSION,
     "description": env.DESCRIPTION,
-    "contact": {
-      "email": env.CONTACT_EMAIL
-    },
-    "license": {
-      "name": env.LICENSE_NAME,
-      "url": env.LICENSE_URL
-    }
   }
 }'
 

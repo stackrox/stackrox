@@ -1,21 +1,20 @@
-import static com.jayway.restassured.RestAssured.given
+import static io.restassured.RestAssured.given
+import static util.Helpers.withRetry
 
-import com.jayway.restassured.response.Response
 import io.grpc.StatusRuntimeException
+import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
 import org.yaml.snakeyaml.Yaml
 
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraph
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkNode
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.NetworkFlowOuterClass.L4Protocol
 import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo.Type
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 
 import common.Constants
-import groups.BAT
-import groups.NetworkFlowVisualization
-import groups.RUNTIME
 import objects.DaemonSet
 import objects.Deployment
 import objects.Edge
@@ -24,6 +23,7 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
 import services.ClusterService
+import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
 import util.Env
@@ -32,12 +32,14 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
 import spock.lang.Ignore
+import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 import spock.lang.Unroll
 
+// TODO(ROX-13739): Re-enable these tests in compatibility-test step
 @Stepwise
 class NetworkFlowTest extends BaseSpecification {
 
@@ -67,7 +69,7 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -75,7 +77,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["socat "+SOCAT_DEBUG+" UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET)
@@ -85,7 +87,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -102,11 +104,11 @@ class NetworkFlowTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(NOCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                     .addLabel("app", NOCONNECTIONSOURCE),
             new Deployment()
                     .setName(SHORTCONSISTENTSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SHORTCONSISTENTSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
@@ -114,14 +116,14 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(SINGLECONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", SINGLECONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["wget -S -T 2 http://${NGINXCONNECTIONTARGET} && " +
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -130,7 +132,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -139,7 +141,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -150,7 +152,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(EXTERNALDESTINATION)
-                    .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .addLabel("app", EXTERNALDESTINATION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep ${NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS}; " +
@@ -159,7 +161,7 @@ class NetworkFlowTest extends BaseSpecification {
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
                     .setNamespace(OTHER_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:socat")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -241,22 +243,12 @@ class NetworkFlowTest extends BaseSpecification {
         destroyDeployments()
     }
 
-    def rebuildForRetries() {
-        if (Helpers.getAttemptCount() > 1) {
-            println ">>>> Recreating test deployments prior to retest <<<<<"
-            destroyDeployments()
-            sleep(5000)
-            createDeployments()
-            sleep(5000)
-            println ">>>> Done <<<<<"
-        }
-    }
-
-    @Category([NetworkFlowVisualization])
-    def "Verify one-time connections show at first, but do not appear again"() {
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
@@ -264,16 +256,25 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in network graph"
-        println "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SINGLECONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
         "Wait for collector update and fetch graph again to confirm connection dropped"
-        assert !waitForEdgeUpdate(edges.get(0))
+        // 65 seconds is the grace period for updates because a closed connection is subject to
+        // afterglow and the rate at which collector and sensor sends network flows (30s respectively).
+        // The afterglow period in testing is 15s so the max time for the close message to propagate is
+        // 30s in collector, 30s in sensor, plus 5s of buffer time for transit/storage.
+        // The network graph continually returns timestamp.Now() if the lastSeenTime is nil.
+        assert waitForEdgeToBeClosed(edges.get(0), 65)
     }
 
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections between StackRox Services"() {
         when:
         "Fetch uIDs for the central, sensor, and collector services, if present"
@@ -286,25 +287,47 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge between sensor and central"
-        println "Checking for edge between sensor and central"
+        log.info "Checking for edge between sensor and central"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sensorUid, centralUid)
         assert edges
 
         then:
         "Check for edge between collector and sensor, if collector is installed"
         if (collectorUid != null) {
-            println "Checking for edge between collector and sensor"
+            log.info "Checking for edge between collector and sensor"
             edges = NetworkGraphUtil.checkForEdge(collectorUid, sensorUid)
             assert edges
         }
     }
 
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @IgnoreIf({ true }) // ROX-16849 this test is flaking in many cluster flavors
+    def "Verify ports are greater than 0"() {
+        given:
+        "ACS is running"
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def nodes = graph.nodesList
+
+        nodes.each { node ->
+            node.outEdges.each { key, value ->
+                value.propertiesList.each { property ->
+                    assert property.port > 0
+                }
+            }
+        }
+    }
+
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == sourceDeployment }?.deploymentUid
@@ -312,7 +335,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Check for edge in network graph"
-        println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
+        log.info "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
 
         assert edges
@@ -329,7 +352,9 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
         "Deployment with listening port"
@@ -352,10 +377,11 @@ class NetworkFlowTest extends BaseSpecification {
         TCPCONNECTIONSOURCE   | []
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
-        rebuildForRetries()
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
@@ -364,7 +390,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "Check for edge in network graph"
-        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -374,7 +400,9 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, RUNTIME, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("NetworkFlowVisualization")
     def "Verify network graph when filtered on \"#filter\" and scoped to \"#scope\" #desc"() {
         given:
         "Orchestrator components exists"
@@ -415,27 +443,28 @@ class NetworkFlowTest extends BaseSpecification {
                 true | "contains stackrox deployments only"
     }
 
-    @Category([BAT, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("NetworkFlowVisualization")
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
-        rebuildForRetries()
         String sourceUid = deployments.find { it.name == TCPCONNECTIONSOURCE }?.deploymentUid
         assert sourceUid != null
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
 
         when:
-        "Network graph is filtered by deployment A"
-        def graph = NetworkGraphService.getNetworkGraph(null, "Deployment:\"${TCPCONNECTIONSOURCE}\"", "")
+        "Check for edge in network graph"
+        log.info "Checking for edge between ${TCPCONNECTIONSOURCE} and ${TCPCONNECTIONTARGET}"
+        List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
+        assert edges
 
         then:
-        "Edge between A and B should exist in network graph"
-        List<Edge> edges = NetworkGraphUtil.findEdges(graph, sourceUid, targetUid)
-        assert edges && edges.size() > 0
+        "Wait for collector update and fetch graph again to confirm short interval connections remain"
+        assert waitForEdgeUpdate(edges.get(0), 90)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
@@ -444,16 +473,13 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Check for edge in network graph"
-        println "Checking for edge from ${EXTERNALDESTINATION} to external target"
+        log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
-        // https://stack-rox.atlassian.net/browse/ROX-7047
-        Assume.assumeFalse(ClusterService.isOpenShift4())
-
         given:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -473,30 +499,54 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         "ping the target deployment"
-        Response response
+        Response response = null
         Timer t = new Timer(12, 5)
         while (response?.statusCode() != 200 && t.IsValid()) {
             try {
-                println "trying ${targetUrl}..."
+                log.info "trying ${targetUrl}..."
                 response = given().get(targetUrl)
             } catch (Exception e) {
-                println "Failure calling ${targetUrl}. Trying again in 5 sec..."
+                log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
             }
         }
         assert response?.getStatusCode() == 200
-        println response.asString()
+        log.info response.asString()
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
-        List<Edge> edges =
-                NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-        assert edges
+        withRetry(5, 20) {
+            log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
+
+            // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
+            // router-default deployment in openshift-ingress namespace.
+            List<Edge> routerDefaultEdges = null
+            if (ClusterService.isOpenShift4()) {
+                SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
+                        .setQuery("Namespace:openshift-ingress")
+                        .build()
+                def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
+                def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
+                routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                if (routerDefaultEdges != null) {
+                    log.info("Found edge coming from OpenShift ingress router")
+                    return
+                }
+            }
+            List<Edge> edges =
+                    NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
+
+            assert edges
+        }
     }
 
-    @Category([NetworkFlowVisualization])
-    @Ignore("ROX-7046 - this test does not pass")
+    @Tag("NetworkFlowVisualization")
     def "Verify intra-cluster connection via external IP"() {
+        // We changed the test to reflect the NetworkGraph's current behavior. Communication between two deployments
+        // through a LoadBalancer shows an edge from 'External Entities', not an edge between the two deployments.
+        // ROX-17936 should address whether we revert to the old behavior or we maintain this new behavior.
+        // We do not test this on OCP.
+        // Manual testing on OCP shows the same behavior but on prow times out most of the time.
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
@@ -508,7 +558,7 @@ class NetworkFlowTest extends BaseSpecification {
         "create a new deployment that talks to A via the LB IP"
         def newDeployment = new Deployment()
                 .setName("talk-to-lb-ip")
-                .setImage("quay.io/rhacs-eng/qa:nginx-1.15.4-alpine")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                 .addLabel("app", "talk-to-lb-ip")
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["while sleep 5; do wget -S -T 2 http://"+deploymentIP+"; done"])
@@ -519,9 +569,13 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Check for edge in network graph"
-        println "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
-        List<Edge> edges = NetworkGraphUtil.checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
-        assert edges
+        withRetry(2, 10) {
+            log.info "Checking for edge from internal to ${NGINXCONNECTIONTARGET} using its external address"
+            List<Edge> edgesToExternalSource = NetworkGraphUtil.checkForEdge(
+                    Constants.INTERNET_EXTERNAL_SOURCE_ID,
+                    deploymentUid, null, 180)
+            assert edgesToExternalSource
+        }
 
         cleanup:
         "remove the new deployment"
@@ -530,7 +584,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify no connections between 2 deployments"() {
         given:
         "Two deployments, A and B, where neither communicates to the other"
@@ -541,15 +595,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         expect:
         "Assert connection states"
-        println "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for NO edge between ${NOCONNECTIONSOURCE} and ${NGINXCONNECTIONTARGET}"
         assert !NetworkGraphUtil.checkForEdge(sourceUid, targetUid, null, 30)
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
-        rebuildForRetries()
         String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
@@ -565,7 +618,9 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges.size() == 2
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
+    // TODO: additional handling may be needed for P/Z, skipping for 1st release
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
@@ -581,7 +636,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "The edge is found before blocked"
-        println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -592,19 +647,19 @@ class NetworkFlowTest extends BaseSpecification {
                 .addPodSelector(["app":NGINXCONNECTIONTARGET])
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
-        println "Sleeping 60s to allow policy to propagate and flows to update after propagation"
+        log.info "Sleeping 60s to allow policy to propagate and flows to update after propagation"
         sleep 60000
 
         and:
         "Get the latest edge"
-        println "Checking for latest edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
+        log.info "Checking for latest edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
         then:
         "make sure edge does not get updated"
-        //Use a 20 second buffer to account for additional edges coming in through the data pipeline
-        assert !waitForEdgeUpdate(edges.get(0), 60, 20)
+        //Use one cadence buffer to account for additional edges coming in through the data pipeline
+        assert !waitForEdgeUpdate(edges.get(0), 60, NetworkGraphUtil.NETWORK_FLOW_UPDATE_CADENCE_IN_SECONDS)
 
         cleanup:
         "remove policy"
@@ -613,7 +668,7 @@ class NetworkFlowTest extends BaseSpecification {
         }
     }
 
-    @Category([NetworkFlowVisualization])
+    @Tag("NetworkFlowVisualization")
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
@@ -625,15 +680,17 @@ class NetworkFlowTest extends BaseSpecification {
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
             assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
-            assert edge.lastActiveTimestamp >= testStartTimeMillis
+            assert edge.lastActiveTimestamp >= testSpecStartTimeMillis
         }
     }
 
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify generated network policies"() {
+        // TODO(RS-178): EKS cannot NetworkPolicy
+        Assume.assumeFalse(ClusterService.isEKS())
+
         given:
-        "Get current state of network graph"
-        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
+        "Get current state of deployed namespaces"
         List<String> deployedNamespaces = deployments*.namespace
 
         and:
@@ -643,6 +700,42 @@ class NetworkFlowTest extends BaseSpecification {
         Services.waitForSRDeletion(delete)
 
         when:
+        "Network graph contains all expected targets"
+        NetworkGraph currentGraph = null
+
+        // This is a map of "deploymentName" -> expectedNumberOfEdges.
+        // It allows us to know when the network graph has reached a desired state and the proper assertions can start.
+        def targets = [(TCPCONNECTIONTARGET):3, (UDPCONNECTIONTARGET):1]
+        targets.each { deploymentName, expectedEdges ->
+            // Make sure that we have enough time to populate the graph: 30s for sensor + some extra.
+            // On the first run, this test benefits from the state left over by previous tests.
+            // However, if the first run fails, the env is recreated and the test is run immediately afterwards.
+            // The system requires time for the changes to propagate to sensor, thus we have an additional retry here.
+            log.info "Verifying graph edges of ${deploymentName}"
+            Helpers.withRetry(6, 20) { retry ->
+                // The graph needs to be re-retrieved on each retry
+                currentGraph = NetworkGraphService.getNetworkGraph()
+
+                def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
+                List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
+                    node.outEdgesMap.containsKey(index)
+                }
+                def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
+                    currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
+                if (allowAllIngress) {
+                    log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                } else {
+                    assert outNodes.size() > 0 == expectedEdges > 0
+                    log.info "${deploymentName} has incoming connections"
+                    def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
+
+                    log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
+                    assert sourceDeploymentsFromGraph.size() == expectedEdges
+                }
+            }
+        }
+
+        and:
         "Generate Network Policies"
         NetworkPolicyModification modification = NetworkPolicyService.generateNetworkPolicies()
         Yaml parser = new Yaml()
@@ -652,56 +745,70 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         then:
-        "verify generated netpols vs current graph state"
+        "verify generated netpols against the current graph state"
         yamls.each {
             assert it."metadata"."namespace" != "kube-system" &&
                     it."metadata"."namespace" != "kube-public"
         }
         yamls.findAll {
             deployedNamespaces.contains(it."metadata"."namespace")
-        }.each {
+        }.each { yaml ->
             String deploymentName =
-                    it."metadata"."name"["stackrox-generated-".length()..it."metadata"."name".length() - 1]
+                yaml."metadata"."name"["stackrox-generated-".length()..yaml."metadata"."name".length() - 1]
             assert deploymentName != NOCONNECTIONSOURCE
-            assert it."metadata"."labels"."network-policy-generator.stackrox.io/generated"
-            assert it."metadata"."namespace"
+            assert yaml."metadata"."labels"."network-policy-generator.stackrox.io/generated"
+            assert yaml."metadata"."namespace"
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
             def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
-                    currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
-            List<NetworkNode> outNodes =  currentGraph.nodesList.findAll { node ->
+                currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
+            List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
             }
-            def ingressPodSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
-                    null
-            def ingressNamespaceSelectors = it."spec"."ingress".find { it.containsKey("from") } ?
-                    it."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
-                    null
-
+            def ingressPodSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("podSelector") } :
+                null
+            def ingressNamespaceSelectors = yaml."spec"."ingress".find { it.containsKey("from") } ?
+                yaml."spec"."ingress".get(0)."from".findAll { it.containsKey("namespaceSelector") } :
+                null
             if (allowAllIngress) {
-                print "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
-                assert it."spec"."ingress" == [[:]]
+                log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
+                assert yaml."spec"."ingress" == [[:]]
             } else if (outNodes.size() > 0) {
-                print "${deploymentName} has incoming connections - ensure podSelectors/namespaceSelectors match " +
-                        "sources from graph"
+                log.info "${deploymentName} has incoming connections - " +
+                    "ensure podSelectors/namespaceSelectors match sources from graph"
                 def sourceDeploymentsFromGraph = outNodes.findAll { it.deploymentName }*.deploymentName
                 def sourceDeploymentsFromNetworkPolicy = ingressPodSelectors.collect {
                     it."podSelector"."matchLabels"."app"
                 }
                 def sourceNamespacesFromNetworkPolicy = ingressNamespaceSelectors.collect {
                     it."namespaceSelector"."matchLabels"."namespace.metadata.stackrox.io/name"
-                }
+                }.findAll { it != null }
+                sourceNamespacesFromNetworkPolicy.addAll(ingressNamespaceSelectors.collect {
+                    it."namespaceSelector"."matchLabels"."kubernetes.io/metadata.name"
+                }).findAll { it != null }
+
+                log.debug("sourceDeploymentsFromNetworkPolicy: {}", sourceDeploymentsFromNetworkPolicy)
+                log.debug("sourceDeploymentsFromGraph: {}", sourceDeploymentsFromGraph)
                 assert sourceDeploymentsFromNetworkPolicy.sort() == sourceDeploymentsFromGraph.sort()
+
+                if (!deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)) {
+                    log.info "Deployed namespaces do not contain all namespaces found in the network policy"
+                    log.info "The network policy:"
+                    log.info modification.toString()
+                }
                 assert deployedNamespaces.containsAll(sourceNamespacesFromNetworkPolicy)
             } else {
-                print "${deploymentName} has no incoming connections - ensure ingress spec is empty"
-                assert it."spec"."ingress" == [] || it."spec"."ingress" == null
+                log.info "${deploymentName} has no incoming connections - ensure ingress spec is empty"
+                assert yaml."spec"."ingress" == [] || yaml."spec"."ingress" == null
             }
         }
     }
 
+    // ROX-13903 - applyGeneratedNetworkPolicy() can hang when run via the
+    // standalone test runner.
+    @IgnoreIf({ !Env.IN_CI })
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         given:
         "apply network policies to the system"
@@ -722,14 +829,14 @@ class NetworkFlowTest extends BaseSpecification {
         and:
         "Get existing network policies from orchestrator"
         def preExistingNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println preExistingNetworkPolicies
+        log.info "${preExistingNetworkPolicies}"
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
-        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
+        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, 'Namespace:r/^qa2?$')
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
         def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println appliedNetworkPolicies
+        log.info "${appliedNetworkPolicies}"
 
         Yaml parser = new Yaml()
         List yamls = []
@@ -785,7 +892,7 @@ class NetworkFlowTest extends BaseSpecification {
                         instanceof StatusRuntimeException
         )
         def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
-        println undoNetworkPolicies
+        log.info "${undoNetworkPolicies}"
         assert undoNetworkPolicies == preExistingNetworkPolicies
 
         cleanup:
@@ -805,7 +912,8 @@ class NetworkFlowTest extends BaseSpecification {
         DeleteExistingPoliciesMode.ALL | ""
     }
 
-    @Category([BAT, NetworkFlowVisualization])
+    @Tag("BAT")
+    @Tag("NetworkFlowVisualization")
     @Ignore("Skip this test until we can determine a more reliable way to test")
     def "Apply a generated network policy and verify connection states"() {
         given:
@@ -857,6 +965,25 @@ class NetworkFlowTest extends BaseSpecification {
         return match
     }
 
+    private waitForEdgeToBeClosed(Edge edge, int timeoutSeconds = 65) {
+        int intervalSeconds = 1
+        int waitTime
+        def prevEdge = edge
+        for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
+            def graph = NetworkGraphService.getNetworkGraph()
+            def newEdge = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)?.find { true }
+
+            // If lastActiveTimestamp is equal to the previous edges lastActiveTimestamp then the edge has been closed
+            if (newEdge != null && newEdge.lastActiveTimestamp == prevEdge.lastActiveTimestamp) {
+                return true
+            }
+            prevEdge = newEdge
+            sleep intervalSeconds * 1000
+        }
+        log.info "Edge was never closed"
+        return false
+    }
+
     private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, float addSecondsToEdgeTimestamp = 0.2) {
         int intervalSeconds = 1
         int waitTime
@@ -873,15 +1000,15 @@ class NetworkFlowTest extends BaseSpecification {
             // considered as a new edge, hence the 0.2 default value.
             if (newEdge != null &&
                     newEdge.lastActiveTimestamp > edge.lastActiveTimestamp + (addSecondsToEdgeTimestamp * 1000)) {
-                println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
-                println "The updated edge is " +
+                log.info "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
+                log.info "The updated edge is " +
                         "${((newEdge.lastActiveTimestamp - edge.lastActiveTimestamp)/1000) as Integer} " +
                         "seconds later"
                 return newEdge
             }
             sleep intervalSeconds * 1000
         }
-        println "SR did not detect updated edge in Network Flow graph"
+        log.info "SR did not detect updated edge in Network Flow graph"
         return null
     }
 

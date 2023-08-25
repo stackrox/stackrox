@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+// DelegatedRegistryConfig determines how to handle scan requests.
+//
+// Refer to v1.DelegatedRegistryConfig for more detailed docs.
+//
+// Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
+message DelegatedRegistryConfig {
+    enum EnabledFor {
+        NONE     = 0;
+        ALL      = 1;
+        SPECIFIC = 2;
+    }
+
+    message DelegatedRegistry {
+        string path       = 1;
+        string cluster_id = 2;
+    }
+
+    EnabledFor                 enabled_for        = 1;
+    string                     default_cluster_id = 2;
+    repeated DelegatedRegistry registries         = 3;
+}

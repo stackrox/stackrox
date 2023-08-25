@@ -1,78 +1,79 @@
-import {
-    renderListAndSidePanel,
-    navigateToSingleEntityPage,
-    hasCountWidgetsFor,
-    clickOnEntityWidget,
-    clickOnSingleEntity,
-    hasTabsFor,
-    hasRelatedEntityFor,
-    pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows,
-} from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 
-describe('Config Management Entities (Service Accounts)', () => {
+import {
+    clickOnSingularEntityWidgetInSidePanel,
+    clickOnSingleEntityInTable,
+    hasCountWidgetsFor,
+    hasTabsFor,
+    hasRelatedEntityFor,
+    navigateToSingleEntityPage,
+    verifyWidgetLinkToTableFromSidePanel,
+    verifyWidgetLinkToTableFromSinglePage,
+    visitConfigurationManagementEntityInSidePanel,
+} from './ConfigurationManagement.helpers';
+
+const entitiesKey = 'serviceaccounts';
+
+describe('Configuration Management Service Accounts', () => {
     withAuth();
 
     it('should render the service accounts list and open the side panel when a row is clicked', () => {
-        renderListAndSidePanel('serviceAccounts');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
     });
 
     it('should click on the namespace entity widget in the side panel and match the header', () => {
-        renderListAndSidePanel('serviceAccounts');
-        clickOnEntityWidget('namespace', 'side-panel');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        clickOnSingularEntityWidgetInSidePanel(entitiesKey, 'namespaces');
     });
 
     it('should render the service list and open the side panel with the clicked namespace value', () => {
-        clickOnSingleEntity('serviceAccounts', 'namespace');
+        clickOnSingleEntityInTable(entitiesKey, 'namespaces');
     });
 
     it('should take you to a service account single when the "navigate away" button is clicked', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
     });
 
     it('should show the related cluster widget', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
 
     it('should have the correct count widgets for a single entity view', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasCountWidgetsFor(['Deployments', 'Roles']);
     });
 
     it('should have the correct tabs for a single entity view', () => {
-        renderListAndSidePanel('serviceAccounts');
-        navigateToSingleEntityPage('serviceAccount');
+        visitConfigurationManagementEntityInSidePanel(entitiesKey);
+        navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['deployments', 'roles']);
     });
 
-    it('should have the same number of Deployments in the count widget as in the Deployments table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            pageEntityCountMatchesTableRows('Deployments');
+    describe('should go to deployments table from widget link', () => {
+        const entitiesKey2 = 'deployments';
+
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('serviceAccounts');
-            sidePanelEntityCountMatchesTableRows('Deployments');
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 
-    it('should have the same number of Roles in the count widget as in the Roles table', () => {
-        context('Page', () => {
-            renderListAndSidePanel('serviceAccounts');
-            navigateToSingleEntityPage('serviceAccount');
-            pageEntityCountMatchesTableRows('Roles');
+    describe('should go to roles table from widget link', () => {
+        const entitiesKey2 = 'roles';
+
+        it('in single page', () => {
+            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
         });
 
-        context('Side Panel', () => {
-            renderListAndSidePanel('serviceAccounts');
-            sidePanelEntityCountMatchesTableRows('Roles');
+        it('in side panel', () => {
+            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
     });
 });

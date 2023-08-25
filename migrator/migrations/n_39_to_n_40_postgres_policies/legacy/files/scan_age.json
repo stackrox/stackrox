@@ -1,0 +1,32 @@
+{
+  "id": "a3eb6dbe-e9ca-451a-919b-216cf7ee11f5",
+  "name": "30-Day Scan Age",
+  "description": "Alert on deployments with images that haven't been scanned in 30 days",
+  "rationale": "Out-of-date scans may not identify the most recent CVEs.",
+  "remediation": "Integrate a scanner with the StackRox Kubernetes Security Platform to trigger scans automatically.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Scan Age",
+          "values": [
+            {
+              "value": "30"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

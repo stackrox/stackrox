@@ -88,7 +88,7 @@ function Widget({
             <div className="border-b border-base-300">
                 <div className="flex flex-auto min-h-10 word-break">
                     <div
-                        className="flex flex-auto text-sm text-base-600 uppercase items-center tracking-wide px-2 leading-normal font-700"
+                        className="flex flex-auto text-base-600 items-center px-2 leading-normal font-700"
                         data-testid="widget-header"
                     >
                         <div className="w-full">{headerContent}</div>

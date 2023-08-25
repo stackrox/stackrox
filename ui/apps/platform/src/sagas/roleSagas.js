@@ -1,6 +1,4 @@
 import { all, call, fork, put, takeLatest, select } from 'redux-saga/effects';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { accessControlPath } from 'routePaths';
 import * as service from 'services/RolesService';
 import { actions, types } from 'reducers/roles';
 import { selectors } from 'reducers';
@@ -61,15 +59,6 @@ function* selectRole(action) {
     }
 }
 
-function* fetchResources() {
-    try {
-        const result = yield call(service.fetchResources);
-        yield put(actions.fetchResources.success(result.response));
-    } catch (error) {
-        Raven.captureException(error);
-    }
-}
-
 function* watchSaveRole() {
     yield takeLatest(types.SAVE_ROLE, saveRole);
 }
@@ -82,17 +71,11 @@ function* watchSelectRole() {
     yield takeLatest(types.SELECTED_ROLE, selectRole);
 }
 
-function* watchFetchResources() {
-    yield takeLatest(types.FETCH_RESOURCES.REQUEST, fetchResources);
-}
-
 export default function* integrations() {
     yield all([
-        takeEveryNewlyMatchedLocation(accessControlPath, getRoles),
         takeLatest(types.FETCH_ROLES.REQUEST, getRoles),
         fork(watchSaveRole),
         fork(watchDeleteRole),
         fork(watchSelectRole),
-        fork(watchFetchResources),
     ]);
 }

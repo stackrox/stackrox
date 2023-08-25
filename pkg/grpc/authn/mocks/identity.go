@@ -8,10 +8,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	authproviders "github.com/stackrox/rox/pkg/auth/authproviders"
 	permissions "github.com/stackrox/rox/pkg/auth/permissions"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockIdentity is a mock of Identity interface.
@@ -49,20 +49,6 @@ func (m *MockIdentity) Attributes() map[string][]string {
 func (mr *MockIdentityMockRecorder) Attributes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Attributes", reflect.TypeOf((*MockIdentity)(nil).Attributes))
-}
-
-// Expiry mocks base method.
-func (m *MockIdentity) Expiry() time.Time {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Expiry")
-	ret0, _ := ret[0].(time.Time)
-	return ret0
-}
-
-// Expiry indicates an expected call of Expiry.
-func (mr *MockIdentityMockRecorder) Expiry() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Expiry", reflect.TypeOf((*MockIdentity)(nil).Expiry))
 }
 
 // ExternalAuthProvider mocks base method.
@@ -175,4 +161,19 @@ func (m *MockIdentity) User() *storage.UserInfo {
 func (mr *MockIdentityMockRecorder) User() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockIdentity)(nil).User))
+}
+
+// ValidityPeriod mocks base method.
+func (m *MockIdentity) ValidityPeriod() (time.Time, time.Time) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidityPeriod")
+	ret0, _ := ret[0].(time.Time)
+	ret1, _ := ret[1].(time.Time)
+	return ret0, ret1
+}
+
+// ValidityPeriod indicates an expected call of ValidityPeriod.
+func (mr *MockIdentityMockRecorder) ValidityPeriod() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidityPeriod", reflect.TypeOf((*MockIdentity)(nil).ValidityPeriod))
 }

@@ -1,7 +1,6 @@
 package errox
 
 import (
-	"os"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -18,10 +17,10 @@ func TestRoxErrorIs(t *testing.T) {
 	errNotFound1 := makeSentinel("base not found")
 	assert.NotErrorIs(t, errNotFound, errNotFound1)
 
-	fileNotFound := New(errNotFound, "file not found")
-	cpuNotFound := New(errNotFound, "CPU not found")
-	googleNotFound := New(errNotFound, "Google not found")
-	movieNotFound := New(fileNotFound, "movie not found")
+	fileNotFound := errNotFound.New("file not found")
+	cpuNotFound := errNotFound.New("CPU not found")
+	googleNotFound := errNotFound.Newf("G%sgle not found", "oo")
+	movieNotFound := fileNotFound.New("movie not found")
 
 	assert.ErrorIs(t, fileNotFound, errNotFound)
 	assert.ErrorIs(t, googleNotFound, errNotFound)
@@ -52,19 +51,38 @@ func TestErrorMessage(t *testing.T) {
 	}
 
 	{
-		mine := New(NotFound, "cannot load")
+		mine := NotFound.New("cannot load")
 		assert.Equal(t, "cannot load", mine.Error())
 	}
+}
 
+func TestCausedBy(t *testing.T) {
 	{
-		err := Newf(InvalidArgs, "custom %s", "message")
-		assert.Equal(t, "custom message", err.Error())
-		assert.ErrorIs(t, err, InvalidArgs)
+		errInvalidAlgorithmF := func(alg string) Error {
+			return InvalidArgs.Newf("invalid hashing algorithm %q used", alg)
+		}
+		assert.Equal(t, "invalid hashing algorithm \"SHA255\" used: only SHA256 is supported",
+			errInvalidAlgorithmF("SHA255").CausedBy("only SHA256 is supported").Error())
+
+		assert.ErrorIs(t, errInvalidAlgorithmF("SHA255"), InvalidArgs)
 	}
 
 	{
-		err := New(os.ErrClosed, "not open")
-		assert.Equal(t, "not open", err.Error())
-		assert.ErrorIs(t, err, os.ErrClosed)
+		cause := errors.New("your fault")
+		err := NotFound.CausedBy(cause)
+		assert.Equal(t, "not found: your fault", err.Error())
+		assert.ErrorIs(t, err, NotFound)
+		assert.NotErrorIs(t, err, cause)
+	}
+
+	{
+		err := NotFound.New("lost forever").CausedBy("swallowed by Kraken")
+		assert.ErrorIs(t, err, NotFound)
+	}
+
+	{
+		err := NotFound.New("absolute disaster").CausedByf("out of %v", "sense")
+		assert.Equal(t, "absolute disaster: out of sense", err.Error())
+		assert.ErrorIs(t, err, NotFound)
 	}
 }

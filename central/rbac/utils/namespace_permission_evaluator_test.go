@@ -1,133 +1,225 @@
+//go:build sql_integration
+
 package utils
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	roleDS "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNamespacePermissionsForSubject(t *testing.T) {
-	cases := []struct {
-		name          string
-		inputRoles    []*storage.K8SRole
-		inputBindings []*storage.K8SRoleBinding
-		inputSubject  *storage.Subject
-		expected      []*storage.PolicyRule
-	}{
+	ctx := sac.WithAllAccess(context.Background())
 
+	clusterID := uuid.NewV4().String()
+
+	testRoles := []*storage.K8SRole{
 		{
-			name: "get all pods and deployments",
-			inputRoles: []*storage.K8SRole{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-pods-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
 				{
-					Id:        "role1",
-					Name:      "get-pods-role",
-					ClusterId: "cluster",
-					Rules: []*storage.PolicyRule{
-						{
-							Verbs: []string{
-								"get",
-							},
-							ApiGroups: []string{
-								"",
-							},
-							Resources: []string{
-								"pods",
-							},
-						},
+					Verbs: []string{
+						"get",
 					},
-				},
-				{
-					Id:        "role2",
-					Name:      "get-deployments-role",
-					ClusterId: "cluster",
-					Rules: []*storage.PolicyRule{
-						{
-							Verbs: []string{
-								"get",
-							},
-							ApiGroups: []string{
-								"",
-							},
-							Resources: []string{
-								"deployments",
-							},
-						},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"pods",
 					},
 				},
 			},
-			inputBindings: []*storage.K8SRoleBinding{
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-deployments-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
 				{
-					Id:        "binding1",
-					RoleId:    "role1",
-					ClusterId: "cluster",
-					Subjects: []*storage.Subject{
-						{
-							Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-							Name:      "subject",
-							Namespace: "namespace",
-						},
+					Verbs: []string{
+						"get",
 					},
-					ClusterRole: false,
-					Namespace:   "namespace",
-				},
-				{
-					Id:        "binding2",
-					RoleId:    "role2",
-					ClusterId: "cluster",
-					Subjects: []*storage.Subject{
-						{
-							Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-							Name:      "subject",
-							Namespace: "namespace",
-						},
+					ApiGroups: []string{
+						"",
 					},
-					ClusterRole: false,
-					Namespace:   "namespace",
+					Resources: []string{
+						"deployments",
+					},
 				},
 			},
-			inputSubject: &storage.Subject{
-				Name:      "subject",
-				Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-				Namespace: "namespace",
-			},
-			expected: []*storage.PolicyRule{
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-replicasets-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
 				{
-					Verbs:     []string{"get"},
-					Resources: []string{"deployments", "pods"},
-					ApiGroups: []string{""},
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"replicasets",
+					},
+				},
+			},
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			Name:      "get-statefulsets-role",
+			ClusterId: clusterID,
+			Rules: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"statefulsets",
+					},
 				},
 			},
 		},
 	}
-
-	mockCtrl := gomock.NewController(t)
-	mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
-	mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
-
-	namespaceScopeQuery := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, "cluster").
-		AddExactMatches(search.Namespace, "namespace").
-		AddExactMatches(search.SubjectName, "subject").
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, false).ProtoQuery()
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, namespaceScopeQuery).Return(c.inputBindings, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(ctx, "role2").Return(c.inputRoles[1], true, nil).AnyTimes()
-
-			evaluator := NewNamespacePermissionEvaluator("cluster", "namespace", mockRoleDatastore, mockBindingDatastore)
-			assert.Equal(t, c.expected, evaluator.ForSubject(ctx, c.inputSubject).ToSlice())
-		})
+	testBindings := []*storage.K8SRoleBinding{
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[0].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: false,
+			Namespace:   "namespace",
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[1].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: false,
+			Namespace:   "namespace",
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[2].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: true,
+			Namespace:   "namespace",
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    testRoles[3].GetId(),
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+					Name:      "subject",
+					Namespace: "namespace",
+				},
+			},
+			ClusterRole: true,
+		},
 	}
 
+	inputSubject := &storage.Subject{
+		Name:      "subject",
+		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+		Namespace: "namespace",
+	}
+	expectedResult := []*storage.PolicyRule{
+		{
+			Verbs:     []string{"get"},
+			Resources: []string{"deployments", "pods", "replicasets"},
+			ApiGroups: []string{""},
+		},
+	}
+
+	pool := pgtest.ForT(t)
+	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
+	for _, role := range testRoles {
+		require.NoError(t, roleStore.UpsertRole(ctx, role))
+	}
+
+	for _, binding := range testBindings {
+		require.NoError(t, bindingStore.UpsertRoleBinding(ctx, binding))
+	}
+
+	evaluator := NewNamespacePermissionEvaluator(clusterID, "namespace", roleStore, bindingStore)
+	assert.Equal(t, expectedResult, evaluator.ForSubject(ctx, inputSubject).ToSlice())
+
+	for _, role := range testRoles {
+		require.NoError(t, roleStore.RemoveRole(ctx, role.GetId()))
+	}
+	for _, binding := range testBindings {
+		require.NoError(t, bindingStore.RemoveRoleBinding(ctx, binding.GetId()))
+	}
+}
+
+func BenchmarkGetBindingsAndRoles(b *testing.B) {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.K8sRole, resources.K8sRoleBinding, resources.K8sSubject)))
+
+	pool := pgtest.ForT(b)
+
+	roleStore := roleDS.GetTestPostgresDataStore(b, pool)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(b, pool)
+
+	roles := fixtures.GetMultipleK8SRoles(10000)
+	bindings := fixtures.GetMultipleK8sRoleBindingsWithRole(10000, 10, roles)
+
+	for _, role := range roles {
+		require.NoError(b, roleStore.UpsertRole(ctx, role))
+	}
+
+	for _, binding := range bindings {
+		require.NoError(b, bindingStore.UpsertRoleBinding(ctx, binding))
+	}
+
+	evaluator := NewNamespacePermissionEvaluator(bindings[500].GetClusterId(), bindings[500].GetNamespace(),
+		roleStore, bindingStore).(*namespacePermissionEvaluator)
+
+	subject := bindings[500].GetSubjects()[4]
+
+	b.Run("run get bindings and roles", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			evaluator.getBindingsAndRoles(ctx, subject)
+		}
+	})
 }

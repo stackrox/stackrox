@@ -133,7 +133,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret
 
 func (s *pipelineImpl) persistSecret(ctx context.Context, action central.ResourceAction, secret *storage.Secret) error {
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return s.secrets.UpsertSecret(ctx, secret)
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.secrets.RemoveSecret(ctx, secret.GetId())
@@ -142,4 +142,4 @@ func (s *pipelineImpl) persistSecret(ctx context.Context, action central.Resourc
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

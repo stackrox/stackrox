@@ -17,8 +17,21 @@ set -eu
 # - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
 
 usage() {
-    echo "./scripts/ci/collect-service-logs.sh <namespace>"
+    echo "./scripts/ci/collect-service-logs.sh <namespace> [<output-dir>]"
     echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
+}
+
+dump_logs() {
+    for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${jpath}[*].name}"); do
+        kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
+        prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
+        if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
+            exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
+            if [ "$exit_code" -eq "0" ]; then
+                mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+            fi
+        fi
+    done
 }
 
 main() {
@@ -26,6 +39,11 @@ main() {
     if [ -z "${namespace}" ]; then
         usage
         exit 1
+    fi
+
+    if ! kubectl get ns "${namespace}"; then
+        echo "Skipping missing namespace"
+        exit 0
     fi
 
     if [ $# -gt 1 ]; then
@@ -41,14 +59,20 @@ main() {
     echo
     set +e
 
-    for object in deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions; do
+    for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations catalogsources subscriptions clusterserviceversions nodes; do
         # A feel good command before pulling logs
         echo ">>> ${object} <<<"
-        kubectl -n "${namespace}" get "${object}" -o wide
+        out="$(mktemp)"
+        if ! kubectl -n "${namespace}" get "${object}" -o wide > "$out" 2>&1; then
+            echo "Cannot get $object in $namespace: $(cat "$out")"
+            continue
+        fi
+        cat "$out"
 
         mkdir -p "${log_dir}/${object}"
 
         for item in $(kubectl -n "${namespace}" get "${object}" -o jsonpath='{.items}' | jq -r '.[] | select(.metadata.deletionTimestamp | not) | .metadata.name'); do
+            kubectl get "${object}" "${item}" -n "${namespace}" -o json > "${log_dir}/${object}/${item}_object.json" 2>&1
             {
               kubectl describe "${object}" "${item}" -n "${namespace}" 2>&1
               echo
@@ -57,20 +81,18 @@ main() {
               echo '# Full YAML definition'
               kubectl get "${object}" "${item}" -n "${namespace}" -o yaml 2>&1
             } > "${log_dir}/${object}/${item}_describe.log"
-            for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
-                kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
-                prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
-                if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
-                  exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath='{.status.containerStatuses}' | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
-                  if [ "$exit_code" -eq "0" ]; then
-                    mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
-                  fi
-                fi
-            done
+
+            jpath='.status.containerStatuses'
+            dump_logs
+
+            jpath='.status.initContainerStatuses'
+            dump_logs
         done
     done
 
     kubectl -n "${namespace}" get events -o wide >"${log_dir}/events.txt"
+    kubectl -n "${namespace}" get events -o yaml >"${log_dir}/events.yaml"
+
     find "${log_dir}" -type f -size 0 -delete
 }
 

@@ -60,7 +60,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                                 to={headerUrl}
                                 className="w-full flex text-primary-700 hover:text-primary-800 focus:text-primary-700"
                             >
-                                <div className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700">
+                                <div className="flex flex-1 items-center pl-4 leading-normal font-700">
                                     {linkText}
                                 </div>
                             </Link>
@@ -68,6 +68,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                                 className="mx-2 text-primary-700 hover:text-primary-800 p-1 bg-primary-300 rounded flex"
                                 to={headerUrl}
                                 target="_blank"
+                                aria-label="External link"
                             >
                                 <ExternalLink size="14" />
                             </Link>

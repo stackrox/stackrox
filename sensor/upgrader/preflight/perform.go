@@ -50,7 +50,7 @@ func PerformChecks(ctx *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan)
 		log.Infof("Preflight check %q finished with %d error(s), %d warning(s)", check.Name(), len(reporter.errors), len(reporter.warnings))
 
 		if len(reporter.errors) > 0 {
-			return errors.Errorf("preflight check %q reported errors:\n%s%s", check.Name(), strings.Join(sliceutils.StringUnique(reporter.errors), "\n"), formatWarnings(reporter.warnings))
+			return errors.Errorf("preflight check %q reported errors:\n%s%s", check.Name(), strings.Join(sliceutils.Unique(reporter.errors), "\n"), formatWarnings(reporter.warnings))
 		}
 		if len(reporter.warnings) > 0 {
 			log.Warnf("There were %d warning(s) running preflight check %q", len(reporter.warnings), check.Name())

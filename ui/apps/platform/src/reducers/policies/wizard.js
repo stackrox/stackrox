@@ -1,14 +1,10 @@
 import { combineReducers } from 'redux';
-import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 
 // Action types
 //-------------
 
 export const types = {
-    SET_WIZARD_STAGE: 'policies/SET_WIZARD_STAGE',
     SET_WIZARD_POLICY: 'policies/SET_WIZARD_POLICY',
-    SET_WIZARD_DRY_RUN_JOB_ID: 'policies/SET_WIZARD_DRY_RUN_JOB_ID',
-    SET_WIZARD_DRY_RUN: 'policies/SET_WIZARD_DRY_RUN',
     SET_WIZARD_POLICY_DISABLED: 'policies/SET_WIZARD_POLICY_DISABLED',
 };
 
@@ -16,10 +12,7 @@ export const types = {
 //---------
 
 export const actions = {
-    setWizardStage: (stage) => ({ type: types.SET_WIZARD_STAGE, stage }),
     setWizardPolicy: (policy) => ({ type: types.SET_WIZARD_POLICY, policy }),
-    setWizardDryRunJobId: (jobId) => ({ type: types.SET_WIZARD_DRY_RUN_JOB_ID, jobId }),
-    setWizardDryRun: (dryRun) => ({ type: types.SET_WIZARD_DRY_RUN, dryRun }),
     setWizardPolicyDisabled: (disabled) => ({ type: types.SET_WIZARD_POLICY_DISABLED, disabled }),
 };
 
@@ -43,13 +36,6 @@ const setPolicyDisabled = (state, disabled) => {
 // If adding a reducer, you'll need to wire it through reducers/policies/reducer.js
 //---------------------------------------------------------------------------------
 
-const wizardStage = (state = wizardStages.details, action) => {
-    if (action.type === types.SET_WIZARD_STAGE) {
-        return action.stage;
-    }
-    return state;
-};
-
 const wizardPolicy = (state = { isNew: false, policy: null }, action) => {
     if (action.type === types.SET_WIZARD_POLICY) {
         return setPolicy(state, action.policy);
@@ -60,20 +46,8 @@ const wizardPolicy = (state = { isNew: false, policy: null }, action) => {
     return state;
 };
 
-const wizardDryRun = (state = { jobId: null, dryRun: null }, action) => {
-    if (action.type === types.SET_WIZARD_DRY_RUN_JOB_ID) {
-        return { jobId: action.jobId };
-    }
-    if (action.type === types.SET_WIZARD_DRY_RUN) {
-        return { dryRun: action.dryRun };
-    }
-    return state;
-};
-
 const reducer = combineReducers({
-    wizardStage,
     wizardPolicy,
-    wizardDryRun,
 });
 
 export default reducer;
@@ -82,17 +56,11 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/policies/reducer.js
 //---------------------------------------------------------------------------------
 
-const getWizardStage = (state) => state.wizardStage;
-
 const getWizardIsNew = (state) => state.wizardPolicy.isNew;
 
 const getWizardPolicy = (state) => state.wizardPolicy.policy;
 
-const getWizardDryRun = (state) => state.wizardDryRun;
-
 export const selectors = {
-    getWizardStage,
     getWizardIsNew,
     getWizardPolicy,
-    getWizardDryRun,
 };

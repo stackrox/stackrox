@@ -1,0 +1,26 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: update-signature-cron
+  namespace: stackrox
+spec:
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: update-signature
+            image: quay.io/rhacs-eng/apollo-ci:stackrox-test-0.3.59
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/bash
+            - /usr/local/bin/update.sh
+            volumeMounts:
+              - mountPath: /usr/local/bin
+                name: update-script
+          restartPolicy: OnFailure
+          volumes:
+            - name: update-script
+              configMap:
+                name: update-script

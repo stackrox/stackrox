@@ -1,0 +1,41 @@
+{
+  "id": "742e0361-bddd-4a2d-8758-f2af6197f61d",
+  "name": "Kubernetes Actions: Port Forward to Pod",
+  "description": "Alerts when Kubernetes API receives port forward request",
+  "rationale": "'pods/portforward' is non-standard way to access applications running on Kubernetes. Attackers with permissions could gain access to application and compromise it",
+  "remediation": "Restrict RBAC access to the 'pods/portforward' resource according to the Principle of Least Privilege. Limit exposing application through port forwarding only development, testing or debugging (non-production) activities. For external traffic, expose application through a LoadBalancer/NodePort service or Ingress Controller",
+  "categories": [
+    "Kubernetes Events"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Kubernetes Resource",
+          "values": [
+            {
+              "value": "PODS_PORTFORWARD"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1609"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

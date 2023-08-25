@@ -2,7 +2,7 @@ package policyversion
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -26,9 +26,19 @@ var (
 	// strictly ascending order.
 	versions = [...]string{legacyVersion, version1, version1_1}
 
+	// supportedVersions enumerates all *supported* versions and must be in the
+	// strictly ascending order. supportedVersions is _always_ a subset of versions
+	// but ordering between versions and supportedVersions is not guaranteed
+	supportedVersions = set.NewFrozenStringSet(version1_1)
+
+	// minimumSupportedVersion returns the minimum policy version that is supported.
+	// This is calculated and cached separately so that supportedVersions doesn't
+	// need to be converted to slice for every comparison.
+	minimumSupportedVersion = supportedVersions.AsSlice()[0]
+
 	// versionRanks maps known versions to their sequence numbers. Note that
 	// the sequence number may vary among different builds.
-	versionRanks = utils.Invert(versions[:]).(map[string]int)
+	versionRanks = utils.InvertSlice(versions[:])
 )
 
 // CurrentVersion is the current version of boolean policies that is handled
@@ -37,10 +47,23 @@ func CurrentVersion() PolicyVersion {
 	return PolicyVersion{versions[len(versions)-1]}
 }
 
-// Version1 is the version that introduced PolicySection in favor of
-// PolicyFields.
-func Version1() PolicyVersion {
-	return PolicyVersion{version1}
+// MinimumSupportedVersion returns the minimum policy version that is supported.
+// Anything lower will result in unexpected behavior.
+func MinimumSupportedVersion() PolicyVersion {
+	return PolicyVersion{minimumSupportedVersion}
+}
+
+// IsCurrentVersion returns true if the policyVersion is equal to the current latest version
+// Purely a convenient way of using Compare to find if it's equal
+func IsCurrentVersion(policyVersion PolicyVersion) bool {
+	return Compare(policyVersion, CurrentVersion()) == 0
+}
+
+// IsSupportedVersion returns true if the policyVersion is one of the supported versions
+// Purely a convenient way of using Compare to find if it's equal
+func IsSupportedVersion(policyVersion PolicyVersion) bool {
+	stringVer := policyVersion.String()
+	return isKnownPolicyVersion(stringVer) && supportedVersions.Contains(stringVer)
 }
 
 // PolicyVersion wraps string-based policy version and provides comparison
@@ -69,16 +92,6 @@ func Compare(a, b PolicyVersion) int {
 	rankB := versionRanks[b.String()]
 
 	return rankA - rankB
-}
-
-// IsBooleanPolicy returns true if the policy has policy version equal or
-// greater to Version1 of boolean policies.
-func IsBooleanPolicy(p *storage.Policy) bool {
-	v, err := FromString(p.GetPolicyVersion())
-	if err != nil {
-		return false
-	}
-	return Compare(v, Version1()) >= 0
 }
 
 // isKnownPolicyVersion returns true if the supplied string is a known

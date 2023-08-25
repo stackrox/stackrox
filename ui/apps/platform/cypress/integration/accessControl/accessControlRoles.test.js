@@ -1,75 +1,55 @@
-import { rolesUrl, selectors } from '../../constants/AccessControlPage';
-import { permissions as permissionsApi } from '../../constants/apiEndpoints';
-
 import withAuth from '../../helpers/basicAuth';
+import { assertCannotFindThePage } from '../../helpers/visit';
 
-// Migration from cy.server and cy.route to cy.intercept fails for /v1/roles/* imported from apiEndpoints.
-const rolesApi = {
-    list: '/v1/roles',
-};
-
-const h1 = 'Access Control';
-const h2 = 'Roles';
+import {
+    assertAccessControlEntityDoesNotExist,
+    clickEntityNameInTable,
+    rolesKey as entitiesKey,
+    saveCreatedRole,
+    visitAccessControlEntities,
+    visitAccessControlEntitiesWithStaticResponseForPermissions,
+    visitAccessControlEntity,
+} from './accessControl.helpers';
+import { selectors } from './accessControl.selectors';
 
 const defaultNames = ['Admin', 'Analyst', 'Continuous Integration', 'None', 'Sensor Creator'];
 
 describe('Access Control Roles', () => {
     withAuth();
 
-    function visitRoles() {
-        cy.intercept('GET', rolesApi.list).as('GetRoles');
-        cy.visit(rolesUrl);
-        cy.wait('@GetRoles');
-    }
-
-    function visitRole(name) {
-        cy.intercept('GET', rolesApi.list).as('GetRoles');
-        cy.visit(`${rolesUrl}/${name}`);
-        cy.wait('@GetRoles');
-    }
-
-    it('displays alert if no permission', () => {
-        cy.intercept('GET', permissionsApi.mypermissions, {
+    it('cannot find the page if no permission', () => {
+        const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
-        }).as('GetMyPermissions');
-        cy.visit(rolesUrl);
-        cy.wait('@GetMyPermissions');
-
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
-
-        cy.get(selectors.alertTitle).should(
-            'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+        };
+        visitAccessControlEntitiesWithStaticResponseForPermissions(
+            entitiesKey,
+            staticResponseForPermissions
         );
+
+        assertCannotFindThePage();
     });
 
-    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
-        visitRoles();
+    it('list has heading, button, and table head cells', () => {
+        visitAccessControlEntities(entitiesKey);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.contains('h2', /^\d+ results? found$/);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get('button:contains("Create role")');
 
-        cy.get(selectors.h2).should('have.text', h2);
-        cy.get(selectors.list.addButton).should('have.text', 'Add role');
-
-        cy.get(`${selectors.list.th}:contains("Name")`);
-        cy.get(`${selectors.list.th}:contains("Description")`);
-        cy.get(`${selectors.list.th}:contains("Permission set")`);
-        cy.get(`${selectors.list.th}:contains("Access scope")`);
+        cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
+        cy.get('th:contains("Description")');
+        cy.get('th:contains("Permission set")');
+        cy.get('th:contains("Access scope")');
+        cy.get('th[aria-label="Row actions"]');
     });
 
     it('list has default names', () => {
-        visitRoles();
+        visitAccessControlEntities(entitiesKey);
 
         const { tdPermissionSetLink, tdAccessScope } = selectors.list.roles;
 
-        cy.get(selectors.list.tdNameLink).then(($tds) => {
+        cy.get('td[data-label="Name"] a').then(($tds) => {
             $tds.get().forEach((td, index) => {
                 const roleName = td.textContent;
                 if (defaultNames.includes(roleName)) {
@@ -81,15 +61,14 @@ describe('Access Control Roles', () => {
     });
 
     it('list link goes to form which has label instead of button and disabled input values', () => {
-        visitRoles();
+        visitAccessControlEntities(entitiesKey);
 
-        const name = 'Admin';
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+        const entityName = 'Admin';
+        clickEntityNameInTable(entitiesKey, entityName);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get('h2').should('have.text', entityName);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
 
@@ -110,7 +89,7 @@ describe('Access Control Roles', () => {
 
         defaultNames.forEach((roleName) => {
             it(`${roleName} has corresponding permission set and no access scope`, () => {
-                visitRole(roleName);
+                visitAccessControlEntity(entitiesKey, roleName);
 
                 cy.get(selectors.form.inputName).should('have.value', roleName);
 
@@ -126,11 +105,11 @@ describe('Access Control Roles', () => {
     });
 
     it('adds a new role and form disables name input when editing an existing role', () => {
-        visitRoles();
+        visitAccessControlEntities(entitiesKey);
 
-        cy.get(selectors.list.addButton).click();
+        cy.get('button:contains("Create role")').click();
 
-        cy.get(selectors.h2).should('have.text', 'Add role');
+        cy.get('h2').should('have.text', 'Create role');
         cy.get(selectors.form.notEditableLabel).should('not.exist');
         cy.get(selectors.form.editButton).should('not.exist');
         cy.get(selectors.form.saveButton).should('be.disabled');
@@ -152,14 +131,12 @@ describe('Access Control Roles', () => {
             .should('be.enabled')
             .should('be.checked');
 
-        cy.intercept('POST', `${rolesApi.list}/${name}`).as('PostRoles');
-        cy.get(selectors.form.saveButton).click();
-        cy.wait('@PostRoles');
+        saveCreatedRole(name);
 
-        cy.get(selectors.h2).should('have.text', h2);
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+        cy.contains('h2', /^\d+ results? found$/).should('exist');
+        cy.get(`td[data-label="Name"] a:contains("${name}")`).click();
 
-        cy.get(selectors.h2).should('have.text', name);
+        cy.get('h2').should('have.text', name);
         cy.get(selectors.form.inputName).should('be.disabled').should('have.value', name);
         cy.get(selectors.form.notEditableLabel).should('not.exist');
         cy.get(selectors.form.editButton).should('exist');
@@ -177,20 +154,9 @@ describe('Access Control Roles', () => {
     });
 
     it('displays message instead of form if entity id does not exist', () => {
-        cy.intercept('GET', rolesApi.list).as('GetAuthProviders');
-        cy.visit(`${rolesUrl}/bogus`);
-        cy.wait('@GetAuthProviders');
+        const entityId = 'bogus';
+        visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
-
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
-        cy.get(selectors.h2).should('not.exist');
-
-        cy.get(selectors.notFound.title).should('have.text', 'Role does not exist');
-        cy.get(selectors.notFound.a).should('have.text', h2).should('have.attr', 'href', rolesUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });

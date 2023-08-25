@@ -2,25 +2,23 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Button,
     Modal,
     ModalVariant,
+    PageSection,
+    pluralize,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { getIsDefaultRoleName } from 'constants/accessControl';
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
 import { PermissionSet, Role } from 'services/RolesService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
+import usePermissions from '../../../hooks/usePermissions';
+import { getOriginLabel, isUserResource } from '../traits';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -36,7 +34,6 @@ export type RolesListProps = {
     groups: Group[];
     permissionSets: PermissionSet[];
     accessScopes: AccessScope[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
@@ -46,12 +43,13 @@ function RolesList({
     groups,
     permissionSets,
     accessScopes,
-    handleCreate,
     handleDelete,
 }: RolesListProps): ReactElement {
     const [nameDeleting, setNameDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(name: string) {
         setNameDeleting(name);
@@ -100,41 +98,24 @@ function RolesList({
         : roles;
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                        <ToolbarItem>
-                            <Title headingLevel="h2">Roles</Title>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Badge isRead>
-                                {s ? `${rolesFiltered.length} / ${roles.length}` : roles.length}
-                            </Badge>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleCreate} isSmall>
-                            Add role
-                        </Button>
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+        <PageSection variant="light">
+            <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (
                 <TableComposable variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
-                            <Th width={20}>Name</Th>
-                            <Th width={30}>Description</Th>
-                            <Th width={20}>Permission set</Th>
+                            <Th width={15}>Name</Th>
+                            <Th width={15}>Origin</Th>
+                            <Th width={25}>Description</Th>
+                            <Th width={15}>Permission set</Th>
                             <Th width={20}>Access scope</Th>
                             <Th width={10} aria-label="Row actions" />
                         </Tr>
                     </Thead>
                     <Tbody>
                         {rolesFiltered.map(
-                            ({ name, description, permissionSetId, accessScopeId }) => (
+                            ({ name, description, permissionSetId, accessScopeId, traits }) => (
                                 <Tr key={name}>
                                     <Td dataLabel="Name">
                                         <AccessControlEntityLink
@@ -143,6 +124,7 @@ function RolesList({
                                             entityName={name}
                                         />
                                     </Td>
+                                    <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                     <Td dataLabel="Description">{description}</Td>
                                     <Td dataLabel="Permission set">
                                         <AccessControlEntityLink
@@ -152,21 +134,18 @@ function RolesList({
                                         />
                                     </Td>
                                     <Td dataLabel="Access scope">
-                                        {accessScopeId ? (
-                                            <AccessControlEntityLink
-                                                entityType="ACCESS_SCOPE"
-                                                entityId={accessScopeId}
-                                                entityName={getAccessScopeName(accessScopeId)}
-                                            />
-                                        ) : (
-                                            'Unrestricted'
-                                        )}
+                                        <AccessControlEntityLink
+                                            entityType="ACCESS_SCOPE"
+                                            entityId={accessScopeId}
+                                            entityName={getAccessScopeName(accessScopeId)}
+                                        />
                                     </Td>
                                     <Td
                                         actions={{
                                             disable:
+                                                !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
-                                                getIsDefaultRoleName(name) ||
+                                                !isUserResource(traits) ||
                                                 getHasRoleName(groups, name),
                                             items: [
                                                 {
@@ -205,7 +184,7 @@ function RolesList({
                     ''
                 )}
             </Modal>
-        </>
+        </PageSection>
     );
 }
 

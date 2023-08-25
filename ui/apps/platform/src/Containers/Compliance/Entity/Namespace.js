@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import pluralize from 'pluralize';
 
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
@@ -11,18 +11,20 @@ import Widget from 'Components/Widget';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
-import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import PageNotFound from 'Components/PageNotFound';
 import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data, entityId) {
     const defaultValue = {
@@ -54,6 +56,7 @@ const NamespacePage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -145,7 +148,11 @@ const NamespacePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.NAMESPACE} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.NAMESPACE}
+                                />
                                 {sidePanelMode && (
                                     <>
                                         <div
@@ -183,6 +190,8 @@ const NamespacePage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -193,6 +202,7 @@ const NamespacePage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

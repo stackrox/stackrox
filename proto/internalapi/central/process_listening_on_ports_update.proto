@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "google/protobuf/timestamp.proto";
+import "storage/process_listening_on_port.proto";
+
+package central;
+
+message ProcessListeningOnPortsUpdate {
+    repeated storage.ProcessListeningOnPortFromSensor processes_listening_on_ports = 1;
+    google.protobuf.Timestamp time = 2;
+}

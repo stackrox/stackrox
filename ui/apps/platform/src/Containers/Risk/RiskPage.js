@@ -48,15 +48,9 @@ const RiskPage = ({
     const filteredSearchOptions = searchOptions.filter(
         (option) => option !== 'Orchestrator Component'
     );
-    const autoFocusSearchInput = !deploymentId;
-
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <RiskPageHeader
-                isViewFiltered={isViewFiltered}
-                searchOptions={filteredSearchOptions}
-                autoFocusSearchInput={autoFocusSearchInput}
-            />
+            <RiskPageHeader isViewFiltered={isViewFiltered} searchOptions={filteredSearchOptions} />
             <PageBody>
                 <div className="flex-shrink-1 overflow-hidden w-full">
                     <RiskTablePanel

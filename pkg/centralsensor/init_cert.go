@@ -43,7 +43,9 @@ func GetClusterID(explicitID, idFromCert string) (string, error) {
 	}
 
 	if IsInitCertClusterID(id) {
-		return "", errors.Errorf("no concrete cluster ID was specified in conjunction with wildcard ID %q", id)
+		return "", errors.Errorf("no concrete cluster ID was specified in conjunction with wildcard ID %q. "+
+			"This may be caused by Central data not being persisted between restarts; you may try deploying Central with STORAGE=pvc. "+
+			"For other potential solutions reffer to https://access.redhat.com/solutions/6972449", id)
 	}
 
 	return id, nil

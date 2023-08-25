@@ -14,11 +14,14 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	userPkg "github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -30,6 +33,23 @@ const (
 	logoutPath       = "logout"
 )
 
+// Query parameters for roxctl authorization.
+const (
+	TokenQueryParameter             = "token"
+	RefreshTokenQueryParameter      = "refreshToken"
+	ExpiresAtQueryParameter         = "expiresAt"
+	AuthorizeCallbackQueryParameter = "authorizeCallback"
+)
+
+const (
+	testQueryParameter        = "test"
+	errorQueryParameter       = "error"
+	stateQueryParameter       = "state"
+	clientStateQueryParameter = "clientState"
+	typeQueryParameter        = "type"
+	userQueryParameter        = "user"
+)
+
 func (r *registryImpl) URLPathPrefix() string {
 	return r.urlPathPrefix
 }
@@ -38,10 +58,10 @@ func (r *registryImpl) errorURL(err error, typ string, clientState string, testM
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"test":  {strconv.FormatBool(testMode)},
-			"error": {err.Error()},
-			"type":  {typ},
-			"state": {clientState},
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			errorQueryParameter: {err.Error()},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -50,9 +70,9 @@ func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"token": {rawToken},
-			"type":  {typ},
-			"state": {clientState},
+			TokenQueryParameter: {rawToken},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -66,10 +86,10 @@ func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState str
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
-			"test":  {strconv.FormatBool(testMode)},
-			"user":  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
-			"type":  {typ},
-			"state": {clientState},
+			testQueryParameter:  {strconv.FormatBool(testMode)},
+			userQueryParameter:  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
+			typeQueryParameter:  {typ},
+			stateQueryParameter: {clientState},
 		}.Encode(),
 	}
 }
@@ -123,9 +143,15 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	providerID := req.URL.Path[len(prefix):]
-	clientState := req.URL.Query().Get("clientState")
-	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
-	clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
+	clientState := req.URL.Query().Get(clientStateQueryParameter)
+	testMode, _ := strconv.ParseBool(req.URL.Query().Get(testQueryParameter))
+	authorizeRoxctlCallbackURL := req.URL.Query().Get(AuthorizeCallbackQueryParameter)
+	state, err := idputil.AttachStateOrEmpty(clientState, testMode, authorizeRoxctlCallbackURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Attaching state: %v", err), http.StatusBadRequest)
+		return
+	}
+	clientState = state
 
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
@@ -156,13 +182,14 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-type tokenRefreshResponse struct {
+// TokenRefreshResponse holds the HTTP response from the token refresh endpoint.
+type TokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
 	Expiry time.Time `json:"expiry,omitempty"`
 }
 
 func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, error) {
-	refreshTokenCookie, err := req.Cookie(refreshTokenCookieName)
+	refreshTokenCookie, err := req.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusBadRequest, "could not obtain refresh token cookie: %v", err)
 	}
@@ -200,7 +227,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		httputil.SetCookie(httputil.ResponseHeaderFromContext(req.Context()), newRefreshCookie)
 	}
 
-	return &tokenRefreshResponse{
+	return &TokenRefreshResponse{
 		Token:  token.Token,
 		Expiry: token.Expiry(),
 	}, nil
@@ -231,7 +258,8 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
-	clientState, testMode := idputil.ParseClientState(clientState)
+	clientState, mode := idputil.ParseClientState(clientState)
+	testMode := mode == idputil.TestAuthMode
 
 	var provider Provider
 	if err == nil {
@@ -255,11 +283,24 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	authResp, err := backend.ProcessHTTPRequest(w, req)
 	if err != nil {
-		log.Errorf(fmt.Sprintf("error processing HTTP request for provider %s of type %s: %v",
-			provider.Name(), provider.Type(), err))
+		log.Errorf("error processing HTTP request for provider %s of type %s: %v",
+			provider.Name(), provider.Type(), err)
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
+	if authResp == nil || authResp.Claims == nil {
+		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
+		return
+	}
+
+	if provider.AttributeVerifier() != nil {
+		if err := provider.AttributeVerifier().Verify(authResp.Claims.Attributes); err != nil {
+			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
+			return
+		}
+	}
+
 	// We need all access for retrieving roles.
 	user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
 	if err != nil {
@@ -275,29 +316,54 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	userInfo := user.GetUserInfo()
 	if userInfo == nil {
-		err := errorhelpers.NewErrNotAuthorized("failed to get user info")
+		err := errox.NotAuthorized.CausedBy("failed to get user info")
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
-		err := errorhelpers.GenericNoValidRole()
-		r.error(w, err, typ, clientState, testMode)
+		r.error(w, auth.ErrNoValidRole, typ, clientState, testMode)
 		return
 	}
 
 	var tokenInfo *tokens.TokenInfo
 	var refreshCookie *http.Cookie
-	if authResp != nil {
-		tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
-		if err != nil {
-			r.error(w, err, typ, clientState, testMode)
-			return
-		}
+	tokenInfo, refreshCookie, err = r.issueTokenForResponse(req.Context(), provider, authResp)
+	if err != nil {
+		r.error(w, err, typ, clientState, testMode)
+		return
 	}
+
+	userPkg.LogSuccessfulUserLogin(log, user)
 
 	if tokenInfo == nil {
 		// Assume the ProcessHTTPRequest already took care of writing a response.
+		return
+	}
+
+	if mode == idputil.AuthorizeRoxctlMode {
+		callbackURL, err := url.Parse(clientState)
+		if err != nil {
+			r.error(w, errox.InvalidArgs.New("invalid callback URL for roxctl authorization"), typ,
+				clientState, false)
+			return
+		}
+		// Verify the callback URL again before doing the final redirect, ensuring we _only_ redirect to localhost and
+		// no unauthorized third-party.
+		if !netutil.IsLocalHost(callbackURL.Hostname()) {
+			r.error(w, errox.InvalidArgs.New("roxctl authorization has to specify localhost / "+
+				"127.0.0.1 as callback URL"), typ, clientState, false)
+		}
+		qp := callbackURL.Query()
+		qp.Set(TokenQueryParameter, tokenInfo.Token)
+		qp.Set(ExpiresAtQueryParameter, tokenInfo.Expiry().Format(time.RFC3339))
+		if refreshCookie != nil {
+			qp.Set(RefreshTokenQueryParameter, refreshCookie.Value)
+		}
+		callbackURL.RawQuery = qp.Encode()
+		w.Header().Set("Location", callbackURL.String())
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 
@@ -316,7 +382,7 @@ func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
 
 	// Whatever happens, make sure the cookie gets cleared.
 	clearCookie := &http.Cookie{
-		Name:     refreshTokenCookieName,
+		Name:     RefreshTokenCookieName,
 		Path:     r.sessionURLPrefix(),
 		HttpOnly: true,
 		Secure:   true,

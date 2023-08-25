@@ -5,10 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
@@ -18,8 +20,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	clusterDeleteCmd := &clusterDeleteCommand{env: cliEnvironment}
 
 	cbr := &cobra.Command{
-		Use:  "delete",
-		Args: cobra.NoArgs,
+		Use:   "delete",
+		Short: "Remove a Sensor from Central.",
+		Long:  "Remove a Sensor from Central, without deleting any orchestrator objects.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := clusterDeleteCmd.Construct(args, cmd); err != nil {
 				return err
@@ -44,14 +48,14 @@ type clusterDeleteCommand struct {
 	timeout time.Duration
 }
 
-func (cmd *clusterDeleteCommand) Construct(args []string, cbr *cobra.Command) error {
+func (cmd *clusterDeleteCommand) Construct(_ []string, cbr *cobra.Command) error {
 	cmd.timeout = flags.Timeout(cbr)
 	return nil
 }
 
 func (cmd *clusterDeleteCommand) Validate() error {
 	if cmd.name == "" {
-		return errorhelpers.ErrInvalidArgs
+		return common.ErrInvalidCommandOption
 	}
 	return nil
 }
@@ -59,7 +63,7 @@ func (cmd *clusterDeleteCommand) Validate() error {
 func (cmd *clusterDeleteCommand) Delete() error {
 	conn, err := cmd.env.GRPCConnection()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	service := v1.NewClustersServiceClient(conn)
 	clusters, err := cmd.getClusters(service)
@@ -78,14 +82,14 @@ func (cmd *clusterDeleteCommand) Delete() error {
 	}
 	if cluster == nil {
 		cmd.env.Logger().ErrfLn("Cluster with name %q not found. Valid clusters are [ %s ]", cmd.name, strings.Join(validClusters, " | "))
-		return errorhelpers.ErrNotFound
+		return errox.NotFound
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.timeout)
 	defer cancel()
 	_, err = service.DeleteCluster(ctx, &v1.ResourceByID{Id: cluster.GetId()})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not delete cluster: %q", cluster.GetId())
 	}
 
 	cmd.env.Logger().PrintfLn("Successfully deleted cluster %q\n", cmd.name)
@@ -97,7 +101,7 @@ func (cmd *clusterDeleteCommand) getClusters(svc v1.ClustersServiceClient) ([]*s
 	defer cancel()
 	clusterResponse, err := svc.GetClusters(ctx, &v1.GetClustersRequest{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not get clusters")
 	}
 	return clusterResponse.GetClusters(), nil
 }

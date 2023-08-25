@@ -8,19 +8,24 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type contextForTesting struct {
 	yamls []string
 }
 
-func (c *contextForTesting) ParseAndValidateObject(data []byte) (k8sutil.Object, error) {
+func (c *contextForTesting) ParseAndValidateObject(data []byte) (*unstructured.Unstructured, error) {
 	yamlStr := string(data)
 	c.yamls = append(c.yamls, yamlStr)
 	return k8sutil.UnstructuredFromYAML(yamlStr)
 }
 
 func (c *contextForTesting) InCertRotationMode() bool {
+	return false
+}
+
+func (c *contextForTesting) IsPodSecurityEnabled() bool {
 	return false
 }
 

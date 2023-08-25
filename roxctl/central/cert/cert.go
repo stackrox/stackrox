@@ -5,18 +5,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
-	"fmt"
 	"io"
 	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/ioutils"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
@@ -33,7 +34,9 @@ type centralCertCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	centralCertCommand := &centralCertCommand{env: cliEnvironment}
 	cbr := &cobra.Command{
-		Use: "cert",
+		Use:   "cert",
+		Short: "Download certificate chain for the Central service.",
+		Long:  "Download certificate chain for the Central service or its associated ingress or load balancer, if one exists.",
 		RunE: util.RunENoArgs(func(cmd *cobra.Command) error {
 			if err := centralCertCommand.construct(cmd); err != nil {
 				return err
@@ -76,7 +79,7 @@ func (cmd *centralCertCommand) certs() error {
 	// Verify that at least 1 certificate was obtained from the connection.
 	certs := conn.ConnectionState().PeerCertificates
 	if len(certs) == 0 {
-		return errors.New("server returned no certificates")
+		return errox.NotFound.New("server returned no certificates")
 	}
 
 	// "File" to output PEM certificate to.
@@ -85,7 +88,7 @@ func (cmd *centralCertCommand) certs() error {
 	switch cmd.filename {
 	case "-":
 		// Default to STDOUT.
-		handle = os.Stdout
+		handle = ioutils.NopWriteCloser(cmd.env.InputOutput().Out())
 	default:
 		// Open the given filename.
 		handle, err = os.Create(cmd.filename)
@@ -95,7 +98,7 @@ func (cmd *centralCertCommand) certs() error {
 	}
 
 	// Print out information about the leaf cert to STDERR.
-	writeCertInfo(os.Stderr, certs[0])
+	writeCertInfo(cmd.env.Logger(), certs[0])
 
 	// Write out the leaf cert in PEM format.
 	if err := writeCertPEM(handle, certs[0]); err != nil {
@@ -122,9 +125,10 @@ func writeCertPEM(writer io.Writer, cert *x509.Certificate) error {
 	return nil
 }
 
-func writeCertInfo(writer io.Writer, cert *x509.Certificate) {
-	fmt.Fprintf(writer, "Issuer:  %v\n", cert.Issuer)
-	fmt.Fprintf(writer, "Subject: %v\n", cert.Subject)
-	fmt.Fprintf(writer, "Not valid before: %v\n", cert.NotBefore)
-	fmt.Fprintf(writer, "Not valid after:  %v\n", cert.NotAfter)
+func writeCertInfo(logger logger.Logger, cert *x509.Certificate) {
+	logger.InfofLn("Issuer: %v", cert.Issuer)
+	logger.InfofLn("Issuer:  %v", cert.Issuer)
+	logger.InfofLn("Subject: %v", cert.Subject)
+	logger.InfofLn("Not valid before: %v", cert.NotBefore)
+	logger.InfofLn("Not valid after:  %v", cert.NotAfter)
 }

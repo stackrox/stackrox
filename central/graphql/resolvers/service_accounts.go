@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -58,10 +59,7 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)))
-	return resolvers.([]*serviceAccountResolver), err
+	return resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
 }
 
 // ServiceAccountCount returns count of all service accounts across infrastructure
@@ -74,11 +72,11 @@ func (resolver *Resolver) ServiceAccountCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ServiceAccountsDataStore.Search(ctx, query)
+	count, err := resolver.ServiceAccountsDataStore.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 func (resolver *serviceAccountResolver) K8sRoleCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -129,11 +127,7 @@ func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args Pagin
 		return nil, err
 	}
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(roleResolvers, nil)
-
-	return resolvers.([]*k8SRoleResolver), err
+	return paginate(pagination, roleResolvers, nil)
 }
 
 func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, passedQuery *v1.Query) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {
@@ -182,14 +176,14 @@ func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, arg
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.ConjunctionQuery(scopedQuery, q))
+	count, err := resolver.root.DeploymentDataStore.Count(ctx, search.ConjunctionQuery(scopedQuery, q))
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
-// Permission returns which scopes do the permissions for the service acc
+// ScopedPermissions returns which scopes do the permissions for the service acc
 func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ScopedPermissions")
 	if err := readK8sRoles(ctx); err != nil {
@@ -250,7 +244,13 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
+	ctx = scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    saClusterID,
+	})
+
 	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
+
 	if err != nil {
 		return evaluators, err
 	}
@@ -263,7 +263,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	return evaluators, nil
 }
 
-func (resolver *serviceAccountResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+func (resolver *serviceAccountResolver) getClusterEvaluator(_ context.Context) k8srbac.EvaluatorForContext {
 	saClusterID := resolver.data.GetClusterId()
 
 	return rbacUtils.NewClusterPermissionEvaluator(saClusterID,

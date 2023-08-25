@@ -3,13 +3,13 @@ package probeupload
 import "regexp"
 
 var (
-	moduleNameRegexStr = `(?:[0-9a-f]{64}|\d+\.\d+\.\d+)`
+	moduleNameRegexStr = `(?:[0-9a-f]{64}|\d+\.\d+\.\d+(?:-rc\d+)?)`
 	moduleNameRegex    = regexp.MustCompile(`^` + moduleNameRegexStr + `$`)
 
 	probeNameRegexStr = `collector-(?:ebpf-\d+\.[^/]+\.o|\d+\.[^/]+\.ko)\.gz`
 	probeNameRegex    = regexp.MustCompile(`^` + probeNameRegexStr + `$`)
 
-	filePathRegex = regexp.MustCompile(`^` + moduleNameRegexStr + `/` + probeNameRegexStr + `$`)
+	moduleAndProbeNameRegex = regexp.MustCompile(`^` + moduleNameRegexStr + `/` + probeNameRegexStr + `$`)
 )
 
 // IsValidModuleVersion returns whether str is a valid module version.
@@ -24,5 +24,5 @@ func IsValidProbeName(str string) bool {
 
 // IsValidFilePath returns whether str is a valid file path for a probe.
 func IsValidFilePath(str string) bool {
-	return filePathRegex.MatchString(str)
+	return moduleAndProbeNameRegex.MatchString(str)
 }

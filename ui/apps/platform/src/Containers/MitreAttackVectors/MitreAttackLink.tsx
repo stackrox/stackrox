@@ -8,21 +8,20 @@ type MitreAttackLinkProps = {
 };
 
 function MitreAttackLink({ href, id }: MitreAttackLinkProps): ReactElement {
-    /* eslint-disable jsx-a11y/control-has-associated-label, jsx-a11y/anchor-has-content */
     return (
         <Button
             variant="link"
-            component={(props) => (
-                <a {...props} href={href} target="_blank" rel="noopener noreferrer" />
-            )}
+            isInline
+            component="a"
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
             icon={<ExternalLinkSquareAltIcon />}
             iconPosition="right"
-            isInline
         >
             {id}
         </Button>
     );
-    /* eslint-enable jsx-a11y/control-has-associated-label, jsx-a11y/anchor-has-content */
 }
 
 export default MitreAttackLink;

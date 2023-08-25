@@ -5,6 +5,7 @@ package storage
 
 import (
 	fmt "fmt"
+	types "github.com/gogo/protobuf/types"
 	proto "github.com/golang/protobuf/proto"
 	io "io"
 	math "math"
@@ -214,12 +215,13 @@ func (m *BannerConfig) Clone() *BannerConfig {
 }
 
 type PublicConfig struct {
-	LoginNotice          *LoginNotice  `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice,proto3" json:"login_notice,omitempty"`
-	Header               *BannerConfig `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
-	Footer               *BannerConfig `protobuf:"bytes,3,opt,name=footer,proto3" json:"footer,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
+	LoginNotice          *LoginNotice            `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice,proto3" json:"login_notice,omitempty"`
+	Header               *BannerConfig           `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
+	Footer               *BannerConfig           `protobuf:"bytes,3,opt,name=footer,proto3" json:"footer,omitempty"`
+	Telemetry            *TelemetryConfiguration `protobuf:"bytes,4,opt,name=telemetry,proto3" json:"telemetry,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
 }
 
 func (m *PublicConfig) Reset()         { *m = PublicConfig{} }
@@ -276,6 +278,13 @@ func (m *PublicConfig) GetFooter() *BannerConfig {
 	return nil
 }
 
+func (m *PublicConfig) GetTelemetry() *TelemetryConfiguration {
+	if m != nil {
+		return m.Telemetry
+	}
+	return nil
+}
+
 func (m *PublicConfig) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -289,6 +298,7 @@ func (m *PublicConfig) Clone() *PublicConfig {
 	cloned.LoginNotice = m.LoginNotice.Clone()
 	cloned.Header = m.Header.Clone()
 	cloned.Footer = m.Footer.Clone()
+	cloned.Telemetry = m.Telemetry.Clone()
 	return cloned
 }
 
@@ -389,23 +399,195 @@ func (m *AlertRetentionConfig) Clone() *AlertRetentionConfig {
 }
 
 // next available tag: 5
+type DecommissionedClusterRetentionConfig struct {
+	RetentionDurationDays int32             `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
+	IgnoreClusterLabels   map[string]string `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels,proto3" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	LastUpdated           *types.Timestamp  `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	CreatedAt             *types.Timestamp  `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral  struct{}          `json:"-"`
+	XXX_unrecognized      []byte            `json:"-"`
+	XXX_sizecache         int32             `json:"-"`
+}
+
+func (m *DecommissionedClusterRetentionConfig) Reset()         { *m = DecommissionedClusterRetentionConfig{} }
+func (m *DecommissionedClusterRetentionConfig) String() string { return proto.CompactTextString(m) }
+func (*DecommissionedClusterRetentionConfig) ProtoMessage()    {}
+func (*DecommissionedClusterRetentionConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_33903d79f8815efc, []int{4}
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DecommissionedClusterRetentionConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig.Merge(m, src)
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *DecommissionedClusterRetentionConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_DecommissionedClusterRetentionConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DecommissionedClusterRetentionConfig proto.InternalMessageInfo
+
+func (m *DecommissionedClusterRetentionConfig) GetRetentionDurationDays() int32 {
+	if m != nil {
+		return m.RetentionDurationDays
+	}
+	return 0
+}
+
+func (m *DecommissionedClusterRetentionConfig) GetIgnoreClusterLabels() map[string]string {
+	if m != nil {
+		return m.IgnoreClusterLabels
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) GetLastUpdated() *types.Timestamp {
+	if m != nil {
+		return m.LastUpdated
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) GetCreatedAt() *types.Timestamp {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DecommissionedClusterRetentionConfig) Clone() *DecommissionedClusterRetentionConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DecommissionedClusterRetentionConfig)
+	*cloned = *m
+
+	if m.IgnoreClusterLabels != nil {
+		cloned.IgnoreClusterLabels = make(map[string]string, len(m.IgnoreClusterLabels))
+		for k, v := range m.IgnoreClusterLabels {
+			cloned.IgnoreClusterLabels[k] = v
+		}
+	}
+	cloned.LastUpdated = m.LastUpdated.Clone()
+	cloned.CreatedAt = m.CreatedAt.Clone()
+	return cloned
+}
+
+// next available tag: 4
+type ReportRetentionConfig struct {
+	HistoryRetentionDurationDays           uint32   `protobuf:"varint,1,opt,name=history_retention_duration_days,json=historyRetentionDurationDays,proto3" json:"history_retention_duration_days,omitempty"`
+	DownloadableReportRetentionDays        uint32   `protobuf:"varint,2,opt,name=downloadable_report_retention_days,json=downloadableReportRetentionDays,proto3" json:"downloadable_report_retention_days,omitempty"`
+	DownloadableReportGlobalRetentionBytes uint32   `protobuf:"varint,3,opt,name=downloadable_report_global_retention_bytes,json=downloadableReportGlobalRetentionBytes,proto3" json:"downloadable_report_global_retention_bytes,omitempty"`
+	XXX_NoUnkeyedLiteral                   struct{} `json:"-"`
+	XXX_unrecognized                       []byte   `json:"-"`
+	XXX_sizecache                          int32    `json:"-"`
+}
+
+func (m *ReportRetentionConfig) Reset()         { *m = ReportRetentionConfig{} }
+func (m *ReportRetentionConfig) String() string { return proto.CompactTextString(m) }
+func (*ReportRetentionConfig) ProtoMessage()    {}
+func (*ReportRetentionConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_33903d79f8815efc, []int{5}
+}
+func (m *ReportRetentionConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ReportRetentionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ReportRetentionConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ReportRetentionConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReportRetentionConfig.Merge(m, src)
+}
+func (m *ReportRetentionConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *ReportRetentionConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReportRetentionConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReportRetentionConfig proto.InternalMessageInfo
+
+func (m *ReportRetentionConfig) GetHistoryRetentionDurationDays() uint32 {
+	if m != nil {
+		return m.HistoryRetentionDurationDays
+	}
+	return 0
+}
+
+func (m *ReportRetentionConfig) GetDownloadableReportRetentionDays() uint32 {
+	if m != nil {
+		return m.DownloadableReportRetentionDays
+	}
+	return 0
+}
+
+func (m *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint32 {
+	if m != nil {
+		return m.DownloadableReportGlobalRetentionBytes
+	}
+	return 0
+}
+
+func (m *ReportRetentionConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ReportRetentionConfig) Clone() *ReportRetentionConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ReportRetentionConfig)
+	*cloned = *m
+
+	return cloned
+}
+
+// next available tag:7
 type PrivateConfig struct {
 	// Types that are valid to be assigned to AlertRetention:
 	//	*PrivateConfig_DEPRECATEDAlertRetentionDurationDays
 	//	*PrivateConfig_AlertConfig
-	AlertRetention                      isPrivateConfig_AlertRetention `protobuf_oneof:"alert_retention"`
-	ImageRetentionDurationDays          int32                          `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
-	ExpiredVulnReqRetentionDurationDays int32                          `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
-	XXX_NoUnkeyedLiteral                struct{}                       `json:"-"`
-	XXX_unrecognized                    []byte                         `json:"-"`
-	XXX_sizecache                       int32                          `json:"-"`
+	AlertRetention                      isPrivateConfig_AlertRetention        `protobuf_oneof:"alert_retention"`
+	ImageRetentionDurationDays          int32                                 `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
+	ExpiredVulnReqRetentionDurationDays int32                                 `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
+	DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention,proto3" json:"decommissioned_cluster_retention,omitempty"`
+	ReportRetentionConfig               *ReportRetentionConfig                `protobuf:"bytes,6,opt,name=report_retention_config,json=reportRetentionConfig,proto3" json:"report_retention_config,omitempty"`
+	XXX_NoUnkeyedLiteral                struct{}                              `json:"-"`
+	XXX_unrecognized                    []byte                                `json:"-"`
+	XXX_sizecache                       int32                                 `json:"-"`
 }
 
 func (m *PrivateConfig) Reset()         { *m = PrivateConfig{} }
 func (m *PrivateConfig) String() string { return proto.CompactTextString(m) }
 func (*PrivateConfig) ProtoMessage()    {}
 func (*PrivateConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_33903d79f8815efc, []int{4}
+	return fileDescriptor_33903d79f8815efc, []int{6}
 }
 func (m *PrivateConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -505,6 +687,20 @@ func (m *PrivateConfig) GetExpiredVulnReqRetentionDurationDays() int32 {
 	return 0
 }
 
+func (m *PrivateConfig) GetDecommissionedClusterRetention() *DecommissionedClusterRetentionConfig {
+	if m != nil {
+		return m.DecommissionedClusterRetention
+	}
+	return nil
+}
+
+func (m *PrivateConfig) GetReportRetentionConfig() *ReportRetentionConfig {
+	if m != nil {
+		return m.ReportRetentionConfig
+	}
+	return nil
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*PrivateConfig) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
@@ -526,6 +722,8 @@ func (m *PrivateConfig) Clone() *PrivateConfig {
 	if m.AlertRetention != nil {
 		cloned.AlertRetention = m.AlertRetention.Clone()
 	}
+	cloned.DecommissionedClusterRetention = m.DecommissionedClusterRetention.Clone()
+	cloned.ReportRetentionConfig = m.ReportRetentionConfig.Clone()
 	return cloned
 }
 
@@ -541,7 +739,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_33903d79f8815efc, []int{5}
+	return fileDescriptor_33903d79f8815efc, []int{7}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -605,6 +803,9 @@ func init() {
 	proto.RegisterType((*BannerConfig)(nil), "storage.BannerConfig")
 	proto.RegisterType((*PublicConfig)(nil), "storage.PublicConfig")
 	proto.RegisterType((*AlertRetentionConfig)(nil), "storage.AlertRetentionConfig")
+	proto.RegisterType((*DecommissionedClusterRetentionConfig)(nil), "storage.DecommissionedClusterRetentionConfig")
+	proto.RegisterMapType((map[string]string)(nil), "storage.DecommissionedClusterRetentionConfig.IgnoreClusterLabelsEntry")
+	proto.RegisterType((*ReportRetentionConfig)(nil), "storage.ReportRetentionConfig")
 	proto.RegisterType((*PrivateConfig)(nil), "storage.PrivateConfig")
 	proto.RegisterType((*Config)(nil), "storage.Config")
 }
@@ -612,48 +813,69 @@ func init() {
 func init() { proto.RegisterFile("storage/config.proto", fileDescriptor_33903d79f8815efc) }
 
 var fileDescriptor_33903d79f8815efc = []byte{
-	// 643 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x94, 0xdd, 0x4e, 0x13, 0x41,
-	0x14, 0xc7, 0xbb, 0xfd, 0x42, 0x4e, 0x0b, 0xd4, 0x4d, 0x35, 0x95, 0x84, 0x4a, 0x16, 0x8c, 0xe5,
-	0xc2, 0x9a, 0x80, 0x89, 0x89, 0xc6, 0x8b, 0x96, 0x36, 0x62, 0x52, 0x08, 0x19, 0x3e, 0x42, 0xbc,
-	0xd9, 0x4c, 0xbb, 0x87, 0xba, 0x61, 0xd8, 0x59, 0xa6, 0xb3, 0x84, 0x72, 0xeb, 0x4b, 0xf8, 0x02,
-	0xbe, 0x88, 0x57, 0x5e, 0x7a, 0xed, 0x95, 0xa9, 0x2f, 0x62, 0x76, 0x76, 0xb6, 0x5d, 0x48, 0x69,
-	0xe3, 0xdd, 0xcc, 0xc9, 0xff, 0xfc, 0x72, 0xfe, 0xe7, 0xcc, 0x19, 0x28, 0x0f, 0x24, 0x17, 0xb4,
-	0x8f, 0xaf, 0x7b, 0xdc, 0x3b, 0x77, 0xfb, 0x75, 0x5f, 0x70, 0xc9, 0xcd, 0x05, 0x1d, 0xb5, 0xde,
-	0x43, 0xa1, 0xc3, 0xfb, 0xae, 0x77, 0xc0, 0xa5, 0xdb, 0x43, 0xb3, 0x02, 0x0b, 0xe8, 0xd1, 0x2e,
-	0x43, 0xa7, 0x62, 0xac, 0x1b, 0xb5, 0x47, 0x24, 0xbe, 0x9a, 0x26, 0x64, 0x25, 0xde, 0xc8, 0x4a,
-	0x7a, 0xdd, 0xa8, 0x2d, 0x12, 0x75, 0xb6, 0x46, 0x06, 0x14, 0x9b, 0xd4, 0xf3, 0x50, 0xec, 0x2a,
-	0xf8, 0xff, 0xa5, 0x9b, 0x75, 0xc8, 0x0e, 0xdc, 0x5b, 0xac, 0x64, 0xd6, 0x8d, 0xda, 0xf2, 0xf6,
-	0x6a, 0x5d, 0xd7, 0x54, 0x4f, 0x22, 0xeb, 0x47, 0xee, 0x2d, 0x12, 0xa5, 0x33, 0xcb, 0x90, 0xeb,
-	0x71, 0xc6, 0x45, 0x25, 0xab, 0x20, 0xd1, 0xc5, 0xdc, 0x82, 0x52, 0x97, 0xf6, 0x2e, 0xfa, 0x82,
-	0x07, 0x9e, 0x63, 0x47, 0x82, 0x9c, 0x12, 0xac, 0x4c, 0xe2, 0xbb, 0x61, 0xd8, 0xda, 0x81, 0x6c,
-	0x88, 0x33, 0x17, 0x21, 0x77, 0x72, 0x70, 0xd4, 0x3e, 0x2e, 0xa5, 0xc2, 0xe3, 0xd1, 0x7e, 0xa3,
-	0xd3, 0x29, 0x19, 0x26, 0x40, 0x7e, 0xbf, 0xdd, 0xfa, 0x74, 0xb2, 0x5f, 0x4a, 0x87, 0xe1, 0x4e,
-	0x83, 0x7c, 0x6c, 0x97, 0x32, 0xd6, 0x77, 0x03, 0x8a, 0x87, 0x41, 0x97, 0xb9, 0x3d, 0x6d, 0xf2,
-	0x2d, 0x14, 0x59, 0xd8, 0x32, 0xdb, 0x53, 0x3d, 0x53, 0x4e, 0x0b, 0xdb, 0xe5, 0x71, 0xf9, 0x89,
-	0x7e, 0x92, 0x02, 0x4b, 0x34, 0xf7, 0x15, 0xe4, 0xbf, 0x20, 0x75, 0x50, 0xa8, 0x2e, 0x14, 0xb6,
-	0x9f, 0x4c, 0x75, 0x4c, 0xb4, 0x28, 0x94, 0x9f, 0x73, 0x2e, 0x51, 0xa8, 0x06, 0x3d, 0x2c, 0x8f,
-	0x44, 0xd6, 0x8f, 0x0c, 0x94, 0x1b, 0x0c, 0x85, 0x24, 0x28, 0xd1, 0x93, 0x2e, 0xf7, 0x74, 0xbd,
-	0xc7, 0xf0, 0x52, 0xe0, 0x80, 0xb3, 0x6b, 0x74, 0x6c, 0x07, 0x7d, 0xc6, 0x87, 0xb6, 0x88, 0x25,
-	0xb6, 0x13, 0x08, 0x1a, 0x1d, 0xe8, 0x70, 0xa0, 0xac, 0xe4, 0xc8, 0x46, 0x2c, 0x6f, 0x29, 0xf5,
-	0x98, 0xd7, 0xd2, 0xda, 0x16, 0x1d, 0x0e, 0x42, 0xaa, 0x83, 0x0c, 0x25, 0x3a, 0xb6, 0x08, 0x3c,
-	0xe9, 0x5e, 0xe2, 0x83, 0xd4, 0x74, 0x44, 0xd5, 0x72, 0x12, 0xa9, 0xa7, 0x53, 0x3b, 0xb0, 0x41,
-	0x19, 0x9b, 0x4b, 0xcc, 0x28, 0xe2, 0x73, 0xca, 0xd8, 0x4c, 0xda, 0x29, 0xd4, 0xa8, 0x94, 0x78,
-	0xe9, 0xcb, 0xf9, 0xd6, 0xb3, 0x0a, 0xb9, 0x39, 0xd6, 0xcf, 0xf2, 0x7e, 0x06, 0x5b, 0x13, 0xee,
-	0xbc, 0x5a, 0x73, 0x0a, 0xfc, 0x62, 0x9c, 0x30, 0xab, 0x62, 0xeb, 0x77, 0x1a, 0x96, 0x0e, 0x85,
-	0x7b, 0x4d, 0x25, 0xea, 0xe9, 0x9d, 0x41, 0xad, 0xd5, 0x3e, 0x24, 0xed, 0xdd, 0xc6, 0x71, 0xbb,
-	0x65, 0xd3, 0x70, 0xc0, 0xb3, 0xc7, 0xb7, 0x97, 0x22, 0x9b, 0x93, 0x8c, 0xbb, 0x2f, 0xe2, 0x8e,
-	0x8b, 0x26, 0x14, 0x23, 0x5c, 0xf4, 0x33, 0xe8, 0x57, 0xb6, 0x36, 0x7e, 0x65, 0xd3, 0x1e, 0xd3,
-	0x5e, 0x8a, 0x14, 0x54, 0x92, 0xae, 0xae, 0x01, 0x6b, 0xee, 0x25, 0xed, 0xcf, 0x9b, 0xfd, 0xaa,
-	0x12, 0x4d, 0x2f, 0xe3, 0x04, 0x6a, 0x78, 0xe3, 0xbb, 0x02, 0x1d, 0xfb, 0x3a, 0x60, 0x9e, 0x2d,
-	0xf0, 0x6a, 0xce, 0x90, 0x36, 0xb4, 0xfe, 0x34, 0x60, 0x1e, 0xc1, 0xab, 0xa9, 0xd8, 0xe6, 0x63,
-	0x58, 0xb9, 0xd7, 0x2c, 0xeb, 0xab, 0x01, 0x79, 0x5d, 0xf7, 0x3b, 0x58, 0xf2, 0xd5, 0x4e, 0xc7,
-	0xe6, 0x8d, 0x7b, 0x2b, 0x96, 0xdc, 0x78, 0x52, 0xf4, 0x93, 0xfb, 0xff, 0x01, 0x96, 0xfd, 0x68,
-	0x44, 0x71, 0x72, 0xb4, 0xce, 0x4f, 0x27, 0xc9, 0xc9, 0x09, 0x92, 0x25, 0x3f, 0x79, 0x6d, 0xbe,
-	0xf9, 0x39, 0xaa, 0x1a, 0xbf, 0x46, 0x55, 0xe3, 0xcf, 0xa8, 0x6a, 0x7c, 0xfb, 0x5b, 0x4d, 0xc1,
-	0x33, 0x97, 0xd7, 0x07, 0x92, 0xf6, 0x2e, 0x04, 0xbf, 0x89, 0xfe, 0xe7, 0x98, 0xf4, 0x39, 0xfe,
-	0xa7, 0xbb, 0x79, 0x15, 0xdf, 0xf9, 0x17, 0x00, 0x00, 0xff, 0xff, 0xd6, 0xb3, 0x1e, 0x3e, 0xcf,
-	0x05, 0x00, 0x00,
+	// 988 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x56, 0xdd, 0x6e, 0xdb, 0x36,
+	0x14, 0x8e, 0x62, 0x27, 0x5d, 0x8e, 0xed, 0xd6, 0xd3, 0x92, 0xd5, 0x33, 0x56, 0x27, 0x70, 0xb3,
+	0xcd, 0x1d, 0x50, 0x07, 0x70, 0x87, 0xfd, 0x74, 0xc8, 0x85, 0x13, 0xbb, 0x3f, 0x98, 0x53, 0x04,
+	0xcc, 0x0f, 0x8a, 0xde, 0x08, 0xb4, 0x75, 0xe2, 0x0a, 0xa1, 0x45, 0x95, 0xa2, 0xd2, 0x38, 0xb7,
+	0xbb, 0xd8, 0x2b, 0xec, 0x62, 0x6f, 0xb0, 0xb7, 0xd8, 0xd5, 0x2e, 0xf7, 0x08, 0x43, 0xb6, 0x07,
+	0x19, 0x48, 0x51, 0x8a, 0x92, 0x28, 0xce, 0x7a, 0x27, 0x92, 0xdf, 0xf9, 0x78, 0xf8, 0xf1, 0x9c,
+	0x8f, 0x82, 0xe5, 0x50, 0x72, 0x41, 0xc7, 0xb8, 0x31, 0xe2, 0xfe, 0x91, 0x37, 0x6e, 0x07, 0x82,
+	0x4b, 0x6e, 0xdf, 0x31, 0xb3, 0xf5, 0xd5, 0x31, 0xe7, 0x63, 0x86, 0x1b, 0x7a, 0x7a, 0x18, 0x1d,
+	0x6d, 0x48, 0x6f, 0x82, 0xa1, 0xa4, 0x93, 0x20, 0x46, 0xd6, 0xef, 0x27, 0xf1, 0x12, 0x19, 0x4e,
+	0x50, 0x8a, 0x69, 0xbc, 0xd0, 0xfc, 0x11, 0x4a, 0x03, 0x3e, 0xf6, 0xfc, 0x57, 0x5c, 0x7a, 0x23,
+	0xb4, 0x6b, 0x70, 0x07, 0x7d, 0x3a, 0x64, 0xe8, 0xd6, 0xac, 0x35, 0xab, 0xf5, 0x11, 0x49, 0x86,
+	0xb6, 0x0d, 0x45, 0x89, 0xa7, 0xb2, 0x36, 0xbf, 0x66, 0xb5, 0x96, 0x88, 0xfe, 0x6e, 0x9e, 0x5b,
+	0x50, 0xde, 0xa2, 0xbe, 0x8f, 0x62, 0x5b, 0xa7, 0xf5, 0x61, 0xe1, 0x76, 0x1b, 0x8a, 0xa1, 0x77,
+	0x86, 0xb5, 0xc2, 0x9a, 0xd5, 0xba, 0xdb, 0xa9, 0xb7, 0x4d, 0x8e, 0xed, 0x2c, 0x65, 0x7b, 0xcf,
+	0x3b, 0x43, 0xa2, 0x71, 0xf6, 0x32, 0x2c, 0x8c, 0x38, 0xe3, 0xa2, 0x56, 0xd4, 0x24, 0xf1, 0xc0,
+	0x7e, 0x04, 0xd5, 0x21, 0x1d, 0x1d, 0x8f, 0x05, 0x8f, 0x7c, 0xd7, 0x89, 0x01, 0x0b, 0x1a, 0x70,
+	0xef, 0x62, 0x7e, 0x5b, 0x4d, 0x37, 0x9f, 0x40, 0x51, 0xd1, 0xd9, 0x4b, 0xb0, 0x70, 0xf0, 0x6a,
+	0xaf, 0xbf, 0x5f, 0x9d, 0x53, 0x9f, 0x7b, 0x3b, 0xdd, 0xc1, 0xa0, 0x6a, 0xd9, 0x00, 0x8b, 0x3b,
+	0xfd, 0xde, 0xcb, 0x83, 0x9d, 0xea, 0xbc, 0x9a, 0x1e, 0x74, 0xc9, 0xf3, 0x7e, 0xb5, 0xd0, 0xfc,
+	0xd7, 0x82, 0xf2, 0x6e, 0x34, 0x64, 0xde, 0xc8, 0x1c, 0xf2, 0x3b, 0x28, 0x33, 0x25, 0x99, 0xe3,
+	0x6b, 0xcd, 0xf4, 0x49, 0x4b, 0x9d, 0xe5, 0x34, 0xfd, 0x8c, 0x9e, 0xa4, 0xc4, 0x32, 0xe2, 0x3e,
+	0x86, 0xc5, 0xb7, 0x48, 0x5d, 0x14, 0x5a, 0x85, 0x52, 0x67, 0x25, 0xf7, 0xc4, 0xc4, 0x80, 0x14,
+	0xfc, 0x88, 0x73, 0x89, 0x42, 0x0b, 0x74, 0x33, 0x3c, 0x06, 0xd9, 0x9b, 0xb0, 0x94, 0x5e, 0xae,
+	0x56, 0xa8, 0xd4, 0x59, 0x4d, 0x23, 0xf6, 0x93, 0x95, 0x38, 0x28, 0x12, 0x54, 0x7a, 0xdc, 0x27,
+	0x17, 0x11, 0xcd, 0x3f, 0x0a, 0xb0, 0xdc, 0x65, 0x28, 0x24, 0x41, 0x89, 0xbe, 0x5a, 0x35, 0xc7,
+	0xdd, 0x87, 0xaf, 0x04, 0x86, 0x9c, 0x9d, 0xa0, 0xeb, 0xb8, 0x18, 0x30, 0x3e, 0x75, 0x44, 0x02,
+	0x71, 0x5c, 0xc3, 0xe4, 0xb8, 0x74, 0x1a, 0x6a, 0x25, 0x16, 0xc8, 0xc3, 0x04, 0xde, 0xd3, 0xe8,
+	0x94, 0xaf, 0x67, 0xb0, 0x3d, 0x3a, 0x0d, 0x15, 0xab, 0x8b, 0x0c, 0x25, 0xba, 0x8e, 0x88, 0x7c,
+	0x55, 0xae, 0x37, 0xb2, 0xce, 0xc7, 0xac, 0x06, 0x4e, 0x62, 0x74, 0x3e, 0xeb, 0x00, 0x1e, 0x52,
+	0xc6, 0x6e, 0x65, 0x2c, 0x68, 0xc6, 0x55, 0xca, 0xd8, 0x4c, 0xb6, 0x43, 0x68, 0x51, 0x29, 0x71,
+	0x12, 0xc8, 0xdb, 0x8f, 0x5e, 0xd4, 0x94, 0xeb, 0x29, 0x7e, 0xd6, 0xd9, 0x5f, 0xc3, 0xa3, 0x0b,
+	0xde, 0xdb, 0x72, 0x5d, 0xd0, 0xc4, 0x5f, 0xa4, 0x01, 0xb3, 0x32, 0x6e, 0xfe, 0x56, 0x80, 0xf5,
+	0x1e, 0x8e, 0xf8, 0x64, 0xe2, 0x85, 0xa1, 0xc7, 0x7d, 0x74, 0xb7, 0x59, 0x14, 0x4a, 0x14, 0x57,
+	0x2f, 0xf5, 0x5b, 0xb8, 0x3f, 0xfb, 0x12, 0x57, 0x44, 0x6e, 0xea, 0x67, 0xb0, 0xe2, 0x8d, 0x7d,
+	0x2e, 0xd0, 0x19, 0xc5, 0xc4, 0x0e, 0xa3, 0x43, 0x64, 0xea, 0x92, 0x0a, 0xad, 0x52, 0xe7, 0x59,
+	0x5a, 0x70, 0xff, 0x27, 0x8b, 0xf6, 0x4b, 0x4d, 0x65, 0x16, 0x07, 0x9a, 0xa8, 0xef, 0x4b, 0x31,
+	0x25, 0x9f, 0x78, 0xd7, 0x57, 0xec, 0x4d, 0x28, 0x33, 0x1a, 0x4a, 0x27, 0x0a, 0x5c, 0x2a, 0xd1,
+	0x35, 0x5d, 0x51, 0x6f, 0xc7, 0xde, 0xd7, 0x4e, 0xbc, 0xaf, 0xbd, 0x9f, 0x78, 0x1f, 0x29, 0x29,
+	0xfc, 0x41, 0x0c, 0xb7, 0x7f, 0x00, 0x18, 0x09, 0x54, 0x9f, 0x0e, 0x95, 0xa6, 0x41, 0x66, 0x05,
+	0x2f, 0x19, 0x74, 0x57, 0xd6, 0x9f, 0x41, 0xed, 0xa6, 0x54, 0xed, 0x2a, 0x14, 0x8e, 0x71, 0xaa,
+	0x55, 0x5b, 0x22, 0xea, 0x53, 0xd9, 0xd4, 0x09, 0x65, 0x11, 0x1a, 0xaf, 0x8b, 0x07, 0x4f, 0xe7,
+	0xbf, 0xb7, 0x9a, 0xbf, 0xcc, 0xc3, 0x0a, 0xc1, 0x80, 0x5f, 0x6f, 0xb2, 0x3e, 0xac, 0xbe, 0xf5,
+	0x94, 0x76, 0xb3, 0x9b, 0xab, 0x42, 0x3e, 0x37, 0xb0, 0xfc, 0xca, 0xfa, 0x09, 0x9a, 0x2e, 0x7f,
+	0xef, 0x33, 0x4e, 0x5d, 0x65, 0xbb, 0x8e, 0xd0, 0x9b, 0x65, 0x29, 0x93, 0x86, 0xaa, 0x90, 0xd5,
+	0x2c, 0xf2, 0x4a, 0x56, 0x9a, 0xec, 0x0d, 0x7c, 0x9d, 0x47, 0x36, 0x66, 0x7c, 0x48, 0x59, 0x86,
+	0x73, 0x38, 0x95, 0x18, 0xf7, 0x54, 0x85, 0x7c, 0x79, 0x9d, 0xf4, 0xb9, 0xc6, 0xa7, 0xd4, 0x5b,
+	0x0a, 0xdd, 0xfc, 0xbd, 0x08, 0x95, 0x5d, 0xe1, 0x9d, 0x50, 0x89, 0x46, 0x81, 0xd7, 0xd0, 0xea,
+	0xf5, 0x77, 0x49, 0x7f, 0xbb, 0xbb, 0xdf, 0xef, 0x39, 0x54, 0x39, 0xd1, 0x6c, 0x9f, 0x79, 0x31,
+	0x47, 0xd6, 0x2f, 0x22, 0x2e, 0x5b, 0xd7, 0x25, 0x51, 0xb6, 0xa0, 0x1c, 0xd3, 0xc5, 0x6f, 0xa7,
+	0xa9, 0x9b, 0x07, 0x69, 0xa9, 0xe6, 0xb9, 0xde, 0x8b, 0x39, 0x52, 0xd2, 0x41, 0x26, 0xbb, 0x2e,
+	0x3c, 0xf0, 0x26, 0x74, 0x7c, 0x9b, 0x49, 0xd5, 0x35, 0x28, 0x3f, 0x8d, 0x03, 0x68, 0xe1, 0x69,
+	0xe0, 0x09, 0x74, 0x9d, 0x93, 0x88, 0xf9, 0x8e, 0xc0, 0x77, 0xb7, 0xb8, 0xc9, 0x43, 0x83, 0x3f,
+	0x8c, 0x98, 0x4f, 0xf0, 0x5d, 0x3e, 0xed, 0x7b, 0x58, 0x73, 0x2f, 0xf5, 0x5a, 0xda, 0x99, 0x29,
+	0xb9, 0xf6, 0x90, 0x52, 0xe7, 0xf1, 0x07, 0x35, 0x27, 0x69, 0xb8, 0x33, 0x51, 0xf6, 0xa1, 0xb2,
+	0x90, 0x2b, 0xe5, 0x65, 0x14, 0x5e, 0xd4, 0xfb, 0x35, 0xd2, 0xfd, 0x72, 0x6b, 0x5e, 0x59, 0x4c,
+	0xce, 0xf4, 0xd6, 0xc7, 0x70, 0xef, 0xca, 0xed, 0x37, 0x7f, 0xb6, 0x60, 0xd1, 0x5c, 0xc4, 0x53,
+	0xa8, 0x04, 0xfa, 0x31, 0x4e, 0xf6, 0xb2, 0xae, 0xbc, 0x8d, 0xd9, 0xa7, 0x9a, 0x94, 0x83, 0xec,
+	0xc3, 0xbd, 0x09, 0x77, 0x83, 0xb8, 0xe6, 0x92, 0xe0, 0xf8, 0x1d, 0xfe, 0xf4, 0x22, 0x38, 0x5b,
+	0x92, 0xa4, 0x12, 0x64, 0x87, 0x5b, 0xdf, 0xfc, 0x79, 0xde, 0xb0, 0xfe, 0x3a, 0x6f, 0x58, 0x7f,
+	0x9f, 0x37, 0xac, 0x5f, 0xff, 0x69, 0xcc, 0xc1, 0x67, 0x1e, 0x6f, 0x87, 0x92, 0x8e, 0x8e, 0x05,
+	0x3f, 0x8d, 0x2d, 0x24, 0x61, 0x7a, 0x93, 0xfc, 0x9a, 0x0d, 0x17, 0xf5, 0xfc, 0x93, 0xff, 0x02,
+	0x00, 0x00, 0xff, 0xff, 0x9a, 0x23, 0xda, 0x5a, 0xc2, 0x09, 0x00, 0x00,
 }
 
 func (m *LoginNotice) Marshal() (dAtA []byte, err error) {
@@ -787,6 +1009,18 @@ func (m *PublicConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Telemetry != nil {
+		{
+			size, err := m.Telemetry.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
 	if m.Footer != nil {
 		{
 			size, err := m.Footer.MarshalToSizedBuffer(dAtA[:i])
@@ -878,6 +1112,123 @@ func (m *AlertRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DecommissionedClusterRetentionConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DecommissionedClusterRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DecommissionedClusterRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.CreatedAt != nil {
+		{
+			size, err := m.CreatedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.LastUpdated != nil {
+		{
+			size, err := m.LastUpdated.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.IgnoreClusterLabels) > 0 {
+		for k := range m.IgnoreClusterLabels {
+			v := m.IgnoreClusterLabels[k]
+			baseI := i
+			i -= len(v)
+			copy(dAtA[i:], v)
+			i = encodeVarintConfig(dAtA, i, uint64(len(v)))
+			i--
+			dAtA[i] = 0x12
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintConfig(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintConfig(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if m.RetentionDurationDays != 0 {
+		i = encodeVarintConfig(dAtA, i, uint64(m.RetentionDurationDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ReportRetentionConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ReportRetentionConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ReportRetentionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.DownloadableReportGlobalRetentionBytes != 0 {
+		i = encodeVarintConfig(dAtA, i, uint64(m.DownloadableReportGlobalRetentionBytes))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.DownloadableReportRetentionDays != 0 {
+		i = encodeVarintConfig(dAtA, i, uint64(m.DownloadableReportRetentionDays))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.HistoryRetentionDurationDays != 0 {
+		i = encodeVarintConfig(dAtA, i, uint64(m.HistoryRetentionDurationDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *PrivateConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -901,6 +1252,30 @@ func (m *PrivateConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ReportRetentionConfig != nil {
+		{
+			size, err := m.ReportRetentionConfig.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.DecommissionedClusterRetention != nil {
+		{
+			size, err := m.DecommissionedClusterRetention.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfig(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.ExpiredVulnReqRetentionDurationDays != 0 {
 		i = encodeVarintConfig(dAtA, i, uint64(m.ExpiredVulnReqRetentionDurationDays))
@@ -1086,6 +1461,10 @@ func (m *PublicConfig) Size() (n int) {
 		l = m.Footer.Size()
 		n += 1 + l + sovConfig(uint64(l))
 	}
+	if m.Telemetry != nil {
+		l = m.Telemetry.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -1119,6 +1498,58 @@ func (m *AlertRetentionConfig) Size() (n int) {
 	return n
 }
 
+func (m *DecommissionedClusterRetentionConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.RetentionDurationDays != 0 {
+		n += 1 + sovConfig(uint64(m.RetentionDurationDays))
+	}
+	if len(m.IgnoreClusterLabels) > 0 {
+		for k, v := range m.IgnoreClusterLabels {
+			_ = k
+			_ = v
+			mapEntrySize := 1 + len(k) + sovConfig(uint64(len(k))) + 1 + len(v) + sovConfig(uint64(len(v)))
+			n += mapEntrySize + 1 + sovConfig(uint64(mapEntrySize))
+		}
+	}
+	if m.LastUpdated != nil {
+		l = m.LastUpdated.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.CreatedAt != nil {
+		l = m.CreatedAt.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ReportRetentionConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.HistoryRetentionDurationDays != 0 {
+		n += 1 + sovConfig(uint64(m.HistoryRetentionDurationDays))
+	}
+	if m.DownloadableReportRetentionDays != 0 {
+		n += 1 + sovConfig(uint64(m.DownloadableReportRetentionDays))
+	}
+	if m.DownloadableReportGlobalRetentionBytes != 0 {
+		n += 1 + sovConfig(uint64(m.DownloadableReportGlobalRetentionBytes))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func (m *PrivateConfig) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1133,6 +1564,14 @@ func (m *PrivateConfig) Size() (n int) {
 	}
 	if m.ExpiredVulnReqRetentionDurationDays != 0 {
 		n += 1 + sovConfig(uint64(m.ExpiredVulnReqRetentionDurationDays))
+	}
+	if m.DecommissionedClusterRetention != nil {
+		l = m.DecommissionedClusterRetention.Size()
+		n += 1 + l + sovConfig(uint64(l))
+	}
+	if m.ReportRetentionConfig != nil {
+		l = m.ReportRetentionConfig.Size()
+		n += 1 + l + sovConfig(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1613,6 +2052,42 @@ func (m *PublicConfig) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Telemetry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Telemetry == nil {
+				m.Telemetry = &TelemetryConfiguration{}
+			}
+			if err := m.Telemetry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipConfig(dAtA[iNdEx:])
@@ -1781,6 +2256,383 @@ func (m *AlertRetentionConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *DecommissionedClusterRetentionConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfig
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DecommissionedClusterRetentionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RetentionDurationDays", wireType)
+			}
+			m.RetentionDurationDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RetentionDurationDays |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IgnoreClusterLabels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IgnoreClusterLabels == nil {
+				m.IgnoreClusterLabels = make(map[string]string)
+			}
+			var mapkey string
+			var mapvalue string
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowConfig
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowConfig
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthConfig
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthConfig
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var stringLenmapvalue uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowConfig
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapvalue |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapvalue := int(stringLenmapvalue)
+					if intStringLenmapvalue < 0 {
+						return ErrInvalidLengthConfig
+					}
+					postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+					if postStringIndexmapvalue < 0 {
+						return ErrInvalidLengthConfig
+					}
+					if postStringIndexmapvalue > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+					iNdEx = postStringIndexmapvalue
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipConfig(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthConfig
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.IgnoreClusterLabels[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastUpdated == nil {
+				m.LastUpdated = &types.Timestamp{}
+			}
+			if err := m.LastUpdated.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CreatedAt == nil {
+				m.CreatedAt = &types.Timestamp{}
+			}
+			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfig(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ReportRetentionConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfig
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ReportRetentionConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ReportRetentionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field HistoryRetentionDurationDays", wireType)
+			}
+			m.HistoryRetentionDurationDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.HistoryRetentionDurationDays |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DownloadableReportRetentionDays", wireType)
+			}
+			m.DownloadableReportRetentionDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DownloadableReportRetentionDays |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DownloadableReportGlobalRetentionBytes", wireType)
+			}
+			m.DownloadableReportGlobalRetentionBytes = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DownloadableReportGlobalRetentionBytes |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfig(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1903,6 +2755,78 @@ func (m *PrivateConfig) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DecommissionedClusterRetention", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.DecommissionedClusterRetention == nil {
+				m.DecommissionedClusterRetention = &DecommissionedClusterRetentionConfig{}
+			}
+			if err := m.DecommissionedClusterRetention.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportRetentionConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfig
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfig
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfig
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ReportRetentionConfig == nil {
+				m.ReportRetentionConfig = &ReportRetentionConfig{}
+			}
+			if err := m.ReportRetentionConfig.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipConfig(dAtA[iNdEx:])

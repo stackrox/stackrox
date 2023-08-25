@@ -8,7 +8,14 @@ import { PermissionsMap } from 'services/RolesService';
 
 import { ReadAccessIcon, WriteAccessIcon } from './AccessIcons';
 import { getReadAccessCount, getWriteAccessCount } from './permissionSets.utils';
-import ResourceDescription from './ResourceDescription';
+import { ResourceDescription } from './ResourceDescription';
+import {
+    replacedResourceMapping,
+    resourceRemovalReleaseVersions,
+    resourceSubstitutions,
+    deprecatedResourceRowStyle,
+} from '../../../constants/accessControl';
+import { ResourceName } from '../../../types/roleResources';
 
 export type PermissionsTableProps = {
     resourceToAccess: PermissionsMap;
@@ -51,8 +58,41 @@ function PermissionsTable({
             </Thead>
             <Tbody>
                 {resourceToAccessEntries.map(([resource, accessLevel]) => (
-                    <Tr key={resource}>
-                        <Td dataLabel="Resource">{resource}</Td>
+                    <Tr
+                        key={resource}
+                        style={
+                            resourceRemovalReleaseVersions.has(resource as ResourceName)
+                                ? deprecatedResourceRowStyle
+                                : {}
+                        }
+                    >
+                        <Td dataLabel="Resource">
+                            <p className="pf-u-font-weight-bold">{resource}</p>
+                            <p>
+                                {resourceSubstitutions[resource] && (
+                                    <>Replaces {resourceSubstitutions[resource].join(', ')}</>
+                                )}
+                            </p>
+                            <p>
+                                {resourceRemovalReleaseVersions.has(resource as ResourceName) && (
+                                    <>
+                                        Will be removed in{' '}
+                                        {resourceRemovalReleaseVersions.get(
+                                            resource as ResourceName
+                                        )}
+                                        .
+                                    </>
+                                )}
+                            </p>
+                            <p>
+                                {replacedResourceMapping.has(resource as ResourceName) && (
+                                    <>
+                                        Will be replaced by{' '}
+                                        {replacedResourceMapping.get(resource as ResourceName)}.
+                                    </>
+                                )}
+                            </p>
+                        </Td>
                         <Td dataLabel="Description">
                             <ResourceDescription resource={resource} />
                         </Td>

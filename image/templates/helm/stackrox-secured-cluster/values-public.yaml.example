@@ -26,7 +26,7 @@
 ## creating a new cluster with a different name.
 #confirmNewClusterName: null
 #
-## Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
+## Custom labels associated with a secured cluster in StackRox.
 #clusterLabels: {}
 #
 ## The gRPC endpoint for accessing StackRox Central.
@@ -124,11 +124,11 @@
 #  # Resource configuration for the sensor container.
 #  resources:
 #    requests:
-#      memory: "1Gi"
-#      cpu: "1"
-#    limits:
 #      memory: "4Gi"
 #      cpu: "2"
+#    limits:
+#      memory: "8Gi"
+#      cpu: "4"
 #
 #  # Settings for the internal service-to-service TLS certificate used by Sensor.
 #  serviceTLS:
@@ -147,6 +147,41 @@
 #    - effect: NoExecute
 #      key: infra
 #      value: reserved
+#
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         # Sensor is single-homed, so avoid preemptible nodes.
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#               - key: cloud.google.com/gke-preemptible
+#                 operator: NotIn
+#                 values:
+#                 - "true"
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/infra
+#               operator: Exists
+#         - weight: 25
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/compute
+#               operator: Exists
+#         # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+#         # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/master
+#               operator: DoesNotExist
+#         - weight: 100
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: DoesNotExist
 #
 #  # Address of the Sensor endpoint including port number. No trailing slash.
 #  # Rarely needs to be changed.
@@ -183,6 +218,31 @@
 #    - effect: NoExecute
 #      key: infra
 #      value: reserved
+#
+#   If scheduling needs specific affinities, you can specify the corresponding affinities here.
+#   affinity:
+#     nodeAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         # node-role.kubernetes.io/master is replaced by node-role.kubernetes.io/control-plane from certain version
+#         # of k8s. We apply both to be compatible with any k8s version.
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/master
+#               operator: Exists
+#         - weight: 50
+#           preference:
+#             matchExpressions:
+#             - key: node-role.kubernetes.io/control-plane
+#               operator: Exists
+#     podAntiAffinity:
+#       preferredDuringSchedulingIgnoredDuringExecution:
+#         - weight: 60
+#           podAffinityTerm:
+#             topologyKey: "kubernetes.io/hostname"
+#             labelSelector:
+#               matchLabels:
+#                 app: admission-control
 #
 #  # Dynamic part of the configuration which is retrieved from Central and can be modified through
 #  # the frontend.
@@ -222,6 +282,9 @@
 #      memory: "500Mi"
 #      cpu: "500m"
 #
+#  # Replicas configures the replicas of the admission controller pod.
+#  replicas: 3
+#
 #  # Settings for the internal service-to-service TLS certificate used by Admission Control.
 #  serviceTLS:
 #    cert: null
@@ -232,11 +295,11 @@
 #
 #  # Collection method to use. Can be one of:
 #  #   - EBPF
-#  #   - KERNEL_MODULE
+#  #   - CORE_BPF
 #  #   - NO_COLLECTION
-#  collectionMethod: KERNEL_MODULE
+#  collectionMethod: EBPF
 #
-#  # Configure usage of taint tolerations. If `false`, tolerations are applied to collector, 
+#  # Configure usage of taint tolerations. If `false`, tolerations are applied to collector,
 #  # and the collector pods can schedule onto all nodes with taints. If `true`, no tolerations
 #  # are applied, and the collector pods won't scheduled onto nodes with taints.
 #  disableTaintTolerations: false
@@ -261,6 +324,10 @@
 #      memory: "1Gi"
 #      cpu: "750m"
 #
+#   If the nodes selected by the node selector are tainted, you can specify the corresponding taint tolerations here.
+#   tolerations:
+#     - operator: "Exists"
+#
 #  complianceImagePullPolicy: IfNotPresent
 #
 #  # Resource configuration for the Compliance container.
@@ -270,6 +337,15 @@
 #      cpu: "10m"
 #    limits:
 #      memory: "2Gi"
+#      cpu: "1"
+#
+#  # Resource configuration for the Node Inventory container.
+#  nodeScanningResources:
+#    requests:
+#      memory: "10Mi"
+#      cpu: "10m"
+#    limits:
+#      memory: "500Mi"
 #      cpu: "1"
 #
 #  # Settings for the internal service-to-service TLS certificate used by Collector.
@@ -289,7 +365,7 @@
 # # pod annotations, and container environment variables for workloads.
 # # The configuration is hierarchical, in the sense that metadata that is defined at a more
 # # generic scope (e.g., for all objects) can be overridden by metadata defined at a narrower
-# # scope (e.g., only for the central deployment).
+# # scope (e.g., only for the sensor deployment).
 # customize:
 #   # Extra metadata for all objects.
 #   labels:
@@ -382,3 +458,8 @@
 #    # can be used in conjunction with both data obtained from the API server, or data set
 #    # via `overrideAPIResources`.
 #    extraAPIResources: []
+#
+#monitoring:
+#  # Enables integration with OpenShift platform monitoring.
+#  openshift:
+#    enabled: true

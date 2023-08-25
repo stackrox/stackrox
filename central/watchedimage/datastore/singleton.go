@@ -2,9 +2,8 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/watchedimage/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/watchedimage/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -15,8 +14,7 @@ var (
 // Singleton returns the instance of DataStore to use.
 func Singleton() DataStore {
 	once.Do(func() {
-		store, err := rocksdb.New(globaldb.GetRocksDB())
-		utils.CrashOnError(err)
+		store := pgStore.New(globaldb.GetPostgres())
 		instance = New(store)
 	})
 	return instance

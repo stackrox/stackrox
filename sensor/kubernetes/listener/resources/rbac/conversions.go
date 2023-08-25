@@ -32,7 +32,6 @@ func toRoxRole(role *v1.Role) *storage.K8SRole {
 		Id:          string(role.GetUID()),
 		Name:        role.GetName(),
 		Namespace:   role.GetNamespace(),
-		ClusterName: role.GetClusterName(),
 		Labels:      role.GetLabels(),
 		Annotations: role.GetAnnotations(),
 		ClusterRole: false,
@@ -47,7 +46,6 @@ func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 		Id:          string(role.GetUID()),
 		Name:        role.GetName(),
 		Namespace:   role.GetNamespace(),
-		ClusterName: role.GetClusterName(),
 		Labels:      role.GetLabels(),
 		Annotations: role.GetAnnotations(),
 		ClusterRole: true,
@@ -57,16 +55,15 @@ func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 	return roxRole.Clone() // Clone the labels, annotations, and policy rules.
 }
 
-func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string) *storage.K8SRoleBinding {
+func toRoxRoleBinding(roleBinding *v1.RoleBinding, roleID string, clusterRole bool) *storage.K8SRoleBinding {
 	roxBinding := &storage.K8SRoleBinding{
 		Id:          string(roleBinding.GetUID()),
 		RoleId:      roleID,
 		Name:        roleBinding.GetName(),
 		Namespace:   roleBinding.GetNamespace(),
-		ClusterName: roleBinding.GetClusterName(),
 		Labels:      roleBinding.GetLabels(),
 		Annotations: roleBinding.GetAnnotations(),
-		ClusterRole: false,
+		ClusterRole: clusterRole,
 		CreatedAt:   protoconv.ConvertTimeToTimestamp(roleBinding.GetCreationTimestamp().Time),
 		Subjects:    getSubjects(roleBinding.Subjects),
 	}
@@ -79,7 +76,6 @@ func toRoxClusterRoleBinding(clusterRoleBinding *v1.ClusterRoleBinding, roleID s
 		RoleId:      roleID, // may be empty in case the named role referenced in the k8s object could not be found
 		Name:        clusterRoleBinding.GetName(),
 		Namespace:   clusterRoleBinding.GetNamespace(),
-		ClusterName: clusterRoleBinding.GetClusterName(),
 		Labels:      clusterRoleBinding.GetLabels(),
 		Annotations: clusterRoleBinding.GetAnnotations(),
 		ClusterRole: true,

@@ -54,3 +54,7 @@ func mustGetModTime(t *testing.T, path string) time.Time {
 	require.NoError(t, err)
 	return fi.ModTime().UTC()
 }
+
+func mustSetModTime(t *testing.T, path string, modTime time.Time) {
+	require.NoError(t, os.Chtimes(path, time.Now(), modTime))
+}

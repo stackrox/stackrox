@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  grafana.ini: |-
+    [server]
+    # Protocol (http, https, socket)
+    protocol = https
+
+    # The ip address to bind to, empty will bind to all interfaces
+    ;http_addr =
+
+    # The http port  to use
+    http_port = 8443
+
+    # https certs & key file
+    cert_file = "/run/secrets/stackrox.io/monitoring/certs/cert.pem"
+    cert_key = "/run/secrets/stackrox.io/monitoring/certs/key.pem"
+
+    [security]
+    # default admin user, created on startup
+    ;admin_user = admin
+
+    # default admin password, can be changed before first start of grafana,  or in profile settings
+    admin_password = {{ required "A Grafana password is required" .Values.password }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  prometheus.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        orgId: 1
+        url: http://localhost:9090
+        isDefault: true
+        version: 1
+        editable: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+data:
+  dashboard.yaml: |-
+    apiVersion: 1
+    providers:
+      - name: Default
+        folder: ''
+        type: file
+        options:
+          path: /etc/grafana/provisioning/dashboards
+  central.json: |-
+{{ .Files.Get "dashboards/central.json" | indent 4 }}
+  cluster-health.json: |-
+{{ .Files.Get "dashboards/cluster-health.json" | indent 4 }}
+  dataplane.json: |-
+{{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
+  node-inventory.json: |-
+{{ .Files.Get "dashboards/node-inventory.json" | indent 4 }}

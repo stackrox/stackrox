@@ -19,13 +19,13 @@ import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
 import AnnotationKeyLabelIcon from '../AnnotationKeyLabelIcon';
 
@@ -132,6 +132,9 @@ function JiraIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.jira.password = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const formik = useIntegrationForm<JiraIntegrationFormValues>({
         initialValues: formInitialValues,

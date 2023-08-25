@@ -6,55 +6,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
-import "storage/compliance_management.proto";
-
 package v1;
-
-message ComplianceRunScheduleInfo {
-    storage.ComplianceRunSchedule schedule = 1;
-
-    ComplianceRun last_run           = 2;
-    ComplianceRun last_completed_run = 3;
-
-    google.protobuf.Timestamp next_run_time = 4;
-}
-
-message GetComplianceRunSchedulesRequest {
-    oneof cluster_id_opt {
-        string cluster_id = 1;
-    }
-    oneof standard_id_opt {
-        string standard_id = 2;
-    }
-    oneof suspended_opt {
-        bool suspended = 3;
-    }
-}
-
-message GetComplianceRunSchedulesResponse {
-    repeated ComplianceRunScheduleInfo schedules = 1;
-}
-
-message AddComplianceRunScheduleRequest {
-    storage.ComplianceRunSchedule schedule_spec = 1;
-}
-
-message AddComplianceRunScheduleResponse {
-    ComplianceRunScheduleInfo added_schedule = 1;
-}
-
-message UpdateComplianceRunScheduleRequest {
-    string schedule_id                         = 1;
-    storage.ComplianceRunSchedule updated_spec = 2;
-}
-
-message UpdateComplianceRunScheduleResponse {
-    ComplianceRunScheduleInfo updated_schedule = 1;
-}
-
-message DeleteComplianceRunScheduleRequest {
-    string schedule_id = 1;
-}
 
 message ComplianceRunSelection {
     // The ID of the cluster. "*" means "all clusters".
@@ -86,7 +38,7 @@ message ComplianceRun {
     string cluster_id  = 2;
     string standard_id = 3;
 
-    string schedule_id = 4;
+    reserved 4;
 
     google.protobuf.Timestamp start_time  = 5;
     google.protobuf.Timestamp finish_time = 6;

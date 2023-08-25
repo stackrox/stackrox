@@ -15,9 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -104,7 +104,7 @@ func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[str
 	var missingClustersFileContents bytes.Buffer
 	fmt.Fprintln(&missingClustersFileContents, "Data from the following clusters is unavailable:")
 	for _, clusterName := range remainingClusterNameMap {
-		if filterClusters != nil && sliceutils.StringFind(filterClusters, clusterName) != -1 {
+		if filterClusters != nil && sliceutils.Find(filterClusters, clusterName) != -1 {
 			fmt.Fprintf(&missingClustersFileContents, "- %s (not requested by user)\n", clusterName)
 		} else {
 			fmt.Fprintf(&missingClustersFileContents, "- %s (no active connection)\n", clusterName)
@@ -125,7 +125,7 @@ func addMissingClustersInfo(ctx context.Context, remainingClusterNameMap map[str
 func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrospect.File, wg *concurrency.WaitGroup, since time.Time) {
 	defer wg.Add(-1)
 
-	restCfg, err := rest.InClusterConfig()
+	restCfg, err := k8sutil.GetK8sInClusterConfig()
 	if err == nil {
 		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC), since)
 	}
@@ -165,7 +165,7 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 	delete(clusterNameMap, clusterID)
 
 	// if there are no cluster filters, all clusters must be considered.
-	if opts.clusters != nil && sliceutils.StringFind(opts.clusters, clusterName) == -1 {
+	if opts.clusters != nil && sliceutils.Find(opts.clusters, clusterName) == -1 {
 		return "", "", false
 	}
 
@@ -174,12 +174,8 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 }
 
 func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
-	subCtx, cancel := context.WithTimeout(ctx, metricsPullTimeout)
-	defer cancel()
-
 	filesC := make(chan k8sintrospect.File)
-
-	clusterNameMap, err := s.getClusterNameMap(subCtx)
+	clusterNameMap, err := s.getClusterNameMap(ctx)
 	if err != nil {
 		return err
 	}
@@ -202,7 +198,7 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 		clusterName = candidateName
 
 		wg.Add(1)
-		go pullMetricsFromSensor(subCtx, clusterName, sensorConn, filesC, &wg)
+		go pullMetricsFromSensor(ctx, clusterName, sensorConn, filesC, &wg)
 	}
 
 	go func() {
@@ -210,24 +206,20 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 		case <-wg.Done():
 			// All invoked goroutines are done.  Close the channel so the handling loop knows it can terminate
 			close(filesC)
-		case <-subCtx.Done():
+		case <-ctx.Done():
 		}
 	}()
 
 	for {
 		select {
-		case <-subCtx.Done():
-			return subCtx.Err()
+		case <-ctx.Done():
+			return ctx.Err()
 		case file, ok := <-filesC:
 			if !ok {
 				return nil
 			}
-			fullPath := path.Join("sensor-metrics", file.Path)
-			fileWriter, err := zipWriter.Create(fullPath)
+			err := writePrefixedFileToZip(zipWriter, "sensor-metrics", file)
 			if err != nil {
-				return err
-			}
-			if _, err := fileWriter.Write(file.Contents); err != nil {
 				return err
 			}
 		}
@@ -235,12 +227,9 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 }
 
 func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writer, opts debugDumpOptions) error {
-	subCtx, cancel := context.WithTimeout(ctx, diagnosticsPullTimeout)
-	defer cancel()
-
 	filesC := make(chan k8sintrospect.File)
 
-	clusterNameMap, err := s.getClusterNameMap(subCtx)
+	clusterNameMap, err := s.getClusterNameMap(ctx)
 	if err != nil {
 		return err
 	}
@@ -263,45 +252,43 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 		clusterName = candidateName
 
 		wg.Add(1)
-		go pullK8sDiagnosticsFilesFromSensor(subCtx, clusterName, sensorConn, filesC, &wg,
+		go pullK8sDiagnosticsFilesFromSensor(ctx, clusterName, sensorConn, filesC, &wg,
 			opts.since)
 	}
 
 	// Add information about clusters for which we didn't have an active sensor connection.
 	if len(clusterNameMap) > 0 {
 		wg.Add(1)
-		go addMissingClustersInfo(subCtx, clusterNameMap, filesC, &wg, opts.clusters)
+		go addMissingClustersInfo(ctx, clusterNameMap, filesC, &wg, opts.clusters)
 	}
 
 	// Pull data from the central cluster.
 	// TODO: It would be nice if we could add a flag to a sensor connection that indicates whether this sensor is
 	// running colocated with central, so we could skip this.
-	wg.Add(1)
-	go pullCentralClusterDiagnostics(subCtx, filesC, &wg, opts.since)
+	if opts.withCentral {
+		wg.Add(1)
+		go pullCentralClusterDiagnostics(ctx, filesC, &wg, opts.since)
+	}
 
 	go func() {
 		select {
 		case <-wg.Done():
 			// All invoked goroutines are done.  Close the channel so the handling loop knows it can terminate
 			close(filesC)
-		case <-subCtx.Done():
+		case <-ctx.Done():
 		}
 	}()
 
 	for {
 		select {
-		case <-subCtx.Done():
-			return subCtx.Err()
+		case <-ctx.Done():
+			return ctx.Err()
 		case file, ok := <-filesC:
 			if !ok {
 				return nil
 			}
-			fullPath := path.Join("kubernetes", file.Path)
-			fileWriter, err := zipWriter.Create(fullPath)
+			err := writePrefixedFileToZip(zipWriter, "kubernetes", file)
 			if err != nil {
-				return err
-			}
-			if _, err := fileWriter.Write(file.Contents); err != nil {
 				return err
 			}
 		}

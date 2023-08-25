@@ -8,6 +8,7 @@ import (
 )
 
 // Provider provides CA and service certificates to the cluster init backend.
+//
 //go:generate mockgen-wrapper
 type Provider interface {
 	GetCA() (string, error)

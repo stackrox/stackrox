@@ -12,7 +12,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 73,
-		VersionAfter:   storage.Version{SeqNum: 74},
+		VersionAfter:   &storage.Version{SeqNum: 74},
 		Run: func(databases *types.Databases) error {
 			err := migrateDefaultRuntimeEventSource(databases.BoltDB)
 			if err != nil {

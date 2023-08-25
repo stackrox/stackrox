@@ -3,6 +3,9 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+import "storage/telemetry.proto";
+
 package storage;
 
 message LoginNotice {
@@ -26,9 +29,10 @@ message BannerConfig {
 }
 
 message PublicConfig {
-    LoginNotice login_notice = 1;
-    BannerConfig header      = 2;
-    BannerConfig footer      = 3;
+    LoginNotice login_notice         = 1;
+    BannerConfig header              = 2;
+    BannerConfig footer              = 3;
+    TelemetryConfiguration telemetry = 4;
 }
 
 message AlertRetentionConfig {
@@ -44,14 +48,31 @@ message AlertRetentionConfig {
 }
 
 // next available tag: 5
+message DecommissionedClusterRetentionConfig {
+    int32 retention_duration_days              = 1;
+    map<string, string> ignore_cluster_labels  = 2;
+    google.protobuf.Timestamp last_updated     = 3;
+    google.protobuf.Timestamp created_at       = 4;
+}
+
+// next available tag: 4
+message ReportRetentionConfig {
+    uint32 history_retention_duration_days              = 1;
+    uint32 downloadable_report_retention_days          = 2;
+    uint32 downloadable_report_global_retention_bytes  = 3;
+}
+
+// next available tag:7
 message PrivateConfig {
     oneof alert_retention {
         // will be deprecated after migration is ready
-        int32                DEPRECATED_alert_retention_duration_days      = 1;
-        AlertRetentionConfig alert_config                                  = 3;
+        int32                DEPRECATED_alert_retention_duration_days       = 1;
+        AlertRetentionConfig alert_config                                   = 3;
     }
-    int32                    image_retention_duration_days                 = 2;
-    int32                    expired_vuln_req_retention_duration_days      = 4;
+    int32                    image_retention_duration_days                  = 2;
+    int32                    expired_vuln_req_retention_duration_days       = 4;
+    DecommissionedClusterRetentionConfig decommissioned_cluster_retention   = 5;
+    ReportRetentionConfig             report_retention_config               = 6;
 }
 
 

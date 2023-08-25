@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
+import lowerCase from 'lodash/lowerCase';
+import pluralize from 'pluralize';
 
 import URLService from 'utils/URLService';
 import { PageBody } from 'Components/Panel';
@@ -12,7 +14,7 @@ import ListTable from './Table';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import SidePanel from './SidePanel';
-import SearchInput from '../SearchInput';
+import ComplianceSearchInput from '../ComplianceSearchInput';
 
 const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
     const history = useHistory();
@@ -27,8 +29,13 @@ const ComplianceList = ({ entityType, query, selectedRowId, noSearch }) => {
         history.push(url);
     }
 
+    const placeholder = `Filter ${pluralize(lowerCase(entityType))}`;
+
     const searchComponent = noSearch ? null : (
-        <SearchInput categories={[searchCategoryTypes[entityType]]} />
+        <ComplianceSearchInput
+            placeholder={placeholder}
+            categories={[searchCategoryTypes[entityType]]}
+        />
     );
 
     return (

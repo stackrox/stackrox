@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -51,22 +52,22 @@ type DeploymentsWithMostSevereViolationsResolver struct {
 }
 
 // ID returns the deployment ID.
-func (r *DeploymentsWithMostSevereViolationsResolver) ID(ctx context.Context) graphql.ID {
+func (r *DeploymentsWithMostSevereViolationsResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(r.deployment.GetId())
 }
 
 // Name returns the deployment name.
-func (r *DeploymentsWithMostSevereViolationsResolver) Name(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) Name(_ context.Context) string {
 	return r.deployment.GetName()
 }
 
 // Namespace returns the deployment namespace.
-func (r *DeploymentsWithMostSevereViolationsResolver) Namespace(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) Namespace(_ context.Context) string {
 	return r.deployment.GetNamespace()
 }
 
 // ClusterName returns the deployment cluster name.
-func (r *DeploymentsWithMostSevereViolationsResolver) ClusterName(ctx context.Context) string {
+func (r *DeploymentsWithMostSevereViolationsResolver) ClusterName(_ context.Context) string {
 	return r.deployment.GetClusterName()
 }
 
@@ -81,12 +82,12 @@ type FailingPolicyResolver struct {
 }
 
 // ID returns the policy id.
-func (r *FailingPolicyResolver) ID(ctx context.Context) graphql.ID {
+func (r *FailingPolicyResolver) ID(_ context.Context) graphql.ID {
 	return graphql.ID(r.policy.GetId())
 }
 
 // Severity returns policy severity.
-func (r *FailingPolicyResolver) Severity(ctx context.Context) string {
+func (r *FailingPolicyResolver) Severity(_ context.Context) string {
 	return r.policy.GetSeverity().String()
 }
 
@@ -99,6 +100,7 @@ func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver
 		return nil, err
 	}
 
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	alerts, err := resolver.ViolationsDataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, err
@@ -124,10 +126,7 @@ func deploymentsWithMostSevereViolations(ctx context.Context, resolver *Resolver
 
 	sortBySeverity(ret)
 
-	resolvers, err := paginationWrapper{
-		pv: pagination,
-	}.paginate(ret, nil)
-	return resolvers.([]*DeploymentsWithMostSevereViolationsResolver), err
+	return paginate(pagination, ret, nil)
 }
 
 func sortBySeverity(deps []*DeploymentsWithMostSevereViolationsResolver) {

@@ -1,5 +1,4 @@
 //go:build tools
-// +build tools
 
 package tools
 
@@ -9,6 +8,5 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
-	_ "github.com/jstemmer/go-junit-report"
-	_ "github.com/mattn/goveralls"
+	_ "github.com/jstemmer/go-junit-report/v2"
 )

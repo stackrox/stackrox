@@ -11,9 +11,11 @@ type GenericImage interface {
 // ToImage converts a storage.ContainerImage to a storage.Image
 func ToImage(ci *storage.ContainerImage) *storage.Image {
 	return &storage.Image{
-		Id:          ci.GetId(),
-		Name:        ci.GetName(),
-		NotPullable: ci.GetNotPullable(),
+		Id:             ci.GetId(),
+		Name:           ci.GetName(),
+		Names:          []*storage.ImageName{ci.GetName()},
+		NotPullable:    ci.GetNotPullable(),
+		IsClusterLocal: ci.GetIsClusterLocal(),
 	}
 }
 

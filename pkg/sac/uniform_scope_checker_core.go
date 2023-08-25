@@ -1,7 +1,8 @@
 package sac
 
 import (
-	"context"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 )
 
 type uniformScopeCheckerCore bool
@@ -21,17 +22,17 @@ func AllowAllAccessScopeChecker() ScopeCheckerCore {
 	return allowAllScopeCheckerCore
 }
 
-func (s uniformScopeCheckerCore) SubScopeChecker(key ScopeKey) ScopeCheckerCore {
+func (s uniformScopeCheckerCore) SubScopeChecker(_ ScopeKey) ScopeCheckerCore {
 	return s
 }
 
-func (s uniformScopeCheckerCore) TryAllowed() TryAllowedResult {
-	if s {
-		return Allow
-	}
-	return Deny
+func (s uniformScopeCheckerCore) Allowed() bool {
+	return bool(s)
 }
 
-func (s uniformScopeCheckerCore) PerformChecks(ctx context.Context) error {
-	return nil
+func (s uniformScopeCheckerCore) EffectiveAccessScope(_ permissions.ResourceWithAccess) (*effectiveaccessscope.ScopeTree, error) {
+	if s {
+		return effectiveaccessscope.UnrestrictedEffectiveAccessScope(), nil
+	}
+	return effectiveaccessscope.DenyAllEffectiveAccessScope(), nil
 }

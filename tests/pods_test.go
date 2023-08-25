@@ -68,11 +68,11 @@ func TestPod(testT *testing.T) {
 			}
 			loopCount++
 			require.LessOrEqual(retryT, loopCount, 20)
-			time.Sleep(3 * time.Second)
+			time.Sleep(4 * time.Second)
 		}
 
 		// Expecting processes: nginx, sh, date, sleep
-		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name }).([]string)
+		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
 		require.ElementsMatch(retryT, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.

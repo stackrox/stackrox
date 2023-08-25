@@ -1,3 +1,7 @@
+values:
+  monitoring:
+    openshift:
+      enabled: false
 server:
   availableSchemas:
   - openshift-4.1.0
@@ -56,3 +60,72 @@ tests:
   expect: |
     .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
     .validatingwebhookconfigurations[].webhooks[] | assertThat(.admissionReviewVersions == null)
+
+- name: "Webhook timeout pads AdmissionController timeout by 2 seconds"
+  tests:
+    - name: "default AdmissionController timeout is 20s + 2s padding"
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 20 + 2)
+    - name: "override sets value correctly"
+      values:
+        admissionControl:
+          dynamic:
+            timeout: 10
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
+
+- name: "Admission control deployment configuration"
+  tests:
+    - name: "default replicas"
+      expect: |
+        .deployments["admission-control"].spec.replicas | assertThat(. == 3)
+    - name: "with configured replicas"
+      values:
+        admissionControl:
+          replicas: 50
+      expect: |
+        .deployments["admission-control"].spec.replicas | assertThat(. == 50)
+
+- name: "Admission Controller affinity"
+  tests:
+    - name: "default affinity"
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+    - name: "override node affinity"
+      values:
+        admissionControl:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 50
+                  preference:
+                    matchExpressions:
+                      - key: node-role.kubernetes.io/master
+                        operator: Exists
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+    - name: "override antiAffinity"
+      values:
+        admissionControl:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 10
+                podAffinityTerm:
+                  namespaces: ["stackrox"]
+                  topologyKey: "kubernetes.io/hostname"
+                  labelSelector:
+                    matchLabels:
+                      app: admission-control
+              - weight: 10
+                podAffinityTerm:
+                  namespaces: ["stackrox"]
+                  topologyKey: "kubernetes.io/hostname"
+                  labelSelector:
+                    matchLabels:
+                      app: admission-control-other
+      expect: |
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)

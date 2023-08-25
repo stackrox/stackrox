@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -25,10 +25,10 @@ type enricherImpl struct {
 }
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.
-func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (images []*storage.Image, updatedIndices []int, pendingEnrichment bool, err error) {
+func (e *enricherImpl) EnrichDeployment(ctx context.Context, enrichCtx enricher.EnrichmentContext, deployment *storage.Deployment) (images []*storage.Image, updatedIndices []int, pendingEnrichment bool, err error) {
 	for i, c := range deployment.GetContainers() {
 		var imgToProcess *storage.Image
-		if (ctx.FetchOnlyIfMetadataEmpty() || ctx.FetchOnlyIfScanEmpty()) && c.GetImage().GetId() != "" {
+		if (enrichCtx.FetchOnlyIfMetadataEmpty() || enrichCtx.FetchOnlyIfScanEmpty()) && c.GetImage().GetId() != "" {
 			var img *storage.Image
 			img, _, err = e.images.GetImage(getImageContext, c.GetImage().GetId())
 			if err != nil {
@@ -45,7 +45,7 @@ func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 		if imgToProcess.GetId() != "" && imgToProcess.GetNotPullable() {
 			continue
 		}
-		enrichmentResult, err := e.imageEnricher.EnrichImage(ctx, imgToProcess)
+		enrichmentResult, err := e.imageEnricher.EnrichImage(ctx, enrichCtx, imgToProcess)
 		if err != nil {
 			log.Error(err)
 		}

@@ -6,6 +6,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/sensor/event"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
@@ -18,29 +21,20 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
-	boltOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "bolt_op_duration",
-		Help:      "Time taken to perform a bolt operation",
+		Name:      "postgres_op_duration",
+		Help:      "Time taken to perform a postgres operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
-	rocksDBOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	acquireDBConnHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "rocksdb_op_duration",
-		Help:      "Time taken to perform a rocksdb operation",
-		// We care more about precision at lower latencies, or outliers at higher latencies.
-		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Operation", "Type"})
-
-	dackboxOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "dackbox_op_duration",
-		Help:      "Time taken to perform a dackbox operation",
+		Name:      "postgres_acquire_conn_op_duration",
+		Help:      "Time taken to acquire a Postgres connection",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -146,30 +140,74 @@ var (
 		Help:      "Time taken to fully process an event from Kubernetes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Action", "Resource", "Dispatcher"})
+
+	clusterMetricsNodeCountGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cluster_metrics_node_count",
+		Help:      "Number of nodes in a secured cluster",
+	}, []string{"ClusterID"})
+
+	clusterMetricsCPUCapacityGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "cluster_metrics_cpu_capacity",
+		Help:      "Total Kubernetes cpu capacity of all nodes in a secured cluster",
+	}, []string{"ClusterID"})
+
+	totalOrphanedPLOPCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "orphaned_plop_total",
+		Help:      "A counter of the total number of PLOP objects without a reference to a ProcessIndicator",
+	}, []string{"ClusterID"})
+
+	processQueueLengthGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_queue_length",
+		Help:      "A gauge that indicates the current number of processes that have not been flushed",
+	})
+
+	sensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_deduper",
+		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
+	}, []string{"status", "type"})
+
+	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "pipeline_panics",
+		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
+	}, []string{"resource"})
+	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_connected",
+	}, []string{"ClusterID", "connection_state"})
 )
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)
 }
 
-// SetBoltOperationDurationTime times how long a particular bolt operation took on a particular resource
-func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+// SetPostgresOperationDurationTime times how long a particular postgres operation took on a particular resource
+func SetPostgresOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	postgresOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
 }
 
-// SetRocksDBOperationDurationTime times how long a particular rocksdb operation took on a particular resource
-func SetRocksDBOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	rocksDBOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
-}
-
-// SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource
-func SetDackboxOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	dackboxOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+// SetAcquireDBConnDuration times how long it took the database pool to acquire a connection
+func SetAcquireDBConnDuration(start time.Time, op metrics.Op, t string) {
+	acquireDBConnHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource
 func SetGraphQLOperationDurationTime(start time.Time, resolver metrics.Resolver, op string) {
-	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).Observe(startTimeToMS(start))
+	graphQLOperationHistogramVec.With(prometheus.Labels{"Resolver": resolver.String(), "Operation": op}).
+		Observe(startTimeToMS(start))
 }
 
 // SetGraphQLQueryDurationTime times how long a particular graphql API took on a particular resource
@@ -184,17 +222,31 @@ func SetSensorEventRunDuration(start time.Time, t, action string) {
 
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
 func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
-	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
+}
+
+// IncrementPipelinePanics increments the counter tracking the panics in pipeline processing
+func IncrementPipelinePanics(msg *central.MsgFromSensor) {
+	resource := reflectutils.Type(msg.GetMsg())
+	if event := msg.GetEvent(); event != nil {
+		resource = reflectutils.Type(event.GetResource())
+	}
+	resource = stringutils.GetAfterLast(resource, "_")
+	pipelinePanicCounter.With(prometheus.Labels{"resource": resource}).Inc()
+}
+
+// IncrementSensorConnect increments the counter for times that a new Sensor connection was observed
+func IncrementSensorConnect(clusterID, state string) {
+	sensorConnectedCounter.With(prometheus.Labels{
+		"ClusterID":        clusterID,
+		"connection_state": state,
+	}).Inc()
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
 func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
 	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
-}
-
-// SetPolicyEvaluationDurationTime is the amount of time a specific policy took
-func SetPolicyEvaluationDurationTime(t time.Time, name string) {
-	policyEvaluationHistogram.With(prometheus.Labels{"Policy": name}).Observe(startTimeToMS(t))
 }
 
 // IncrementResourceProcessedCounter is a counter for how many times a resource has been processed in Central
@@ -214,17 +266,14 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
 func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
-	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).Observe(startTimeToMS(startTime))
-}
-
-// IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses
-func IncrementDBCacheCounter(op string, t string) {
-	totalCacheOperationsCounter.With(prometheus.Labels{"Operation": op, "Type": t}).Inc()
+	riskProcessingHistogramVec.With(prometheus.Labels{"Risk_Reprocessor": riskObjectType}).
+		Observe(startTimeToMS(startTime))
 }
 
 // SetDatastoreFunctionDuration is a histogram for datastore function timing
 func SetDatastoreFunctionDuration(start time.Time, resourceType, function string) {
-	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).Observe(startTimeToMS(start))
+	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).
+		Observe(startTimeToMS(start))
 }
 
 // SetFunctionSegmentDuration times a specific segment within a function
@@ -235,4 +284,38 @@ func SetFunctionSegmentDuration(start time.Time, segment string) {
 // SetResourceProcessingDuration is the duration from sensor ingestion to Central processing
 func SetResourceProcessingDuration(event *central.SensorEvent) {
 	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
+}
+
+// SetClusterMetrics sets cluster metrics to the values that have been collected by Sensor.
+func SetClusterMetrics(clusterID string, clusterMetrics *central.ClusterMetrics) {
+	clusterMetricsNodeCountGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
+		Set(float64(clusterMetrics.GetNodeCount()))
+	clusterMetricsCPUCapacityGaugeVec.With(prometheus.Labels{"ClusterID": clusterID}).
+		Set(float64(clusterMetrics.GetCpuCapacity()))
+}
+
+// IncrementOrphanedPLOPCounter increments the counter for orphaned PLOP
+// objects. An orphaned PLOP objects indicates that something is not quite
+// right, e.g. process information is received after the endpoint, or not
+// received at all. This type of situations require investigation.
+func IncrementOrphanedPLOPCounter(clusterID string) {
+	totalOrphanedPLOPCounter.With(prometheus.Labels{"ClusterID": clusterID}).Inc()
+}
+
+// ModifyProcessQueueLength modifies the metric for the number of processes that have not been flushed
+func ModifyProcessQueueLength(delta int) {
+	processQueueLengthGauge.Add(float64(delta))
+}
+
+// IncSensorEventsDeduper increments the sensor events deduper on whether or not it was deduped or not
+func IncSensorEventsDeduper(deduped bool, msg *central.MsgFromSensor) {
+	if msg.GetEvent() == nil {
+		return
+	}
+	label := "passed"
+	if deduped {
+		label = "deduped"
+	}
+	typ := event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": label, "type": typ}).Inc()
 }

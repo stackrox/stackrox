@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -168,11 +167,12 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		},
 	}
 
+	storeProvider := InitializeStore()
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), c.registryOverride,
-				orchestratornamespaces.Singleton()).GetDeployment()
+				storeProvider.orchestratorNamespaces, storeProvider.Registries()).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}

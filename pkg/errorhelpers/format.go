@@ -10,7 +10,7 @@ import (
 // ErrorList is a wrapper around many errors
 type ErrorList struct {
 	start  string
-	errors []string
+	errors []error
 }
 
 // NewErrorList returns a new ErrorList
@@ -34,7 +34,7 @@ func (e *ErrorList) AddError(err error) {
 	if err == nil {
 		return
 	}
-	e.errors = append(e.errors, err.Error())
+	e.errors = append(e.errors, err)
 }
 
 // AddErrors adds the non-nil errors in the given slice to the list of errors.
@@ -43,7 +43,7 @@ func (e *ErrorList) AddErrors(errs ...error) {
 		if err == nil {
 			continue
 		}
-		e.errors = append(e.errors, err.Error())
+		e.errors = append(e.errors, err)
 	}
 }
 
@@ -59,41 +59,61 @@ func (e *ErrorList) AddWrapf(err error, format string, args ...interface{}) {
 
 // AddString adds a string based error to the list
 func (e *ErrorList) AddString(err string) {
-	e.errors = append(e.errors, err)
+	e.errors = append(e.errors, errors.New(err))
 }
 
 // AddStringf adds a templated string
 func (e *ErrorList) AddStringf(t string, args ...interface{}) {
-	e.errors = append(e.errors, fmt.Sprintf(t, args...))
+	e.errors = append(e.errors, errors.Errorf(t, args...))
 }
 
 // AddStrings adds multiple string based errors to the list.
 func (e *ErrorList) AddStrings(errs ...string) {
-	e.errors = append(e.errors, errs...)
+	for _, err := range errs {
+		e.errors = append(e.errors, errors.New(err))
+	}
 }
 
 // ToError returns an error if there were errors added or nil
 func (e *ErrorList) ToError() error {
-	switch len(e.errors) {
-	case 0:
+	if len(e.errors) == 0 {
 		return nil
-	case 1:
-		return fmt.Errorf("%s error: %s", e.start, e.errors[0])
-	default:
-		return fmt.Errorf("%s errors: [%s]", e.start, strings.Join(e.errors, ", "))
 	}
+	return e
+}
+
+// Error implements the error interface
+func (e *ErrorList) Error() string {
+	return e.String()
 }
 
 // String converts the list to a string, returning empty if no errors were added.
 func (e *ErrorList) String() string {
-	err := e.ToError()
-	if err == nil {
+	switch len(e.errors) {
+	case 0:
 		return ""
+	case 1:
+		return fmt.Sprintf("%s error: %s", e.start, e.errors[0])
+	default:
+		return fmt.Sprintf("%s errors: [%s]", e.start, strings.Join(e.ErrorStrings(), ", "))
 	}
-	return err.Error()
 }
 
 // ErrorStrings returns all the error strings in this ErrorList as a slice, ignoring the start string.
 func (e *ErrorList) ErrorStrings() []string {
+	errors := make([]string, 0, len(e.errors))
+	for _, err := range e.errors {
+		errors = append(errors, err.Error())
+	}
+	return errors
+}
+
+// Errors returns the underlying errors in the error list
+func (e *ErrorList) Errors() []error {
 	return e.errors
+}
+
+// Empty returns whether the list of error strings is empty.
+func (e *ErrorList) Empty() bool {
+	return len(e.errors) == 0
 }

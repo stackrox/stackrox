@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
 
-export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
+export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-quay.io/stackrox-io}"
+echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
+
+export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
 
-export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-stackrox/collector}"
+export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/collector}"
 echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
-
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
 export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
-export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-stackrox/roxctl}"
+export ROX_POSTGRES_DATASTORE="true"
+echo "ROX_POSTGRES_DATASTORE set to $ROX_POSTGRES_DATASTORE"
+
+export CENTRAL_DB_IMAGE_REPO="${CENTRAL_DB_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/central-db}"
+echo "CENTRAL_DB_IMAGE_REPO set to $CENTRAL_DB_IMAGE_REPO"
+
+export CENTRAL_DB_IMAGE_TAG="${CENTRAL_DB_IMAGE_TAG:-${MAIN_IMAGE_TAG}}"
+echo "StackRox central db image tag set to $CENTRAL_DB_IMAGE_TAG"
+
+export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${CENTRAL_DB_IMAGE_TAG}}"
+echo "StackRox central db image set to $CENTRAL_DB_IMAGE"
+
+export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/roxctl}"
 echo "ROXCTL_IMAGE_REPO set to $ROXCTL_IMAGE_REPO"
 
 export ROXCTL_IMAGE_TAG="${ROXCTL_IMAGE_TAG:-${MAIN_IMAGE_TAG}}"
@@ -22,21 +36,22 @@ echo "StackRox roxctl image tag set to $ROXCTL_IMAGE_TAG"
 export ROXCTL_IMAGE="${ROXCTL_IMAGE_REPO}:${ROXCTL_IMAGE_TAG}"
 echo "StackRox roxctl image set to $ROXCTL_IMAGE"
 
+export ROXCTL_ROX_IMAGE_FLAVOR="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" image-flavor)}"
+echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
+
+export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
+echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
+
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
-  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
 if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  export SCANNER_DB_IMAGE="stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  export SCANNER_DB_IMAGE
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
-
-export MONITORING_IMAGE="${MONITORING_IMAGE:-}"
-if [[ -z "${MONITORING_IMAGE}" ]]; then
-  MONITORING_IMAGE="stackrox/monitoring:$(cat "$(git rev-parse --show-toplevel)/MONITORING_VERSION")"
-fi
-echo "StackRox monitoring image set to $MONITORING_IMAGE"
 
 function curl_central() {
 	cmd=(curl -k)
@@ -74,12 +89,13 @@ function wait_for_central {
 
     echo -n "Waiting for Central to respond."
     set +e
-    local start_time="$(date '+%s')"
+    local start_time
+    start_time="$(date '+%s')"
     local deadline=$((start_time + 10*60))  # 10 minutes
-    until $(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"); do
-        if [[ "$(date '+%s')" > "$deadline" ]]; then
+    until curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"; do
+        if [[ "$(date '+%s')" -gt "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
-            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath={.items[0].metadata.name})"
+            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath='{.items[0].metadata.name}')"
             if [[ -n "$central_pod" ]]; then
                 "${ORCH_CMD}" -n stackrox exec "${central_pod}" -c central -- kill -ABRT 1
             fi
@@ -113,10 +129,10 @@ function get_cluster_zip {
     EXTRA_JSON="$8"
 
     COLLECTION_METHOD_ENUM="default"
-    if [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
+    if [[ "$COLLECTION_METHOD" == "core_bpf" ]]; then
+       COLLECTION_METHOD_ENUM="CORE_BPF"
+    elif [[ "$COLLECTION_METHOD" == "ebpf" ]]; then
       COLLECTION_METHOD_ENUM="EBPF"
-    elif [[ "$COLLECTION_METHOD" == "kernel-module" ]]; then
-      COLLECTION_METHOD_ENUM="KERNEL_MODULE"
     elif [[ "$COLLECTION_METHOD" == "none" ]]; then
       COLLECTION_METHOD_ENUM="NO_COLLECTION"
     else
@@ -130,24 +146,24 @@ function get_cluster_zip {
     STATUS=$(curl_central -X POST \
         -d "$CLUSTER_JSON" \
         -s \
-        -o $TMP \
+        -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/clusters)
+        "https://$LOCAL_API_ENDPOINT/v1/clusters")
     >&2 echo "Status: $STATUS"
     if [ "$STATUS" != "200" ]; then
-      cat $TMP
+      cat "$TMP"
       exit 1
     fi
 
-    ID="$(cat ${TMP} | jq -r .cluster.id)"
+    ID="$(jq -r .cluster.id "${TMP}")"
 
     echo "Getting zip file for cluster ${ID}"
     STATUS=$(curl_central -X POST \
-        -d "{\"id\": \"$ID\"}" \
+        -d "{\"id\": \"$ID\", \"createUpgraderSA\": true}" \
         -s \
-        -o $OUTPUT_DIR/sensor-deploy.zip \
+        -o "$OUTPUT_DIR/sensor-deploy.zip" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip)
+        "https://$LOCAL_API_ENDPOINT/api/extensions/clusters/zip")
     echo "Status: $STATUS"
     echo "Saved zip file to $OUTPUT_DIR"
     echo
@@ -171,11 +187,11 @@ function get_identity {
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/serviceIdentities)
+        "https://$LOCAL_API_ENDPOINT/v1/serviceIdentities")
     echo "Status: $STATUS"
-    echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .certificate > "$OUTPUT_DIR/sensor-cert.pem"
-    cat "$TMP" | jq -r .privateKey > "$OUTPUT_DIR/sensor-key.pem"
+    echo "Response: $(cat "${TMP}")"
+    jq -r .certificate "$TMP" > "$OUTPUT_DIR/sensor-cert.pem"
+    jq -r .privateKey "$TMP" > "$OUTPUT_DIR/sensor-key.pem"
     rm "$TMP"
     echo
 }
@@ -194,10 +210,10 @@ function get_authority {
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
-        https://$LOCAL_API_ENDPOINT/v1/authorities)
+        "https://$LOCAL_API_ENDPOINT/v1/authorities")
     echo "Status: $STATUS"
-    echo "Response: $(cat ${TMP})"
-    cat "$TMP" | jq -r .authorities[0].certificate > "$OUTPUT_DIR/ca.pem"
+    echo "Response: $(cat "${TMP}")"
+    jq -r .authorities[0].certificate "$TMP" > "$OUTPUT_DIR/ca.pem"
     rm "$TMP"
     echo
 }
@@ -232,8 +248,8 @@ function setup_license() {
     echo "Injecting license ..."
     [[ -f "$license_file" ]] || { echo "License file $license_file not found!" ; return 1 ; }
 
-    local tmp="$(mktemp)"
-
+    local tmp
+    tmp="$(mktemp)"
     status=$(curl_central \
 	    -s \
 	    -o "$tmp" \
@@ -253,14 +269,13 @@ function setup_license() {
 
 function setup_auth0() {
     local LOCAL_API_ENDPOINT="$1"
-	echo "Setting up StackRox Dev Auth0 login"
-
-	local client_secret="TYpciXquIi4sqlpux2rzwxcGjvvdWYfUO45d4m44CVUtvK91Z2lKJon55HUXfQJZ"
+    local LOCAL_CLIENT_SECRET="$2"
+	echo "Setting up Dev Auth0 login"
 
 	TMP=$(mktemp)
 	STATUS=$(curl_central \
 	    -s \
-        -o $TMP \
+        -o "$TMP" \
         "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
         -w "%{http_code}\n" \
         -X POST \
@@ -274,7 +289,7 @@ function setup_auth0() {
 	"config": {
 		"issuer": "https://sr-dev.auth0.com",
 		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
-		"client_secret": "${client_secret}",
+		"client_secret": "${LOCAL_CLIENT_SECRET}",
 		"mode": "post"
 	},
 	"extraUiEndpoints": ["localhost:8000", "localhost:3000", "localhost:8001", "prevent.stackrox.com"]

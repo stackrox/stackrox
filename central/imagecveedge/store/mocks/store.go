@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -35,39 +36,39 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockStore) Count() (int, error) {
+func (m *MockStore) Count(ctx context.Context) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count")
+	ret := m.ctrl.Call(m, "Count", ctx)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockStoreMockRecorder) Count() *gomock.Call {
+func (mr *MockStoreMockRecorder) Count(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx)
 }
 
 // Exists mocks base method.
-func (m *MockStore) Exists(id string) (bool, error) {
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", id)
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Exists indicates an expected call of Exists.
-func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(id string) (*storage.ImageCVEEdge, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.ImageCVEEdge, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.ImageCVEEdge)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -75,30 +76,15 @@ func (m *MockStore) Get(id string) (*storage.ImageCVEEdge, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
-}
-
-// GetAll mocks base method.
-func (m *MockStore) GetAll() ([]*storage.ImageCVEEdge, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*storage.ImageCVEEdge)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockStoreMockRecorder) GetAll() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ids []string) ([]*storage.ImageCVEEdge, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVEEdge, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ids)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.ImageCVEEdge)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -106,21 +92,7 @@ func (m *MockStore) GetMany(ids []string) ([]*storage.ImageCVEEdge, []int, error
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
-}
-
-// UpdateVulnState mocks base method.
-func (m *MockStore) UpdateVulnState(cve string, images []string, state storage.VulnerabilityState) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnState", cve, images, state)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateVulnState indicates an expected call of UpdateVulnState.
-func (mr *MockStoreMockRecorder) UpdateVulnState(cve, images, state interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnState", reflect.TypeOf((*MockStore)(nil).UpdateVulnState), cve, images, state)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }

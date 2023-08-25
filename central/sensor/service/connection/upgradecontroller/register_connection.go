@@ -55,16 +55,16 @@ func determineUpgradabilityFromVersionInfoAndConn(sensorVersion string, conn Sen
 	if sensorVersion == version.GetMainVersion() {
 		return storage.ClusterUpgradeStatus_UP_TO_DATE, "sensor is running the same version as Central"
 	}
+
+	// Check if the connection supports auto-upgrade.
+	if err := conn.CheckAutoUpgradeSupport(); err != nil {
+		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, err.Error()
+	}
 	cmp := version.CompareReleaseVersions(sensorVersion, version.GetMainVersion())
 	// The sensor is newer! See comments on the below enum value in the proto file
 	// for more details on how we handle this case.
 	if cmp > 0 {
 		return storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER, fmt.Sprintf("sensor is running a newer version (%s)", sensorVersion)
-	}
-
-	// Check if the connection supports auto-upgrade.
-	if err := conn.CheckAutoUpgradeSupport(); err != nil {
-		return storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED, err.Error()
 	}
 
 	// We don't differentiate between cmp == -1 and cmp == 0.

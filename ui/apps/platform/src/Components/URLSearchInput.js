@@ -44,6 +44,7 @@ const URLSearchInput = ({ categories, ...props }) => {
 };
 
 URLSearchInput.propTypes = {
+    placeholder: PropTypes.string.isRequired,
     categories: PropTypes.arrayOf(PropTypes.string),
 };
 

@@ -3,13 +3,15 @@
 This Helm chart allows you to deploy the central services of the StackRox
 Kubernetes Security Platform: StackRox Central and StackRox Scanner.
 
+If you want to install Red Hat Advanced Cluster Security, refer to
+[Installing quickly using Helm charts](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html)
+for up to date information.
+
 ## Prerequisites
 
 To deploy the central services for the StackRox Kubernetes Security platform
 using Helm, you must:
 - Have at least version 3.1 of the Helm tool installed on your machine
-- Have credentials for the `stackrox.io` registry or the other image registry
-  you use.
 
 ## Add the Canonical Chart Location as a Helm Repository
 
@@ -30,16 +32,17 @@ beforehand.
 The basic command for deploying the central services is
 ```sh
 helm install -n stackrox --create-namespace \
-    stackrox-central-services stackrox/central-services
+    --set central.persistence.none=true \
+    stackrox-central-services stackrox/stackrox-central-services
 ```
 If you have a copy of this chart on your machine, you can also reference the
-path to this copy instead of `stackrox/central-services` above.
+path to this copy instead of `stackrox/stackrox-central-services` above.
 
-In order to be able to access StackRox Docker images, you also need image pull
-credentials. There are several ways to inject the required credentials (if any)
-into the installation process:
-- **Explicitly specify username and password:** Use this if you are using the images
-  from the default registry (`[< required "" .MainRegistry >]`), or a registry that supports username/password
+In case you use image mirroring or otherwise access StackRox container images from non-standard location,
+you may also need to provide image pull credentials.
+There are several ways to inject the required credentials (if any) into the installation process:
+
+- **Explicitly specify username and password:** Use this if you are using a registry that supports username/password
   authentication. Pass the following arguments to the `helm install` command:
   ```sh
   --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
@@ -50,15 +53,11 @@ into the installation process:
   ```sh
   --set imagePullSecrets.useExisting="pull-secret-1;pull-secret-2"
   ```
-- **Do not use image pull secrets:** If you are pulling your images from a registry in a private
+- **Do not use image pull secrets:** If you are pulling your images from quay.io/stackrox-io or a registry in a private
   network that does not require authentication, or if the default service account in the namespace
   to which you are deploying is already configured with appropriate image pull secrets, you do
-  not need to specify any additional image pull secrets. To inform the installer that it does
-  not need to check for specified image pull secrets, pass the following option:
-  ```sh
-  --set imagePullSecrets.allowNone=true
-  ```
-  
+  not need to specify any additional image pull secrets.
+
 ### Accessing the StackRox Portal After Deployment
 
 Once you have deployed the StackRox Kubernetes Security Platform Central Services via
@@ -168,7 +167,7 @@ If you wish to make any changes to the deployment, simply change the configurati
 in your `values-public.yaml` and/or `values-private.yaml` file(s), and inject them into an
 `helm upgrade` invocation:
 ```sh
-helm upgrade -n stackrox stackrox-central-services stackrox/central-services \
+helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-services \
     -f values-public.yaml \
     -f values-private.yaml
 ```

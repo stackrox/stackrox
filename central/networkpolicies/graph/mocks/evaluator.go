@@ -8,11 +8,11 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	tree "github.com/stackrox/rox/pkg/networkgraph/tree"
 	set "github.com/stackrox/rox/pkg/set"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockEvaluator is a mock of Evaluator interface.
@@ -115,17 +115,17 @@ func (m *MocknamespaceProvider) EXPECT() *MocknamespaceProviderMockRecorder {
 	return m.recorder
 }
 
-// GetNamespaces mocks base method.
-func (m *MocknamespaceProvider) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+// GetAllNamespaces mocks base method.
+func (m *MocknamespaceProvider) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaces", ctx)
+	ret := m.ctrl.Call(m, "GetAllNamespaces", ctx)
 	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetNamespaces indicates an expected call of GetNamespaces.
-func (mr *MocknamespaceProviderMockRecorder) GetNamespaces(ctx interface{}) *gomock.Call {
+// GetAllNamespaces indicates an expected call of GetAllNamespaces.
+func (mr *MocknamespaceProviderMockRecorder) GetAllNamespaces(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MocknamespaceProvider)(nil).GetNamespaces), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNamespaces", reflect.TypeOf((*MocknamespaceProvider)(nil).GetAllNamespaces), ctx)
 }

@@ -2,41 +2,40 @@ import React, { ReactElement, useState } from 'react';
 import {
     Alert,
     AlertVariant,
-    Badge,
     Button,
     Modal,
     ModalVariant,
+    PageSection,
+    pluralize,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import { AccessScope, getIsDefaultAccessScopeId } from 'services/AccessScopesService';
+import { AccessScope } from 'services/AccessScopesService';
 import { Role } from 'services/RolesService';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
+import usePermissions from '../../../hooks/usePermissions';
+import { getOriginLabel, isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
 export type AccessScopesListProps = {
     accessScopes: AccessScope[];
     roles: Role[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
 function AccessScopesList({
     accessScopes,
     roles,
-    handleCreate,
     handleDelete,
 }: AccessScopesListProps): ReactElement {
     const [idDeleting, setIdDeleting] = useState('');
     const [nameConfirmingDelete, setNameConfirmingDelete] = useState<string | null>(null);
     const [alertDelete, setAlertDelete] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(id: string) {
         setIdDeleting(id);
@@ -71,50 +70,21 @@ function AccessScopesList({
     }
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }}>
-                <ToolbarContent>
-                    <ToolbarGroup spaceItems={{ default: 'spaceItemsMd' }}>
-                        <ToolbarItem>
-                            <Title headingLevel="h2">Access scopes</Title>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Badge isRead>{accessScopes.length}</Badge>
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarItem alignment={{ default: 'alignRight' }}>
-                        <Button variant="primary" onClick={handleCreate} isSmall>
-                            Add access scope
-                        </Button>
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
+        <PageSection variant="light">
+            <Title headingLevel="h2">{pluralize(accessScopes.length, 'result')} found</Title>
             {alertDelete}
             <TableComposable variant="compact">
                 <Thead>
                     <Tr>
-                        <Th width={20}>Name</Th>
-                        <Th width={30}>Description</Th>
-                        <Th width={40}>Roles</Th>
+                        <Th width={15}>Name</Th>
+                        <Th width={15}>Origin</Th>
+                        <Th width={25}>Description</Th>
+                        <Th width={35}>Roles</Th>
                         <Th width={10} aria-label="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>
-                    <Tr className="pf-u-background-color-200">
-                        <Td dataLabel="Name">Unrestricted</Td>
-                        <Td dataLabel="Description">Access to all clusters and namespaces</Td>
-                        <Td dataLabel="Roles">
-                            <RolesLink
-                                roles={roles.filter(
-                                    ({ accessScopeId }) => accessScopeId.length === 0
-                                )}
-                                entityType={entityType}
-                                entityId=""
-                            />
-                        </Td>
-                        <Td />
-                    </Tr>
-                    {accessScopes.map(({ id, name, description }) => (
+                    {accessScopes.map(({ id, name, description, traits }) => (
                         <Tr key={id}>
                             <Td dataLabel="Name">
                                 <AccessControlEntityLink
@@ -123,6 +93,7 @@ function AccessScopesList({
                                     entityName={name}
                                 />
                             </Td>
+                            <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                             <Td dataLabel="Description">{description}</Td>
                             <Td dataLabel="Roles">
                                 <RolesLink
@@ -136,8 +107,9 @@ function AccessScopesList({
                             <Td
                                 actions={{
                                     disable:
+                                        !hasWriteAccessForPage ||
                                         idDeleting === id ||
-                                        getIsDefaultAccessScopeId(id) ||
+                                        !isUserResource(traits) ||
                                         roles.some(({ accessScopeId }) => accessScopeId === id),
                                     items: [
                                         {
@@ -174,7 +146,7 @@ function AccessScopesList({
                     ''
                 )}
             </Modal>
-        </>
+        </PageSection>
     );
 }
 

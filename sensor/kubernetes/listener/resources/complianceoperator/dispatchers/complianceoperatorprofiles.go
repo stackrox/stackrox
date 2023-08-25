@@ -1,10 +1,11 @@
 package dispatchers
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -22,7 +23,7 @@ func NewProfileDispatcher() *ProfileDispatcher {
 }
 
 // ProcessEvent processes a compliance operator profile
-func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	var complianceProfile v1alpha1.Profile
 
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
@@ -50,7 +51,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 		})
 	}
 
-	return []*central.SensorEvent{
+	events := []*central.SensorEvent{
 		{
 			Id:     protoProfile.GetId(),
 			Action: action,
@@ -59,4 +60,5 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 			},
 		},
 	}
+	return component.NewEvent(events...)
 }

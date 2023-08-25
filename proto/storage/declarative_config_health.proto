@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message DeclarativeConfigHealth {
+    enum Status {
+        UNHEALTHY     = 0;
+        HEALTHY       = 1;
+    }
+
+    enum ResourceType {
+        CONFIG_MAP     = 0;
+        ACCESS_SCOPE   = 1;
+        PERMISSION_SET = 2;
+        ROLE           = 3;
+        AUTH_PROVIDER  = 4;
+        GROUP          = 5;
+        NOTIFIER       = 6;
+    }
+
+    string id                                     = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string name                                   = 2;
+    Status status                                 = 4;
+    string error_message                          = 5;
+    string resource_name                          = 6;
+    ResourceType resource_type                    = 7;
+
+    // Timestamp when the current status was set.
+    google.protobuf.Timestamp last_timestamp      = 8;
+}

@@ -22,6 +22,8 @@ protoc-*
 coverage.out
 coverage.html
 combined_coverage.dat
+/.gotools/
+.proto/
 
 # Build output
 /bin/
@@ -39,10 +41,9 @@ combined_coverage.dat
 !/.idea/codeStyles/
 !/.idea/codeStyles/codeStyleConfig.xml
 !/.idea/codeStyles/Project.xml
-# If you intend adding code styles from subdirectories, you should enumerate them explicitly similar to above. E.g.
-# !/qa-tests-backend/.idea/codeStyles/
-# !/qa-tests-backend/.idea/codeStyles/codeStyleConfig.xml
-# !/qa-tests-backend/.idea/codeStyles/Project.xml
+!/qa-tests-backend/.idea/codeStyles/
+!/qa-tests-backend/.idea/codeStyles/codeStyleConfig.xml
+!/qa-tests-backend/.idea/codeStyles/Project.xml
 
 # Miscellaneous
 *.g4
@@ -51,6 +52,7 @@ combined_coverage.dat
 /.gradle/
 /stackrox-central-services-chart/
 /stackrox-secured-cluster-services-chart/
+.vscode
 
 # Mac OS hidden file
 .DS_Store
@@ -63,3 +65,6 @@ cypress-report.xml
 
 # Local exclusions
 local/database-restore/*
+
+# shellcheck output
+shellcheck-reports

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	cDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -16,21 +15,22 @@ import (
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const fakeClusterID = "FAKECLUSTERID"
@@ -104,12 +104,24 @@ type ServiceTestSuite struct {
 	notifiers        *nDataStoreMocks.MockDataStore
 	tested           Service
 	mockCtrl         *gomock.Controller
-	envIsolator      *envisolator.EnvIsolator
 }
 
 func (suite *ServiceTestSuite) SetupTest() {
 	// Since all the datastores underneath are mocked, the context of the request doesns't need any permissions.
-	suite.requestContext = context.Background()
+	suite.requestContext = sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(
+			suite.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+					resources.NetworkPolicy.GetResource(): {
+						Clusters: nil,
+						Included: true,
+					},
+				},
+			},
+		),
+	)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.networkPolicies = npMocks.NewMockDataStore(suite.mockCtrl)
@@ -122,8 +134,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.networkBaselines = networkBaselineDSMocks.NewMockDataStore(suite.mockCtrl)
 	suite.netTreeMgr = netTreeMgrMocks.NewMockManager(suite.mockCtrl)
 	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
+	suite.T().Setenv(features.NetworkDetectionBaselineSimulation.EnvVar(), "true")
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.externalSrcs, suite.graphConfig, suite.networkBaselines, suite.netTreeMgr,
 		suite.evaluator, suite.namespaces, suite.clusters, suite.notifiers, nil, nil)
@@ -131,7 +142,6 @@ func (suite *ServiceTestSuite) SetupTest() {
 
 func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ServiceTestSuite) TestAuth() {
@@ -145,6 +155,21 @@ func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
+	testCtx := sac.WithGlobalAccessScopeChecker(
+		suite.requestContext,
+		sac.TestScopeCheckerCoreFromFullScopeMap(
+			suite.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+					resources.NetworkPolicy.GetResource(): {
+						Clusters: nil,
+						Included: true,
+					},
+				},
+			},
+		),
+	)
+
 	// Mock that cluster exists.
 	suite.clusters.EXPECT().Exists(gomock.Any(), fakeClusterID).
 		Return(false, nil)
@@ -154,7 +179,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 		ClusterId:       fakeClusterID,
 		IncludeNodeDiff: true,
 	}
-	_, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
+	_, err := suite.tested.SimulateNetworkGraph(testCtx, request)
 	suite.Error(err, "expected graph generation to fail since cluster does not exist")
 }
 
@@ -545,6 +570,30 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
 }
 
+func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
+	// Mock that cluster exists.
+	suite.clusters.EXPECT().Exists(gomock.Any(), fakeClusterID).
+		Return(true, nil)
+
+	// Mock that we have network policies in effect for the cluster.
+	neps := make([]*storage.NetworkPolicy, 0)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, gomock.Eq("my-namespace")).
+		Return(neps, nil).
+		Times(1)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(suite.requestContext, fakeClusterID, gomock.Eq("")).
+		Times(0)
+
+	// Make the request to the service and check that it did not err.
+	request := &v1.GetNetworkPoliciesRequest{
+		ClusterId: fakeClusterID,
+		Namespace: "my-namespace",
+	}
+	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
+
+	suite.NoError(err, "expected graph generation to succeed")
+	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+}
+
 func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment() {
 	// NOTE: although the test verifies GetAllowedPeersFromCurrentPolicyForDeployment, most of the
 	// dependency calls are mocked out. Thus those dependency calls' logics are not tested. This
@@ -731,6 +780,7 @@ func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {
 // getSampleNetworkGraph requires at least 4 deployments
 // This function configures a graph which has explicit edges like this:
 //   - deployment001 -> deployment000 -> deployment002
+//
 // deployment003 is an "island" in this graph
 // deployment001 has non-isolated ingress, and deployment002 has non-isolated egress. Thus
 // there should be an implicit edge from deployment002 -> deployment001

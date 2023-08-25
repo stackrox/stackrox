@@ -3,12 +3,13 @@ package service
 import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 )
 
-const defaultScopeName = ""
+var defaultScopeID = role.AccessScopeIncludeAll.Id
 
 // This function ensures that no APIToken with permissions more than principal's can be created.
 // For each requested tuple (access scope, resource, accessLevel) we check that either:
@@ -18,16 +19,16 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 	// Group roles by access scope.
 	userRolesByScope := make(map[string][]permissions.ResolvedRole)
 	for _, userRole := range userRoles {
-		scopeName := userRole.GetAccessScope().GetName()
-		userRolesByScope[scopeName] = append(userRolesByScope[scopeName], userRole)
+		scopeID := userRole.GetAccessScope().GetId()
+		userRolesByScope[scopeID] = append(userRolesByScope[scopeID], userRole)
 	}
 
 	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
 	var multiErr error
 	for _, requestedRole := range requestedRoles {
-		scopeName := requestedRole.GetAccessScope().GetName()
-		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeName], userRolesByScope[defaultScopeName]...))
-		err := comparePermissions(requestedRole.GetPermissions(), applicablePermissions, scopeName)
+		scopeID := requestedRole.GetAccessScope().GetId()
+		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeID], userRolesByScope[defaultScopeID]...))
+		err := comparePermissions(requestedRole, applicablePermissions)
 		if err != nil {
 			multiErr = multierror.Append(multiErr, err)
 		}
@@ -35,12 +36,13 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 	return multiErr
 }
 
-func comparePermissions(requestedPerms, applicablePerms map[string]storage.Access, scopeName string) error {
+func comparePermissions(requestedRole permissions.ResolvedRole, applicablePerms map[string]storage.Access) error {
 	var multiErr error
-	for requestedResource, requestedAccess := range requestedPerms {
+	accessScopeName := requestedRole.GetAccessScope().GetName()
+	for requestedResource, requestedAccess := range requestedRole.GetPermissions() {
 		userAccess := applicablePerms[requestedResource]
 		if userAccess < requestedAccess {
-			err := newPrivilegeEscalationError(requestedResource, scopeName, requestedAccess, userAccess)
+			err := newPrivilegeEscalationError(requestedResource, accessScopeName, requestedAccess, userAccess)
 			multiErr = multierror.Append(multiErr, err)
 		}
 	}

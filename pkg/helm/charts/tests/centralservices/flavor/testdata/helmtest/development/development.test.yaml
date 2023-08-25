@@ -1,6 +1,0 @@
-tests:
-- name: validate image defaults
-  expect: |
-    assertCentral("docker.io/stackrox/main:3.0.99.0")
-    assertScanner("docker.io/stackrox/scanner:99.9.9")
-    assertScannerDB("docker.io/stackrox/scanner-db:99.9.9")

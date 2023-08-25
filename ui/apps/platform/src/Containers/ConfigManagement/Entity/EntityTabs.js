@@ -14,7 +14,7 @@ const TAB_GROUPS = {
     POLICIES: 'Policies & CIS Controls',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
     APPLICATION_RESOURCES: 'Application & Infrastructure Resources',
-    RBAC_CONFIG: 'RBAC Visibility & Configurations',
+    RBAC_CONFIG: 'Role-Based Access Control',
 };
 
 // TODO: this can be greatly simplified with the entityRelationships

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -22,6 +23,7 @@ func init() {
 }
 
 // mode is the mode we want the renderer to function in.
+//
 //go:generate stringer -type=mode
 type mode int
 
@@ -34,12 +36,17 @@ const (
 	centralTLSOnly
 	// scannerTLSOnly renders only the scanner tls secret
 	scannerTLSOnly
+	// centralDBOnly renders only the central db
+	centralDBOnly
 )
 
 func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) error {
 	// Ensure that default values are taken from the flavor if not provided explicitly in the parameteres
 	if c.K8sConfig.MainImage == "" {
 		c.K8sConfig.MainImage = imageFlavor.MainImage()
+	}
+	if c.K8sConfig.CentralDBImage == "" {
+		c.K8sConfig.CentralDBImage = imageFlavor.CentralDBImage()
 	}
 	if c.K8sConfig.ScannerImage == "" {
 		c.K8sConfig.ScannerImage = imageFlavor.ScannerImage()
@@ -67,10 +74,14 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.K8sConfig.Command = "oc"
 	}
 
+	if mode == centralDBOnly {
+		c.K8sConfig.EnableCentralDB = true
+	}
+
 	configureImageOverrides(c, imageFlavor)
 
 	var err error
-	if mode == renderAll {
+	if mode == renderAll || mode == centralDBOnly {
 		c.K8sConfig.Registry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.MainImage)
 		if err != nil {
 			return err
@@ -93,6 +104,15 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		}
 	}
 
+	// Currently, when the K8S config is generated through interactive mode, the configuration flags will be called twice.
+	// This doesn't affect single value configurations, like booleans and strings, but slices.
+	// TODO(ROX-14956):Once the duplication of flag values is removed, this can be removed.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps)
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Unique(c.K8sConfig.DeclarativeConfigMounts.Secrets)
+	// Additionally, the default value used by the configuration for empty arrays is "[]", which we will have to remove.
+	c.K8sConfig.DeclarativeConfigMounts.ConfigMaps = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.ConfigMaps, []string{"[]"})
+	c.K8sConfig.DeclarativeConfigMounts.Secrets = sliceutils.Without(c.K8sConfig.DeclarativeConfigMounts.Secrets, []string{"[]"})
+
 	return nil
 }
 
@@ -106,6 +126,11 @@ func RenderScannerOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File,
 	return render(c, scannerOnly, imageFlavor)
 }
 
+// RenderCentralDBOnly renders the zip files for the Central DB
+func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
+	return render(c, centralDBOnly, imageFlavor)
+}
+
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	files, err := render(c, mode, imageFlavor)
 	if err != nil {
@@ -113,7 +138,7 @@ func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor default
 	}
 
 	if len(files) != 1 {
-		return nil, utils.Should(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
+		return nil, utils.ShouldErr(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
 	}
 	return files[0].Content, nil
 }

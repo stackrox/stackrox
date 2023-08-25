@@ -8,23 +8,23 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	netTreeMgrMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDSMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestutils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type generatorTestSuite struct {
@@ -383,7 +383,7 @@ func (s *generatorTestSuite) TestGenerate() {
 					},
 				},
 			},
-		}, *types.TimestampNow(), nil)
+		}, types.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)
@@ -508,22 +508,27 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 	// - NO netpol for depE (not selected)
 	// - netpol for qux (don't need NS metadata for netpol generation, only for peers in other namespaces)
 
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.OneStepSCC{
-			sac.ResourceScopeKey(resources.Deployment.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz", "qux"),
-			),
-			sac.ResourceScopeKey(resources.NetworkGraph.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "baz", "qux"),
-			),
-			sac.ResourceScopeKey(resources.Namespace.Resource): sac.AllowFixedScopes(
-				sac.ClusterScopeKeys("mycluster"),
-				sac.NamespaceScopeKeys("foo", "bar", "baz"),
-			),
-		},
-	})
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
+			sac.TestScopeMap{
+				storage.Access_READ_ACCESS: {
+					resources.Deployment.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz", "qux"}},
+						},
+					},
+					resources.NetworkGraph.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "baz", "qux"}},
+						},
+					},
+					resources.Namespace.Resource: &sac.TestResourceScope{
+						Clusters: map[string]*sac.TestClusterScope{
+							"mycluster": {Namespaces: []string{"foo", "bar", "baz"}},
+						},
+					},
+				},
+			}))
 
 	ts := types.TimestampNow()
 	req := &v1.GenerateNetworkPoliciesRequest{
@@ -656,7 +661,7 @@ func (s *generatorTestSuite) TestGenerateWithMaskedUnselectedAndDeleted() {
 			depFlow("depF", "depC"),
 			depFlow("depF", "depD"),
 			depFlow("depF", "depG"),
-		}, *types.TimestampNow(), nil)
+		}, types.TimestampNow(), nil)
 
 	s.mockNetTreeMgr.EXPECT().GetReadOnlyNetworkTree(gomock.Any(), gomock.Any()).Return(nil)
 	s.mockNetTreeMgr.EXPECT().GetDefaultNetworkTree(gomock.Any()).Return(nil)

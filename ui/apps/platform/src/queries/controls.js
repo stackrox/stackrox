@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
-export const AGGREGATED_RESULTS_ACROSS_ENTITY = gql`
-    query getAggregatedResults(
+export const AGGREGATED_RESULTS_ACROSS_ENTITY = (entityType) => gql`
+    query getAggregatedResultsAcrossEntity_${entityType}(
         $groupBy: [ComplianceAggregation_Scope!]
         $unit: ComplianceAggregation_Scope!
         $where: String
@@ -115,8 +115,8 @@ export const AGGREGATED_RESULTS_ACROSS_ENTITIES = gql`
     }
 `;
 
-export const AGGREGATED_RESULTS_STANDARDS_BY_ENTITY = gql`
-    query getAggregatedResults(
+export const AGGREGATED_RESULTS_STANDARDS_BY_ENTITY = (entityType) => gql`
+    query getAggregatedResultsByEntity_${entityType}(
         $groupBy: [ComplianceAggregation_Scope!]
         $unit: ComplianceAggregation_Scope!
         $where: String
@@ -218,7 +218,7 @@ export const CONTROL_QUERY = gql`
                     scope
                 }
                 keys {
-                    ... on Node {
+                    ... on ComplianceDomain_Node {
                         clusterName
                         id
                         name

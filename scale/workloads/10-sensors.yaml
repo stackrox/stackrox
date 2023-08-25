@@ -1,0 +1,31 @@
+deploymentWorkload:
+- deploymentType: Deployment
+  lifecycleDuration: 45m0s
+  numDeployments: 3000
+  numLifecycles: 0
+  podWorkload:
+    containerWorkload:
+      numImages: 0
+    lifecycleDuration: 25m0s
+    numContainers: 3
+    numPods: 3
+    processWorkload:
+      alertRate: 0.003
+      processInterval: 1m30s
+  updateInterval: 25m0s
+networkWorkload:
+  batchSize: 5000
+  flowInterval: 30s
+nodeWorkload:
+  numNodes: 1000
+rbacWorkload:
+  numBindings: 3000
+  numRoles: 3000
+  numServiceAccounts: 3000
+numNamespaces: 1000
+networkPolicyWorkload:
+- lifecycleDuration: 30m0s
+  numNetworkPolicies: 5000
+  numLifecycles: 0
+  numLabels: 5
+  updateInterval: 10m0s

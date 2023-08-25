@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
@@ -72,7 +73,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 // due to the absence (or presence) of image scans.
 func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 	for _, a := range alerts {
-		if !policyfields.ContainsUnscannedImageField(a.GetPolicy()) {
+		if !policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
 			return true
 		}
 	}
@@ -84,7 +85,7 @@ func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
 	filteredAlerts := alerts[:0]
 	for _, a := range alerts {
-		if policyfields.ContainsUnscannedImageField(a.GetPolicy()) {
+		if policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)
@@ -135,7 +136,10 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.deploytimeDetector.Detect(detectionCtx, dep, imgs)
+		return s.deploytimeDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+			Deployment: dep,
+			Images:     imgs,
+		})
 	}
 
 	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
@@ -148,9 +152,10 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil
 	}
 
-	if !pointer.BoolPtrDerefOr(req.DryRun, false) {
+	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 	}
 
+	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
 }

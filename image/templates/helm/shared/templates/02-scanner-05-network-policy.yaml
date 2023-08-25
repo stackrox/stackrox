@@ -5,21 +5,27 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ ._rox.scanner.name }}
+  name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "networkpolicy" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "networkpolicy" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ ._rox.scanner.name }}
+      app: scanner
   ingress:
   - from:
     - podSelector:
         matchLabels:
           app: central
+{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
+  - from:
+    - podSelector:
+        matchLabels:
+          app: sensor
+{{ end }}
     ports:
     - port: 8080
       protocol: TCP
@@ -33,21 +39,21 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ ._rox.scanner.name }}-db
+  name: scanner-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "networkpolicy" (print ._rox.scanner.name "-db")) | nindent 4 }}
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-db") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "networkpolicy" (print ._rox.scanner.name "-db")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-db") | nindent 4 }}
 spec:
   podSelector:
     matchLabels:
-      app: {{ ._rox.scanner.name }}-db
+      app: scanner-db
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app: {{ ._rox.scanner.name }}
+          app: scanner
     ports:
     - port: 5432
       protocol: TCP
@@ -55,3 +61,26 @@ spec:
     - Ingress
 
 {{ end -}}
+
+{{ if ._rox.scanner.exposeMonitoring }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "networkpolicy" "scanner-monitoring") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "networkpolicy" "scanner-monitoring") | nindent 4 }}
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: scanner
+  policyTypes:
+    - Ingress
+{{ end }}

@@ -3,7 +3,12 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common/centralid"
+	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/installmethod"
 )
 
 var (
@@ -85,6 +90,20 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
 	})
 
+	totalProcessesSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_processes_sent_counter",
+		Help:      "A counter of the total number of processes sent to Central by Sensor",
+	})
+
+	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "total_processes_received_counter",
+		Help:      "A counter of the total number of processes received by Sensor from Collector",
+	})
+
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -114,6 +133,48 @@ var (
 		Help:      "Time taken to fully process an event from Kubernetes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Action", "Resource", "Dispatcher"})
+
+	resolverChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "resolver_channel_size",
+		Help:      "A gauge to track the resolver channel size",
+	})
+
+	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "output_channel_size",
+		Help:      "A gauge to track the output channel size",
+	})
+
+	telemetryLabels = prometheus.Labels{
+		"branding":       branding.GetProductNameShort(),
+		"build":          metrics.GetBuildType(),
+		"sensor_version": version.GetMainVersion(),
+	}
+
+	telemetrySecuredNodes = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "secured_nodes",
+			Help:        "The number of nodes secured by Sensor",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
+	)
+
+	telemetrySecuredVCPU = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "secured_vcpu",
+			Help:        "The number of vCPUs secured by Sensor",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
+	)
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -156,6 +217,16 @@ func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
 }
 
+// IncrementTotalProcessesSentCounter increments the total number of endpoints sent
+func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
+	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
+}
+
+// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
+func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
+	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
+}
+
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
 func IncrementProcessEnrichmentDrops() {
 	processEnrichmentDrops.Inc()
@@ -182,4 +253,42 @@ func IncK8sEventCount(action string, resource string) {
 // SetResourceProcessingDurationForResource sets the duration for how long it takes to process the resource
 func SetResourceProcessingDurationForResource(event *central.SensorEvent) {
 	metrics.SetResourceProcessingDurationForEvent(k8sObjectProcessingDuration, event, "")
+}
+
+// IncResolverChannelSize increases the resolverChannel by 1
+func IncResolverChannelSize() {
+	resolverChannelSize.Inc()
+}
+
+// DecResolverChannelSize decreases the resolverChannel by 1
+func DecResolverChannelSize() {
+	resolverChannelSize.Dec()
+}
+
+// IncOutputChannelSize increases the outputChannel by 1
+func IncOutputChannelSize() {
+	outputChannelSize.Inc()
+}
+
+// DecOutputChannelSize decreases the outputChannel by 1
+func DecOutputChannelSize() {
+	outputChannelSize.Dec()
+}
+
+// SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
+func SetTelemetryMetrics(cm *central.ClusterMetrics) {
+	telemetrySecuredNodes.Reset()
+	telemetrySecuredNodes.WithLabelValues(
+		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
+		clusterid.GetNoWait(),
+	).Set(float64(cm.GetNodeCount()))
+	telemetrySecuredVCPU.Reset()
+	telemetrySecuredVCPU.WithLabelValues(
+		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
+		clusterid.GetNoWait(),
+	).Set(float64(cm.GetCpuCapacity()))
 }

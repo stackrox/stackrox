@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheck(t *testing.T) {
@@ -70,11 +71,30 @@ func (s *suiteImpl) TestPass() {
 
 	policies := []*storage.Policy{
 		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Source: "/etc/passwd",
+			PolicySections: []*storage.PolicySection{
+				{
+					SectionName: "section-1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.VolumeSource,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "/etc/passwd",
+								},
+							},
+						},
+						{
+							FieldName: fieldnames.VolumeType,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "EmptyDir",
+								},
+							},
+						},
+					},
 				},
 			},
+			PolicyVersion: "1.1",
 		},
 	}
 
@@ -125,36 +145,58 @@ func (s *suiteImpl) TestFail() {
 				},
 			},
 		},
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "boo",
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/var/run/docker.sock",
-							Type:   "HostPath (bare host directory volume)",
-						},
-					},
-				},
-			},
-		},
 	}
 
 	policies := []*storage.Policy{
 		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Destination: "/etc/passwd",
+			Id:   "policy1",
+			Name: "policy-1",
+			PolicySections: []*storage.PolicySection{
+				{
+					SectionName: "section-1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.VolumeSource,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "/etc/passwd",
+								},
+							},
+						},
+						{
+							FieldName: fieldnames.VolumeType,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "HostPath (bare host directory volume)",
+								},
+							},
+						},
+					},
 				},
 			},
+			PolicyVersion: "1.1",
 		},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
 	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(s.T(), policies))
-	data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
+	data.EXPECT().UnresolvedAlerts().AnyTimes().Return([]*storage.ListAlert{
+		{
+			Id:    "alert1",
+			State: storage.ViolationState_ACTIVE,
+			Policy: &storage.ListAlertPolicy{
+				Id:   "policy1",
+				Name: "policy-1",
+			},
+			Entity: &storage.ListAlert_Deployment{
+				Deployment: &storage.ListAlertDeployment{
+					Id:   testDeployments[0].Id,
+					Name: testDeployments[0].Name,
+				},
+			},
+		},
+	})
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)

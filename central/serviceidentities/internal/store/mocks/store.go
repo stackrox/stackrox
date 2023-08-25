@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -34,31 +35,31 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AddServiceIdentity mocks base method.
-func (m *MockStore) AddServiceIdentity(identity *storage.ServiceIdentity) error {
+// GetAll mocks base method.
+func (m *MockStore) GetAll(ctx context.Context) ([]*storage.ServiceIdentity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddServiceIdentity", identity)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddServiceIdentity indicates an expected call of AddServiceIdentity.
-func (mr *MockStoreMockRecorder) AddServiceIdentity(identity interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddServiceIdentity", reflect.TypeOf((*MockStore)(nil).AddServiceIdentity), identity)
-}
-
-// GetServiceIdentities mocks base method.
-func (m *MockStore) GetServiceIdentities() ([]*storage.ServiceIdentity, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServiceIdentities")
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]*storage.ServiceIdentity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetServiceIdentities indicates an expected call of GetServiceIdentities.
-func (mr *MockStoreMockRecorder) GetServiceIdentities() *gomock.Call {
+// GetAll indicates an expected call of GetAll.
+func (mr *MockStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceIdentities", reflect.TypeOf((*MockStore)(nil).GetServiceIdentities))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
+}
+
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.ServiceIdentity) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
 }

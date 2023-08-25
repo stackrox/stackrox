@@ -15,8 +15,8 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import { entityViolationsColumns } from 'constants/listColumns';
 
+import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import SeverityLabel from 'Components/SeverityLabel';
 import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = (data) => {
@@ -92,7 +92,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                     headerClassName: defaultHeaderClassName,
                     className: defaultColumnClassName,
                     accessor: 'name',
-                    Cell: ({ original }) => {
+                    Cell: ({ original, pdf }) => {
                         const { severity, categories, name } = original;
 
                         const groupHeader = (
@@ -100,7 +100,11 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                                 <div className="flex flex-1">{name}</div>
                                 <div>
                                     <span>
-                                        Severity: <SeverityLabel severity={severity} />
+                                        Severity:{' '}
+                                        <PolicySeverityIconText
+                                            severity={severity}
+                                            isTextOnly={pdf}
+                                        />
                                     </span>
                                     <span className="pl-2 pr-2">|</span>
                                     <span>Categories: {categories.join(',')}</span>

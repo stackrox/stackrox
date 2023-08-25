@@ -7,12 +7,15 @@ import (
 )
 
 type stringCollector struct {
-	stringsProto  storage.ComplianceStrings
+	stringsProto  *storage.ComplianceStrings
 	stringIndices map[string]int
 }
 
-func newStringCollector() *stringCollector {
+func newStringCollector(runID string) *stringCollector {
 	return &stringCollector{
+		stringsProto: &storage.ComplianceStrings{
+			Id: runID,
+		},
 		stringIndices: make(map[string]int),
 	}
 }
@@ -31,7 +34,7 @@ func (c *stringCollector) Collect(s string) int {
 // and returns a `ComplianceStrings` proto that contains the strings and allows looking up the original message strings
 // through the newly populated `MessageId` field in the evidence record.
 func ExternalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.ComplianceStrings {
-	sc := newStringCollector()
+	sc := newStringCollector(resultsProto.GetRunMetadata().GetRunId())
 	externalizeStringsForEntity(resultsProto.GetClusterResults(), sc)
 	for _, deploymentResults := range resultsProto.GetDeploymentResults() {
 		externalizeStringsForEntity(deploymentResults, sc)
@@ -39,7 +42,7 @@ func ExternalizeStrings(resultsProto *storage.ComplianceRunResults) *storage.Com
 	for _, nodeResults := range resultsProto.GetNodeResults() {
 		externalizeStringsForEntity(nodeResults, sc)
 	}
-	return &sc.stringsProto
+	return sc.stringsProto
 }
 
 func externalizeStringsForEntity(entityResults *storage.ComplianceRunResults_EntityResults, strings *stringCollector) {

@@ -4,8 +4,12 @@ import (
 	routeV1 "github.com/openshift/api/route/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/service"
+	"github.com/stackrox/rox/sensor/common/store/resolver"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -16,13 +20,13 @@ type serviceWithRoutes struct {
 
 type serviceWrap struct {
 	*v1.Service
-	selector labels.Selector
+	selector selector.Selector
 }
 
 func wrapService(svc *v1.Service) *serviceWrap {
 	return &serviceWrap{
 		Service:  svc,
-		selector: SelectorFromMap(svc.Spec.Selector),
+		selector: selector.CreateSelector(svc.Spec.Selector, selector.EmptyMatchesNothing()),
 	}
 }
 
@@ -46,7 +50,7 @@ func exposureInfoFromPort(template *storage.PortConfig_ExposureInfo, port v1.Ser
 	return out
 }
 
-func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_ExposureInfo {
+func (s *serviceWithRoutes) exposure() map[service.PortRef][]*storage.PortConfig_ExposureInfo {
 	if s.Spec.Type == v1.ServiceTypeExternalName {
 		return nil
 	}
@@ -72,9 +76,9 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 		}
 	}
 
-	result := make(map[portRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
+	result := make(map[service.PortRef][]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
 	for _, port := range s.Spec.Ports {
-		ref := portRefOf(port)
+		ref := service.PortRefOf(port)
 		exposureInfo := exposureInfoFromPort(exposureTemplate, port)
 		result[ref] = append(result[ref], exposureInfo)
 	}
@@ -98,7 +102,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 				if !matchFunc(&s.Spec.Ports[i]) {
 					continue
 				}
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 				break // Only one port will ever match
@@ -107,7 +111,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 			// This is the case where route.Spec.Port is not specified, in which case
 			// the route targets all ports on the service.
 			for _, port := range s.Spec.Ports {
-				ref := portRefOf(port)
+				ref := service.PortRefOf(port)
 				exposureInfo := exposureInfoFromPort(routeExposureTemplate, port)
 				result[ref] = append(result[ref], exposureInfo)
 			}
@@ -117,7 +121,7 @@ func (s *serviceWithRoutes) exposure() map[portRef][]*storage.PortConfig_Exposur
 	return result
 }
 
-// serviceDispatcher handles servidce resource events.
+// serviceDispatcher handles service resource events.
 type serviceDispatcher struct {
 	serviceStore           *serviceStore
 	deploymentStore        *DeploymentStore
@@ -135,44 +139,60 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *Deploymen
 	}
 }
 
-// Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+// ProcessEvent processes a service resource event, and returns the sensor events to emit in response.
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
-	var sel selector
+	var sel selector.Selector
 	oldWrap := sh.serviceStore.getService(svc.Namespace, svc.Name)
 	if oldWrap != nil {
 		sel = oldWrap.selector
 	}
-	if action == central.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
-			sel = or(sel, newWrap.selector)
+			sel = selector.Or(sel, newWrap.selector)
 		} else {
 			sel = newWrap.selector
 		}
 	} else if action == central.ResourceAction_REMOVE_RESOURCE {
 		sh.serviceStore.removeService(svc)
 	}
+	// If OnNamespaceDelete is called before we need to get the selector from the received object
+	if sel == nil {
+		wrap := wrapService(svc)
+		sel = wrap.selector
+	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) []*central.SensorEvent {
-	events := sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)
-	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
-	return events
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector.Selector) *component.ResourceEvent {
+	var message component.ResourceEvent
+	if env.ResyncDisabled.BooleanSetting() {
+		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(namespace, sel))
+	} else {
+		message.AddSensorEvent(sh.portExposureReconciler.UpdateExposuresForMatchingDeployments(namespace, sel)...)
+		sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
+	}
+	return &message
 }
 
-func (sh *serviceDispatcher) processCreate(svc *v1.Service) []*central.SensorEvent {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) *component.ResourceEvent {
 	svcWrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(svcWrap)
-	events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
-		serviceWrap: svcWrap,
-		routes:      sh.serviceStore.getRoutesForService(svcWrap),
-	})
-	sh.endpointManager.OnServiceCreate(svcWrap)
-	return events
+	var message component.ResourceEvent
+	if env.ResyncDisabled.BooleanSetting() {
+		message.AddDeploymentReference(resolver.ResolveDeploymentLabels(svc.GetNamespace(), svcWrap.selector))
+	} else {
+		events := sh.portExposureReconciler.UpdateExposureOnServiceCreate(serviceWithRoutes{
+			serviceWrap: svcWrap,
+			routes:      sh.serviceStore.getRoutesForService(svcWrap),
+		})
+		sh.endpointManager.OnServiceCreate(svcWrap)
+		message.AddSensorEvent(events...)
+	}
+	return &message
 }

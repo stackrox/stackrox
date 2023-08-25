@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/utils"
@@ -25,6 +25,8 @@ var (
 )
 
 type service struct {
+	central.UnimplementedSensorUpgradeControlServiceServer
+
 	connectionManager connection.Manager
 }
 
@@ -36,12 +38,12 @@ func clusterIDFromCtx(ctx context.Context) (string, error) {
 
 	svc := id.Service()
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
-		return "", errorhelpers.NewErrNotAuthorized("only sensor/upgrader may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensor/upgrader may access this API")
 	}
 
 	clusterID := svc.GetId()
 	if clusterID == "" {
-		return "", errorhelpers.NewErrNotAuthorized("only sensors with a valid cluster ID may access this API")
+		return "", errox.NotAuthorized.CausedBy("only sensors with a valid cluster ID may access this API")
 	}
 	return clusterID, nil
 }
@@ -54,7 +56,7 @@ func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.U
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
 	}
 
 	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
@@ -68,13 +70,13 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
 	}
 
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {
 		if errors.Is(err, upgradecontroller.ErrNoUpgradeInProgress) {
 			s, err := status.New(codes.Internal, err.Error()).WithDetails(&central.UpgradeCheckInResponseDetails_NoUpgradeInProgress{})
-			if utils.Should(err) == nil {
+			if utils.ShouldErr(err) == nil {
 				return nil, s.Err()
 			}
 		}
@@ -87,7 +89,7 @@ func (s *service) RegisterServiceServer(server *grpc.Server) {
 	central.RegisterSensorUpgradeControlServiceServer(server, s)
 }
 
-func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+func (s *service) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 

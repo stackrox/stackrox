@@ -7,6 +7,7 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import "storage/role.proto";
 
 package v1;
@@ -42,6 +43,21 @@ message ListSimpleAccessScopesResponse {
     repeated storage.SimpleAccessScope access_scopes = 1;
 }
 
+// ScopeObject represents an ID, name pair, which can apply to any
+// entity that takes part in an access scope (so far Cluster and Namespace).
+message ScopeObject {
+    string id   = 1;
+    string name = 2;
+}
+
+message GetClustersForPermissionsResponse {
+    repeated ScopeObject clusters = 1;
+}
+
+message GetNamespacesForClusterAndPermissionsResponse {
+    repeated ScopeObject namespaces = 1;
+}
+
 message ComputeEffectiveAccessScopeRequest {
     enum Detail {
         STANDARD = 0;
@@ -66,6 +82,17 @@ message ComputeEffectiveAccessScopeRequest {
 message CreateRoleRequest {
     string         name = 1;
     storage.Role   role = 2;
+}
+
+message GetClustersForPermissionsRequest {
+    Pagination      pagination  = 1;
+    repeated string permissions = 2;
+}
+
+message GetNamespaceForClusterAndPermissionsRequest {
+    reserved 1; // For pagination, should namespace search allow for it.
+    string          cluster_id  = 2;
+    repeated string permissions = 3;
 }
 
 service RoleService {
@@ -118,8 +145,6 @@ service RoleService {
     // Permission sets                                                        //
     //                                                                        //
 
-    // BEGIN EXPERIMENTAL/UNSTABLE API
-
     rpc GetPermissionSet (ResourceByID) returns (storage.PermissionSet) {
         option (google.api.http) = {
             get: "/v1/permissionsets/{id}"
@@ -155,13 +180,9 @@ service RoleService {
         };
     }
 
-    // END EXPERIMENTAL/UNSTABLE API
-
     ////////////////////////////////////////////////////////////////////////////
     // Access scopes                                                          //
     //                                                                        //
-
-    // BEGIN EXPERIMENTAL/UNSTABLE API
 
     rpc GetSimpleAccessScope (ResourceByID) returns (storage.SimpleAccessScope) {
         option (google.api.http) = {
@@ -213,19 +234,19 @@ service RoleService {
     //
     // We let the caller decide what level of detail they would like to have:
     //
-    //   * Minimal, when only roots of included subtrees are listed by their
+    //   - Minimal, when only roots of included subtrees are listed by their
     //     IDs. Clusters can be either INCLUDED (its namespaces are included but
     //     are not listed) or PARTIAL (at least one namespace is explicitly
     //     included). Namespaces can only be INCLUDED.
     //
-    //   * Standard [default], when all known clusters and namespaces are listed
+    //   - Standard [default], when all known clusters and namespaces are listed
     //     with their IDs and names. Clusters can be INCLUDED (all its
     //     namespaces are explicitly listed as INCLUDED), PARTIAL (all its
     //     namespaces are explicitly listed, some as INCLUDED and some as
     //     EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as
     //     EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.
     //
-    //   * High, when every cluster and namespace is augmented with metadata.
+    //   - High, when every cluster and namespace is augmented with metadata.
     rpc ComputeEffectiveAccessScope (ComputeEffectiveAccessScopeRequest) returns (storage.EffectiveAccessScope) {
         option (google.api.http) = {
             post: "/v1/computeeffectiveaccessscope"
@@ -233,5 +254,40 @@ service RoleService {
         };
     }
 
-    // END EXPERIMENTAL/UNSTABLE API
+    // Extraction of user scope elements
+
+    // GetClustersForPermissions
+    //
+    // Returns the list of cluster ID and cluster name pairs that have at least read allowed
+    // by the scope of the requesting user for the list of requested permissions.
+    // Effective access scopes are only considered for input permissions that have
+    // cluster scope or narrower (i.e. global permissions from the input are ignored).
+    //
+    // If the input only contains permissions at global level, the output will be an empty list.
+    //
+    // If no permission is given in input, all clusters allowed by the requester scope for
+    // any permission with cluster scope or narrower will be part of the response.
+    rpc GetClustersForPermissions (GetClustersForPermissionsRequest) returns (GetClustersForPermissionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/sac/clusters"
+        };
+    }
+
+    // GetNamespacesForClusterAndPermissions
+    //
+    // Returns the list of namespace ID and namespace name pairs that belong to the requested
+    // cluster and for which the user has at least read access granted for the list of
+    // requested permissions that have namespace scope or narrower (i.e. global and cluster
+    // permissions from the input are ignored).
+    //
+    // If the input only contains permissions at global or cluster level, the output will be
+    // an empty list.
+    //
+    // If no permission is given in input, all namespaces allowed by the requester scope for
+    // any permission with namespace scope or narrower will be part of the response.
+    rpc GetNamespacesForClusterAndPermissions (GetNamespaceForClusterAndPermissionsRequest) returns (GetNamespacesForClusterAndPermissionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/sac/clusters/{cluster_id}/namespaces"
+        };
+    }
 }

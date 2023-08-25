@@ -1,9 +1,12 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 // CommandHandler executes the input scrape commands, and reconciles scrapes with input ComplianceReturns,
@@ -20,11 +23,11 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 		service: complianceService,
 
 		commands: make(chan *central.ScrapeCommand),
-		updates:  make(chan *central.MsgFromSensor),
+		updates:  make(chan *message.ExpiringMessage),
 
 		scrapeIDToState: make(map[string]*scrapeState),
 
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
+		stopper:          concurrency.NewStopper(),
+		centralReachable: atomic.Bool{},
 	}
 }

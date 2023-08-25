@@ -1,21 +1,21 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for pods.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	GetIDs() ([]string, error)
+	GetIDs(ctx context.Context) ([]string, error)
 
-	Get(id string) (*storage.Pod, bool, error)
-	GetMany(ids []string) ([]*storage.Pod, []int, error)
-	Walk(fn func(obj *storage.Pod) error) error
+	Get(ctx context.Context, id string) (*storage.Pod, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Pod, []int, error)
+	Walk(ctx context.Context, fn func(obj *storage.Pod) error) error
 
-	Upsert(pod *storage.Pod) error
-	Delete(id string) error
-
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
+	Upsert(ctx context.Context, pod *storage.Pod) error
+	Delete(ctx context.Context, id string) error
 }

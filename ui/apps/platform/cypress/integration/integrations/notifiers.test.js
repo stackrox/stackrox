@@ -1,54 +1,40 @@
-import * as api from '../../constants/apiEndpoints';
-import { labels, selectors, url } from '../../constants/IntegrationsPage';
 import withAuth from '../../helpers/basicAuth';
 import {
     generateNameWithDate,
     getHelperElementByLabel,
     getInputByLabel,
 } from '../../helpers/formHelpers';
-import { visitIntegrationsUrl } from '../../helpers/integrations';
 import sampleCert from '../../helpers/sampleCert';
 
-function assertNotifierntegrationTable(integrationType) {
-    const label = labels.notifiers[integrationType];
-    cy.get(`${selectors.breadcrumbItem}:contains("${label}")`);
-    cy.get(`${selectors.title2}:contains("${label}")`);
-}
+import {
+    clickCreateNewIntegrationInTable,
+    deleteIntegrationInTable,
+    saveCreatedIntegrationInForm,
+    testIntegrationInFormWithoutStoredCredentials,
+    testIntegrationInFormWithStoredCredentials,
+    visitIntegrationsTable,
+} from './integrations.helpers';
+import { selectors } from './integrations.selectors';
 
-function getNotifierIntegrationTypeUrl(integrationType) {
-    return `${url}/notifiers/${integrationType}`;
-}
+// Page address segments are the source of truth for integrationSource and integrationType.
+const integrationSource = 'notifiers';
 
-function visitNotifierIntegrationType(integrationType) {
-    visitIntegrationsUrl(getNotifierIntegrationTypeUrl(integrationType));
-    assertNotifierntegrationTable(integrationType);
-}
+const staticResponseForTest = { body: {} };
 
-function saveNotifierIntegrationType(integrationType) {
-    cy.intercept('GET', api.integrations.notifiers).as('getNotifierIntegrations');
-    if (integrationType === 'jira') {
-        // Mock request because backend pings your Jira on Save, not just on Test.
-        cy.intercept('POST', api.integrations.notifiers, {
-            body: { id: 'abcdefgh' },
-        }).as('postNotifierIntegration');
-    } else {
-        cy.intercept('POST', api.integrations.notifiers).as('postNotifierIntegration');
-    }
-    cy.get(selectors.buttons.save).should('be.enabled').click();
-    cy.wait(['@postNotifierIntegration', '@getNotifierIntegrations']);
-    assertNotifierntegrationTable(integrationType);
-    cy.location('pathname').should('eq', getNotifierIntegrationTypeUrl(integrationType));
-}
+const staticResponseForPOST = {
+    body: { id: 'abcdefgh' },
+};
 
-describe('Notifiers Test', () => {
+describe('Notifier Integrations', () => {
     withAuth();
 
-    describe('Notifier forms', () => {
+    describe('forms', () => {
         it('should create a new AWS Security Hub integration', () => {
             const integrationName = generateNameWithDate('Nova AWS Security Hub');
             const integrationType = 'awsSecurityHub';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -91,15 +77,23 @@ describe('Notifiers Test', () => {
             // Step 3, check valid form and save
             getInputByLabel('AWS account number').clear().type('939357552771').blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Email integration', () => {
             const integrationName = generateNameWithDate('Nova Email');
             const integrationType = 'email';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -128,7 +122,7 @@ describe('Notifiers Test', () => {
 
             // Step 2, check fields for invalid formats
             getInputByLabel('Email server').type('example.');
-            getInputByLabel('Sender').type('scooby@doo', {
+            getInputByLabel('Sender').type('scooby@doo.', {
                 parseSpecialCharSequences: false,
             });
             getInputByLabel('Default recipient')
@@ -150,7 +144,7 @@ describe('Notifiers Test', () => {
             getInputByLabel('Email server').type('smtp.example.com:465');
             getInputByLabel('Username').clear().type('scooby');
             getInputByLabel('Password').clear().type('monkey');
-            getInputByLabel('From').clear().type('ACS');
+            getInputByLabel('From').clear().type('Scooby');
             getInputByLabel('Sender').clear().type('scooby@doo.com', {
                 parseSpecialCharSequences: false,
             });
@@ -160,15 +154,23 @@ describe('Notifiers Test', () => {
             getInputByLabel('Annotation key for recipient').clear().type('email');
             getInputByLabel('Disable TLS certificate validation (insecure)').click();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Generic Webhook integration', () => {
             const integrationName = generateNameWithDate('Nova Generic Webhook');
             const integrationType = 'generic';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -183,8 +185,7 @@ describe('Notifiers Test', () => {
             cy.get(selectors.buttons.save).should('be.disabled');
 
             // Step 2, check fields for invalid formats, or conditional validation
-            getInputByLabel('Endpoint').type('example').blur();
-            getHelperElementByLabel('Endpoint').contains('Endpoint must be a valid URL');
+            getInputByLabel('Endpoint').type('example.com:3000/hooks/123').blur();
 
             getInputByLabel('Username').type('neo').blur();
             getInputByLabel('Password').type(' ').blur();
@@ -200,7 +201,7 @@ describe('Notifiers Test', () => {
 
             // Step 3, check valid from and save
             getInputByLabel('Integration name').clear().type(integrationName);
-            getInputByLabel('Endpoint').clear().type('example.com:3000/hooks/123');
+            getInputByLabel('Endpoint').clear().type('service-name');
             getInputByLabel('CA certificate (optional)').type(sampleCert, { delay: 1 });
             getInputByLabel('Skip TLS verification').click();
             getInputByLabel('Enable audit logging').click();
@@ -210,15 +211,24 @@ describe('Notifiers Test', () => {
             getInputByLabel('Key').type('x-org');
             getInputByLabel('Value').type('mysteryinc').blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Google Cloud SCC integration', () => {
             const integrationName = generateNameWithDate('Nova Google Cloud SCC');
             const integrationType = 'cscc';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -264,15 +274,23 @@ describe('Notifiers Test', () => {
                 })
                 .blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Jira integration', () => {
             const integrationName = generateNameWithDate('Nova Jira');
             const integrationType = 'jira';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -308,15 +326,24 @@ describe('Notifiers Test', () => {
             getInputByLabel('Jira URL').clear().type('https://example.atlassian.net');
             getInputByLabel('Default project').clear().type('Unicorn').blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            // Mock request because backend pings your Jira on Save, not just on Test.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new PagerDuty integration', () => {
             const integrationName = generateNameWithDate('Nova PagerDuty');
             const integrationType = 'pagerduty';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -343,15 +370,23 @@ describe('Notifiers Test', () => {
             getInputByLabel('Integration name').clear().type(integrationName);
             getInputByLabel('PagerDuty integration key').type('key');
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Sumo Logic integration', () => {
             const integrationName = generateNameWithDate('Nova Sumo Logic');
             const integrationType = 'sumologic';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -380,15 +415,23 @@ describe('Notifiers Test', () => {
                 .clear()
                 .type('https://endpoint.sumologic.com/receiver/v1/http/');
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Splunk integration', () => {
             const integrationName = generateNameWithDate('Nova Splunk');
             const integrationType = 'splunk';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -444,15 +487,24 @@ describe('Notifiers Test', () => {
             getInputByLabel('Source type for alert').clear().type('stackrox-alert');
             getInputByLabel('Source type for audit').clear().type('stackrox-audit-message');
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Slack integration', () => {
             const integrationName = generateNameWithDate('Nova Slack');
             const integrationType = 'slack';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -488,15 +540,23 @@ describe('Notifiers Test', () => {
                 .type('https://hooks.slack.com/services/scooby/doo')
                 .blur();
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
 
         it('should create a new Syslog integration', () => {
             const integrationName = generateNameWithDate('Nova Syslog');
             const integrationType = 'syslog';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -507,6 +567,12 @@ describe('Notifiers Test', () => {
             getInputByLabel('Logging facility').focus().blur(); // focus, then blur, select in order to trigger validation
             getInputByLabel('Receiver host').click().blur();
             getInputByLabel('Receiver port').click().clear().blur();
+
+            // check format toggle
+            cy.get('.pf-c-form__group-label .pf-c-form__label-text:contains("Message Format")');
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button.pf-m-selected:contains("CEF")'
+            );
 
             getHelperElementByLabel('Integration name').contains('Integration name is required');
             getHelperElementByLabel('Logging facility').contains('Logging facility is required');
@@ -529,16 +595,34 @@ describe('Notifiers Test', () => {
 
             // Step 3, check valid form and save
             getInputByLabel('Receiver port').clear().type('1').blur();
+            cy.get('button:contains("Add new extra field")').click();
+            getInputByLabel('Key').type('vehicle');
+            getInputByLabel('Value').type('vanagon').blur();
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+            ).click();
+            cy.get(
+                '#messageFormat .pf-c-toggle-group__item .pf-c-toggle-group__button:contains("CEF (legacy field order)")'
+            ).should('have.class', 'pf-m-selected');
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            // Mock response to prevent error in central log file: Unable to send audit msg.
+            saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
+
+            // Test does not delete, because it did not create.
         });
 
         it('should create a new Teams integration', () => {
             const integrationName = generateNameWithDate('Nova Teams');
             const integrationType = 'teams';
-            visitNotifierIntegrationType(integrationType);
-            cy.get(selectors.buttons.newIntegration).click();
+
+            visitIntegrationsTable(integrationSource, integrationType);
+            clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
             // Step 0, should start out with disabled Save and Test buttons
             cy.get(selectors.buttons.test).should('be.disabled');
@@ -564,8 +648,15 @@ describe('Notifiers Test', () => {
                 .blur();
             getInputByLabel('Annotation key for Teams webhook').clear().type('teams');
 
-            cy.get(selectors.buttons.test).should('be.enabled');
-            saveNotifierIntegrationType(integrationType);
+            testIntegrationInFormWithoutStoredCredentials(
+                integrationSource,
+                integrationType,
+                staticResponseForTest
+            );
+
+            saveCreatedIntegrationInForm(integrationSource, integrationType);
+
+            deleteIntegrationInTable(integrationSource, integrationType, integrationName);
         });
     });
 });

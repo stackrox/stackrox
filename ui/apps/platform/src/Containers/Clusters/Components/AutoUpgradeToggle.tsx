@@ -2,13 +2,14 @@ import React, { ReactElement, useState, useEffect } from 'react';
 
 import ToggleSwitch from 'Components/ToggleSwitch';
 import {
+    isAutoUpgradeSupported,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
     AutoUpgradeConfig,
 } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
-    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig>({});
+    const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);
 
     function fetchConfig(): void {
         getAutoUpgradeConfig()
@@ -24,7 +25,15 @@ function AutoUpgradeToggle(): ReactElement {
         fetchConfig();
     }, []);
 
-    function toggleAutoUpgrade(): void {
+    if (!autoUpgradeConfig) {
+        return <></>;
+    }
+
+    if (!isAutoUpgradeSupported(autoUpgradeConfig)) {
+        return <>Automatic upgrades are disabled for Cloud Service</>;
+    }
+
+    const toggleAutoUpgrade = () => {
         // @TODO, wrap this settings change in a confirmation prompt of some sort
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
         const newConfig = {
@@ -45,7 +54,7 @@ function AutoUpgradeToggle(): ReactElement {
             // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
             fetchConfig();
         });
-    }
+    };
 
     return (
         <ToggleSwitch

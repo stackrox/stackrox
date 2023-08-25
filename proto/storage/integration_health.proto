@@ -4,23 +4,25 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
 message IntegrationHealth {
     enum Status {
         UNINITIALIZED = 0;
-        UNHEALTHY = 1;
-        HEALTHY = 2;
+        UNHEALTHY     = 1;
+        HEALTHY       = 2;
     }
     enum Type {
-        UNKNOWN = 0;
-        IMAGE_INTEGRATION = 1;
-        NOTIFIER = 2;
-        BACKUP = 3;
+        UNKNOWN            = 0;
+        IMAGE_INTEGRATION  = 1;
+        NOTIFIER           = 2;
+        BACKUP             = 3;
+        DECLARATIVE_CONFIG = 4;
     }
 
-    string id                                     = 1;
+    string id                                     = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string name                                   = 2;
     Type type                                     = 3;
     Status status                                 = 4;

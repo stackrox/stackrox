@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/examples/helloworld/helloworld"
 )
 
@@ -19,7 +20,7 @@ type helloServer struct {
 	helloworld.UnimplementedGreeterServer
 }
 
-func (s *helloServer) SayHello(ctx context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
+func (s *helloServer) SayHello(_ context.Context, in *helloworld.HelloRequest) (*helloworld.HelloReply, error) {
 	return &helloworld.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
 
@@ -75,7 +76,7 @@ func TestLazyConn(t *testing.T) {
 	assert.True(t, errors.Is(failCtx.Err(), context.DeadlineExceeded), "Error types did not match")
 
 	// connect to gRPC server
-	conn, err := grpc.Dial(listener.Addr().String(), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	require.NoError(t, err)
 	defer utils.IgnoreError(conn.Close)
 

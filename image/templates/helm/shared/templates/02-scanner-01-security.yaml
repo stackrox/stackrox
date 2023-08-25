@@ -1,89 +1,16 @@
 {{- include "srox.init" . -}}
 
-{{- if not ._rox.scanner.disable -}}
-
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . (print "stackrox-" ._rox.scanner.name "-psp")) }}
-  labels:
-    {{- include "srox.labels" (list . "clusterrole" (print "stackrox-" ._rox.scanner.name "-psp")) | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "clusterrole" (print "stackrox-" ._rox.scanner.name "-psp")) | nindent 4 }}
-rules:
-- apiGroups:
-  - policy
-  resources:
-  - podsecuritypolicies
-  resourceNames:
-  - {{ include "srox.globalResourceName" (list . (print "stackrox-" ._rox.scanner.name)) }}
-  verbs:
-  - use
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-{{ ._rox.scanner.name }}-psp
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "srox.labels" (list . "rolebinding" (print "stackrox-" ._rox.scanner.name "-psp")) | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "rolebinding" (print "stackrox-" ._rox.scanner.name "-psp")) | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ include "srox.globalResourceName" (list . (print "stackrox-" ._rox.scanner.name "-psp")) }}
-subjects:
-  - kind: ServiceAccount
-    name: {{ ._rox.scanner.name }}
-    namespace: {{ .Release.Namespace }}
-
----
-
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: {{ include "srox.globalResourceName" (list . (print "stackrox-" ._rox.scanner.name)) }}
-  labels:
-    {{- include "srox.labels" (list . "podsecuritypolicy" (print "stackrox-" ._rox.scanner.name)) | nindent 4 }}
-  annotations:
-    {{- include "srox.annotations" (list . "podsecuritypolicy" (print "stackrox-" ._rox.scanner.name)) | nindent 4 }}
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  volumes:
-    - 'configMap'
-    - 'emptyDir'
-    - 'projected'
-    - 'secret'
-    - 'downwardAPI'
-    - 'persistentVolumeClaim'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-
+{{- if not ._rox.scanner.disable }}
 {{- if and ._rox.env.openshift ._rox.system.createSCCs }}
----
-
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
-  name: {{ include "srox.globalResourceName" (list . (print "stackrox-" ._rox.scanner.name)) }}
+  name: {{ include "srox.globalResourceName" (list . "stackrox-scanner") }}
   labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" (print "stackrox-" ._rox.scanner.name)) | nindent 4 }}
+    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "securitycontextconstraints" (print "stackrox-" ._rox.scanner.name)) | nindent 4 }}
-    kubernetes.io/description: stackrox-{{ ._rox.scanner.name }} is the security constraint for the Scanner container
+    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-scanner") | nindent 4 }}
+    kubernetes.io/description: stackrox-scanner is the security constraint for the Scanner container
 priority: 0
 runAsUser:
   type: RunAsAny
@@ -92,7 +19,7 @@ seLinuxContext:
 seccompProfiles:
   - '*'
 users:
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ ._rox.scanner.name }}
+  - system:serviceaccount:{{ .Release.Namespace }}:scanner
 volumes:
   - '*'
 allowHostDirVolumePlugin: false
@@ -114,12 +41,12 @@ requiredDropCapabilities: []
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-{{ ._rox.scanner.name }}-scc
+  name: use-scanner-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" (print "use-" ._rox.scanner.name "-scc")) | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-scanner-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" (print "use-" ._rox.scanner.name "-scc")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-scanner-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
@@ -133,20 +60,19 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ ._rox.scanner.name }}-use-scc
+  name: scanner-use-scc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "rolebinding" (print ._rox.scanner.name "-use-scc")) | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "rolebinding" (print ._rox.scanner.name "-use-scc")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: use-{{ ._rox.scanner.name }}-scc
+  name: use-scanner-scc
 subjects:
 - kind: ServiceAccount
-  name: {{ ._rox.scanner.name }}
+  name: scanner
   namespace: {{ .Release.Namespace }}
-{{ end -}}
-
-{{ end -}}
+{{- end }}
+{{- end }}

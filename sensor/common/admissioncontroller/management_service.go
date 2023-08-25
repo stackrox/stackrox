@@ -23,8 +23,10 @@ var (
 )
 
 type managementService struct {
-	settingsStream     concurrency.ReadOnlyValueStream
-	sensorEventsStream concurrency.ReadOnlyValueStream
+	sensor.UnimplementedAdmissionControlManagementServiceServer
+
+	settingsStream     concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	sensorEventsStream concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 
 	alertHandler AlertHandler
 	admCtrlMgr   SettingsManager
@@ -46,7 +48,7 @@ func (s *managementService) RegisterServiceServer(srv *grpc.Server) {
 	sensor.RegisterAdmissionControlManagementServiceServer(srv, s)
 }
 
-func (s *managementService) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, cc *grpc.ClientConn) error {
+func (s *managementService) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	return nil
 }
 
@@ -73,8 +75,8 @@ func (s *managementService) runRecv(
 	}
 }
 
-func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer, settingsIt concurrency.ValueStreamIter) error {
-	settings, _ := settingsIt.Value().(*sensor.AdmissionControlSettings)
+func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer, settingsIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]) error {
+	settings := settingsIt.Value()
 	if settings == nil {
 		return nil
 	}
@@ -137,12 +139,12 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 }
 
 func (s *managementService) PolicyAlerts(_ context.Context, alerts *sensor.AdmissionControlAlerts) (*types.Empty, error) {
-	go s.alertHandler.ProcessAlerts(alerts)
-	return &types.Empty{}, nil
+	err := s.alertHandler.ProcessAlerts(alerts)
+	return &types.Empty{}, err
 }
 
-func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter) error {
-	obj, _ := iter.Value().(*sensor.AdmCtrlUpdateResourceRequest)
+func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManagementService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.AdmCtrlUpdateResourceRequest]) error {
+	obj := iter.Value()
 	if obj == nil {
 		return nil
 	}

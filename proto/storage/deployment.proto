@@ -15,51 +15,55 @@ package storage;
 
 // Next available tag: 35
 message Deployment {
-    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
-    string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
+    string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"'];
+    string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
     reserved 3;
-    uint64 hash                                = 26 [(gogoproto.moretags) = "hash:\"ignore\""];
-    string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
-    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
-    bool orchestrator_component                = 33 [(gogoproto.moretags) = "search:\"Orchestrator Component\""];
-    int64 replicas                             = 6 [(gogoproto.moretags) = "policy:\"Replicas\""];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
-    map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
+    uint64 hash                                = 26 [(gogoproto.moretags) = 'hash:"ignore" sensorhash:"ignore"'];
+    string type                                = 4 [(gogoproto.moretags) = 'search:"Deployment Type"'];
+    string namespace                           = 5 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+    string namespace_id                        = 23 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"'];
+    bool orchestrator_component                = 33 [(gogoproto.moretags) = 'search:"Orchestrator Component"'];
+    int64 replicas                             = 6 [(gogoproto.moretags) = 'policy:"Replicas"'];
+    map<string, string> labels                 = 7 [(gogoproto.moretags) = 'search:"Deployment Label,store"'];
+    map<string, string> pod_labels             = 19 [(gogoproto.moretags) = 'search:"Pod Label,store"'];
     LabelSelector label_selector               = 20;
-    google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = "search:\"Created,store,hidden\" hash:\"ignore\""];
-    string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    google.protobuf.Timestamp created          = 8 [(gogoproto.moretags) = 'search:"Created,store,hidden" hash:"ignore"'];
+    string cluster_id                          = 9 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"type(uuid)"'];
+    string cluster_name                        = 10 [(gogoproto.moretags) = 'search:"Cluster,store"'];
     repeated Container containers              = 11;
     reserved 12;
-    map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
-    int64 priority                             = 15 [(gogoproto.moretags) = "search:\"Priority,hidden\" hash:\"ignore\""];
+    map<string, string> annotations            = 14 [(gogoproto.moretags) = 'search:"Deployment Annotation"'];
+    int64 priority                             = 15 [(gogoproto.moretags) = 'search:"Deployment Risk Priority,hidden" hash:"ignore"'];
     bool inactive                              = 16;
-    repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
-    string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
-    PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = "search:\"Service Account Permission Level,store\""];
-    bool automount_service_account_token       = 25 [(gogoproto.moretags) = "policy:\"Automount Service Account Token\""];
-    bool host_network                          = 21 [(gogoproto.moretags) = "policy:\"Host Network\""];
-    bool host_pid                              = 31 [(gogoproto.moretags) = "policy:\"Host PID\""];
-    bool host_ipc                              = 32 [(gogoproto.moretags) = "policy:\"Host IPC\""];
-    string runtime_class                       = 34 [(gogoproto.moretags) = "policy:\"Runtime Class\""];
-    repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
-    repeated PortConfig ports                  = 24 [(gogoproto.moretags) = "policy:\"Ports\""];
+    repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = 'search:"Image Pull Secret"'];
+    string service_account                     = 18 [(gogoproto.moretags) = 'search:"Service Account"'];
+    PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = 'search:"Service Account Permission Level,store"'];
+    bool automount_service_account_token       = 25 [(gogoproto.moretags) = 'policy:"Automount Service Account Token"'];
+    bool host_network                          = 21 [(gogoproto.moretags) = 'policy:"Host Network"'];
+    bool host_pid                              = 31 [(gogoproto.moretags) = 'policy:"Host PID"'];
+    bool host_ipc                              = 32 [(gogoproto.moretags) = 'policy:"Host IPC"'];
+    string runtime_class                       = 34 [(gogoproto.moretags) = 'policy:"Runtime Class"'];
+    repeated Toleration tolerations            = 22 [(gogoproto.moretags) = 'search:"-"'];
+    repeated PortConfig ports                  = 24 [(gogoproto.moretags) = 'policy:"Ports"'];
 
-    int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
-    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\" policy:\",ignore\""];
+    int64 state_timestamp                      = 27 [(gogoproto.moretags) = 'hash:"ignore" sensorhash:"ignore"']; // Internal use only
+    float risk_score                           = 29 [(gogoproto.moretags) = 'search:"Deployment Risk Score,hidden" policy:",ignore"'];
 
-    repeated string process_tags               = 30 [(gogoproto.moretags) = "search:\"Process Tag,store\""];
+    reserved 30; // was tags
 }
 
+// Next tag: 12
 message ContainerImage {
     option (gogoproto.goproto_unrecognized) = false;
 
     // These tags maintain backwards compatibility with the previously embedded storage.Image
-    string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
-    ImageName name = 1;
-    bool not_pullable  = 10;
+    // Tags after 10 may be used as needed
+    reserved 2, 3, 5, 6, 7, 8, 9;
+    string    id               = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"'];
+    ImageName name             = 1;
+    bool      not_pullable     = 10;
+
+    bool      is_cluster_local = 11;
 }
 
 message Container {
@@ -69,22 +73,22 @@ message Container {
     ContainerImage image             = 3;
     SecurityContext security_context = 4;
     repeated Volume volumes          = 5;
-    repeated PortConfig ports        = 6 [(gogoproto.moretags) = "policy:\",ignore\" search:\"-\""]; // Policies use the port config on the top-level deployment.
+    repeated PortConfig ports        = 6 [(gogoproto.moretags) = 'policy:",ignore" search:"-"']; // Policies use the port config on the top-level deployment.
     repeated EmbeddedSecret secrets  = 7;
     Resources resources              = 8;
 
     reserved 9; // previously instances
-    string name                      = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
+    string name                      = 10 [(gogoproto.moretags) = 'policy:"Container Name"'];
 
     LivenessProbe liveness_probe     = 11;
     ReadinessProbe readiness_probe   = 12;
 }
 
 message Resources {
-    float cpu_cores_request = 1 [(gogoproto.moretags) = "search:\"CPU Cores Request,store\""];
-    float cpu_cores_limit   = 2 [(gogoproto.moretags) = "search:\"CPU Cores Limit,store\""];
-    float memory_mb_request = 3 [(gogoproto.moretags) = "search:\"Memory Request (MB),store\""];
-    float memory_mb_limit   = 4 [(gogoproto.moretags) = "search:\"Memory Limit (MB),store\""];
+    float cpu_cores_request = 1 [(gogoproto.moretags) = 'search:"CPU Cores Request,store"'];
+    float cpu_cores_limit   = 2 [(gogoproto.moretags) = 'search:"CPU Cores Limit,store"'];
+    float memory_mb_request = 3 [(gogoproto.moretags) = 'search:"Memory Request (MB),store"'];
+    float memory_mb_limit   = 4 [(gogoproto.moretags) = 'search:"Memory Limit (MB),store"'];
 }
 
 message Volume {
@@ -93,34 +97,34 @@ message Volume {
         HOST_TO_CONTAINER = 1;
         BIDIRECTIONAL     = 2;
     }
-    string name                        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
-    string source                      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
-    string destination                 = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
-    bool read_only                     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
-    string type                        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
-    MountPropagation mount_propagation = 6 [(gogoproto.moretags) = "policy:\"Mount Propagation\""];
+    string name                        = 1 [(gogoproto.moretags) = 'search:"Volume Name,store"'];
+    string source                      = 2 [(gogoproto.moretags) = 'search:"Volume Source,store"'];
+    string destination                 = 3 [(gogoproto.moretags) = 'search:"Volume Destination,store"'];
+    bool read_only                     = 4 [(gogoproto.moretags) = 'search:"Volume ReadOnly,store"'];
+    string type                        = 5 [(gogoproto.moretags) = 'search:"Volume Type,store"'];
+    MountPropagation mount_propagation = 6 [(gogoproto.moretags) = 'policy:"Mount Propagation"'];
 }
 
 message LivenessProbe {
-    bool defined = 1 [(gogoproto.moretags) = "policy:\"Liveness Probe Defined\""];
+    bool defined = 1 [(gogoproto.moretags) = 'policy:"Liveness Probe Defined"'];
 }
 
 message ReadinessProbe {
-    bool defined = 1 [(gogoproto.moretags) = "policy:\"Readiness Probe Defined\""];
+    bool defined = 1 [(gogoproto.moretags) = 'policy:"Readiness Probe Defined"'];
 }
 
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
     // Pod UID
-    string id                                           = 1 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
-    string name                                         = 2 [(gogoproto.moretags) = "search:\"Pod Name,hidden\""];
-    string deployment_id                                = 3 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
-    string namespace                                    = 4 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id                                   = 5 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
+    string id                                           = 1 [(gogoproto.moretags) = 'search:"Pod ID,hidden" sql:"pk,type(uuid)"'];
+    string name                                         = 2 [(gogoproto.moretags) = 'search:"Pod Name,hidden"'];
+    string deployment_id                                = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,type(uuid)"'];
+    string namespace                                    = 4 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+    string cluster_id                                   = 5 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" sql:"type(uuid)"'];
     repeated ContainerInstance live_instances           = 6;
     // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
     // There is one bucket (list) per container name.
-    repeated ContainerInstanceList terminated_instances = 7 [(gogoproto.moretags) = "search:\"-\""];
+    repeated ContainerInstanceList terminated_instances = 7 [(gogoproto.moretags) = 'search:"-"'];
     // Time Kubernetes reports the pod was created.
     google.protobuf.Timestamp started                   = 8;
 
@@ -147,7 +151,7 @@ message ContainerInstance {
     google.protobuf.Timestamp started  = 4;
 
     // Image ID
-    string image_digest                = 5 [(gogoproto.moretags) = "search:\"Container Image Digest,hidden\""];
+    string image_digest                = 5 [(gogoproto.moretags) = 'search:"Container Image Digest,hidden"'];
 
     // The finish time of the container, if it finished.
     google.protobuf.Timestamp finished = 7;
@@ -169,8 +173,8 @@ message ContainerInstanceID {
 }
 
 message EmbeddedSecret {
-    string name = 1 [(gogoproto.moretags) = "search:\"Secret\""];
-    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\""];
+    string name = 1 [(gogoproto.moretags) = 'search:"Secret"'];
+    string path = 2 [(gogoproto.moretags) = 'search:"Secret Path"'];
 }
 
 // Next Available Tag: 6
@@ -185,38 +189,38 @@ message PortConfig {
     }
 
     message ExposureInfo {
-        ExposureLevel level       = 1 [(gogoproto.moretags) = "search:\"Exposure Level,store\""];
+        ExposureLevel level       = 1 [(gogoproto.moretags) = 'search:"Exposure Level,store"'];
 
         // only set if level is not HOST
-        string service_name       = 2 [(gogoproto.moretags) = "search:\"Exposing Service,store\""];
+        string service_name       = 2 [(gogoproto.moretags) = 'search:"Exposing Service,store"'];
         string service_id         = 3;
         string service_cluster_ip = 4;
-        int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
+        int32 service_port        = 5 [(gogoproto.moretags) = 'search:"Exposing Service Port,store"'];
 
         // only set if level is HOST, NODE, EXTERNAL or ROUTE
-        int32 node_port = 6 [(gogoproto.moretags) = "search:\"Exposed Node Port,store\""];
+        int32 node_port = 6 [(gogoproto.moretags) = 'search:"Exposed Node Port,store"'];
 
         // only set if level is EXTERNAL
-        repeated string external_ips       = 7 [(gogoproto.moretags) = "search:\"External IP,store\""];
+        repeated string external_ips       = 7 [(gogoproto.moretags) = 'search:"External IP,store"'];
         // only set if level is EXTERNAL or ROUTE
-        repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
+        repeated string external_hostnames = 8 [(gogoproto.moretags) = 'search:"External Hostname,store"'];
     }
 
     string name             = 1;
-    int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
-    string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
+    int32 container_port    = 2 [(gogoproto.moretags) = 'search:"Port,store"'];
+    string protocol         = 3 [(gogoproto.moretags) = 'search:"Port Protocol,store"'];
 
-    ExposureLevel exposure       = 4 [(gogoproto.moretags) = "search:\"Max Exposure Level,store\""];
+    ExposureLevel exposure       = 4 [(gogoproto.moretags) = 'search:"Max Exposure Level,store"'];
     int32 exposed_port           = 5 [deprecated = true];
 
-    repeated ExposureInfo exposure_infos = 6 [(gogoproto.moretags) = "policy:\"Exposure Infos\""];
+    repeated ExposureInfo exposure_infos = 6 [(gogoproto.moretags) = 'policy:"Exposure Infos"'];
 }
 
 message ContainerConfig {
     message EnvironmentConfig {
-        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\""];
-        string value    = 2 [(gogoproto.moretags) = "search:\"Environment Value,store\""];
-        EnvVarSource env_var_source = 3 [(gogoproto.moretags) = "search:\"Environment Variable Source,store\""];
+        string key      = 1 [(gogoproto.moretags) = 'search:"Environment Key,store"'];
+        string value    = 2 [(gogoproto.moretags) = 'search:"Environment Value,store"'];
+        EnvVarSource env_var_source = 3 [(gogoproto.moretags) = 'search:"Environment Variable Source,store"'];
 
         // For any update to EnvVarSource, please also update 'ui/src/messages/common.js'
         enum EnvVarSource {
@@ -235,11 +239,11 @@ message ContainerConfig {
     string directory                = 4;
     string user                     = 5;
     int64 uid                       = 6;
-    string app_armor_profile        = 7 [(gogoproto.moretags) = "policy:\"AppArmor Profile\""];
+    string app_armor_profile        = 7 [(gogoproto.moretags) = 'policy:"AppArmor Profile"'];
 }
 
 message SecurityContext {
-    bool privileged                     = 1 [(gogoproto.moretags) = "search:\"Privileged,store\""];
+    bool privileged                     = 1 [(gogoproto.moretags) = 'search:"Privileged,store"'];
     message SELinux {
         string user     = 1;
         string role     = 2;
@@ -247,9 +251,9 @@ message SecurityContext {
         string level    = 4;
     }
     SELinux selinux                     = 2;
-    repeated string drop_capabilities   = 3 [(gogoproto.moretags) = "search:\"Drop Capabilities,store\""];
-    repeated string add_capabilities    = 4 [(gogoproto.moretags) = "search:\"Add Capabilities,store\""];
-    bool read_only_root_filesystem      = 5 [(gogoproto.moretags) = "search:\"Read Only Root Filesystem,store\""];
+    repeated string drop_capabilities   = 3 [(gogoproto.moretags) = 'search:"Drop Capabilities,store"'];
+    repeated string add_capabilities    = 4 [(gogoproto.moretags) = 'search:"Add Capabilities,store"'];
+    bool read_only_root_filesystem      = 5 [(gogoproto.moretags) = 'search:"Read Only Root Filesystem,store"'];
 
     message SeccompProfile {
         enum ProfileType {
@@ -257,10 +261,11 @@ message SecurityContext {
             RUNTIME_DEFAULT = 1;
             LOCALHOST       = 2;
         }
-        ProfileType type         = 1 [(gogoproto.moretags) = "policy:\"Seccomp Profile Type\""];
+        ProfileType type         = 1 [(gogoproto.moretags) = 'policy:"Seccomp Profile Type"'];
         string localhost_profile = 2;
     }
     SeccompProfile seccomp_profile = 6;
+    bool allow_privilege_escalation = 7 [(gogoproto.moretags) = 'policy:"Allow Privilege Escalation"'];
 }
 
 // Next available tag: 9

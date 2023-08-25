@@ -1,30 +1,24 @@
+//go:build sql_integration
+
 package service
 
 import (
 	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/golang/mock/gomock"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/indexer"
-	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAuthz(t *testing.T) {
@@ -114,26 +108,14 @@ func TestLabelsMap(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			rocksDB := rocksdbtest.RocksDBForT(t)
-			defer rocksDB.Close()
-
-			bleveIndex, err := globalindex.MemOnlyIndex()
-			require.NoError(t, err)
-
-			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
-			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
-
-			deploymentsDS := datastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			ds, closer := setupPostgresDatastore(t)
+			defer closer()
 
 			for _, deployment := range c.deployments {
-				assert.NoError(t, deploymentsDS.UpsertDeployment(ctx, deployment))
+				assert.NoError(t, ds.UpsertDeployment(ctx, deployment))
 			}
 
-			indexingDone := concurrency.NewSignal()
-			indexingQ.PushSignal(&indexingDone)
-			indexingDone.Wait()
-
-			results, err := deploymentsDS.Search(ctx, queryForLabels())
+			results, err := ds.Search(ctx, queryForLabels())
 			assert.NoError(t, err)
 			actualMap, actualValues := labelsMapFromSearchResults(results)
 
@@ -143,14 +125,17 @@ func TestLabelsMap(t *testing.T) {
 	}
 }
 
-func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
-	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+func setupPostgresDatastore(t *testing.T) (datastore.DataStore, func()) {
+	testingDB := pgtest.ForT(t)
+	pool := testingDB.DB
+
+	mockCtrl := gomock.NewController(t)
+	riskDataStore := riskMocks.NewMockDataStore(mockCtrl)
+	ds, err := datastore.New(pool, nil, nil, nil, riskDataStore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
-	reg := indexer.NewWrapperRegistry()
-	lazy := indexer.NewLazy(indexingQ, reg, index, dacky.AckIndexed)
-	lazy.Start()
-
-	return dacky, reg, indexingQ
+	closer := func() {
+		pool.Close()
+	}
+	return ds, closer
 }

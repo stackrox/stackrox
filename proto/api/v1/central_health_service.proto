@@ -24,13 +24,13 @@ message CentralUpgradeStatus {
     // Current Central Version
     string version = 1;
 
-    // The version of previous replica in Central. This is the version we can force rollback to.
+    // The version of previous clone in Central. This is the version we can force rollback to.
     string force_rollback_to = 2;
 
     // If true, we can rollback to the current version if an upgrade failed.
     bool can_rollback_after_upgrade = 3;
 
     // Current disk space stats for upgrade
-    int64 space_required_for_rollback_after_upgrade = 4;
-    int64 space_available_for_rollback_after_upgrade = 5;
+    int64 space_required_for_rollback_after_upgrade = 4 [deprecated = true];
+    int64 space_available_for_rollback_after_upgrade = 5 [deprecated = true];
 }

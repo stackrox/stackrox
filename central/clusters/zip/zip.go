@@ -145,6 +145,8 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		CreateUpgraderSA: createUpgraderSA,
 		SlimCollector:    slimCollector,
 		IstioVersion:     params.IstioVersion,
+
+		DisablePodSecurityPolicies: params.DisablePodSecurityPolicies,
 	}
 
 	baseFiles, err := renderBaseFiles(cluster, renderOpts, certs)

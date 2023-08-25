@@ -8,10 +8,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -19,48 +23,64 @@ import (
 
 const (
 	noteOpenShift3xCompatibilityMode = `NOTE: Deployment files are generated in OpenShift 3.x compatibility mode. Set the --openshift-version flag to 3 to suppress this note, or to 4 take advantage of OpenShift 4.x features.`
+	defaultBundlePath                = "central-bundle"
 )
 
-type persistentFlagsWrapper struct {
+type flagsWrapper struct {
 	*pflag.FlagSet
 }
 
-func (w *persistentFlagsWrapper) UInt32Var(p *uint32, name string, value uint32, usage string, groups ...string) {
+func (w *flagsWrapper) UInt32Var(p *uint32, name string, value uint32, usage string, groups ...string) {
 	w.FlagSet.Uint32Var(p, name, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) StringVar(p *string, name, value, usage string, groups ...string) {
+func (w *flagsWrapper) StringVar(p *string, name, value, usage string, groups ...string) {
 	w.StringVarP(p, name, "", value, usage, groups...)
 }
 
-func (w *persistentFlagsWrapper) StringVarP(p *string, name, shorthand, value, usage string, groups ...string) {
+func (w *flagsWrapper) StringVarP(p *string, name, shorthand, value, usage string, groups ...string) {
 	w.FlagSet.StringVarP(p, name, shorthand, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) BoolVar(p *bool, name string, value bool, usage string, groups ...string) {
+func (w *flagsWrapper) StringSliceVar(p *[]string, name string, value []string, usage string, groups ...string) {
+	w.FlagSet.StringSliceVar(p, name, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
+func (w *flagsWrapper) Uint32VarP(p *uint32, name, shorthand string, value uint32, usage string, groups ...string) {
+	w.FlagSet.Uint32VarP(p, name, shorthand, value, usage)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
+func (w *flagsWrapper) BoolVar(p *bool, name string, value bool, usage string, groups ...string) {
 	w.FlagSet.BoolVar(p, name, value, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func (w *persistentFlagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
+func (w *flagsWrapper) OptBoolVar(p **bool, name, shorthand string, usage, unsetRep string, groups ...string) {
+	flags.OptBoolFlagVarPF(w.FlagSet, p, name, shorthand, usage, unsetRep)
+	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
+}
+
+func (w *flagsWrapper) Var(value pflag.Value, name, usage string, groups ...string) {
 	w.FlagSet.Var(value, name, usage)
 	utils.Must(w.SetAnnotation(name, groupAnnotationKey, groups))
 }
 
-func orchestratorCommand(shortName, longName string) *cobra.Command {
+func orchestratorCommand(shortName, _ string) *cobra.Command {
 	c := &cobra.Command{
 		Use: shortName,
 		Annotations: map[string]string{
 			categoryAnnotation: "Enter orchestrator",
 		},
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
-			return errors.New("storage type must be specified")
+			return errox.InvalidArgs.New("storage type must be specified")
 		}),
 	}
 	if !roxctl.InMainImage() {
-		c.PersistentFlags().Var(newOutputDir(&cfg.OutputDir), "output-dir", "the directory to output the deployment bundle to")
+		c.PersistentFlags().Var(common.NewOutputDir(&cfg.OutputDir, defaultBundlePath), "output-dir", "the directory to output the deployment bundle to")
 	}
 	return c
 }
@@ -81,18 +101,26 @@ func k8sBasedOrchestrator(cliEnvironment environment.Environment, k8sConfig *ren
 	c.AddCommand(hostPathVolume(cliEnvironment))
 	c.AddCommand(noVolume(cliEnvironment))
 
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 	// Adds k8s specific flags
 	flags.AddImageDefaults(flagWrap.FlagSet, &k8sConfig.ImageFlavorName)
 
-	defaultImageHelp := fmt.Sprintf("(if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
+	defaultImageHelp := fmt.Sprintf(" (if unset, a default will be used according to --%s)", flags.ImageDefaultsFlagName)
 	flagWrap.StringVarP(&k8sConfig.MainImage, flags.FlagNameMainImage, "i", "", "main image to use"+defaultImageHelp, "central")
 	flagWrap.BoolVar(&k8sConfig.OfflineMode, "offline", false, "whether to run StackRox in offline mode, which avoids reaching out to the Internet", "central")
-
+	flagWrap.StringVar(&k8sConfig.CentralDBImage, flags.FlagNameCentralDBImage, "", "central-db image to use"+defaultImageHelp, "central")
 	flagWrap.StringVar(&k8sConfig.ScannerImage, flags.FlagNameScannerImage, "", "scanner image to use"+defaultImageHelp, "scanner")
 	flagWrap.StringVar(&k8sConfig.ScannerDBImage, flags.FlagNameScannerDBImage, "", "scanner-db image to use"+defaultImageHelp, "scanner")
+	flagWrap.BoolVar(&k8sConfig.Telemetry.Enabled, "enable-telemetry", version.IsReleaseVersion(), "whether to enable telemetry", "central")
 
-	flagWrap.BoolVar(&k8sConfig.EnableTelemetry, "enable-telemetry", true, "whether to enable telemetry", "central")
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.ConfigMaps, "declarative-config-config-maps", nil,
+			"list of config maps to add as declarative configuration mounts in central", "central")
+		flagWrap.StringSliceVar(&k8sConfig.DeclarativeConfigMounts.Secrets, "declarative-config-secrets", nil,
+			"list of secrets to add as declarative configuration mounts in central", "central")
+	}
+
+	k8sConfig.EnableCentralDB = true
 
 	return c
 }
@@ -104,7 +132,8 @@ func newK8sConfig() *renderer.K8sConfig {
 func k8s(cliEnvironment environment.Environment) *cobra.Command {
 	k8sConfig := newK8sConfig()
 	c := k8sBasedOrchestrator(cliEnvironment, k8sConfig, "k8s", "Kubernetes", func() (storage.ClusterType, error) { return storage.ClusterType_KUBERNETES_CLUSTER, nil })
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into a Kubernetes cluster."
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
 
@@ -142,8 +171,9 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 		}
 		return clusterType, nil
 	})
+	c.Short = "Generate the required YAML configuration files to deploy StackRox Central into an OpenShift cluster."
 
-	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+	flagWrap := &flagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
 
@@ -151,6 +181,7 @@ func openshift(cliEnvironment environment.Environment) *cobra.Command {
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", fmt.Sprintf("the deployment tool to use (%s)", strings.Join(validFormats, ", ")), "central")
 
 	flagWrap.IntVar(&openshiftVersion, "openshift-version", 0, "the OpenShift major version (3 or 4) to deploy on")
+	flagWrap.OptBoolVar(&k8sConfig.Monitoring.OpenShiftMonitoring, "openshift-monitoring", "", "integration with OpenShift 4 monitoring", "auto", "central")
 	flagWrap.Var(istioSupportWrapper{&k8sConfig.IstioVersion}, "istio-support",
 		fmt.Sprintf(
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",

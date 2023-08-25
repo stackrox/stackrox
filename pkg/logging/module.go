@@ -35,8 +35,8 @@ func ModuleForName(name string) *Module {
 
 // ForEachModule invokes f for known modules. If selector is not empty,
 // f is invoked for every entry in selector:
-//   * a pointer to a known Module instance if the entry is known
-//   * a nil pointer if the entry is not known
+//   - a pointer to a known Module instance if the entry is known
+//   - a nil pointer if the entry is not known
 func ForEachModule(f func(name string, m *Module), selector []string) {
 	modules.forEachModule(f, selector)
 }
@@ -62,8 +62,8 @@ func newModule(name string, logLevel zap.AtomicLevel) *Module {
 }
 
 // Logger returns a new logger for m.
-func (m *Module) Logger() *Logger {
-	return CreateLogger(m, 0)
+func (m *Module) Logger(opts ...OptionsFunc) *LoggerImpl {
+	return CreateLogger(m, 0, opts...)
 }
 
 // Name returns the name of m
@@ -172,12 +172,12 @@ func callerFileToPackage(skip int) string {
 // getCallingModule returns the short name of the module calling this function, skipping <skip> stack frames in the
 // call stack.
 // The short name is determined as follows:
-// - If the package is a subpackage of "<projectPrefix>/pkg", the short name is the result of stripping
-//   "<projectPrefix>/".
-// - Otherwise, if the package is a subpackage of "<projectPrefix>/", the short name is the result of stripping
-//   "<projectPrefix>/" and the first component of the remaining path name, including any trailing slashes. If the
-//   resulting string is the empty string, the short name is "main".
-// - Otherwise, the short name is the full package name.
+//   - If the package is a subpackage of "<projectPrefix>/pkg", the short name is the result of stripping
+//     "<projectPrefix>/".
+//   - Otherwise, if the package is a subpackage of "<projectPrefix>/", the short name is the result of stripping
+//     "<projectPrefix>/" and the first component of the remaining path name, including any trailing slashes. If the
+//     resulting string is the empty string, the short name is "main".
+//   - Otherwise, the short name is the full package name.
 func getCallingModule(skip int) string {
 	callingPackage := callerFileToPackage(skip)
 	if callingPackage == "" {

@@ -4,8 +4,28 @@
    We should have a goal of eventually being able to delete this file.
  */
 
-body {
-    font-family: var(--pf-global--FontFamily--sans-serif) !important;
+.ReactModal__Content,
+#main-page-container > div > :not(.pf-c-page__main-section) {
+  font-size: 0.875rem;
+  color: var(--base-600);
+}
+
+/* Universal selector increases specificity of these override style rules */
+
+* .theme-dark {
+    --base-500: #aaabac;
+    --base-600: #ffffff;
+}
+
+* .theme-light {
+    --base-500: var(--pf-global--palette--black-600);
+    --base-600: var(--pf-global--palette--black-900);
+    --base-700: var(--pf-global--palette--black-1000);
+}
+
+/* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
+.pf-c-page__main-section a {
+    color: var(--pf-global--link--Color);
 }
 
 .pf-c-page__sidebar {
@@ -24,6 +44,9 @@ body {
     align-self: center !important;
 }
 
+.pf-c-expandable-section__toggle-text {
+    text-align: left;
+}
 .pf-c-card__expandable-content {
     border-top: var(--pf-global--BorderColor--100) var(--pf-global--BorderWidth--sm) solid;
 }
@@ -39,6 +62,7 @@ body {
     border-right-color: var(--pf-global--BorderColor--300);
     border-bottom-color: var(--pf-global--BorderColor--200);
     border-left-color: var(--pf-global--BorderColor--300);
+    padding: var(--pf-c-form-control--PaddingTop) var(--pf-c-form-control--PaddingRight) var(--pf-c-form-control--PaddingBottom) var(--pf-c-form-control--PaddingLeft);
 }
 
 .pf-c-form-control:disabled {
@@ -48,7 +72,18 @@ body {
     border-color: var(--pf-c-form-control--disabled--BorderColor) !important;
 }
 
-.pf-c-select__toggle::before {
+/* Replace override for PatternFly with rule from ui-components.css file for classic disabled buttons. */
+:not(.pf-c-page__main-section) button:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* SimpleListItem in policy categories: specify color instead of depending on opacity. */
+.pf-c-simple-list button:disabled {
+    color: var(--pf-global--disabled-color--100);
+}
+
+.pf-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
     right: 0;
@@ -69,13 +104,34 @@ body {
     border-width: 1px !important;
 }
 
+/* Un-override the above override when the <Select> component is disabled */
+.pf-c-select__toggle.pf-m-disabled::before {
+    border-width: inherit !important;
+}
+
+/* Un-override the above override when the <Select> component is in an invalid state */
+.pf-m-invalid .pf-c-select__toggle::before {
+    /* Why are these pseudo elements not able to access the vars? */
+    /* border-bottom-color: var(--pf-c-select__toggle--before--BorderBottomColor); */
+    border-bottom-color: rgb(201, 25, 11) !important;
+    border-bottom-width: 2px !important;
+}
+
+/* Fix default text in plain PF Select */
+.pf-c-select__toggle.pf-m-plain .pf-c-select__toggle-text {
+    overflow: visible !important;
+}
+
+
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
-.pf-c-tree-view__node-title .pf-c-button__icon.pf-m-end svg,
 .pf-c-button__icon.pf-m-start svg,
+.pf-c-button__icon.pf-m-end svg,
 .pf-c-empty-state__content svg,
 .pf-c-table__toggle-icon svg,
 .pf-c-expandable-section__toggle-icon svg,
-.pf-c-breadcrumb__item-divider svg {
+.chr-c-feedback-modal svg,
+.pf-c-breadcrumb__item-divider svg,
+.pf-c-modal-box__title-icon svg {
     display: inline;
 }
 
@@ -85,17 +141,55 @@ body {
 }
 
 /* Override filter which simulates dark background color */
-.theme-dark .pf-c-table input[type='checkbox'] {
+.theme-dark .pf-c-table input[type='checkbox'],
+.theme-dark .pf-c-check input[type='checkbox'] {
     filter: inherit; /* replace invert(0.3) */
 }
 
-button.pf-c-tree-view__node {
-    font-weight: inherit; /* override 600 from ui-components */
+/* override width of thead checkbox so that it's not cut off when table is empty */
+.pf-c-table thead tr > .pf-c-table__check {
+    min-width: 44px;
 }
 
 /* Global Search modal */
 .search-modal .pf-c-tab-content {
     height: calc(100% - 112px) !important;
+}
+
+/* Overrides Tailwind bolding of PF ToggleGroup buttons */
+.pf-c-toggle-group__button {
+    font-weight: var(--pf-global--FontWeight--normal);
+}
+
+/* override PatternFly DescriptionList horizontal variant to allow long keys and values to wrap */
+.pf-c-description-list__term,
+.pf-c-description-list__description{
+    word-break: break-all;
+}
+
+/* Override none value for list-style in Tailwind stylesheet. */
+.pf-c-modal-box ol,
+.pf-c-page__main-section ol {
+    list-style: decimal;
+}
+
+/* Override the preceding override for PatternFly Wizard */
+.pf-c-page__main-section ol.pf-c-wizard__nav-list {
+    list-style: none;
+}
+
+/*
+ * Override disabled checkbox styles when the input element is in a PF table
+ */
+.pf-c-table__check input[type="checkbox"]:disabled,
+.pf-c-form__group input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    border-color: revert;
+}
+.pf-c-table__check input[type="checkbox"]:checked:disabled,
+.pf-c-form__group input[type="checkbox"]:checked:disabled {
+    background-color: var(--pf-global--disabled-color--200);
+    border-color: transparent;
 }
 
 /* For classic components to equal or exceed z-index of PatternFly elements. */

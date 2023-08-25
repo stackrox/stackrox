@@ -10,9 +10,11 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 
 import RequestCommentsButton from 'Containers/VulnMgmt/RiskAcceptance/RequestComments/RequestCommentsButton';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import useTableSelection from 'hooks/useTableSelection';
 import { UsePaginationResult } from 'hooks/patternfly/usePagination';
 import usePermissions from 'hooks/usePermissions';
@@ -41,7 +43,7 @@ export type PendingApprovalsTableProps = {
     isLoading: boolean;
     itemCount: number;
     searchFilter: SearchFilter;
-    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
+    setSearchFilter: (newFilter: SearchFilter) => void;
 } & UsePaginationResult;
 
 function PendingApprovalsTable({
@@ -102,9 +104,6 @@ function PendingApprovalsTable({
             (canApproveRequests ||
                 (canCreateRequests && row.requestor.id === currentUser.userId)) &&
             row.targetState === 'DEFERRED' &&
-            // @TODO: Canceling an approved pending update request causes an error.
-            // We can remove this once backend has a fix
-            row.status !== 'APPROVED_PENDING_UPDATE' &&
             selectedIds.includes(row.id)
         );
     });
@@ -266,12 +265,9 @@ function PendingApprovalsTable({
                     </Thead>
                     <Tbody>
                         {rows.map((row, rowIndex) => {
-                            // @TODO: Canceling an approved pending update request causes an error.
-                            // We can remove this once backend has a fix
                             const canCancelRequest =
-                                row.status !== 'APPROVED_PENDING_UPDATE' &&
-                                (canApproveRequests ||
-                                    (canCreateRequests && row.requestor.id === currentUser.userId));
+                                canApproveRequests ||
+                                (canCreateRequests && row.requestor.id === currentUser.userId);
 
                             return (
                                 <Tr key={row.id}>
@@ -282,7 +278,7 @@ function PendingApprovalsTable({
                                             isSelected: selected[rowIndex],
                                         }}
                                     />
-                                    <Td dataLabel="Requested entity">{row.cves.ids[0]}</Td>
+                                    <Td dataLabel="Requested entity">{row.cves.cves[0]}</Td>
                                     <Td dataLabel="Requested action">
                                         <VulnRequestedAction
                                             targetState={row.targetState}
@@ -314,7 +310,7 @@ function PendingApprovalsTable({
                                     <Td dataLabel="Comments">
                                         <RequestCommentsButton
                                             comments={row.comments}
-                                            cve={row.cves.ids[0]}
+                                            cve={row.cves.cves[0]}
                                         />
                                     </Td>
                                     <Td dataLabel="Requestor">{row.requestor.name}</Td>
@@ -339,6 +335,21 @@ function PendingApprovalsTable({
                                 </Tr>
                             );
                         })}
+                        {!rows.length && (
+                            <Tr>
+                                <Td colSpan={8}>
+                                    <Bullseye>
+                                        <EmptyStateTemplate
+                                            title="No pending approvals found"
+                                            headingLevel="h2"
+                                            icon={SearchIcon}
+                                        >
+                                            To continue, edit your filter settings and search again.
+                                        </EmptyStateTemplate>
+                                    </Bullseye>
+                                </Td>
+                            </Tr>
+                        )}
                     </Tbody>
                 </TableComposable>
             )}

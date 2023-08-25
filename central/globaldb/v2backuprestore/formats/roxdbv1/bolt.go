@@ -1,3 +1,5 @@
+//go:build amd64
+
 package roxdbv1
 
 import (
@@ -12,7 +14,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func restoreBoltDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
+func restoreBoltDB(ctx common.RestoreFileContext, fileReader io.Reader, _ int64) error {
 	boltFile, err := ctx.OpenFile(bolthelper.DBFileName, os.O_CREATE|os.O_RDWR|odirect.GetODirectFlag(), 0600)
 	if err != nil {
 		return errors.Wrap(err, "could not create bolt file")

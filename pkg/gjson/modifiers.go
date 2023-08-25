@@ -3,8 +3,11 @@ package gjson
 import (
 	"encoding/json"
 	"regexp"
+	"sort"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/tidwall/gjson"
 )
 
@@ -13,16 +16,18 @@ type CustomModifier = func(json, arg string) string
 
 var boolReplaceRegex = regexp.MustCompile(`.@boolReplace.*(})`)
 var listReplaceRegex = regexp.MustCompile(`.@list`)
+var textReplaceRegex = regexp.MustCompile(`.@text.*(})`)
 
 // modifiersRegexp provides a list of regex expressions that match all custom modifier prefixes for
 // sanitizing of queries.
 func modifiersRegexp() []*regexp.Regexp {
-	return []*regexp.Regexp{boolReplaceRegex, listReplaceRegex}
+	return []*regexp.Regexp{boolReplaceRegex, listReplaceRegex, textReplaceRegex}
 }
 
 var customGJSONModifiers = map[string]CustomModifier{
 	"list":        ListModifier(),
 	"boolReplace": BoolReplaceModifier(),
+	"text":        TextModifier(),
 }
 
 func init() {
@@ -106,4 +111,88 @@ func defaultReplaceBoolOptions() *replaceBoolOptions {
 		TrueReplace:  "true",
 		FalseReplace: "false",
 	}
+}
+
+type textOptions struct {
+	PrintKeys       bool   `json:"printKeys"`
+	CustomSeparator string `json:"customSeparator"`
+}
+
+func defaultTextOptions() *textOptions {
+	return &textOptions{
+		PrintKeys: true,
+	}
+}
+
+// TextModifier provides the @text modifier for gjson which creates a single string from the result, which contains
+// the key value pairs and a newline as separator.
+func TextModifier() CustomModifier {
+	return func(jsonString, arg string) string {
+		opts := defaultTextOptions()
+		if arg != "" {
+			gjson.Parse(arg).ForEach(func(key, value gjson.Result) bool {
+				switch key.String() {
+				case "printKeys":
+					opts.PrintKeys = value.Bool()
+				case "customSeparator":
+					opts.CustomSeparator = value.String()
+				}
+				return true
+			})
+		}
+		modifier := resultToTextModifier{opts: opts}
+		res := gjson.Parse(jsonString)
+		texts := map[int]string{}
+		res.ForEach(func(key, value gjson.Result) bool {
+			toText(texts, key, value, modifier, 0)
+			return true
+		})
+		// Ensure we keep the same order for the texts we generated.
+		keys := maputil.Keys(texts)
+		sort.Ints(keys)
+		var result []string
+		for _, key := range keys {
+			result = append(result, modifier.trimSeparator(texts[key]))
+		}
+		bytes, _ := json.Marshal(result)
+		return string(bytes)
+	}
+}
+
+func toText(texts map[int]string, key gjson.Result, value gjson.Result, modifier resultToTextModifier, index int) int {
+	if !value.IsArray() {
+		texts[index] += modifier.resultToText(key, value)
+		index++
+		return index
+	}
+	for _, val := range value.Array() {
+		if val.IsArray() {
+			index = toText(texts, key, val, modifier, index)
+			continue
+		}
+		texts[index] += modifier.resultToText(key, val)
+		index++
+	}
+	return index
+}
+
+type resultToTextModifier struct {
+	opts *textOptions
+}
+
+func (r *resultToTextModifier) resultToText(key, value gjson.Result) string {
+	var sb strings.Builder
+
+	if r.opts.PrintKeys {
+		sb.WriteString(key.String())
+		// Add a colon, and tab space between key and value.
+		sb.WriteString(":\t")
+	}
+	sb.WriteString(value.String())
+	sb.WriteString(utils.IfThenElse(r.opts.CustomSeparator != "", r.opts.CustomSeparator, "\n"))
+	return sb.String()
+}
+
+func (r *resultToTextModifier) trimSeparator(s string) string {
+	return strings.TrimSuffix(s, utils.IfThenElse(r.opts.CustomSeparator != "", r.opts.CustomSeparator, "\n"))
 }

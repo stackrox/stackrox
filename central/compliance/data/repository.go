@@ -6,6 +6,7 @@ import (
 	"context"
 	"math"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/mailru/easyjson"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -14,8 +15,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/data"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -252,7 +253,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		r.registries = append(r.registries, registryIntegration)
 	}
 	for _, scannerIntegration := range f.imageIntegrationsSet.ScannerSet().GetAll() {
-		r.scanners = append(r.scanners, scannerIntegration)
+		r.scanners = append(r.scanners, scannerIntegration.GetScanner())
 	}
 
 	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)
@@ -271,7 +272,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	r.notifiers, err = f.notifierDataStore.GetNotifiers(ctx, &v1.GetNotifiersRequest{})
+	r.notifiers, err = f.notifierDataStore.GetNotifiers(ctx)
 	if err != nil {
 		return err
 	}
@@ -288,7 +289,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	alertQuery := search.ConjunctionQuery(
 		clusterQuery,
-		search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
 	)
 	alertQuery.Pagination = infPagination
 	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)
@@ -297,19 +298,22 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	r.complianceOperatorResults = make(map[string][]*storage.ComplianceOperatorCheckResult)
-	err = f.complianceOperatorResultStore.Walk(ctx, func(c *storage.ComplianceOperatorCheckResult) error {
-		if c.GetClusterId() != clusterID {
+	walkFn := func() error {
+		r.complianceOperatorResults = make(map[string][]*storage.ComplianceOperatorCheckResult)
+		return f.complianceOperatorResultStore.Walk(ctx, func(c *storage.ComplianceOperatorCheckResult) error {
+			if c.GetClusterId() != clusterID {
+				return nil
+			}
+			rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
+			if rule == "" {
+				log.Errorf("Expected rule annotation for %+v", c)
+				return nil
+			}
+			r.complianceOperatorResults[rule] = append(r.complianceOperatorResults[rule], c)
 			return nil
-		}
-		rule := c.Annotations[v1alpha1.RuleIDAnnotationKey]
-		if rule == "" {
-			log.Errorf("Expected rule annotation for %+v", c)
-			return nil
-		}
-		r.complianceOperatorResults[rule] = append(r.complianceOperatorResults[rule], c)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 

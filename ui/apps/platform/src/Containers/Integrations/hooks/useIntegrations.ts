@@ -6,14 +6,12 @@ import { selectors } from 'reducers';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 
 const selectIntegrations = createStructuredSelector({
-    authPlugins: selectors.getAuthPlugins,
-    authProviders: selectors.getAuthProviders,
     apiTokens: selectors.getAPITokens,
     clusterInitBundles: selectors.getClusterInitBundles,
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags,
+    signatureIntegrations: selectors.getSignatureIntegrations,
 });
 
 export type UseIntegrations = {
@@ -25,13 +23,12 @@ export type UseIntegrationsResponse = Integration[];
 
 const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResponse => {
     const {
-        authPlugins,
         apiTokens,
         clusterInitBundles,
-        authProviders,
         notifiers,
         backups,
         imageIntegrations,
+        signatureIntegrations,
     } = useSelector(selectIntegrations);
 
     function findIntegrations() {
@@ -39,17 +36,15 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
             integration.type.toLowerCase() === type.toLowerCase();
 
         switch (source) {
-            case 'authPlugins': {
-                return authPlugins;
-            }
             case 'authProviders': {
+                // Integrations Authentication Tokens differ from Access Control Auth providers.
                 if (type === 'apitoken') {
                     return apiTokens;
                 }
                 if (type === 'clusterInitBundle') {
                     return clusterInitBundles;
                 }
-                return authProviders.filter(typeLowerMatches);
+                return [];
             }
             case 'notifiers': {
                 return notifiers.filter(typeLowerMatches);
@@ -59,6 +54,9 @@ const useIntegrations = ({ source, type }: UseIntegrations): UseIntegrationsResp
             }
             case 'imageIntegrations': {
                 return imageIntegrations.filter(typeLowerMatches);
+            }
+            case 'signatureIntegrations': {
+                return signatureIntegrations;
             }
             default: {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

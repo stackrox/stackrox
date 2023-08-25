@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -59,7 +59,7 @@ func getConfig(filename string) (*v1.IntegrationAsConfiguration, error) {
 		return nil, errors.Wrap(err, "converting to json")
 	}
 	var config v1.IntegrationAsConfiguration
-	err = jsonpb.UnmarshalString(string(jsonBytes), &config)
+	err = jsonutil.JSONBytesToProto(jsonBytes, &config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error unmarshaling proto from secret %q", filename)
 	}
@@ -108,7 +108,7 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 	w.id = config.Id
 }
 
-func (w *watchHandler) OnWatchError(err error) {
+func (w *watchHandler) OnWatchError(_ error) {
 	if w.id != "" {
 		w.mgr.Remove(elevatedCtx, w.id)
 	}

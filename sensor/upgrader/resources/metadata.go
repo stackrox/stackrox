@@ -54,7 +54,7 @@ func populateFromResourceList(resourceList *v1.APIResourceList, expectedGVKs map
 	gv, err := schema.ParseGroupVersion(resourceList.GroupVersion)
 	if err != nil {
 		// Should never happen, but let's be forgiving if it does.
-		log.Warnf("Failed to parse group version for resource list %v: %v", resourceList, utils.Should(err))
+		log.Warnf("Failed to parse group version for resource list %v: %v", resourceList, utils.ShouldErr(err))
 		return nil
 	}
 

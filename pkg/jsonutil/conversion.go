@@ -1,6 +1,8 @@
 package jsonutil
 
 import (
+	"bytes"
+	"io"
 	"regexp"
 	"strings"
 
@@ -21,9 +23,29 @@ const (
 	OptUnEscape
 )
 
+// JSONUnmarshaler returns a jsonpb Unmarshaler configured to allow unknown fields,
+// i.e. not error out unmarshaling JSON that contains attributes not defined in proto.
+// This Unmarshaler must be used everywhere instead of direct calls to jsonpb.Unmarshal
+// and jsonpb.UnmarshalString.
+func JSONUnmarshaler() *jsonpb.Unmarshaler {
+	return &jsonpb.Unmarshaler{
+		AllowUnknownFields: true,
+	}
+}
+
 // JSONToProto converts a string containing JSON into a proto message.
 func JSONToProto(json string, m proto.Message) error {
-	return jsonpb.UnmarshalString(json, m)
+	return JSONReaderToProto(strings.NewReader(json), m)
+}
+
+// JSONBytesToProto converts bytes containing JSON into a proto message.
+func JSONBytesToProto(contents []byte, m proto.Message) error {
+	return JSONReaderToProto(bytes.NewReader(contents), m)
+}
+
+// JSONReaderToProto converts bytes from a reader containing JSON into a proto message.
+func JSONReaderToProto(reader io.Reader, m proto.Message) error {
+	return JSONUnmarshaler().Unmarshal(reader, m)
 }
 
 // ProtoToJSON converts a proto message into a string containing JSON.
@@ -56,14 +78,16 @@ func ProtoToJSON(m proto.Message, options ...ConversionOption) (string, error) {
 	return s, nil
 }
 
-// UnEscape restores characters escaped by JSON marshaller on behalf of the
+// unEscape restores characters escaped by JSON marshaller on behalf of the
 // jsonpb library. There is no option to disable escaping and a strong
 // opposition to add such functionality into jsonpb:
-//     https://github.com/golang/protobuf/pull/409#issuecomment-350385601
+//
+//	https://github.com/golang/protobuf/pull/409#issuecomment-350385601
 //
 // An alternative suggested by the jsonpb maintainers is to post process the
 // result JSON:
-//     https://github.com/golang/protobuf/issues/407
+//
+//	https://github.com/golang/protobuf/issues/407
 func unEscape(json string) string {
 	return re.ReplaceAllStringFunc(json, func(match string) string {
 		// If the match starts with "\\u...", the backwards slash is escaped,

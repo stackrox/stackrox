@@ -11,11 +11,10 @@ import (
 	complianceOperatorCheckDS "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
 	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -26,14 +25,6 @@ const (
 
 // ComplianceManager manages compliance schedules and one-off compliance runs.
 type ComplianceManager interface {
-	Start() error
-	Stop() error
-
-	GetSchedules(ctx context.Context, request *v1.GetComplianceRunSchedulesRequest) ([]*v1.ComplianceRunScheduleInfo, error)
-	AddSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
-	UpdateSchedule(ctx context.Context, spec *storage.ComplianceRunSchedule) (*v1.ComplianceRunScheduleInfo, error)
-	DeleteSchedule(ctx context.Context, id string) error
-
 	GetRecentRuns(ctx context.Context, request *v1.GetRecentComplianceRunsRequest) ([]*v1.ComplianceRun, error)
 	GetRecentRun(ctx context.Context, id string) (*v1.ComplianceRun, error)
 
@@ -50,13 +41,12 @@ type ComplianceManager interface {
 func NewManager(standardsRegistry *standards.Registry,
 	complianceOperatorManager complianceOperatorManager.Manager,
 	complianceOperatorResults complianceOperatorCheckDS.DataStore,
-	scheduleStore ScheduleStore,
 	clusterStore clusterDatastore.DataStore,
-	nodeStore nodeDatastore.GlobalDataStore,
+	nodeStore nodeDatastore.DataStore,
 	deploymentStore datastore.DataStore,
 	podStore podDatastore.DataStore,
 	dataRepoFactory data.RepositoryFactory,
 	scrapeFactory factory.ScrapeFactory,
-	resultsStore complianceDS.DataStore) (ComplianceManager, error) {
-	return newManager(standardsRegistry, complianceOperatorManager, complianceOperatorResults, scheduleStore, clusterStore, nodeStore, deploymentStore, podStore, dataRepoFactory, scrapeFactory, resultsStore)
+	resultsStore complianceDS.DataStore) ComplianceManager {
+	return newManager(standardsRegistry, complianceOperatorManager, complianceOperatorResults, clusterStore, nodeStore, deploymentStore, podStore, dataRepoFactory, scrapeFactory, resultsStore)
 }

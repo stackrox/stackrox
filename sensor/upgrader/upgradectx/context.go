@@ -18,14 +18,9 @@ import (
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/kubectl/pkg/util/openapi"
-	openAPIValidation "k8s.io/kubectl/pkg/util/openapi/validation"
 	"k8s.io/kubectl/pkg/validation"
 )
 
@@ -40,8 +35,6 @@ type UpgradeContext struct {
 
 	config config.UpgraderConfig
 
-	scheme                 *runtime.Scheme
-	codecs                 serializer.CodecFactory
 	resources              map[schema.GroupVersionKind]*resources.Metadata
 	clientSet              kubernetes.Interface
 	dynamicClientGenerator dynamic.Interface
@@ -51,6 +44,8 @@ type UpgradeContext struct {
 
 	centralHTTPClient *http.Client
 	grpcClientConn    *grpc.ClientConn
+
+	podSecurityPoliciesSupported bool
 }
 
 // Create creates a new upgrader context from the given config.
@@ -111,9 +106,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	log.Infof("Server supports %d out of %d relevant state resource types", numStateResources, len(common.StateResourceTypes))
 
+	pspSupported := false
 	for _, gvk := range common.OrderedBundleResourceTypes {
 		if _, ok := resourceMap[gvk]; ok {
 			log.Infof("Resource type %s is SUPPORTED", gvk)
+			if gvk.Kind == "PodSecurityPolicy" {
+				pspSupported = true
+			}
 		} else {
 			log.Infof("Resource type %s is NOT SUPPORTED", gvk)
 		}
@@ -135,29 +134,19 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving OpenAPI schema document from server")
 	}
-	if err := common.PatchOpenAPISchema(openAPIDoc); err != nil {
-		return nil, errors.Wrap(err, "patching OpenAPI schema")
-	}
-	openAPIResources, err := openapi.NewOpenAPIData(openAPIDoc)
+	schemaValidator, err := common.ValidatorFromOpenAPIDoc(openAPIDoc)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing OpenAPI schema document into resources")
+		return nil, errors.Wrap(err, "creating validator from OpenAPI schema")
 	}
-	schemaValidator := openAPIValidation.NewSchemaValidation(openAPIResources)
-
-	schm := scheme.Scheme
 
 	c := &UpgradeContext{
-		ctx:                    ctx,
-		config:                 *config,
-		scheme:                 schm,
-		codecs:                 serializer.NewCodecFactory(schm),
-		resources:              resourceMap,
-		clientSet:              k8sClientSet,
-		dynamicClientGenerator: dynamicClientGenerator,
-		schemaValidator: validation.ConjunctiveSchema{
-			schemaValidator,
-			yamlValidator{jsonValidator: validation.NoDoubleKeySchema{}},
-		},
+		ctx:                          ctx,
+		config:                       *config,
+		resources:                    resourceMap,
+		clientSet:                    k8sClientSet,
+		dynamicClientGenerator:       dynamicClientGenerator,
+		schemaValidator:              schemaValidator,
+		podSecurityPoliciesSupported: pspSupported,
 	}
 
 	if config.CentralEndpoint != "" {
@@ -244,24 +233,9 @@ func (c *UpgradeContext) ProcessID() string {
 	return c.config.ProcessID
 }
 
-// Scheme returns the Kubernetes resource scheme we are using.
-func (c *UpgradeContext) Scheme() *runtime.Scheme {
-	return c.scheme
-}
-
 // InCertRotationMode returns whether this is a cert rotation upgrade.
 func (c *UpgradeContext) InCertRotationMode() bool {
 	return c.config.InCertRotationMode
-}
-
-// Codecs returns the Kubernetes resource codec factory we are using.
-func (c *UpgradeContext) Codecs() *serializer.CodecFactory {
-	return &c.codecs
-}
-
-// UniversalDecoder is a decoder that can be used to decode any object.
-func (c *UpgradeContext) UniversalDecoder() runtime.Decoder {
-	return fallbackDecoder{c.codecs.UniversalDeserializer(), yamlDecoder{jsonDecoder: unstructured.UnstructuredJSONScheme}}
 }
 
 // IsProcessStateObject checks if the given object belongs to the state of this upgrade process.
@@ -299,6 +273,8 @@ func (c *UpgradeContext) DoCentralHTTPRequest(req *http.Request) (*http.Response
 		return nil, errors.New("no HTTP client configured")
 	}
 
+	req.Header.Set("User-Agent", clientconn.GetUserAgent())
+
 	return c.centralHTTPClient.Do(req)
 }
 
@@ -313,39 +289,15 @@ func (c *UpgradeContext) Validator() validation.Schema {
 }
 
 // ParseAndValidateObject parses and validates (against the server's OpenAPI schema) a serialized Kubernetes object.
-func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sutil.Object, error) {
-	obj, _, err := c.UniversalDecoder().Decode(data, nil, nil)
+func (c *UpgradeContext) ParseAndValidateObject(data []byte) (*unstructured.Unstructured, error) {
+	k8sObj, err := k8sutil.UnstructuredFromYAML(string(data))
 	if err != nil {
 		return nil, err
 	}
 	if err := c.schemaValidator.ValidateBytes(data); err != nil {
 		return nil, errors.Wrap(err, "schema validation failed")
 	}
-	k8sObj, _ := obj.(k8sutil.Object)
-	if k8sObj == nil {
-		return nil, errors.Errorf("object of kind %v is not a Kubernetes API object", obj.GetObjectKind().GroupVersionKind())
-	}
 	return k8sObj, nil
-}
-
-func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sutil.Object, error) {
-	objs, ok := unpackListReflect(listObj)
-	if ok {
-		return objs, nil
-	}
-
-	log.Infof("Could not unpack list of kind %v using reflection", listObj.GetObjectKind().GroupVersionKind())
-
-	var list unstructured.UnstructuredList
-	if err := c.scheme.Convert(listObj, &list, nil); err != nil {
-		return nil, errors.Wrapf(err, "converting object of kind %v to a generic list", listObj.GetObjectKind().GroupVersionKind())
-	}
-
-	objs = make([]k8sutil.Object, 0, len(list.Items))
-	for i := range list.Items {
-		objs = append(objs, &list.Items[i])
-	}
-	return objs, nil
 }
 
 // Owner returns the owning object of this upgrader instance, if any.
@@ -354,12 +306,12 @@ func (c *UpgradeContext) Owner() *k8sobjects.ObjectRef {
 }
 
 // List lists all Kubernetes options of resources of the given purpose, applying the given list options.
-func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav1.ListOptions) ([]k8sutil.Object, error) {
+func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav1.ListOptions) ([]*unstructured.Unstructured, error) {
 	if listOpts == nil {
 		listOpts = &metav1.ListOptions{}
 	}
 
-	var result []k8sutil.Object
+	var result []*unstructured.Unstructured
 
 	for _, resourceMD := range c.resources {
 		if resourceMD.Purpose&resourcePurpose != resourcePurpose {
@@ -371,18 +323,18 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceMD)
 		}
 
-		objs, err := c.unpackList(listObj)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unpacking list of objects of type %v", resourceMD)
+		for _, item := range listObj.Items {
+			item := item // create a copy to prevent aliasing
+			result = append(result, &item)
 		}
-		result = append(result, objs...)
 	}
 
 	return result, nil
 }
 
-// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
-func (c *UpgradeContext) ListCurrentObjects() ([]k8sutil.Object, error) {
+// ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process. The caller is free
+// to modify the objects.
+func (c *UpgradeContext) ListCurrentObjects() ([]*unstructured.Unstructured, error) {
 	listOpts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
 	}
@@ -399,4 +351,9 @@ func (c *UpgradeContext) ListCurrentObjects() ([]k8sutil.Object, error) {
 	common.Filter(&objects, common.Not(common.AdditionalCASecretPredicate))
 
 	return objects, nil
+}
+
+// IsPodSecurityEnabled returns whether or not pod security polices are enabled for this cluster
+func (c *UpgradeContext) IsPodSecurityEnabled() bool {
+	return c.podSecurityPoliciesSupported
 }

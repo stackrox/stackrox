@@ -9,7 +9,8 @@ import (
 // Command defines the collector command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "collector",
+		Use:   "collector",
+		Short: "Commands related to the Collector service.",
 	}
 
 	c.AddCommand(

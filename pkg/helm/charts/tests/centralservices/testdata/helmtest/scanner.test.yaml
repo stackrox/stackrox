@@ -1,0 +1,148 @@
+values:
+  central:
+    persistence:
+      none: true
+  ca:
+    cert: ""
+    key: ""
+  scanner:
+    serviceTLS:
+      cert: ""
+      key: ""
+    dbServiceTLS:
+      cert: ""
+      key: ""
+  monitoring:
+    openshift:
+      enabled: false
+tests:
+- name: "scanner with default settings"
+  expect: |
+    .serviceaccounts["scanner"] | assertThat(. != null)
+    .secrets["scanner-db-password"].stringData.password | assertThat(length != 0)
+    .configmaps["scanner-config"].data.["config.yaml"] | assertThat(length != 0)
+    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    verifyNodeAffinities(.deployments["scanner"])
+    verifyNodeAffinities(.deployments["scanner-db"])
+    .networkpolicys["scanner"] | assertThat(. != null)
+    .networkpolicys["scanner-db"] | assertThat(. != null)
+    .deployments["scanner"] | assertThat(. != null)
+    .deployments["scanner-db"] | assertThat(. != null)
+    .services["scanner"] | assertThat(. != null)
+    .services["scanner-db"] | assertThat(. != null)
+  tests:
+  - name: "in full mode"
+    expect: |
+      .secrets["scanner-tls"].stringData | assertThat(.["cert.pem"] | contains("BEGIN CERTIFICATE"))
+      .secrets["scanner-db-tls"].stringData | assertThat(.["key.pem"] | contains("BEGIN RSA PRIVATE KEY"))
+      .deployments["scanner"].spec.template.spec.containers[0].image | assertThat(contains("slim") == false)
+      .deployments["scanner-db"].spec.template.spec.containers[0].image | assertThat(contains("slim") == false)
+    tests:
+    - name: "as default"
+    - name: "with explicit setting"
+      set:
+        scanner.mode: full
+    - name: "with empty setting"
+      set:
+        scanner.mode: ""
+
+- name: "scanner with deprecated PodSecurityPolicies disabled"
+  values:
+    system:
+      enablePodSecurityPolicies: false
+  expect: |
+    .podsecuritypolicys["stackrox-scanner"] | assertThat(. == null)
+    .rolebindings["stackrox-scanner-psp"] | assertThat(. == null)
+    .clusterroles["stackrox-scanner-psp"] | assertThat(. == null)
+
+- name: "scanner with deprecated PodSecurityPolicies enabled"
+  values:
+    system:
+      enablePodSecurityPolicies: true
+  expect: |
+    .podsecuritypolicys["stackrox-scanner"] | assertThat(. != null)
+    .rolebindings["stackrox-scanner-psp"] | assertThat(. != null)
+    .clusterroles["stackrox-scanner-psp"] | assertThat(. != null)
+
+#TODO: Add istio tests
+- name: "configured scanner"
+  values:
+    scanner:
+      replicas: 5
+      autoscaling:
+        minReplicas: 50
+        maxReplicas: 100
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: Exists
+  expect: |
+    .deployments["scanner"].spec.replicas | assertThat(. == 5)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
+    .horizontalpodautoscalers["scanner"].spec.minReplicas | assertThat(. == 50)
+    .horizontalpodautoscalers["scanner"].spec.maxReplicas | assertThat(. == 100)
+
+- name: "disable scanner cert generation"
+  set:
+    scanner.serviceTLS.generate: false
+    scanner.dbServiceTLS.generate: false
+  expect: |
+    .secrets["scanner-tls"].stringData | assertThat(.["cert.pem"] | length == 0)
+    .secrets["scanner-db-tls"].stringData | assertThat(.["key.pem"] | length == 0)
+
+- name: "scanner with OpenShift 3 and enabled SCCs"
+  server:
+    visibleSchemas:
+    - openshift-3.11.0
+    availableSchemas:
+    - openshift-3.11.0
+  values:
+    env:
+      openshift: 3
+    system:
+      createSCCs: true
+  expect: |
+    .securitycontextconstraints["stackrox-scanner"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:scanner"))
+    .roles["use-scanner-scc"] | assertThat(. == null)
+    .rolebindings["scanner-use-scc"] | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    verifyNodeAffinities(.deployments["scanner"])
+    verifyNodeAffinities(.deployments["scanner-db"])
+    .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "scanner with OpenShift 4 and disabled SCCs"
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  values:
+    env:
+      openshift: 4
+    system:
+      createSCCs: false
+  expect: |
+    .roles["use-scanner-scc"] | assertThat(. != null)
+    .rolebindings["scanner-use-scc"] | assertThat(. != null)
+    .securitycontextconstraints["stackrox-scanner"] | assertThat(. == null)
+    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    verifyNodeAffinities(.deployments["scanner"])
+    verifyNodeAffinities(.deployments["scanner-db"])
+    .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+
+- name: "Installation fails with slim mode"
+  values:
+    scanner:
+      mode: slim
+  expectError: true
+  expect: |
+    .error | assertThat(contains("set to full mode: scanner.mode=full"))

@@ -9,13 +9,13 @@ import (
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
 	pkgAlert "github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -49,15 +49,15 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 // AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
+	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
 		return nil, err
 	}
 
 	// If any of the alerts are for a deployment, detect if the deployment itself is modified
-	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, staleAlerts)
+	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, toBeResolvedAlerts)
 
-	// Mark any old alerts no longer generated as stale, and insert new alerts.
+	// Mark any old alerts no longer generated as resolved, and insert new alerts.
 	err = d.notifyAndUpdateBatch(ctx, newAlerts)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
-	err = d.markAlertsStale(ctx, staleAlerts)
+	err = d.markAlertsResolved(ctx, toBeResolvedAlerts)
 	if err != nil {
 		return nil, err
 	}
@@ -101,19 +101,24 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// markAlertsStale marks all input alerts stale in the input datastore.
-func (d *alertManagerImpl) markAlertsStale(ctx context.Context, alertsToMark []*storage.Alert) error {
-	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
-	for _, existingAlert := range alertsToMark {
-		err := d.alerts.MarkAlertStale(ctx, existingAlert.GetId())
-		if err == nil {
-			// run notifier for all the resolved alerts
-			existingAlert.State = storage.ViolationState_RESOLVED
-			d.notifier.ProcessAlert(ctx, existingAlert)
-		}
-		errList.AddError(err)
+// markAlertsResolved marks all input alerts resolved in the input datastore.
+func (d *alertManagerImpl) markAlertsResolved(ctx context.Context, alertsToMark []*storage.Alert) error {
+	if len(alertsToMark) == 0 {
+		return nil
 	}
-	return errList.ToError()
+
+	ids := make([]string, 0, len(alertsToMark))
+	for _, alert := range alertsToMark {
+		ids = append(ids, alert.GetId())
+	}
+	resolvedAlerts, err := d.alerts.MarkAlertsResolvedBatch(ctx, ids...)
+	if err != nil {
+		return err
+	}
+	for _, resolvedAlert := range resolvedAlerts {
+		d.notifier.ProcessAlert(ctx, resolvedAlert)
+	}
+	return nil
 }
 
 func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert *storage.Alert) bool {
@@ -133,7 +138,7 @@ func (d *alertManagerImpl) shouldDebounceNotification(ctx context.Context, alert
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
-		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
+		AddExactMatches(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 		ProtoQuery()
 	resolvedAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
 	if err != nil {
@@ -161,10 +166,12 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(ctx context.Context, alertsToMar
 	return d.updateBatch(ctx, alertsToMark)
 }
 
-// It is the caller's responsibility to not call this with an empty slice,
-// else this function will panic.
-func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
-	return processes[len(processes)-1].GetSignal().GetTime()
+// It is the caller's responsibility to not call this with an empty slice.
+func lastTimestamp(processes []*storage.ProcessIndicator) (*ptypes.Timestamp, error) {
+	if len(processes) == 0 {
+		return nil, errors.New("Unexpected: no processes found in the alert")
+	}
+	return processes[len(processes)-1].GetSignal().GetTime(), nil
 }
 
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
@@ -174,6 +181,7 @@ func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewProcesses bool) {
 	oldProcessViolation := old.GetProcessViolation()
 
+	// Do not return if the old alert has 0 processes because that is unexpected. Further down we log the error.
 	if len(newAlert.GetProcessViolation().GetProcesses()) == 0 {
 		return
 	}
@@ -184,7 +192,19 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 
 	newProcessesSlice := oldProcessViolation.GetProcesses()
 	// De-dupe processes using timestamps.
-	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
+	timestamp, err := lastTimestamp(oldProcessViolation.GetProcesses())
+	if err != nil {
+		log.Errorf(
+			"Failed to merge alerts. "+
+				"New alert %s (policy=%s) has %d processses and old alert %s (policy=%s) has %d processes: %v",
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), len(newAlert.GetProcessViolation().GetProcesses()),
+			old.GetId(), old.GetPolicy().GetName(), len(oldProcessViolation.GetProcesses()), err,
+		)
+		// At this point, we know that the new alert has non-zero process violations but it cannot be merged.
+		newAlertHasNewProcesses = true
+		return
+	}
+
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
 		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
 			newAlertHasNewProcesses = true
@@ -276,23 +296,22 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	if newAlert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY && old.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
 		newAlert.Enforcement = old.GetEnforcement()
 		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
-		if protoutils.EqualStorageAlert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
+		if protoutils.SlicesEqual(newAlert.GetViolations(), old.GetViolations()) {
 			newAlert.Time = old.GetTime()
 		}
 	}
 
 	newAlert.FirstOccurred = old.GetFirstOccurred()
-	newAlert.Tags = old.GetTags()
 	return newAlert
 }
 
-// MergeManyAlerts merges two alerts.
+// mergeManyAlerts merges two alerts.
 func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
-) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
-	qb := search.NewQueryBuilder().AddStrings(
+) (newAlerts, updatedAlerts, toBeResolvedAlerts []*storage.Alert, err error) {
+	qb := search.NewQueryBuilder().AddExactMatches(
 		search.ViolationState,
 		storage.ViolationState_ACTIVE.String(),
 		storage.ViolationState_ATTEMPTED.String())
@@ -308,7 +327,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
-			alert.FirstOccurred = ptypes.TimestampNow()
+			// `alert.time` is the latest violation time.
+			alert.FirstOccurred = alert.GetTime()
 			newAlerts = append(newAlerts, alert)
 			continue
 		}
@@ -321,7 +341,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			continue
 		}
 
-		alert.FirstOccurred = ptypes.TimestampNow()
+		// `alert.time` is the latest violation time.
+		alert.FirstOccurred = alert.GetTime()
 		newAlerts = append(newAlerts, alert)
 	}
 
@@ -335,8 +356,8 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 	// Find any old alerts no longer being produced.
 	for _, previousAlert := range previousAlerts {
-		if d.shouldMarkAlertStale(previousAlert, incomingAlerts, oldAlertFilters...) {
-			staleAlerts = append(staleAlerts, previousAlert)
+		if d.shouldMarkAlertResolved(previousAlert, incomingAlerts, oldAlertFilters...) {
+			toBeResolvedAlerts = append(toBeResolvedAlerts, previousAlert)
 		}
 
 		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
@@ -361,7 +382,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertStale(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
+func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
 	oldAndNew := []*storage.Alert{oldAlert}
 	oldAndNew = append(oldAndNew, incomingAlerts...)
 	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.

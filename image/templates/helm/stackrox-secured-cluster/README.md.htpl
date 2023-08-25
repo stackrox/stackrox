@@ -3,18 +3,13 @@
 This Helm chart allows you to deploy the necessary services on a StackRox
 secured cluster: StackRox Sensor, StackRox Collector, and StackRox Admission
 Control.
-
-**PLEASE NOTE:** This Helm chart supersedes the `sensor` Helm chart shipped for previous
-versions of the StackRox Kubernetes Security Platform. If you have previously used the
-`sensor` chart, see the [sensor-chart-upgrade.md](sensor-chart-upgrade.md) document in this
-directory for instructions on how to upgrade.
+If you want to install Secured Cluster Services for Red Hat Advanced Cluster Security,
+refer to [Installing the secured-cluster-services Helm chart](https://docs.openshift.com/acs/installing/installing_helm/install-helm-quick.html#installing-secured-cluster-services-quickly_acs-install-helm-quick).
 
 ## Prerequisites
 
 To deploy the secured cluster services for the StackRox Kubernetes Security Platform, you must:
 - Have at least version 3.1 of the Helm tool installed on your machine
-- Have credentials for the `[< required "" .MainRegistry >]` registry or the other image registry
-  you use.
 
 > **IMPORTANT**
 >
@@ -54,10 +49,6 @@ clusters by providing it as an input to the `helm install` command.
 
 ### Generate cluster init bundle
 
-To generate a **cluster init bundle** by using the `roxctl` CLI, make sure that
-you are running the StackRox Kubernetes Security Platform and the `roxctl` CLI
-version 3.0.55 or newer.
-
 Run the following command to generate a **cluster init bundle**:
 ```sh
 roxctl central init-bundles generate <cluster init bundle name> --output cluster-init-bundle.yaml
@@ -68,57 +59,23 @@ roxctl central init-bundles generate <cluster init bundle name> --output cluster
 - Make sure that you store this bundle securely as it contains secrets. You can
   use the same bundle to set up multiple StackRox secured clusters.
 
-### Deploy Secured Cluster Services 
+### Deploy Secured Cluster Services
 
 You can use the following command to deploy secured cluster services by using
 this Helm chart:
 ```sh
 helm install -n stackrox --create-namespace \
-    stackrox-secured-cluster-services stackrox/secured-cluster-services \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
     -f <path to cluster-init-bundle.yaml> \
     --set clusterName=<name of the secured cluster> \
     --set centralEndpoint=<endpoint of Central service>
 ```
 - In this command, you can replace the chart name
-  `stackrox/secured-cluster-services` with the chart's file path if you have it
+  `stackrox/stackrox-secured-cluster-services` with the chart's file path if you have it
   locally.
 - The provided cluster name can either denote the intended name for a new secured cluster
   or the name of an existing cluster, in which case the name will be reused and associated
   with the Kubernetes cluster on which the chart is installed.
-
-To access StackRox Docker images, you also need image pull credentials. While
-installing, you can inject the required credentials (if any) by using one of the
-following ways:
-
-#### Specify username and password
-
-Pass the following arguments to the `helm install` command if you are using the
-images from the default registry (`[< required "" .MainRegistry >]`) or a registry that supports
-authentication by using username and password:
-
-```sh
---set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
-```
-
-#### Use pre-existing image pull secrets
-If you already created one or multiple image pull secrets in the namespace in
-which you are deploying, you can reference these secrets as follows:
-
-```sh
---set imagePullSecrets.useExisting="pull-secret-name1;pull-secret-name2"
-```
-
-#### Skip image pull secrets
-When you are pulling the images from a registry in a private network that does
-not require authentication, or if you've already configured the namespace's (in
-which you are deploying) default service account with the appropriate image pull
-secrets. In that case, you do not need to specify any additional image pull
-secrets. To disable image pull secrets, pass the following arguments to the
-`helm install` command:
-
-```sh
---set imagePullSecrets.allowNone=true
-```
 
 After you deploy the StackRox Kubernetes Security Platform Secured Cluster
 Services using the `helm install` command, you will see informative notes and
@@ -127,6 +84,26 @@ itself to StackRox Central, and it is visible in the StackRox portal as a
 Helm-managed cluster. If the provided cluster name is already associated with
 an existing secured cluster, the name will be reused and associated with the
 cluster on which the chart is installed.
+
+In case you use image mirroring or otherwise access StackRox container images from non-standard location,
+you may also need to provide image pull credentials.
+There are several ways to inject the required credentials (if any) into the installation process:
+
+- **Explicitly specify username and password:** Use this if you are using a registry that supports username/password
+  authentication. Pass the following arguments to the `helm install` command:
+  ```sh
+  --set imagePullSecrets.username=<registry username> --set imagePullSecrets.password=<registry password>
+  ```
+- **Use pre-existing image pull secrets:** If you already have one or several image pull secrets
+  created in the namespace to which you are deploying, you can reference these in the following
+  way (we assume that your secrets are called `pull-secret-1` and `pull-secret-2`):
+  ```sh
+  --set imagePullSecrets.useExisting="pull-secret-1;pull-secret-2"
+  ```
+- **Do not use image pull secrets:** If you are pulling your images from quay.io/stackrox-io or a registry in a private
+  network that does not require authentication, or if the default service account in the namespace
+  to which you are deploying is already configured with appropriate image pull secrets, you do
+  not need to specify any additional image pull secrets.
 
 ### Applying custom configuration options
 
@@ -170,21 +147,21 @@ the options which you can configure:
 
   env:
     istio: true  # enable istio support
-  
+
   sensor:
     # Use custom resource overrides for sensor
     resources:
       requests:
-        cpu: "1"
-        memory: "1Gi"
-      limits:
         cpu: "2"
         memory: "4Gi"
-  
+      limits:
+        cpu: "4"
+        memory: "8Gi"
+
   admissionControl:
     dynamic:
       disableBypass: true # Disable bypassing of Admission Controller
-  
+
   customize:
     # Apply the important-service=true label for all objects managed by this chart.
     labels:
@@ -220,7 +197,7 @@ Secured Cluster Services:
 For example, to apply configuration changes for the secured cluster, use the following command:
 ```sh
 helm upgrade -n stackrox \
-    stackrox-secured-cluster-services stackrox/secured-cluster-services \
+    stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
     --reuse-values \
     -f values-public.yaml \
     -f values-private.yaml
@@ -272,7 +249,7 @@ chart and their default values:
 |`image.main.registry`| Address of the registry you are using for main image.|`[< required "" .MainRegistry >]` |
 |`image.collector.registry`| Address of the registry you are using for collector image.|`[< required "" .CollectorRegistry >]` |
 |`sensor.endpoint`| Address of the Sensor endpoint including port number. No trailing slash.|`sensor.stackrox.svc:443` |
-|`collector.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`KERNEL_MODULE` |
+|`collector.collectionMethod`|Either `EBPF`, `CORE_BPF`, or `NO_COLLECTION`. |`EBPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
 |`collector.slimMode`| Specify `true` if you want to use a slim Collector image for deploying Collector. Using slim Collector images requires Central to provide the matching kernel module or eBPF probe. If you are running the StackRox Kubernetes Security Platform in offline mode, you must download a kernel support package from [stackrox.io](https://install.stackrox.io/collector/support-packages/index.html) and upload it to Central for slim Collectors to function. Otherwise, you must ensure that Central can access the online probe repository hosted at https://collector-modules.stackrox.io/.|`false` |
 |`admissionControl.listenOnCreates`| This setting controls whether the cluster is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests for `create` events on Kubernetes objects. |`false` |
@@ -305,17 +282,19 @@ non-standard environments:
 |`sensor.resources`|Resource specification for Sensor.|See below.|
 |`collector.resources`|Resource specification for Collector.|See below.|
 |`collector.complianceResources`|Resource specification for Collector's Compliance container.|See below.|
+|`collector.nodeScanningResources`|Resource specification for Collector's Node Inventory container.|See below.|
 |`collector.nodeSelector` | Node selector for Collector pods placement. | `null` (no placement constraints) |
 |`admissionControl.resources`|Resource specification for Admission Control.|See below.|
 |`sensor.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
 |`sensor.nodeSelector` | Node selector for Sensor pod placement. | `null` (no placement constraints) |
-|`collector.imagePullPolicy`| Kubernetes image pull policy for Sensor. | `Always` when deploying in slim mode, otherwise `IfNotPresent`. |
-|`collector.complianceImagePullPolicy`| Kubernetes image pull policy for Sensor. | `IfNotPresent` |
+|`collector.imagePullPolicy`| Kubernetes image pull policy for Collector. | `Always` when deploying in slim mode, otherwise `IfNotPresent`. |
+|`collector.complianceImagePullPolicy`| Kubernetes image pull policy for Collector. | `IfNotPresent` |
 |`admissionControl.imagePullPolicy`| Kubernetes image pull policy for Admission Control. | `IfNotPresent` |
 |`admissionControl.nodeSelector` | Node selector for Admission Control pods placement. | `null` (no placement constraints) |
 |`exposeMonitoring`| This setting controls whether the monitoring port (TCP 9090) should be exposed on the services. | `false` |
 |`env.openshift`| The StackRox Kubernetes Security Platform automatically detects the OpenShift version (`3.x` or `4.x`). Use this parameter to override the automatically detected version number, for example `4`. | `null` |
 |`env.istio`| This setting can be used for overwriting the auto-sensing of Istio environments. If enabled, the cluster is set up for an Istio environment. | Auto-sensed, depends on environment. |
+|`scanner.disable`| Scan images stored in the cluster's local registries. This variable is only available for the OpenShift Container Platform. | `true` |
 
 ### Default resources
 
@@ -323,12 +302,13 @@ Each container's default resource settings are defined in the
 `internal/defaults.yaml` file in this chart. The following table lists the YAML
 paths to the respective defaults for each container that this chart deploys:
 
-|Container        |Path in `internal/defaults.yaml`        |
-|:----------------|:---------------------------------------|
-|Sensor           |`defaults.sensor.resources`             |
-|Collector        |`defaults.collector.resources`          |
-|Compliance       |`defaults.collector.complianceResources`|
-|Admission Control|`defaults.admissionControl.resources`   |
+|Container        |Path in `internal/defaults.yaml`           |
+|:----------------|:------------------------------------------|
+|Sensor           |`defaults.sensor.resources`                |
+|Collector        |`defaults.collector.resources`             |
+|Compliance       |`defaults.collector.complianceResources`   |
+|NodeInventory    |`defaults.collector.nodeScanningResources`|
+|Admission Control|`defaults.admissionControl.resources`      |
 
 ### Customization settings
 
@@ -417,7 +397,7 @@ doesn't need to be kept secret.
    run the `helm install` or the `helm upgrade` command,
    pass the option `-f ca-config.yaml`:
    ```sh
-   helm install -n stackrox stackrox-secured-cluster-services stackrox/secured-cluster-services \
+   helm install -n stackrox stackrox-secured-cluster-services stackrox/stackrox-secured-cluster-services \
      -f ca-config.yaml \
      <other options ...>
    ```

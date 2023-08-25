@@ -11,3 +11,56 @@ critical
 data race
 should (not|never) happen
 OMITTED.*LOG LINES DUE TO THROTTLING
+
+# Following is the list of deprecated k8s and OCP APIs that are getting signalled in the product logs by k8s client
+# libraries.
+# Obtain the list of deprecations:
+# - for k8s from https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+# - for OCP via links from https://access.redhat.com/articles/6955985
+
+# k8s 1.29
+W.*v1beta2.*(FlowSchema|PriorityLevelConfiguration).*deprecated
+
+# k8s 1.27
+W.*v1beta1.*CSIStorageCapacity.*deprecated
+
+# k8s 1.26
+W.*v1beta1.*(FlowSchema|PriorityLevelConfiguration).*deprecated
+W.*v2beta2.*HorizontalPodAutoscaler.*deprecated
+
+# k8s 1.25
+W.*v1beta1.*CronJob.*deprecated
+W.*v1beta1.*EndpointSlice.*deprecated
+W.*v1beta1.*Event.*deprecated
+W.*v2beta1.*HorizontalPodAutoscaler.*deprecated
+W.*v1beta1.*PodDisruptionBudget.*deprecated
+W.*v1beta1.*PodSecurityPolicy.*deprecated
+W.*v1beta1.*RuntimeClass.*deprecated
+
+# k8s 1.22
+W.*v1beta1.*MutatingWebhookConfiguration.*deprecated
+W.*v1beta1.*CustomResourceDefinition.*deprecated
+W.*v1beta1.*APIService.*deprecated
+W.*v1beta1.*TokenReview.*deprecated
+W.*v1beta1.*(LocalSubjectAccessReview|SelfSubjectAccessReview|SubjectAccessReview|SelfSubjectRulesReview).*deprecated
+W.*v1beta1.*CertificateSigningRequest.*deprecated
+W.*v1beta1.*Lease.*deprecated
+W.*v1beta1.*Ingress.*deprecated
+W.*v1beta1.*IngressClass.*deprecated
+W.*v1beta1.*(ClusterRole|ClusterRoleBinding|Role|RoleBinding).*deprecated
+W.*v1beta1.*PriorityClass.*deprecated
+W.*v1beta1.*(CSIDriver|CSINode|StorageClass|VolumeAttachment).*deprecated
+
+# k8s 1.16
+W.*v1beta1.*NetworkPolicy.*deprecated
+W.*(v1beta1|v1beta2).*DaemonSet.*deprecated
+W.*(v1beta1|v1beta2).*Deployment.*deprecated
+W.*(v1beta1|v1beta2).*StatefulSet.*deprecated
+W.*(v1beta1|v1beta1).*ReplicaSet.*deprecated
+
+# Any other warning emitted by client-go/rest/warnings.go for server-side Warning headers. See:
+# - https://github.com/kubernetes/client-go/blob/cf830e3cb3abbcc32cc1b6bea4feb1a9a1881af3/rest/warnings.go#L70
+# - https://github.com/kubernetes/klog/blob/ff82b97aa02342da77fe80485cf92459e7ab2943/klog.go#L624-L644
+# This should also catch deprecations above but is subject to break when the code file gets renamed, therefore it's not
+# promoted to be a single catch-all pattern.
+W[\d\s\.:]+warnings\.go:\d+].+

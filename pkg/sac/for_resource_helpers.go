@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -23,13 +22,24 @@ func ForResource(resourceMD permissions.ResourceMetadata) ForResourceHelper {
 
 // ScopeChecker returns the scope checker for accessing the given resource in the specified way.
 func (h ForResourceHelper) ScopeChecker(ctx context.Context, am storage.Access, keys ...ScopeKey) ScopeChecker {
-	return GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(h.resourceMD.GetResource()).SubScopeChecker(keys...)
+	resourceScopeChecker := GlobalAccessScopeChecker(ctx).AccessMode(am).Resource(
+		h.resourceMD).SubScopeChecker(keys...)
+
+	if h.resourceMD.GetReplacingResource() == nil {
+		return resourceScopeChecker
+	}
+	// Conditionally create a OR scope checker if a replacing resource is given. This way we check access to either
+	// the old resource OR the replacing resource, keeping backwards-compatibility.
+	return NewOrScopeChecker(
+		resourceScopeChecker,
+		GlobalAccessScopeChecker(ctx).AccessMode(am).
+			Resource(h.resourceMD.ReplacingResource).SubScopeChecker(keys...))
 }
 
 // AccessAllowed checks if in the given context, we have access of the specified kind to the resource or
 // a subscope thereof.
 func (h ForResourceHelper) AccessAllowed(ctx context.Context, am storage.Access, keys ...ScopeKey) (bool, error) {
-	return h.ScopeChecker(ctx, am, keys...).Allowed(ctx)
+	return h.ScopeChecker(ctx, am, keys...).IsAllowed(), nil
 }
 
 // ReadAllowed checks if in the given context, we have read access to the resource or a subscope thereof.
@@ -42,10 +52,10 @@ func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (
 	return h.AccessAllowed(ctx, storage.Access_READ_WRITE_ACCESS, keys...)
 }
 
-// MustCreateSearchHelper creates and returns a search helper with the given options, or panics if the
+// MustCreatePgSearchHelper creates and returns a search helper with the given options, or panics if the
 // search helper could not be created.
-func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap) SearchHelper {
-	searchHelper, err := NewSearchHelper(h.resourceMD, options)
+func (h ForResourceHelper) MustCreatePgSearchHelper() SearchHelper {
+	searchHelper, err := NewPgSearchHelper(h.resourceMD, h.ScopeChecker)
 	utils.CrashOnError(err)
 	return searchHelper
 }

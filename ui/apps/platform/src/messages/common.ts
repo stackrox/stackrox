@@ -19,6 +19,7 @@ export const vulnerabilitySeverityLabels: Record<VulnerabilitySeverity, string> 
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate',
     LOW_VULNERABILITY_SEVERITY: 'Low',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown',
 });
 
 export const clusterTypeLabels = Object.freeze({
@@ -81,7 +82,12 @@ export const resourceLabels = Object.freeze({
     SECRET: 'secret',
     CONTROL: 'control',
     CVE: 'CVE',
+    IMAGE_CVE: 'Image CVE',
+    NODE_CVE: 'Node CVE',
+    CLUSTER_CVE: 'Platform CVE',
     COMPONENT: 'component',
+    NODE_COMPONENT: 'node component',
+    IMAGE_COMPONENT: 'image component',
     IMAGE: 'image',
     POLICY: 'policy',
     CHECK: 'check',

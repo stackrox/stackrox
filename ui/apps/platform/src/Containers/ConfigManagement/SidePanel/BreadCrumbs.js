@@ -2,13 +2,15 @@ import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
+import upperFirst from 'lodash/upperFirst';
 import { ChevronRight } from 'react-feather';
 import { Link, withRouter } from 'react-router-dom';
 
-import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
 import useEntityName from 'hooks/useEntityName';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
+
+import BackButton from './BackButton';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
@@ -54,6 +56,34 @@ const getLink = (match, location, index, length) => {
     return urlBuilder.url();
 };
 
+// Tailwind purge needs to see complete class strings instead of `max-w-1/${length}` template literal.
+const getMaxWidthClass = (length) => {
+    switch (length) {
+        case 1:
+            return 'max-w-full';
+        case 2:
+            return 'max-w-1/2';
+        case 3:
+            return 'max-w-1/3';
+        case 4:
+            return 'max-w-1/4';
+        case 5:
+            return 'max-w-1/5';
+        case 6:
+            return 'max-w-1/6';
+        case 7:
+            return 'max-w-1/7';
+        case 8:
+            return 'max-w-1/8';
+        case 9:
+            return 'max-w-1/9';
+        case 10:
+            return 'max-w-1/10';
+        default:
+            return '';
+    }
+};
+
 const BreadCrumbLinks = (props) => {
     const { className, match, location, history, ...params } = props;
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
@@ -61,34 +91,33 @@ const BreadCrumbLinks = (props) => {
         return null;
     }
     const breadCrumbStates = getBreadCrumbStates(params);
-    let maxWidthClass = 'max-w-full';
-    if (breadCrumbStates.length > 1) {
-        maxWidthClass = `max-w-1/${breadCrumbStates.length}`;
-    }
+    const maxWidthClass = getMaxWidthClass(breadCrumbStates.length);
     const breadCrumbLinks = breadCrumbStates.map((state, i, { length }) => {
         const icon = i !== length - 1 ? Icon : null;
         const link = getLink(match, location, i, length);
+        const name = state.type === 'entity list' ? upperFirst(state.name) : state.name;
         const content = link ? (
             <Link
-                className="text-primary-700 underline uppercase truncate"
+                className="text-primary-700 underline truncate font-700"
                 title={state.name}
                 to={link}
             >
-                {state.name}
+                {name}
             </Link>
         ) : (
             <span className="w-full truncate" title={state.name}>
-                <span className="truncate uppercase">{state.name}</span>
+                <span className="truncate font-700">{name}</span>
             </span>
         );
         if (!state) {
             return null;
         }
+        const entityTypeLabel = upperFirst(state.type);
         return (
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
                 <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
                     {content}
-                    <span className="capitalize italic font-600">{state.type.toLowerCase()}</span>
+                    <span>{entityTypeLabel}</span>
                 </span>
                 <span className="flex items-center">{icon}</span>
             </div>

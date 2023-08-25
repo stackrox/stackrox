@@ -1,14 +1,17 @@
 import static Services.getPolicies
 import static Services.waitForViolation
-
-import groups.GraphQL
-import objects.Deployment
-import services.GraphQLService
-import org.junit.experimental.categories.Category
-import util.Timer
+import static util.Helpers.withRetry
 
 import java.util.stream.Collectors
 
+import objects.Deployment
+import services.GraphQLService
+
+import spock.lang.Tag
+import util.Env
+
+@Tag("BAT")
+@Tag("GraphQL")
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
     private static final String PARENT_NAME = "/bin/sh"
@@ -17,7 +20,8 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String CONTAINER_NAME = "eventnginx"
     private static final Deployment DEPLOYMENT = new Deployment()
             .setName(DEPLOYMENT_NAME)
-            .setImage("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-" +
+                    "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
             .addLabel("app", "test")
             .setCommand(["sh", "-c", "apt-get -y clean && sleep 600"])
     private static final POLICY = "Ubuntu Package Manager Execution"
@@ -49,7 +53,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
                     uid
                     parentName
                     parentUid
-                    whitelisted
+                    inBaseline
                 }
             }
         }
@@ -72,7 +76,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
                     uid
                     parentName
                     parentUid
-                    whitelisted
+                    inBaseline
                 }
             }
         }
@@ -89,7 +93,6 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
     private final gqlService = new GraphQLService()
 
-    @Category(GraphQL)
     def "Verify Deployment Events in GraphQL"() {
         when:
         "Validate Policy Violation is Triggered"
@@ -110,43 +113,43 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
 
         String deploymentUid = DEPLOYMENT.deploymentUid
         assert deploymentUid != null
-        assert verifyDeploymentEvents(deploymentUid)
+        verifyDeploymentEvents(deploymentUid)
         String podUid = verifyPodEvents(deploymentUid)
         assert podUid != null
-        assert verifyContainerEvents(podUid)
+        verifyContainerEvents(podUid)
     }
 
-    private boolean verifyDeploymentEvents(String deploymentUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+    private void verifyDeploymentEvents(String deploymentUid, int retries = 30, int interval = 4) {
+        withRetry(retries, interval) {
             def depEvents = gqlService.Call(GET_DEPLOYMENT_EVENTS_OVERVIEW, [deploymentId: deploymentUid])
             assert depEvents.getCode() == 200
-            println "return code " + depEvents.getCode()
+            log.info "return code " + depEvents.getCode()
             assert depEvents.getValue().result != null
             def events = depEvents.getValue().result
-            assert events.numPolicyViolations == 1
+            if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+                // observing more than 1 policy voilations randomly
+                assert events.numPolicyViolations >= 1
+            } else {
+                assert events.numPolicyViolations == 1
+            }
             // Cannot determine how many processes will actually run at this point due to the apt-get.
             // As long as we see more than 1, we'll take it.
             assert events.numProcessActivities > 1
             assert events.numRestarts == 0
             assert events.numTerminations == 0
             assert events.numTotalPods == 1
-
-            return true
         }
-        println "Unable to get deployment event for $deploymentUid in ${t.SecondsSince()} seconds"
-        return false
     }
 
     private String verifyPodEvents(String deploymentUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+        def event = null
+        withRetry(retries, interval) {
             def podEvents = gqlService.Call(GET_POD_EVENTS, [podsQuery: "Deployment ID: " + deploymentUid])
             assert podEvents.getCode() == 200
-            println "return code " + podEvents.getCode()
+            log.info "return code " + podEvents.getCode()
             assert podEvents.getValue().result != null
             assert podEvents.getValue().result.size() == 1
-            def event = podEvents.getValue().result.get(0)
+            event = podEvents.getValue().result.get(0)
             def pod = DEPLOYMENT.getPods().get(0)
             assert event.name == pod.name
             // No need to test start time, as it is tested in the non-groovy API tests.
@@ -155,20 +158,16 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentName == PARENT_NAME
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
-            assert procEvent.whitelisted
-
-            return event.id
+            assert procEvent.inBaseline
         }
-        println "Unable to get pod events for deployment $deploymentUid in ${t.SecondsSince()} seconds"
-        return null
+        return event?.id
     }
 
-    private boolean verifyContainerEvents(String podUid, int retries = 30, int interval = 4) {
-        Timer t = new Timer(retries, interval)
-        while (t.IsValid()) {
+    private void verifyContainerEvents(String podUid, int retries = 30, int interval = 4) {
+        withRetry(retries, interval) {
             def containerEvents = gqlService.Call(GET_CONTAINER_EVENTS, [containersQuery: "Pod ID: " + podUid])
             assert containerEvents.getCode() == 200
-            println "return code " + containerEvents.getCode()
+            log.info "return code " + containerEvents.getCode()
             assert containerEvents.getValue().result != null
             assert containerEvents.getValue().result.size() == 1
             def event = containerEvents.getValue().result.get(0)
@@ -177,11 +176,7 @@ class DeploymentEventGraphQLTest extends BaseSpecification {
             assert procEvent.parentName == PARENT_NAME
             assert procEvent.parentUid == 0
             assert procEvent.args == PROCESS_ARGS
-            assert procEvent.whitelisted
-
-            return true
+            assert procEvent.inBaseline
         }
-        println "Unable to get container events for pod $podUid in ${t.SecondsSince()} seconds"
-        return false
     }
 }

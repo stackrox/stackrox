@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -70,16 +71,24 @@ type restoreProcess struct {
 	// For statistics (atomic access; approximate only)
 	bytesRead      int64
 	filesProcessed int64
+
+	// Informs whether processing a RocksDB or Postgres backup bundle
+	postgresBundle bool
 }
 
 func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreRequestHeader, handlerFuncs []common.RestoreFileHandlerFunc, data io.Reader) (*restoreProcess, error) {
+	var postgresBundle bool
 	mfFiles := header.GetManifest().GetFiles()
 	if len(mfFiles) != len(handlerFuncs) {
-		return nil, utils.Should(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
+		return nil, utils.ShouldErr(errors.Errorf("mismatch: %d handler functions provided for %d files in the manifest", len(handlerFuncs), len(mfFiles)))
 	}
 
 	files := make([]*restoreFile, 0, len(mfFiles))
 	for i, manifestFile := range mfFiles {
+		// Check to see if we are processing a postgres bundle
+		if manifestFile.GetName() == backup.PostgresFileName {
+			postgresBundle = true
+		}
 		files = append(files, &restoreFile{
 			manifestFile: manifestFile,
 			handlerFunc:  handlerFuncs[i],
@@ -98,7 +107,7 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 
 	resumableDataReader, initAttach, detachEvents := ioutils.NewResumableReader(crc32.NewIEEE())
 	if err := initAttach.Attach(data, 0, nil); err != nil {
-		return nil, utils.Should(errors.Wrap(err, "could not attach initial reader to resumable reader"))
+		return nil, utils.ShouldErr(errors.Wrap(err, "could not attach initial reader to resumable reader"))
 	}
 
 	p := &restoreProcess{
@@ -110,6 +119,8 @@ func newRestoreProcess(ctx context.Context, id string, header *v1.DBRestoreReque
 		cancelSig:       concurrency.NewSignal(),
 		completionSig:   concurrency.NewErrorSignal(),
 		reattachableSig: concurrency.NewSignal(),
+
+		postgresBundle: postgresBundle,
 	}
 
 	p.data = ioutils.NewCountingReader(resumableDataReader, &p.bytesRead)
@@ -149,11 +160,15 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 }
 
 func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {
-	if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
-		return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
+	// If processing a postgres bundle, do not create the restore directories
+	if !p.postgresBundle {
+		if err := os.MkdirAll(tempOutputDir, 0700); err != nil {
+			return errors.Wrapf(err, "could not create temporary output directory %s", tempOutputDir)
+		}
 	}
 
-	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir)
+	// store if Postgres bundle here
+	restoreCtx := newRestoreProcessContext(ctx, tempOutputDir, p.postgresBundle)
 
 	if err := p.processFiles(restoreCtx); err != nil {
 		return err
@@ -163,8 +178,11 @@ func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir stri
 		return err
 	}
 
-	if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
-		return errors.Wrapf(err, "restore process succeeded, but failed to atomically create symbolic link to output directory %s", tempOutputDir)
+	// If processing a postgres bundle, do not update the restore symlink
+	if !p.postgresBundle {
+		if err := os.Symlink(filepath.Base(tempOutputDir), finalDir); err != nil {
+			return errors.Wrapf(err, "failed to atomically create a symbolic link to restore directory %s", tempOutputDir)
+		}
 	}
 
 	return nil

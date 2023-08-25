@@ -1,0 +1,34 @@
+{
+  "id": "41e5153f-98d1-4830-9f80-983afcbe73c1",
+  "name": "Docker CIS 5.21: Ensure the default seccomp profile is not disabled",
+  "description": "Seccomp filtering provides a means to filter incoming system calls. The default seccomp profile uses an allow list to permit a large number of common system calls, and block all others.",
+  "rationale": "A large number of system calls are exposed to every userland process with many of them going unused for the entire lifetime of the process. Most of applications do not need all these system calls and would therefore benefit from having a reduced set of available system calls. Having a reduced set of system calls reduces the total kernel surface exposed to the application and thus improvises application security.",
+  "remediation": "By default, seccomp profiles are enabled. You do not need to do anything unless you want to modify and use a modified seccomp profile.",
+  "disabled": true,
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Seccomp Profile Type",
+          "values": [
+            {
+              "value": "UNCONFINED"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

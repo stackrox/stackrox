@@ -1,9 +1,8 @@
 import React from 'react';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
-import FormFieldRequired from 'Components/forms/FormFieldRequired';
 import Select from 'Components/Select';
 import {
     labelClassName,
@@ -17,6 +16,7 @@ import {
 } from 'constants/form.constants';
 
 import { clusterTypeOptions, clusterTypes, runtimeOptions } from './cluster.helpers';
+import FormFieldRequired from './Components/FormFieldRequired';
 import HelmValueWarning from './Components/HelmValueWarning';
 
 // factory that returns a handler to normalize our generic Select component's return value
@@ -80,10 +80,7 @@ const StaticConfigurationSection = ({
     const isTypeOpenShift3 = selectedCluster?.type === clusterTypes.OPENSHIFT_3;
 
     return (
-        <CollapsibleSection
-            title="Static Configuration (requires deployment)"
-            titleClassName="text-xl"
-        >
+        <CollapsibleSection title="Static Configuration (requires deployment)">
             <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="name" className={labelClassName}>
@@ -330,12 +327,14 @@ const StaticConfigurationSection = ({
                         />
                     </div>
                     {!centralEnv?.successfullyFetched && (
-                        <Message type="warn">
-                            Failed to check if Central has kernel support packages available
-                        </Message>
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Failed to check if Central has kernel support packages available"
+                        />
                     )}
                     {showSlimCollectorWarning && (
-                        <Message type="warn">
+                        <Alert variant="warning" isInline title="Kernel support package">
                             <span>
                                 Central doesn’t have the required Kernel support package. Retrieve
                                 it from{' '}
@@ -349,7 +348,7 @@ const StaticConfigurationSection = ({
                                 </a>{' '}
                                 and upload it to Central using roxctl.
                             </span>
-                        </Message>
+                        </Alert>
                     )}
                 </div>
             </div>

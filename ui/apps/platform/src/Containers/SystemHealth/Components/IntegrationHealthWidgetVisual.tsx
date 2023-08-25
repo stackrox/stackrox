@@ -1,39 +1,77 @@
 import React, { ReactElement } from 'react';
-import { Message } from '@stackrox/ui-components';
+import {
+    Alert,
+    Card,
+    CardBody,
+    CardHeader,
+    CardHeaderMain,
+    CardTitle,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 
-import { integrationsPath } from 'routePaths';
-import ViewAllButton from 'Components/ViewAllButton';
-import Widget from 'Components/Widget';
+import pluralize from 'pluralize';
 import IntegrationsHealth from './IntegrationsHealth';
 import { IntegrationMergedItem } from '../utils/integrations';
+import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
 
 type IntegrationHealthWidgetProps = {
-    id: string;
     integrationText: string;
     integrationsMerged: IntegrationMergedItem[];
-    requestHasError: boolean;
+    errorMessageFetching: string;
+    isFetchingInitialRequest: boolean;
 };
 
 const IntegrationHealthWidget = ({
-    id,
     integrationText,
     integrationsMerged,
-    requestHasError,
+    errorMessageFetching,
+    isFetchingInitialRequest,
 }: IntegrationHealthWidgetProps): ReactElement => {
+    const integrations = integrationsMerged.filter((integrationMergedItem) => {
+        return integrationMergedItem.status === 'UNHEALTHY';
+    });
+    /* eslint-disable no-nested-ternary */
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : errorMessageFetching
+        ? ErrorIcon
+        : healthIconMap[integrations.length === 0 ? 'success' : 'danger'];
+    /* eslint-enable no-nested-ternary */
+    const hasCount = !isFetchingInitialRequest && !errorMessageFetching;
+
     return (
-        <Widget
-            header={integrationText}
-            headerComponents={<ViewAllButton url={`${integrationsPath}#${id}`} />}
-            id={id}
-        >
-            {requestHasError ? (
-                <div className="p-2 w-full">
-                    <Message type="error">Request failed for {integrationText}</Message>
-                </div>
-            ) : (
-                <IntegrationsHealth integrationsMerged={integrationsMerged} />
+        <Card isFullHeight isCompact>
+            <CardHeader>
+                <CardHeaderMain>
+                    <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                        <FlexItem>{icon}</FlexItem>
+                        <FlexItem>
+                            <CardTitle component="h2">{integrationText}</CardTitle>
+                        </FlexItem>
+                        {hasCount && (
+                            <FlexItem>
+                                {integrations.length === 0
+                                    ? 'no errors'
+                                    : `${integrations.length} ${pluralize(
+                                          'error',
+                                          integrations.length
+                                      )}`}
+                            </FlexItem>
+                        )}
+                    </Flex>
+                </CardHeaderMain>
+            </CardHeader>
+            {(errorMessageFetching || integrations.length !== 0) && (
+                <CardBody>
+                    {errorMessageFetching ? (
+                        <Alert isInline variant="warning" title={errorMessageFetching} />
+                    ) : (
+                        <IntegrationsHealth integrations={integrations} />
+                    )}
+                </CardBody>
             )}
-        </Widget>
+        </Card>
     );
 };
 

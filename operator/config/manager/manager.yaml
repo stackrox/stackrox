@@ -22,6 +22,8 @@ spec:
   replicas: 1
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
         app: rhacs-operator
@@ -34,11 +36,18 @@ spec:
         env:
         - name: RELATED_IMAGE_MAIN
         - name: RELATED_IMAGE_SCANNER
+        - name: RELATED_IMAGE_SCANNER_SLIM
         - name: RELATED_IMAGE_SCANNER_DB
+        - name: RELATED_IMAGE_SCANNER_DB_SLIM
         - name: RELATED_IMAGE_COLLECTOR_SLIM
         - name: RELATED_IMAGE_COLLECTOR_FULL
         - name: RELATED_IMAGE_ROXCTL
-        - name: RELATED_IMAGE_DOCS
+        - name: RELATED_IMAGE_CENTRAL_DB
+        - name: MEMORY_LIMIT_BYTES
+          valueFrom:
+            resourceFieldRef:
+              containerName: manager
+              resource: limits.memory
         image: controller:latest
         name: manager
         securityContext:

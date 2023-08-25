@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheck(t *testing.T) {
@@ -156,6 +156,6 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 func (s *suiteImpl) cluster() *storage.Cluster {
 	return &storage.Cluster{
 		Id:               uuid.NewV4().String(),
-		CollectionMethod: storage.CollectionMethod_KERNEL_MODULE,
+		CollectionMethod: storage.CollectionMethod_EBPF,
 	}
 }

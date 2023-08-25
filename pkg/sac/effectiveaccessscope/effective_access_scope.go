@@ -55,10 +55,23 @@ type namespacesScopeSubTree struct {
 	Attributes treeNodeAttributes
 }
 
+func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
+	return &namespacesScopeSubTree{
+		State:      n.State,
+		Attributes: *n.Attributes.copy(),
+	}
+}
+
 // UnrestrictedEffectiveAccessScope returns ScopeTree allowing everything
 // implicitly via marking the root Included.
 func UnrestrictedEffectiveAccessScope() *ScopeTree {
 	return newEffectiveAccessScopeTree(Included)
+}
+
+// DenyAllEffectiveAccessScope returns ScopeTree denying everything
+// implicitly via marking the root Excluded.
+func DenyAllEffectiveAccessScope() *ScopeTree {
+	return newEffectiveAccessScopeTree(Excluded)
 }
 
 // ComputeEffectiveAccessScope applies a simple access scope to provided
@@ -145,6 +158,47 @@ func (root *ScopeTree) Compactify() ScopeTreeCompacted {
 	return compacted
 }
 
+// FromClustersAndNamespacesMap will build and return a ScopeTree that allows access to all clusters and
+// (cluster, namespace) pairs provided in input.
+func FromClustersAndNamespacesMap(includedClusters []string, includedNamespaces map[string][]string) *ScopeTree {
+	if len(includedClusters) == 0 && len(includedNamespaces) == 0 {
+		return DenyAllEffectiveAccessScope()
+	}
+	root := &ScopeTree{
+		State:           Partial,
+		clusterIDToName: make(map[string]string, 0),
+		Clusters:        make(map[string]*clustersScopeSubTree, 0),
+	}
+	includedClusterSubTree := &clustersScopeSubTree{
+		State: Included,
+	}
+	includedNamespaceSubTree := &namespacesScopeSubTree{
+		State: Included,
+	}
+	for _, clusterID := range includedClusters {
+		root.clusterIDToName[clusterID] = clusterID
+		root.Clusters[clusterID] = includedClusterSubTree
+	}
+	for clusterID, namespaces := range includedNamespaces {
+		root.clusterIDToName[clusterID] = clusterID
+		clusterTree := root.Clusters[clusterID]
+		if clusterTree == nil && len(namespaces) == 0 {
+			continue
+		}
+		if clusterTree == nil {
+			clusterTree = &clustersScopeSubTree{
+				State:      Partial,
+				Namespaces: make(map[string]*namespacesScopeSubTree, 0),
+			}
+		}
+		for _, namespace := range namespaces {
+			clusterTree.Namespaces[namespace] = includedNamespaceSubTree
+		}
+		root.Clusters[clusterID] = clusterTree
+	}
+	return root
+}
+
 // String yields a compacted one-line string representation.
 func (root *ScopeTree) String() string {
 	return root.Compactify().String()
@@ -152,7 +206,19 @@ func (root *ScopeTree) String() string {
 
 // ToJSON yields a compacted JSON representation.
 func (root *ScopeTree) ToJSON() (string, error) {
+	if root == nil {
+		return "{}", nil
+	}
 	return root.Compactify().ToJSON()
+}
+
+// GetClusterIDs returns the list of cluster IDs known to the current scope tree
+func (root *ScopeTree) GetClusterIDs() []string {
+	clusterIDs := make([]string, 0, len(root.clusterIDToName))
+	for k := range root.clusterIDToName {
+		clusterIDs = append(clusterIDs, k)
+	}
+	return clusterIDs
 }
 
 // GetClusterByID returns ClusterScopeSubTree for given cluster ID.
@@ -189,8 +255,8 @@ func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, cluster
 // included directly.
 //
 // For MINIMAL level of detail, delete from the tree:
-//   * subtrees *with roots* in the Excluded state,
-//   * subtrees *of nodes* in the Included state.
+//   - subtrees *with roots* in the Excluded state,
+//   - subtrees *of nodes* in the Included state.
 func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	deleteUnnecessaryNodes := detail == v1.ComputeEffectiveAccessScopeRequest_MINIMAL
 	for clusterName, cluster := range root.Clusters {
@@ -226,6 +292,59 @@ func (root *ScopeTree) bubbleUpStatesAndCompactify(detail v1.ComputeEffectiveAcc
 		if root.State == Excluded && (cluster.State == Included || cluster.State == Partial) {
 			root.State = Partial
 		}
+	}
+}
+
+// Merge adds scope tree to the current root so result tree includes nodes that are included at least in one of them.
+// As we don't know in which form we get tree to merge with result will be in MINIMAL form
+func (root *ScopeTree) Merge(tree *ScopeTree) {
+	if tree == nil || tree == DenyAllEffectiveAccessScope() {
+		return
+	}
+	if tree.State == Included || root.State == Included {
+		root.State = Included
+		return
+	}
+	if root.Clusters == nil {
+		root.Clusters = map[string]*clustersScopeSubTree{}
+	}
+	if len(tree.clusterIDToName) > 0 && root.clusterIDToName == nil {
+		root.clusterIDToName = make(map[string]string)
+	}
+	for clusterID, clusterName := range tree.clusterIDToName {
+		root.clusterIDToName[clusterID] = clusterName
+	}
+	for key, cluster := range tree.Clusters {
+		rootCluster := root.Clusters[key]
+		if rootCluster == nil || cluster.State == Included {
+			root.Clusters[key] = cluster.copy()
+			continue
+		}
+		if rootCluster.State == Included || cluster.State == Excluded {
+			continue
+		}
+		// partial
+		for nsName, namespace := range cluster.Namespaces {
+			if namespace.State == Included {
+				if rootCluster.Namespaces == nil {
+					rootCluster.Namespaces = map[string]*namespacesScopeSubTree{}
+				}
+				rootCluster.Namespaces[nsName] = namespace.copy()
+			}
+		}
+	}
+	root.bubbleUpStatesAndCompactify(v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+}
+
+func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
+	namespaces := make(map[string]*namespacesScopeSubTree, len(cluster.Namespaces))
+	for k, v := range cluster.Namespaces {
+		namespaces[k] = v.copy()
+	}
+	return &clustersScopeSubTree{
+		State:      cluster.State,
+		Namespaces: namespaces,
+		Attributes: *cluster.Attributes.copy(),
 	}
 }
 

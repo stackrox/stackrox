@@ -3,18 +3,22 @@ package enricher
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+var _ NodeEnricher = (*enricherImpl)(nil)
+
 type enricherImpl struct {
-	cves cveSuppressor
+	cves CVESuppressor
 
 	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource
@@ -47,16 +51,30 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 	delete(e.scanners, id)
 }
 
-// EnrichNode enriches a node with the integration set present.
-func (e *enricherImpl) EnrichNode(node *storage.Node) error {
-	err := e.enrichWithScan(node)
+// EnrichNodeWithInventory does vulnerability scanning and sets the result in node.NodeScan.
+// node must not be nil - it is caller's responsibility to ensure this
+// nodeInventory can be nil - in that case it is skipped on scanning
+func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	// Clear any pre-existing notes, as it will all be filled here.
+	// Note: this is valid even if node.Notes is nil.
+	node.Notes = node.Notes[:0]
+
+	err := e.enrichWithScan(node, nodeInventory)
+	if err != nil {
+		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
+	}
 
 	e.cves.EnrichNodeWithSuppressedCVEs(node)
 
 	return err
 }
 
-func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
+// EnrichNode enriches a node with the integration set present.
+func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+	return e.EnrichNodeWithInventory(node, nil)
+}
+
+func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 
 	e.lock.RLock()
@@ -72,7 +90,7 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	}
 
 	for _, scanner := range scanners {
-		if err := e.enrichNodeWithScanner(node, scanner); err != nil {
+		if err := e.enrichNodeWithScanner(node, nodeInventory, scanner.GetNodeScanner()); err != nil {
 			errorList.AddError(err)
 			continue
 		}
@@ -83,13 +101,14 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node) error {
 	return errorList.ToError()
 }
 
-func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.NodeScanner) error {
+func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *storage.NodeInventory, scanner types.NodeScanner) error {
 	sema := scanner.MaxConcurrentNodeScanSemaphore()
 	_ = sema.Acquire(context.Background(), 1)
 	defer sema.Release(1)
 
 	scanStartTime := time.Now()
-	scan, err := scanner.GetNodeScan(node)
+	scan, err := scanner.GetNodeInventoryScan(node, nodeInventory)
+
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
@@ -99,6 +118,10 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, scanner types.N
 	}
 
 	node.Scan = scan
+	converter.FillV2NodeVulnerabilities(node)
+	for _, component := range node.GetScan().GetComponents() {
+		component.Vulns = nil
+	}
 	FillScanStats(node)
 
 	return nil
@@ -120,10 +143,11 @@ func FillScanStats(n *storage.Node) {
 	for _, c := range n.GetScan().GetComponents() {
 		var componentTopCVSS float32
 		var hasVulns bool
-		for _, v := range c.GetVulns() {
+
+		for _, v := range c.GetVulnerabilities() {
 			hasVulns = true
-			if _, ok := vulns[v.GetCve()]; !ok {
-				vulns[v.GetCve()] = false
+			if _, ok := vulns[v.GetCveBaseInfo().GetCve()]; !ok {
+				vulns[v.GetCveBaseInfo().GetCve()] = false
 			}
 
 			if v.GetCvss() > componentTopCVSS {
@@ -136,7 +160,7 @@ func FillScanStats(n *storage.Node) {
 
 			fixedByProvided = true
 			if v.GetFixedBy() != "" {
-				vulns[v.GetCve()] = true
+				vulns[v.GetCveBaseInfo().GetCve()] = true
 			}
 		}
 
@@ -172,4 +196,17 @@ func FillScanStats(n *storage.Node) {
 			FixableCves: numFixableVulns,
 		}
 	}
+}
+
+// nodeScanningOSImagePrefixes lists OsImages prefixes that supports full-host node scanning.
+var nodeScanningOSImagePrefixes = []string{"Red Hat Enterprise Linux CoreOS"}
+
+// SupportsNodeScanning returns if the provided node object supports full host node scanning.
+func SupportsNodeScanning(node *storage.Node) bool {
+	for _, osPrefix := range nodeScanningOSImagePrefixes {
+		if strings.HasPrefix(node.GetOsImage(), osPrefix) {
+			return true
+		}
+	}
+	return false
 }

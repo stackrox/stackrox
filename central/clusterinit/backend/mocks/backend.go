@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
-	requestinfo "github.com/stackrox/rox/pkg/grpc/requestinfo"
+	mtls "github.com/stackrox/rox/pkg/mtls"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockBackend is a mock of Backend interface.
@@ -111,7 +111,7 @@ func (mr *MockBackendMockRecorder) Revoke(ctx, id interface{}) *gomock.Call {
 }
 
 // ValidateClientCertificate mocks base method.
-func (m *MockBackend) ValidateClientCertificate(arg0 context.Context, arg1 []requestinfo.CertInfo) error {
+func (m *MockBackend) ValidateClientCertificate(arg0 context.Context, arg1 []mtls.CertInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateClientCertificate", arg0, arg1)
 	ret0, _ := ret[0].(error)

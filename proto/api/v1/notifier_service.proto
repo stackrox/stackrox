@@ -11,8 +11,7 @@ import "storage/notifier.proto";
 package v1;
 
 message GetNotifiersRequest {
-    string name = 1;
-    string type = 2;
+    reserved 1 to 2; // Removed name and type. The API never respected filtering by name or type, so it was removed.
 }
 
 message GetNotifiersResponse {
@@ -39,7 +38,7 @@ service NotifierService {
         };
     }
 
-    // GetNotifiers returns all notifier configurations that match the request filters.
+    // GetNotifiers returns all notifier configurations.
     rpc GetNotifiers (GetNotifiersRequest) returns (GetNotifiersResponse) {
         option (google.api.http) = {
             get: "/v1/notifiers"

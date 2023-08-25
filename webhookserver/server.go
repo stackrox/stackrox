@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -41,7 +42,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func getHandler(w http.ResponseWriter, r *http.Request) {
+func getHandler(w http.ResponseWriter, _ *http.Request) {
 	lock.Lock()
 	defer lock.Unlock()
 	resp, err := json.Marshal(&dataPosted)
@@ -69,14 +70,24 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func tlsServer() {
-	err := http.ListenAndServeTLS(":8443", "/tmp/certs/server.crt", "/tmp/certs/server.key", http.HandlerFunc(rootHandler))
+	server := &http.Server{
+		ReadHeaderTimeout: 5 * time.Second,
+		Addr:              ":8443",
+		Handler:           http.HandlerFunc(rootHandler),
+	}
+	err := server.ListenAndServeTLS("/tmp/certs/server.crt", "/tmp/certs/server.key")
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
 func nonTLSServer() {
-	if err := http.ListenAndServe(":8080", http.HandlerFunc(rootHandler)); err != nil {
+	server := &http.Server{
+		ReadHeaderTimeout: 5 * time.Second,
+		Addr:              ":8080",
+		Handler:           http.HandlerFunc(rootHandler),
+	}
+	if err := server.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -35,12 +36,12 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 		managerTesting.TestManagerOptions{Policy: policy},
 	)
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
+	const deploymentID = "f3237faf-8350-4c39-b045-ff4c493ddb71"
 	managerTesting.ProcessDeploymentEvent(t, mgr, &storage.Deployment{
-		Id:        "f3237faf-8350-4c39-b045-ff4c493ddb71",
+		Id:        deploymentID,
 		Name:      "sensor",
 		Type:      "Deployment",
 		Namespace: "stackrox",
@@ -48,7 +49,7 @@ func TestExecIntoPodNameEventPolicy(t *testing.T) {
 	managerTesting.ProcessPodEvent(t, mgr, &storage.Pod{
 		Id:           "64a1d6ee-2425-5f19-990e-a2d8b18c1e4c",
 		Name:         "sensor-74f6965874-qckz6",
-		DeploymentId: "f3237faf-8350-4c39-b045-ff4c493ddb71",
+		DeploymentId: deploymentID,
 		Namespace:    "stackrox",
 	})
 
@@ -106,8 +107,7 @@ func TestLatestTagPolicyAdmissionReview(t *testing.T) {
 		},
 	})
 
-	err = mgr.Start()
-	require.NoError(t, err)
+	mgr.Start()
 	defer mgr.Stop()
 
 	runv1 := serviceTestRun{
@@ -161,10 +161,16 @@ type serviceTestRun struct {
 	t           *testing.T
 }
 
+// execute runs the review request through the handler and then
+// runs alerts from manager through the assertion function.
 func (r serviceTestRun) execute() {
 	require.NotNil(r.t, r.mgr)
 	require.NotNil(r.t, r.handlerFunc)
 	require.True(r.t, r.mgr.IsReady(), "Manager is stopped or was not started")
+	// Wait for any events delivered to manager prior to this call to be processed.
+	syncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	require.NoError(r.t, r.mgr.Sync(syncCtx))
 
 	s := service{
 		mgr: r.mgr,
@@ -183,7 +189,7 @@ func (r serviceTestRun) execute() {
 	assert.Equal(r.t, http.StatusOK, resp.Code)
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(3 * time.Second):
 		assert.Fail(r.t, "Did not receive any alerts before timeout expired, but expected some")
 	case alerts := <-r.mgr.Alerts():
 		r.assertionFunc(r.t, resp.Result(), alerts)

@@ -2,12 +2,12 @@ package centralsensor
 
 import (
 	"sort"
+
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // SensorCapability identifies a capability exposed by sensor.
 type SensorCapability string
-
-//go:generate genny -in=../set/generic.go -out=gen-caps-set.go -pkg centralsensor gen "KeyType=SensorCapability"
 
 // String returns the string form of sensor capability.
 func (s SensorCapability) String() string {
@@ -15,8 +15,8 @@ func (s SensorCapability) String() string {
 }
 
 // CapSetFromStringSlice takes a slice of strings, and converts it into a SensorCapabilitySet.
-func CapSetFromStringSlice(capStrs ...string) SensorCapabilitySet {
-	capSet := NewSensorCapabilitySet()
+func CapSetFromStringSlice(capStrs ...string) set.Set[SensorCapability] {
+	capSet := set.NewSet[SensorCapability]()
 	for _, capStr := range capStrs {
 		capSet.Add(SensorCapability(capStr))
 	}
@@ -24,7 +24,7 @@ func CapSetFromStringSlice(capStrs ...string) SensorCapabilitySet {
 }
 
 // CapSetToStringSlice takes a capability set, and converts it into a string slice.
-func CapSetToStringSlice(capSet SensorCapabilitySet) []string {
+func CapSetToStringSlice(capSet set.Set[SensorCapability]) []string {
 	strs := make([]string, 0, len(capSet))
 	for capability := range capSet {
 		strs = append(strs, capability.String())

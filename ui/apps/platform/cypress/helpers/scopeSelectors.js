@@ -1,4 +1,7 @@
-import { isString, isPlainObject, isFunction, mapValues } from 'lodash';
+import isString from 'lodash/isString';
+import isPlainObject from 'lodash/isPlainObject';
+import isFunction from 'lodash/isFunction';
+import mapValues from 'lodash/mapValues';
 
 function appendPrefixDeep(prefix, selector) {
     if (isPlainObject(selector)) {

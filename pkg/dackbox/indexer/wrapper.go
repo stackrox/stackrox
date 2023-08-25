@@ -6,6 +6,7 @@ import (
 )
 
 // Wrapper is an object that wraps keys and values into their indexed id:value pair.
+//
 //go:generate mockgen-wrapper
 type Wrapper interface {
 	Wrap(key []byte, msg proto.Message) (string, interface{})

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/node/datastore/dackbox/datastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -17,12 +17,12 @@ var nodeLoaderType = reflect.TypeOf(storage.Node{})
 
 func init() {
 	RegisterTypeFactory(nodeLoaderType, func() interface{} {
-		return NewNodeLoader(datastore.Singleton())
+		return NewNodeLoader(nodeDatastore.Singleton())
 	})
 }
 
 // NewNodeLoader creates a new loader for node data.
-func NewNodeLoader(ds datastore.DataStore) NodeLoader {
+func NewNodeLoader(ds nodeDatastore.DataStore) NodeLoader {
 	return &nodeLoaderImpl{
 		loaded: make(map[string]*storage.Node),
 		ds:     ds,
@@ -43,6 +43,7 @@ type NodeLoader interface {
 	FromIDs(ctx context.Context, ids []string) ([]*storage.Node, error)
 	FromID(ctx context.Context, id string) (*storage.Node, error)
 	FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Node, error)
+	FullNodeWithID(ctx context.Context, id string) (*storage.Node, error)
 
 	CountFromQuery(ctx context.Context, query *v1.Query) (int32, error)
 	CountAll(ctx context.Context) (int32, error)
@@ -53,21 +54,43 @@ type nodeLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.Node
 
-	ds datastore.DataStore
+	ds nodeDatastore.DataStore
 }
 
 // FromIDs loads a set of nodes from a set of ids.
 func (ndl *nodeLoaderImpl) FromIDs(ctx context.Context, ids []string) ([]*storage.Node, error) {
-	nodes, err := ndl.load(ctx, ids)
+	nodes, err := ndl.load(ctx, ids, false)
 	if err != nil {
 		return nil, err
 	}
 	return nodes, nil
 }
 
-// FromID loads a node from an ID.
+// FromID loads a node from an ID. Does not load scan components and vulnerabilities when Postgres is enabled.
 func (ndl *nodeLoaderImpl) FromID(ctx context.Context, id string) (*storage.Node, error) {
-	nodes, err := ndl.load(ctx, []string{id})
+	nodes, err := ndl.load(ctx, []string{id}, false)
+	if err != nil {
+		return nil, err
+	}
+	return nodes[0], nil
+}
+
+// FullNodeWithID loads full node from an ID.
+func (ndl *nodeLoaderImpl) FullNodeWithID(ctx context.Context, id string) (*storage.Node, error) {
+	node, err := ndl.FromID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Do not load the full node if full scan is already available.
+	if node.GetComponents() == 0 || len(node.GetScan().GetComponents()) > 0 {
+		return node, nil
+	}
+
+	ndl.lock.Lock()
+	delete(ndl.loaded, id)
+	ndl.lock.Unlock()
+
+	nodes, err := ndl.load(ctx, []string{id}, true)
 	if err != nil {
 		return nil, err
 	}
@@ -92,17 +115,22 @@ func (ndl *nodeLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) 
 	return int32(numResults), nil
 }
 
-// CountFromQuery returns the total number of nodes.
+// CountAll returns the total number of nodes.
 func (ndl *nodeLoaderImpl) CountAll(ctx context.Context) (int32, error) {
 	count, err := ndl.ds.CountNodes(ctx)
 	return int32(count), err
 }
 
-func (ndl *nodeLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Node, error) {
+func (ndl *nodeLoaderImpl) load(ctx context.Context, ids []string, pullFullObject bool) ([]*storage.Node, error) {
 	nodes, missing := ndl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		nodes, err = ndl.ds.GetNodesBatch(ctx, collectMissing(ids, missing))
+		// `pullFullObject` is only supported on Postgres.
+		if pullFullObject {
+			nodes, err = ndl.ds.GetNodesBatch(ctx, collectMissing(ids, missing))
+		} else {
+			nodes, err = ndl.ds.GetManyNodeMetadata(ctx, collectMissing(ids, missing))
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db/mocks"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -67,7 +67,7 @@ func (s *CacheTestSuite) TestSingleOperations() {
 
 	// Upsert again with a new value and make sure cache reflects the new value
 	cloned1 := alert1.Clone()
-	cloned1.Tags = []string{"new tags"}
+	cloned1.Policy.EnforcementActions = []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT}
 
 	s.underlyingDB.EXPECT().Upsert(cloned1)
 	s.NoError(s.cache.Upsert(cloned1))
@@ -132,7 +132,7 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	s.Equal([]proto.Message{alert1, alert2}, msgs)
 
 	cloned1 := alert1.Clone()
-	cloned1.Tags = []string{"new tags"}
+	cloned1.Policy.EnforcementActions = []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT}
 
 	s.underlyingDB.EXPECT().UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2})
 	s.NoError(s.cache.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2}))

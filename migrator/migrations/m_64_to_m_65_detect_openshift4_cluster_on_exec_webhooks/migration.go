@@ -17,7 +17,7 @@ var (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 64,
-		VersionAfter:   storage.Version{SeqNum: 65},
+		VersionAfter:   &storage.Version{SeqNum: 65},
 		Run: func(databases *types.Databases) error {
 			return migrateOpenShiftClusterType(databases.RocksDB)
 		},

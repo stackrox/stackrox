@@ -5,11 +5,10 @@ import { useLocation } from 'react-router-dom';
 import { getQueryObject } from 'utils/queryStringUtils';
 import VulnMgmtCreateReportPage from './VulnMgmtCreateReportPage';
 import VulnMgmtReportTablePage from './VulnMgmtReportTablePage';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
 
 function VulnMgmtReportsMainPage(): ReactElement {
     const { search } = useLocation();
-    const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
+    const queryObject = getQueryObject(search);
     const { action } = queryObject;
 
     if (action === 'create') {

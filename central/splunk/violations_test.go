@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package splunk
 
 // This file contains tests for /violations endpoint (mostly).
@@ -13,15 +15,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
+	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -611,39 +612,21 @@ var (
 	}
 )
 
-func makeTimestamp(timeStr string) *types.Timestamp {
-	ts, err := types.TimestampProto(mustParseTime(timeStr))
-	utils.CrashOnError(err)
-	return ts
-}
-
-func mustParseTime(timeStr string) time.Time {
-	ts, err := time.Parse(time.RFC3339Nano, timeStr)
-	utils.CrashOnError(err)
-	return ts
-}
-
 func TestViolations(t *testing.T) {
 	suite.Run(t, &violationsTestSuite{})
 }
 
-type violationsTestSuite struct {
-	suite.Suite
-	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert storage.Alert
-	allowCtx                                                         context.Context
-}
-
 func (s *violationsTestSuite) SetupTest() {
-	s.deployAlert = *deployAlert.Clone()
-	s.processAlert = *processAlert.Clone()
-	s.k8sAlert = *k8sAlert.Clone()
-	s.networkAlert = *networkAlert.Clone()
-	s.resourceAlert = *resourceAlert.Clone()
+	s.deployAlert = deployAlert.Clone()
+	s.processAlert = processAlert.Clone()
+	s.k8sAlert = k8sAlert.Clone()
+	s.networkAlert = networkAlert.Clone()
+	s.resourceAlert = resourceAlert.Clone()
 	s.allowCtx = sac.WithAllAccess(context.Background())
 }
 
 func (s *violationsTestSuite) TestNetworkAlert() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.networkAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.networkAlert).runRequestAndGetBody())
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -705,7 +688,7 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 }
 
 func (s *violationsTestSuite) TestProcessAlert() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.processAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.processAlert).runRequestAndGetBody())
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -726,7 +709,7 @@ func (s *violationsTestSuite) TestProcessAlert() {
 }
 
 func (s *violationsTestSuite) TestK8sAlert() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.k8sAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.k8sAlert).runRequestAndGetBody())
 	s.Len(vs, 3)
 
 	for _, v := range vs {
@@ -754,7 +737,7 @@ func (s *violationsTestSuite) TestK8sAlert() {
 }
 
 func (s *violationsTestSuite) TestDeployAlert() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.deployAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.deployAlert).runRequestAndGetBody())
 	s.Len(vs, 1)
 
 	s.Equal("GENERIC", s.extr(vs[0], ".violationInfo.violationType"))
@@ -771,7 +754,7 @@ func (s *violationsTestSuite) TestDeployAlert() {
 }
 
 func (s *violationsTestSuite) TestResourceAlert() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.resourceAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.resourceAlert).runRequestAndGetBody())
 	s.Len(vs, 2)
 
 	for _, v := range vs {
@@ -792,7 +775,7 @@ func (s *violationsTestSuite) TestResourceAlert() {
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
-	vs := s.getViolations(s.prepare().setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setAlerts(s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert).runRequestAndGetBody())
 
 	ids := set.StringSet{}
 	for _, v := range vs {
@@ -981,7 +964,7 @@ func (s *violationsTestSuite) checkPolicy(violation interface{}) {
 }
 
 func (s *violationsTestSuite) TestResponsePagination() {
-	s.withAlerts(these(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert), func(alertsDS datastore.DataStore) {
+	s.withAlerts(these(s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert), func(alertsDS datastore.DataStore) {
 		violationsNoPagination := s.getViolations(s.prepare().setAlertsDS(alertsDS).runRequestAndGetBody())
 		s.NotEmpty(violationsNoPagination)
 		s.sortViolationsByID(violationsNoPagination)
@@ -1023,7 +1006,7 @@ func (s *violationsTestSuite) TestResponsePagination() {
 }
 
 func (s *violationsTestSuite) TestCheckpointIteration() {
-	violationsNoPagination := s.getViolations(s.prepare().setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert).runRequestAndGetBody())
+	violationsNoPagination := s.getViolations(s.prepare().setAlerts(s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert).runRequestAndGetBody())
 	s.NotEmpty(violationsNoPagination)
 	s.sortViolationsByID(violationsNoPagination)
 
@@ -1031,14 +1014,14 @@ func (s *violationsTestSuite) TestCheckpointIteration() {
 
 	// Get a part of violations from the first three alerts initially.
 	checkpoint := "2021-01-01T00:00:00Z__2021-02-15T19:04:36.712345678Z" // ToTimestamp in the middle of k8sAlert violations
-	body := s.prepare().setCheckpoint(checkpoint).setAlerts(&s.deployAlert, &s.processAlert, &s.k8sAlert).runRequestAndGetBody()
+	body := s.prepare().setCheckpoint(checkpoint).setAlerts(s.deployAlert, s.processAlert, s.k8sAlert).runRequestAndGetBody()
 	checkpoint = s.extr(body, ".newCheckpoint").(string)
 	violationsPaginated = append(violationsPaginated, s.getViolations(body)...)
 	s.Equal("2021-02-15T19:04:36.712345678Z", checkpoint)
 	s.Less(len(violationsPaginated), len(violationsNoPagination))
 
 	// Next, get remaining violations from k8sAlert and a new networkAlert.
-	body = s.prepare().setCheckpoint(checkpoint).setAlerts(&s.k8sAlert, &s.networkAlert).runRequestAndGetBody()
+	body = s.prepare().setCheckpoint(checkpoint).setAlerts(s.k8sAlert, s.networkAlert).runRequestAndGetBody()
 	checkpoint = s.extr(body, ".newCheckpoint").(string)
 	violationsPaginated = append(violationsPaginated, s.getViolations(body)...)
 	assertCheckpointIsNow(s.T(), checkpoint)
@@ -1067,7 +1050,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 	}{
 		{
 			name:                  "Checkpoint before violations",
-			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			alerts:                []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert},
 			fromCheckpoint:        "2021-01-01T00:00:00Z",
 			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z", // The first violation timestamp in the data.
 			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z", // The biggest violation timestamp in the data.
@@ -1075,7 +1058,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: now,
 		}, {
 			name:                  "Checkpoint without ToTimestamp over all violations",
-			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			alerts:                []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert},
 			fromCheckpoint:        "2021-02-01T17:18:48Z",
 			violationsNotBefore:   "2021-02-01T17:18:49.421852357Z", // The first violation timestamp after the checkpoint.
 			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z", // The biggest violation timestamp in the data.
@@ -1083,7 +1066,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: now,
 		}, {
 			name:                  "Checkpoint with ToTimestamp over all violations",
-			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			alerts:                []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert},
 			fromCheckpoint:        "2021-02-01T16:09:02.193352817Z__2021-02-15T19:04:36.712345678Z",
 			violationsNotBefore:   "2021-02-01T17:15:56.457252Z",    // The smallest violation timestamp in the data.
 			violationsNotAfter:    "2021-02-15T19:04:36.712345678Z", // The last violation is exactly at ToTimestamp.
@@ -1099,7 +1082,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: now,
 		}, {
 			name:                  "No checkpoint and all violations",
-			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			alerts:                []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert},
 			fromCheckpoint:        "",
 			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z",
 			violationsNotAfter:    "2021-03-21T21:50:46.741573591Z",
@@ -1109,14 +1092,14 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			// While FromTimestamp==ToTimestamp is possible and won't be an error, it will select no data.
 			// Returned newCheckpoint will allow to query data further.
 			name:                  "FromTimestamp is equal to ToTimestamp",
-			alerts:                []*storage.Alert{&s.processAlert, &s.k8sAlert, &s.deployAlert, &s.networkAlert},
+			alerts:                []*storage.Alert{s.processAlert, s.k8sAlert, s.deployAlert, s.networkAlert},
 			fromCheckpoint:        "2021-02-01T18:00:00Z__2021-02-01T18:00:00Z", // Between violations.
 			expectedCount:         0,
 			expectedNewCheckpoint: "2021-02-01T18:00:00Z",
 		}, {
 			// Process violations filtering needs to be checked independently because it is done separately.
 			name:                  "ToTimestamp in the middle of Process Indicators",
-			alerts:                []*storage.Alert{&s.processAlert},
+			alerts:                []*storage.Alert{s.processAlert},
 			fromCheckpoint:        "2021-02-01T00:00:00Z__2021-02-01T17:15:56.457252Z",
 			violationsNotBefore:   "2021-02-01T17:15:56.457252Z",
 			violationsNotAfter:    "2021-02-01T17:15:56.457252Z",
@@ -1124,7 +1107,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: "2021-02-01T17:15:56.457252Z",
 		}, {
 			name:                  "FromTimestamp in the middle of Process Indicators",
-			alerts:                []*storage.Alert{&s.processAlert},
+			alerts:                []*storage.Alert{s.processAlert},
 			fromCheckpoint:        "2021-02-01T17:15:56.457252Z__2021-02-01T17:18:49.421852357Z",
 			violationsNotBefore:   "2021-02-01T17:18:49.421852357Z",
 			violationsNotAfter:    "2021-02-01T17:18:49.421852357Z",
@@ -1133,7 +1116,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 		}, {
 			// Non-process violations filtering on the example of K8S events.
 			name:                  "ToTimestamp in the middle of k8s events",
-			alerts:                []*storage.Alert{&s.k8sAlert},
+			alerts:                []*storage.Alert{s.k8sAlert},
 			fromCheckpoint:        "2021-02-15T19:04:36Z__2021-02-15T19:04:36.712345678Z",
 			violationsNotBefore:   "2021-02-15T19:04:36.659410153Z",
 			violationsNotAfter:    "2021-02-15T19:04:36.712345678Z",
@@ -1141,7 +1124,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: "2021-02-15T19:04:36.712345678Z",
 		}, {
 			name:                  "FromTimestamp in the middle of k8s events",
-			alerts:                []*storage.Alert{&s.k8sAlert},
+			alerts:                []*storage.Alert{s.k8sAlert},
 			fromCheckpoint:        "2021-02-15T19:04:36.659410153Z__2021-02-15T19:04:37Z",
 			violationsNotBefore:   "2021-02-15T19:04:36.712345678Z",
 			violationsNotAfter:    "2021-02-15T19:04:36.843302212Z",
@@ -1150,7 +1133,7 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 		}, {
 			// Non-runtime violations filtering is again a bit special and so we check it separately.
 			name:                  "Deploy violations in the range",
-			alerts:                []*storage.Alert{&s.deployAlert},
+			alerts:                []*storage.Alert{s.deployAlert},
 			fromCheckpoint:        "2021-02-01T16:09:02.193352816Z__2021-02-01T16:09:02.193352817Z",
 			violationsNotBefore:   "2021-02-01T16:09:02.193352817Z",
 			violationsNotAfter:    "2021-02-01T16:09:02.193352817Z",
@@ -1158,13 +1141,13 @@ func (s *violationsTestSuite) TestCheckpointTimestampFiltering() {
 			expectedNewCheckpoint: "2021-02-01T16:09:02.193352817Z",
 		}, {
 			name:                  "Deploy violations after the range",
-			alerts:                []*storage.Alert{&s.deployAlert},
+			alerts:                []*storage.Alert{s.deployAlert},
 			fromCheckpoint:        "2021-01-01T00:00:00Z__2021-02-01T16:09:02.193352816Z",
 			expectedCount:         0,
 			expectedNewCheckpoint: "2021-02-01T16:09:02.193352816Z",
 		}, {
 			name:                  "Deploy violations before the range",
-			alerts:                []*storage.Alert{&s.deployAlert},
+			alerts:                []*storage.Alert{s.deployAlert},
 			fromCheckpoint:        "2021-02-01T16:09:02.193352817Z__2021-04-01T00:00:00Z",
 			expectedCount:         0,
 			expectedNewCheckpoint: "2021-04-01T00:00:00Z",
@@ -1211,7 +1194,7 @@ func (s *violationsTestSuite) TestCheckpointFromAlertIDFiltering() {
 	}
 
 	body := s.prepare().setCheckpoint("2000-01-01T00:00:00Z__2021-03-29T14:37:00Z__"+smallerID).
-		setAlerts(&s.k8sAlert, &s.processAlert).runRequestAndGetBody()
+		setAlerts(s.k8sAlert, s.processAlert).runRequestAndGetBody()
 	vs := s.getViolations(body)
 
 	s.NotEmpty(vs)
@@ -1223,7 +1206,7 @@ func (s *violationsTestSuite) TestCheckpointFromAlertIDFiltering() {
 
 func (s *violationsTestSuite) TestCheckpointWithFromAlertID() {
 	pagination := paginationSettings{violationsPerResponse: 4}
-	body := s.prepare().setPagination(pagination).setAlerts(&s.deployAlert, &s.processAlert, &s.k8sAlert, &s.networkAlert).runRequestAndGetBody()
+	body := s.prepare().setPagination(pagination).setAlerts(s.deployAlert, s.processAlert, s.k8sAlert, s.networkAlert).runRequestAndGetBody()
 
 	vs := s.getViolations(body)
 	s.GreaterOrEqual(len(vs), 4)
@@ -1249,7 +1232,7 @@ func (s *violationsTestSuite) TestNonParsableCheckpoint() {
 func (s *violationsTestSuite) TestCheckpointInTheFuture() {
 	w := httptest.NewRecorder()
 
-	s.prepare().setCheckpoint("2130-12-31T23:59:59Z").setAlerts(&s.processAlert, &s.k8sAlert, &s.deployAlert).runRequest(w)
+	s.prepare().setCheckpoint("2130-12-31T23:59:59Z").setAlerts(s.processAlert, s.k8sAlert, s.deployAlert).runRequest(w)
 
 	s.Equal(http.StatusBadRequest, w.Code)
 	s.Regexp("error.*validating checkpoint.*FromTimestamp.*in the future", w.Body.String())
@@ -1257,7 +1240,7 @@ func (s *violationsTestSuite) TestCheckpointInTheFuture() {
 
 func (s *violationsTestSuite) TestFirstCheckpointParamWins() {
 	checkpointParams := []string{"2021-03-26T09:28:59Z", "2005-01-01T00:00:00Z"}
-	vs := s.getViolations(s.prepare().setCheckpoint(checkpointParams...).setAlerts(&s.k8sAlert).runRequestAndGetBody())
+	vs := s.getViolations(s.prepare().setCheckpoint(checkpointParams...).setAlerts(s.k8sAlert).runRequestAndGetBody())
 	s.Empty(vs)
 }
 
@@ -1340,41 +1323,16 @@ func (rb *requestBuilder) runRequestAndGetBody() map[string]interface{} {
 func (s *violationsTestSuite) TestResponseContentType() {
 	w := httptest.NewRecorder()
 
-	s.prepare().setAlerts(&s.deployAlert).runRequest(w)
+	s.prepare().setAlerts(s.deployAlert).runRequest(w)
 
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 }
 
-func (s *violationsTestSuite) TestViolationsHandlerError() {
-	w := httptest.NewRecorder()
-
-	// context.Background() did not go through our context validation and will not include any global access scope.
-	// We use this to make datastore generate an error which will make the request fail.
-	s.prepare().setContext(context.Background()).setAlerts(&s.deployAlert).runRequest(w)
-
-	s.Equal(http.StatusInternalServerError, w.Code)
-	s.Contains(w.Body.String(), "access scope was not found in context")
-}
-
-// failingResponseWriter is an implementation of http.ResponseWriter that returns error on attempt to write to it
-// to emulate e.g. closed connection.
-type failingResponseWriter struct {
-	header http.Header
-}
-
-func (f failingResponseWriter) Header() http.Header {
-	return f.header
-}
-func (f failingResponseWriter) WriteHeader(_ int) {}
-func (f failingResponseWriter) Write(_ []byte) (int, error) {
-	return 0, errors.New("mock http write error")
-}
-
 func (s *violationsTestSuite) TestViolationsHandlerWriteError() {
-	w := failingResponseWriter{header: map[string][]string{}}
+	w := mock.NewFailingResponseWriter(errors.New("mock http write error"))
 	s.PanicsWithError("net/http: abort Handler", func() {
-		s.prepare().setAlerts(&s.processAlert).runRequest(w)
+		s.prepare().setAlerts(s.processAlert).runRequest(w)
 	})
 }
 

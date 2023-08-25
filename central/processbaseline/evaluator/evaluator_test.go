@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	processBaselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processBaselineResultMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func makeBaselineStatuses(t *testing.T, statuses ...string) (protoStatuses []storage.ContainerNameAndBaselineStatus_BaselineStatus) {

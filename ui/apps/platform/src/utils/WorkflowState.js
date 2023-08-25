@@ -248,6 +248,10 @@ export class WorkflowState {
         return new WorkflowState(useCase, newStateStack, newSearch, newSort, newPaging);
     }
 
+    getStateStack() {
+        return this.stateStack;
+    }
+
     // Resets the current state based on minimal parameters
     reset(useCase, entityType, entityId, search, sort, paging) {
         const newUseCase = useCase || this.useCase;

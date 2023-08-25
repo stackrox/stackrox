@@ -7,8 +7,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/central/clusters"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
-	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	probeUploadManager "github.com/stackrox/rox/central/probeupload/manager"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -24,17 +22,25 @@ const (
 
 var (
 	log          = logging.LoggerForModule()
-	instance     ProbeSources
+	instance     probeSources
 	instanceInit sync.Once
 )
 
-// ProbeSources contains the list of activated probe sources.
-type ProbeSources struct {
+//go:generate mockgen-wrapper
+
+// ProbeSources interface provides the availability of the probes packages.
+type ProbeSources interface {
+	AnyAvailable(ctx context.Context) (bool, error)
+	CopyAsSlice() []probeupload.ProbeSource
+}
+
+// probeSources contains the list of activated probe sources.
+type probeSources struct {
 	probeSources []probeupload.ProbeSource
 }
 
 // CopyAsSlice retrieves the activated probe sources as a slice backed by newly allocated memory.
-func (s ProbeSources) CopyAsSlice() []probeupload.ProbeSource {
+func (s *probeSources) CopyAsSlice() []probeupload.ProbeSource {
 	probeSources := make([]probeupload.ProbeSource, len(s.probeSources))
 	copy(probeSources, s.probeSources)
 	return probeSources
@@ -43,7 +49,7 @@ func (s ProbeSources) CopyAsSlice() []probeupload.ProbeSource {
 // AnyAvailable implements a simple heuristic for the availability of kernel probes.
 // It returns true if any of the activated probe sources is available in the sense
 // that it does support the transmitting of (some) kernel probes.
-func (s *ProbeSources) AnyAvailable(ctx context.Context) (bool, error) {
+func (s *probeSources) AnyAvailable(ctx context.Context) (bool, error) {
 	var finalErr error
 
 	for _, source := range s.probeSources {
@@ -60,7 +66,7 @@ func (s *ProbeSources) AnyAvailable(ctx context.Context) (bool, error) {
 	return false, finalErr
 }
 
-func (s *ProbeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager, licenseMgr licenseManager.LicenseManager) {
+func (s *probeSources) initializeStandardSources(probeUploadManager probeUploadManager.Manager) {
 	s.probeSources = make([]probeupload.ProbeSource, 0, 2)
 	s.probeSources = append(s.probeSources, probeUploadManager)
 	if env.OfflineModeEnv.BooleanSetting() {
@@ -71,30 +77,17 @@ func (s *ProbeSources) initializeStandardSources(probeUploadManager probeUploadM
 		return
 	}
 
-	opts := kocache.Options{}
-	if licenseMgr != nil {
-		opts.ModifyRequest = func(req *http.Request) {
-			customerID := licenseMgr.GetActiveLicense().GetMetadata().GetLicensedForId()
-			if customerID == "" {
-				return
-			}
-			q := req.URL.Query()
-			q.Set("cid", customerID)
-			req.URL.RawQuery = q.Encode()
-		}
-	}
-
 	httpClient := &http.Client{
 		Transport: proxy.RoundTripper(),
 		Timeout:   httpTimeout,
 	}
-	s.probeSources = append(s.probeSources, kocache.New(context.Background(), httpClient, baseURL, opts))
+	s.probeSources = append(s.probeSources, kocache.New(context.Background(), httpClient, baseURL))
 }
 
 // Singleton returns the singleton instance for the ProbeSources entity.
 func Singleton() ProbeSources {
 	instanceInit.Do(func() {
-		instance.initializeStandardSources(probeUploadManager.Singleton(), licenseSingletons.ManagerSingleton())
+		instance.initializeStandardSources(probeUploadManager.Singleton())
 	})
-	return instance
+	return &instance
 }

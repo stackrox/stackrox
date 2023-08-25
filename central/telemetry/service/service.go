@@ -3,14 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/telemetry/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Service is the interface to the gRPC service for managing telemetry
@@ -23,8 +17,6 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(mgr manager.Manager) Service {
-	return &serviceImpl{
-		manager: mgr,
-	}
+func New() Service {
+	return &serviceImpl{}
 }

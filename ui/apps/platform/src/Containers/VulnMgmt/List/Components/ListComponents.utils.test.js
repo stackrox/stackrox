@@ -6,6 +6,13 @@ import { WorkflowState } from 'utils/WorkflowState';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
 
+function mockIsFeatureFlagEnabled(flag) {
+    if (flag === 'ROX_ACTIVE_VULN_MGMT') {
+        return true;
+    }
+    return false;
+}
+
 describe('ListComponents.utils', () => {
     describe('getFilteredComponentColumns', () => {
         it('should return all the components columns when in a context that allows them', () => {
@@ -13,20 +20,28 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.IMAGE, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             expect(filteredColumns).toEqual(tableColumns);
         });
 
         it('should remove the source and location columns when in Components main list context', () => {
             const stateStack = [new WorkflowEntity(entityTypes.COMPONENT)];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
@@ -41,10 +56,14 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
@@ -59,10 +78,14 @@ describe('ListComponents.utils', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT),
             ];
-            const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
+            const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
-            const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
+            const filteredColumns = getFilteredComponentColumns(
+                tableColumns,
+                workflowState,
+                mockIsFeatureFlagEnabled
+            );
 
             const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
@@ -73,10 +96,6 @@ describe('ListComponents.utils', () => {
         });
     });
 });
-
-function getEntityState(useCase, stateStack) {
-    return new WorkflowState(useCase, stateStack);
-}
 
 function getComponentTableColumns(workflowState) {
     const tableColumns = [
@@ -154,7 +173,9 @@ function getComponentTableColumns(workflowState) {
             className: `w-1/8`,
             accessor: 'imageCount',
             Cell: ({ original }) => original.imageCount,
-            sortField: componentSortFields.IMAGES,
+            // TODO: restore sorting on this field, see https://issues.redhat.com/browse/ROX-12548 for context
+            // sortField: componentSortFields.IMAGES,
+            sortable: false,
         },
         {
             Header: `Deployments`,

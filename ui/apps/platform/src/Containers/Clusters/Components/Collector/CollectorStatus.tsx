@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, DetailedTooltipOverlay } from '@stackrox/ui-components';
+import DetailedTooltipContent from 'Components/DetailedTooltipContent';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
 import HealthStatus from '../HealthStatus';
 import CollectorStatusTotals from './CollectorStatusTotals';
 import CollectorUnavailableStatus from './CollectorUnavailableStatus';
@@ -39,7 +39,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
         lastContact,
     } = healthStatus;
     const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
-    const { Icon, bgColor, fgColor } = isDelayed
+    const { Icon, fgColor } = isDelayed
         ? delayedCollectorStatusStyle
         : healthStatusStyles[collectorHealthStatus];
     const icon = <Icon className={`${isList ? 'inline' : ''} h-4 w-4`} />;
@@ -61,11 +61,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
 
     if (collectorHealthInfo) {
         const collectorStatusTotalsElement = (
-            <CollectorStatusTotals
-                collectorHealthInfo={collectorHealthInfo}
-                bgColor={bgColor}
-                fgColor={fgColor}
-            />
+            <CollectorStatusTotals collectorHealthInfo={collectorHealthInfo} />
         );
         const infoElement = healthInfoComplete ? (
             collectorStatusTotalsElement
@@ -81,7 +77,7 @@ function CollectorStatus({ healthStatus, isList = false }: CollectorStatusProps)
         return isList ? (
             <Tooltip
                 content={
-                    <DetailedTooltipOverlay
+                    <DetailedTooltipContent
                         title="Collector Health Information"
                         body={infoElement}
                     />

@@ -24,7 +24,7 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
         history.push(url);
     }
 
-    const content = <div className="font-400 text-6xl text-lg text-primary-700">{value}</div>;
+    const content = <div className="text-6xl text-lg text-primary-700">{value}</div>;
 
     const result = (
         <button

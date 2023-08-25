@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestWriteLogsErrorReturnError(t *testing.T) {
 
 func TestWriteLogsNoLogsWritesNothing(t *testing.T) {
 	var b bytes.Buffer
-	err := WriteLogs(&b, []string{})
+	err := WriteLogs(&b, []*storage.LogImbue{})
 	assert.Nil(t, err)
 	assert.Equal(t, "[]", b.String())
 }
@@ -41,7 +42,7 @@ func TestWriteLogsLogsOnSeparateLines(t *testing.T) {
 func TestWriteNonJSONLogAddsErrorToOutput(t *testing.T) {
 	var b bytes.Buffer
 	input := "not a json"
-	err := WriteLogs(&b, []string{input})
+	err := WriteLogs(&b, []*storage.LogImbue{{Log: []byte(input)}})
 	assert.Nil(t, err)
 	s := b.String()
 	assert.True(t, strings.Contains(s, "encodingError"))
@@ -50,14 +51,20 @@ func TestWriteNonJSONLogAddsErrorToOutput(t *testing.T) {
 
 type errorWriter struct{}
 
-func (w errorWriter) Write(p []byte) (int, error) {
+func (w errorWriter) Write(_ []byte) (int, error) {
 	return 0, errors.New("i'm an error, how about you")
 }
 
-func logs() []string {
-	return []string{
-		`{"json": "object"}`,
-		`{"weirdstring" : "**&&^^%%$$"}`,
-		`[{},{"hey": "hehehehey"}]`,
+func logs() []*storage.LogImbue {
+	return []*storage.LogImbue{
+		{
+			Log: []byte(`{"json": "object"}`),
+		},
+		{
+			Log: []byte(`{"weirdstring" : "**&&^^%%$$"}`),
+		},
+		{
+			Log: []byte(`[{},{"hey": "hehehehey"}]`),
+		},
 	}
 }

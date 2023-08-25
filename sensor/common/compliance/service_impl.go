@@ -12,19 +12,26 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 )
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
-	output      chan *compliance.ComplianceReturn
-	auditEvents chan *sensor.AuditEvents
+	sensor.UnimplementedComplianceServiceServer
+
+	output          chan *compliance.ComplianceReturn
+	auditEvents     chan *sensor.AuditEvents
+	nodeInventories chan *storage.NodeInventory
+
+	complianceC <-chan common.MessageToComplianceWithAddress
 
 	auditLogCollectionManager AuditLogCollectionManager
 
 	orchestrator orchestrator.Orchestrator
 
+	multiplexer       *Multiplexer
 	connectionManager *connectionManager
 }
 
@@ -63,7 +70,7 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 }
 
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
-func (s *serviceImpl) GetScrapeConfig(ctx context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
+func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
 		return nil, err
@@ -77,13 +84,38 @@ func (s *serviceImpl) GetScrapeConfig(ctx context.Context, nodeName string) (*se
 	}, nil
 }
 
+func (s *serviceImpl) startSendingLoop() {
+	for msg := range s.complianceC {
+		if msg.Broadcast {
+			s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
+				err := server.Send(msg.Msg)
+				if err != nil {
+					log.Errorf("Error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
+					return
+				}
+			})
+		} else {
+			con, ok := s.connectionManager.connectionMap[msg.Hostname]
+			if !ok {
+				log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
+				return
+			}
+			err := con.Send(msg.Msg)
+			if err != nil {
+				log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
+				return
+			}
+		}
+	}
+}
+
 func (s *serviceImpl) RunScrape(msg *sensor.MsgToCompliance) int {
 	var count int
 
 	s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
 		err := server.Send(msg)
 		if err != nil {
-			log.Errorf("error sending compliance request to node %q: %v", node, err)
+			log.Errorf("Error sending compliance request to node %q: %v", node, err)
 			return
 		}
 		count++
@@ -127,6 +159,8 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		defer s.auditLogCollectionManager.RemoveEligibleComplianceNode(hostname)
 	}
 
+	go s.startSendingLoop()
+
 	for {
 		msg, err := server.Recv()
 		if err != nil {
@@ -140,6 +174,8 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_AuditEvents:
 			s.auditEvents <- t.AuditEvents
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
+		case *sensor.MsgFromCompliance_NodeInventory:
+			s.nodeInventories <- t.NodeInventory
 		}
 	}
 }
@@ -165,4 +201,8 @@ func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
 
 func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 	return s.auditEvents
+}
+
+func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
+	return s.nodeInventories
 }

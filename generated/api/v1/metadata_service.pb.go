@@ -7,6 +7,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	storage "github.com/stackrox/rox/generated/storage"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -58,6 +59,65 @@ func (x Metadata_LicenseStatus) String() string {
 
 func (Metadata_LicenseStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_1b6865797fbcf5f5, []int{0, 0}
+}
+
+type DatabaseStatus_DatabaseType int32
+
+const (
+	DatabaseStatus_Hidden     DatabaseStatus_DatabaseType = 0
+	DatabaseStatus_RocksDB    DatabaseStatus_DatabaseType = 1
+	DatabaseStatus_PostgresDB DatabaseStatus_DatabaseType = 2
+)
+
+var DatabaseStatus_DatabaseType_name = map[int32]string{
+	0: "Hidden",
+	1: "RocksDB",
+	2: "PostgresDB",
+}
+
+var DatabaseStatus_DatabaseType_value = map[string]int32{
+	"Hidden":     0,
+	"RocksDB":    1,
+	"PostgresDB": 2,
+}
+
+func (x DatabaseStatus_DatabaseType) String() string {
+	return proto.EnumName(DatabaseStatus_DatabaseType_name, int32(x))
+}
+
+func (DatabaseStatus_DatabaseType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_1b6865797fbcf5f5, []int{4, 0}
+}
+
+type CentralServicesCapabilities_CapabilityStatus int32
+
+const (
+	// CapabilityAvailable means that UI and APIs should be available for users to use.
+	// This does not automatically mean that the functionality is 100% available and any calls to APIs will result
+	// in successful execution. Rather it means that users should be allowed to leverage the functionality as
+	// opposed to CapabilityDisabled when functionality should be blocked.
+	CentralServicesCapabilities_CapabilityAvailable CentralServicesCapabilities_CapabilityStatus = 0
+	// CapabilityDisabled means the corresponding UI should be disabled and attempts to use related APIs
+	// should lead to errors.
+	CentralServicesCapabilities_CapabilityDisabled CentralServicesCapabilities_CapabilityStatus = 1
+)
+
+var CentralServicesCapabilities_CapabilityStatus_name = map[int32]string{
+	0: "CapabilityAvailable",
+	1: "CapabilityDisabled",
+}
+
+var CentralServicesCapabilities_CapabilityStatus_value = map[string]int32{
+	"CapabilityAvailable": 0,
+	"CapabilityDisabled":  1,
+}
+
+func (x CentralServicesCapabilities_CapabilityStatus) String() string {
+	return proto.EnumName(CentralServicesCapabilities_CapabilityStatus_name, int32(x))
+}
+
+func (CentralServicesCapabilities_CapabilityStatus) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_1b6865797fbcf5f5, []int{6, 0}
 }
 
 type Metadata struct {
@@ -386,55 +446,315 @@ func (m *TLSChallengeRequest) Clone() *TLSChallengeRequest {
 	return cloned
 }
 
+type DatabaseStatus struct {
+	// indicates whether or not central can communicate with the database
+	DatabaseAvailable bool `protobuf:"varint,1,opt,name=database_available,json=databaseAvailable,proto3" json:"database_available,omitempty"`
+	// type of database serving central
+	DatabaseType DatabaseStatus_DatabaseType `protobuf:"varint,2,opt,name=database_type,json=databaseType,proto3,enum=v1.DatabaseStatus_DatabaseType" json:"database_type,omitempty"`
+	// version of the database
+	DatabaseVersion      string   `protobuf:"bytes,3,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DatabaseStatus) Reset()         { *m = DatabaseStatus{} }
+func (m *DatabaseStatus) String() string { return proto.CompactTextString(m) }
+func (*DatabaseStatus) ProtoMessage()    {}
+func (*DatabaseStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1b6865797fbcf5f5, []int{4}
+}
+func (m *DatabaseStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DatabaseStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DatabaseStatus.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DatabaseStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatabaseStatus.Merge(m, src)
+}
+func (m *DatabaseStatus) XXX_Size() int {
+	return m.Size()
+}
+func (m *DatabaseStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_DatabaseStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DatabaseStatus proto.InternalMessageInfo
+
+func (m *DatabaseStatus) GetDatabaseAvailable() bool {
+	if m != nil {
+		return m.DatabaseAvailable
+	}
+	return false
+}
+
+func (m *DatabaseStatus) GetDatabaseType() DatabaseStatus_DatabaseType {
+	if m != nil {
+		return m.DatabaseType
+	}
+	return DatabaseStatus_Hidden
+}
+
+func (m *DatabaseStatus) GetDatabaseVersion() string {
+	if m != nil {
+		return m.DatabaseVersion
+	}
+	return ""
+}
+
+func (m *DatabaseStatus) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DatabaseStatus) Clone() *DatabaseStatus {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DatabaseStatus)
+	*cloned = *m
+
+	return cloned
+}
+
+type DatabaseBackupStatus struct {
+	BackupInfo           *storage.BackupInfo `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo,proto3" json:"backup_info,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
+}
+
+func (m *DatabaseBackupStatus) Reset()         { *m = DatabaseBackupStatus{} }
+func (m *DatabaseBackupStatus) String() string { return proto.CompactTextString(m) }
+func (*DatabaseBackupStatus) ProtoMessage()    {}
+func (*DatabaseBackupStatus) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1b6865797fbcf5f5, []int{5}
+}
+func (m *DatabaseBackupStatus) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DatabaseBackupStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DatabaseBackupStatus.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DatabaseBackupStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatabaseBackupStatus.Merge(m, src)
+}
+func (m *DatabaseBackupStatus) XXX_Size() int {
+	return m.Size()
+}
+func (m *DatabaseBackupStatus) XXX_DiscardUnknown() {
+	xxx_messageInfo_DatabaseBackupStatus.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DatabaseBackupStatus proto.InternalMessageInfo
+
+func (m *DatabaseBackupStatus) GetBackupInfo() *storage.BackupInfo {
+	if m != nil {
+		return m.BackupInfo
+	}
+	return nil
+}
+
+func (m *DatabaseBackupStatus) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DatabaseBackupStatus) Clone() *DatabaseBackupStatus {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DatabaseBackupStatus)
+	*cloned = *m
+
+	cloned.BackupInfo = m.BackupInfo.Clone()
+	return cloned
+}
+
+// Provides availability of certain functionality of Central Services in the current configuration.
+// The initial intended use is to disable certain functionality that does not make sense in the Cloud Service context.
+type CentralServicesCapabilities struct {
+	// Ability to use container IAM role for scanning images from Amazon ECR using Scanner deployed as part of Central
+	// Services.
+	// Note that CapabilityAvailable status does not mean that Scanner container actually has IAM role attached. Such
+	// check isn't implemented at the moment and an attempt to use the corresponding setting may lead to errors when
+	// the role is not actually there. It's user's responsibility to check the presence of role and integration status
+	// when the corresponding setting is enabled.
+	CentralScanningCanUseContainerIamRoleForEcr CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,1,opt,name=central_scanning_can_use_container_iam_role_for_ecr,json=centralScanningCanUseContainerIamRoleForEcr,proto3,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_scanning_can_use_container_iam_role_for_ecr,omitempty"`
+	// Ability to configure and perform Central backups to Amazon S3 or Google Cloud Storage.
+	CentralCanUseCloudBackupIntegrations CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,2,opt,name=central_can_use_cloud_backup_integrations,json=centralCanUseCloudBackupIntegrations,proto3,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_use_cloud_backup_integrations,omitempty"`
+	// Ability to present health of declarative config resources (e.g. auth providers, roles, access scopes, permission
+	// sets, notifiers) to the user.
+	CentralCanDisplayDeclarativeConfigHealth CentralServicesCapabilities_CapabilityStatus `protobuf:"varint,3,opt,name=central_can_display_declarative_config_health,json=centralCanDisplayDeclarativeConfigHealth,proto3,enum=v1.CentralServicesCapabilities_CapabilityStatus" json:"central_can_display_declarative_config_health,omitempty"`
+	XXX_NoUnkeyedLiteral                     struct{}                                     `json:"-"`
+	XXX_unrecognized                         []byte                                       `json:"-"`
+	XXX_sizecache                            int32                                        `json:"-"`
+}
+
+func (m *CentralServicesCapabilities) Reset()         { *m = CentralServicesCapabilities{} }
+func (m *CentralServicesCapabilities) String() string { return proto.CompactTextString(m) }
+func (*CentralServicesCapabilities) ProtoMessage()    {}
+func (*CentralServicesCapabilities) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1b6865797fbcf5f5, []int{6}
+}
+func (m *CentralServicesCapabilities) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CentralServicesCapabilities) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CentralServicesCapabilities.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CentralServicesCapabilities) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CentralServicesCapabilities.Merge(m, src)
+}
+func (m *CentralServicesCapabilities) XXX_Size() int {
+	return m.Size()
+}
+func (m *CentralServicesCapabilities) XXX_DiscardUnknown() {
+	xxx_messageInfo_CentralServicesCapabilities.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CentralServicesCapabilities proto.InternalMessageInfo
+
+func (m *CentralServicesCapabilities) GetCentralScanningCanUseContainerIamRoleForEcr() CentralServicesCapabilities_CapabilityStatus {
+	if m != nil {
+		return m.CentralScanningCanUseContainerIamRoleForEcr
+	}
+	return CentralServicesCapabilities_CapabilityAvailable
+}
+
+func (m *CentralServicesCapabilities) GetCentralCanUseCloudBackupIntegrations() CentralServicesCapabilities_CapabilityStatus {
+	if m != nil {
+		return m.CentralCanUseCloudBackupIntegrations
+	}
+	return CentralServicesCapabilities_CapabilityAvailable
+}
+
+func (m *CentralServicesCapabilities) GetCentralCanDisplayDeclarativeConfigHealth() CentralServicesCapabilities_CapabilityStatus {
+	if m != nil {
+		return m.CentralCanDisplayDeclarativeConfigHealth
+	}
+	return CentralServicesCapabilities_CapabilityAvailable
+}
+
+func (m *CentralServicesCapabilities) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CentralServicesCapabilities) Clone() *CentralServicesCapabilities {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CentralServicesCapabilities)
+	*cloned = *m
+
+	return cloned
+}
+
 func init() {
 	proto.RegisterEnum("v1.Metadata_LicenseStatus", Metadata_LicenseStatus_name, Metadata_LicenseStatus_value)
+	proto.RegisterEnum("v1.DatabaseStatus_DatabaseType", DatabaseStatus_DatabaseType_name, DatabaseStatus_DatabaseType_value)
+	proto.RegisterEnum("v1.CentralServicesCapabilities_CapabilityStatus", CentralServicesCapabilities_CapabilityStatus_name, CentralServicesCapabilities_CapabilityStatus_value)
 	proto.RegisterType((*Metadata)(nil), "v1.Metadata")
 	proto.RegisterType((*TrustInfo)(nil), "v1.TrustInfo")
 	proto.RegisterType((*TLSChallengeResponse)(nil), "v1.TLSChallengeResponse")
 	proto.RegisterType((*TLSChallengeRequest)(nil), "v1.TLSChallengeRequest")
+	proto.RegisterType((*DatabaseStatus)(nil), "v1.DatabaseStatus")
+	proto.RegisterType((*DatabaseBackupStatus)(nil), "v1.DatabaseBackupStatus")
+	proto.RegisterType((*CentralServicesCapabilities)(nil), "v1.CentralServicesCapabilities")
 }
 
 func init() { proto.RegisterFile("api/v1/metadata_service.proto", fileDescriptor_1b6865797fbcf5f5) }
 
 var fileDescriptor_1b6865797fbcf5f5 = []byte{
-	// 584 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x93, 0xdd, 0x6e, 0xd3, 0x30,
-	0x14, 0xc7, 0xe7, 0x74, 0xb0, 0xe5, 0x2c, 0x6d, 0x33, 0x6f, 0x88, 0x10, 0x6d, 0xd5, 0x08, 0x42,
-	0x14, 0x21, 0x32, 0x75, 0xdc, 0x22, 0xa4, 0x7d, 0x84, 0xa9, 0xd2, 0x28, 0x28, 0xad, 0xd0, 0x84,
-	0x10, 0x91, 0x97, 0x7a, 0x9d, 0xb5, 0xcc, 0x2e, 0xb1, 0x1b, 0x01, 0x97, 0xbc, 0xc2, 0x6e, 0x78,
-	0x05, 0x2e, 0x78, 0x0f, 0x2e, 0x91, 0x78, 0x01, 0x34, 0x78, 0x10, 0xe4, 0xa4, 0x49, 0x3b, 0xc1,
-	0x65, 0x7e, 0xe7, 0x7f, 0x4e, 0xce, 0xc7, 0xdf, 0xb0, 0x49, 0xc6, 0x6c, 0x3b, 0xeb, 0x6c, 0x5f,
-	0x50, 0x45, 0x86, 0x44, 0x91, 0x48, 0xd2, 0x34, 0x63, 0x31, 0xf5, 0xc7, 0xa9, 0x50, 0x02, 0x1b,
-	0x59, 0xc7, 0xdd, 0x18, 0x09, 0x31, 0x4a, 0xe8, 0xb6, 0x56, 0x12, 0xce, 0x85, 0x22, 0x8a, 0x09,
-	0x2e, 0x0b, 0x85, 0x8b, 0xa7, 0x05, 0xe8, 0xc5, 0x58, 0x7d, 0x2c, 0x98, 0x77, 0x69, 0xc0, 0xf2,
-	0x8b, 0x69, 0x41, 0xec, 0xc0, 0x52, 0x46, 0x53, 0xc9, 0x04, 0x77, 0xd0, 0x16, 0x6a, 0x9b, 0x61,
-	0xf9, 0x89, 0xef, 0x82, 0x75, 0x32, 0x61, 0xc9, 0x30, 0x3a, 0x4d, 0x48, 0x26, 0x52, 0xc7, 0xc8,
-	0xc3, 0x2b, 0x39, 0x7b, 0x9e, 0x23, 0x7c, 0x0f, 0xea, 0x29, 0x4d, 0x28, 0x91, 0x34, 0xca, 0xb1,
-	0x53, 0xdb, 0x42, 0xed, 0xe5, 0xd0, 0x9a, 0xc2, 0x3d, 0xcd, 0x70, 0x00, 0x8d, 0x84, 0xc5, 0x94,
-	0x4b, 0x1a, 0x49, 0x45, 0xd4, 0x44, 0x3a, 0x8b, 0x5b, 0xa8, 0xdd, 0xd8, 0x71, 0xfd, 0xac, 0xe3,
-	0x97, 0x7d, 0xf8, 0x47, 0x85, 0xa4, 0x9f, 0x2b, 0xf6, 0x0c, 0x07, 0x85, 0xf5, 0x64, 0x1e, 0x79,
-	0xef, 0xa0, 0x7e, 0x4d, 0x83, 0x2d, 0x58, 0xec, 0xbd, 0xec, 0x05, 0xf6, 0x82, 0x6b, 0x2c, 0x23,
-	0xdc, 0x84, 0xa5, 0x6e, 0xef, 0xf5, 0xee, 0x51, 0xf7, 0xc0, 0x46, 0x25, 0x08, 0x8e, 0x5f, 0x75,
-	0xc3, 0xe0, 0xc0, 0x36, 0x72, 0x80, 0x01, 0xc2, 0xa0, 0x3f, 0xd8, 0x0d, 0x07, 0xdd, 0xde, 0xa1,
-	0x5d, 0xcb, 0x99, 0x09, 0x37, 0x8a, 0x9c, 0x45, 0xef, 0x2b, 0x02, 0x73, 0x90, 0x4e, 0xa4, 0xea,
-	0xf2, 0x53, 0x81, 0x37, 0x01, 0x62, 0x9a, 0xaa, 0x28, 0x3e, 0x23, 0x4c, 0x6f, 0xa6, 0xd6, 0xb6,
-	0x42, 0x53, 0x93, 0x7d, 0x0d, 0xf0, 0x43, 0xb0, 0x25, 0xe5, 0x52, 0xa4, 0x5a, 0x90, 0x24, 0x94,
-	0x8f, 0xe8, 0x74, 0x3f, 0xcd, 0x82, 0xef, 0x97, 0x18, 0x3f, 0x82, 0xd5, 0x98, 0x72, 0x95, 0x92,
-	0x64, 0x4e, 0x5b, 0xcb, 0xb5, 0xf6, 0x34, 0x30, 0x13, 0xdf, 0x87, 0x06, 0x19, 0x0e, 0x99, 0xbe,
-	0xa0, 0xd6, 0x13, 0xbd, 0x2b, 0xfd, 0xeb, 0xfa, 0x8c, 0xee, 0x13, 0xe9, 0x9d, 0xc1, 0xfa, 0xe0,
-	0xa8, 0x5f, 0xa5, 0x85, 0x54, 0x8e, 0x05, 0x97, 0x14, 0xef, 0xc0, 0x2d, 0xa5, 0x47, 0x88, 0x18,
-	0x3f, 0x15, 0xda, 0x2b, 0x8c, 0x24, 0xec, 0x13, 0x1d, 0xe6, 0xa7, 0xb5, 0xc2, 0x35, 0x55, 0xce,
-	0xd7, 0xaf, 0x42, 0x78, 0x03, 0x4c, 0xc9, 0x46, 0x9c, 0xa8, 0x49, 0x5a, 0xcc, 0x60, 0x85, 0x33,
-	0xe0, 0x3d, 0x83, 0xb5, 0xeb, 0x7f, 0x7a, 0x3f, 0xa1, 0x52, 0xe1, 0x07, 0xd0, 0xac, 0x86, 0x89,
-	0x94, 0x38, 0xa7, 0xa5, 0x7b, 0x1a, 0x15, 0x1e, 0x68, 0xba, 0xf3, 0x0d, 0x41, 0xb3, 0xbc, 0x71,
-	0xbf, 0xf0, 0x2e, 0x7e, 0x0a, 0x2b, 0x87, 0x54, 0x55, 0x0e, 0x34, 0xb5, 0x0f, 0x02, 0xed, 0x4f,
-	0xd7, 0x9a, 0xb7, 0x84, 0xb7, 0xfe, 0xf9, 0xe7, 0x9f, 0x4b, 0xa3, 0x81, 0xad, 0xf9, 0x17, 0x80,
-	0xdf, 0x82, 0x35, 0xdf, 0x11, 0xbe, 0xad, 0x73, 0xfe, 0xd3, 0xa3, 0xeb, 0xfc, 0x1b, 0x28, 0xd6,
-	0xe4, 0xdd, 0xc9, 0x0b, 0xaf, 0xe1, 0x55, 0x5d, 0x58, 0x25, 0xf2, 0x71, 0xd5, 0xf4, 0x9e, 0xff,
-	0xfd, 0xaa, 0x85, 0x7e, 0x5c, 0xb5, 0xd0, 0xaf, 0xab, 0x16, 0xfa, 0xf2, 0xbb, 0xb5, 0x00, 0x0e,
-	0x13, 0xbe, 0x54, 0x24, 0x3e, 0x4f, 0xc5, 0x87, 0xe2, 0x01, 0xf9, 0x64, 0xcc, 0xfc, 0xac, 0xf3,
-	0xc6, 0xc8, 0x3a, 0xc7, 0x0b, 0x27, 0x37, 0x73, 0xf6, 0xe4, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0x34, 0x72, 0xb8, 0xde, 0xab, 0x03, 0x00, 0x00,
+	// 1040 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xcf, 0x6f, 0x1b, 0xc5,
+	0x17, 0xcf, 0x3a, 0xf9, 0x36, 0xf1, 0xcb, 0xc6, 0xd9, 0x8c, 0xd3, 0xc6, 0x75, 0xdb, 0x34, 0xdf,
+	0x05, 0x44, 0xaa, 0x2a, 0x1b, 0xe2, 0x22, 0x71, 0x41, 0x48, 0x89, 0xed, 0xa6, 0x96, 0x42, 0x5a,
+	0xad, 0x4d, 0x55, 0x10, 0x62, 0x35, 0xde, 0x7d, 0x76, 0x46, 0xd9, 0xec, 0x98, 0x9d, 0xf1, 0x0a,
+	0x73, 0xe4, 0xc6, 0x11, 0xf5, 0x82, 0xb8, 0x70, 0xe6, 0xcf, 0xe0, 0xc6, 0x11, 0x89, 0x7f, 0x00,
+	0x05, 0x2e, 0xfc, 0x17, 0x68, 0x66, 0x7f, 0x78, 0xdd, 0x22, 0x10, 0xdc, 0x76, 0x3e, 0xef, 0x33,
+	0x9f, 0xf7, 0xde, 0xbc, 0x1f, 0x0b, 0xf7, 0xe8, 0x84, 0x1d, 0x26, 0x47, 0x87, 0x57, 0x28, 0x69,
+	0x40, 0x25, 0xf5, 0x04, 0xc6, 0x09, 0xf3, 0xd1, 0x99, 0xc4, 0x5c, 0x72, 0x52, 0x49, 0x8e, 0x9a,
+	0x77, 0xc7, 0x9c, 0x8f, 0x43, 0x3c, 0x54, 0x4c, 0x1a, 0x45, 0x5c, 0x52, 0xc9, 0x78, 0x24, 0x52,
+	0x46, 0x93, 0x64, 0x02, 0x78, 0x35, 0x91, 0xb3, 0x0c, 0xbb, 0x2d, 0x24, 0x8f, 0xe9, 0x18, 0x0f,
+	0xc5, 0x4c, 0x48, 0xbc, 0xf2, 0x58, 0x34, 0xe2, 0xa9, 0xc9, 0x7e, 0x59, 0x81, 0xb5, 0x0f, 0x33,
+	0x5f, 0xa4, 0x01, 0xab, 0x09, 0xc6, 0x82, 0xf1, 0xa8, 0x61, 0xec, 0x19, 0xfb, 0x55, 0x37, 0x3f,
+	0x92, 0xff, 0x83, 0x39, 0x9c, 0xb2, 0x30, 0xf0, 0x46, 0x21, 0x4d, 0x78, 0xdc, 0xa8, 0x68, 0xf3,
+	0xba, 0xc6, 0x1e, 0x6b, 0x88, 0xbc, 0x01, 0x1b, 0x31, 0x86, 0x48, 0x05, 0x7a, 0x1a, 0x6e, 0x2c,
+	0xef, 0x19, 0xfb, 0x6b, 0xae, 0x99, 0x81, 0x27, 0x0a, 0x23, 0x5d, 0xa8, 0x85, 0xcc, 0xc7, 0x48,
+	0xa0, 0x27, 0x24, 0x95, 0x53, 0xd1, 0x58, 0xd9, 0x33, 0xf6, 0x6b, 0xad, 0xa6, 0x93, 0x1c, 0x39,
+	0x79, 0x1c, 0xce, 0x59, 0x4a, 0xe9, 0x6b, 0xc6, 0x49, 0xa5, 0x61, 0xb8, 0x1b, 0x61, 0x19, 0xb2,
+	0x3f, 0x83, 0x8d, 0x05, 0x0e, 0x31, 0x61, 0xe5, 0xfc, 0xe9, 0x79, 0xd7, 0x5a, 0x6a, 0x56, 0xd6,
+	0x0c, 0xb2, 0x09, 0xab, 0xbd, 0xf3, 0xe7, 0xc7, 0x67, 0xbd, 0x8e, 0x65, 0xe4, 0x40, 0xf7, 0xc5,
+	0xb3, 0x9e, 0xdb, 0xed, 0x58, 0x15, 0x0d, 0x10, 0x00, 0xb7, 0xdb, 0x1f, 0x1c, 0xbb, 0x83, 0xde,
+	0xf9, 0xa9, 0xb5, 0xac, 0xb1, 0x2a, 0xfc, 0x2f, 0xbd, 0xb3, 0x62, 0xff, 0x60, 0x40, 0x75, 0x10,
+	0x4f, 0x85, 0xec, 0x45, 0x23, 0x4e, 0xee, 0x01, 0xf8, 0x18, 0x4b, 0xcf, 0xbf, 0xa0, 0x4c, 0xbd,
+	0xcc, 0xf2, 0xbe, 0xe9, 0x56, 0x15, 0xd2, 0x56, 0x00, 0x79, 0x00, 0x96, 0xc0, 0x48, 0xf0, 0x58,
+	0x11, 0xc2, 0x10, 0xa3, 0x31, 0x66, 0xef, 0xb3, 0x99, 0xe2, 0xed, 0x1c, 0x26, 0x0f, 0x61, 0xcb,
+	0xc7, 0x48, 0xc6, 0x34, 0x2c, 0x71, 0x97, 0x35, 0xd7, 0xca, 0x0c, 0x73, 0xf2, 0x5b, 0x50, 0xa3,
+	0x41, 0xc0, 0x54, 0x71, 0x15, 0x9f, 0xaa, 0xb7, 0x52, 0xae, 0x37, 0xe6, 0x68, 0x9b, 0x0a, 0xfb,
+	0x02, 0xb6, 0x07, 0x67, 0xfd, 0xe2, 0x9a, 0x8b, 0x62, 0xc2, 0x23, 0x81, 0xa4, 0x05, 0x37, 0xa5,
+	0x4a, 0x41, 0x57, 0x5b, 0xb5, 0x11, 0xa3, 0x21, 0xfb, 0x12, 0x03, 0x5d, 0x5a, 0xd3, 0xad, 0xcb,
+	0x3c, 0xbf, 0x7e, 0x61, 0x22, 0x77, 0xa1, 0x2a, 0xd8, 0x38, 0xa2, 0x72, 0x1a, 0xa7, 0x39, 0x98,
+	0xee, 0x1c, 0xb0, 0x3f, 0x80, 0xfa, 0xa2, 0xa7, 0xcf, 0xa7, 0x28, 0x24, 0x79, 0x1b, 0x36, 0x8b,
+	0x64, 0x3c, 0xc9, 0x2f, 0x31, 0xef, 0x9e, 0x5a, 0x01, 0x0f, 0x14, 0x6a, 0xff, 0x61, 0x40, 0xad,
+	0x43, 0x25, 0x1d, 0xd2, 0xa2, 0x6e, 0x07, 0x40, 0x82, 0x0c, 0xf1, 0x68, 0x42, 0x59, 0x48, 0x87,
+	0x21, 0xea, 0xeb, 0x6b, 0xee, 0x56, 0x6e, 0x39, 0xce, 0x0d, 0xa4, 0x03, 0x1b, 0x05, 0x5d, 0xce,
+	0x26, 0x69, 0x8c, 0xb5, 0xd6, 0x7d, 0xd5, 0x3d, 0x8b, 0xca, 0xc5, 0x71, 0x30, 0x9b, 0xa0, 0x6b,
+	0x06, 0xa5, 0x93, 0x2a, 0x58, 0xa1, 0x92, 0xf7, 0x7b, 0x5a, 0x84, 0xcd, 0x1c, 0x7f, 0x9e, 0xc2,
+	0xf6, 0x7b, 0x60, 0x96, 0x85, 0x08, 0xc0, 0x8d, 0x27, 0x2c, 0x08, 0x30, 0xb2, 0x96, 0xc8, 0x3a,
+	0xac, 0xba, 0xdc, 0xbf, 0x14, 0x9d, 0x13, 0xcb, 0x20, 0x35, 0x80, 0x67, 0x5c, 0xc8, 0x71, 0x8c,
+	0xea, 0x5c, 0xb1, 0xcf, 0x60, 0x3b, 0xbf, 0x78, 0x42, 0xfd, 0xcb, 0xe9, 0x24, 0x4b, 0xf8, 0x5d,
+	0x58, 0x1f, 0xea, 0xb3, 0x2e, 0x8b, 0xce, 0x74, 0xbd, 0x55, 0x77, 0xb2, 0x01, 0x75, 0x52, 0xae,
+	0xaa, 0x8a, 0x0b, 0xc3, 0xe2, 0xdb, 0xfe, 0x7e, 0x05, 0xee, 0xb4, 0xd3, 0xfe, 0xe8, 0xa7, 0xfb,
+	0x40, 0xb4, 0xe9, 0x84, 0x0e, 0x59, 0xc8, 0x24, 0x43, 0x41, 0xbe, 0x33, 0xe0, 0x51, 0xde, 0x58,
+	0xc2, 0xa7, 0x51, 0xc4, 0xa2, 0xb1, 0xe7, 0xd3, 0xc8, 0x9b, 0x0a, 0xf4, 0x7c, 0x1e, 0x49, 0xca,
+	0x22, 0x8c, 0x3d, 0x46, 0xaf, 0xbc, 0x98, 0x87, 0xe8, 0x8d, 0x78, 0xec, 0xa1, 0x1f, 0x6b, 0xf7,
+	0xb5, 0xd6, 0x3b, 0xea, 0xf9, 0xfe, 0x46, 0xde, 0x29, 0x0e, 0xb3, 0x34, 0x0b, 0xf7, 0x61, 0xe6,
+	0xac, 0x9f, 0xf9, 0x6a, 0xd3, 0xe8, 0x23, 0x81, 0xed, 0xdc, 0x51, 0x8f, 0x5e, 0xb9, 0x3c, 0xc4,
+	0xc7, 0x3c, 0xee, 0xfa, 0x31, 0xf9, 0xda, 0x80, 0x07, 0x45, 0xd7, 0xe7, 0x31, 0x85, 0x7c, 0x1a,
+	0x78, 0xc5, 0x4b, 0x48, 0x1c, 0xc7, 0xe9, 0x16, 0xcb, 0x2a, 0xfa, 0xef, 0x43, 0x7a, 0x33, 0x9f,
+	0x9f, 0x34, 0x14, 0xa5, 0x9f, 0x3f, 0xe6, 0x5c, 0x9d, 0x7c, 0x63, 0xc0, 0x41, 0x39, 0x96, 0x80,
+	0x89, 0x49, 0x48, 0x67, 0x5e, 0x80, 0x7e, 0x48, 0x15, 0x29, 0xd1, 0xef, 0x35, 0x62, 0x63, 0xef,
+	0x02, 0x69, 0x28, 0x2f, 0x74, 0x63, 0xfc, 0x97, 0x78, 0xf6, 0xe7, 0xf1, 0x74, 0x52, 0x27, 0x9d,
+	0xb9, 0x8f, 0xb6, 0x76, 0xf1, 0x44, 0x7b, 0xb0, 0xdb, 0x60, 0xbd, 0x7a, 0x9b, 0xec, 0x40, 0x7d,
+	0x8e, 0x15, 0xfd, 0x6f, 0x2d, 0x91, 0x5b, 0x40, 0xe6, 0x86, 0x0e, 0x13, 0x0a, 0x0e, 0x2c, 0xa3,
+	0xf5, 0xe3, 0x32, 0x6c, 0xe6, 0xfb, 0x33, 0x0b, 0x90, 0xbc, 0x0f, 0xeb, 0xa7, 0x28, 0x8b, 0xed,
+	0x5e, 0x55, 0x39, 0x74, 0xd5, 0x6f, 0xa1, 0x69, 0x96, 0xd7, 0xad, 0xbd, 0xfd, 0xd5, 0x2f, 0xbf,
+	0xbf, 0xac, 0xd4, 0x88, 0x59, 0xfe, 0xf1, 0x90, 0x4f, 0xc1, 0x2c, 0x4f, 0x3b, 0xd9, 0x51, 0x77,
+	0xfe, 0x62, 0xfe, 0x9b, 0x8d, 0xd7, 0x0d, 0xe9, 0x0a, 0xb2, 0x6f, 0x6b, 0xe1, 0x3a, 0xd9, 0x52,
+	0xc2, 0x32, 0x14, 0x07, 0xc5, 0x42, 0x20, 0x4f, 0x61, 0xeb, 0x14, 0xe5, 0x2b, 0xdb, 0xa0, 0x14,
+	0x21, 0x79, 0x7d, 0xa4, 0xed, 0x3b, 0x5a, 0xee, 0x26, 0xa9, 0x2b, 0xb9, 0x7c, 0x52, 0x0f, 0xd3,
+	0xff, 0x08, 0xf9, 0x18, 0x76, 0x4a, 0x82, 0x0b, 0x33, 0x57, 0x92, 0x6d, 0x94, 0x65, 0xcb, 0xa4,
+	0xc5, 0x58, 0xd3, 0xc6, 0xcc, 0xa5, 0x47, 0x70, 0xeb, 0x14, 0x65, 0x3b, 0xaf, 0x67, 0x69, 0xee,
+	0x4a, 0xca, 0xf7, 0xff, 0xa1, 0x43, 0xec, 0x3d, 0xed, 0xa0, 0x49, 0x1a, 0xca, 0x41, 0xd6, 0x1c,
+	0x07, 0x7e, 0x89, 0x71, 0xe2, 0xfc, 0x74, 0xbd, 0x6b, 0xfc, 0x7c, 0xbd, 0x6b, 0xfc, 0x7a, 0xbd,
+	0x6b, 0x7c, 0xfb, 0xdb, 0xee, 0x12, 0x34, 0x18, 0x77, 0x84, 0xa4, 0xfe, 0x65, 0xcc, 0xbf, 0x48,
+	0x7f, 0xd8, 0x0e, 0x9d, 0x30, 0x27, 0x39, 0xfa, 0xa4, 0x92, 0x1c, 0xbd, 0x58, 0x1a, 0xde, 0xd0,
+	0xd8, 0xa3, 0x3f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xdb, 0xd3, 0x19, 0x70, 0x36, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -450,7 +770,15 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type MetadataServiceClient interface {
 	GetMetadata(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Metadata, error)
+	// TLSChallenge
+	//
+	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
+	// chain. This is necessary if Central is running behind a load balancer
+	// with self-signed certificates. Does not require authentication.
 	TLSChallenge(ctx context.Context, in *TLSChallengeRequest, opts ...grpc.CallOption) (*TLSChallengeResponse, error)
+	GetDatabaseStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseStatus, error)
+	GetDatabaseBackupStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseBackupStatus, error)
+	GetCentralCapabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CentralServicesCapabilities, error)
 }
 
 type metadataServiceClient struct {
@@ -479,10 +807,45 @@ func (c *metadataServiceClient) TLSChallenge(ctx context.Context, in *TLSChallen
 	return out, nil
 }
 
+func (c *metadataServiceClient) GetDatabaseStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseStatus, error) {
+	out := new(DatabaseStatus)
+	err := c.cc.Invoke(ctx, "/v1.MetadataService/GetDatabaseStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metadataServiceClient) GetDatabaseBackupStatus(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DatabaseBackupStatus, error) {
+	out := new(DatabaseBackupStatus)
+	err := c.cc.Invoke(ctx, "/v1.MetadataService/GetDatabaseBackupStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *metadataServiceClient) GetCentralCapabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CentralServicesCapabilities, error) {
+	out := new(CentralServicesCapabilities)
+	err := c.cc.Invoke(ctx, "/v1.MetadataService/GetCentralCapabilities", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MetadataServiceServer is the server API for MetadataService service.
 type MetadataServiceServer interface {
 	GetMetadata(context.Context, *Empty) (*Metadata, error)
+	// TLSChallenge
+	//
+	// Returns all trusted CAs, i.e., secret/additional-ca and Central's cert
+	// chain. This is necessary if Central is running behind a load balancer
+	// with self-signed certificates. Does not require authentication.
 	TLSChallenge(context.Context, *TLSChallengeRequest) (*TLSChallengeResponse, error)
+	GetDatabaseStatus(context.Context, *Empty) (*DatabaseStatus, error)
+	GetDatabaseBackupStatus(context.Context, *Empty) (*DatabaseBackupStatus, error)
+	GetCentralCapabilities(context.Context, *Empty) (*CentralServicesCapabilities, error)
 }
 
 // UnimplementedMetadataServiceServer can be embedded to have forward compatible implementations.
@@ -494,6 +857,15 @@ func (*UnimplementedMetadataServiceServer) GetMetadata(ctx context.Context, req 
 }
 func (*UnimplementedMetadataServiceServer) TLSChallenge(ctx context.Context, req *TLSChallengeRequest) (*TLSChallengeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TLSChallenge not implemented")
+}
+func (*UnimplementedMetadataServiceServer) GetDatabaseStatus(ctx context.Context, req *Empty) (*DatabaseStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDatabaseStatus not implemented")
+}
+func (*UnimplementedMetadataServiceServer) GetDatabaseBackupStatus(ctx context.Context, req *Empty) (*DatabaseBackupStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDatabaseBackupStatus not implemented")
+}
+func (*UnimplementedMetadataServiceServer) GetCentralCapabilities(ctx context.Context, req *Empty) (*CentralServicesCapabilities, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCentralCapabilities not implemented")
 }
 
 func RegisterMetadataServiceServer(s *grpc.Server, srv MetadataServiceServer) {
@@ -536,6 +908,60 @@ func _MetadataService_TLSChallenge_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MetadataService_GetDatabaseStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetDatabaseStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MetadataService/GetDatabaseStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetDatabaseStatus(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetadataService_GetDatabaseBackupStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetDatabaseBackupStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MetadataService/GetDatabaseBackupStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetDatabaseBackupStatus(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MetadataService_GetCentralCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MetadataServiceServer).GetCentralCapabilities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.MetadataService/GetCentralCapabilities",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MetadataServiceServer).GetCentralCapabilities(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _MetadataService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.MetadataService",
 	HandlerType: (*MetadataServiceServer)(nil),
@@ -547,6 +973,18 @@ var _MetadataService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TLSChallenge",
 			Handler:    _MetadataService_TLSChallenge_Handler,
+		},
+		{
+			MethodName: "GetDatabaseStatus",
+			Handler:    _MetadataService_GetDatabaseStatus_Handler,
+		},
+		{
+			MethodName: "GetDatabaseBackupStatus",
+			Handler:    _MetadataService_GetDatabaseBackupStatus_Handler,
+		},
+		{
+			MethodName: "GetCentralCapabilities",
+			Handler:    _MetadataService_GetCentralCapabilities_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -743,6 +1181,136 @@ func (m *TLSChallengeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DatabaseStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DatabaseStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DatabaseStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.DatabaseVersion) > 0 {
+		i -= len(m.DatabaseVersion)
+		copy(dAtA[i:], m.DatabaseVersion)
+		i = encodeVarintMetadataService(dAtA, i, uint64(len(m.DatabaseVersion)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.DatabaseType != 0 {
+		i = encodeVarintMetadataService(dAtA, i, uint64(m.DatabaseType))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.DatabaseAvailable {
+		i--
+		if m.DatabaseAvailable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *DatabaseBackupStatus) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DatabaseBackupStatus) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DatabaseBackupStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.BackupInfo != nil {
+		{
+			size, err := m.BackupInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintMetadataService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CentralServicesCapabilities) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CentralServicesCapabilities) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CentralServicesCapabilities) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.CentralCanDisplayDeclarativeConfigHealth != 0 {
+		i = encodeVarintMetadataService(dAtA, i, uint64(m.CentralCanDisplayDeclarativeConfigHealth))
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.CentralCanUseCloudBackupIntegrations != 0 {
+		i = encodeVarintMetadataService(dAtA, i, uint64(m.CentralCanUseCloudBackupIntegrations))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.CentralScanningCanUseContainerIamRoleForEcr != 0 {
+		i = encodeVarintMetadataService(dAtA, i, uint64(m.CentralScanningCanUseContainerIamRoleForEcr))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintMetadataService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovMetadataService(v)
 	base := offset
@@ -841,6 +1409,65 @@ func (m *TLSChallengeRequest) Size() (n int) {
 	l = len(m.ChallengeToken)
 	if l > 0 {
 		n += 1 + l + sovMetadataService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DatabaseStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.DatabaseAvailable {
+		n += 2
+	}
+	if m.DatabaseType != 0 {
+		n += 1 + sovMetadataService(uint64(m.DatabaseType))
+	}
+	l = len(m.DatabaseVersion)
+	if l > 0 {
+		n += 1 + l + sovMetadataService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DatabaseBackupStatus) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BackupInfo != nil {
+		l = m.BackupInfo.Size()
+		n += 1 + l + sovMetadataService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CentralServicesCapabilities) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CentralScanningCanUseContainerIamRoleForEcr != 0 {
+		n += 1 + sovMetadataService(uint64(m.CentralScanningCanUseContainerIamRoleForEcr))
+	}
+	if m.CentralCanUseCloudBackupIntegrations != 0 {
+		n += 1 + sovMetadataService(uint64(m.CentralCanUseCloudBackupIntegrations))
+	}
+	if m.CentralCanDisplayDeclarativeConfigHealth != 0 {
+		n += 1 + sovMetadataService(uint64(m.CentralCanDisplayDeclarativeConfigHealth))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1367,6 +1994,323 @@ func (m *TLSChallengeRequest) Unmarshal(dAtA []byte) error {
 			}
 			m.ChallengeToken = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMetadataService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DatabaseStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMetadataService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DatabaseStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DatabaseStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DatabaseAvailable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.DatabaseAvailable = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DatabaseType", wireType)
+			}
+			m.DatabaseType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.DatabaseType |= DatabaseStatus_DatabaseType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DatabaseVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DatabaseVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMetadataService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DatabaseBackupStatus) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMetadataService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DatabaseBackupStatus: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DatabaseBackupStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BackupInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.BackupInfo == nil {
+				m.BackupInfo = &storage.BackupInfo{}
+			}
+			if err := m.BackupInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMetadataService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMetadataService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CentralServicesCapabilities) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMetadataService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CentralServicesCapabilities: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CentralServicesCapabilities: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CentralScanningCanUseContainerIamRoleForEcr", wireType)
+			}
+			m.CentralScanningCanUseContainerIamRoleForEcr = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CentralScanningCanUseContainerIamRoleForEcr |= CentralServicesCapabilities_CapabilityStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CentralCanUseCloudBackupIntegrations", wireType)
+			}
+			m.CentralCanUseCloudBackupIntegrations = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CentralCanUseCloudBackupIntegrations |= CentralServicesCapabilities_CapabilityStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CentralCanDisplayDeclarativeConfigHealth", wireType)
+			}
+			m.CentralCanDisplayDeclarativeConfigHealth = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMetadataService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CentralCanDisplayDeclarativeConfigHealth |= CentralServicesCapabilities_CapabilityStatus(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipMetadataService(dAtA[iNdEx:])

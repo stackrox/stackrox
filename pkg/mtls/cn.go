@@ -9,32 +9,31 @@ import (
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Identity identifies a particular certificate.
 type Identity struct {
-	Subject Subject
-	Serial  *big.Int
-	Expiry  time.Time
+	Subject   Subject
+	Serial    *big.Int
+	NotBefore time.Time
+	Expiry    time.Time
 }
 
 // IdentityFromCert returns an mTLS (mutual TLS) identity for the given certificate.
-func IdentityFromCert(cert requestinfo.CertInfo) Identity {
+func IdentityFromCert(cert CertInfo) Identity {
 	return Identity{
-		Subject: convertCertSubject(cert.Subject),
-		Serial:  cert.SerialNumber,
-		Expiry:  cert.NotAfter,
+		Subject:   convertCertSubject(cert.Subject),
+		Serial:    cert.SerialNumber,
+		NotBefore: cert.NotBefore,
+		Expiry:    cert.NotAfter,
 	}
 }
 
 // V1 returns the identity represented as a v1 API ServiceIdentity.
 func (id Identity) V1() *storage.ServiceIdentity {
 	return &storage.ServiceIdentity{
-		Srl: &storage.ServiceIdentity_SerialStr{
-			SerialStr: id.Serial.String(),
-		},
+		SerialStr:    id.Serial.String(),
 		Type:         id.Subject.ServiceType,
 		Id:           id.Subject.Identifier,
 		InitBundleId: id.Subject.InitBundleID,

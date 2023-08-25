@@ -16,8 +16,8 @@ function BinaryCollapsible({ commandLineArgs, children }) {
             <div className={`${titleClassName} ${backgroundClass}`}>
                 <div className="flex items-center">
                     <div className="flex pl-2">{icon}</div>
-                    <div className="p-2 text-primary-800 flex flex-1 italic">
-                        <span className="text-base font-600 word-break">{displayArgs}</span>
+                    <div className="p-2 flex flex-1">
+                        <span className="text-base word-break">{displayArgs}</span>
                     </div>
                 </div>
             </div>

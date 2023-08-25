@@ -24,10 +24,10 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -69,7 +69,7 @@ func generateCert(t *testing.T, parent *x509.Certificate, signer crypto.Signer, 
 }
 
 func getTokenForUserPKIAuthProvider(t *testing.T, authProviderID string, tlsConf *tls.Config) string {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/sso/providers/userpki/%s/authenticate", testutils.RoxAPIEndpoint(t), authProviderID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://%s/sso/providers/userpki/%s/authenticate", centralgrpc.RoxAPIEndpoint(t), authProviderID), nil)
 	require.NoError(t, err)
 
 	httpClient := &http.Client{
@@ -112,7 +112,7 @@ func getAuthStatus(t *testing.T, tlsConf *tls.Config, token string) (*v1.AuthSta
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	conn, err := clientconn.DialTLS(ctx, testutils.RoxAPIEndpoint(t), tlsConf, opts...)
+	conn, err := clientconn.DialTLS(ctx, centralgrpc.RoxAPIEndpoint(t), tlsConf, opts...)
 	require.NoError(t, err)
 	client := v1.NewAuthServiceClient(conn)
 	return client.GetAuthStatus(ctx, &v1.Empty{})
@@ -154,7 +154,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 			},
 		},
 	}
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	authService := v1.NewAuthProviderServiceClient(conn)
 	groupService := v1.NewGroupServiceClient(conn)
 
@@ -173,7 +173,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{Id: createdAuthProvider.GetId()})
+		_, err := authService.DeleteAuthProvider(ctx, &v1.DeleteByIDWithForce{Id: createdAuthProvider.GetId()})
 		require.NoError(t, err)
 	}()
 
@@ -198,7 +198,8 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	// Token plus matching cert => things should work.
 	authStatusWithToken, err := getAuthStatus(t, tlsConfWithLeaf, token)
 	require.NoError(t, err)
-	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(), cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active")))
+	assert.Empty(t, cmp.Diff(createdAuthProvider, authStatusWithToken.GetAuthProvider(),
+		cmpopts.IgnoreFields(storage.AuthProvider{}, "Config", "Validated", "Active", "LastUpdated")))
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatusWithToken)
 }
 
@@ -222,7 +223,7 @@ func TestClientCARequested(t *testing.T) {
 		},
 	}
 
-	conn, err := tls.Dial("tcp", testutils.RoxAPIEndpoint(t), tlsConf)
+	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)
 	require.NoError(t, err, "could not connect to central")
 	_ = conn.Handshake()
 	_ = conn.Close()

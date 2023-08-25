@@ -6,7 +6,7 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -60,10 +60,10 @@ const VulnMgmtNamespace = ({
                     }
                 }
                 policyCount(query: $policyQuery)
-                vulnCount
-                deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
+                deploymentCount
                 imageCount
-                componentCount
+                imageComponentCount
+                imageVulnerabilityCount
             }
         }
     `;

@@ -3,16 +3,21 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useDeepCompareEffect from 'use-deep-compare-effect';
+import { Bullseye } from '@patternfly/react-core';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import TableHeader from 'Components/TableHeader';
-import MessageCentered from 'Components/MessageCentered';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { fetchDeployments, fetchDeploymentsCount } from 'services/DeploymentsService';
-import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
+import {
+    fetchDeploymentsWithProcessInfoLegacy as fetchDeploymentsWithProcessInfo,
+    fetchDeploymentsCountLegacy,
+} from 'services/DeploymentsService';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     filterAllowedSearch,
     convertToRestSearch,
@@ -21,7 +26,7 @@ import {
 } from 'utils/searchUtils';
 import RiskTable from './RiskTable';
 
-const DEFAULT_RISK_SORT = [{ id: 'Priority', desc: false }];
+const DEFAULT_RISK_SORT = [{ id: 'Deployment Risk Priority', desc: false }];
 function RiskTablePanel({
     history,
     selectedDeploymentId,
@@ -62,18 +67,18 @@ function RiskTablePanel({
     const restSort = convertSortToRestFormat(sortOption);
 
     useDeepCompareEffect(() => {
-        fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
+        fetchDeploymentsWithProcessInfo(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE)
             .then(setCurrentDeployments)
             .catch((error) => {
                 setCurrentDeployments([]);
-                setErrorMessageDeployments(checkForPermissionErrorMessage(error));
+                setErrorMessageDeployments(getAxiosErrorMessage(error));
             });
 
         /*
          * Although count does not depend on change to sort option or page offset,
          * request in case of change to count of deployments in Kubernetes environment.
          */
-        fetchDeploymentsCount(restSearch)
+        fetchDeploymentsCountLegacy(restSearch)
             .then(setDeploymentsCount)
             .catch(() => {
                 setDeploymentsCount(0);
@@ -91,7 +96,7 @@ function RiskTablePanel({
             <PanelHead>
                 <TableHeader
                     length={deploymentCount}
-                    type="Deployment"
+                    type="deployment"
                     isViewFiltered={isViewFiltered}
                 />
                 <PanelHeadEnd>
@@ -105,7 +110,16 @@ function RiskTablePanel({
             </PanelHead>
             <PanelBody>
                 {errorMessageDeployments ? (
-                    <MessageCentered type="error">{errorMessageDeployments}</MessageCentered>
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="Unable to load deployments"
+                            headingLevel="h2"
+                            icon={ExclamationTriangleIcon}
+                            iconClassName="pf-u-warning-color-100"
+                        >
+                            {errorMessageDeployments}
+                        </EmptyStateTemplate>
+                    </Bullseye>
                 ) : (
                     <RiskTable
                         currentDeployments={currentDeployments}

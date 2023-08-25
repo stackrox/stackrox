@@ -10,5 +10,5 @@ package storage;
 
 message TelemetryConfiguration {
     bool                      enabled       = 1;
-    google.protobuf.Timestamp last_set_time = 2;
+    google.protobuf.Timestamp last_set_time = 2 [deprecated = true];
 }

@@ -17,13 +17,16 @@ type restoreProcessContext struct {
 
 	numAsyncChecks int
 	asyncErrorsC   chan error
+
+	postgresBundle bool
 }
 
-func newRestoreProcessContext(ctx context.Context, outputDir string) *restoreProcessContext {
+func newRestoreProcessContext(ctx context.Context, outputDir string, postgresBundle bool) *restoreProcessContext {
 	return &restoreProcessContext{
-		Context:      ctx,
-		outputDir:    strings.TrimRight(outputDir, "/") + "/",
-		asyncErrorsC: make(chan error),
+		Context:        ctx,
+		outputDir:      strings.TrimRight(outputDir, "/") + "/",
+		asyncErrorsC:   make(chan error),
+		postgresBundle: postgresBundle,
 	}
 }
 
@@ -56,6 +59,10 @@ func (c *restoreProcessContext) Mkdir(relativePath string, perm os.FileMode) (st
 		return "", err
 	}
 	return path, nil
+}
+
+func (c *restoreProcessContext) IsPostgresBundle() bool {
+	return c.postgresBundle
 }
 
 func (c *restoreProcessContext) dispatchAsyncCheck(checkFn func(ctx common.RestoreProcessContext) error, fileName string) {

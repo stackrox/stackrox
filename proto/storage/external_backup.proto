@@ -10,7 +10,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message ExternalBackup {
-    string           id              = 1;
+    string           id              = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string           name            = 2;
     string           type            = 3;
     storage.Schedule schedule        = 4;
@@ -27,20 +27,20 @@ message ExternalBackup {
 
 message S3Config {
     string bucket            = 1;
-    bool   use_iam           = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    bool   use_iam           = 2 [(gogoproto.moretags) = 'scrub:"dependent"'];
     // The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
-    string access_key_id     = 3 [(gogoproto.moretags) = "scrub:\"always\""];
+    string access_key_id     = 3 [(gogoproto.moretags) = 'scrub:"always"'];
     // The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
-    string secret_access_key = 4 [(gogoproto.moretags) = "scrub:\"always\""];
+    string secret_access_key = 4 [(gogoproto.moretags) = 'scrub:"always"'];
     string region            = 5;
     string object_prefix     = 6;
-    string endpoint          = 7 [(gogoproto.moretags) = "scrub:\"dependent\" validate:\"nolocalendpoint\""];
+    string endpoint          = 7 [(gogoproto.moretags) = 'scrub:"dependent" validate:"nolocalendpoint"'];
 }
 
 message GCSConfig {
     string bucket            = 1;
     // The service account for the storage integration. The server will mask the value of this credential in responses and logs.
-    string service_account   = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+    string service_account   = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     string object_prefix     = 3;
-    bool   use_workload_id   = 4 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    bool   use_workload_id   = 4 [(gogoproto.moretags) = 'scrub:"dependent"'];
 }

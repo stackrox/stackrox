@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const maxSize = 1000;
 
@@ -21,10 +20,10 @@ const TableHeader = (props) => {
     }
     let component = (
         <div
-            className="overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 uppercase"
+            className="overflow-hidden mx-4 flex text-base-600 items-center leading-normal font-700"
             data-testid="filtered-header"
         >
-            <Tooltip content={<TooltipOverlay>{headerText}</TooltipOverlay>}>
+            <Tooltip content={headerText}>
                 <div className="truncate flex-none">{headerText}</div>
             </Tooltip>
         </div>
@@ -34,7 +33,7 @@ const TableHeader = (props) => {
         component = (
             <div className="pt-2">
                 {component}
-                <div className="pl-4 opacity-75 italic">
+                <div className="pl-4 opacity-75">
                     Please add a filter to narrow down your results.
                 </div>
             </div>

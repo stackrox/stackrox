@@ -61,6 +61,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -112,6 +131,25 @@
           },
           {
             "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -213,6 +251,25 @@
             "type": "boolean"
           },
           {
+            "name": "request.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "request.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
             "name": "groupBy",
             "in": "query",
             "required": false,
@@ -280,6 +337,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -334,6 +410,25 @@
           },
           {
             "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -503,6 +598,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -621,7 +735,8 @@
       "enum": [
         "GENERIC",
         "K8S_EVENT",
-        "NETWORK_FLOW"
+        "NETWORK_FLOW",
+        "NETWORK_POLICY"
       ],
       "default": "GENERIC"
     },
@@ -638,20 +753,6 @@
           }
         }
       }
-    },
-    "EnvironmentConfigEnvVarSource": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "RAW",
-        "SECRET_KEY",
-        "CONFIG_MAP_KEY",
-        "FIELD",
-        "RESOURCE_FIELD",
-        "UNKNOWN"
-      ],
-      "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
     "GetAlertTimeseriesResponseClusterAlerts": {
       "type": "object",
@@ -773,18 +874,6 @@
         }
       }
     },
-    "PortConfigExposureLevel": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "EXTERNAL",
-        "NODE",
-        "INTERNAL",
-        "HOST",
-        "ROUTE"
-      ],
-      "default": "UNSET"
-    },
     "ProcessSignalLineageInfo": {
       "type": "object",
       "properties": {
@@ -827,7 +916,7 @@
       "properties": {
         "typeUrl": {
           "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
         },
         "value": {
           "type": "string",
@@ -835,7 +924,7 @@
           "description": "Must be a valid serialized protocol buffer of the above specified type."
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "runtimeError": {
       "type": "object",
@@ -869,6 +958,18 @@
         },
         "lifecycleStage": {
           "$ref": "#/definitions/storageLifecycleStage"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -914,12 +1015,6 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
@@ -978,53 +1073,23 @@
       ],
       "default": "OR"
     },
-    "storageComparator": {
-      "type": "string",
-      "enum": [
-        "LESS_THAN",
-        "LESS_THAN_OR_EQUALS",
-        "EQUALS",
-        "GREATER_THAN_OR_EQUALS",
-        "GREATER_THAN"
-      ],
-      "default": "LESS_THAN"
-    },
-    "storageComponent": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        }
-      }
-    },
     "storageContainerImage": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "These tags maintain backwards compatibility with the previously embedded storage.Image"
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
         },
         "notPullable": {
           "type": "boolean"
-        }
-      }
-    },
-    "storageDockerfileLineRuleField": {
-      "type": "object",
-      "properties": {
-        "instruction": {
-          "type": "string"
         },
-        "value": {
-          "type": "string"
+        "isClusterLocal": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 12"
     },
     "storageEnforcementAction": {
       "type": "string",
@@ -1087,14 +1152,6 @@
         }
       }
     },
-    "storageHostMountPolicy": {
-      "type": "object",
-      "properties": {
-        "readOnly": {
-          "type": "boolean"
-        }
-      }
-    },
     "storageImageName": {
       "type": "object",
       "properties": {
@@ -1109,34 +1166,6 @@
         },
         "fullName": {
           "type": "string"
-        }
-      }
-    },
-    "storageImageNamePolicy": {
-      "type": "object",
-      "properties": {
-        "registry": {
-          "type": "string"
-        },
-        "remote": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        }
-      }
-    },
-    "storageKeyValuePolicy": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        },
-        "envVarSource": {
-          "$ref": "#/definitions/EnvironmentConfigEnvVarSource"
         }
       }
     },
@@ -1184,12 +1213,6 @@
         "enforcementCount": {
           "type": "integer",
           "format": "int32"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "enforcementAction": {
           "$ref": "#/definitions/storageEnforcementAction"
@@ -1285,40 +1308,6 @@
       ],
       "default": "UNKNOWN_TYPE"
     },
-    "storageNumericalPolicy": {
-      "type": "object",
-      "properties": {
-        "op": {
-          "$ref": "#/definitions/storageComparator"
-        },
-        "value": {
-          "type": "number",
-          "format": "float"
-        }
-      }
-    },
-    "storagePermissionLevel": {
-      "type": "string",
-      "enum": [
-        "UNSET",
-        "NONE",
-        "DEFAULT",
-        "ELEVATED_IN_NAMESPACE",
-        "ELEVATED_CLUSTER_WIDE",
-        "CLUSTER_ADMIN"
-      ],
-      "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
-    },
-    "storagePermissionPolicy": {
-      "type": "object",
-      "properties": {
-        "permissionLevel": {
-          "$ref": "#/definitions/storagePermissionLevel"
-        }
-      },
-      "description": "K8S RBAC Permission level configuration."
-    },
     "storagePolicy": {
       "type": "object",
       "properties": {
@@ -1346,9 +1335,6 @@
             "type": "string"
           }
         },
-        "fields": {
-          "$ref": "#/definitions/storagePolicyFields"
-        },
         "lifecycleStages": {
           "type": "array",
           "items": {
@@ -1357,12 +1343,6 @@
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource"
-        },
-        "whitelists": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/storageExclusion"
-          }
         },
         "exclusions": {
           "type": "array",
@@ -1437,114 +1417,6 @@
         }
       }
     },
-    "storagePolicyFields": {
-      "type": "object",
-      "properties": {
-        "imageName": {
-          "$ref": "#/definitions/storageImageNamePolicy"
-        },
-        "imageAgeDays": {
-          "type": "string",
-          "format": "int64"
-        },
-        "lineRule": {
-          "$ref": "#/definitions/storageDockerfileLineRuleField"
-        },
-        "cvss": {
-          "$ref": "#/definitions/storageNumericalPolicy",
-          "title": "Scan Metadata"
-        },
-        "cve": {
-          "type": "string"
-        },
-        "component": {
-          "$ref": "#/definitions/storageComponent"
-        },
-        "scanAgeDays": {
-          "type": "string",
-          "format": "int64"
-        },
-        "noScanExists": {
-          "type": "boolean"
-        },
-        "env": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "command": {
-          "type": "string"
-        },
-        "args": {
-          "type": "string"
-        },
-        "directory": {
-          "type": "string"
-        },
-        "user": {
-          "type": "string"
-        },
-        "volumePolicy": {
-          "$ref": "#/definitions/storageVolumePolicy"
-        },
-        "portPolicy": {
-          "$ref": "#/definitions/storagePortPolicy"
-        },
-        "requiredLabel": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "requiredAnnotation": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "disallowedAnnotation": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "privileged": {
-          "type": "boolean"
-        },
-        "dropCapabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "addCapabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "containerResourcePolicy": {
-          "$ref": "#/definitions/storageResourcePolicy"
-        },
-        "processPolicy": {
-          "$ref": "#/definitions/storageProcessPolicy"
-        },
-        "readOnlyRootFs": {
-          "type": "boolean"
-        },
-        "fixedBy": {
-          "type": "string"
-        },
-        "portExposurePolicy": {
-          "$ref": "#/definitions/storagePortExposurePolicy"
-        },
-        "permissionPolicy": {
-          "$ref": "#/definitions/storagePermissionPolicy"
-        },
-        "hostMountPolicy": {
-          "$ref": "#/definitions/storageHostMountPolicy"
-        },
-        "whitelistEnabled": {
-          "type": "boolean"
-        },
-        "requiredImageLabel": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        },
-        "disallowedImageLabel": {
-          "$ref": "#/definitions/storageKeyValuePolicy"
-        }
-      },
-      "title": "Next Available Tag: 29"
-    },
     "storagePolicyGroup": {
       "type": "object",
       "properties": {
@@ -1587,35 +1459,12 @@
         }
       }
     },
-    "storagePortExposurePolicy": {
-      "type": "object",
-      "properties": {
-        "exposureLevels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/PortConfigExposureLevel"
-          }
-        }
-      }
-    },
-    "storagePortPolicy": {
-      "type": "object",
-      "properties": {
-        "port": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "protocol": {
-          "type": "string"
-        }
-      }
-    },
     "storageProcessIndicator": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "title": "A unique uuid for the Indicator message"
+          "title": "A unique UUID for the Indicator message"
         },
         "deploymentId": {
           "type": "string"
@@ -1649,23 +1498,6 @@
         }
       },
       "title": "Next available tag: 13"
-    },
-    "storageProcessPolicy": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "args": {
-          "type": "string"
-        },
-        "ancestor": {
-          "type": "string"
-        },
-        "uid": {
-          "type": "string"
-        }
-      }
     },
     "storageProcessSignal": {
       "type": "object",
@@ -1730,23 +1562,6 @@
         }
       }
     },
-    "storageResourcePolicy": {
-      "type": "object",
-      "properties": {
-        "cpuResourceRequest": {
-          "$ref": "#/definitions/storageNumericalPolicy"
-        },
-        "cpuResourceLimit": {
-          "$ref": "#/definitions/storageNumericalPolicy"
-        },
-        "memoryResourceRequest": {
-          "$ref": "#/definitions/storageNumericalPolicy"
-        },
-        "memoryResourceLimit": {
-          "$ref": "#/definitions/storageNumericalPolicy"
-        }
-      }
-    },
     "storageScope": {
       "type": "object",
       "properties": {
@@ -1793,25 +1608,26 @@
       ],
       "default": "ACTIVE"
     },
-    "storageVolumePolicy": {
+    "v1AggregateBy": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
         },
-        "source": {
-          "type": "string"
-        },
-        "destination": {
-          "type": "string"
-        },
-        "readOnly": {
+        "distinct": {
           "type": "boolean"
-        },
-        "type": {
-          "type": "string"
         }
       }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
     },
     "v1AlertEvent": {
       "type": "object",
@@ -1932,6 +1748,13 @@
         },
         "sortOption": {
           "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },
@@ -1989,6 +1812,10 @@
         },
         "reversed": {
           "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },

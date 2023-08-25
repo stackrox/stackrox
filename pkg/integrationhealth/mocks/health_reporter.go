@@ -7,8 +7,8 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockReporter is a mock of Reporter interface.
@@ -60,6 +60,21 @@ func (m *MockReporter) RemoveIntegrationHealth(id string) error {
 func (mr *MockReporterMockRecorder) RemoveIntegrationHealth(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveIntegrationHealth", reflect.TypeOf((*MockReporter)(nil).RemoveIntegrationHealth), id)
+}
+
+// RetrieveIntegrationHealths mocks base method.
+func (m *MockReporter) RetrieveIntegrationHealths(typ storage.IntegrationHealth_Type) ([]*storage.IntegrationHealth, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RetrieveIntegrationHealths", typ)
+	ret0, _ := ret[0].([]*storage.IntegrationHealth)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RetrieveIntegrationHealths indicates an expected call of RetrieveIntegrationHealths.
+func (mr *MockReporterMockRecorder) RetrieveIntegrationHealths(typ interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RetrieveIntegrationHealths", reflect.TypeOf((*MockReporter)(nil).RetrieveIntegrationHealths), typ)
 }
 
 // UpdateIntegrationHealthAsync mocks base method.

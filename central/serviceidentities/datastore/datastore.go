@@ -8,6 +8,7 @@ import (
 )
 
 // DataStore is the datastore for serviceidentities keys.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetServiceIdentities(context.Context) ([]*storage.ServiceIdentity, error)

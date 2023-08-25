@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
@@ -12,11 +12,13 @@ import useCases from 'constants/useCaseTypes';
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
-import ResourceTabs from 'Components/ResourceTabs';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
+
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 const ControlPage = ({
     entityId,
@@ -28,6 +30,7 @@ const ControlPage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
 
     return (
@@ -153,6 +156,8 @@ const ControlPage = ({
                                     listEntityType={listEntityType1}
                                     entity={control}
                                     entityName={`${standardName} ${name}`}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -168,6 +173,7 @@ const ControlPage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

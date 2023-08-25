@@ -10,17 +10,15 @@ const InfoWidget = ({ title, headline, description, linkUrl, loading }) => {
         <Loader />
     ) : (
         <div className="p-6">
-            <div className="border-b border-base-400 pb-3 text-2xl font-600 text-base-600">
-                {headline}
-            </div>
-            <div className="pt-3 text-base-500 font-700">{description}</div>
+            <div className="border-b border-base-400 pb-3 text-2xl text-base-600">{headline}</div>
+            <div className="pt-3">{description}</div>
         </div>
     );
     return (
         <Widget
             header={title}
             className="bg-base-100"
-            bodyClassName="flex-col h-full justify-center text-center text-base-600 font-600 p-3"
+            bodyClassName="flex-col h-full justify-center text-center text-base-600 p-3"
         >
             {linkUrl && !loading ? (
                 <Link

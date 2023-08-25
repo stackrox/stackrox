@@ -43,17 +43,18 @@ describe('AccessTokenManager', () => {
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };
 
         m.setToken('my-token', tokenInfo);
-        expect(refreshToken).not.toBeCalled();
+        expect(refreshToken).not.toHaveBeenCalled();
         jest.advanceTimersByTime(1000);
-        expect(refreshToken).toBeCalledWith(tokenInfo);
+        expect(refreshToken).toHaveBeenCalledWith(tokenInfo);
     });
 
     it('should clear timeout on refresh token invocation', () => {
+        const timeoutSpy = jest.spyOn(global, 'clearTimeout');
         const m = new AccessTokenManager();
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };
         m.setToken('my-token', tokenInfo);
         m.refreshToken();
-        expect(clearTimeout).toBeCalledTimes(1);
+        expect(timeoutSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should store new token info after refresh', () => {
@@ -94,14 +95,14 @@ describe('AccessTokenManager', () => {
 
         m.onRefreshTokenStarted(refreshTokenListener);
         m.refreshToken();
-        expect(refreshTokenListener).toBeCalledTimes(1);
+        expect(refreshTokenListener).toHaveBeenCalledTimes(1);
 
         m.removeRefreshTokenListener(refreshTokenListener);
         return m.getRefreshTokenOpPromise().then(() => {
             expect(m.getRefreshTokenOpPromise()).toEqual(null);
             m.refreshToken();
-            expect(refreshToken).toBeCalledTimes(2);
-            expect(refreshTokenListener).toBeCalledTimes(1);
+            expect(refreshToken).toHaveBeenCalledTimes(2);
+            expect(refreshTokenListener).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -112,11 +113,11 @@ describe('AccessTokenManager', () => {
 
         m.onRefreshTokenStarted(refreshTokenListener);
         m.refreshToken();
-        expect(refreshTokenListener).toBeCalledTimes(1);
+        expect(refreshTokenListener).toHaveBeenCalledTimes(1);
 
         const firstOpPromise = m.getRefreshTokenOpPromise();
         m.refreshToken();
-        expect(refreshTokenListener).toBeCalledTimes(1);
+        expect(refreshTokenListener).toHaveBeenCalledTimes(1);
         expect(m.getRefreshTokenOpPromise()).toEqual(firstOpPromise);
     });
 });

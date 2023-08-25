@@ -33,6 +33,10 @@ message UpdateReportConfigurationRequest {
     storage.ReportConfiguration report_config = 2;
 }
 
+message CountReportConfigurationsResponse {
+    int32 count = 1;
+}
+
 service ReportConfigurationService {
     rpc GetReportConfigurations(RawQuery) returns (GetReportConfigurationsResponse) {
         option (google.api.http) = {
@@ -66,6 +70,13 @@ service ReportConfigurationService {
     rpc DeleteReportConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/report/configurations/{id}"
+        };
+    }
+
+    // CountReportConfigurations returns the number of report configurations.
+    rpc CountReportConfigurations (RawQuery) returns (CountReportConfigurationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/report-configurations-count"
         };
     }
 }

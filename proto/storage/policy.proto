@@ -13,36 +13,36 @@ import "storage/rbac.proto";
 package storage;
 
 message Policy {
-    string                      id                      = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
-    string                      name                    = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
-    string                      description             = 3 [(gogoproto.moretags) = "search:\"Description\""];
+    string                      id                      = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden" sql:"pk"'];
+    string                      name                    = 2 [(gogoproto.moretags) = 'search:"Policy,store" sql:"unique"'];
+    string                      description             = 3 [(gogoproto.moretags) = 'search:"Description"'];
     string                      rationale               = 4;
     string                      remediation             = 5;
-    bool                        disabled                = 6 [(gogoproto.moretags) = "search:\"Disabled\""];
-    repeated string             categories              = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
-    PolicyFields                fields                  = 8;
+    bool                        disabled                = 6 [(gogoproto.moretags) = 'search:"Disabled"'];
+    repeated string             categories              = 7 [(gogoproto.moretags) = 'search:"Category,store"'];
+    reserved                                              8; // was PolicyFields fields
 
-    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
+    repeated LifecycleStage     lifecycle_stages        = 9  [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
     EventSource                 event_source            = 22;
 
-    repeated Exclusion          whitelists              = 10 [deprecated = true];
+    reserved                                            10; //was repeated Exclusion whitelists
     repeated Exclusion          exclusions              = 21;
     repeated Scope              scope                   = 11;
 
-    Severity                    severity                = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
+    Severity                    severity                = 12 [(gogoproto.moretags) = 'search:"Severity,store"'];
     // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
     // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
     // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
+    repeated EnforcementAction  enforcement_actions     = 13 [(gogoproto.moretags) = 'search:"Enforcement"'];
     repeated string             notifiers               = 14;
-    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
+    google.protobuf.Timestamp   last_updated            = 15 [(gogoproto.moretags) = 'search:"Policy Last Updated"'];
 
     // For internal use only.
-    string                      SORT_name               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
+    string                      SORT_name               = 16 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
     // For internal use only.
-    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = "search:\"SORT_Lifecycle Stage,hidden\""];
+    string                      SORT_lifecycleStage     = 17 [(gogoproto.moretags) = 'search:"SORT_Lifecycle Stage,hidden"'];
     // For internal use only.
-    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
+    bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
 
     string                      policy_version          = 19;
     repeated PolicySection      policy_sections         = 20;
@@ -136,69 +136,6 @@ enum LifecycleStage {
     RUNTIME   = 2;
 }
 
-// Next Available Tag: 29
-message PolicyFields {
-    ImageNamePolicy image_name          = 1;
-
-    // Registry metadata
-    oneof set_image_age_days {
-        int64 image_age_days            = 2;
-    }
-    DockerfileLineRuleField line_rule   = 3;
-
-    // Scan Metadata
-    NumericalPolicy cvss                = 4;
-    string cve                          = 5;
-
-    Component component                 = 6;
-    oneof set_scan_age_days {
-        int64 scan_age_days             = 7;
-    }
-
-    // Whether to alert if no scan exists for an image.
-    oneof set_no_scan_exists {
-        bool no_scan_exists              = 8;
-    }
-
-    KeyValuePolicy env                   = 9;
-    string command                       = 10;
-    string args                          = 11;
-    string directory                     = 12;
-    string user                          = 13;
-
-    VolumePolicy volume_policy           = 14;
-
-    PortPolicy port_policy                = 15;
-    KeyValuePolicy required_label         = 16;
-    KeyValuePolicy required_annotation    = 17;
-    KeyValuePolicy disallowed_annotation  = 24;
-
-    oneof set_privileged {
-        bool privileged                   = 18;
-    }
-    repeated string drop_capabilities     = 19;
-    repeated string add_capabilities      = 20;
-
-    ResourcePolicy container_resource_policy = 21;
-    reserved 22;
-    ProcessPolicy process_policy = 23;
-
-    oneof set_read_only_root_fs {
-        bool read_only_root_fs = 25;
-    }
-    string fixed_by = 26;
-
-    PortExposurePolicy port_exposure_policy = 27;
-    PermissionPolicy permission_policy = 28;
-    HostMountPolicy host_mount_policy = 29;
-    oneof set_whitelist {
-        bool whitelist_enabled = 30;
-    }
-
-    KeyValuePolicy required_image_label   = 31;
-    KeyValuePolicy disallowed_image_label = 32;
-}
-
 message Component {
     string name    = 1;
     string version = 2;
@@ -282,7 +219,7 @@ message Exclusion {
     string                    name       = 1;
 
     message Container {
-        ImageName image_name = 3 [(gogoproto.moretags) = "search:\"-\""];
+        ImageName image_name = 3 [(gogoproto.moretags) = 'search:"-"'];
     }
     reserved 2; // formally Container container
 

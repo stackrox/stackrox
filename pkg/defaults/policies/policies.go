@@ -1,14 +1,14 @@
 package policies
 
 import (
-	"bytes"
 	"embed"
 	"path/filepath"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -22,6 +22,9 @@ var (
 
 	//go:embed files/*.json
 	policiesFS embed.FS
+
+	// featureFlagFileGuard is a map indexed by file name that ignores files if the feature flag is not enabled.
+	featureFlagFileGuard = map[string]features.FeatureFlag{}
 )
 
 // DefaultPolicies returns a slice of the default policies.
@@ -34,7 +37,11 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 
 	errList := errorhelpers.NewErrorList("Default policy validation")
 	for _, f := range files {
-		p, err := readPolicyFile(filepath.Join(policiesDir, f.Name()))
+		if flag, ok := featureFlagFileGuard[f.Name()]; ok && !flag.Enabled() {
+			continue
+		}
+
+		p, err := ReadPolicyFile(filepath.Join(policiesDir, f.Name()))
 		if err != nil {
 			errList.AddError(err)
 			continue
@@ -55,13 +62,14 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 	return policies, errList.ToError()
 }
 
-func readPolicyFile(path string) (*storage.Policy, error) {
+// ReadPolicyFile reads a policy from the file with path
+func ReadPolicyFile(path string) (*storage.Policy, error) {
 	contents, err := policiesFS.ReadFile(path)
 	// We must be able to read the embedded files.
 	utils.CrashOnError(err)
 
 	var policy storage.Policy
-	err = jsonpb.Unmarshal(bytes.NewReader(contents), &policy)
+	err = jsonutil.JSONBytesToProto(contents, &policy)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy (%s) json: %s", path, err)
 		return nil, err

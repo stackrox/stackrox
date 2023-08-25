@@ -1,6 +1,5 @@
 # A library of bash functions useful for installing operator using OLM.
 
-declare -r IMAGE_TAG_BASE="${IMAGE_TAG_BASE:-docker.io/stackrox/stackrox-operator}"
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
 declare -r pull_secret="operator-pull-secret"
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
@@ -20,10 +19,10 @@ function create_namespace() {
 
 function create_pull_secret() {
   local -r operator_ns="$1"
+  local -r registry_hostname="$2"
   # Note: can get rid of this secret once its in the cluster global pull secrets,
   # see https://stack-rox.atlassian.net/browse/RS-261
   log "Creating image pull secret..."
-  local -r registry_hostname="${IMAGE_TAG_BASE%%/*}"
   "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
     | kubectl -n "${operator_ns}" apply -f -
 
@@ -35,14 +34,13 @@ function create_pull_secret() {
 
 function apply_operator_manifests() {
   log "Applying operator manifests..."
-  local -r image_registry="${IMAGE_TAG_BASE%/*}"
   local -r operator_ns="$1"
-  local -r index_version="$2"
-  local -r operator_version="$3"
+  local -r image_tag_base="$2"
+  local -r index_version="$3"
+  local -r operator_version="$4"
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    `# TODO(ROX-7740): Remove the following two once we have a single dev+CI repo.` \
-    IMAGE_TAG_BASE="${IMAGE_TAG_BASE}" IMAGE_REGISTRY="${image_registry}" \
+    IMAGE_TAG_BASE="${image_tag_base}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
 }
@@ -65,12 +63,34 @@ function retry() {
   return 1
 }
 
+function check_version_tag() {
+  local -r version_tag="$1"
+  local -r allow_dirty_tag="$2"
+
+  if [[ "$version_tag" == *-dirty ]]; then
+    log "Target image tag has -dirty suffix."
+    if [[ "$allow_dirty_tag" == false ]]; then
+      log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command or add '--allow-dirty-tag' flag if you need to install dirty tagged image."
+      return 1
+    fi
+  fi
+
+  return 0
+}
+
 function approve_install_plan() {
   local -r operator_ns="$1"
   local -r version_tag="$2"
 
   log "Waiting for an install plan to be created"
-  retry 10 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s
+  if ! retry 10 5 kubectl -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
+    log "Install plan failed to materialize."
+    log "Dumping pod descriptions..."
+    kubectl -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
+    log "Dumping catalog sources and subscriptions..."
+    kubectl -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
+    return 1
+  fi
 
   log "Verifying that the subscription is progressing to the expected CSV of ${version_tag}..."
   local current_csv

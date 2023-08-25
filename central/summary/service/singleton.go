@@ -5,7 +5,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )

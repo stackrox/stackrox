@@ -6,20 +6,25 @@ import PageNotFound from 'Components/PageNotFound';
 import VulnMgmtListDeployments from './Deployments/VulnMgmtListDeployments';
 import VulnMgmtListImages from './Images/VulnMgmtListImages';
 import VulnMgmtListComponents from './Components/VulnMgmtListComponents';
+import VulnMgmtListNodeComponents from './NodeComponents/VulnMgmtListNodeComponents';
+import VulnMgmtListImageComponents from './ImageComponents/VulnMgmtListImageComponents';
 import VulnMgmtListCves from './Cves/VulnMgmtListCves';
 import VulnMgmtListClusters from './Clusters/VulnMgmtListClusters';
 import VulnMgmtListNamespaces from './Namespaces/VulnMgmtListNamespaces';
-import VulnMgmtListPolicies from './Policies/VulnMgmtListPolicies';
 import VulnMgmtListNodes from './Nodes/VulnMgmtListNodes';
 
 const entityComponentMap = {
     [entityTypes.DEPLOYMENT]: VulnMgmtListDeployments,
     [entityTypes.IMAGE]: VulnMgmtListImages,
     [entityTypes.COMPONENT]: VulnMgmtListComponents,
+    [entityTypes.NODE_COMPONENT]: VulnMgmtListNodeComponents,
+    [entityTypes.IMAGE_COMPONENT]: VulnMgmtListImageComponents,
     [entityTypes.CVE]: VulnMgmtListCves,
+    [entityTypes.IMAGE_CVE]: VulnMgmtListCves,
+    [entityTypes.NODE_CVE]: VulnMgmtListCves,
+    [entityTypes.CLUSTER_CVE]: VulnMgmtListCves,
     [entityTypes.CLUSTER]: VulnMgmtListClusters,
     [entityTypes.NAMESPACE]: VulnMgmtListNamespaces,
-    [entityTypes.POLICY]: VulnMgmtListPolicies,
     [entityTypes.NODE]: VulnMgmtListNodes,
 };
 

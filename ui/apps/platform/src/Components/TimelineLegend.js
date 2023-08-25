@@ -1,6 +1,6 @@
 import React from 'react';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import Button from 'Components/Button';
 import PolicyViolationEvent from 'Components/TimelineGraph/EventsGraph/EventMarker/PolicyViolationEvent';
 import ProcessActivityEvent from 'Components/TimelineGraph/EventsGraph/EventMarker/ProcessActivityEvent';
@@ -11,7 +11,7 @@ const ICON_SIZE = 15;
 
 const TimelineLegend = () => {
     const content = (
-        <TooltipOverlay>
+        <div data-testid="timeline-legend-items">
             <div className="flex items-center mb-2">
                 <ProcessActivityEvent size={ICON_SIZE} />
                 <span className="ml-2">Process Activity</span>
@@ -32,10 +32,10 @@ const TimelineLegend = () => {
                 <TerminationEvent size={ICON_SIZE} />
                 <span className="ml-2">Container Termination</span>
             </div>
-        </TooltipOverlay>
+        </div>
     );
     return (
-        <Tooltip trigger="click" position="right" content={content}>
+        <Tooltip content={content}>
             <div>
                 <Button className="btn btn-base" dataTestId="timeline-legend" text="Show Legend" />
             </div>

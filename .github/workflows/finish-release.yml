@@ -1,0 +1,209 @@
+name: Finish Release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (A.B.C[-N])
+        required: true
+        default: 0.0.0-test
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
+
+env:
+  main_branch: ${{ github.event.repository.default_branch }}
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: >-
+  ${{
+    format('Finish release {0}{1}',
+      inputs.version,
+      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+    )
+  }}
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
+jobs:
+  properties:
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
+    steps:
+      - name: Read workflow properties file
+        id: fetch
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  run-parameters:
+    if: github.event_name == 'workflow_dispatch'
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  variables:
+    if: github.event_name == 'workflow_dispatch'
+    name: Setup variables
+    uses: ./.github/workflows/variables.yml
+    with:
+      version: ${{ inputs.version }}
+      assert-format: A.B.C[-N]
+
+  publish-release:
+    name: Tag Release ${{ needs.variables.outputs.named-release-patch }}
+    runs-on: ubuntu-latest
+    needs: [variables, properties]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.variables.outputs.branch }}
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Initialize mandatory git config
+        run: |
+          git config user.name "${{ github.event.sender.login }}"
+          git config user.email noreply@github.com
+
+      - name: Tag release branch with "${{ needs.variables.outputs.named-release-patch }}"
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            tag-rc \
+            "${{ needs.variables.outputs.named-release-patch }}"
+
+      - name: Create GitHub Release
+        id: release
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            create-release \
+            "${{ needs.variables.outputs.named-release-patch }}" \
+            "false"
+
+      - run: |
+          echo "Created GitHub release [${{ needs.variables.outputs.named-release-patch }}](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete open milestone for release
+        if: env.DRY_RUN == 'false'
+        run: |
+          set -uo pipefail
+          gh api \
+            repos/${{ github.repository }}/milestones \
+            --jq '.[] | select((.title | startswith("${{ needs.variables.outputs.named-release-patch }}-rc.")) and (.state == "open")) | .number' \
+          | xargs -I % gh api -X DELETE repos/${{ github.repository }}/milestones/%
+
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            {
+              "text": "Release <${{ steps.release.outputs.url }} | ${{ inputs.version }}> has been published. Consult the tracker for next steps.",
+
+              "blocks": [
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":${{ fromJSON('["desert", "white_check_mark"]')[github.event.inputs.dry-run != 'true'] }}:
+            *Release <${{ steps.release.outputs.url }} | ${{ inputs.version }}> of <${{github.server_url}}/${{github.repository}}|${{github.repository}}> has been published on GitHub.*" }},
+
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: Tell the downstream release engineer to trigger the downstream release,
+            and once the downstream release is complete, merge the PR created by CI in
+            <https://github.com/stackrox/release-artifacts/pulls|stackrox/release-artifacts>
+            repository." }},
+            { "type": "section", "text": { "type": "mrkdwn", "text":
+            ":arrow_right: Check the status of the upstream CI for the tag in <https://prow.ci.openshift.org/?repo=stackrox%2Fstackrox&job=*release-${{ needs.variables.outputs.release }}*|Openshift CI> and follow up on any failures." }}
+            ]}
+
+  update-infra-demo-version:
+    name: Update infra demo default versions
+    runs-on: ubuntu-latest
+    needs: [publish-release]
+    env:
+      BRANCH: "bump-demo-versions-${{ inputs.version }}"
+    steps:
+      - name: Checkout stackrox/infra repository
+        uses: actions/checkout@v3
+        with:
+          repository: stackrox/infra
+          token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+          ref: master
+      - name: Initialize git and check remote branch exists
+        id: check-existing
+        run: |
+          git config user.name "${{github.event.sender.login}}"
+          git config user.email noreply@github.com
+          if git ls-remote --quiet --exit-code origin "$BRANCH"; then
+            echo "branch-exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch-exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Create new branch
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          git switch --create "$BRANCH"
+      - name: Switch to branch
+        if: steps.check-existing.outputs.branch-exists == 'true'
+        run: |
+          git fetch origin
+          git switch "$BRANCH"
+      - name: Update the demo version in the infra chart definition
+        run: |
+          CURRENT_VERSION="$(yq '.annotations.acsDemoVersion' < chart/infra-server/Chart.yaml)"
+          if printf '%s\n%s\n' "${CURRENT_VERSION}" "${{ inputs.version }}" | sort --check=quiet --version-sort; then
+            yq eval -i '.annotations.acsDemoVersion = "${{ inputs.version }}"' chart/infra-server/Chart.yaml
+            git add chart/infra-server/Chart.yaml
+            if ! git diff-index --quiet HEAD; then
+              git commit --message "Bump demo versions for ${{ inputs.version }}"
+              echo "Demo versions were bumped in infra." >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "Demo versions were not updated in infra, because there is no diff." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            echo "Demo versions were not updated in infra, because the current version is newer." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Push changes & open PR
+        if: env.DRY_RUN == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
+        run: |
+          git push --force --set-upstream origin "$BRANCH"
+          if ! gh pr ready; then
+            PR_URL=$(gh pr create --repo stackrox/infra \
+              --title "Bump demo versions to ${{ inputs.version }}" \
+              --base "master" \
+              --body "Bumping demo versions for ACS release ${{ inputs.version }}")
+
+            echo ":arrow_right: Let the infra team review and roll out the changes from the [PR]($PR_URL) that has been created." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo ":arrow_right: Let the infra team review and rollout the changes from the update PR." >> "$GITHUB_STEP_SUMMARY"
+          fi

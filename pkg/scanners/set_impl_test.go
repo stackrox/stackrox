@@ -7,25 +7,28 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
+
+var _ types.Scanner = (*fakeScanner)(nil)
 
 type fakeScanner struct {
 	typ string
 }
 
-func (*fakeScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (*fakeScanner) GetScan(*storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) Match(image *storage.ImageName) bool {
+func (*fakeScanner) Match(*storage.ImageName) bool {
 	panic("implement me")
 }
 
@@ -44,16 +47,30 @@ func (f *fakeScanner) Type() string {
 	return "type"
 }
 
-func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
+func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
-func (f *fakeScanner) DataSource() *storage.DataSource {
-	return nil
+func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return &v1.VulnDefinitionsInfo{}, nil
 }
 
-func (f *fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return &v1.VulnDefinitionsInfo{}, nil
+var _ types.ImageScannerWithDataSource = (*fakeImageScanner)(nil)
+
+type fakeImageScanner struct {
+	scanner types.Scanner
+}
+
+func newFakeImageScanner(scanner types.Scanner) types.ImageScannerWithDataSource {
+	return &fakeImageScanner{scanner: scanner}
+}
+
+func (f *fakeImageScanner) GetScanner() types.Scanner {
+	return f.scanner
+}
+
+func (*fakeImageScanner) DataSource() *storage.DataSource {
+	return nil
 }
 
 func TestSetOrdering(t *testing.T) {
@@ -71,7 +88,7 @@ func TestSetOrdering(t *testing.T) {
 
 	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("clairify", func(integration *storage.ImageIntegration) bool {
 		return integration.GetType() == "clairify"
-	})).Return(&fakeScanner{typ: "clairify"}, nil)
+	})).Return(newFakeImageScanner(&fakeScanner{typ: "clairify"}), nil)
 
 	clairifyIntegration := &storage.ImageIntegration{
 		Id:   "clairify",
@@ -83,27 +100,27 @@ func TestSetOrdering(t *testing.T) {
 		},
 	}
 
-	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("dtr", func(integration *storage.ImageIntegration) bool {
-		return integration.GetType() == "dtr"
-	})).Return(&fakeScanner{typ: "dtr"}, nil)
+	scannerFactory.EXPECT().CreateScanner(testutils.PredMatcher("ecr", func(integration *storage.ImageIntegration) bool {
+		return integration.GetType() == "ecr"
+	})).Return(newFakeImageScanner(&fakeScanner{typ: "ecr"}), nil)
 
-	dtrIntegration := &storage.ImageIntegration{
-		Id:   "dtr",
-		Type: "dtr",
-		IntegrationConfig: &storage.ImageIntegration_Dtr{
-			Dtr: &storage.DTRConfig{
-				Username: "user",
-				Password: "password",
-				Endpoint: server.URL,
+	ecrIntegration := &storage.ImageIntegration{
+		Id:   "ecr",
+		Type: "ecr",
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				AccessKeyId:     "user",
+				SecretAccessKey: "password",
+				Endpoint:        server.URL,
 			},
 		},
 	}
 	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
-	require.NoError(t, scannerSet.UpdateImageIntegration(dtrIntegration))
+	require.NoError(t, scannerSet.UpdateImageIntegration(ecrIntegration))
 	for i := 0; i < 10000; i++ {
 		scanners := scannerSet.GetAll()
-		assert.Equal(t, "dtr", scanners[0].Type())
-		assert.Equal(t, "clairify", scanners[1].Type())
+		assert.Equal(t, "ecr", scanners[0].GetScanner().Type())
+		assert.Equal(t, "clairify", scanners[1].GetScanner().Type())
 	}
 }
 
@@ -118,11 +135,11 @@ func TestSet(t *testing.T) {
 	assert.True(t, s.IsEmpty())
 
 	goodIntegration := &storage.ImageIntegration{Id: "GOOD"}
-	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(&fakeScanner{typ: "FAKE"}, nil).Times(2)
+	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(newFakeImageScanner(&fakeScanner{typ: "FAKE"}), nil).Times(2)
 
 	badIntegration := &storage.ImageIntegration{Id: "BAD"}
-	var nilFS *fakeScanner
-	mockFactory.EXPECT().CreateScanner(badIntegration).Return(nilFS, errors.New(errText))
+	var nilFIS *fakeImageScanner
+	mockFactory.EXPECT().CreateScanner(badIntegration).Return(nilFIS, errors.New(errText))
 
 	err := s.UpdateImageIntegration(goodIntegration)
 	require.Nil(t, err)
@@ -135,7 +152,7 @@ func TestSet(t *testing.T) {
 
 	all := s.GetAll()
 	assert.Len(t, all, 1)
-	assert.Equal(t, "FAKE", all[0].Type())
+	assert.Equal(t, "FAKE", all[0].GetScanner().Type())
 
 	s.Clear()
 	assert.True(t, s.IsEmpty())
@@ -144,7 +161,7 @@ func TestSet(t *testing.T) {
 	require.Nil(t, err)
 	all = s.GetAll()
 	assert.Len(t, all, 1)
-	assert.Equal(t, "FAKE", all[0].Type())
+	assert.Equal(t, "FAKE", all[0].GetScanner().Type())
 
 	err = s.RemoveImageIntegration(goodIntegration.GetId())
 	require.Nil(t, err)

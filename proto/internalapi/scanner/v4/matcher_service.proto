@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package scanner.v4;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "internalapi/scanner/v4/vulnerability_report.proto";
+import "internalapi/scanner/v4/common.proto";
+
+option go_package = "v4";
+
+message GetVulnerabilitiesRequest {
+    string   hash_id = 1;
+    Contents contents = 2;
+}
+
+message Metadata {
+    google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
+}
+
+// Matcher finds vulnerabilities in index reports.
+service Matcher {
+
+    // GetVulnerabilities returns a VulnerabilityReport for a previously indexed manifest.
+    rpc GetVulnerabilities (GetVulnerabilitiesRequest) returns (VulnerabilityReport);
+
+    // GetMetadata returns information on vulnerability metadata, ek.g., last update timestamp.
+    rpc GetMetadata (google.protobuf.Empty) returns (Metadata);
+}

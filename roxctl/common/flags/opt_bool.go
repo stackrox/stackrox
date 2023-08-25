@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/pflag"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 type optBool struct {
@@ -26,7 +27,7 @@ func (v optBool) Set(strVal string) error {
 	}
 	b, err := strconv.ParseBool(strVal)
 	if err != nil {
-		return err
+		return errox.InvalidArgs.New("invalid boolean").CausedBy(err)
 	}
 	*v.boolp = &b
 	return nil

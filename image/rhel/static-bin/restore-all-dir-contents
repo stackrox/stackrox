@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Note: This is also used for Scanner.
+
+set -euo pipefail
+
+[ -d /.init-dirs ] || exit 0
+
+cp -rfP /.init-dirs/* /

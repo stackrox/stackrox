@@ -1,5 +1,4 @@
 //go:build !release && !go1.17
-// +build !release,!go1.17
 
 package sync
 

@@ -2,6 +2,8 @@ package services
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import groovy.transform.ToString
+import groovy.util.logging.Slf4j
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
 import org.apache.http.HttpResponse
@@ -15,6 +17,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
 import util.Env
 
+@Slf4j
 class GraphQLService {
     // Top level service object functionality
     /////////////////////////////////////////
@@ -38,14 +41,14 @@ class GraphQLService {
             return response
         }
 
-        println "There were errors in the graph QL response:"
-        response.print()
+        log.warn("There were errors in the graph QL response: ${response}")
 
         return response
     }
 
     // Response value type for GQL requests. Since the return is not tied to any data structure,
     // we return a Map generated from the JSON returned as the response.
+    @ToString
     static class Response {
         private final int code
         private final Object value
@@ -71,17 +74,12 @@ class GraphQLService {
             return this.value
         }
 
-        Boolean hasNoErrors() {
-            return this.code == 200 && (this.errors == null || this.errors.size() == 0)
+        List<String> getErrors() {
+            return this.errors
         }
 
-        void print() {
-            println "code: "
-            println this.code
-            println "value: "
-            println this.value
-            println "errors: "
-            println this.errors
+        Boolean hasNoErrors() {
+            return this.code == 200 && (this.errors == null || this.errors.size() == 0)
         }
     }
 
@@ -115,6 +113,8 @@ class GraphQLService {
         private final List<Tuple2<String, String>> defaultHeaders
         private final String addr
 
+        private static final Integer MAX_LOG_CHARS = 1024
+
         Poster(String addr) {
             this.addr = addr
             this.defaultHeaders = [new Tuple2<String, String>("Content-Type", "application/json")]
@@ -128,7 +128,7 @@ class GraphQLService {
                 HttpResponse response = client.execute(httpPost)
                 return parseResponse(response)
             } catch (Exception e) {
-                e.toString()
+                log.error("failed to GQL post", e)
             }
             return new Response()
         }
@@ -136,6 +136,8 @@ class GraphQLService {
         private Response parseResponse(HttpResponse response)  {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
+            log.debug "GraphQL response: " + (
+                bsa.size() < MAX_LOG_CHARS ? bsa : bsa.toString().take(MAX_LOG_CHARS) + "...")
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
             return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
         }
@@ -164,6 +166,8 @@ class GraphQLService {
                 httpPost.addHeader(header.getFirst(), header.getSecond())
             }
             def jsonContent = new JsonOutput().toJson(content)
+            log.debug "GraphQL query: " + (
+                jsonContent.length() < MAX_LOG_CHARS ? jsonContent : jsonContent.take(MAX_LOG_CHARS) + "...")
             httpPost.setEntity(new StringEntity(jsonContent))
             return httpPost
         }

@@ -11,12 +11,15 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/random"
 	"google.golang.org/grpc"
 )
 
@@ -26,9 +29,46 @@ var (
 	x509Err = x509.UnknownAuthorityError{}.Error()
 )
 
+// New creates a new Service.
+func New(sensorConnectionManager connection.Manager, imageDatastore imageDatastore.DataStore, riskManager riskManager.Manager) Service {
+	return &serviceImpl{
+		imageDatastore:          imageDatastore,
+		riskManager:             riskManager,
+		sensorConnectionManager: sensorConnectionManager,
+		client: http.Client{
+			Timeout:   20 * time.Second,
+			Transport: proxy.RoundTripper(),
+		},
+	}
+}
+
 type serviceImpl struct {
+	central.UnimplementedDevelopmentServiceServer
+
 	sensorConnectionManager connection.Manager
+	imageDatastore          imageDatastore.DataStore
+	riskManager             riskManager.Manager
 	client                  http.Client
+}
+
+func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.ReplicateImageRequest) (*central.Empty, error) {
+	image, exists, err := s.imageDatastore.GetImage(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Errorf("image %q does not exist", req.GetId())
+	}
+	for i := 0; i < int(req.GetTimes()); i++ {
+		image.Id, err = random.GenerateString(65, random.HexValues)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.riskManager.CalculateRiskAndUpsertImage(image); err != nil {
+			return nil, err
+		}
+	}
+	return &central.Empty{}, nil
 }
 
 func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Empty) (*central.ReconciliationStatsByClusterResponse, error) {
@@ -52,9 +92,9 @@ func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Emp
 	return &resp, nil
 }
 
-func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
+func (s *serviceImpl) URLHasValidCert(_ context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
 	if !strings.HasPrefix(req.GetUrl(), "https://") {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "url %q must start with https", req.GetUrl())
+		return nil, errors.Wrapf(errox.InvalidArgs, "url %q must start with https", req.GetUrl())
 	}
 	_, err := s.client.Get(req.GetUrl())
 	if err == nil {
@@ -81,31 +121,20 @@ func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasVa
 	}, nil
 }
 
-func (s *serviceImpl) EnvVars(ctx context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
+func (s *serviceImpl) EnvVars(_ context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
 	envVars := os.Environ()
 	return &central.EnvVarsResponse{
 		EnvVars: envVars,
 	}, nil
 }
 
-func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
+func (s *serviceImpl) RandomData(_ context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
 	resp := &central.RandomDataResponse{
 		Data: make([]byte, req.GetSize_()),
 	}
 
 	_, _ = rand.Read(resp.Data)
 	return resp, nil
-}
-
-// New creates a new Service.
-func New(sensorConnectionManager connection.Manager) Service {
-	return &serviceImpl{
-		sensorConnectionManager: sensorConnectionManager,
-		client: http.Client{
-			Timeout:   20 * time.Second,
-			Transport: proxy.RoundTripper(),
-		},
-	}
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {

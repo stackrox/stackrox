@@ -1,6 +1,7 @@
 package externalsrcs
 
 import (
+	"bytes"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -12,9 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgNet "github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -22,8 +23,10 @@ var (
 )
 
 // Store is a store for network graph external sources.
+//
+//go:generate mockgen-wrapper
 type Store interface {
-	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream
+	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]
 	LookupByNetwork(ipNet pkgNet.IPNetwork) *storage.NetworkEntityInfo
 	LookupByID(id string) *storage.NetworkEntityInfo
 }
@@ -47,7 +50,7 @@ type handlerImpl struct {
 	// to 0, this gives us highest-smallest to lowest-largest subnet ordering. e.g. 127.0.0.0/8, 10.10.0.0/24,
 	// 10.0.0.0/24, 10.0.0.0/8. This list can be used to lookup the smallest subnet containing an IP address.
 	lastSeenList             *sensor.IPNetworkList
-	ipNetworkListProtoStream *concurrency.ValueStream
+	ipNetworkListProtoStream *concurrency.ValueStream[*sensor.IPNetworkList]
 
 	lock sync.Mutex
 }
@@ -60,6 +63,8 @@ func (h *handlerImpl) Start() error {
 func (h *handlerImpl) Stop(_ error) {
 	h.stopSig.Signal()
 }
+
+func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
@@ -88,7 +93,7 @@ func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 }
 
-func (h *handlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -156,11 +161,11 @@ func normalizeNetworkList(listProto *sensor.IPNetworkList) {
 }
 
 func networkListsEqual(a, b *sensor.IPNetworkList) bool {
-	return sliceutils.ByteEqual(a.GetIpv4Networks(), b.GetIpv4Networks()) &&
-		sliceutils.ByteEqual(a.GetIpv6Networks(), b.GetIpv6Networks())
+	return bytes.Equal(a.GetIpv4Networks(), b.GetIpv4Networks()) &&
+		bytes.Equal(a.GetIpv6Networks(), b.GetIpv6Networks())
 }
 
-func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream {
+func (h *handlerImpl) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
 	return h.ipNetworkListProtoStream
 }
 

@@ -1,19 +1,18 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for Image Components.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll() ([]*storage.ImageComponent, error)
-	Count() (int, error)
-	Get(id string) (*storage.ImageComponent, bool, error)
-	GetBatch(ids []string) ([]*storage.ImageComponent, []int, error)
+	Count(ctx context.Context) (int, error)
+	Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
 
-	Exists(id string) (bool, error)
-
-	Upsert(component ...*storage.ImageComponent) error
-	Delete(ids ...string) error
+	Exists(ctx context.Context, id string) (bool, error)
 }

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
@@ -24,20 +25,29 @@ func TestAllPackagesAreImported(t *testing.T) {
 			continue
 		}
 		baseName := filepath.Base(entry.Name())
-		if !strings.HasPrefix(baseName, "m_") {
+
+		if !isMigrationName(baseName) {
 			continue
 		}
 		existingMigrations.Add(baseName)
 	}
 
+	var allImports []*ast.ImportSpec
 	f, err := parser.ParseFile(token.NewFileSet(), "all.go", nil, parser.ImportsOnly)
 	require.NoError(t, err, "failed to parse all.go")
 
+	allImports = append(allImports, f.Imports...)
+
+	f, err = parser.ParseFile(token.NewFileSet(), "all_rocksdb.go", nil, parser.ImportsOnly)
+	require.NoError(t, err, "failed to parse all_rocksdb.go")
+
+	allImports = append(allImports, f.Imports...)
+
 	importedMigrations := set.NewStringSet()
-	for _, imp := range f.Imports {
+	for _, imp := range allImports {
 		pkgName := strings.TrimSuffix(strings.TrimPrefix(imp.Path.Value, `"`), `"`)
 		pkgBaseName := path.Base(pkgName)
-		if !strings.HasPrefix(pkgBaseName, "m_") {
+		if !isMigrationName(pkgBaseName) {
 			continue
 		}
 		importedMigrations.Add(pkgBaseName)
@@ -48,4 +58,8 @@ func TestAllPackagesAreImported(t *testing.T) {
 
 	assert.Empty(t, existingButNotImported, "some existing migrations aren't imported")
 	assert.Empty(t, importedButNotExisting, "some imported migrations don't exist")
+}
+
+func isMigrationName(name string) bool {
+	return strings.HasPrefix(name, "m_") || strings.HasPrefix(name, "n_")
 }

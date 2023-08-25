@@ -1,6 +1,6 @@
 import { gql } from '@apollo/client';
 
-const COMPONENT_NAME = gql`
+export const COMPONENT_NAME = gql`
     query getComponentName($id: ID!) {
         component(id: $id) {
             id
@@ -10,4 +10,22 @@ const COMPONENT_NAME = gql`
     }
 `;
 
-export default COMPONENT_NAME;
+export const NODE_COMPONENT_NAME = gql`
+    query getNodeComponentName($id: ID!) {
+        nodeComponent(id: $id) {
+            id
+            name
+            version
+        }
+    }
+`;
+
+export const IMAGE_COMPONENT_NAME = gql`
+    query getImageComponentName($id: ID!) {
+        imageComponent(id: $id) {
+            id
+            name
+            version
+        }
+    }
+`;

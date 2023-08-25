@@ -35,6 +35,7 @@ message ComplianceStandardMetadata {
     int32  num_implemented_checks = 4;
     repeated Scope scopes         = 5;
     bool   dynamic                = 6;
+    bool hideScanResults          = 7;
 }
 
 message ComplianceControlGroup {
@@ -70,8 +71,10 @@ message GetComplianceStandardsResponse {
     repeated ComplianceStandardMetadata standards = 1;
 }
 
-message ComplianceControlResultsResponse {
-    repeated storage.ComplianceControlResult results = 1;
+message UpdateComplianceRequest {
+
+    string id = 1;
+    bool hideScanResults = 2;
 }
 
 message GetComplianceRunResultsRequest {
@@ -85,7 +88,7 @@ message GetComplianceRunResultsRequest {
 }
 
 message GetComplianceRunResultsResponse {
-    storage.ComplianceRunResults results = 1;
+    storage.ComplianceRunResults           results     = 1;
     repeated storage.ComplianceRunMetadata failed_runs = 2;
 }
 
@@ -102,12 +105,6 @@ service ComplianceService {
         };
     }
 
-    rpc GetComplianceControlResults(RawQuery) returns (ComplianceControlResultsResponse) {
-        option (google.api.http) = {
-            get: "/v1/compliance/results"
-        };
-    }
-
     rpc GetRunResults(GetComplianceRunResultsRequest) returns (GetComplianceRunResultsResponse) {
         option (google.api.http) = {
             get: "/v1/compliance/runresults"
@@ -119,4 +116,12 @@ service ComplianceService {
             get: "/v1/compliance/aggregatedresults"
         };
     }
+
+    rpc UpdateComplianceStandardConfig(UpdateComplianceRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/compliance/standards/{id}"
+            body: "*"
+        };
+    }
 }
+

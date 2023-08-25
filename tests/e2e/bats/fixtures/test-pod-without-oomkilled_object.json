@@ -1,0 +1,444 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "annotations": {
+            "cni.projectcalico.org/containerID": "6595fca96828b85a73115ff0375a796080af55815b3d7529f40d0ab65f054cd9",
+            "cni.projectcalico.org/podIP": "10.28.1.7/32",
+            "cni.projectcalico.org/podIPs": "10.28.1.7/32",
+            "email": "support@stackrox.com",
+            "meta.helm.sh/release-name": "stackrox-secured-cluster-services",
+            "meta.helm.sh/release-namespace": "stackrox",
+            "owner": "stackrox",
+            "traffic.sidecar.istio.io/excludeInboundPorts": "8443,9443"
+        },
+        "creationTimestamp": "2023-01-16T18:18:04Z",
+        "generateName": "sensor-67d98c67bf-",
+        "labels": {
+            "app": "sensor",
+            "app.kubernetes.io/component": "sensor",
+            "app.kubernetes.io/instance": "stackrox-secured-cluster-services",
+            "app.kubernetes.io/managed-by": "Helm",
+            "app.kubernetes.io/name": "stackrox",
+            "app.kubernetes.io/part-of": "stackrox-secured-cluster-services",
+            "app.kubernetes.io/version": "3.73.0",
+            "helm.sh/chart": "sensor-73.0.0",
+            "pod-template-hash": "67d98c67bf"
+        },
+        "name": "sensor-67d98c67bf-v688m",
+        "namespace": "stackrox",
+        "ownerReferences": [
+            {
+                "apiVersion": "apps/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "ReplicaSet",
+                "name": "sensor-67d98c67bf",
+                "uid": "67a4028e-7c12-497f-b398-1962a5683cb5"
+            }
+        ],
+        "resourceVersion": "13898",
+        "uid": "e88e265b-f706-4818-bfd6-713b77275be6"
+    },
+    "spec": {
+        "affinity": {
+            "nodeAffinity": {
+                "preferredDuringSchedulingIgnoredDuringExecution": [
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "cloud.google.com/gke-preemptible",
+                                    "operator": "NotIn",
+                                    "values": [
+                                        "true"
+                                    ]
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/infra",
+                                    "operator": "Exists"
+                                }
+                            ]
+                        },
+                        "weight": 50
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/compute",
+                                    "operator": "Exists"
+                                }
+                            ]
+                        },
+                        "weight": 25
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/master",
+                                    "operator": "DoesNotExist"
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/control-plane",
+                                    "operator": "DoesNotExist"
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    }
+                ]
+            }
+        },
+        "containers": [
+            {
+                "command": [
+                    "kubernetes-sensor"
+                ],
+                "env": [
+                    {
+                        "name": "K8S_NODE_NAME",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "spec.nodeName"
+                            }
+                        }
+                    },
+                    {
+                        "name": "POD_NAMESPACE",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.namespace"
+                            }
+                        }
+                    },
+                    {
+                        "name": "POD_NAME",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.name"
+                            }
+                        }
+                    },
+                    {
+                        "name": "ROX_CENTRAL_ENDPOINT",
+                        "value": "central.stackrox:443"
+                    },
+                    {
+                        "name": "ROX_ADVERTISED_ENDPOINT",
+                        "value": "sensor.stackrox.svc:443"
+                    },
+                    {
+                        "name": "ROX_CSV_EXPORT",
+                        "value": "false"
+                    },
+                    {
+                        "name": "ROX_INTEGRATIONS_AS_CONFIG",
+                        "value": "false"
+                    },
+                    {
+                        "name": "ROX_NETPOL_FIELDS",
+                        "value": "true"
+                    },
+                    {
+                        "name": "ROX_NETWORK_DETECTION_BASELINE_SIMULATION",
+                        "value": "true"
+                    },
+                    {
+                        "name": "ROX_PROCESSES_LISTENING_ON_PORT",
+                        "value": "false"
+                    },
+                    {
+                        "name": "ROX_QUAY_ROBOT_ACCOUNTS",
+                        "value": "true"
+                    },
+                    {
+                        "name": "ROX_RESYNC_DISABLED",
+                        "value": "false"
+                    },
+                    {
+                        "name": "ROX_ROXCTL_NETPOL_GENERATE",
+                        "value": "true"
+                    }
+                ],
+                "image": "quay.io/rhacs-eng/main:3.73.0",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "sensor",
+                "ports": [
+                    {
+                        "containerPort": 8443,
+                        "name": "api",
+                        "protocol": "TCP"
+                    },
+                    {
+                        "containerPort": 9443,
+                        "name": "webhook",
+                        "protocol": "TCP"
+                    }
+                ],
+                "readinessProbe": {
+                    "failureThreshold": 3,
+                    "httpGet": {
+                        "path": "/ready",
+                        "port": 9443,
+                        "scheme": "HTTPS"
+                    },
+                    "periodSeconds": 10,
+                    "successThreshold": 1,
+                    "timeoutSeconds": 1
+                },
+                "resources": {
+                    "limits": {
+                        "cpu": "2",
+                        "memory": "4Gi"
+                    },
+                    "requests": {
+                        "cpu": "1",
+                        "memory": "1Gi"
+                    }
+                },
+                "securityContext": {
+                    "readOnlyRootFilesystem": true,
+                    "runAsNonRoot": true
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/log/stackrox/",
+                        "name": "varlog"
+                    },
+                    {
+                        "mountPath": "/etc/ssl/",
+                        "name": "sensor-etc-ssl-volume"
+                    },
+                    {
+                        "mountPath": "/etc/pki/ca-trust/",
+                        "name": "sensor-etc-pki-volume"
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/certs/",
+                        "name": "certs",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/usr/local/share/ca-certificates/",
+                        "name": "additional-ca-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/var/cache/stackrox",
+                        "name": "cache"
+                    },
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-pfs84",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "imagePullSecrets": [
+            {
+                "name": "secured-cluster-services-main"
+            },
+            {
+                "name": "stackrox"
+            }
+        ],
+        "nodeName": "gke-kfuuiswk-default-pool-e1a776bf-w6n2",
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+            "fsGroup": 4000,
+            "runAsUser": 4000
+        },
+        "serviceAccount": "sensor",
+        "serviceAccountName": "sensor",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            }
+        ],
+        "volumes": [
+            {
+                "name": "certs",
+                "secret": {
+                    "defaultMode": 420,
+                    "items": [
+                        {
+                            "key": "sensor-cert.pem",
+                            "path": "cert.pem"
+                        },
+                        {
+                            "key": "sensor-key.pem",
+                            "path": "key.pem"
+                        },
+                        {
+                            "key": "ca.pem",
+                            "path": "ca.pem"
+                        }
+                    ],
+                    "secretName": "sensor-tls"
+                }
+            },
+            {
+                "emptyDir": {},
+                "name": "sensor-etc-ssl-volume"
+            },
+            {
+                "emptyDir": {},
+                "name": "sensor-etc-pki-volume"
+            },
+            {
+                "name": "additional-ca-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "additional-ca-sensor"
+                }
+            },
+            {
+                "emptyDir": {},
+                "name": "varlog"
+            },
+            {
+                "emptyDir": {},
+                "name": "cache"
+            },
+            {
+                "name": "kube-api-access-pfs84",
+                "projected": {
+                    "defaultMode": 420,
+                    "sources": [
+                        {
+                            "serviceAccountToken": {
+                                "expirationSeconds": 3607,
+                                "path": "token"
+                            }
+                        },
+                        {
+                            "configMap": {
+                                "items": [
+                                    {
+                                        "key": "ca.crt",
+                                        "path": "ca.crt"
+                                    }
+                                ],
+                                "name": "kube-root-ca.crt"
+                            }
+                        },
+                        {
+                            "downwardAPI": {
+                                "items": [
+                                    {
+                                        "fieldRef": {
+                                            "apiVersion": "v1",
+                                            "fieldPath": "metadata.namespace"
+                                        },
+                                        "path": "namespace"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-16T18:18:05Z",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-16T18:36:35Z",
+                "status": "True",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-16T18:36:35Z",
+                "status": "True",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-16T18:18:04Z",
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "containerID": "containerd://f9c8e01a2f6e18018b6bce34cbdce825ce239adbf10754021f34c3eb9071ffce",
+                "image": "quay.io/rhacs-eng/main:3.73.0",
+                "imageID": "quay.io/rhacs-eng/main@sha256:a9b4ceac14ed662e800a2b411b3567449c8454d1aa156cb69a6b9eb7dfa10d2f",
+                "lastState": {
+                    "terminated": {
+                        "containerID": "containerd://c9ca4c70c0f47fd93292b17c692f06e6614ee249c8ba95118cb1a86a82b70e8d",
+                        "exitCode": 1,
+                        "finishedAt": "2023-01-16T18:36:32Z",
+                        "reason": "Error",
+                        "startedAt": "2023-01-16T18:18:57Z"
+                    }
+                },
+                "name": "sensor",
+                "ready": true,
+                "restartCount": 1,
+                "started": true,
+                "state": {
+                    "running": {
+                        "startedAt": "2023-01-16T18:36:33Z"
+                    }
+                }
+            }
+        ],
+        "hostIP": "10.0.0.5",
+        "phase": "Running",
+        "podIP": "10.28.1.7",
+        "podIPs": [
+            {
+                "ip": "10.28.1.7"
+            }
+        ],
+        "qosClass": "Burstable",
+        "startTime": "2023-01-16T18:18:05Z"
+    }
+}

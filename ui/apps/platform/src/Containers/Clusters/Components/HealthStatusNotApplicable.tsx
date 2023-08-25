@@ -1,9 +1,5 @@
 import React, { ReactElement } from 'react';
 
-import { healthStatusStyles } from '../cluster.helpers';
-
-const { bgColor, fgColor } = healthStatusStyles.UNINITIALIZED;
-
 type HealthStatusNotApplicableProps = { testId: string; isList?: boolean };
 
 function HealthStatusNotApplicable({
@@ -12,7 +8,7 @@ function HealthStatusNotApplicable({
 }: HealthStatusNotApplicableProps): ReactElement {
     return (
         <div className={`${isList ? 'inline' : ''} leading-normal`} data-testid={testId}>
-            <span className={`${bgColor} ${fgColor}`}>Not applicable</span>
+            <span className="pf-u-text-nowrap">Not applicable</span>
         </div>
     );
 }

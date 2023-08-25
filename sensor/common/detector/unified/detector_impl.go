@@ -3,6 +3,7 @@ package unified
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
@@ -23,25 +24,24 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 	})
 }
 
-func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, deployment *storage.Deployment, images []*storage.Image) []*storage.Alert {
-	alerts, err := d.deploytimeDetector.Detect(ctx, deployment, images)
+func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment) []*storage.Alert {
+	alerts, err := d.deploytimeDetector.Detect(ctx, enhancedDeployment)
 	if err != nil {
-		log.Errorf("Error running detection on deployment %q: %v", deployment.GetName(), err)
-	}
-	return alerts
-
-}
-
-func (d *detectorImpl) DetectProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndProcess(deployment, images, process, processNotInBaseline)
-	if err != nil {
-		log.Errorf("Error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
+		log.Errorf("Error running detection on deployment %q: %v", enhancedDeployment.Deployment.GetName(), err)
 	}
 	return alerts
 }
 
-func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployment, images []*storage.Image, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(deployment, images, kubeEvent)
+func (d *detectorImpl) DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, process *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndProcess(enhancedDeployment, process, processNotInBaseline)
+	if err != nil {
+		log.Errorf("Error running runtime policies for deployment %q and process %q: %v", enhancedDeployment.Deployment.GetName(), process.GetSignal().GetExecFilePath(), err)
+	}
+	return alerts
+}
+
+func (d *detectorImpl) DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, kubeEvent)
 	if err != nil {
 		log.Errorf("Error running runtime policies for kubernetes event %s: %v", kubernetes.EventAsString(kubeEvent), err)
 	}
@@ -49,11 +49,10 @@ func (d *detectorImpl) DetectKubeEventForDeployment(deployment *storage.Deployme
 }
 
 func (d *detectorImpl) DetectNetworkFlowForDeployment(
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) []*storage.Alert {
-	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(deployment, images, flow)
+	alerts, err := d.runtimeDetector.DetectForDeploymentAndNetworkFlow(enhancedDeployment, flow)
 	if err != nil {
 		log.Errorf("Error running runtime policies for network flow %v: %v", flow, err)
 	}

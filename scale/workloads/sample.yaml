@@ -1,0 +1,59 @@
+nodeWorkload:
+  # Create this many nodes
+  numNodes: 100
+
+# Create this many namespaces, with random UUID names
+numNamespaces: 100
+
+rbacWorkload:
+  # Create roles, attached to random namespaces
+  numRoles: 5000
+  # Create service accounts, attached to random namespaces
+  numServiceAccounts: 5000
+  # Create role bindings, choosing a random SA and random role from a random NS
+  numBindings: 5000
+
+# Can have multiple concurrent deployment workloads
+deploymentWorkload:
+- deploymentType: Deployment
+  # Create this many deployments, randomly across namespaces
+  numDeployments: 1500
+  # Applies static labels of the form `key-{n}:value:{n}` for `n = 1..numLabels` on each deployment
+  numLabels: 10
+  # Number of times to destroy and recreate deployments beyond the initial scale up
+  numLifecycles: 0
+  # Approx this often, destroy and recreate the deployment
+  lifecycleDuration: 30m
+  # Approx this often, update the annotations on the deployment
+  updateInterval: 5m
+  podWorkload:
+    # Add this many containers to each deployment...
+    numContainers: 2
+    # ...with this many replicas.
+    numPods: 5
+    # Every time this interval is reached, until the deployment is destroyed, kill the pod and recreate it with a new name/ID/IP addr
+    lifecycleDuration: 5m
+    containerWorkload:
+      # Select a random image to run in the pod, if `numImages` > 0, only use the first `numImages` from the random list
+      numImages: 0
+    processWorkload:
+      # For each pod, every time this interval is reached, run a new random process in the pod...
+      processInterval: 30s
+      # ... the `alertRate` is the frequency at which the process is a "bad" one that will trigger an alert
+      alertRate: 0.001
+
+# Can have multiple concurrent network policy workloads
+networkPolicyWorkload:
+- lifecycleDuration: 30m0s
+  numNetworkPolicies: 1000
+  numLifecycles: 0
+  # Applies static labels of the form `key-{n}:value:{n}` for `n = 1..numLabels``
+  numLabels: 5
+  updateInterval: 10m0s
+
+networkWorkload:
+  # Every time the specified interval is reached...
+  flowInterval: 60s
+  # ...create this many random connections between IP addresses in the cluster
+  batchSize: 500
+

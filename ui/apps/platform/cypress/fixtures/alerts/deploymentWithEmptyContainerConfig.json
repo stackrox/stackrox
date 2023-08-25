@@ -1,0 +1,58 @@
+{
+    "id": "e841ea9b-6a96-11e8-b4ce-42010a8a01d4",
+    "name": "nginx",
+    "version": "26839",
+    "type": "Deployment",
+    "namespace": "default",
+    "replicas": "1",
+    "labels": [
+        {
+        "key": "run",
+        "value": "nginx"
+        }
+    ],
+    "updatedAt": "2018-06-07T21:08:20Z",
+    "clusterId": "4ba47118-068e-4677-ab45-413ebc4f0f17",
+    "clusterName": "K8s",
+    "containers": [
+        {
+        "config": null,
+        "image": {
+            "name": {
+            "sha": "sha256:1f9c00b4c95ef931afa097823d902e7602aebc3ec5532e907e066978075ca3e0",
+            "registry": "docker.io",
+            "remote": "library/nginx",
+            "tag": "latest",
+            "fullName": "docker.io/library/nginx:latest"
+            },
+            "metadata": null,
+            "scan": null
+        },
+        "securityContext": null,
+        "volumes": [],
+        "ports": [],
+        "secrets": []
+        }
+    ],
+    "tombstone": null,
+    "annotations": [
+        {
+        "key": "deployment.kubernetes.io/revision",
+        "value": "1"
+        }
+    ],
+    "imagePullSecrets": [],
+    "serviceAccount": "ip-masq-agent",
+    "processes": [],
+    "priority": "0",
+    "serviceAccountPermissionLevel": "NONE",
+    "automountServiceAccountToken": true,
+    "hostNetwork": false,
+    "hostPid": false,
+    "hostIpc": false,
+    "runtimeClass": "",
+    "tolerations": [],
+    "ports": [],
+    "stateTimestamp": "1688993859040137",
+    "riskScore": 5.7972984
+}

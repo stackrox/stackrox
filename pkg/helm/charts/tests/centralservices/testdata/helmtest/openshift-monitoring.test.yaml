@@ -2,66 +2,114 @@ server:
   availableSchemas:
   - openshift-4.1.0
   - com.coreos
+values:
+  central:
+    persistence:
+      none: true
 tests:
-- name: "When enabled"
+- name: "When enabled (legacy)"
   set:
     enableOpenShiftMonitoring: true
     env.openshift: 4
-  tests:
+  tests: &enabled-test
     - name: "resources are created for prometheus-operator"
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. != null)
-        .servicemonitors["central-monitor"] | assertThat(. != null)
-
-    - name: "monitoring is exposed"
-    - name: "enableOpenShiftMonitoring overrides central.exposeMonitoring"
-      set:
-        central.exposeMonitoring: false
-      expect: |
-        .deployments.central.spec.template.spec.containers[0].ports[] | select(.containerPort == 9090)
-          | assertThat(.name == "monitoring")
-        .services.central.spec.ports[] | select(.port == 9090) | [
-            assertThat(.targetPort == "monitoring"),
-            assertThat(.name == "monitoring")
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. != null)
+        .servicemonitors["central-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
-        .networkpolicys["central-monitoring"] | assertThat(. != null)
 
-    - name: "a note for the namespace label is added"
-      expect:
-        .notes | assertThat(contains("To have openshift-monitoring include metrics from the"))
+    - name: "secure metrics endpoint is enabled"
+      expect: |
+        .deployments.central.spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_ENABLE_SECURE_METRICS") | assertThat(.value == "true")
+        .deployments.central.spec.template.spec.containers[0].ports[] |
+          select(.name == "monitoring-tls") | assertThat(.containerPort == 9091)
+        .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "monitoring-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/monitoring-tls")
+        .services.central.spec.ports[] | select(.name == "monitoring-tls") | [
+            assertThat(.targetPort == "monitoring-tls"),
+            assertThat(.port == 9091)
+          ]
+        .networkpolicys["central-monitoring-tls"] | assertThat(. != null)
+
+- name: "When enabled"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 4
+  tests: *enabled-test
+
+- name: "When enabled via default value"
+  set:
+    env.openshift: 4
+  tests: *enabled-test
 
 - name: "When disabled"
   set:
+    monitoring.openshift.enabled: false
     env.openshift: 4
-  tests:
-    - name: "resources are not created when disabled (by default)"
-    - name: "resources are not created when explicitly disabled"
-      set:
-        enableOpenShiftMonitoring: false
+  tests: &disabled-test
+    - name: "resources are not created for prometheus-operator"
       expect: |
         .roles["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
-        .servicemonitors["central-monitor"] | assertThat(. == null)
+        .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
 
-- name: "An error is thrown when enableOpenShiftMonitoring is true in an env that does not support it"
-  expectError: true
+    - name: "secure metrics endpoint is disabled"
+      expect: |
+        .networkpolicys["central-monitoring-tls"] | assertThat(. == null)
+
+- name: "Disable override when on non-OpenShift environment"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: false
+  tests: *disabled-test
+
+- name: "Disable override when on explicit OpenShift 3 environment"
+  set:
+    monitoring.openshift.enabled: true
+    env.openshift: 3
+  tests: *disabled-test
+
+- name: "Disable override with default value when on explicit OpenShift 3 environment"
+  set:
+    env.openshift: 3
+  tests: *disabled-test
+
+- name: "Disable override when on auto-detected OpenShift 3 environment"
+  set:
+    monitoring.openshift.enabled: true
+  server:
+    visibleSchemas:
+      - openshift-3.11.0
+  capabilities:
+    kubeVersion:
+      version: "v1.11.0"
+  tests: *disabled-test
+
+- name: "Disable override when on non-OpenShift environment (legacy)"
   set:
     enableOpenShiftMonitoring: true
-  tests:
-  - name: "cannot be enabled due to default env not being openshift"
-  - name: "on an explicit non-OpenShift environment"
-    set:
-      env.openshift: false
-  - name: "on an explicit OpenShift 3 environment"
-    set:
-      env.openshift: 3
-  - name: "on an auto-detected OpenShift 3 environment"
-    server:
-      visibleSchemas:
+    env.openshift: false
+  tests: *disabled-test
+
+- name: "Disable override when on explicit OpenShift 3 environment (legacy)"
+  set:
+    enableOpenShiftMonitoring: true
+    env.openshift: 3
+  tests: *disabled-test
+
+- name: "Disable override when on auto-detected OpenShift 3 environment (legacy)"
+  set:
+    enableOpenShiftMonitoring: true
+  server:
+    visibleSchemas:
       - openshift-3.11.0
-    capabilities:
-      kubeVersion:
-        version: "v1.11.0"
-    expect: |
-      .error | assertThat(contains("enableOpenShiftMonitoring") and contains("but the chart is not being deployed in an OpenShift 4 cluster"))
+  capabilities:
+    kubeVersion:
+      version: "v1.11.0"
+  tests: *disabled-test

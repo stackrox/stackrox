@@ -1,0 +1,12 @@
+/** 
+This sticks the cluster name for each SelectGroup to the top of the component
+while the user scrolls through the choices, making it easier for them to know
+what cluster the visible namespaces belong to.
+*/
+.namespace-select .pf-c-select__menu-group-title {
+  position: sticky;
+  top: calc(var(--pf-c-select__menu--PaddingTop) * -1);
+  border-bottom: 1px solid var(--pf-global--BorderColor--100);
+  background-color: var(--pf-c-select__menu--BackgroundColor);
+  z-index: 1;
+}

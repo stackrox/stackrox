@@ -22,7 +22,7 @@ type nodeSpec struct {
 type nodeSpecMap map[string]nodeSpec
 
 func sortedIDs(ids []string) []string {
-	result := sliceutils.StringClone(ids)
+	result := sliceutils.ShallowClone(ids)
 	sort.Strings(result)
 	return result
 }

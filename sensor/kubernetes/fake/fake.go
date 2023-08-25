@@ -5,10 +5,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/cockroachdb/pebble"
 	appVersioned "github.com/openshift/client-go/apps/clientset/versioned"
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
+	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
@@ -25,6 +28,8 @@ import (
 
 const (
 	workloadPath = "/var/scale/stackrox/workload.yaml"
+
+	defaultNamespaceNum = 30
 )
 
 var (
@@ -71,8 +76,14 @@ func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
 	return nil
 }
 
+// OpenshiftOperator implements the client interface.
+func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
+	return nil
+}
+
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
+	db         *pebble.DB
 	fakeClient *fake.Clientset
 	client     client.Interface
 	workload   *Workload
@@ -83,14 +94,32 @@ type WorkloadManager struct {
 	networkManager      manager.Manager
 }
 
+// WorkloadManagerConfig WorkloadManager's configuration
+type WorkloadManagerConfig struct {
+	workloadFile string
+}
+
+// ConfigDefaults default configuration
+func ConfigDefaults() *WorkloadManagerConfig {
+	return &WorkloadManagerConfig{
+		workloadFile: workloadPath,
+	}
+}
+
+// WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
+func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
+	c.workloadFile = file
+	return c
+}
+
 // Client returns the mock client
 func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
-func NewWorkloadManager() *WorkloadManager {
-	data, err := os.ReadFile(workloadPath)
+func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
+	data, err := os.ReadFile(config.workloadFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -103,13 +132,22 @@ func NewWorkloadManager() *WorkloadManager {
 		log.Panicf("could not unmarshal workload from file due to error (%v): %s", err, data)
 	}
 
+	var db *pebble.DB
+	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
+		db, err = pebble.Open(storagePath, &pebble.Options{})
+		if err != nil {
+			log.Panic("could not open id storage")
+		}
+	}
+
 	mgr := &WorkloadManager{
+		db:                  db,
 		workload:            &workload,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
 
-	log.Infof("Created Workload manager for workload")
+	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
 	log.Infof("Rendered workload: %+v", workload)
 	return mgr
@@ -123,8 +161,8 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 }
 
 // clearActions periodically cleans up the fake client we're using. This needs to exist because we aren't
-// using the client for it's original purpose of unit testing. Essentially, it stores the actions
-// so you can check which actions were run. We don't care about this actions so clear them every 10s
+// using the client for its original purpose of unit testing. Essentially, it stores the actions
+// so you can check which actions were run. We don't care about these actions so clear them every 10s
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
@@ -135,26 +173,51 @@ func (w *WorkloadManager) clearActions() {
 func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
-	for _, n := range getNamespaces() {
+	numNamespaces := defaultNamespaceNum
+	if num := w.workload.NumNamespaces; num != 0 {
+		numNamespaces = num
+	}
+	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
+		w.writeID(namespacePrefix, n.UID)
 		objects = append(objects, n)
 	}
 
-	nodes := w.getNodes(w.workload.NodeWorkload)
+	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
+		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
-	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
+	labelsPool.matchLabels = w.workload.MatchLabels
+
+	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
+
+	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
+	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
+	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
 			for _, p := range resource.pods {
 				objects = append(objects, p)
 			}
+		}
+	}
+
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
+	var npResources []*networkPolicyToBeManaged
+	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
+	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
+		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
+			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
+			npResources = append(npResources, resource)
+
+			objects = append(objects, resource.networkPolicy)
 		}
 	}
 
@@ -179,6 +242,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	// Fork management of deployment resources
 	for _, resource := range resources {
 		go w.manageDeployment(context.Background(), resource)
+	}
+
+	// Fork management of networkPolicy resources
+	for _, resource := range npResources {
+		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
 	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)

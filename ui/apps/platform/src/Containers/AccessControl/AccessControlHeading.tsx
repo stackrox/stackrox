@@ -1,53 +1,34 @@
 import React, { ReactElement } from 'react';
-import { Breadcrumb, BreadcrumbItem, Title } from '@patternfly/react-core';
-import pluralize from 'pluralize';
+import { Divider, PageSection, Title } from '@patternfly/react-core';
 
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { AccessControlEntityType } from 'constants/entityTypes';
-import { accessControlLabels } from 'messages/common';
-
-import { getEntityPath } from './accessControlPaths';
+import AccessControlNav from './AccessControlNav';
 
 export type AccessControlHeadingProps = {
+    /** The AccessControl Entity managed on this page, used to highlight the current navigation item. */
     entityType?: AccessControlEntityType;
-    entityName?: string;
-    isDisabled?: boolean;
-    isList?: boolean;
+    /** Whether or not to hide the tab navigation component */
+    isNavHidden?: boolean;
 };
 
-/*
- * Render breadcrumb and title h1 at the top of Access Control page.
- *
- * The isActive prop renders a breadcrumb item as text.
- * BreadcrumbItemLink renders a React Router link.
+/**
+ * Render title h1 and tab navigation at top of page.
  */
 function AccessControlHeading({
     entityType,
-    entityName,
-    isDisabled,
-    isList,
+    isNavHidden = false,
 }: AccessControlHeadingProps): ReactElement {
-    let entityTypeBreadcrumb;
-    if (entityType) {
-        const entityTypeLabel = pluralize(accessControlLabels[entityType]);
-        entityTypeBreadcrumb =
-            isDisabled || isList ? (
-                <BreadcrumbItem isActive>{entityTypeLabel}</BreadcrumbItem>
-            ) : (
-                <BreadcrumbItemLink to={getEntityPath(entityType)}>
-                    {entityTypeLabel}
-                </BreadcrumbItemLink>
-            );
-    }
-
     return (
         <>
-            <Breadcrumb>
-                <BreadcrumbItem isActive>Access Control</BreadcrumbItem>
-                {entityTypeBreadcrumb}
-                {entityName && <BreadcrumbItem isActive>{entityName}</BreadcrumbItem>}
-            </Breadcrumb>
-            <Title headingLevel="h1">Access Control</Title>
+            <PageSection variant="light">
+                <Title headingLevel="h1">Access Control</Title>
+            </PageSection>
+            {isNavHidden || (
+                <PageSection variant="light" className="pf-u-px-sm pf-u-py-0">
+                    <AccessControlNav entityType={entityType} />
+                </PageSection>
+            )}
+            <Divider component="div" />
         </>
     );
 }

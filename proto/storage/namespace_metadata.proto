@@ -10,13 +10,12 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message NamespaceMetadata {
-    string                    id            = 1 [(gogoproto.moretags) = "search:\"Namespace ID\""];
-    string                    name          = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string                    cluster_id    = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
-    string                    cluster_name  = 4 [(gogoproto.moretags) = "search:\"Cluster\""];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string>       labels        = 5 [(gogoproto.moretags) = "search:\"Label\""];
+    string                    id            = 1 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"pk,type(uuid)"'];
+    string                    name          = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+    string                    cluster_id    = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string                    cluster_name  = 4 [(gogoproto.moretags) = 'search:"Cluster"'];
+    map<string, string>       labels        = 5 [(gogoproto.moretags) = 'search:"Namespace Label"'];
     google.protobuf.Timestamp creation_time = 6;
     int64                     priority      = 7;
-    map<string, string>       annotations   = 8 [(gogoproto.moretags) = "search:\"Namespace Annotation\""];
+    map<string, string>       annotations   = 8 [(gogoproto.moretags) = 'search:"Namespace Annotation"'];
 }

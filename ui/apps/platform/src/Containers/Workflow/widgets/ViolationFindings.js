@@ -5,8 +5,6 @@ import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
-import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
 
 const processData = (data) => {
     if (!data.violations || !data.violations.length) {
@@ -60,12 +58,6 @@ const ViolationFindings = ({ data, message }) => {
                         })}
                     </ul>
                 </Widget>
-                <div className="lg:sx-2 md:sx-1 sy-1">
-                    <ViolationTags resourceId={policyViolation.id} isCollapsible={false} />
-                </div>
-                <div className="sx-1 sy-1">
-                    <ViolationComments resourceId={policyViolation.id} isCollapsible={false} />
-                </div>
             </div>
         );
     } else {

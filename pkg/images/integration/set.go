@@ -8,6 +8,7 @@ import (
 )
 
 // Set provides an interface for reading the active set of image integrations.
+//
 //go:generate mockgen-wrapper
 type Set interface {
 	RegistryFactory() registries.Factory
@@ -23,7 +24,10 @@ type Set interface {
 
 // NewSet returns a new Set instance.
 func NewSet(reporter integrationhealth.Reporter) Set {
-	registryFactory := registries.NewFactory()
+	registryFactory := registries.NewFactory(registries.FactoryOptions{
+		CreatorFuncsWithoutRepoList: registries.AllCreatorFuncsWithoutRepoList,
+	})
+
 	registrySet := registries.NewSet(registryFactory)
 
 	scannerFactory := scanners.NewFactory(registrySet)

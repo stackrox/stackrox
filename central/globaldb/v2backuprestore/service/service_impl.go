@@ -18,7 +18,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.DBService/GetExportCapabilities",
 		},
 		dbAuthz.DBReadAccessAuthorizer(): {
@@ -32,6 +32,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedDBServiceServer
+
 	mgr manager.Manager
 }
 
@@ -53,14 +55,14 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 	return v1.RegisterDBServiceHandler(ctx, mux, conn)
 }
 
-func (s *service) GetExportCapabilities(ctx context.Context, _ *v1.Empty) (*v1.GetDBExportCapabilitiesResponse, error) {
+func (s *service) GetExportCapabilities(_ context.Context, _ *v1.Empty) (*v1.GetDBExportCapabilitiesResponse, error) {
 	return &v1.GetDBExportCapabilitiesResponse{
 		Formats:            s.mgr.GetExportFormats().ToProtos(),
 		SupportedEncodings: s.mgr.GetSupportedFileEncodings(),
 	}, nil
 }
 
-func (s *service) GetActiveRestoreProcess(ctx context.Context, _ *v1.Empty) (*v1.GetActiveDBRestoreProcessResponse, error) {
+func (s *service) GetActiveRestoreProcess(_ context.Context, _ *v1.Empty) (*v1.GetActiveDBRestoreProcessResponse, error) {
 	process := s.mgr.GetActiveRestoreProcess()
 	if process == nil {
 		return &v1.GetActiveDBRestoreProcessResponse{}, nil

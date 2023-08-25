@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/processbaseline/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestAuthz(t *testing.T) {
@@ -338,7 +338,7 @@ func TestBaselineCheck(t *testing.T) {
 	}
 	hasReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist, resources.Deployment)))
+			sac.ResourceScopeKeys(resources.DeploymentExtension, resources.Deployment)))
 	mockCtrl := gomock.NewController(t)
 	deployments := deploymentMocks.NewMockDataStore(mockCtrl)
 	baselines := mocks.NewMockDataStore(mockCtrl)

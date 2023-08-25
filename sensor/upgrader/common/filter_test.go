@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -20,7 +21,7 @@ auto-upgrade.stackrox.io/component: "sensor"
 imagePullSecrets:
 - name: stackrox
 `
-
+	//#nosec G101 -- This is a false positive
 	sensorTLSSecretYAML = `apiVersion: v1
 kind: Secret
 data:
@@ -37,6 +38,7 @@ metadata:
   namespace: stackrox
 type: Opaque
 `
+	//#nosec G101 -- This is a false positive
 	centralTLSSecretYAML = `apiVersion: v1
 kind: Secret
 type: Opaque
@@ -69,7 +71,7 @@ metadata:
 type: Opaque`
 )
 
-func mustGetObjFromYAML(t *testing.T, yaml string) k8sutil.Object {
+func mustGetObjFromYAML(t *testing.T, yaml string) *unstructured.Unstructured {
 	obj, err := k8sutil.UnstructuredFromYAML(yaml)
 	require.NoError(t, err)
 	return obj
@@ -80,9 +82,9 @@ func TestFilterToOnlyCertObjects(t *testing.T) {
 	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
 	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
 	additionalCA := mustGetObjFromYAML(t, additionalCASensorYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA}
+	filtered := []*unstructured.Unstructured{serviceAccount, sensorTLS, centralTLS, additionalCA}
 	Filter(&filtered, CertObjectPredicate)
-	assert.Equal(t, []k8sutil.Object{sensorTLS}, filtered)
+	assert.Equal(t, []*unstructured.Unstructured{sensorTLS}, filtered)
 }
 
 func TestFilterAdditionalCASecretObjects(t *testing.T) {
@@ -90,9 +92,9 @@ func TestFilterAdditionalCASecretObjects(t *testing.T) {
 	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
 	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
 	additionalCA := mustGetObjFromYAML(t, additionalCASensorYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA}
+	filtered := []*unstructured.Unstructured{serviceAccount, sensorTLS, centralTLS, additionalCA}
 	Filter(&filtered, AdditionalCASecretPredicate)
-	assert.Equal(t, []k8sutil.Object{additionalCA}, filtered)
+	assert.Equal(t, []*unstructured.Unstructured{additionalCA}, filtered)
 }
 
 func TestFilterNotAdditionalCASecretObjects(t *testing.T) {
@@ -100,7 +102,7 @@ func TestFilterNotAdditionalCASecretObjects(t *testing.T) {
 	sensorTLS := mustGetObjFromYAML(t, sensorTLSSecretYAML)
 	centralTLS := mustGetObjFromYAML(t, centralTLSSecretYAML)
 	additionalCA := mustGetObjFromYAML(t, additionalCASensorYAML)
-	filtered := []k8sutil.Object{serviceAccount, sensorTLS, centralTLS, additionalCA}
+	filtered := []*unstructured.Unstructured{serviceAccount, sensorTLS, centralTLS, additionalCA}
 	Filter(&filtered, Not(AdditionalCASecretPredicate))
-	assert.Equal(t, []k8sutil.Object{serviceAccount, sensorTLS, centralTLS}, filtered)
+	assert.Equal(t, []*unstructured.Unstructured{serviceAccount, sensorTLS, centralTLS}, filtered)
 }

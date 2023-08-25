@@ -13,6 +13,7 @@ import (
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -25,7 +26,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		user.Authenticated(): {
 			"/v1.CredentialExpiryService/GetCertExpiry",
 		},
 	})
@@ -33,6 +34,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
+	v1.UnimplementedCredentialExpiryServiceServer
+
 	imageIntegrations imageIntegrationStore.DataStore
 	scannerConfig     *tls.Config
 }
@@ -44,7 +47,7 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 	case v1.GetCertExpiry_SCANNER:
 		return s.getScannerCertExpiry(ctx)
 	}
-	return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid component: %v", request.GetComponent())
+	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
 
 func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error) {
@@ -123,7 +126,7 @@ func (s *serviceImpl) getScannerCertExpiry(ctx context.Context) (*v1.GetCertExpi
 		}
 	}
 	if len(clairifyEndpoints) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "StackRox Scanner is not integrated")
+		return nil, errors.Wrap(errox.InvalidArgs, "StackRox Scanner is not integrated")
 	}
 	errC := make(chan error, len(clairifyEndpoints))
 	expiryC := make(chan *types.Timestamp, len(clairifyEndpoints))

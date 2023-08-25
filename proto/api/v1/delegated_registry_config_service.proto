@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message DelegatedRegistryClustersResponse {
+    repeated DelegatedRegistryCluster clusters = 1;
+}
+
+message DelegatedRegistryCluster {
+    string id       = 1;
+    string name     = 2;
+    bool   is_valid = 3;
+}
+
+// DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in 
+// central services or sent to particular secured clusters.
+message DelegatedRegistryConfig {
+    enum EnabledFor {
+        // Scan all images via central services except for images from the OCP integrated registry
+        NONE     = 0;
+        // Scan all images via the secured clusters
+        ALL      = 1;
+        // Scan images that match `registries` or are from the OCP integrated registry via the secured clusters
+        // otherwise scan via central services
+        SPECIFIC = 2;
+    }
+
+    message DelegatedRegistry {
+        // Registry + optional path, ie: quay.example.com/prod
+        string path       = 1;
+        // ID of the cluster to delegate ad-hoc requests to
+        string cluster_id = 2;
+    }
+
+    // Determines if delegation is enabled for no registries, all registries, or specific registries
+    EnabledFor                 enabled_for        = 1;
+
+    // The default cluster to delegate ad-hoc requests to if no match found in registries, not used
+    // if `enabled for` is NONE
+    string                     default_cluster_id = 2;
+
+    // If `enabled for` is NONE registries has no effect. 
+    //  
+    // If `ALL` registries directs ad-hoc requests to the specified secured clusters if the path matches. 
+    //
+    // If `SPECIFIC` registries directs ad-hoc requests to the specified secured clusters just like with `ALL`,
+    // but in addition images that match the specified paths will be scanned locally by the secured clusters 
+    // (images from the OCP integrated registry are always scanned locally). Images that do not match a path
+    // will be scanned via central services
+    repeated DelegatedRegistry registries         = 3;
+}
+
+// DelegatedRegistryConfigService APIs can be used to control how to route image scans amongst
+// central and secured clusters
+service DelegatedRegistryConfigService {
+
+    // GetConfig returns the current delegated registry configuration
+    rpc GetConfig(Empty) returns (DelegatedRegistryConfig) {
+        option (google.api.http) = {
+            get: "/v1/delegatedregistryconfig"
+        };
+    }
+
+    // GetClusters returns the list of clusters (id + name) and a flag indicating whether or not 
+    // the cluster is valid for use in the delegated registry config
+    rpc GetClusters(Empty) returns (DelegatedRegistryClustersResponse) {
+        option (google.api.http) = {
+            get: "/v1/delegatedregistryconfig/clusters"
+        };
+    }
+
+    // UpdateConfig updates the stored delegated registry configuration
+    rpc UpdateConfig(DelegatedRegistryConfig) returns (DelegatedRegistryConfig) {
+        option (google.api.http) = {
+            put: "/v1/delegatedregistryconfig"
+            body: "*"
+        };
+    }
+
+}

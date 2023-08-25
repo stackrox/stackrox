@@ -1,12 +1,27 @@
 tests:
-- name: "Should create PVC"
+- name: "Should not create PVC"
+  expectError: true
   values:
     central:
       persistence:
         persistentVolumeClaim:
-          claimName: "stackrox-db-test"
+          claimName: "central-db-test"
           size: "1000Gi"
           storageClass: "testStorageClass"
   expect: |
-    .persistentvolumeclaims["stackrox-db-test"].spec.resources.requests | assertThat(.storage == "1000Gi")
-    .persistentvolumeclaims["stackrox-db-test"].spec | assertThat(.storageClassName == "testStorageClass")
+    .error | assertThat(contains("we stop creating central PVC during installation"))
+
+- name: "Should create central-db PVC"
+  values:
+    central:
+      persistence:
+        none: true
+      db:
+        persistence:
+          persistentVolumeClaim:
+            claimName: "central-db-test"
+            size: "1000Gi"
+            storageClass: "testStorageClass"
+  expect: |
+    .persistentvolumeclaims["central-db-test"].spec.resources.requests | assertThat(.storage == "1000Gi")
+    .persistentvolumeclaims["central-db-test"].spec | assertThat(.storageClassName == "testStorageClass")

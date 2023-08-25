@@ -1,24 +1,19 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/pod/datastore/internal/search"
-	"github.com/stackrox/rox/central/pod/index"
-	rocksStore "github.com/stackrox/rox/central/pod/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	search2 "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,24 +25,12 @@ func BenchmarkSearchAllPods(b *testing.B) {
 			sac.ResourceScopeKeys(resources.Deployment),
 		))
 
-	tempPath, err := os.MkdirTemp("", "")
-	require.NoError(b, err)
+	pgtestbase := pgtest.ForT(b)
+	require.NotNil(b, pgtestbase)
+	pool := pgtestbase.DB
 
-	blevePath := filepath.Join(tempPath, "scorch.bleve")
-
-	db, err := rocksdb.NewTemp("benchmark_search_all")
-	require.NoError(b, err)
-	defer rocksdbtest.TearDownRocksDB(db)
-
-	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
-	require.NoError(b, err)
-
-	podsStore := rocksStore.New(db)
-	podsIndexer := index.New(bleveIndex)
-	podsSearcher := search.New(podsStore, podsIndexer)
-	simpleFilter := filter.NewFilter(5, []int{5, 4, 3, 2, 1})
-
-	podsDatastore, err := newDatastoreImpl(podsStore, podsIndexer, podsSearcher, nil, simpleFilter)
+	simpleFilter := filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
+	podsDatastore, err := NewPostgresDB(pool, nil, simpleFilter)
 	require.NoError(b, err)
 
 	podPrototype := fixtures.GetPod().Clone()

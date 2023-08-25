@@ -3,13 +3,15 @@ package output
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
+	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +35,6 @@ type HelmChartTestSuite struct {
 
 func (s *HelmChartTestSuite) SetupTest() {
 	testutils.SetExampleVersion(s.T())
-	testbuildinfo.SetForTest(s.T())
 }
 
 func TestHelmLint(t *testing.T) {
@@ -58,8 +59,10 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		{flavor: "dummy", rhacs: false, wantErr: true},
 
 		// Group: Valid --image-defaults, no --rhacs
+		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: false},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: false},
+		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: false},
 
 		// Group: --rhacs only (test backwards-compatibility with versions < v3.68)
 		{flavor: "", flavorProvided: false, rhacs: true},
@@ -68,32 +71,24 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 		// Providing both flags shall produce flag-collision error
 		{flavor: "", flavorProvided: true, rhacs: true, wantErr: true},
 		{flavor: "dummy", rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameStackRoxIORelease, rhacs: true, wantErr: true},
 		{flavor: defaults.ImageFlavorNameRHACSRelease, rhacs: true, wantErr: true},
+		{flavor: defaults.ImageFlavorNameOpenSource, rhacs: true, wantErr: true},
 	}
-	// development flavor can be used only on non-released builds
-	if !buildinfo.ReleaseBuild {
-		tests = append(tests,
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: true, wantErr: true}, // error: collision of --rhacs and --image-defaults
-			testCase{flavor: defaults.ImageFlavorNameDevelopmentBuild, rhacs: false},
-		)
-	}
-	testIO, _, _, _ := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+
+	testIO, _, _, _ := io.TestIO()
+	env := environment.NewTestCLIEnvironment(s.T(), testIO, printer.DefaultColorPrinter())
 
 	for _, tt := range tests {
 		tt := tt
 		for chartName := range common.ChartTemplates {
 			s.Run(fmt.Sprintf("%s-rhacs-%t-flavorProvided-%t-image-defaults-%s", chartName, tt.rhacs, tt.flavorProvided, tt.flavor), func() {
-				outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-				s.T().Cleanup(func() {
-					_ = os.RemoveAll(outputDir)
-				})
-				require.NoError(s.T(), err)
+				outputDir := s.T().TempDir()
 				if tt.flavor != "" {
 					tt.flavorProvided = true
 				}
-				err = outputHelmChart(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env.Logger())
+				err := executeHelpOutputCommand(chartName, outputDir, true, tt.flavor, tt.flavorProvided, tt.rhacs, env)
 				if tt.wantErr {
 					assert.Error(s.T(), err)
 				} else {
@@ -105,9 +100,11 @@ func (s *HelmChartTestSuite) TestOutputHelmChart() {
 }
 
 func (s *HelmChartTestSuite) TestHelmLint() {
-	flavorsToTest := []string{defaults.ImageFlavorNameStackRoxIORelease, defaults.ImageFlavorNameRHACSRelease}
-	if !buildinfo.ReleaseBuild {
-		flavorsToTest = append(flavorsToTest, defaults.ImageFlavorNameDevelopmentBuild)
+	flavorsToTest := []string{
+		defaults.ImageFlavorNameDevelopmentBuild,
+		defaults.ImageFlavorNameStackRoxIORelease,
+		defaults.ImageFlavorNameRHACSRelease,
+		defaults.ImageFlavorNameOpenSource,
 	}
 
 	for chartName := range common.ChartTemplates {
@@ -123,16 +120,12 @@ func (s *HelmChartTestSuite) TestHelmLint() {
 }
 
 func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor string) {
-	outputDir, err := os.MkdirTemp("", "roxctl-helm-output-lint-")
-	t.Cleanup(func() {
-		_ = os.RemoveAll(outputDir)
-	})
-	require.NoError(t, err)
+	outputDir := t.TempDir()
 
-	testIO, _, _, _ := environment.TestIO()
-	env := environment.NewCLIEnvironment(testIO, printer.DefaultColorPrinter())
+	testIO, _, _, _ := io.TestIO()
+	env := environment.NewTestCLIEnvironment(t, testIO, printer.DefaultColorPrinter())
 
-	err = outputHelmChart(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env.Logger())
+	err := executeHelpOutputCommand(chartName, outputDir, true, imageFlavor, imageFlavor != "", rhacs, env)
 	require.NoErrorf(t, err, "failed to output helm chart %s", chartName)
 
 	for _, ns := range lintNamespaces {
@@ -140,6 +133,33 @@ func testChartLint(t *testing.T, chartName string, rhacs bool, imageFlavor strin
 			testChartInNamespaceLint(t, outputDir, ns)
 		})
 	}
+}
+
+func executeHelpOutputCommand(chartName, outputDir string, removeOutputDir bool, imageFlavor string, flavorProvided, rhacs bool, env environment.Environment) error {
+	cmd := helmOutputCommand{
+		outputDir:       outputDir,
+		removeOutputDir: removeOutputDir,
+		rhacs:           rhacs,
+		imageFlavor:     imageFlavor,
+		env:             env,
+	}
+
+	c := &cobra.Command{Use: "test"}
+
+	// Add and set `ImageDefaultsFlagName` flag if provided in the test scope
+	if flavorProvided {
+		c.Flags().Bool(flags.ImageDefaultsFlagName, flavorProvided, "")
+		if err := c.Flags().Set(flags.ImageDefaultsFlagName, strconv.FormatBool(flavorProvided)); err != nil {
+			return err
+		}
+	}
+
+	// Execute command flow
+	cmd.Construct(chartName, c)
+	if err := cmd.Validate(); err != nil {
+		return err
+	}
+	return cmd.outputHelmChart()
 }
 
 func testChartInNamespaceLint(t *testing.T, chartDir string, namespace string) {

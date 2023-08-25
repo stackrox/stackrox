@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -12,11 +13,16 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	queryTracerEnabled    = env.PostgresQueryTracer.BooleanSetting()
+	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
 )
 
 type logger struct {
@@ -63,8 +69,12 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Adds the data loader intermediates so that we can stop ourselves from loading the same data from the store
 	// many time.
 	ctx = loaders.WithLoaderContext(ctx)
+	if queryTracerEnabled {
+		ctx = postgres.WithTracerContext(ctx)
+	}
 
-	defer metrics.SetGraphQLQueryDurationTime(time.Now(), params.Query)
+	startTime := time.Now()
+	defer metrics.SetGraphQLQueryDurationTime(startTime, params.Query)
 
 	response := h.Schema.Exec(ctx, params.Query, params.OperationName, params.Variables)
 	responseJSON, err := json.Marshal(response)
@@ -73,6 +83,10 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if queryTracerEnabled && time.Since(startTime) > graphQLQueryThreshold {
+		singleLineQuery := strings.ReplaceAll(params.Query, "\n", " ")
+		postgres.LogTracef(ctx, log, "GraphQL Op %s took %d ms: %s vars=%+v", params.OperationName, time.Since(startTime).Milliseconds(), singleLineQuery, params.Variables)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(responseJSON)
 }

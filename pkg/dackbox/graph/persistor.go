@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -36,11 +36,11 @@ func (prv *Persistor) deleteFrom(from []byte) {
 	prv.txn.Delete(prv.prefixKey(from))
 }
 
-func (prv *Persistor) setTo(to []byte, from [][]byte) {
+func (prv *Persistor) setTo(_ []byte, _ [][]byte) {
 	// do nothing, we only store the forward map.
 }
 
-func (prv *Persistor) deleteTo(to []byte) {
+func (prv *Persistor) deleteTo(_ []byte) {
 	// do nothing, we only store the forward map.
 }
 

@@ -3,7 +3,6 @@ package bolthelpers
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -20,27 +19,6 @@ func TopLevelRef(db *bolt.DB, key []byte) BucketRef {
 	return &topLevelBucketRef{
 		db:  db,
 		key: key,
-	}
-}
-
-// TopLevelRefWithCreateIfNotExists returns a top-level bucket in the DB,
-// creating it if it doesn't exist.
-func TopLevelRefWithCreateIfNotExists(db *bolt.DB, key []byte) (BucketRef, error) {
-	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(key)
-		return err
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating bucket %v", key)
-	}
-	return TopLevelRef(db, key), nil
-}
-
-// NestedRef obtains a BucketRef for a nested bucket inside a parent bucket.
-func NestedRef(parent BucketRef, key []byte) BucketRef {
-	return &nestedBucketRef{
-		parent: parent,
-		key:    key,
 	}
 }
 
@@ -65,27 +43,4 @@ func (r *topLevelBucketRef) View(fn func(b *bolt.Bucket) error) error {
 
 func (r *topLevelBucketRef) Update(fn func(b *bolt.Bucket) error) error {
 	return r.db.Update(r.getApplyFunc(fn))
-}
-
-type nestedBucketRef struct {
-	parent BucketRef
-	key    []byte
-}
-
-func (r *nestedBucketRef) getApplyFunc(fn func(b *bolt.Bucket) error) func(b *bolt.Bucket) error {
-	return func(b *bolt.Bucket) error {
-		nested := b.Bucket(r.key)
-		if nested == nil {
-			return fmt.Errorf("no such bucket: %v", r.key)
-		}
-		return fn(nested)
-	}
-}
-
-func (r *nestedBucketRef) View(fn func(b *bolt.Bucket) error) error {
-	return r.parent.View(r.getApplyFunc(fn))
-}
-
-func (r *nestedBucketRef) Update(fn func(b *bolt.Bucket) error) error {
-	return r.parent.Update(r.getApplyFunc(fn))
 }

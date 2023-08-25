@@ -3,11 +3,11 @@
 sensor:
   resources:
     requests:
-      memory: "1Gi"
-      cpu: "1"
-    limits:
       memory: "4Gi"
       cpu: "2"
+    limits:
+      memory: "8Gi"
+      cpu: "4"
 
 admissionControl:
   resources:
@@ -33,4 +33,12 @@ collector:
       cpu: "10m"
     limits:
       memory: "2Gi"
+      cpu: "1"
+
+  nodeScanningResources:
+    requests:
+      memory: "10Mi"
+      cpu: "10m"
+    limits:
+      memory: "500Mi"
       cpu: "1"

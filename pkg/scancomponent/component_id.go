@@ -1,13 +1,15 @@
 package scancomponent
 
 import (
-	"encoding/base64"
-	"fmt"
+	"github.com/stackrox/rox/pkg/logging"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-// ComponentID creates a component ID from the given name and version
-func ComponentID(name, version string) string {
-	nameEncoded := base64.RawURLEncoding.EncodeToString([]byte(name))
-	versionEncoded := base64.RawURLEncoding.EncodeToString([]byte(version))
-	return fmt.Sprintf("%s:%s", nameEncoded, versionEncoded)
+var (
+	log = logging.LoggerForModule()
+)
+
+// ComponentID creates a component ID from the given name and version (and os if postgres is enabled).
+func ComponentID(name, version, os string) string {
+	return pgSearch.IDFromPks([]string{name, version, os})
 }

@@ -1,5 +1,4 @@
 //go:build tools
-// +build tools
 
 package tools
 
@@ -9,9 +8,8 @@ package tools
 
 import (
 	// Tool dependencies, not used anywhere in the code.
-	_ "github.com/ckaznocha/protoc-gen-lint"
-	_ "github.com/golang/mock/mockgen"
 	_ "github.com/mailru/easyjson/easyjson"
-	_ "github.com/mauricelam/genny"
+	_ "go.uber.org/mock/mockgen"
 	_ "golang.org/x/tools/cmd/stringer"
+	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
 )

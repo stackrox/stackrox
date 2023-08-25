@@ -9,6 +9,8 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -31,8 +33,9 @@ func New(store nfDS.ClusterDataStore,
 	networkTreeMgr networktree.Manager,
 	deployments dDS.DataStore,
 	clusters clusterDS.DataStore,
+	networkPolicy networkPolicyDS.DataStore,
 	graphConfigDS datastore.DataStore) Service {
-	return newService(store, entities, networkTreeMgr, deployments, clusters, graphConfigDS)
+	return newService(store, entities, networkTreeMgr, deployments, clusters, networkPolicy, graphConfigDS)
 }
 
 func newService(store nfDS.ClusterDataStore,
@@ -40,13 +43,16 @@ func newService(store nfDS.ClusterDataStore,
 	networkTreeMgr networktree.Manager,
 	deployments dDS.DataStore,
 	clusters clusterDS.DataStore,
+	networkPolicy networkPolicyDS.DataStore,
 	graphConfigDS datastore.DataStore) *serviceImpl {
 	return &serviceImpl{
-		clusterFlows:   store,
-		entities:       entities,
-		networkTreeMgr: networkTreeMgr,
-		deployments:    deployments,
-		clusters:       clusters,
-		graphConfig:    graphConfigDS,
+		clusterFlows:     store,
+		entities:         entities,
+		networkTreeMgr:   networkTreeMgr,
+		deployments:      deployments,
+		clusters:         clusters,
+		graphConfig:      graphConfigDS,
+		networkPolicy:    networkPolicy,
+		clusterSACHelper: sachelper.NewClusterSacHelper(clusters),
 	}
 }

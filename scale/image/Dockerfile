@@ -7,8 +7,6 @@ COPY ./image/bin/profiler /profiler
 COPY ./profiler/pprof.sh /pprof.sh
 COPY ./profiler/entrypoint.sh /profiler-entrypoint.sh
 
-COPY ./image/bin/mocksensor /mocksensor
-COPY ./image/bin/mockcollector /mockcollector
 COPY ./image/bin/chaos /chaos
 
 COPY ./image/fixtures/scrape.json /files/scrape.json

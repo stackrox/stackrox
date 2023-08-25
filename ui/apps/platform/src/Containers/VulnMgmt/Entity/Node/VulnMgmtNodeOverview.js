@@ -7,10 +7,12 @@ import Metadata from 'Components/Metadata';
 import RiskScore from 'Components/RiskScore';
 import entityTypes from 'constants/entityTypes';
 import TopCvssLabel from 'Components/TopCvssLabel';
+import ScanDataMessage from 'Containers/VulnMgmt/Components/ScanDataMessage';
+import getNodeScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getNodeScanMessage';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { entityGridContainerClassName } from '../WorkflowEntityPage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidgetFixableCves from '../TableWidgetFixableCves';
 
@@ -36,7 +38,7 @@ const emptyNode = {
     vulnCount: 0,
 };
 
-const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
+const VulnMgmtNodeOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -58,8 +60,11 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         // eslint-disable-next-line no-unused-vars
         vulnCount,
         scan,
+        notes,
     } = safeData;
     safeData.componentCount = scan?.components?.length || 0;
+
+    safeData.nodeComponentCount = scan?.components?.length || 0;
 
     const metadataKeyValuePairs = [
         {
@@ -105,9 +110,12 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const currentEntity = { [entityTypes.NODE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
+    const scanMessage = getNodeScanMessage(notes || [], scan?.notes || []);
+
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
+                <ScanDataMessage header={scanMessage.header} body={scanMessage.body} />
                 <CollapsibleSection title="Node Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="sx-2">
@@ -115,7 +123,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                 className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={nodeStats}
-                                title="Details & Metadata"
+                                title="Details and metadata"
                                 labels={labels}
                                 annotations={annotations}
                             />
@@ -126,13 +134,14 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Node Findings">
-                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidgetFixableCves
                             workflowState={workflowState}
                             entityContext={entityContext}
                             entityType={entityTypes.NODE}
                             name={safeData?.name}
                             id={safeData?.id}
+                            vulnType={entityTypes.NODE_CVE}
                         />
                     </div>
                 </CollapsibleSection>
@@ -146,4 +155,4 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     );
 };
 
-export default VulnMgmtDeploymentOverview;
+export default VulnMgmtNodeOverview;

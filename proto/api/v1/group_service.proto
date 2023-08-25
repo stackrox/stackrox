@@ -20,6 +20,9 @@ message GetGroupsRequest {
     oneof value_opt {
         string value = 3;
     }
+    oneof id_opt {
+        string id = 4;
+    }
 }
 
 // API for updating Groups and getting users.
@@ -37,8 +40,27 @@ message GroupBatchUpdateRequest {
     // 2) if in previous_groups and required_groups, it gets updated.
     // 3) if not in previous_groups but in required_groups, it gets added.
     repeated storage.Group previous_groups = 1;
+
     // Required groups are the groups we want to mutate the previous groups into.
     repeated storage.Group required_groups = 2;
+
+    bool force                             = 3;
+}
+
+message DeleteGroupRequest {
+    // We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+    string auth_provider_id = 1;
+    string key              = 2;
+    string value            = 3;
+    string id               = 4;
+
+    bool force              = 5;
+}
+
+message UpdateGroupRequest {
+    storage.Group group = 1;
+
+    bool force          = 2;
 }
 
 service GroupService {
@@ -69,14 +91,14 @@ service GroupService {
         };
     }
 
-    rpc UpdateGroup (storage.Group) returns (Empty) {
+    rpc UpdateGroup (UpdateGroupRequest) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/groups"
-            body: "*"
+            body: "group"
         };
     }
 
-    rpc DeleteGroup (storage.GroupProperties) returns (Empty) {
+    rpc DeleteGroup (DeleteGroupRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/groups"
         };

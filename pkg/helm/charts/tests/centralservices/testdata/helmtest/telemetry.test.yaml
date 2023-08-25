@@ -1,0 +1,29 @@
+defs: |
+  def container(obj; name):
+  obj.spec.template.spec.containers[] | select(.name == name);
+
+  def envVars(obj; container):
+  container(obj; container) | .env | from_entries;
+values:
+  central:
+    persistence:
+      none: true
+
+tests:
+  - name: Central telemetry should not be enabled by default
+    expect: |
+      envVars(.deployments.central; "central") | assertThat(has("ROX_TELEMETRY_STORAGE_KEY_V1") == false)
+
+  - name: Central telemetry should be enabled when enabled
+    set:
+      central.telemetry.enabled: true
+      central.telemetry.storage.key: "key"
+    expect: |
+      envVars(.deployments.central; "central")["ROX_TELEMETRY_STORAGE_KEY_V1"] | assertThat(. == "key")
+
+  - name: Central monitoring should be disabled when not enabled
+    set:
+      central.telemetry.enabled: false
+      central.telemetry.storage.key: "key"
+    expect: |
+      envVars(.deployments.central; "central") | assertThat(has("ROX_TELEMETRY_STORAGE_KEY_V1") == false)

@@ -15,56 +15,28 @@ import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import { FieldArray, FormikProvider } from 'formik';
 
-import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
-
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import { GenericNotifierIntegration as GenericWebhookIntegration } from 'types/notifier.proto';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
-
-export type GenericWebhookIntegration = {
-    generic: {
-        endpoint: string;
-        skipTlsVerify: boolean;
-        auditLoggingEnabled: boolean;
-        caCert: string;
-        username: string;
-        password: string;
-        headers: {
-            key: string;
-            value: string;
-        }[];
-        extraFields: {
-            key: string;
-            value: string;
-        }[];
-    };
-    type: 'generic';
-} & NotifierIntegrationBase;
 
 export type GenericWebhookIntegrationFormValues = {
     notifier: GenericWebhookIntegration;
     updatePassword: boolean;
 };
 
-const validEndpointRegex =
-    /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
-
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
         name: yup.string().trim().required('Name is required'),
         generic: yup.object().shape({
-            endpoint: yup
-                .string()
-                .trim()
-                .required('Endpoint is required')
-                .matches(validEndpointRegex, 'Endpoint must be a valid URL'),
+            endpoint: yup.string().trim().required('Endpoint is required'),
             skipTlsVerify: yup.bool(),
             auditLoggingEnabled: yup.bool(),
             username: yup
@@ -112,7 +84,7 @@ export const defaultValues: GenericWebhookIntegrationFormValues = {
         name: '',
         generic: {
             endpoint: '',
-            skipTlsVerify: false,
+            skipTLSVerify: false,
             auditLoggingEnabled: false,
             caCert: '',
             username: '',
@@ -141,6 +113,9 @@ function GenericWebhookIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.generic.password = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const formik = useIntegrationForm<GenericWebhookIntegrationFormValues>({
         initialValues: formInitialValues,
@@ -214,13 +189,13 @@ function GenericWebhookIntegrationForm({
                         </FormLabelGroup>
                         <FormLabelGroup
                             label=""
-                            fieldId="notifier.generic.skipTlsVerify"
+                            fieldId="notifier.generic.skipTLSVerify"
                             errors={errors}
                         >
                             <Checkbox
                                 label="Skip TLS verification"
-                                id="notifier.generic.skipTlsVerify"
-                                isChecked={values.notifier.generic.skipTlsVerify}
+                                id="notifier.generic.skipTLSVerify"
+                                isChecked={values.notifier.generic.skipTLSVerify}
                                 onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}

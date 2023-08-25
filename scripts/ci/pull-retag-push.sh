@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
+# shellcheck source=../../scripts/lib.sh
+source "$ROOT/scripts/lib.sh"
+
 set -euxo pipefail
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
-
 if (( "$#" != 2 )); then
-  echo >&2 "Usage: $0 SRC DEST"
-  exit 1
+  die "Usage: $0 SRC DEST"
 fi
 
 SRC="$1"
 DEST="$2"
 
+[[ "${OPENSHIFT_CI:-false}" == "false" ]] || { die "Not supported in OpenShift CI"; }
+
 docker pull "${SRC}" | cat
 docker tag "${SRC}" "${DEST}"
-"${DIR}/push-as-manifest-list.sh" "${DEST}" | cat
+docker push "${DEST}" | cat
+# No need to keep the old images
+docker rmi "${SRC}" "${DEST}"

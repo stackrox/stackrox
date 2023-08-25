@@ -3,6 +3,7 @@ package sensor
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 )
 
@@ -14,11 +15,10 @@ type CentralSender interface {
 }
 
 // NewCentralSender returns a new instance of a CentralSender.
-func NewCentralSender(senders ...common.SensorComponent) CentralSender {
+func NewCentralSender(finished *sync.WaitGroup, senders ...common.SensorComponent) CentralSender {
 	return &centralSenderImpl{
-		stopC:    concurrency.NewErrorSignal(),
-		stoppedC: concurrency.NewErrorSignal(),
-
-		senders: senders,
+		stopper:  concurrency.NewStopper(),
+		senders:  senders,
+		finished: finished,
 	}
 }

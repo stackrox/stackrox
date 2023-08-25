@@ -4,15 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -56,11 +57,22 @@ var (
 		Categories:         []string{"Vulnerability Management", "Privileges"},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion: "1.1",
 	}
 
 	buildPolicy = &storage.Policy{
@@ -68,11 +80,22 @@ var (
 		Name:               "Sample build time policy",
 		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.CVSS,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "7",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion: "1.1",
 	}
 
 	indicatorsWithSSH = []*storage.ProcessIndicator{
@@ -126,9 +149,22 @@ var (
 		Name:               "Privileged Container",
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
-		Fields: &storage.PolicyFields{SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
-		}},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.PrivilegedContainer,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "true",
+							},
+						},
+					},
+				},
+			},
+		},
+		PolicyVersion: "1.1",
 	}
 
 	imageIntegrations = []*storage.ImageIntegration{
@@ -149,22 +185,44 @@ var (
 	sshPolicy = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "SSH Policy",
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "sshd",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "sshd",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion:      "1.1",
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
 	sshPolicyWithNoEnforcement = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "SSH Policy",
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "sshd",
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "sshd",
+							},
+						},
+					},
+				},
 			},
 		},
+		PolicyVersion: "1.1",
 	}
 )
 

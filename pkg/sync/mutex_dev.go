@@ -1,5 +1,4 @@
 //go:build !release
-// +build !release
 
 package sync
 
@@ -56,6 +55,7 @@ func panicOnTimeout(action string, do func(), timeout time.Duration) {
 
 // panicOnTimeoutMarked allows recording the timestamp (in nanoseconds since unix epoch) as a parameter on the
 // stack. The noinline directive is supposed to prevent the optimizer from removing it.
+//
 //go:noinline
 func panicOnTimeoutMarked(action string, do func(), timeout time.Duration, nowNanos int64) {
 	do()
@@ -72,6 +72,15 @@ type Mutex struct {
 func (m *Mutex) Lock() {
 	panicOnTimeout("Mutex.Lock", m.Mutex.Lock, lockTimeout)
 	m.acquireTime = time.Now()
+}
+
+// TryLock wraps the call to sync.Mutex TryLock. It returns true if the lock was acquired.
+func (m *Mutex) TryLock() bool {
+	if m.Mutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
 }
 
 // Unlock releases an acquired lock on the mutex.
@@ -95,6 +104,24 @@ func (m *RWMutex) RLock() {
 func (m *RWMutex) Lock() {
 	panicOnTimeout("RWMutex.Lock", m.RWMutex.Lock, lockTimeout)
 	m.acquireTime = time.Now()
+}
+
+// TryRLock wraps the call to sync.RWMutex TryRLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryRLock() bool {
+	if m.RWMutex.TryRLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
+}
+
+// TryLock wraps the call to sync.RWMutex TryLock. It returns true if the lock was acquired.
+func (m *RWMutex) TryLock() bool {
+	if m.RWMutex.TryLock() {
+		m.acquireTime = time.Now()
+		return true
+	}
+	return false
 }
 
 // Unlock releases an acquired writer (exclusive) lock on the mutex.

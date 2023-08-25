@@ -1,12 +1,15 @@
 package listener
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,11 +19,12 @@ import (
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
 // channel
 type resourceEventHandlerImpl struct {
+	context    context.Context
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	output                chan<- *central.MsgFromSensor
-	treatCreatesAsUpdates *concurrency.Flag
+	resolver         component.Resolver
+	syncingResources *concurrency.Flag
 
 	syncLock                   sync.Mutex
 	seenIDs                    map[types.UID]struct{}
@@ -30,8 +34,8 @@ type resourceEventHandlerImpl struct {
 
 func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
-	if h.treatCreatesAsUpdates != nil && h.treatCreatesAsUpdates.Get() {
-		h.sendResourceEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
+	if h.syncingResources != nil && h.syncingResources.Get() {
+		h.sendResourceEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
 	} else {
 		h.sendResourceEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
 	}
@@ -104,18 +108,9 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 		kubernetes.TrimAnnotations(metaObj)
 	}
 
-	evWraps := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	h.sendEvents(evWraps...)
-}
-
-func (h *resourceEventHandlerImpl) sendEvents(evWraps ...*central.SensorEvent) {
-	for _, evWrap := range evWraps {
-		h.output <- &central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: evWrap,
-			},
-		}
-	}
+	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
+	message.Context = h.context
+	h.resolver.Send(message)
 }
 
 func getObjUID(newObj interface{}) types.UID {

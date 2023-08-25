@@ -8,7 +8,7 @@ import (
 )
 
 // Abort aborts the current compliance check, optionally setting an error.
-func Abort(ctx ComplianceContext, err error) {
+func Abort(_ ComplianceContext, err error) {
 	halt(err)
 }
 

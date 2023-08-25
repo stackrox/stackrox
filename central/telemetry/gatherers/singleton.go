@@ -1,19 +1,21 @@
 package gatherers
 
 import (
+	"github.com/pkg/errors"
+
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	depDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	installation "github.com/stackrox/rox/central/installation/store"
-	manager "github.com/stackrox/rox/central/license/singleton"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	sensorUpgradeConfigDatastore "github.com/stackrox/rox/central/sensorupgradeconfig/datastore"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -24,21 +26,17 @@ var (
 // Singleton initializes and returns a RoxGatherer singleton
 func Singleton() *RoxGatherer {
 	gathererInit.Do(func() {
+		_, adminConfig, err := pgconfig.GetPostgresConfig()
+		utils.CrashOnError(errors.Wrap(err, "unable to get Postgres config"))
+
+		dbGatherer := newDatabaseGatherer(
+			newPostgresGatherer(globaldb.GetPostgres(), adminConfig),
+		)
+
 		gatherer = newRoxGatherer(
 			newCentralGatherer(
-				manager.ManagerSingleton(),
 				installation.Singleton(),
-				newDatabaseGatherer(
-					newRocksDBGatherer(globaldb.GetRocksDB()),
-					newBoltGatherer(globaldb.GetGlobalDB()),
-					newBleveGatherer(
-						globalindex.GetGlobalIndex(),
-						globalindex.GetGlobalTmpIndex(),
-						globalindex.GetAlertIndex(),
-						globalindex.GetPodIndex(),
-						globalindex.GetProcessIndex(),
-					),
-				),
+				dbGatherer,
 				newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()),
 				gatherers.NewComponentInfoGatherer(),
 				sensorUpgradeConfigDatastore.Singleton(),

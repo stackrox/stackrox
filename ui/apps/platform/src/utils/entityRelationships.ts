@@ -3,166 +3,229 @@
 // note: the relationships are directional!
 // changing direction may change relationship type between entities!!
 
-import uniq from 'lodash/uniq';
-import entityTypes from 'constants/entityTypes';
-import relationshipTypes from 'constants/relationshipTypes';
-import useCaseTypes from 'constants/useCaseTypes';
+import { RelationshipType } from 'constants/relationshipTypes';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
-// base k8s entities to be used across all use cases
-const baseEntities = [entityTypes.CLUSTER, entityTypes.NAMESPACE, entityTypes.DEPLOYMENT];
+/*
+// For historical interest: never used.
+const complianceEntityTypes = ['CONTROL', 'NODE', 'CLUSTER', 'NAMESPACE', 'DEPLOYMENT'];
+*/
 
-// map of use cases to entities
-export const useCaseEntityMap = {
-    [useCaseTypes.COMPLIANCE]: [entityTypes.CONTROL, entityTypes.NODE, ...baseEntities],
-    [useCaseTypes.CONFIG_MANAGEMENT]: [
-        entityTypes.CONTROL,
-        entityTypes.NODE,
-        entityTypes.IMAGE,
-        entityTypes.ROLE,
-        entityTypes.SECRET,
-        entityTypes.SUBJECT,
-        entityTypes.SERVICE_ACCOUNT,
-        entityTypes.POLICY,
-        ...baseEntities,
-    ],
-    [useCaseTypes.VULN_MANAGEMENT]: [
-        entityTypes.POLICY,
-        entityTypes.CVE,
-        ...baseEntities,
-        entityTypes.IMAGE,
-        entityTypes.COMPONENT,
-    ],
-};
+const configurationManagementEntityTypes = [
+    'CONTROL',
+    'NODE',
+    'IMAGE',
+    'ROLE',
+    'SECRET',
+    'SUBJECT',
+    'SERVICE_ACCOUNT',
+    'POLICY',
+    'CLUSTER',
+    'NAMESPACE',
+    'DEPLOYMENT',
+] as const; // necessary for type below
 
-export const getUseCaseEntityMap = (): Record<string, string[]> => {
-    const entityMap = { ...useCaseEntityMap };
-    if (!entityMap[useCaseTypes.VULN_MANAGEMENT].includes(entityTypes.NODE)) {
-        entityMap[useCaseTypes.VULN_MANAGEMENT].push(entityTypes.NODE);
+export type ConfigurationManagementEntityType = (typeof configurationManagementEntityTypes)[number];
+
+export function getConfigurationManagementEntityTypes(
+    isFeatureFlagEnabled?: IsFeatureFlagEnabled
+): ConfigurationManagementEntityType[] {
+    if (isFeatureFlagEnabled) {
+        // Arrays include all possible entity types for use case.
+        return configurationManagementEntityTypes.filter((/* entityType */) => {
+            /*
+            // Pattern to filter out an entity type if a feature flag is not enabled.
+            if (entityType === 'WHICHEVER' && !isFeatureFlagEnabled(ROX_WHATEVER)) {
+                return false;
+            } 
+            */
+            return true;
+        });
     }
-    return entityMap;
-};
 
-export const entityGroups = {
+    return [...configurationManagementEntityTypes];
+}
+
+const vulnerabilityManagementEntityTypes = [
+    'IMAGE_CVE',
+    'NODE_CVE',
+    'CLUSTER_CVE',
+    'CLUSTER',
+    'NAMESPACE',
+    'DEPLOYMENT',
+    'IMAGE',
+    'IMAGE_COMPONENT',
+    'NODE_COMPONENT',
+    'NODE',
+] as const; // necessary for type below
+
+export type VulnerabilityManagementEntityType = (typeof vulnerabilityManagementEntityTypes)[number];
+
+export function getVulnerabilityManagementEntityTypes(
+    isFeatureFlagEnabled?: IsFeatureFlagEnabled
+): VulnerabilityManagementEntityType[] {
+    if (isFeatureFlagEnabled) {
+        // Arrays include all possible entity types for use case.
+        return vulnerabilityManagementEntityTypes.filter((/* entityType */) => {
+            /*
+            // Pattern to filter out an entity type if a feature flag is not enabled.
+            if (entityType === 'WHICHEVER' && !isFeatureFlagEnabled(ROX_WHATEVER)) {
+                return false;
+            } 
+            */
+            return true;
+        });
+    }
+
+    return [...vulnerabilityManagementEntityTypes];
+}
+
+export type EntityGroup =
+    | 'OVERVIEW'
+    | 'VIOLATIONS_AND_FINDINGS'
+    | 'APPLICATION_RESOURCES'
+    | 'RBAC_CONFIG'
+    | 'SECURITY';
+
+export const entityGroups: Record<EntityGroup, string> = {
     OVERVIEW: 'Overview',
     VIOLATIONS_AND_FINDINGS: 'Violations & Findings',
     APPLICATION_RESOURCES: 'Application & Infrastructure',
-    RBAC_CONFIG: 'RBAC Visibility & Configurations',
+    RBAC_CONFIG: 'Role-Based Access Control',
     SECURITY: 'Security Findings',
 };
 
-export const entityGroupMap = {
-    [entityTypes.ROLE]: entityGroups.RBAC_CONFIG,
-    [entityTypes.SUBJECT]: entityGroups.RBAC_CONFIG,
-    [entityTypes.SERVICE_ACCOUNT]: entityGroups.RBAC_CONFIG,
+export type EntityType = ConfigurationManagementEntityType | VulnerabilityManagementEntityType;
 
-    [entityTypes.DEPLOYMENT]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.SECRET]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.NODE]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.CLUSTER]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.NAMESPACE]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.IMAGE]: entityGroups.APPLICATION_RESOURCES,
-    [entityTypes.COMPONENT]: entityGroups.APPLICATION_RESOURCES,
+export const entityGroupMap: Record<EntityType, EntityGroup> = {
+    ROLE: 'RBAC_CONFIG',
+    SUBJECT: 'RBAC_CONFIG',
+    SERVICE_ACCOUNT: 'RBAC_CONFIG',
 
-    [entityTypes.POLICY]: entityGroups.SECURITY,
-    [entityTypes.CONTROL]: entityGroups.SECURITY,
-    [entityTypes.CVE]: entityGroups.SECURITY,
+    DEPLOYMENT: 'APPLICATION_RESOURCES',
+    SECRET: 'APPLICATION_RESOURCES',
+    NODE: 'APPLICATION_RESOURCES',
+    CLUSTER: 'APPLICATION_RESOURCES',
+    NAMESPACE: 'APPLICATION_RESOURCES',
+    IMAGE: 'APPLICATION_RESOURCES',
+    NODE_COMPONENT: 'APPLICATION_RESOURCES',
+    IMAGE_COMPONENT: 'APPLICATION_RESOURCES',
+
+    POLICY: 'SECURITY',
+    CONTROL: 'SECURITY',
+    NODE_CVE: 'SECURITY',
+    IMAGE_CVE: 'SECURITY',
+    CLUSTER_CVE: 'SECURITY',
 };
 
 type EntityRelationshipData = {
-    children: string[];
-    parents: string[];
-    matches: string[];
-    extendedMatches?: string[];
+    children: EntityType[];
+    parents: EntityType[];
+    matches: EntityType[];
+    extendedMatches?: EntityType[];
 };
 
 // If you change the data, then you will need to update a snapshot.
-const entityRelationshipMap: Record<string, EntityRelationshipData> = {
-    [entityTypes.CLUSTER]: {
-        children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
+const entityRelationshipMap: Record<EntityType, EntityRelationshipData> = {
+    CLUSTER: {
+        children: ['NODE', 'NAMESPACE', 'ROLE'],
         parents: [],
-        matches: [entityTypes.CONTROL],
-        // TODO: add CVE entity type and filter by k8s accordingly
-        // matches: [entityTypes.CONTROL, entityTypes.CVE],
+        matches: ['CONTROL', 'CLUSTER_CVE'],
         // extendedMatches: [entityTypes.POLICY]
     },
-    [entityTypes.NODE]: {
-        children: [entityTypes.COMPONENT],
-        parents: [entityTypes.CLUSTER],
-        matches: [entityTypes.CONTROL],
+    NODE: {
+        children: ['NODE_COMPONENT'],
+        parents: ['CLUSTER'],
+        matches: ['CONTROL'],
     },
-    [entityTypes.NAMESPACE]: {
-        children: [entityTypes.DEPLOYMENT, entityTypes.SERVICE_ACCOUNT, entityTypes.SECRET],
-        parents: [entityTypes.CLUSTER],
+    NAMESPACE: {
+        children: ['DEPLOYMENT', 'SERVICE_ACCOUNT', 'SECRET'],
+        parents: ['CLUSTER'],
         matches: [],
         // extendedMatches: [entityTypes.POLICY]
     },
-    [entityTypes.DEPLOYMENT]: {
-        children: [entityTypes.IMAGE],
-        parents: [entityTypes.NAMESPACE, entityTypes.CLUSTER],
-        matches: [
-            entityTypes.SERVICE_ACCOUNT,
-            entityTypes.POLICY,
-            entityTypes.CONTROL,
-            entityTypes.SECRET,
-        ],
+    DEPLOYMENT: {
+        children: ['IMAGE'],
+        parents: ['NAMESPACE', 'CLUSTER'],
+        matches: ['SERVICE_ACCOUNT', 'POLICY', 'CONTROL', 'SECRET'],
     },
-    [entityTypes.IMAGE]: {
-        children: [entityTypes.COMPONENT],
+    IMAGE: {
+        children: ['IMAGE_COMPONENT'],
         parents: [],
-        matches: [entityTypes.DEPLOYMENT],
+        matches: ['DEPLOYMENT'],
     },
-    [entityTypes.COMPONENT]: {
+    NODE_COMPONENT: {
         children: [],
         parents: [],
-        matches: [entityTypes.IMAGE, entityTypes.CVE, entityTypes.NODE],
-        extendedMatches: [entityTypes.DEPLOYMENT],
+        matches: ['NODE_CVE', 'NODE'],
+        extendedMatches: [],
     },
-    // technically this CVE entity type encompasses node CVEs, image/component CVEs, k8s CVEs (for clusters)
-    [entityTypes.CVE]: {
+    IMAGE_COMPONENT: {
         children: [],
         parents: [],
-        matches: [entityTypes.COMPONENT],
-        extendedMatches: [entityTypes.IMAGE, entityTypes.DEPLOYMENT, entityTypes.NODE],
+        matches: ['IMAGE', 'IMAGE_CVE'],
+        extendedMatches: ['DEPLOYMENT'],
     },
-    [entityTypes.CONTROL]: {
+    IMAGE_CVE: {
         children: [],
         parents: [],
-        matches: [entityTypes.NODE, entityTypes.DEPLOYMENT, entityTypes.CLUSTER],
+        matches: ['IMAGE_COMPONENT'],
+        extendedMatches: ['IMAGE', 'DEPLOYMENT'],
     },
-    [entityTypes.POLICY]: {
+    NODE_CVE: {
         children: [],
         parents: [],
-        matches: [entityTypes.DEPLOYMENT],
+        matches: ['NODE_COMPONENT'],
+        extendedMatches: ['NODE'],
     },
-    [entityTypes.SECRET]: {
-        children: [],
-        parents: [entityTypes.NAMESPACE],
-        matches: [entityTypes.DEPLOYMENT],
-    },
-    [entityTypes.SUBJECT]: {
+    CLUSTER_CVE: {
         children: [],
         parents: [],
-        matches: [entityTypes.ROLE],
+        matches: [],
+        extendedMatches: ['CLUSTER'],
     },
-    [entityTypes.SERVICE_ACCOUNT]: {
+    CONTROL: {
         children: [],
-        parents: [entityTypes.NAMESPACE],
-        matches: [entityTypes.DEPLOYMENT, entityTypes.ROLE],
+        parents: [],
+        matches: ['NODE', 'DEPLOYMENT', 'CLUSTER'],
     },
-    [entityTypes.ROLE]: {
+    POLICY: {
         children: [],
-        parents: [entityTypes.CLUSTER],
-        matches: [entityTypes.SERVICE_ACCOUNT, entityTypes.SUBJECT],
+        parents: [],
+        matches: ['DEPLOYMENT'],
+    },
+    SECRET: {
+        children: [],
+        parents: ['NAMESPACE'],
+        matches: ['DEPLOYMENT'],
+    },
+    SUBJECT: {
+        children: [],
+        parents: [],
+        matches: ['ROLE'],
+    },
+    SERVICE_ACCOUNT: {
+        children: [],
+        parents: ['NAMESPACE'],
+        matches: ['DEPLOYMENT', 'ROLE'],
+    },
+    ROLE: {
+        children: [],
+        parents: ['CLUSTER'],
+        matches: ['SERVICE_ACCOUNT', 'SUBJECT'],
     },
 };
 
 // helper functions
-const getChildren = (entityType: string): string[] => entityRelationshipMap[entityType].children;
-const getParents = (entityType: string): string[] => entityRelationshipMap[entityType].parents;
-const getPureMatches = (entityType: string): string[] => entityRelationshipMap[entityType].matches;
-const getExtendedMatches = (entityType: string): string[] =>
+const getChildren = (entityType: EntityType): EntityType[] =>
+    entityRelationshipMap[entityType].children;
+const getParents = (entityType: EntityType): EntityType[] =>
+    entityRelationshipMap[entityType].parents;
+const getPureMatches = (entityType: EntityType): EntityType[] =>
+    entityRelationshipMap[entityType].matches;
+const getExtendedMatches = (entityType: EntityType): EntityType[] =>
     entityRelationshipMap[entityType].extendedMatches || [];
-const getMatches = (entityType: string): string[] => [
+const getMatches = (entityType: EntityType): EntityType[] => [
     ...getPureMatches(entityType),
     ...getExtendedMatches(entityType),
 ];
@@ -170,68 +233,94 @@ const getMatches = (entityType: string): string[] => [
 // function to recursively get inclusive 'contains' relationships (inferred)
 // this includes all generations of children AND inferred (matches of children down the chain) relationships
 // e.g. namespace inclusively contains policy since ns contains deployment and deployment matches policy
-const getContains = (entityType: string): string[] => {
-    const relationships: string[] = [];
-    const children = getChildren(entityType);
-    if (children) {
-        children.forEach((child) => {
-            const childMatches = getPureMatches(child);
-            const childContains = getContains(child);
-            relationships.push(child, ...childMatches, ...childContains);
-        });
+const getContains = (entityType: EntityType): EntityType[] => {
+    const relationships: EntityType[] = [];
+
+    function pushChild(child) {
+        // Do not include itself. Prevent duplicates.
+        if (child !== entityType && !relationships.includes(child)) {
+            relationships.push(child);
+        }
     }
-    // TODO: Should never return a type as a relationship of itself. Seems like logic is off somewhere
-    return uniq(relationships).filter((type) => type !== entityType);
+
+    getChildren(entityType).forEach((child) => {
+        pushChild(child);
+        getPureMatches(child).forEach((childMatches) => {
+            pushChild(childMatches);
+        });
+        getContains(child).forEach((childContains) => {
+            pushChild(childContains);
+        });
+    });
+
+    return relationships;
 };
 
-const isChild = (parent: string, child: string): boolean => getChildren(parent).includes(child);
-const isParent = (parent: string, child: string): boolean => getParents(child).includes(parent);
-const isMatch = (entityType1: string, entityType2: string): boolean =>
+const isChild = (parent: EntityType, child: EntityType): boolean =>
+    getChildren(parent).includes(child);
+const isParent = (parent: EntityType, child: EntityType): boolean =>
+    getParents(child).includes(parent);
+const isMatch = (entityType1: EntityType, entityType2: EntityType): boolean =>
     getMatches(entityType1).includes(entityType2);
-const isPureMatch = (entityType1: string, entityType2: string): boolean =>
+const isPureMatch = (entityType1: EntityType, entityType2: EntityType): boolean =>
     getPureMatches(entityType1).includes(entityType2);
-const isExtendedMatch = (entityType1: string, entityType2: string): boolean =>
+const isExtendedMatch = (entityType1: EntityType, entityType2: EntityType): boolean =>
     getExtendedMatches(entityType1).includes(entityType2);
-const isContained = (entityType1: string, entityType2: string): boolean =>
+const isContained = (entityType1: EntityType, entityType2: EntityType): boolean =>
     getContains(entityType1).includes(entityType2);
-const isContainedInferred = (entityType1: string, entityType2: string): boolean =>
+const isContainedInferred = (entityType1: EntityType, entityType2: EntityType): boolean =>
     entityType1 !== entityType2 &&
     isContained(entityType1, entityType2) &&
     !isChild(entityType1, entityType2);
 
-// wrapper function returns a list of entities, given an entitytype, relationship, and useCase
-// e.g.
-// f(type, relationship, useCase)
-// f(cluster, contains, config management), f(deployment, parents, config management)
-export const getEntityTypesByRelationship = (
-    entityType: string,
-    relationship: string,
-    useCase: string
-): string[] => {
-    const entityMap = getUseCaseEntityMap();
-    let entities: string[] = [];
-    if (relationship === relationshipTypes.CONTAINS) {
-        entities = getContains(entityType);
-        // this is to remove NODE links from IMAGE, DEPLOYMENT, NAMESPACE and vice versa
-        // need to revisit the mapping later.
-        if (entityType === entityTypes.NODE) {
-            entities = entities.filter((entity) => entity !== entityTypes.IMAGE);
-        } else if (
-            entityType === entityTypes.IMAGE ||
-            entityType === entityTypes.DEPLOYMENT ||
-            entityType === entityTypes.NAMESPACE
-        ) {
-            entities = entities.filter((entity) => entity !== entityTypes.NODE);
+function getEntityTypesByRelationship(
+    entityType: EntityType,
+    relationship: RelationshipType
+): EntityType[] {
+    switch (relationship) {
+        case 'CONTAINS': {
+            const entities = getContains(entityType);
+            // this is to remove NODE links from IMAGE, DEPLOYMENT, NAMESPACE and vice versa
+            // need to revisit the mapping later.
+            if (entityType === 'NODE') {
+                return entities.filter((entity) => entity !== 'IMAGE');
+            }
+            if (
+                entityType === 'IMAGE' ||
+                entityType === 'DEPLOYMENT' ||
+                entityType === 'NAMESPACE'
+            ) {
+                return entities.filter((entity) => entity !== 'NODE');
+            }
+            return entities;
         }
-    } else if (relationship === relationshipTypes.MATCHES) {
-        entities = getMatches(entityType);
-    } else if (relationship === relationshipTypes.PARENTS) {
-        entities = getParents(entityType);
-    } else if (relationship === relationshipTypes.CHILDREN) {
-        entities = getChildren(entityType);
+        case 'MATCHES':
+            return getMatches(entityType);
+        case 'PARENTS': // not used in UI
+            return getParents(entityType);
+        case 'CHILDREN': // not used in UI
+            return getChildren(entityType);
+        default:
+            return [];
     }
-    return entities.filter((entity) => entityMap[useCase].includes(entity));
-};
+}
+
+// Configuration Management never used this method to compute its EntityTypesByRelationship.
+
+export function getVulnerabilityManagementEntityTypesByRelationship(
+    entityType: EntityType,
+    relationship: RelationshipType,
+    isFeatureFlagEnabled?: IsFeatureFlagEnabled
+) {
+    const entityTypes = getVulnerabilityManagementEntityTypes(isFeatureFlagEnabled);
+
+    // Do not include itself. Filter out any Configuration Management entity types.
+    return getEntityTypesByRelationship(entityType, relationship).filter(
+        (entityTypeByRelationship) =>
+            entityTypeByRelationship !== entityType &&
+            entityTypes.includes(entityTypeByRelationship as VulnerabilityManagementEntityType)
+    ) as VulnerabilityManagementEntityType[];
+}
 
 export default {
     getChildren,

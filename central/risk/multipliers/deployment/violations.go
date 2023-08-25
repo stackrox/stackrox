@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -28,7 +27,7 @@ var (
 
 // ViolationsMultiplier is a scorer for the violations on a deployment
 type ViolationsMultiplier struct {
-	getter getters.AlertGetter
+	searcher getters.AlertSearcher
 }
 
 type policyFactor struct {
@@ -37,19 +36,17 @@ type policyFactor struct {
 }
 
 // NewViolations scores the data based on the number and severity of policy violations.
-func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
+func NewViolations(searcher getters.AlertSearcher) *ViolationsMultiplier {
 	return &ViolationsMultiplier{
-		getter: getter,
+		searcher: searcher,
 	}
 }
 
 // Score takes a deployment and evaluates its risk based on policy violations.
 func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
-	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String())
 
-	alerts, err := v.getter.ListAlerts(ctx, &v1.ListAlertsRequest{
-		Query: qb.Query(),
-	})
+	alerts, err := v.searcher.SearchListAlerts(ctx, qb.ProtoQuery())
 	if err != nil {
 		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil

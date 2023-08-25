@@ -5,7 +5,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -14,9 +13,6 @@ type secretDataMap = map[string][]byte
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
-	if !features.LocalImageScanning.Enabled() {
-		return nil, errors.Errorf("feature '%s' is disabled", features.LocalImageScanning.Name())
-	}
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
 	}
@@ -74,7 +70,9 @@ func generateServiceCertMap(serviceType storage.ServiceType, namespace string, c
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
-		mtls.WithValidityExpiringInDays(),
+		// TODO(ROX-9128): restore after we make sure clients can reliably reconnect
+		// after certificate rotation, as part of ROX-8577.
+		// mtls.WithValidityExpiringInDays(),
 		mtls.WithNamespace(namespace),
 	}
 	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {

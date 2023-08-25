@@ -5,10 +5,12 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -34,42 +36,38 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AckKeysIndexed mocks base method.
-func (m *MockStore) AckKeysIndexed(keys ...string) error {
+// DeleteByQuery mocks base method.
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range keys {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
+	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AckKeysIndexed indicates an expected call of AckKeysIndexed.
-func (mr *MockStoreMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
+// DeleteByQuery indicates an expected call of DeleteByQuery.
+func (mr *MockStoreMockRecorder) DeleteByQuery(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), keys...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByQuery", reflect.TypeOf((*MockStore)(nil).DeleteByQuery), ctx, query)
 }
 
 // DeleteMany mocks base method.
-func (m *MockStore) DeleteMany(id []string) error {
+func (m *MockStore) DeleteMany(ctx context.Context, id []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteMany", id)
+	ret := m.ctrl.Call(m, "DeleteMany", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteMany indicates an expected call of DeleteMany.
-func (mr *MockStoreMockRecorder) DeleteMany(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) DeleteMany(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, id)
 }
 
 // Get mocks base method.
-func (m *MockStore) Get(id string) (*storage.ProcessIndicator, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", id)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*storage.ProcessIndicator)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -77,30 +75,30 @@ func (m *MockStore) Get(id string) (*storage.ProcessIndicator, bool, error) {
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetKeysToIndex mocks base method.
-func (m *MockStore) GetKeysToIndex() ([]string, error) {
+// GetByQuery mocks base method.
+func (m *MockStore) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeysToIndex")
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "GetByQuery", ctx, q)
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetKeysToIndex indicates an expected call of GetKeysToIndex.
-func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
+// GetByQuery indicates an expected call of GetByQuery.
+func (mr *MockStoreMockRecorder) GetByQuery(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, q)
 }
 
 // GetMany mocks base method.
-func (m *MockStore) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error) {
+func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMany", ids)
+	ret := m.ctrl.Call(m, "GetMany", ctx, ids)
 	ret0, _ := ret[0].([]*storage.ProcessIndicator)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
@@ -108,35 +106,35 @@ func (m *MockStore) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, e
 }
 
 // GetMany indicates an expected call of GetMany.
-func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetMany(ctx, ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
 // UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(arg0 []*storage.ProcessIndicator) error {
+func (m *MockStore) UpsertMany(arg0 context.Context, arg1 []*storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertMany", arg0)
+	ret := m.ctrl.Call(m, "UpsertMany", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertMany indicates an expected call of UpsertMany.
-func (mr *MockStoreMockRecorder) UpsertMany(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpsertMany(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), arg0, arg1)
 }
 
 // Walk mocks base method.
-func (m *MockStore) Walk(arg0 func(*storage.ProcessIndicator) error) error {
+func (m *MockStore) Walk(arg0 context.Context, arg1 func(*storage.ProcessIndicator) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Walk", arg0)
+	ret := m.ctrl.Call(m, "Walk", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Walk indicates an expected call of Walk.
-func (mr *MockStoreMockRecorder) Walk(arg0 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Walk(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0, arg1)
 }

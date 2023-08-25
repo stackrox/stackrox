@@ -8,12 +8,12 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	networkgraph "github.com/stackrox/rox/pkg/networkgraph"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.
@@ -37,6 +37,20 @@ func NewMockManager(ctrl *gomock.Controller) *MockManager {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
+}
+
+// CreateNetworkBaseline mocks base method.
+func (m *MockManager) CreateNetworkBaseline(deploymentID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateNetworkBaseline", deploymentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateNetworkBaseline indicates an expected call of CreateNetworkBaseline.
+func (mr *MockManagerMockRecorder) CreateNetworkBaseline(deploymentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNetworkBaseline", reflect.TypeOf((*MockManager)(nil).CreateNetworkBaseline), deploymentID)
 }
 
 // ProcessBaselineLockUpdate mocks base method.
@@ -124,15 +138,15 @@ func (mr *MockManagerMockRecorder) ProcessNetworkPolicyUpdate(ctx, action, polic
 }
 
 // ProcessPostClusterDelete mocks base method.
-func (m *MockManager) ProcessPostClusterDelete(clusterID string) error {
+func (m *MockManager) ProcessPostClusterDelete(deploymentIDs []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessPostClusterDelete", clusterID)
+	ret := m.ctrl.Call(m, "ProcessPostClusterDelete", deploymentIDs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessPostClusterDelete indicates an expected call of ProcessPostClusterDelete.
-func (mr *MockManagerMockRecorder) ProcessPostClusterDelete(clusterID interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) ProcessPostClusterDelete(deploymentIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPostClusterDelete", reflect.TypeOf((*MockManager)(nil).ProcessPostClusterDelete), clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPostClusterDelete", reflect.TypeOf((*MockManager)(nil).ProcessPostClusterDelete), deploymentIDs)
 }

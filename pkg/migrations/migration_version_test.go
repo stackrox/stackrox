@@ -13,12 +13,6 @@ import (
 )
 
 func TestMigrationVersion_Read(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "migver-read")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Remove(tempDir)
-	}()
-
 	testCases := []struct {
 		description string
 		prepFunc    func(dbPath string)
@@ -44,7 +38,7 @@ func TestMigrationVersion_Read(t *testing.T) {
 			},
 			shouldFail:  true,
 			expectedVer: version.GetMainVersion(),
-			expectedSeq: CurrentDBVersionSeqNum(),
+			expectedSeq: LastRocksDBVersionSeqNum(),
 		},
 		{
 			description: "Migration version exists",
@@ -53,14 +47,13 @@ func TestMigrationVersion_Read(t *testing.T) {
 			},
 			shouldFail:  false,
 			expectedVer: version.GetMainVersion(),
-			expectedSeq: CurrentDBVersionSeqNum(),
+			expectedSeq: LastRocksDBVersionSeqNum(),
 		},
 	}
 
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
-			dir, err := os.MkdirTemp(tempDir, "")
-			require.NoError(t, err)
+			dir := t.TempDir()
 			if c.prepFunc != nil {
 				c.prepFunc(dir)
 			}
@@ -77,12 +70,6 @@ func TestMigrationVersion_Read(t *testing.T) {
 }
 
 func TestMigrationVersion_Write(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "migver-write")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.Remove(tempDir)
-	}()
-
 	testCases := []struct {
 		description  string
 		prepFunc     func(dbPath string)
@@ -117,8 +104,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
-			dir, err := os.MkdirTemp(tempDir, "")
-			require.NoError(t, err)
+			dir := t.TempDir()
 			if c.prepFunc != nil {
 				c.prepFunc(dir)
 			}
@@ -138,7 +124,7 @@ func TestMigrationVersion_Write(t *testing.T) {
 			require.NoError(t, err)
 
 			assert.Equal(t, version.GetMainVersion(), ver.MainVersion)
-			assert.Equal(t, CurrentDBVersionSeqNum(), ver.SeqNum)
+			assert.Equal(t, LastRocksDBVersionSeqNum(), ver.SeqNum)
 			assert.Equal(t, dir, ver.dbPath)
 		})
 	}

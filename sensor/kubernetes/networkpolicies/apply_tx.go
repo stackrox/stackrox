@@ -89,7 +89,7 @@ type norecordAction struct {
 	rollbackAction
 }
 
-func (a norecordAction) Record(mod *storage.NetworkPolicyModification) {}
+func (a norecordAction) Record(_ *storage.NetworkPolicyModification) {}
 
 type deletePolicy struct {
 	name, namespace string

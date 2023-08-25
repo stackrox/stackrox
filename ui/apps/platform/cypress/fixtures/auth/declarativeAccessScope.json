@@ -1,0 +1,18 @@
+{
+  "accessScopes": [
+    {
+      "id": "access-scope-test-id",
+      "name": "access-scope-test-name",
+      "description": "test desc",
+      "rules": {
+        "includedClusters": [],
+        "includedNamespaces": [],
+        "clusterLabelSelectors": [],
+        "namespaceLabelSelectors": []
+      },
+      "traits": {
+        "origin": "DECLARATIVE"
+      }
+    }
+  ]
+}

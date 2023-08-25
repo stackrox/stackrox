@@ -1,58 +1,43 @@
+//go:build sql_integration
+
 package tests
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/central/clusterinit/store"
-	"github.com/stackrox/rox/central/clusterinit/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
-	"github.com/stretchr/testify/require"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
-type storeCreator func(t *testing.T) (store.Store, func(t *testing.T))
-
-func createRocksDBStore(t *testing.T) (store.Store, func(t *testing.T)) {
-	testRocksDB := rocksdbtest.RocksDBForT(t)
-	rocksStore, err := rocksdb.NewStore(testRocksDB)
-	require.NoError(t, err)
-
-	tearDown := func(t *testing.T) {
-		rocksdbtest.TearDownRocksDB(testRocksDB)
-	}
-	return rocksStore, tearDown
-}
-
 func TestClusterInitStore(t *testing.T) {
-	t.Parallel()
-
-	stores := map[string]storeCreator{
-		"rocksdb": createRocksDBStore,
-	}
-
-	for name, storeCreator := range stores {
-		t.Run(name, func(t *testing.T) {
-			suite.Run(t, &clusterInitStoreTestSuite{storeCreator: storeCreator})
-		})
-	}
+	suite.Run(t, new(clusterInitStoreTestSuite))
 }
 
 type clusterInitStoreTestSuite struct {
-	storeCreator storeCreator
-
 	suite.Suite
-	store         store.Store
-	teardownStore func(t *testing.T)
+	store store.Store
+	ctx   context.Context
+	db    postgres.DB
+}
+
+func (s *clusterInitStoreTestSuite) SetupSuite() {
+	s.ctx = sac.WithAllAccess(context.Background())
 }
 
 func (s *clusterInitStoreTestSuite) SetupTest() {
-	s.store, s.teardownStore = s.storeCreator(s.T())
+	s.db = pgtest.ForT(s.T())
+	s.store = store.NewStore(pgStore.New(s.db))
 }
 
 func (s *clusterInitStoreTestSuite) TearDownTest() {
-	s.teardownStore(s.T())
+	s.db.Close()
 }
 
 func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {
@@ -65,10 +50,10 @@ func (s *clusterInitStoreTestSuite) TestIDCollisionOnAdd() {
 		Name: "id collision",
 	}
 
-	err := s.store.Add(meta)
+	err := s.store.Add(s.ctx, meta)
 	s.NoError(err)
 
-	err = s.store.Add(idCollision)
+	err = s.store.Add(s.ctx, idCollision)
 	s.Error(err)
 	s.True(errors.Is(err, store.ErrInitBundleIDCollision))
 }
@@ -78,7 +63,7 @@ func (s *clusterInitStoreTestSuite) TestNameCollisionOnAdd() {
 		Id:   "0123456789",
 		Name: "test_name",
 	}
-	err := s.store.Add(meta)
+	err := s.store.Add(s.ctx, meta)
 	s.NoError(err)
 
 	meta2 := &storage.InitBundleMeta{
@@ -86,7 +71,7 @@ func (s *clusterInitStoreTestSuite) TestNameCollisionOnAdd() {
 		Name: "test_name",
 	}
 
-	err = s.store.Add(meta2)
+	err = s.store.Add(s.ctx, meta2)
 	s.Error(err)
 }
 
@@ -108,27 +93,27 @@ func (s *clusterInitStoreTestSuite) TestRevokeToken() {
 	}
 
 	for _, m := range []*storage.InitBundleMeta{toRevokeMeta, meta} {
-		err := s.store.Add(m)
+		err := s.store.Add(s.ctx, m)
 		s.Require().NoError(err)
 	}
 
-	storedMeta, err := s.store.Get(toRevokeMeta.GetId())
+	storedMeta, err := s.store.Get(s.ctx, toRevokeMeta.GetId())
 	s.Require().NoError(err)
 	s.False(storedMeta.GetIsRevoked())
 
-	err = s.store.Revoke(toRevokeMeta.GetId())
+	err = s.store.Revoke(s.ctx, toRevokeMeta.GetId())
 	s.Require().NoError(err)
 
 	// test GetAll ignores revoked bundles
-	all, err := s.store.GetAll()
+	all, err := s.store.GetAll(s.ctx)
 	s.Require().NoError(err)
 	s.Len(all, 1)
 	s.Equal("available", all[0].GetName())
 
 	// test name can be reused after revoking an init-bundle
-	err = s.store.Add(toReuseMetaName)
+	err = s.store.Add(s.ctx, toReuseMetaName)
 	s.Require().NoError(err)
-	reused, err := s.store.Get(toReuseMetaName.GetId())
+	reused, err := s.store.Get(s.ctx, toReuseMetaName.GetId())
 	s.Require().NoError(err)
 	s.Equal(toReuseMetaName.GetName(), reused.GetName())
 	s.Equal(toRevokeMeta.GetName(), reused.GetName())

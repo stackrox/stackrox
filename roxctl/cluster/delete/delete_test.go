@@ -11,11 +11,12 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -30,15 +31,16 @@ type clusterDeleteTestSuite struct {
 }
 
 type mockClustersServiceServer struct {
-	v1.ClustersServiceServer
+	v1.UnimplementedClustersServiceServer
+
 	clusters []*storage.Cluster
 }
 
-func (m *mockClustersServiceServer) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
+func (m *mockClustersServiceServer) GetClusters(_ context.Context, _ *v1.GetClustersRequest) (*v1.ClustersList, error) {
 	return &v1.ClustersList{Clusters: m.clusters}, nil
 }
 
-func (m *mockClustersServiceServer) DeleteCluster(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
+func (m *mockClustersServiceServer) DeleteCluster(_ context.Context, _ *v1.ResourceByID) (*v1.Empty, error) {
 	return &v1.Empty{}, nil
 }
 
@@ -55,7 +57,7 @@ func (c *clusterDeleteTestSuite) createGRPCMockClustersService(clusters []*stora
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	c.Require().NoError(err)
 
 	closeFunction := func() {
@@ -103,7 +105,7 @@ func (c *clusterDeleteTestSuite) TestCommandRequiresName() {
 	err := cbr.Execute()
 
 	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errorhelpers.ErrInvalidArgs)
+	c.Assert().ErrorIs(err, errox.InvalidArgs)
 }
 
 func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
@@ -115,7 +117,7 @@ func (c *clusterDeleteTestSuite) TestCommandFailsIfClusterNotFound() {
 	err := cbr.Execute()
 
 	c.Require().Error(err)
-	c.Assert().ErrorIs(err, errorhelpers.ErrNotFound)
+	c.Assert().ErrorIs(err, errox.NotFound)
 }
 
 func (c *clusterDeleteTestSuite) TestConstructSetsTimeoutFlag() {

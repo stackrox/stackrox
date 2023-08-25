@@ -8,19 +8,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo/testbuildinfo"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	flavorUtils "github.com/stackrox/rox/pkg/images/defaults/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
+	"helm.sh/helm/v3/pkg/chart"
 )
 
 func init() {
 	testutils.SetMainVersion(&testing.T{}, "3.0.55.0")
-	testbuildinfo.SetForTest(&testing.T{})
 }
 
 func TestManager(t *testing.T) {
@@ -30,18 +27,12 @@ func TestManager(t *testing.T) {
 type embedTestSuite struct {
 	suite.Suite
 
-	envIsolator *envisolator.EnvIsolator
-	image       *Image
+	image *Image
 }
 
 func (s *embedTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	testutils.SetExampleVersion(s.T())
 	s.image = GetDefaultImage()
-}
-
-func (s *embedTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *embedTestSuite) TestEmbedAllFiles() {
@@ -69,6 +60,7 @@ func (s *embedTestSuite) TestLoadChartForFlavor() {
 		defaults.DevelopmentBuildImageFlavor(),
 		defaults.StackRoxIOReleaseImageFlavor(),
 		defaults.RHACSReleaseImageFlavor(),
+		defaults.OpenSourceImageFlavor(),
 	}
 
 	for _, flavor := range testCases {
@@ -85,9 +77,9 @@ func (s *embedTestSuite) TestLoadChartForFlavor() {
 	}
 }
 
-func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
+func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlagValuesOnReleaseBuilds() {
 	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	metaVals.FeatureFlags = nil
+	metaVals.ReleaseBuild = true
 
 	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
 	s.Require().NoError(err)
@@ -102,21 +94,49 @@ func (s *embedTestSuite) TestSecuredClusterChartShouldIgnoreFeatureFlags() {
 
 // This test will be removed after the scanner integration is finished. It is critical to check that no scanner manifests are contained within
 // secured cluster.
-func (s *embedTestSuite) TestLoadSecuredClusterDoesNotContainScannerManifests() {
-	s.envIsolator.Setenv(features.LocalImageScanning.Name(), "false")
+func (s *embedTestSuite) TestLoadSecuredClusterScanner() {
+	testCases := map[string]struct {
+		kubectlOutput           bool
+		expectScannerFilesExist bool
+	}{
 
-	metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
-	chart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
-	s.Require().NoError(err)
-	s.Equal("stackrox-secured-cluster-services", chart.Name())
-	s.NotEmpty(chart.Templates)
-
-	var foundScannerTpls []string
-	for _, tpl := range chart.Templates {
-		if strings.Contains(tpl.Name, "scanner") {
-			foundScannerTpls = append(foundScannerTpls, tpl.Name)
-		}
+		"contains scanner manifests": {
+			kubectlOutput:           false,
+			expectScannerFilesExist: true,
+		},
+		"in kubectl output does not contain scanner manifests": {
+			kubectlOutput:           true,
+			expectScannerFilesExist: false,
+		},
 	}
 
-	s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster chart", foundScannerTpls)
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			metaVals := charts.GetMetaValuesForFlavor(flavorUtils.MakeImageFlavorForTest(s.T()))
+			metaVals.KubectlOutput = testCase.kubectlOutput
+
+			loadedChart, err := s.image.LoadChart(SecuredClusterServicesChartPrefix, metaVals)
+			s.Require().NoError(err)
+			s.NotEmpty(loadedChart.Templates)
+
+			var chartFiles []*chart.File
+			chartFiles = append(chartFiles, loadedChart.Files...)
+			chartFiles = append(chartFiles, loadedChart.Templates...)
+
+			var foundScannerTpls []string
+			for _, tpl := range chartFiles {
+				if strings.Contains(tpl.Name, "scanner") {
+					foundScannerTpls = append(foundScannerTpls, tpl.Name)
+				}
+			}
+
+			// Release builds should not contain scanner files currently
+			if testCase.expectScannerFilesExist {
+				s.NotEmpty(foundScannerTpls, "Did not found any scanner manifests but expected them.")
+			} else {
+				s.Empty(foundScannerTpls, "Found unexpected scanner manifests %q in SecuredCluster loadedChart", foundScannerTpls)
+			}
+		})
+	}
+
 }

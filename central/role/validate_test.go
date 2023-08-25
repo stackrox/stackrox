@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/stackrox/rox/generated/storage"
-	labelUtils "github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,11 +20,11 @@ func TestValidateRole(t *testing.T) {
 			},
 		},
 		"role must reference an existing permission set": constructRole("role with no permission set", "", ""),
+		"empty access scope reference is not allowed":    constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
 
 	testCasesGood := map[string]*storage.Role{
 		"valid name, permissionSetId and accessScopeId": constructRole("new valid role", GeneratePermissionSetID(), GenerateAccessScopeID()),
-		"empty access scope reference is allowed":       constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
 
 	for desc, role := range testCasesGood {
@@ -51,7 +51,7 @@ func constructRole(name, permissionSetID, accessScopeID string) *storage.Role {
 }
 
 func TestValidatePermissionSet(t *testing.T) {
-	mockGoodID := permissionSetIDPrefix + "Tanis Half-Elven"
+	mockGoodID := uuid.NewDummy().String()
 	mockBadID := "Tanis Half-Elven"
 	mockName := "Hero of the Lance"
 	mockGoodResource := "K8sRoleBinding"
@@ -107,8 +107,27 @@ func TestValidatePermissionSet(t *testing.T) {
 	}
 }
 
+func TestGeneratePermissionSetID(t *testing.T) {
+	generatedID := GeneratePermissionSetID()
+	_, err := uuid.FromString(generatedID)
+	assert.NoError(t, err)
+}
+
+func TestEnsureValidPermissionSetIDPostgres(t *testing.T) {
+	validID := GeneratePermissionSetID()
+	checkedValidID := EnsureValidPermissionSetID(validID)
+	assert.Equal(t, validID, checkedValidID)
+
+	// Test that an invalid ID triggers the generation of a valid UUID.
+	invalidID := "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
+	checkedInvalidID := EnsureValidPermissionSetID(invalidID)
+	assert.NotEqual(t, invalidID, checkedInvalidID)
+	_, err := uuid.FromString(checkedInvalidID)
+	assert.NoError(t, err)
+}
+
 func TestValidateSimpleAccessScope(t *testing.T) {
-	mockGoodID := EnsureValidAccessScopeID("42")
+	mockGoodID := uuid.NewDummy().String()
 	mockBadID := "42"
 	mockName := "Heart of Gold"
 	mockDescription := "HHGTTG"
@@ -126,10 +145,6 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 	}
 
 	testCasesGood := map[string]*storage.SimpleAccessScope{
-		"id and name are set": {
-			Id:   mockGoodID,
-			Name: mockName,
-		},
 		"id, name, and namespace label selector are set": {
 			Id:    mockGoodID,
 			Name:  mockName,
@@ -163,21 +178,22 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		{
 			name:                   "empty simple access scope",
 			scope:                  &storage.SimpleAccessScope{},
-			expectedNumberOfErrors: 2,
+			expectedNumberOfErrors: 3,
 		},
 		{
 			name:                   "id is missing",
-			scope:                  &storage.SimpleAccessScope{Name: mockName},
+			scope:                  &storage.SimpleAccessScope{Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
 			expectedNumberOfErrors: 1,
 		}, {
 			name:                   "name is missing",
-			scope:                  &storage.SimpleAccessScope{Id: mockGoodID},
+			scope:                  &storage.SimpleAccessScope{Id: mockGoodID, Rules: &storage.SimpleAccessScope_Rules{}},
 			expectedNumberOfErrors: 1,
 		}, {
 			name: "bad id",
 			scope: &storage.SimpleAccessScope{
-				Id:   mockBadID,
-				Name: mockName,
+				Id:    mockBadID,
+				Name:  mockName,
+				Rules: &storage.SimpleAccessScope_Rules{},
 			},
 			expectedNumberOfErrors: 1,
 		},
@@ -211,7 +227,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		}, {
 			name: "multiple errors",
 			scope: &storage.SimpleAccessScope{
-				Id:   mockGoodID,
+				Id:   mockBadID,
 				Name: mockName,
 				Rules: &storage.SimpleAccessScope_Rules{
 					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
@@ -220,7 +236,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 						{Requirements: []*storage.SetBasedLabelSelector_Requirement{
 							{Key: "valid", Op: 42, Values: []string{"value"}},
 						}}}}},
-			expectedNumberOfErrors: 2,
+			expectedNumberOfErrors: 3,
 		}, {
 			name: "invalid selectors",
 			scope: &storage.SimpleAccessScope{
@@ -254,7 +270,7 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 			err := ValidateSimpleAccessScope(tc.scope)
 			var target *multierror.Error
 			if errors.As(err, &target) {
-				assert.Equal(t, target.Len(), tc.expectedNumberOfErrors)
+				assert.Equal(t, tc.expectedNumberOfErrors, target.Len())
 			} else {
 				assert.Zero(t, tc.expectedNumberOfErrors)
 				assert.NoError(t, err)
@@ -263,87 +279,23 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 	}
 }
 
-func TestValidateSimpleAccessScopeRules(t *testing.T) {
-	mockClusterName := "Infinite Improbability Drive"
-	mockGoodNamespace := &storage.SimpleAccessScope_Rules_Namespace{
-		ClusterName:   "Atomic Vector Plotter",
-		NamespaceName: "Advanced Tea Substitute",
-	}
-	mockBadNamespace1 := &storage.SimpleAccessScope_Rules_Namespace{
-		ClusterName: "Brownian Motion Producer",
-	}
-	mockBadNamespace2 := &storage.SimpleAccessScope_Rules_Namespace{
-		NamespaceName: "Bambleweeny 57 Submeson Brain",
-	}
-	mockGoodSelector := labelUtils.LabelSelector("fleet", storage.SetBasedLabelSelector_NOT_IN, []string{"vogon"})
-	mockBadSelector := &storage.SetBasedLabelSelector{
-		Requirements: []*storage.SetBasedLabelSelector_Requirement{
-			{Key: "valid", Op: 42, Values: []string{"value"}},
-		},
-	}
-
-	testCasesGood := map[string]*storage.SimpleAccessScope_Rules{
-		"valid namespace label selector": {
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockGoodNamespace,
-			},
-		},
-		"all possible rules are set": {
-			IncludedClusters: []string{
-				mockClusterName,
-			},
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockGoodNamespace,
-			},
-			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-				mockGoodSelector,
-			},
-			NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-				mockGoodSelector,
-			},
-		},
-	}
-
-	testCasesBad := map[string]*storage.SimpleAccessScope_Rules{
-		"namespace with missing namespace name": {
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockBadNamespace1,
-			},
-		},
-		"namespace with missing cluster name": {
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockBadNamespace2,
-			},
-		},
-		"cluster label selector with empty requirements": {
-			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
-				mockBadSelector,
-			},
-		},
-		"namespace label selector with empty requirements": {
-			NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
-				mockBadSelector,
-			},
-		},
-	}
-
-	for desc, scopeRules := range testCasesGood {
-		t.Run(desc, func(t *testing.T) {
-			err := ValidateSimpleAccessScopeRules(scopeRules)
-			assert.NoErrorf(t, err, "simple access scope rules: '%+v'", scopeRules)
-		})
-	}
-
-	for desc, scopeRules := range testCasesBad {
-		t.Run(desc, func(t *testing.T) {
-			err := ValidateSimpleAccessScopeRules(scopeRules)
-			assert.Errorf(t, err, "simple access scope rules: '%+v'", scopeRules)
-		})
-	}
+func TestGenerateAccessScopeID(t *testing.T) {
+	generatedID := GenerateAccessScopeID()
+	validID := EnsureValidAccessScopeID(generatedID)
+	assert.Equal(t, generatedID, validID)
+	_, err := uuid.FromString(generatedID)
+	assert.NoError(t, err)
 }
 
-func TestGenerateAccessScopeID(t *testing.T) {
-	id := GenerateAccessScopeID()
-	validID := EnsureValidAccessScopeID(id)
-	assert.Equal(t, id, validID)
+func TestEnsureValidAccessScopeID(t *testing.T) {
+	validID := GenerateAccessScopeID()
+	checkedValidID := EnsureValidAccessScopeID(validID)
+	assert.Equal(t, validID, checkedValidID)
+
+	// Test that an invalid ID triggers the generation of a valid UUID.
+	invalidID := "abcdefgh-ijkl-mnop-qrst-uvwxyz012345"
+	checkedInvalidID := EnsureValidAccessScopeID(invalidID)
+	assert.NotEqual(t, invalidID, checkedInvalidID)
+	_, err := uuid.FromString(checkedInvalidID)
+	assert.NoError(t, err)
 }

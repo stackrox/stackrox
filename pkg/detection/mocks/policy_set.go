@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	detection "github.com/stackrox/rox/pkg/detection"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPolicySet is a mock of PolicySet interface.

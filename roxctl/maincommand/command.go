@@ -2,45 +2,53 @@ package maincommand
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/common/printer"
-	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/completion"
+	connectivitymapDeprecated "github.com/stackrox/rox/roxctl/connectivity-map"
+	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
+	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
+	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
 
-func versionCommand() *cobra.Command {
+func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "version",
-		RunE: util.RunENoArgs(func(c *cobra.Command) error {
+		Use:   "version",
+		Short: "Display the current roxctl version.",
+		Args:  cobra.NoArgs,
+		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
-				enc := json.NewEncoder(os.Stdout)
+				enc := json.NewEncoder(cliEnvironment.InputOutput().Out())
 				enc.SetIndent("", "  ")
+				versions := version.GetAllVersionsDevelopment()
 				if buildinfo.ReleaseBuild {
-					return enc.Encode(version.GetAllVersionsUnified())
+					versions = version.GetAllVersionsUnified()
 				}
-				return enc.Encode(version.GetAllVersionsDevelopment())
+				return errors.Wrap(enc.Encode(versions), "could not encode version")
 			}
-			fmt.Println(version.GetMainVersion())
+			cliEnvironment.Logger().PrintfLn(version.GetMainVersion())
 			return nil
-		}),
+		},
 	}
 	c.PersistentFlags().Bool("json", false, "display extended version information as JSON")
+	flags.HideInheritedFlags(c)
 	return c
 }
 
@@ -56,16 +64,7 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
-	// We have chicken and egg problem here. We need to parse flags to know if --no-color was set
-	// but at the same time we need to set printer to handle possible flags parsing errors.
-	// Instead of using native cobra flags mechanism we can just check if os.Args contains --no-color.
-	var colorPrinter printer.ColorfulPrinter
-	if flags.HasNoColor(os.Args) {
-		colorPrinter = printer.NoColorPrinter()
-	} else {
-		colorPrinter = printer.DefaultColorPrinter()
-	}
-	cliEnvironment := environment.NewCLIEnvironment(environment.DefaultIO(), colorPrinter)
+	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})
@@ -75,14 +74,22 @@ func Command() *cobra.Command {
 		cluster.Command(cliEnvironment),
 		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
-		logconvert.Command(),
+		logconvert.Command(cliEnvironment),
 		image.Command(cliEnvironment),
-		scanner.Command(),
-		sensor.Command(),
+		scanner.Command(cliEnvironment),
+		sensor.Command(cliEnvironment),
 		helm.Command(cliEnvironment),
-		versionCommand(),
-		completion.Command(),
+		versionCommand(cliEnvironment),
+		completion.Command(cliEnvironment),
+		connectivitymapDeprecated.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
+	if features.RoxctlNetpolGenerate.Enabled() {
+		c.AddCommand(generate.Command(cliEnvironment))
+	}
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		c.AddCommand(declarativeconfig.Command(cliEnvironment))
+	}
 
 	return c
 }

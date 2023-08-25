@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	//#nosec G101 -- This is a false positive
 	automountServiceAccountTokenTemplate = `Deployment {{- if .AutomountServiceAccountToken }} mounts{{else}} does not mount{{end}} the service account tokens.`
 )
 

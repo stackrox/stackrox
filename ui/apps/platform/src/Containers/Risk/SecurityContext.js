@@ -1,7 +1,8 @@
 import React from 'react';
 
-import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
+
+import KeyValuePairs from './KeyValuePairs';
 
 const containerSecurityContextMap = {
     privileged: { label: 'Privileged' },
@@ -36,14 +37,14 @@ const SecurityContext = ({ deployment }) => {
                 );
             });
         if (!containers.length) {
-            containers = <span className="py-3 font-600 italic">None</span>;
+            containers = <span className="py-3">None</span>;
         }
     } else {
-        containers = <span className="py-3 font-600 italic">None</span>;
+        containers = <span className="py-3">None</span>;
     }
     return (
         <div className="px-3 pt-5">
-            <div className="bg-base-100 text-primary-600 tracking-wide">
+            <div className="bg-base-100 text-primary-600">
                 <CollapsibleCard title="Security Context">
                     <div className="flex h-full px-3">{containers}</div>
                 </CollapsibleCard>

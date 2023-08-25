@@ -8,7 +8,7 @@ function useTabs({ defaultTab }: { defaultTab: string }) {
         setActiveKeyTab(eventKey);
     }
 
-    return { activeKeyTab, onSelectTab };
+    return { activeKeyTab, onSelectTab, setActiveKeyTab };
 }
 
 export default useTabs;

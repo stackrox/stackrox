@@ -1,0 +1,48 @@
+// This contains protobuf types in pair with ClairCore's types, with
+// minimal differences. See https://github.com/quay/claircore for comments
+// on the fields.
+
+syntax = "proto3";
+
+package scanner.v4;
+
+import "google/protobuf/empty.proto";
+import "internalapi/scanner/v4/index_report.proto";
+
+option go_package = "v4";
+
+// Provide information to retrieve container images and their layers.
+message ContainerImageLocator {
+    string url      = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message CreateIndexReportRequest {
+    string hash_id = 1;
+    oneof resource_locator {
+        ContainerImageLocator container_image = 2;
+    }
+}
+
+message GetIndexReportRequest {
+    string hash_id = 1;
+}
+
+message HasIndexReportRequest {
+    string hash_id = 1;
+}
+
+// Indexer service creates manifests and store index reports.
+service Indexer {
+
+    // CreateIndexReport creates a manifest for the specified resource.
+    rpc CreateIndexReport (CreateIndexReportRequest) returns (IndexReport);
+
+    // GetIndexReport returns one index report.
+    rpc GetIndexReport (GetIndexReportRequest) returns (IndexReport);
+
+    // HasIndexReport checks if an index report for the specified resource exists.
+    rpc HasIndexReport (HasIndexReportRequest) returns (google.protobuf.Empty);
+
+}

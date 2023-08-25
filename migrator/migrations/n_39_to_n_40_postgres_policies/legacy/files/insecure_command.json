@@ -1,0 +1,33 @@
+{
+  "id": "657f4d37-55ab-42f2-bdce-9a4b74a67328",
+  "name": "Insecure specified in CMD",
+  "description": "Alert on deployments using 'insecure' in the command",
+  "rationale": "Using insecure in a command implies accessing or providing data from a server on an unencrypted connection.",
+  "remediation": "Use a certificate manager and certificate rotation routinely to ensure secure service-to-service communication.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Dockerfile Line",
+          "values": [
+            {
+              "value": "CMD=.*insecure.*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

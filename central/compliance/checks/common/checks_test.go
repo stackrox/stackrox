@@ -3,9 +3,9 @@ package common
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/generated/storage"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCheckSecretsInEnv(t *testing.T) {

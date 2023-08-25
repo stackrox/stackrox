@@ -384,23 +384,6 @@ func generateUintMatcher(value string, _ reflect.Type, matchAll bool) (baseMatch
 	}, nil
 }
 
-// formatFloat formats a float, returning at most three points after
-// the decimal place, and aggressively trimming trailing zeros.
-func formatFloat(f float64) string {
-	formatted := fmt.Sprintf("%.3f", f)
-	indexDot := strings.Index(formatted, ".")
-	if indexDot == -1 {
-		return formatted
-	}
-	keepUpto := len(formatted) - 1
-	for ; keepUpto >= indexDot; keepUpto-- {
-		if formatted[keepUpto] != '0' && formatted[keepUpto] != '.' {
-			break
-		}
-	}
-	return formatted[:keepUpto+1]
-}
-
 func generateFloatMatcher(value string, _ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
 	var baseMatcher func(float64) bool
 	if matchAll && value != "" {
@@ -417,7 +400,7 @@ func generateFloatMatcher(value string, _ reflect.Type, matchAll bool) (baseMatc
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
 			asFloat := instance.Float()
-			return []valueMatchedPair{{value: formatFloat(asFloat), matched: matchAll || baseMatcher(asFloat)}}
+			return []valueMatchedPair{{value: readable.Float(asFloat, 3), matched: matchAll || baseMatcher(asFloat)}}
 		}
 		return nil
 	}, nil

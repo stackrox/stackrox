@@ -85,10 +85,18 @@ func (k ResourceScopeKey) String() string {
 }
 
 // ResourceScopeKeys wraps the given resources in a scope key slice.
+// Note: The returned scope keys _may_ be greater than the given resources,
+// since replacing resources will be taken into account and conditionally added
+// to the returned scope keys.
+// This should be fine, as the ResourceScopeKeys is used in contexts which do not
+// specifically require a fixed length based on the number of permissions.ResourceHandle.
 func ResourceScopeKeys(resources ...permissions.ResourceHandle) []ScopeKey {
-	keys := make([]ScopeKey, len(resources))
-	for i, resource := range resources {
-		keys[i] = ResourceScopeKey(resource.GetResource())
+	keys := make([]ScopeKey, 0, len(resources))
+	for _, resource := range resources {
+		keys = append(keys, ResourceScopeKey(resource.GetResource()))
+		if resource.GetReplacingResource() != nil {
+			keys = append(keys, ResourceScopeKey(*resource.GetReplacingResource()))
+		}
 	}
 	return keys
 }
@@ -143,45 +151,39 @@ func NamespaceScopeKeys(namespaces ...string) []ScopeKey {
 
 // ScopePredicate is a common interface for all objects that can be interpreted as an expression over scopes.
 type ScopePredicate interface {
-	TryAllowed(sc ScopeChecker) TryAllowedResult
+	Allowed(sc ScopeChecker) bool
 }
 
 // ScopeSuffix is a predicate that checks if the given scope suffix (relative to the checker) is allowed.
 type ScopeSuffix []ScopeKey
 
-// TryAllowed implements the ScopePredicate interface.
-func (i ScopeSuffix) TryAllowed(sc ScopeChecker) TryAllowedResult {
-	return sc.TryAllowed(i...)
+// Allowed implements the ScopePredicate interface.
+func (i ScopeSuffix) Allowed(sc ScopeChecker) bool {
+	return sc.IsAllowed(i...)
 }
 
 // AnyScope is a scope predicate that evaluates to Allowed if any of the given scopes is allowed.
 type AnyScope []ScopePredicate
 
-// TryAllowed implements the ScopePredicate interface.
-func (p AnyScope) TryAllowed(sc ScopeChecker) TryAllowedResult {
-	res := Deny
+// Allowed implements the ScopePredicate interface.
+func (p AnyScope) Allowed(sc ScopeChecker) bool {
 	for _, pred := range p {
-		if predRes := pred.TryAllowed(sc); predRes == Allow {
-			return Allow
-		} else if predRes == Unknown {
-			res = Unknown
+		if pred.Allowed(sc) {
+			return true
 		}
 	}
-	return res
+	return false
 }
 
 // AllScopes is a scope predicate that evaluates to Allowed if all of the given scopes are allowed.
 type AllScopes []ScopePredicate
 
-// TryAllowed implements the ScopePredicate interface.
-func (p AllScopes) TryAllowed(sc ScopeChecker) TryAllowedResult {
-	res := Allow
+// Allowed implements the ScopePredicate interface.
+func (p AllScopes) Allowed(sc ScopeChecker) bool {
 	for _, pred := range p {
-		if predRes := pred.TryAllowed(sc); predRes == Deny {
-			return Deny
-		} else if predRes == Unknown {
-			res = Unknown
+		if !pred.Allowed(sc) {
+			return false
 		}
 	}
-	return res
+	return true
 }

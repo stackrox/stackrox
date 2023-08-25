@@ -16,6 +16,7 @@ var (
 )
 
 // Searcher provides search functionality on existing alerts
+//
 //go:generate mockgen-wrapper
 type Searcher interface {
 	SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error)
@@ -24,15 +25,11 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
+func New(processBaselineStore store.Store, indexer index.Indexer) (Searcher, error) {
 	ds := &searcherImpl{
-		storage:           storage,
-		indexer:           indexer,
+		storage:           processBaselineStore,
 		formattedSearcher: formatSearcher(indexer),
 	}
 
-	if err := ds.buildIndex(); err != nil {
-		return nil, err
-	}
 	return ds, nil
 }

@@ -23,12 +23,31 @@ enum LoadBalancerType {
     ROUTE         = 3;
 }
 
+// next available tag: 3
+message DecommissionedClusterRetentionInfo {
+    oneof RetentionInfo {
+        // indicates whether a cluster is protected from deletion
+        bool is_excluded           = 1;
+        // days after which cluster will be deleted if sensor health remains UNHEALTHY
+        int32 days_until_deletion  = 2;
+    }
+}
+
 message ClusterResponse {
-    storage.Cluster cluster            = 1;
+    storage.Cluster cluster                                    = 1;
+    DecommissionedClusterRetentionInfo cluster_retention_info  = 2;
+}
+
+message ClusterDefaultsResponse {
+    string main_image_repository = 1;
+    string collector_image_repository = 2;
+    bool kernel_support_available = 3;
 }
 
 message ClustersList {
-    repeated storage.Cluster clusters = 1;
+    repeated storage.Cluster clusters                                            = 1;
+    // Maps 'UNHEALTHY' clusters' IDs to their retention info
+    map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
 }
 
 message GetClustersRequest {
@@ -36,6 +55,7 @@ message GetClustersRequest {
 }
 
 message KernelSupportAvailableResponse {
+    option deprecated = true;
     bool kernel_support_available = 1;
 }
 
@@ -73,15 +93,17 @@ service ClustersService {
         };
     }
 
+    // GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
     rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
+        option deprecated = true;
         option (google.api.http) = {
             get: "/v1/clusters-env/kernel-support-available"
         };
     }
 
-    rpc GetClusterDefaults(Empty) returns (ClusterResponse) {
+    rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
         option (google.api.http) = {
-            get: "/v1/clusters-env/cluster-defaults"
+            get: "/v1/cluster-defaults"
         };
     }
 }

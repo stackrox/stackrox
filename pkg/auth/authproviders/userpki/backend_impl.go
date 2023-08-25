@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
@@ -34,7 +35,7 @@ var (
 	errInvalidCertificate = errors.New("user certificate doesn't match any configured provider")
 )
 
-func newBackend(ctx context.Context, pathPrefix string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, error) {
+func newBackend(_ context.Context, pathPrefix string, callbacks ProviderCallbacks, config map[string]string) (authproviders.Backend, error) {
 	pem := config[ConfigKeys]
 	if pem == "" {
 		return nil, errors.Errorf("parameter %q is required", ConfigKeys)
@@ -80,7 +81,7 @@ func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 	p.callbacks.UnregisterAuthProvider(provider)
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
+func (p *backendImpl) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return p.pathPrefix + authenticateHandlerPath, nil
 }
 
@@ -88,10 +89,10 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return nil, utils.Should(httputil.Errorf(http.StatusNotFound,
+		return nil, utils.ShouldErr(httputil.Errorf(http.StatusNotFound,
 			"invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
 	}
 
@@ -133,7 +134,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return nil, errInvalidCertificate
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ExchangeToken(_ context.Context, _, _ string) (*authproviders.AuthResponse, string, error) {
 	return nil, "", status.Errorf(codes.Unimplemented, "ExchangeToken not implemented for provider type %q", TypeName)
 }
 
@@ -148,11 +149,11 @@ func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error
 	return nil
 }
 
-func userID(info requestinfo.CertInfo) string {
+func userID(info mtls.CertInfo) string {
 	return "userpki:" + info.CertFingerprint
 }
 
-func externalUser(info requestinfo.CertInfo) *tokens.ExternalUserClaim {
+func externalUser(info mtls.CertInfo) *tokens.ExternalUserClaim {
 	attrs := userpki.ExtractAttributes(info)
 	return &tokens.ExternalUserClaim{
 		UserID:     userID(info),

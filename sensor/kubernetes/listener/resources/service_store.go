@@ -2,7 +2,10 @@ package resources
 
 import (
 	routeV1 "github.com/openshift/api/route/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/selector"
+	"github.com/stackrox/rox/sensor/common/service"
 	v1 "k8s.io/api/core/v1"
 	k8sLabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,12 +31,23 @@ type serviceStore struct {
 
 // newServiceStore creates and returns a new service store.
 func newServiceStore() *serviceStore {
-	return &serviceStore{
-		services:                make(map[string]map[string]*serviceWrap),
-		routesByServiceMetadata: make(map[string]map[string][]*routeV1.Route),
-		routesByRouteRef:        make(map[routeRef]*routeV1.Route),
-		nodePortServices:        make(map[types.UID]*serviceWrap),
-	}
+	ss := &serviceStore{}
+	ss.initMaps()
+	return ss
+}
+
+func (ss *serviceStore) initMaps() {
+	ss.services = make(map[string]map[string]*serviceWrap)
+	ss.routesByServiceMetadata = make(map[string]map[string][]*routeV1.Route)
+	ss.routesByRouteRef = make(map[routeRef]*routeV1.Route)
+	ss.nodePortServices = make(map[types.UID]*serviceWrap)
+}
+
+func (ss *serviceStore) Cleanup() {
+	ss.lock.Lock()
+	defer ss.lock.Unlock()
+
+	ss.initMaps()
 }
 
 func (ss *serviceStore) upsertRoute(route *routeV1.Route) {
@@ -99,8 +113,8 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 	}
 }
 
-// NodePortServicesSnapshot returns a snapshot of the service wraps
-func (ss *serviceStore) NodePortServicesSnapshot() []*serviceWrap {
+// nodePortServicesSnapshot returns a snapshot of the service wraps
+func (ss *serviceStore) nodePortServicesSnapshot() []*serviceWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
 
@@ -133,11 +147,15 @@ func (ss *serviceStore) OnNamespaceDeleted(ns string) {
 }
 
 func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
-	labelSet := k8sLabels.Set(labels)
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
+	return ss.getMatchingServicesWithRoutesNoLock(namespace, labels)
+}
+
+func (ss *serviceStore) getMatchingServicesWithRoutesNoLock(namespace string, labels map[string]string) (matching []serviceWithRoutes) {
+	labelSet := k8sLabels.Set(labels)
 	for _, entry := range ss.services[namespace] {
-		if entry.selector.Matches(labelSet) {
+		if entry.selector.Matches(selector.CreateLabelsWithLen(labelSet)) {
 			svcWithRoutes := serviceWithRoutes{
 				serviceWrap: entry,
 				routes:      ss.routesByServiceMetadata[namespace][entry.Name],
@@ -148,6 +166,16 @@ func (ss *serviceStore) getMatchingServicesWithRoutes(namespace string, labels m
 	return matching
 }
 
+// GetExposureInfos returns all port exposure definition for services matching a namespace and a set of labels.
+func (ss *serviceStore) GetExposureInfos(namespace string, labels map[string]string) (result []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+	ss.lock.Lock()
+	defer ss.lock.Unlock()
+	for _, svc := range ss.getMatchingServicesWithRoutesNoLock(namespace, labels) {
+		result = append(result, svc.exposure())
+	}
+	return
+}
+
 func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {
 	ss.lock.RLock()
 	defer ss.lock.RUnlock()
@@ -156,5 +184,7 @@ func (ss *serviceStore) getService(namespace string, name string) *serviceWrap {
 }
 
 func (ss *serviceStore) getRoutesForService(svcWrap *serviceWrap) []*routeV1.Route {
+	ss.lock.RLock()
+	defer ss.lock.RUnlock()
 	return ss.routesByServiceMetadata[svcWrap.Namespace][svcWrap.Name]
 }

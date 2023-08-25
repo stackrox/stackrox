@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: shellshock
+    team: test-team
+  name: shell
+  namespace: test
+spec:
+  containers:
+  - image: vulnerables/cve-2014-6271
+    name: shell
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: rce
+  name: samba
+  namespace: test
+spec:
+  containers:
+  - image: vulnerables/cve-2017-7494
+    name: samba

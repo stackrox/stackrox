@@ -3,6 +3,7 @@ package authproviders
 import (
 	"context"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -19,7 +20,10 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.AddAuthProvider(ctx, &pr.storedInfo)
+		if pr.storedInfo.LastUpdated == nil {
+			pr.storedInfo.LastUpdated = timestamp.TimestampNow()
+		}
+		return store.AddAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
@@ -29,14 +33,15 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
-		return store.UpdateAuthProvider(ctx, &pr.storedInfo)
+		pr.storedInfo.LastUpdated = timestamp.TimestampNow()
+		return store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
-func DeleteFromStore(ctx context.Context, store Store) ProviderOption {
+func DeleteFromStore(ctx context.Context, store Store, providerID string, force bool) ProviderOption {
 	return func(pr *providerImpl) error {
-		err := store.RemoveAuthProvider(ctx, pr.storedInfo.Id)
+		err := store.RemoveAuthProvider(ctx, providerID, force)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.
@@ -47,8 +52,8 @@ func DeleteFromStore(ctx context.Context, store Store) ProviderOption {
 		}
 		// a deleted provider should no longer be accessible, but it's still cached as a token source so mark it as
 		// no longer valid
-		pr.storedInfo = storage.AuthProvider{
-			Id:      pr.storedInfo.Id,
+		pr.storedInfo = &storage.AuthProvider{
+			Id:      pr.storedInfo.GetId(),
 			Enabled: false,
 		}
 		return nil

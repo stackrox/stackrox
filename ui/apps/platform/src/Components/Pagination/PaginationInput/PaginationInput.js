@@ -10,8 +10,8 @@ const TYPING_DELAY = 800;
 const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
     const [localPage, setLocalPage] = useState(currentPage);
     const delayedSetPage = useCallback(
-        debounce((newPage) => onChange(newPage), TYPING_DELAY),
-        []
+        () => debounce((newPage) => onChange(newPage), TYPING_DELAY),
+        [onChange]
     );
 
     const totalPages = Math.ceil(totalSize / pageSize);
@@ -32,11 +32,11 @@ const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
     }
 
     return (
-        <div className="font-600 select-none">
+        <div className="select-none">
             Page
             <input
                 type="number"
-                className="text-center bg-base-100 text-base-900 border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-400 outline-none"
+                className="text-center bg-base-100 text-base-600 border-2 border-base-300 px-1 py-1 mx-2 focus:border-primary-400 outline-none"
                 value={localPage}
                 min={1}
                 max={totalPages}

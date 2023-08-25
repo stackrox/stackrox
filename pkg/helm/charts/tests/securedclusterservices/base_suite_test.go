@@ -1,17 +1,15 @@
 package securedclusterservices
 
 import (
+	_ "embed"
 	"io"
 	"path"
 	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/pkg/features"
 	metaUtil "github.com/stackrox/rox/pkg/helm/charts/testutils"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -32,85 +30,16 @@ var (
 
 	// A values YAML that sets all generatable values explicitly, and causes all
 	// objects to be generated.
-	allValuesExplicit = `
-cluster:
-  name: foo
-  type: OPENSHIFT4_CLUSTER
-
-ca:
-  cert: "DUMMY CA CERTIFICATE"
-
-imagePullSecrets:
-  username: myuser
-  password: mypass
-  
-endpoint:
-  central: "central.stackrox:443"
-  advertised: "central-advertised.stackrox:443"
-
-image:
-  repository:
-    main: "custom-main-repo"
-    collector: "custom-collector-repo"
-  registry:
-    main: "custom-main-registry"
-    collector: "custom-collector-registry"
-
-envVars:
-- name: CUSTOM_ENV_VAR
-  value: FOO
-
-sensor:
-  serviceTLS:
-    cert: "DUMMY SENSOR CERT"
-    key: "DUMMY SENSOR KEY"
-
-collector:
-  serviceTLS:
-    cert: "DUMMY COLLECTOR CERT"
-    key: "DUMMY COLLECTOR KEY"
-
-admissionControl:
-  serviceTLS:
-    cert: "DUMMY ADMISSION CONTROL CERT"
-    key: "DUMMY ADMISSION CONTROL KEY"
-
-config:
-  collectionMethod: KERNEL_MODULE
-  admissionControl:
-    listenOnCreates: true
-    listenOnUpdates: true
-    enforceOnCreates: true
-    enforceOnUpdates: true
-    scanInline: true
-    disableBypass: true
-    timeout: 4
-  disableTaintTolerations: true
-  createUpgraderServiceAccount: true
-  createSecrets: true
-  offlineMode: true
-  slimCollector: true
-  exposeMonitoring: true
-
-enableOpenShiftMonitoring: true
-`
+	//go:embed testdata/all-values-explicit.yaml
+	allValuesExplicit string
 )
 
 type baseSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 }
 
 func TestBase(t *testing.T) {
 	suite.Run(t, new(baseSuite))
-}
-
-func (s *baseSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *baseSuite) TeardownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *baseSuite) LoadAndRenderWithNamespace(namespace string, valStrs ...string) (*chart.Chart, map[string]string) {
@@ -171,10 +100,6 @@ func (s *baseSuite) ParseObjects(objYAMLs map[string]string) []unstructured.Unst
 func (s *baseSuite) TestAllGeneratableExplicit() {
 	// Ensures that allValuesExplicit causes all templates to be rendered non-empty, including the one
 	// containing generated values.
-	// TODO(ROX-8793): The tests will be enabled in a follow-up ticket because the current implementation breaks helm chart rendering.
-	if !buildinfo.ReleaseBuild {
-		s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "false")
-	}
 
 	_, rendered := s.LoadAndRender(allValuesExplicit)
 	s.Require().NotEmpty(rendered)

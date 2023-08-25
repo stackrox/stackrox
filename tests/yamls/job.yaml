@@ -1,3 +1,5 @@
+# Will be used within roxctl_verification.sh.
+# Contains a Job resource.
 apiVersion: batch/v1
 kind: Job
 metadata:

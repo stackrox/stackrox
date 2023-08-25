@@ -5,15 +5,18 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/gjson"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"github.com/stackrox/rox/roxctl/summaries/policy"
@@ -42,6 +45,31 @@ var (
 		printers.JUnitSkippedTestCasesExpressionKey:     "results.#.violatedPolicies.#(failingCheck==~false)#.name",
 		printers.JUnitFailedTestCaseErrMsgExpressionKey: "results.#.violatedPolicies.#(failingCheck==~true)#.violation.@list",
 	}
+
+	sarifJSONPathExpressions = map[string]string{
+		printers.SarifRuleJSONPathExpressionKey: "results.#.violatedPolicies.#.name",
+		printers.SarifHelpJSONPathExpressionKey: gjson.MultiPathExpression(
+			"@text",
+			gjson.Expression{
+				Key:        "Policy",
+				Expression: "results.#.violatedPolicies.#.name",
+			},
+			gjson.Expression{
+				Key:        "Severity",
+				Expression: "results.#.violatedPolicies.#.severity",
+			},
+			gjson.Expression{
+				Key:        "Violations",
+				Expression: "results.#.violatedPolicies.#.violation.@list",
+			},
+			gjson.Expression{
+				Key:        "Remediation",
+				Expression: "results.#.violatedPolicies.#.remediation",
+			},
+		),
+		printers.SarifSeverityJSONPathExpressionKey: "results.#.violatedPolicies.#.severity",
+	}
+
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
 		printer.NewTabularPrinterFactory(defaultDeploymentCheckHeaders, defaultDeploymentCheckJSONPathExpression),
@@ -54,13 +82,16 @@ var (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	deploymentCheckCmd := &deploymentCheckCommand{env: cliEnvironment}
 
-	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", supportedObjectPrinters...)
+	objectPrinterFactory, err := printer.NewObjectPrinterFactory("table", append(supportedObjectPrinters,
+		printer.NewSarifPrinterFactory(printers.SarifPolicyReport, sarifJSONPathExpressions, &deploymentCheckCmd.file))...)
 	// this error should never occur, it would only occur if default values are invalid
 	utils.Must(err)
 
 	c := &cobra.Command{
-		Use:  "check",
-		Args: cobra.NoArgs,
+		Use:   "check",
+		Short: "Check deployments for deploy time policy violations.",
+		Long:  "Check deployments for deploy time policy violations, and exit with an non-zero code if at least one of the violated policies has deploy time enforcement turned on.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := deploymentCheckCmd.Construct(args, cmd, objectPrinterFactory); err != nil {
 				return err
@@ -82,6 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&deploymentCheckCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
 	c.Flags().StringSliceVarP(&deploymentCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
+	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
 
 	// mark legacy output format specific flags as deprecated
@@ -102,6 +134,7 @@ type deploymentCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	force              bool
 
 	// injected or constructed values by Construct
 	env                environment.Environment
@@ -109,7 +142,7 @@ type deploymentCheckCommand struct {
 	standardizedFormat bool
 }
 
-func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
+func (d *deploymentCheckCommand) Construct(_ []string, cmd *cobra.Command, f *printer.ObjectPrinterFactory) error {
 	d.timeout = flags.Timeout(cmd)
 
 	// Only create a printer if legacy json output format is not used
@@ -117,7 +150,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 	if !d.json {
 		p, err := f.CreatePrinter()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not create printer for deployment check results")
 		}
 		d.printer = p
 		d.standardizedFormat = f.IsStandardizedFormat()
@@ -128,7 +161,7 @@ func (d *deploymentCheckCommand) Construct(args []string, cmd *cobra.Command, f 
 
 func (d *deploymentCheckCommand) Validate() error {
 	if _, err := os.Open(d.file); err != nil {
-		return errorhelpers.NewErrInvalidArgs(err.Error())
+		return common.ErrInvalidCommandOption.CausedBy(err)
 	}
 
 	return nil
@@ -141,12 +174,12 @@ func (d *deploymentCheckCommand) Check() error {
 		retry.Tries(d.retryCount+1),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(err error) {
-			d.env.Logger().ErrfLn("Scanning image failed: %v. Retrying after %d seconds...",
+			d.env.Logger().ErrfLn("Checking deployment failed: %v. Retrying after %d seconds...",
 				err, d.retryDelay)
 			time.Sleep(time.Duration(d.retryDelay) * time.Second)
 		}))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "checking deployment failed after %d retries", d.retryCount)
 	}
 	return nil
 }
@@ -154,21 +187,21 @@ func (d *deploymentCheckCommand) Check() error {
 func (d *deploymentCheckCommand) checkDeployment() error {
 	deploymentFileContents, err := os.ReadFile(d.file)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not read deployment file: %q", d.file)
 	}
 
-	alerts, err := d.getAlerts(string(deploymentFileContents))
+	alerts, ignoredObjRefs, err := d.getAlertsAndIgnoredObjectRefs(string(deploymentFileContents))
 	if err != nil {
-		return retry.MakeRetryable(err)
+		return errors.Wrap(retry.MakeRetryable(err), "retrieving alerts from central")
 	}
 
-	return d.printResults(alerts)
+	return d.printResults(alerts, ignoredObjRefs)
 }
 
-func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Alert, error) {
+func (d *deploymentCheckCommand) getAlertsAndIgnoredObjectRefs(deploymentYaml string) ([]*storage.Alert, []string, error) {
 	conn, err := d.env.GRPCConnection()
 	if err != nil {
-		return nil, err
+		return nil, nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
 	defer utils.IgnoreError(conn.Close)
 
@@ -181,19 +214,26 @@ func (d *deploymentCheckCommand) getAlerts(deploymentYaml string) ([]*storage.Al
 		PolicyCategories: d.policyCategories,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, errors.Wrap(err, "could not check deploy-time alerts")
 	}
 
 	var alerts []*storage.Alert
 	for _, r := range response.GetRuns() {
 		alerts = append(alerts, r.GetAlerts()...)
 	}
-	return alerts, nil
+	return alerts, response.GetIgnoredObjectRefs(), nil
 }
 
-func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
+func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert, ignoredObjectRefs []string) error {
+	// Print all ignored objects whose schema was not registered, i.e. CRDs. We don't need to take standardizedFormat
+	// into account since we will print to os.StdErr by default. We shall do this at the beginning, since we also
+	// want this to be visible to the old output format.
+	for _, ignoredObjRef := range ignoredObjectRefs {
+		d.env.Logger().InfofLn("Ignored object %q as its schema was not registered.", ignoredObjRef)
+	}
+
 	if d.json {
-		return report.JSON(d.env.InputOutput().Out, alerts)
+		return errors.Wrap(report.JSON(d.env.InputOutput().Out(), alerts), "could not print JSON report")
 	}
 
 	// TODO: Need to refactor this to include additional summary info for non-standardized formats
@@ -205,7 +245,7 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if err := d.printer.Print(policySummary, d.env.ColorWriter()); err != nil {
-		return err
+		return errors.Wrap(err, "could not print policy summary")
 	}
 
 	amountBreakingPolicies := policySummary.GetTotalAmountOfBreakingPolicies()
@@ -216,12 +256,12 @@ func (d *deploymentCheckCommand) printResults(alerts []*storage.Alert) error {
 	}
 
 	if amountBreakingPolicies != 0 {
-		return policy.NewErrBreakingPolicies(amountBreakingPolicies)
+		return errors.Wrap(policy.NewErrBreakingPolicies(amountBreakingPolicies), "breaking policies found")
 	}
 	return nil
 }
 
-func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out environment.Logger, deployments ...string) {
+func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out logger.Logger, deployments ...string) {
 	out.PrintfLn("Policy check results for deployments: %v", deployments)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		policy.TotalPolicyAmountKey, numOfPolicyViolations[policy.TotalPolicyAmountKey],
@@ -232,7 +272,7 @@ func printDeploymentPolicySummary(numOfPolicyViolations map[string]int, out envi
 }
 
 func printAdditionalWarnsAndErrs(amountViolatedPolicies, amountBreakingPolicies int, results []policy.EntityResult,
-	out environment.Logger) {
+	out logger.Logger) {
 	if amountViolatedPolicies == 0 {
 		return
 	}

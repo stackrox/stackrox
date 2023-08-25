@@ -37,27 +37,27 @@ import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { ReportScope } from 'hooks/useFetchReport';
+
+import { getWriteAccessForReport } from '../VulnMgmtReport.utils';
 
 type VulnMgmtReportDetailProps = {
     report: ReportConfiguration;
+    reportScope: ReportScope | null;
 };
 
-function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactElement {
+function VulnMgmtReportDetail({ report, reportScope }: VulnMgmtReportDetailProps): ReactElement {
     const history = useHistory();
 
     const [alert, setAlert] = useState<AlertProps | null>(null);
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [isActionsOpen, setIsActionsOpen] = useState(false);
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
-    const canWriteReports =
-        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const dropdownItems: ReactElement[] = [];
-    if (canWriteReports) {
+    if (hasWriteAccessForReport) {
         dropdownItems.push(
             <DropdownItem key="Edit report" component="button" onClick={onEditReport}>
                 Edit report
@@ -236,9 +236,9 @@ function VulnMgmtReportDetail({ report }: VulnMgmtReportDetailProps): ReactEleme
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>
-                                <DescriptionListTerm>Resource scope</DescriptionListTerm>
+                                <DescriptionListTerm>Report scope</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    <ScopeName scopeId={report?.scopeId} />
+                                    <ScopeName reportScope={reportScope} />
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                             <DescriptionListGroup>

@@ -1,0 +1,72 @@
+{
+  "id": "1913283f-ce3c-4134-84ef-195c4cd687ae",
+  "name": "Curl in Image",
+  "description": "Alert on deployments with curl present",
+  "rationale": "Leaving download tools like curl in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
+  "remediation": "Use your package manager's \"remove\", \"purge\" or \"erase\" command to remove curl from the image build for production containers. Ensure that any configuration files are also removed.",
+  "disabled": true,
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox central",
+      "deployment": {
+        "name": "central",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox sensor",
+      "deployment": {
+        "name": "sensor",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox admission controller",
+      "deployment": {
+        "name": "admission-control",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "curl="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

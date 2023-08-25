@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -15,8 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
-
-var log = logging.LoggerForModule()
 
 // NewExtractor returns a new token-based identity extractor.
 func NewExtractor(roleStore permissions.RoleStore, tokenValidator tokens.Validator) authn.IdentityExtractor {
@@ -36,10 +35,14 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if rawToken == "" {
 		return nil, nil
 	}
-
 	token, err := e.validator.Validate(ctx, rawToken)
 	if err != nil {
-		log.Warnf("Token validation failed: %v", err)
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"Token validation failed for hostname %v: %v",
+			ri.Hostname,
+			err,
+		)
 		return nil, errors.New("token validation failed")
 	}
 
@@ -107,7 +110,12 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 		authProvider:  authProvider,
 	}
 	if id.friendlyName == "" {
-		id.friendlyName = fmt.Sprintf("anonymous bearer token with roles %s (expires %v)", strings.Join(roleNames, ","), token.Expiry())
+		// Note we use roles as seen in the token, without filtering.
+		id.friendlyName = fmt.Sprintf("anonymous bearer token %q with roles [%s] (jti: %s, expires: %s)",
+			token.Name,
+			strings.Join(roleNames, ","),
+			token.ID,
+			token.Expiry().Format(time.RFC3339))
 	}
 	return id, nil
 }

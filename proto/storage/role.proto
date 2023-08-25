@@ -4,6 +4,8 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "storage/labels.proto";
+import "storage/traits.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -15,12 +17,12 @@ message Role {
     reserved             4; // id, future field
 
     // `name` and `description` are provided by the user and can be changed.
-    string name        = 1;
+    string name        = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string description = 5;
 
     // The associated PermissionSet and AccessScope for this Role.
-    string permission_set_id = 6;
-    string access_scope_id   = 7;
+    string permission_set_id = 6 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
+    string access_scope_id   = 7 [(gogoproto.moretags) = 'sql:"type(uuid)"'];
 
     // Minimum (not default!) access level for every resource. Can be extended
     // below by explicit permissions but not shrunk.
@@ -30,6 +32,8 @@ message Role {
 
     // Deprecated 2021-04-20 in favor of `permission_set_id`.
     map<string, Access> resource_to_access = 3 [deprecated = true];
+
+    Traits traits = 8;
 }
 
 enum Access {
@@ -41,13 +45,15 @@ enum Access {
 // This encodes a set of permissions for StackRox resources.
 message PermissionSet {
     // id is generated and cannot be changed.
-    string id          = 1;
+    string id          = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
     // `name` and `description` are provided by the user and can be changed.
-    string name        = 2;
+    string name        = 2 [(gogoproto.moretags) = 'sql:"unique"'];
     string description = 3;
 
     map<string, Access> resource_to_access = 4;
+
+    Traits traits = 5;
 }
 
 // Simple access scope is a (simple) selection criteria for scoped resources.
@@ -71,13 +77,15 @@ message SimpleAccessScope {
     }
 
     // `id` is generated and cannot be changed.
-    string id          = 1;
+    string id          = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
     // `name` and `description` are provided by the user and can be changed.
-    string name        = 2;
+    string name        = 2  [(gogoproto.moretags) = 'sql:"unique"'];
     string description = 3;
 
     Rules  rules       = 4;
+
+    Traits traits      = 5;
 }
 
 // EffectiveAccessScope describes which clusters and namespaces are "in scope"

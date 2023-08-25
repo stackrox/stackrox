@@ -1,0 +1,25 @@
+# Artifact Hub repository metadata file
+#
+# Some settings like the verified publisher flag or the ignored packages won't
+# be applied until the next time the repository is processed. Please keep in
+# mind that the repository won't be processed if it has not changed since the
+# last time it was processed. Depending on the repository kind, this is checked
+# in a different way. For Helm http based repositories, we consider it has
+# changed if the `index.yaml` file changes. For git based repositories, it does
+# when the hash of the last commit in the branch you set up changes. This does
+# NOT apply to ownership claim operations, which are processed immediately.
+#
+
+# All users that are listed here can claim ownership of the repo -
+# either for themselves or for any organization they are part of
+# See https://artifacthub.io/docs/topics/repositories/#verified-publisher
+# for more information
+
+repositoryID: 2644ab37-85e0-4cd2-b8cb-d770c37f3949
+
+# Add your name and mail address here if you want to be able to verify the ownership of the repo on ArtifactHub.
+# Make sure you provide the same mail address that you use to log in to ArtifactHub.
+# For more information: https://artifacthub.io/docs/topics/repositories/#ownership-claim
+owners:
+- name: Maddosaurus
+  email: gh@maddosaurus.de

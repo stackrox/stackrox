@@ -3,6 +3,7 @@ package clusterhealthupdate
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -12,12 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -46,17 +42,21 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor,
+	injector common.MessageInjector) error {
 	cInfo := msg.GetClusterHealthInfo().GetCollectorHealthInfo()
 	aInfo := msg.GetClusterHealthInfo().GetAdmissionControlHealthInfo()
+	sInfo := msg.GetClusterHealthInfo().GetScannerHealthInfo()
 
 	conn := connection.FromContext(ctx)
 	clusterHealthStatus := &storage.ClusterHealthStatus{
 		CollectorHealthInfo:          cInfo,
 		AdmissionControlHealthInfo:   aInfo,
+		ScannerHealthInfo:            sInfo,
 		SensorHealthStatus:           storage.ClusterHealthStatus_HEALTHY,
 		CollectorHealthStatus:        clusterhealth.PopulateCollectorStatus(cInfo),
 		AdmissionControlHealthStatus: clusterhealth.PopulateAdmissionControlStatus(aInfo),
+		ScannerHealthStatus:          clusterhealth.PopulateLocalScannerStatus(sInfo),
 		LastContact:                  timestamp.Now().GogoProtobuf(),
 		// When sensor health monitoring is revised update the sensor capability
 		HealthInfoComplete: conn != nil && conn.HasCapability(centralsensor.HealthMonitoringCap),
@@ -66,8 +66,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	if err := s.clusters.UpdateClusterHealth(ctx, clusterID, clusterHealthStatus); err != nil {
 		return err
 	}
+
+	// We added a response from the ClusterHealth message from Sensor to ensure the Sensor <-> Central connection does
+	// not become stale. Since Sensor drops unknown messages, and we do not require acknowledgement from Sensor, we
+	// do not have to check for specific sensor capabilities here.
+	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterHealthResponse{},
+	}); err != nil {
+		return errors.Wrapf(err, "sending cluster health response to cluster %q", clusterID)
+	}
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {
+func (s *pipelineImpl) OnFinish(_ string) {
 }

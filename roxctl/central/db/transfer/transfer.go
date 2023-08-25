@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/vbauerster/mpb/v4"
@@ -65,7 +66,7 @@ func ViaHTTP(req *http.Request, client common.RoxctlHTTPClient, earliestDeadline
 	totalLen := req.ContentLength
 	name := "Uploading..."
 	if req.Body == nil {
-		return nil, errors.New("transfer request must have a non-nil body")
+		return nil, errox.InvalidArgs.New("transfer request must have a non-nil body")
 	}
 	if srcFile, ok := req.Body.(interface{ Stat() (os.FileInfo, error) }); ok {
 		srcFileStat, err := srcFile.Stat()

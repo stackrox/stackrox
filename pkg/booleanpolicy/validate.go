@@ -1,6 +1,7 @@
 package booleanpolicy
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +18,7 @@ type validateConfiguration struct {
 	// See ROX-5208 for details.
 	validateEnvVarSourceRestrictions bool
 	sourceIsAuditLogEvents           bool
+	disallowFromInDockerfileLine     bool
 }
 
 // ValidateOption models an option for validation.
@@ -27,6 +29,13 @@ type ValidateOption func(*validateConfiguration)
 func ValidateEnvVarSourceRestrictions() ValidateOption {
 	return func(c *validateConfiguration) {
 		c.validateEnvVarSourceRestrictions = true
+	}
+}
+
+// ValidateNoFromInDockerfileLine disallows FROM in the Dockerfile line.
+func ValidateNoFromInDockerfileLine() ValidateOption {
+	return func(c *validateConfiguration) {
+		c.disallowFromInDockerfileLine = true
 	}
 }
 
@@ -48,8 +57,8 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	}
 
 	errorList := errorhelpers.NewErrorList("policy validation")
-	if !policyversion.IsBooleanPolicy(p) {
-		errorList.AddStringf("invalid version for boolean policy (got %q)", p.GetPolicyVersion())
+	if err := validateBooleanPolicyVersion(p); err != nil {
+		errorList.AddErrors(err)
 	}
 	if p.GetName() == "" {
 		errorList.AddString("no name specified")
@@ -58,7 +67,32 @@ func Validate(p *storage.Policy, options ...ValidateOption) error {
 	for _, section := range p.GetPolicySections() {
 		errorList.AddError(validatePolicySection(section, configuration, p.GetEventSource()))
 	}
+
+	// Special case for ImageSignatureVerifiedBy policy for which we don't allow
+	// AND operator due to the UI limitations.
+	for _, ps := range p.PolicySections {
+		for _, pg := range ps.PolicyGroups {
+			if pg.FieldName == fieldnames.ImageSignatureVerifiedBy && pg.BooleanOperator == storage.BooleanOperator_AND {
+				errorList.AddStringf("operator AND is not allowed for field %q", fieldnames.ImageSignatureVerifiedBy)
+			}
+		}
+	}
+
 	return errorList.ToError()
+}
+
+func validateBooleanPolicyVersion(policy *storage.Policy) error {
+	ver, err := policyversion.FromString(policy.GetPolicyVersion())
+	if err != nil {
+		return errors.New("policy has invalid version")
+	}
+
+	// As of 70.0 we only support the latest version (1.1). This may in the future be expanded to support more, but for
+	// now it's enough to just check it matches current version
+	if !policyversion.IsCurrentVersion(ver) {
+		return errors.New("only policy with version 1.1 is supported")
+	}
+	return nil
 }
 
 // validatePolicySection validates the format of a policy section

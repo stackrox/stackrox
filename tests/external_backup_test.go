@@ -1,21 +1,19 @@
 //go:build externalbackups
-// +build externalbackups
 
 package tests
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	googleStorage "cloud.google.com/go/storage"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/iterator"
@@ -51,12 +49,13 @@ func TestGCSExternalBackup(t *testing.T) {
 	serviceAccount := os.Getenv("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT")
 	require.NotEmpty(t, serviceAccount)
 
-	prefix := os.Getenv("CIRCLE_BUILD_NUM")
+	prefix := os.Getenv("BUILD_ID")
+	require.NotEmpty(t, prefix)
 
 	client, err := googleStorage.NewClient(context.Background(), option.WithCredentialsJSON([]byte(serviceAccount)))
 	require.NoError(t, err)
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewExternalBackupServiceClient(conn)
 
 	externalBackup := &storage.ExternalBackup{
@@ -77,12 +76,27 @@ func TestGCSExternalBackup(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	_, err = service.TestExternalBackup(ctx, externalBackup)
+	// We could be in a situation where central isn't quite ready from the
+	// previous tests.  This will retry a few times until it is if that is the case.
+	// If this first one doesn't work, then the rest are doomed so no need to wrap those
+	// in retries.
+	err = retry.WithRetry(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_, err := service.TestExternalBackup(ctx, externalBackup)
+		cancel()
+		return err
+	},
+		retry.Tries(10),
+		retry.BetweenAttempts(func(_ int) {
+			time.Sleep(10 * time.Second)
+		}),
+		retry.OnFailedAttempts(func(err error) {
+			log.Error(err.Error())
+		}),
+	)
 	assert.NoError(t, err)
-	cancel()
 
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	backup, err := service.PostExternalBackup(ctx, externalBackup)
 	assert.NoError(t, err)
 	cancel()
@@ -112,7 +126,7 @@ func TestGCSExternalBackup(t *testing.T) {
 	err = retry.WithRetry(func() error {
 		numBackups := countNumBackups(t, client, prefix)
 		if numBackups != 2 {
-			return errors.New(fmt.Sprintf("Backup is not pruned: got %d", numBackups))
+			return errors.Errorf("Backup is not pruned: got %d", numBackups)
 		}
 		return nil
 	},

@@ -1,0 +1,7 @@
+/* z index override for sticky table header in PF
+ * following recommendation to lower table z-index as suggested here:
+ * https://www.patternfly.org/v4/components/table/#sticky-table-modifiers 
+ */
+[data-testid="policies-table"] {
+    z-index: 55;
+}

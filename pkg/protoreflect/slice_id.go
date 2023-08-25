@@ -13,6 +13,7 @@ func identityOfSlice(slice []byte) sliceIdentity {
 		return sliceIdentity{}
 	}
 	return sliceIdentity{
+		//#nosec G103
 		base:   uintptr(unsafe.Pointer(&slice[0])),
 		length: len(slice),
 	}

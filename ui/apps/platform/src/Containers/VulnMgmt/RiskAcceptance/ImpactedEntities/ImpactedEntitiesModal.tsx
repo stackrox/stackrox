@@ -7,6 +7,7 @@ import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import { vulnManagementPath } from 'routePaths';
+import { VulnerabilityRequest } from '../vulnerabilityRequests.graphql';
 
 function EntityName({ entity, entityType }) {
     return entityType === entityTypes.IMAGE ? (
@@ -29,7 +30,7 @@ function EntityName({ entity, entityType }) {
 export type ImpactedEntitiesModalProps = {
     isOpen: boolean;
     entityType: string;
-    entities: Record<string, any>[];
+    entities: VulnerabilityRequest['deployments'] | VulnerabilityRequest['images'];
     onClose: () => void;
 };
 

@@ -10,41 +10,44 @@ import (
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
-	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
+	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
+	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	netFlowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/role/resources"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/simplecache"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
-	connectionTerminationTimeout = 5 * time.Second
-
 	// clusterMoveGracePeriod determines the amount of time that has to pass before a (logical) StackRox cluster can
 	// be moved to a different (physical) Kubernetes cluster.
 	clusterMoveGracePeriod = 3 * time.Minute
@@ -59,27 +62,31 @@ var (
 )
 
 type datastoreImpl struct {
-	indexer              index.Indexer
-	clusterStorage       store.ClusterStore
-	clusterHealthStorage store.ClusterHealthStore
-	notifier             notifierProcessor.Processor
-	searcher             search.Searcher
+	clusterStorage            clusterStore.Store
+	clusterHealthStorage      clusterHealthStore.Store
+	clusterCVEDataStore       clusterCVEDS.DataStore
+	alertDataStore            alertDataStore.DataStore
+	imageIntegrationDataStore imageIntegrationDataStore.DataStore
+	namespaceDataStore        namespaceDataStore.DataStore
+	deploymentDataStore       deploymentDataStore.DataStore
+	nodeDataStore             nodeDataStore.DataStore
+	podDataStore              podDataStore.DataStore
+	secretsDataStore          secretDataStore.DataStore
+	netFlowsDataStore         netFlowDataStore.ClusterDataStore
+	netEntityDataStore        netEntityDataStore.EntityDataStore
+	serviceAccountDataStore   serviceAccountDataStore.DataStore
+	roleDataStore             roleDataStore.DataStore
+	roleBindingDataStore      roleBindingDataStore.DataStore
+	cm                        connection.Manager
+	networkBaselineMgr        networkBaselineManager.Manager
 
-	alertDataStore      alertDataStore.DataStore
-	namespaceDataStore  namespaceDataStore.DataStore
-	deploymentDataStore deploymentDataStore.DataStore
-	nodeDataStore       nodeDataStore.GlobalDataStore
-	podDataStore        podDataStore.DataStore
-	secretsDataStore    secretDataStore.DataStore
-	netFlowsDataStore   netFlowDataStore.ClusterDataStore
-	netEntityDataStore  netEntityDataStore.EntityDataStore
-	cm                  connection.Manager
-	networkBaselineMgr  networkBaselineManager.Manager
-
+	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
 
 	idToNameCache simplecache.Cache
 	nameToIDCache simplecache.Cache
+
+	searcher search.Searcher
 
 	lock sync.Mutex
 }
@@ -92,7 +99,7 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -102,7 +109,7 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	cluster.Status.UpgradeStatus = upgradeStatus
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
@@ -113,7 +120,7 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -123,7 +130,7 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
@@ -131,7 +138,7 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 		return err
 	}
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -140,25 +147,24 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	var clusters []*storage.Cluster
-	err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
-		clusters = append(clusters, cluster)
-		return nil
-	})
+func (ds *datastoreImpl) buildCache(ctx context.Context) error {
+	clusters, err := ds.collectClusters(ctx)
 	if err != nil {
 		return err
 	}
 
 	clusterHealthStatuses := make(map[string]*storage.ClusterHealthStatus)
-	err = ds.clusterHealthStorage.WalkAllWithID(func(id string, healthInfo *storage.ClusterHealthStatus) error {
-		clusterHealthStatuses[id] = healthInfo
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		clusterHealthStatuses = make(map[string]*storage.ClusterHealthStatus)
+		return ds.clusterHealthStorage.Walk(ctx, func(healthInfo *storage.ClusterHealthStatus) error {
+			clusterHealthStatuses[healthInfo.Id] = healthInfo
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 
@@ -167,23 +173,19 @@ func (ds *datastoreImpl) buildIndex() error {
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
-	return ds.indexer.AddClusters(clusters)
+	return nil
 }
 
 func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
-	var clusters []*storage.Cluster
-	if err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
-		clusters = append(clusters, cluster)
-		return nil
-	}); err != nil {
-		return err
-	}
-
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Node, resources.NetworkGraph)))
 
+	clusters, err := ds.collectClusters(ctx)
+	if err != nil {
+		return err
+	}
 	for _, cluster := range clusters {
 		ds.netEntityDataStore.RegisterCluster(ctx, cluster.GetId())
 	}
@@ -209,13 +211,13 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
-	ds.populateHealthInfos(clusters...)
+	ds.populateHealthInfos(ctx, clusters...)
 	ds.updateClusterPriority(clusters...)
 	return clusters, nil
 }
 
 func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error) {
-	cluster, found, err := ds.clusterStorage.Get(id)
+	cluster, found, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -223,7 +225,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 		return nil, false, err
 	}
 
-	ds.populateHealthInfos(cluster)
+	ds.populateHealthInfos(ctx, cluster)
 	ds.updateClusterPriority(cluster)
 	return cluster, true, nil
 }
@@ -233,16 +235,12 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	if err != nil {
 		return nil, err
 	} else if ok {
-		var clusters []*storage.Cluster
-		err := ds.clusterStorage.Walk(func(cluster *storage.Cluster) error {
-			clusters = append(clusters, cluster)
-			return nil
-		})
+		clusters, err := ds.collectClusters(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		ds.populateHealthInfos(clusters...)
+		ds.populateHealthInfos(ctx, clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
@@ -281,7 +279,7 @@ func (ds *datastoreImpl) CountClusters(ctx context.Context) (int, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
-		return ds.clusterStorage.Count()
+		return ds.clusterStorage.Count(ctx)
 	}
 
 	return ds.Count(ctx, pkgSearch.EmptyQuery())
@@ -300,14 +298,18 @@ func (ds *datastoreImpl) AddCluster(ctx context.Context, cluster *storage.Cluste
 	if err := checkWriteSac(ctx, cluster.GetId()); err != nil {
 		return "", err
 	}
+	_, found := ds.nameToIDCache.Get(cluster.Name)
+	if found {
+		return "", errox.AlreadyExists.Newf("the cluster with name %s exists, cannot re-add it", cluster.GetName())
+	}
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	return ds.addClusterNoLock(cluster)
+	return ds.addClusterNoLock(ctx, cluster)
 }
 
-func (ds *datastoreImpl) addClusterNoLock(cluster *storage.Cluster) (string, error) {
+func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.Cluster) (string, error) {
 	if cluster.GetId() != "" {
 		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
@@ -317,9 +319,11 @@ func (ds *datastoreImpl) addClusterNoLock(cluster *storage.Cluster) (string, err
 	}
 
 	cluster.Id = uuid.NewV4().String()
-	if err := ds.updateClusterNoLock(cluster); err != nil {
+	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return "", err
 	}
+
+	trackClusterRegistered(ctx, cluster)
 
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -341,7 +345,7 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	existingCluster, exists, err := ds.clusterStorage.Get(cluster.GetId())
+	existingCluster, exists, err := ds.clusterStorage.Get(ctx, cluster.GetId())
 	if err != nil {
 		return err
 	}
@@ -355,7 +359,7 @@ func (ds *datastoreImpl) UpdateCluster(ctx context.Context, cluster *storage.Clu
 		cluster.Status = existingCluster.GetStatus()
 	}
 
-	if err := ds.updateClusterNoLock(cluster); err != nil {
+	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return err
 	}
 
@@ -393,12 +397,13 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	oldHealth, _, err := ds.clusterHealthStorage.Get(id)
+	oldHealth, _, err := ds.clusterHealthStorage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	if err := ds.clusterHealthStorage.UpsertWithID(id, clusterHealthStatus); err != nil {
+	clusterHealthStatus.Id = id
+	if err := ds.clusterHealthStorage.Upsert(ctx, clusterHealthStatus); err != nil {
 		return err
 	}
 
@@ -407,15 +412,21 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 		return nil
 	}
 
-	cluster, exists, err := ds.clusterStorage.Get(id)
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {
 		return err
 	}
+
 	if !exists {
 		return nil
 	}
 	cluster.HealthStatus = clusterHealthStatus
-	return ds.indexer.AddCluster(cluster)
+
+	if oldHealth.GetSensorHealthStatus() == storage.ClusterHealthStatus_UNINITIALIZED &&
+		clusterHealthStatus.GetSensorHealthStatus() != storage.ClusterHealthStatus_UNINITIALIZED {
+		trackClusterInitialized(cluster)
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error {
@@ -426,13 +437,13 @@ func (ds *datastoreImpl) UpdateSensorDeploymentIdentification(ctx context.Contex
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	cluster.MostRecentSensorId = identification
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string, states map[string]*storage.AuditLogFileState) error {
@@ -450,7 +461,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	cluster, err := ds.getClusterOnly(id)
+	cluster, err := ds.getClusterOnly(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -464,7 +475,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 		cluster.AuditLogState[node] = state
 	}
 
-	return ds.clusterStorage.Upsert(cluster)
+	return ds.clusterStorage.Upsert(ctx, cluster)
 }
 
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
@@ -476,7 +487,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	defer ds.lock.Unlock()
 
 	// Fetch the cluster an confirm it exists.
-	cluster, exists, err := ds.clusterStorage.Get(id)
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if !exists {
 		return errors.Errorf("unable to find cluster %q", id)
 	}
@@ -484,7 +495,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return err
 	}
 
-	if err := ds.clusterStorage.Delete(id); err != nil {
+	if err := ds.clusterStorage.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
@@ -492,19 +503,15 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
 	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
-	return ds.indexer.DeleteCluster(id)
+	return nil
 }
 
 func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage.Cluster, done *concurrency.Signal) {
 	// Terminate the cluster connection to prevent new data from being stored.
 	if ds.cm != nil {
-		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
-			conn.Terminate(errors.New("cluster was deleted"))
-			if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
-				utils.Should(errors.Errorf("connection to sensor from cluster %s not terminated after %v", cluster.GetId(), connectionTerminationTimeout))
-			}
-		}
+		ds.cm.CloseConnection(cluster.GetId())
 	}
+	ds.removeClusterImageIntegrations(ctx, cluster)
 
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
@@ -512,12 +519,12 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	ds.removeClusterNamespaces(ctx, cluster)
 
 	// Tombstone each deployment and mark alerts stale.
-	ds.removeClusterDeployments(ctx, cluster)
+	removedDeployments := ds.removeClusterDeployments(ctx, cluster)
 
 	ds.removeClusterPods(ctx, cluster)
 
 	// Remove nodes associated with this cluster
-	if err := ds.nodeDataStore.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
+	if err := ds.nodeDataStore.DeleteAllNodesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
@@ -525,14 +532,38 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
-	err := ds.networkBaselineMgr.ProcessPostClusterDelete(cluster.GetId())
+	err := ds.networkBaselineMgr.ProcessPostClusterDelete(removedDeployments)
 	if err != nil {
 		log.Errorf("failed to delete network baselines associated with this cluster %q: %v", cluster.GetId(), err)
 	}
 
 	ds.removeClusterSecrets(ctx, cluster)
+	ds.removeClusterServiceAccounts(ctx, cluster)
+	ds.removeK8SRoles(ctx, cluster)
+	ds.removeRoleBindings(ctx, cluster)
+
+	if err := ds.clusterCVEDataStore.DeleteClusterCVEsInternal(ctx, cluster.GetId()); err != nil {
+		log.Errorf("Failed to delete cluster cves for cluster %q: %v ", cluster.GetId(), err)
+	}
+
 	if done != nil {
 		done.Signal()
+	}
+}
+
+func (ds *datastoreImpl) removeClusterImageIntegrations(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+
+	imageIntegrations, err := ds.imageIntegrationDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("failed to get image integrations for removed cluster %s: %v", cluster.GetId(), err)
+		return
+	}
+	for _, imageIntegration := range imageIntegrations {
+		err = ds.imageIntegrationDataStore.RemoveImageIntegration(ctx, imageIntegration.ID)
+		if err != nil {
+			log.Errorf("failed to remove image integration %s in deleted cluster: %v", imageIntegration.ID, err)
+		}
 	}
 }
 
@@ -540,13 +571,13 @@ func (ds *datastoreImpl) removeClusterNamespaces(ctx context.Context, cluster *s
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	namespaces, err := ds.namespaceDataStore.Search(ctx, q)
 	if err != nil {
-		log.Errorf("failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
 	for _, namespace := range namespaces {
 		err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
 		if err != nil {
-			log.Errorf("failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
+			log.Errorf("Failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
 		}
 	}
 
@@ -566,41 +597,111 @@ func (ds *datastoreImpl) removeClusterPods(ctx context.Context, cluster *storage
 	}
 }
 
-func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) {
+func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) []string {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
 	deployments, err := ds.deploymentDataStore.Search(ctx, q)
 	if err != nil {
 		log.Errorf("failed to get deployments for removed cluster %s: %v", cluster.GetId(), err)
 	}
+
+	// Deployment IDs being removed.
+	removedIDs := make([]string, 0, len(deployments))
+
 	// Tombstone each deployment and mark alerts stale.
 	for _, deployment := range deployments {
 		alerts, err := ds.getAlerts(ctx, deployment.ID)
 		if err != nil {
-			log.Errorf("failed to retrieve alerts for deployment %s: %v", deployment.ID, err)
+			log.Errorf("Failed to retrieve alerts for deployment %s: %v", deployment.ID, err)
 		} else {
 			err = ds.markAlertsStale(ctx, alerts)
 			if err != nil {
-				log.Errorf("failed to mark alerts for deployment %s as stale: %v", deployment.ID, err)
+				log.Errorf("Failed to mark alerts for deployment %s as stale: %v", deployment.ID, err)
 			}
 		}
 
+		removedIDs = append(removedIDs, deployment.ID)
 		err = ds.deploymentDataStore.RemoveDeployment(ctx, cluster.GetId(), deployment.ID)
 		if err != nil {
-			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
+			log.Errorf("Failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
 		}
 	}
 
+	return removedIDs
 }
 
 func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *storage.Cluster) {
 	secrets, err := ds.getSecrets(ctx, cluster)
 	if err != nil {
-		log.Errorf("failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
+		log.Errorf("Failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.secretsDataStore.RemoveSecret(ctx, s.GetId())
+		if err := ds.secretsDataStore.RemoveSecret(ctx, s.GetId()); err != nil {
+			log.Errorf("Failed to remove secret with id %s from deleted cluster %s: %v", s.GetId(), cluster.GetId(), err)
+		}
 	}
+}
+
+func (ds *datastoreImpl) removeClusterServiceAccounts(ctx context.Context, cluster *storage.Cluster) {
+	serviceAccounts, err := ds.getServiceAccounts(ctx, cluster)
+	if err != nil {
+		log.Errorf("Failed to find service accounts in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, s := range serviceAccounts {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.serviceAccountDataStore.RemoveServiceAccount(ctx, s); err != nil {
+			log.Errorf("Failed to remove service account with id %s from deleted cluster %s: %v", s, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) removeK8SRoles(ctx context.Context, cluster *storage.Cluster) {
+	roles, err := ds.getRoles(ctx, cluster)
+	if err != nil {
+		log.Errorf("Failed to find K8S roles in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, r := range roles {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.roleDataStore.RemoveRole(ctx, r); err != nil {
+			log.Errorf("failed to remove K8S role with id %s from deleted cluster %s: %v", r, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) removeRoleBindings(ctx context.Context, cluster *storage.Cluster) {
+	bindings, err := ds.getRoleBindings(ctx, cluster)
+	if err != nil {
+		log.Errorf("Failed to find K8S role bindings in deleted cluster %s: %v", cluster.GetId(), err)
+	}
+	for _, b := range bindings {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		if err := ds.roleBindingDataStore.RemoveRoleBinding(ctx, b); err != nil {
+			log.Errorf("Failed to remove K8S role binding with id %s from deleted cluster %s: %v", b, cluster.GetId(), err)
+		}
+	}
+}
+
+func (ds *datastoreImpl) getRoleBindings(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.roleBindingDataStore.Search(ctx, q))
+}
+
+func (ds *datastoreImpl) getRoles(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.roleDataStore.Search(ctx, q))
+}
+
+func (ds *datastoreImpl) getServiceAccounts(ctx context.Context, cluster *storage.Cluster) ([]string, error) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	return convertSearchResultsToIDs(ds.serviceAccountDataStore.Search(ctx, q))
+}
+
+func convertSearchResultsToIDs(res []pkgSearch.Result, err error) ([]string, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	return pkgSearch.ResultsToIDs(res), nil
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {
@@ -610,54 +711,28 @@ func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluste
 
 func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]*storage.Alert, error) {
 	q := pkgSearch.NewQueryBuilder().
-		AddStrings(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
 		AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
 	return ds.alertDataStore.SearchRawAlerts(ctx, q)
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
-	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
-	for _, alert := range alerts {
-		errorList.AddError(ds.alertDataStore.MarkAlertStale(ctx, alert.GetId()))
-		if errorList.ToError() == nil {
-			// run notifier for all the resolved alerts
-			alert.State = storage.ViolationState_RESOLVED
-			ds.notifier.ProcessAlert(ctx, alert)
-		}
-	}
-	return errorList.ToError()
-}
-
-func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {
-	if err := ds.doCleanUpNodeStore(ctx); err != nil {
-		log.Errorf("Error cleaning up cluster node stores: %v", err)
-	}
-}
-
-func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
-	clusterNodeStores, err := ds.nodeDataStore.GetAllClusterNodeStores(ctx, false)
-	if err != nil {
-		return errors.Wrap(err, "retrieving per-cluster node stores")
-	}
-
-	if len(clusterNodeStores) == 0 {
+	if len(alerts) == 0 {
 		return nil
 	}
 
-	orphanedClusterIDsInNodeStore := set.NewStringSet()
-	for clusterID := range clusterNodeStores {
-		orphanedClusterIDsInNodeStore.Add(clusterID)
+	ids := make([]string, 0, len(alerts))
+	for _, alert := range alerts {
+		ids = append(ids, alert.GetId())
 	}
-
-	clusters, err := ds.GetClusters(ctx)
+	resolvedAlerts, err := ds.alertDataStore.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
-		return errors.Wrap(err, "retrieving clusters")
+		return err
 	}
-	for _, cluster := range clusters {
-		orphanedClusterIDsInNodeStore.Remove(cluster.GetId())
+	for _, resolvedAlert := range resolvedAlerts {
+		ds.notifier.ProcessAlert(ctx, resolvedAlert)
 	}
-
-	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, orphanedClusterIDsInNodeStore.AsSlice()...)
+	return nil
 }
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
@@ -666,8 +741,8 @@ func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {
 	}
 }
 
-func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {
-	cluster, exists, err := ds.clusterStorage.Get(id)
+func (ds *datastoreImpl) getClusterOnly(ctx context.Context, id string) (*storage.Cluster, error) {
+	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -677,13 +752,13 @@ func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {
 	return cluster, nil
 }
 
-func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
+func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*storage.Cluster) {
 	ids := make([]string, 0, len(clusters))
 	for _, cluster := range clusters {
 		ids = append(ids, cluster.GetId())
 	}
 
-	infos, missing, err := ds.clusterHealthStorage.GetMany(ids)
+	infos, missing, err := ds.clusterHealthStorage.GetMany(ctx, ids)
 	if err != nil {
 		log.Errorf("failed to populate health info for %d clusters: %v", len(ids), err)
 		return
@@ -704,7 +779,7 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 	}
 }
 
-func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
+func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *storage.Cluster) error {
 	if err := normalizeCluster(cluster); err != nil {
 		return err
 	}
@@ -712,10 +787,7 @@ func (ds *datastoreImpl) updateClusterNoLock(cluster *storage.Cluster) error {
 		return err
 	}
 
-	if err := ds.clusterStorage.Upsert(cluster); err != nil {
-		return err
-	}
-	if err := ds.indexer.AddCluster(cluster); err != nil {
+	if err := ds.clusterStorage.Upsert(ctx, cluster); err != nil {
 		return err
 	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
@@ -781,7 +853,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 			cluster.HelmConfig = clusterConfig.Clone()
 		}
 
-		if _, err := ds.addClusterNoLock(cluster); err != nil {
+		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
 	} else {
@@ -796,7 +868,8 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
 		timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
 
-		if timeLeftInGracePeriod > 0 {
+		// In a scale test environment, allow Sensors to reconnect in under the time limit
+		if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
 			if err := common.CheckConnReplace(hello.GetDeploymentIdentification(), cluster.GetMostRecentSensorId()); err != nil {
 				managerPretty := "non-manually" // Unless we extend the `ManagerType` and forget to extend the switch here, this should never surface to the user.
 				switch manager {
@@ -840,7 +913,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	if !proto.Equal(currentCluster, cluster) {
 		// Cluster is dirty and needs to be updated in the DB.
-		if err := ds.updateClusterNoLock(cluster); err != nil {
+		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 			return nil, err
 		}
 	}
@@ -848,25 +921,9 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	return cluster, nil
 }
 
-// GetClusterDefaults is consumed by the API to provide the user with the default secured cluster values.
-func (ds *datastoreImpl) GetClusterDefaults(ctx context.Context) (*storage.Cluster, error) {
-	cluster := &storage.Cluster{}
-	if err := addDefaults(cluster); err != nil {
-		return nil, err
-	}
-
-	// Collector image default is not supposed to be stored in cluster object but only used to display to the user
-	// on the UI.
-	flavor := defaults.GetImageFlavorFromEnv()
-	if cluster.GetCollectorImage() == "" {
-		cluster.CollectorImage = flavor.CollectorFullImageNoTag()
-	}
-	return cluster, nil
-}
-
 func normalizeCluster(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot normalize nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot normalize nil cluster object")
 	}
 
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
@@ -881,14 +938,18 @@ func validateInput(cluster *storage.Cluster) error {
 
 // addDefaults enriches the provided non-nil cluster object with defaults for
 // fields that cannot stay empty.
+// `cluster.* bool` flags remain untouched.
 func addDefaults(cluster *storage.Cluster) error {
 	if cluster == nil {
-		return errorhelpers.NewErrInvariantViolation("cannot enrich nil cluster object")
+		return errox.InvariantViolation.CausedBy("cannot enrich nil cluster object")
 	}
 
-	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
-	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
-		cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
+	collectionMethod := cluster.GetCollectionMethod()
+
+	// For backwards compatibility reasons, if Collection Method is not set, or set
+	// to KERNEL_MODULE (which is unsupported) then honor defaults for runtime support
+	if collectionMethod == storage.CollectionMethod_UNSET_COLLECTION || collectionMethod == storage.CollectionMethod_KERNEL_MODULE {
+		cluster.CollectionMethod = storage.CollectionMethod_EBPF
 	}
 	cluster.RuntimeSupport = cluster.GetCollectionMethod() != storage.CollectionMethod_NO_COLLECTION
 
@@ -918,9 +979,11 @@ func addDefaults(cluster *storage.Cluster) error {
 	if acConfig.GetTimeoutSeconds() == 0 {
 		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
 	}
-	flavor := defaults.GetImageFlavorFromEnv()
 	if cluster.GetMainImage() == "" {
+		flavor := defaults.GetImageFlavorFromEnv()
 		cluster.MainImage = flavor.MainImageNoTag()
+		// cluster.CollectorImage should be kept empty here on the save path
+		// because it is computed using complex rules from the MainImage on the load path.
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		cluster.CentralApiEndpoint = "central.stackrox:443"
@@ -943,4 +1006,19 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
 	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
+}
+
+func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	var clusters []*storage.Cluster
+	walkFn := func() error {
+		clusters = clusters[:0]
+		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
+			clusters = append(clusters, cluster)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+		return nil, err
+	}
+	return clusters, nil
 }

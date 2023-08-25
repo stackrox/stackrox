@@ -22,7 +22,7 @@ var (
 
 	migration = types.Migration{
 		StartingSeqNum: 58,
-		VersionAfter:   storage.Version{SeqNum: 59},
+		VersionAfter:   &storage.Version{SeqNum: 59},
 		Run: func(databases *types.Databases) error {
 			if err := migrateNodes(databases.BoltDB, databases.RocksDB); err != nil {
 				return err

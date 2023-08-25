@@ -1,0 +1,41 @@
+{
+  "id": "86804b96-e87e-4eae-b56e-1718a8a55763",
+  "name": "Process Targeting Cluster Kubelet Endpoint",
+  "description": "Detects misuse of the healthz/kubelet API/heapster endpoint",
+  "rationale": "A pod communicating to a Kubernetes API from via command line is highly irregular",
+  "remediation": "Look for open ports that may allow remote execution. Remove network utilities like curl and wget that allow these connections. Consider a firewall deny ingress firewall rule to the node serving the API",
+  "categories": [
+    "Kubernetes"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Arguments",
+          "values": [
+            {
+              "value": "(https?://)?(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\:(10250|10248|10255)|heapster\\.kube\\-system/metrics|KUBERNETES_PORT_443_TCP_ADDR|KUBERNETES_SERVICE_HOST).*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0007",
+      "techniques": [
+        "T1613"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

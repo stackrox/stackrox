@@ -1,0 +1,92 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: asset-cache-netpol
+  namespace: frontend
+spec:
+  podSelector:
+      matchLabels:
+          app: asset-cache
+  policyTypes:
+      - Ingress
+      - Egress
+status: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: webapp-netpol
+  namespace: frontend
+spec:
+  egress:
+      - ports:
+          - port: 8080
+            protocol: TCP
+        to:
+          - namespaceSelector:
+              matchLabels:
+                  kubernetes.io/metadata.name: backend
+            podSelector:
+              matchLabels:
+                  app: checkout
+      - ports:
+          - port: 8080
+            protocol: TCP
+        to:
+          - namespaceSelector:
+              matchLabels:
+                  kubernetes.io/metadata.name: backend
+            podSelector:
+              matchLabels:
+                  app: recommendation
+      - ports:
+          - port: 8080
+            protocol: TCP
+        to:
+          - namespaceSelector:
+              matchLabels:
+                  kubernetes.io/metadata.name: backend
+            podSelector:
+              matchLabels:
+                  app: reports
+      - ports:
+          - port: 8080
+            protocol: TCP
+        to:
+          - namespaceSelector:
+              matchLabels:
+                  kubernetes.io/metadata.name: backend
+            podSelector:
+              matchLabels:
+                  app: shipping
+      - ports:
+          - port: 5353
+            protocol: UDP
+        to:
+          - namespaceSelector: {}
+  podSelector:
+      matchLabels:
+          app: webapp
+  policyTypes:
+      - Ingress
+      - Egress
+status: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  name: default-deny-in-namespace-frontend
+  namespace: frontend
+spec:
+  podSelector: {}
+  policyTypes:
+      - Ingress
+      - Egress
+status: {}

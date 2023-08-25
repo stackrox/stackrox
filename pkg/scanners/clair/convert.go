@@ -8,8 +8,9 @@ import (
 )
 
 func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
+	os := stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown")
 	return &storage.ImageScan{
 		OperatingSystem: stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown"),
-		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
+		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features, os),
 	}
 }

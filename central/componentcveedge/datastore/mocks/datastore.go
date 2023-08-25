@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -81,21 +81,6 @@ func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ComponentC
 func (mr *MockDataStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
-}
-
-// GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ComponentCVEEdge, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
-	ret0, _ := ret[0].([]*storage.ComponentCVEEdge)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBatch indicates an expected call of GetBatch.
-func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
 }
 
 // Search mocks base method.

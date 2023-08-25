@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mastercard-processor
+  namespace: payments
+  labels:
+    app: mastercard-processor
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mastercard-processor
+  namespace: payments
+  labels:
+    app: mastercard-processor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: mastercard-processor
+    namespace: payments
+
+---
+# Deployment named "mastercard-processor"
+# Listens on :8080
+# Vulnerable to struts
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mastercard-processor
+  namespace: payments
+  labels:
+    app: mastercard-processor
+    app.kubernetes.io/part-of: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mastercard-processor
+  template:
+    metadata:
+      labels:
+        app: mastercard-processor
+    spec:
+      serviceAccountName: mastercard-processor
+      containers:
+        - image: quay.io/vuln/mastercard-processor:latest
+          imagePullPolicy: Always
+          name: mastercard-processor
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+
+---
+# Service named "mastercard-processor-service"
+# Listens on :8080
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mastercard-processor
+  name: mastercard-processor-service
+  namespace: payments
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: mastercard-processor
+  type: ClusterIP

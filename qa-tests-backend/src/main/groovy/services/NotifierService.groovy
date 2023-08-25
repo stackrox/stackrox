@@ -1,32 +1,26 @@
 package services
 
 import common.Constants
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
 import util.Env
+import util.MailServer
 
+@Slf4j
 class NotifierService extends BaseService {
-    private static final PAGERDUTY_API_KEY = "fix-me-ROX-7589-and-this-should-be-secret"
-
-    // SLACK_MAIN_WEBHOOK is the webhook URL for #slack-test
-    public static final SLACK_MAIN_WEBHOOK = Env.mustGetSlackMainWebhook()
-    // SLACK_ALT_WEBHOOK is the webhook URL for #stackrox-alerts-2
-    public static final SLACK_ALT_WEBHOOK = Env.mustGetSlackAltWebhook()
+    // FIXME(ROX-7589): this should be secret
+    // private static final PAGERDUTY_API_KEY = Env.mustGetPagerdutyApiKey()
+    private static final String PAGERDUTY_API_KEY = null
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
     static addNotifier(NotifierOuterClass.Notifier notifier) {
-        try {
-            return getNotifierClient().postNotifier(notifier)
-        } catch (Exception e) {
-            println "Failed to add notifier..."
-            e.printStackTrace()
-            throw e
-        }
+        return getNotifierClient().postNotifier(notifier)
     }
 
     static testNotifier(NotifierOuterClass.Notifier notifier) {
@@ -34,7 +28,7 @@ class NotifierService extends BaseService {
             getNotifierClient().testNotifier(notifier)
             return true
         } catch (Exception e) {
-            println e.toString()
+            log.error("error testing notifier", e)
             return false
         }
     }
@@ -48,35 +42,40 @@ class NotifierService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println e.toString()
+            log.error("error deleting notifier", e)
         }
     }
 
     static NotifierOuterClass.Notifier getEmailIntegrationConfig(
             String name,
-            disableTLS = false,
-            startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED,
-            Integer port = null) {
+            String server,
+            boolean sendAuthCreds = true,
+            boolean disableTLS = false,
+            NotifierOuterClass.Email.AuthMethod startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED) {
         NotifierOuterClass.Notifier.Builder builder =
                 NotifierOuterClass.Notifier.newBuilder()
                         .setEmail(NotifierOuterClass.Email.newBuilder())
+
+        def emailBuilder = builder.getEmailBuilder()
+                .setSender(Constants.EMAIL_NOTIFER_SENDER)
+                .setFrom(Constants.EMAIL_NOTIFER_FROM)
+                .setDisableTLS(disableTLS)
+                .setStartTLSAuthMethod(startTLS)
+
+        if (sendAuthCreds) {
+            emailBuilder.setUsername(MailServer.MAILSERVER_USER).setPassword(MailServer.MAILSERVER_PASS)
+        } else {
+            emailBuilder.setAllowUnauthenticatedSmtp(!sendAuthCreds)
+        }
+
         builder
                 .setType("email")
                 .setName(name)
-                .setLabelKey("mailgun")
-                .setLabelDefault("stackrox.qa@gmail.com")
+                .setLabelKey("email_label")
+                .setLabelDefault(Constants.EMAIL_NOTIFIER_RECIPIENT)
                 .setUiEndpoint(getStackRoxEndpoint())
-                .setEmail(builder.getEmailBuilder()
-                        .setUsername("automation@mailgun.rox.systems")
-                        .setPassword(Env.mustGet("MAILGUN_PASSWORD"))
-                        .setSender(Constants.EMAIL_NOTIFER_SENDER)
-                        .setFrom(Constants.EMAIL_NOTIFER_FROM)
-                        .setDisableTLS(disableTLS)
-                        .setStartTLSAuthMethod(startTLS)
-                )
-        port == null ?
-                builder.getEmailBuilder().setServer("smtp.mailgun.org") :
-                builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
+                .setEmail(emailBuilder)
+        builder.getEmailBuilder().setServer(server)
         return builder.build()
     }
 
@@ -85,8 +84,8 @@ class NotifierService extends BaseService {
             Boolean enableTLS,
             String caCert,
             Boolean skipTLSVerification,
-            Boolean auditLoggingEnabled)  {
-        NotifierOuterClass.GenericOrBuilder genericBuilder =  NotifierOuterClass.Generic.newBuilder()
+            Boolean auditLoggingEnabled) {
+        NotifierOuterClass.GenericOrBuilder genericBuilder = NotifierOuterClass.Generic.newBuilder()
                 .setEndpoint("http://webhookserver.stackrox:8080")
                 .setCaCert(caCert)
                 .setSkipTLSVerify(skipTLSVerification)
@@ -94,8 +93,8 @@ class NotifierService extends BaseService {
                 .setUsername("admin")
                 .setPassword("admin")
                 .addHeaders(
-                Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
-        )
+                        Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
+                )
                 .addExtraFields(Common.KeyValuePair.newBuilder().setKey("fieldkey").setValue("fieldvalue").build())
         if (enableTLS) {
             genericBuilder.setEndpoint("https://webhookserver.stackrox:8443")
@@ -114,7 +113,7 @@ class NotifierService extends BaseService {
                 .setType("slack")
                 .setName(name)
                 .setLabelKey(labelKey)
-                .setLabelDefault(SLACK_MAIN_WEBHOOK)
+                .setLabelDefault(Env.mustGetSlackMainWebhook())
                 .setUiEndpoint(getStackRoxEndpoint())
                 .build()
     }
@@ -164,7 +163,7 @@ class NotifierService extends BaseService {
     static NotifierOuterClass.Notifier getSplunkIntegrationConfig(
             boolean legacy,
             String serviceName,
-            String name)  throws Exception {
+            String name) throws Exception {
         String splunkIntegration = "splunk-Integration"
         String prePackagedToken = "00000000-0000-0000-0000-000000000000"
 
@@ -193,7 +192,7 @@ class NotifierService extends BaseService {
     static NotifierOuterClass.Notifier getSyslogIntegrationConfig(
             String serviceName,
             int port,
-            String name)  throws Exception {
+            String name) throws Exception {
         String syslogIntegration = "syslog-Integration"
 
         return NotifierOuterClass.Notifier.newBuilder()
@@ -209,6 +208,7 @@ class NotifierService extends BaseService {
                                 .setSkipTlsVerify(true)
                                 .build()
                         )
+                        .setMessageFormat(NotifierOuterClass.Syslog.MessageFormat.CEF)
                         .build()
                 )
                 .build()

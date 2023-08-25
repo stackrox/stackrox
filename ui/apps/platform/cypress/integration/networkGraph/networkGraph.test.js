@@ -1,109 +1,171 @@
-import { url as networkUrl, selectors as networkPageSelectors } from '../../constants/NetworkPage';
-import selectors from '../../selectors';
-
-import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { clickOnNodeByName, filterDeployments, filterNamespaces } from '../../helpers/networkGraph';
+import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
-describe('Network Deployment Details', () => {
+import {
+    visitNetworkGraph,
+    visitNetworkGraphFromLeftNav,
+    checkNetworkGraphEmptyState,
+    selectCluster,
+    selectNamespace,
+    selectDeployment,
+    selectFilter,
+    updateAndCloseCidrModal,
+} from './networkGraph.helpers';
+import { networkGraphSelectors } from './networkGraph.selectors';
+
+describe('Network Graph smoke tests', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.server();
+    it('should visit using the left nav', () => {
+        visitNetworkGraphFromLeftNav();
 
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+        checkNetworkGraphEmptyState();
+    });
 
-        cy.fixture('network/networkPolicies.json').as('networkPoliciesJson');
-        cy.route('GET', api.network.networkPoliciesGraph, '@networkPoliciesJson').as(
-            'networkPolicies'
+    it('should visit from direct navigation', () => {
+        visitNetworkGraph();
+
+        cy.title().should('match', getRegExpForTitleWithBranding('Network Graph'));
+
+        checkNetworkGraphEmptyState();
+    });
+
+    it('should render a graph, including toolbar, when cluster and namespace are selected', () => {
+        visitNetworkGraph();
+
+        checkNetworkGraphEmptyState();
+
+        selectCluster();
+        selectNamespace('stackrox');
+
+        // check that group of nodes for NS is present
+        cy.get(`${networkGraphSelectors.groups} [data-id="stackrox"]`);
+
+        // check that label for NS is present and has the filtered-namespace class
+        cy.get(
+            `${networkGraphSelectors.nodes} [data-id="stackrox"] g.filtered-namespace text`
+        ).contains('stackrox');
+
+        // check that toolbar and buttons are present
+        cy.get(`${networkGraphSelectors.toolbar}`);
+        cy.get(networkGraphSelectors.toolbarItem).contains('Zoom In');
+        cy.get(networkGraphSelectors.toolbarItem).contains('Zoom Out');
+        cy.get(networkGraphSelectors.toolbarItem).contains('Fit to Screen');
+        cy.get(networkGraphSelectors.toolbarItem).contains('Reset View');
+
+        // open Legend as well, after verifying its existence
+        cy.get(networkGraphSelectors.toolbarItem).contains('Legend').click();
+
+        // check Legend content
+        cy.get('.pf-c-popover__content [data-testid="legend-title"]:contains("Legend")');
+
+        cy.get('.pf-c-popover__content [data-testid="node-types-title"]:contains("Node types")');
+        cy.get('.pf-c-popover__content .pf-c-description-list__text:contains("Deployment")');
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("External CIDR block")'
         );
 
-        cy.fixture('network/centralDeployment.json').as('centralDeploymentJson');
-        cy.route('GET', api.network.deployment, '@centralDeploymentJson').as('centralDeployment');
+        cy.get(
+            '.pf-c-popover__content [data-testid="namespace-types-title"]:contains("Namespace types")'
+        );
+        cy.get('.pf-c-popover__content .pf-c-description-list__text:contains("Related namespace")');
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("Filtered namespace")'
+        );
 
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
-        cy.wait('@networkPolicies');
+        cy.get(
+            '.pf-c-popover__content [data-testid="deployment-badges-title"]:contains("Deployment badges")'
+        );
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("Connected to external entities")'
+        );
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("Isolated by network policy rules")'
+        );
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("All traffic allowed (No network policies)")'
+        );
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("Only has an egress network policy")'
+        );
+        cy.get(
+            '.pf-c-popover__content .pf-c-description-list__text:contains("Only has an ingress network policy")'
+        );
+
+        // close the Legend
+        cy.get('.pf-c-popover__content [aria-label="Close"]').click();
     });
 
-    it('should open up the Deployments Side Panel when a deployment is clicked', () => {
-        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            clickOnNodeByName(cytoscape, {
-                type: 'DEPLOYMENT',
-                name: 'central',
-            });
-            cy.wait('@centralDeployment');
-            cy.get(`${networkPageSelectors.networkEntityTabbedOverlay.header}:contains("central")`);
+    it('should correctly display entities when scope and filters are applied', () => {
+        visitNetworkGraph();
+
+        // Apply a namespace filter for 'stackrox'
+        selectNamespace('stackrox');
+
+        // Verify that 'stackrox' namespace is present
+        cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
+
+        // Verify that central, central-db, scanner, scanner-db, sensor are present
+        ['central', 'central-db', 'scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
         });
-    });
-});
 
-describe('Network Graph Search', () => {
-    withAuth();
+        // Apply a deployment filter for 'central-db'
+        selectDeployment('central-db');
 
-    beforeEach(() => {
-        cy.server();
-        cy.route('GET', api.network.networkPoliciesGraph).as('networkPoliciesGraph');
-        cy.route('GET', api.network.networkGraph).as('networkGraph');
-    });
-
-    it('should filter to show only the deployments from the stackrox namespace and deployments connected to them', () => {
-        const namespaceName = 'stackrox';
-
-        cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
-
-        cy.get(selectors.search.multiSelectInput).type('Namespace{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${namespaceName}{enter}`);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
-
-        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            const deployments = cytoscape.nodes().filter(filterDeployments);
-            deployments.forEach((deployment) => {
-                expect(deployment.data().parent).to.be.oneOf(['stackrox', 'kube-system']);
-            });
+        // Verify that central, central-db are present and that scanner, scanner-db, sensor are not present
+        ['central', 'central-db'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
         });
+        ['scanner', 'scanner-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
+        });
+
+        // Remove the central-db selection from the scope filter
+        selectDeployment('central-db');
+        // Apply a general filter of "Deployment Label" for 'app=scanner-db'
+        selectFilter('Deployment Label', 'app=scanner-db');
+
+        ['scanner', 'scanner-db'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment));
+        });
+        ['central', 'central-db', 'sensor'].forEach((deployment) => {
+            cy.get(networkGraphSelectors.deploymentNode(deployment)).should('not.exist');
+        });
+
+        // Verify that the correct namespace is displayed
+        cy.get(networkGraphSelectors.filteredNamespaceGroupNode('stackrox'));
     });
 
-    it('should filter to show only the stackrox namespace and deployments connected to stackrox namespace', () => {
-        const namespaceName = 'stackrox';
+    it('should allow the addition and deletion of CIDR blocks', () => {
+        visitNetworkGraph();
 
-        cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        // open the CIDR block modal and add a block
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).type('{selectall}redhat.com');
+        cy.get(networkGraphSelectors.cidrBlockEntryCidrInputAt(0)).type('{selectall}10.0.0.0/24');
 
-        cy.get(selectors.search.multiSelectInput).type('Namespace{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${namespaceName}{enter}`);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        updateAndCloseCidrModal();
 
-        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            const namespaces = cytoscape.nodes().filter(filterNamespaces);
-            expect(namespaces.size()).to.equal(1);
-            namespaces.forEach((namespace) => {
-                expect(namespace.data().name).to.be.oneOf(['stackrox', 'kube-system']);
-            });
-        });
-    });
+        // Check that the values are still there
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should(
+            'have.value',
+            'redhat.com'
+        );
+        cy.get(networkGraphSelectors.cidrBlockEntryCidrInputAt(0)).should(
+            'have.value',
+            '10.0.0.0/24'
+        );
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(1)).should('not.exist');
 
-    it('should filter to show only a specific deployment and deployments connected to it', () => {
-        const deploymentName = 'central';
+        // Delete the CIDR block
+        cy.get(networkGraphSelectors.cidrBlockEntryDeleteButtonAt(0)).click();
 
-        cy.visit(networkUrl);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
+        updateAndCloseCidrModal();
 
-        cy.get(selectors.search.multiSelectInput).type('Deployment{enter}');
-        cy.get(selectors.search.multiSelectInput).type(`${deploymentName}{enter}`);
-        cy.wait(['@networkPoliciesGraph', '@networkGraph']);
-
-        cy.getCytoscape(networkPageSelectors.cytoscapeContainer).then((cytoscape) => {
-            const deployments = cytoscape.nodes().filter(filterDeployments);
-            expect(deployments.size()).to.be.at.least(3); // central, scanner, sensor
-
-            const minDeps = [];
-            deployments.forEach((deployment) => {
-                minDeps.push(deployment.data().name);
-            });
-            expect(minDeps).to.include.members(['central', 'scanner', 'sensor']);
-        });
+        // Check that the values are removed
+        cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should('not.exist');
     });
 });

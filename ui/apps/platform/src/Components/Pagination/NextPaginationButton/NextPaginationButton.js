@@ -15,7 +15,7 @@ const NextPaginationButton = ({ className, currentPage, totalSize, pageSize, onC
             className={className}
             onClick={onNextPage}
             disabled={currentPage === totalPages || totalPages === 1}
-            data-testid="next-page-button"
+            aria-label="Go to next page"
         >
             <ChevronRight className="h-6 w-6" />
         </button>

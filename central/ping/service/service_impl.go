@@ -9,7 +9,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedPingServiceServer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

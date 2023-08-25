@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -36,12 +36,13 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // GetBackup mocks base method.
-func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, error) {
+func (m *MockDataStore) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBackup", ctx, id)
 	ret0, _ := ret[0].(*storage.ExternalBackup)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetBackup indicates an expected call of GetBackup.

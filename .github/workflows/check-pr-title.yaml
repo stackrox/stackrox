@@ -1,0 +1,46 @@
+name: "Check PR title"
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-title:
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Check if the PR title is well dressed
+        env:
+          CONV: '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([\w\-\.]+\))?!?'
+          JIRA: '([A-Z]+-[0-9]+, ?)*[A-Z]+-[0-9]+'
+          TEXT: ': .+'
+        run: |
+          # Either conventional or JIRA-nnn prefix followed by ': ' and random text:
+          REGEX="(($CONV)|($JIRA))($TEXT)"
+          test_regex() { echo -nE "$1" | grep --perl-regexp --line-regexp "$REGEX" ; }
+
+          echo "Examples:"
+          test_regex 'ROX-123: text'
+          test_regex 'ROX-123, RS-45: text'
+          test_regex 'refactor: text'
+          test_regex 'fix(ui): text'
+          test_regex 'feat(api)!: text'
+
+          if ! test_regex "$PR_TITLE"
+          then
+            echo "::error::Please update the PR title so that it follows the convention."
+            exit 1
+          fi
+
+      - name: Check PR title length
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        env:
+          LENGTH: '70'
+        run: |
+          TITLE_LENGTH="$(echo -nE "$PR_TITLE" | wc --chars)"
+          if [ "$TITLE_LENGTH" -gt "$LENGTH" ]
+          then
+            echo "::error::Please shorten the PR title from $TITLE_LENGTH to at most $LENGTH characters."
+            exit 1
+          fi

@@ -13,12 +13,14 @@ else
     count="$(${KUBE_COMMAND} api-resources | grep "securitycontextconstraints" -c || true)"
     if [[ "${count}" -eq 0 ]]; then
        echo >&2 "Detected an attempt to deploy a cluster bundle designed to be deployed on OpenShift, \\
-        on a vanilla Kubernetes cluster. Please regenerate the cluster bundle using cluster type `k8s` and redeploy. \\
+        on a vanilla Kubernetes cluster. Please regenerate the cluster bundle using cluster type 'k8s' and redeploy. \\
         If you think this message is in error, and would like to continue deploying the cluster bundle, please rerun \\
         the script using 'SKIP_ORCHESTRATOR_CHECK=true ./sensor.sh'"
         exit 1
     fi
 fi
+
+SUPPORTS_PSP=$(${KUBE_COMMAND} api-resources | grep "podsecuritypolicies" -c || true)
 
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 ${KUBE_COMMAND} -n stackrox annotate namespace/stackrox --overwrite openshift.io/node-selector=""
@@ -33,8 +35,16 @@ echo "Creating sensor security context constraints..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-scc.yaml"
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml"
-echo "Creating sensor pod security policies..."
-${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+
+if [[ -f "$DIR/sensor-pod-security.yaml" ]]; then
+  # Checking if the cluster supports pod security policies
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating sensor pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
+  fi
+fi
 
 # OpenShift roles can be delayed to be added
 sleep 5
@@ -81,8 +91,14 @@ echo "Creating admission controller RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-rbac.yaml"
 echo "Creating admission controller network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-netpol.yaml"
-echo "Creating admission controller pod security policies..."
-${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
+if [[ -f "$DIR/admission-controller-pod-security.yaml" ]]; then
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating admission controller pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/admission-controller-pod-security.yaml"
+  fi
+fi
 echo "Creating admission controller deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
 
@@ -94,8 +110,14 @@ echo "Creating collector RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml"
 echo "Creating collector network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
-echo "Creating collector pod security policies..."
-${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
+if [[ -f "$DIR/collector-pod-security.yaml" ]]; then
+  if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
+    echo "Pod security policies are not supported on this cluster. Skipping..."
+  else
+    echo "Creating collector pod security policies..."
+    ${KUBE_COMMAND} apply -f "$DIR/collector-pod-security.yaml"
+  fi
+fi
 echo "Creating collector daemon set..."
 ${KUBE_COMMAND} apply -f "$DIR/collector.yaml"
 

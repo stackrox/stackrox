@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPolicySet(t *testing.T) {
@@ -84,34 +84,66 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 
-var goodPolicy = policyversion.MustEnsureConverted(&storage.Policy{
+var goodPolicy = &storage.Policy{
 	Id:         "1",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "latest",
-		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
+	PolicySections: []*storage.PolicySection{
+		{
+			SectionName: "section-1",
+			PolicyGroups: []*storage.PolicyGroup{
+				{
+					FieldName: fieldnames.ImageTag,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "latest",
+						},
+					},
+				},
+				{
+					FieldName: fieldnames.PrivilegedContainer,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "true",
+						},
+					},
+				},
+			},
 		},
 	},
+	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-})
+}
 
-var badPolicy = policyversion.MustEnsureConverted(&storage.Policy{
+var badPolicy = &storage.Policy{
 	Id:         "2",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
 	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "^^[/",
-		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
+	PolicySections: []*storage.PolicySection{
+		{
+			SectionName: "section-1",
+			PolicyGroups: []*storage.PolicyGroup{
+				{
+					FieldName: fieldnames.ImageTag,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "^^[/",
+						},
+					},
+				},
+				{
+					FieldName: fieldnames.PrivilegedContainer,
+					Values: []*storage.PolicyValue{
+						{
+							Value: "true",
+						},
+					},
+				},
+			},
 		},
 	},
+	PolicyVersion:   "1.1",
 	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
-})
+}

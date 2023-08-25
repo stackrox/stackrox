@@ -3,11 +3,21 @@
 # Assumes a previous version is already installed via OLM using olm-operator-install.sh.
 set -eu -o pipefail
 
+# shellcheck source=./common.sh
 source "$(dirname "$0")/common.sh"
 
+declare allow_dirty_tag=false
+
 function main() {
+  case "$1" in
+  -d | --allow-dirty-tag)
+    allow_dirty_tag=true
+    shift
+    ;;
+  esac
+
   if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 <operator_ns> <operator-version>" >&2
+    echo "Usage: $0 [-d | --allow-dirty-tag] <operator_ns> <operator-version>" >&2
     exit 1
   fi
 
@@ -20,6 +30,7 @@ function main() {
   #  --type=json -p '[{"op": "remove", "path": "/spec/startingCSV"}, {"op": "replace", "path": "/spec/installPlanApproval", "value": "Automatic"}]'
 
   # However OLM happens to create an install plan for the latest version anyway, as soon as the old one is done, so we just have to approve it:
+  check_version_tag "${operator_version}" "${allow_dirty_tag}"
   approve_install_plan "${operator_ns}" "${operator_version}"
   nurse_deployment_until_available "${operator_ns}" "${operator_version}"
 }

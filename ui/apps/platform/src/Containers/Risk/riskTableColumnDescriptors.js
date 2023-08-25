@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import find from 'lodash/find';
 import dateFns from 'date-fns';
+import { Tooltip } from '@patternfly/react-core';
 
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
 
@@ -16,9 +16,7 @@ function DeploymentNameColumn({ original }) {
         <div className="flex items-center">
             <span className="pr-1">
                 {isSuspicious && (
-                    <Tooltip
-                        content={<TooltipOverlay>Abnormal processes discovered</TooltipOverlay>}
-                    >
+                    <Tooltip content="Abnormal processes discovered">
                         <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
                     </Tooltip>
                 )}
@@ -64,7 +62,7 @@ const riskTableColumnDescriptors = [
     },
     {
         Header: 'Priority',
-        searchField: 'Priority',
+        searchField: 'Deployment Risk Priority',
         accessor: 'deployment.priority',
         Cell: ({ value }) => {
             const asInt = parseInt(value, 10);

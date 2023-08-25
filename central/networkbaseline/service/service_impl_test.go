@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,8 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -26,7 +25,6 @@ func TestNetworkBaselineService(t *testing.T) {
 
 type NetworkBaselineServiceTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	mockCtrl  *gomock.Controller
 	baselines *networkBaselineDSMocks.MockDataStore
@@ -36,7 +34,6 @@ type NetworkBaselineServiceTestSuite struct {
 }
 
 func (s *NetworkBaselineServiceTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.baselines = networkBaselineDSMocks.NewMockDataStore(s.mockCtrl)
@@ -46,7 +43,6 @@ func (s *NetworkBaselineServiceTestSuite) SetupTest() {
 
 func (s *NetworkBaselineServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-	s.envIsolator.RestoreAll()
 }
 
 func (s *NetworkBaselineServiceTestSuite) getBaselineWithCustomFlow(
@@ -107,11 +103,16 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 		},
 	}
 
-	// Id we don't have any baseline, it should throw error since baselines
-	// should have been created when deployments are created
+	// If we don't have any baseline, then it is in observation and not created yet, so we will create
+	// one
+	// First call returns not found
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(nil, false, nil)
-	_, err := s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
-	s.Error(err, "network baseline for the deployment does not exist")
+	s.manager.EXPECT().CreateNetworkBaseline(request.GetDeploymentId()).Return(nil)
+	// Second call returns a baseline that was created in the call to CreateNetworkBaseline
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
+	testBase, err := s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
+	s.Nil(err)
+	s.NotNil(testBase)
 
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err := s.service.GetNetworkBaselineStatusForFlows(allAllowedCtx, request)
@@ -137,10 +138,13 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaseline() {
 	baseline := s.getBaselineWithSampleFlow()
 
-	// When no baseline, expect error
+	// When no baseline, create one
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(nil, false, nil)
-	_, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
-	s.Error(err, "network baseline for the deployment does not exist")
+	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
+	s.manager.EXPECT().CreateNetworkBaseline(gomock.Any())
+	newBase, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})
+	s.NotNil(newBase)
+	s.Nil(err)
 
 	s.baselines.EXPECT().GetNetworkBaseline(gomock.Any(), gomock.Any()).Return(baseline, true, nil)
 	rsp, err := s.service.GetNetworkBaseline(allAllowedCtx, &v1.ResourceByID{Id: baseline.GetDeploymentId()})

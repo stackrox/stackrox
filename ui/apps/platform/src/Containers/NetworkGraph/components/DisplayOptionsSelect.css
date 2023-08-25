@@ -1,0 +1,4 @@
+#display-options-dropdown span.pf-c-check__label {
+    display: flex;
+    align-items: center;
+}

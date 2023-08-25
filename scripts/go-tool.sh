@@ -74,13 +74,14 @@ function invoke_go() {
 function go_build() (
   export GOOS="${GOOS:-${DEFAULT_GOOS}}"
   [[ -n "$GOOS" ]] || die "GOOS must be set"
+  [[ -n "$GOARCH" ]] || die "GOARCH must be set"
 
   for main_srcdir in "$@"; do
     if ! [[ "${main_srcdir}" =~ ^\.?/ ]]; then
       main_srcdir="./${main_srcdir}"
     fi
     bin_name="$(basename "$main_srcdir")"
-    output_file="bin/${GOOS}/${bin_name}"
+    output_file="bin/${GOOS}_${GOARCH}/${bin_name}"
     if [[ "$GOOS" == "windows" ]]; then
       output_file="${output_file}.exe"
     fi
@@ -101,7 +102,7 @@ function invoke_go_build() {
   if [[ "$DEBUG_BUILD" == "yes" ]]; then
     gcflags+=(-gcflags "all=-N -l")
   fi
-  invoke_go build "${gcflags[@]}" "$@"
+  invoke_go build -trimpath "${gcflags[@]}" "$@"
 }
 
 function go_run() (

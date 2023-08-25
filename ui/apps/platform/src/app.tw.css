@@ -1,5 +1,3 @@
-@import '~slick-carousel/slick/slick.css';
-@import '~slick-carousel/slick/slick-theme.css';
 @import 'css/style.css';
 
 @import '~@stackrox/tailwind-config/light.theme.css';
@@ -11,39 +9,13 @@
     background: var(--base-400);
 }
 
-.theme-dark #integrationsPage img,
-.theme-dark .login-bg img {
-    filter: invert(1) saturate(0) brightness(3);
-    opacity: 0.8;
-}
-
-.theme-dark .network-panel {
-    filter: brightness(0.95);
-}
-
-.theme-dark .network-grid-bg {
-    filter: invert(0.97) hue-rotate(185deg) brightness(1.7) saturate(0.6);
-}
-
-.theme-dark .cytoscape-container {
-    filter: brightness(0.96) contrast(1) hue-rotate(0deg) saturate(7);
-    opacity: 0.75;
-}
-
-.theme-dark .search-modal img {
-    filter: invert(1) brightness(2.5) hue-rotate(180deg) saturate(0.6);
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import '~@stackrox/ui-components/lib/ui-components.css';
-
 /* reset the unthinking hardcoded resets of Tailwind Forms in v2 plugin,
    https://github.com/tailwindlabs/tailwindcss-forms/blob/master/src/index.js
-   This has to be done in both ui-components CSS and apps/platform CSS,
-   otherwise, the Tailwind reset will win if it's only done in one or the other. */
+*/
 [type='text'],
 [type='email'],
 [type='url'],
@@ -139,15 +111,12 @@ h6 {
 .react-modal-overlay {
     @apply fixed top-0 left-0 w-full h-full text-base !important;
     background-color: hsla(225, 41%, 32%, 0.82);
-    font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
-        Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
     z-index: 9000;
 }
 
 .toast-selector {
     @apply text-base !important;
-    font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
-        Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+    font-family: var(--pf-global--FontFamily--sans-serif);
 }
 
 .pill {
@@ -186,14 +155,6 @@ h6 {
     }
 }
 
-.logo {
-    width: 48px;
-    height: 48px;
-    position: relative;
-    top: 1px;
-    padding: 4px;
-}
-
 .tab-row {
     box-shadow: inset 0 -1px 0 0 theme('colors.base-400'), 0 15px 30px 0 theme('colors.base-200');
 }
@@ -218,35 +179,6 @@ h6 {
 
 .transform-rotate-half-turn {
     transform: rotate(0.5turn);
-}
-
-.login-border-t {
-    background: linear-gradient(
-        90deg,
-        hsl(26, 94%, 73%) 0%,
-        hsl(4, 100%, 82%) 44.95%,
-        hsl(262, 85%, 74%) 100%
-    );
-    height: 5px;
-}
-
-.login-bg {
-    background-image: url('images/login-stripes.svg');
-    background-position: top left;
-    background-repeat: no-repeat;
-}
-
-.login-bg::before {
-    background-image: url(images/login-stripes.svg);
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background-repeat: no-repeat;
-    bottom: 0;
-    right: 0;
-    content: '';
-    transform: rotate(180deg);
-    pointer-events: none;
 }
 
 /* will clean this up at some point... */
@@ -283,13 +215,6 @@ h6 {
 
 .navigation-panel ul {
     width: 270px;
-}
-
-.search-modal {
-    position: absolute;
-    left: 0;
-    top: 76px;
-    height: calc(100% - 76px);
 }
 
 /* Collapsible CSS */
@@ -358,101 +283,8 @@ h6 {
     background: hsla(0, 0%, 100%, 0.19);
 }
 
-.slick-initialized.slick-slider,
-.slick-list,
-.slick-track {
-    height: 100%;
-    user-select: text;
-}
-
-.slick-arrow::before {
-    display: none;
-}
-
-.carousel-prev-arrow,
-.carousel-next-arrow {
-    position: absolute;
-    top: 0%;
-    z-index: 2;
-}
-.carousel-prev-arrow,
-.carousel-next-arrow {
-    position: absolute;
-    top: 0%;
-    z-index: 2;
-}
-
-.carousel-prev-arrow {
-    right: 70px;
-}
-
-.carousel-next-arrow {
-    right: 24px;
-}
-
 .cursor-text {
     cursor: text !important;
-}
-
-.recharts-responsive-container .recharts-tooltip-cursor {
-    fill-opacity: 0;
-}
-
-.bg-inherit {
-    background: inherit;
-}
-
-.left-navigation {
-    width: 133px;
-}
-
-.text-critical-severity {
-    color: hsl(7, 50%, 55%);
-}
-
-.text-high-severity {
-    color: hsl(349, 50%, 78%);
-}
-
-.network-grid-bg {
-    background-image: linear-gradient(hsla(216, 62%, 85%, 0.52) 1px, transparent 1px),
-        linear-gradient(90deg, hsla(216, 22%, 69%, 0.2) 1px, transparent 1px),
-        linear-gradient(hsla(216, 33%, 77%, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, hsla(216, 67%, 81%, 0.1) 1px, transparent 1px),
-        radial-gradient(#f0f5ff 45%, #e2ebff 97%);
-    background-size: 32px 32px, 32px 32px, 4px 4px, 4px 4px, 100% 100%;
-    background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px, -2px -2px;
-}
-
-/**
-  Outline for Simulation Mode
- */
-.simulator-mode.success:before,
-.simulator-mode.error:before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    pointer-events: none;
-}
-
-.simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
-}
-
-.simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-    box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
-}
-
-.top-navigation {
-    box-shadow: inset 0px -1px 0 0 var(--base-400);
 }
 
 .__react_component_tooltip.type-dark.place-top:after {
@@ -460,20 +292,20 @@ h6 {
 }
 
 .btn-class {
-    @apply inline-flex px-2 rounded-sm font-600 uppercase text-center items-center min-w-16 justify-center border-2 !important;
+    @apply inline-flex px-2 rounded-sm text-center items-center min-w-16 justify-center border-2 !important;
     line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 
 .btn-sm {
-    @apply btn-class py-1 text-xs !important;
+    @apply btn-class py-1 text-sm !important;
 }
 
 .btn {
-    @apply btn-class py-2 text-sm !important;
+    @apply btn-class py-2 !important;
 }
 
 .btn-icon {
-    @apply flex py-2 px-2 rounded-sm font-600 uppercase text-center text-sm items-center justify-center bg-base-200 border !important;
+    @apply flex py-2 px-2 rounded-sm text-center items-center justify-center bg-base-200 border !important;
 }
 
 .btn-success {
@@ -514,72 +346,6 @@ h6 {
 
 .btn-base:hover {
     @apply border-base-400 bg-base-200 text-base-700 !important;
-}
-
-/* Network Graph CSS Classes */
-
-.pin-network-zoom-buttons-left {
-    left: -150px !important;
-}
-
-.pin-network-update-label-left {
-    left: -175px !important;
-}
-
-.btn-graph-refresh circle {
-    fill: hsla(225, 51%, 52%, 1);
-    stroke: hsla(225, 51%, 52%, 1);
-}
-
-.node circle {
-    fill: hsl(232, 35%, 38%);
-}
-
-.node.internetAccess circle:first-child {
-    fill: hsl(316, 93%, 89%);
-}
-
-.bg-header {
-    position: relative;
-    z-index: 0;
-}
-
-.bg-header:before {
-    background-image: url('images/header-bg.svg');
-    background-position: 100% 0%;
-    background-repeat: no-repeat;
-    background-size: 640px;
-    content: '';
-    width: 100%;
-    height: 100%;
-    top: 0;
-    position: absolute;
-    right: 0;
-    z-index: -1;
-}
-
-.text-separator {
-    overflow: hidden;
-}
-
-.text-separator:before,
-.text-separator:after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    overflow: hidden;
-    border: 1px solid currentColor;
-}
-
-.text-separator:before {
-    transform: translateX(-100%) translateY(-50%);
-    top: 50%;
-}
-
-.text-separator:after {
-    transform: translateY(-50%);
-    top: 50%;
 }
 
 /* React Select override */
@@ -667,15 +433,6 @@ h6 {
     @apply bg-base-0 !important; /* th also needs background for horizontal scrolling beyond tr width */
 }
 
-.theme-dark .network-panel .ReactTable .rt-thead.-header .rt-tr {
-    background: none !important;
-    box-shadow: none !important;
-}
-
-.theme-dark .network-panel .ReactTable .rt-th {
-    background: none !important;
-}
-
 .theme-dark .widget .ReactTable .rt-thead.-header .rt-tr,
 .theme-dark .widget .ReactTable .rt-th {
     @apply bg-base-100 !important;
@@ -726,7 +483,7 @@ h6 {
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
-    @apply text-tertiary-700 bg-tertiary-200 !important;
+    @apply bg-tertiary-200 !important;
     box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
         inset 0px -1px 0 0 theme('colors.tertiary-400');
     z-index: 4 !important;
@@ -841,7 +598,7 @@ h6 {
 .redoc-wrap {
     /* TODO: discover a way to export CSS vars from our tailwind-config package
        for now, repeating light theme colors here,
-       because Redoc components unreadable with StackRox dark theme,
+       because Redoc components unreadable with classic dark theme,
        their styles need to be tuned
     */
 
@@ -1078,7 +835,7 @@ h6 {
 /* widget detail */
 .widget-detail-bullet {
     position: relative;
-    @apply font-500 py-2 px-1;
+    @apply py-2 px-1;
 }
 
 .widget-detail-bullet::before {
@@ -1224,11 +981,6 @@ h6 {
 }
 .drag-grip::after {
     content: '... ... ... ... ... ... ...';
-}
-
-.network-overlay-bg-shadow {
-    box-shadow: 0 0 30px 0 rgba(81, 119, 255, 0.23);
-    background: rgba(81, 119, 255, 0.23);
 }
 
 .border-spacing-0 {

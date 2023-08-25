@@ -1,4 +1,3 @@
-import { normalize } from 'normalizr';
 import queryString from 'qs';
 import FileSaver from 'file-saver';
 
@@ -7,44 +6,15 @@ import { addBrandedTimestampToString } from 'utils/dateUtils';
 import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 
 import axios from './instance';
-import { policy as policySchema } from './schemas';
+import { Empty } from './types';
 
 const baseUrl = '/v1/policies';
-const policyCategoriesUrl = '/v1/policyCategories';
-
-/*
- * Fetch policy summary for a given policy policyId.
- * TODO delete after policiesSagas.js has been deleted, because superseded by getPolicy
- */
-export function fetchPolicy(
-    policyId: string
-): Promise<{ response: { entities: { policy: Record<string, Policy> } } }> {
-    return axios.get<Policy>(`${baseUrl}/${policyId}`).then((response) => ({
-        response: normalize(response.data, policySchema),
-    }));
-}
 
 /*
  * Get a policy. Policy is a superset of ListPolicy.
  */
 export function getPolicy(policyId: string): Promise<Policy> {
     return axios.get<Policy>(`${baseUrl}/${policyId}`).then((response) => response.data);
-}
-
-/*
- * Fetch a list of policies.
- * TODO delete after policiesSagas.js has been deleted, because superseded by getPolicies
- */
-export function fetchPolicies(filters: { query: string }): Promise<{
-    response: {
-        entities: { policy: Record<string, ListPolicy> };
-        result: { policies: ListPolicy[] };
-    };
-}> {
-    const params = queryString.stringify(filters, { arrayFormat: 'repeat' });
-    return axios.get<{ policies: Policy[] }>(`${baseUrl}?${params}`).then((response) => ({
-        response: normalize(response.data, { policies: [policySchema] }),
-    }));
 }
 
 /*
@@ -58,46 +28,23 @@ export function getPolicies(query = ''): Promise<ListPolicy[]> {
 }
 
 /*
- * Fetch a list of policy categories.
- * TODO delete after policiesSagas.js has been deleted, because superseded by getPolicyCategories
- */
-export function fetchPolicyCategories(): Promise<{ response: { categories: string[] } }> {
-    return axios.get<{ categories: string[] }>(policyCategoriesUrl).then((response) => ({
-        response: response.data,
-    }));
-}
-
-/*
- * Get policy categories.
- */
-export function getPolicyCategories(): Promise<string[]> {
-    return axios
-        .get<{ categories: string[] }>(policyCategoriesUrl)
-        .then((response) => response?.data?.categories ?? []);
-}
-
-/*
  * Reassess policies.
  */
-export function reassessPolicies(): Promise<Record<string, never>> {
-    return axios
-        .post<Record<string, never>>(`${baseUrl}/reassess`)
-        .then((response) => response.data);
+export function reassessPolicies(): Promise<Empty> {
+    return axios.post<Empty>(`${baseUrl}/reassess`).then((response) => response.data);
 }
 
 /*
  * Delete a policy.
  */
-export function deletePolicy(policyId: string): Promise<Record<string, never>> {
-    return axios
-        .delete<Record<string, never>>(`${baseUrl}/${policyId}`)
-        .then((response) => response.data);
+export function deletePolicy(policyId: string): Promise<Empty> {
+    return axios.delete<Empty>(`${baseUrl}/${policyId}`).then((response) => response.data);
 }
 
 /*
  * Delete policies.
  */
-export function deletePolicies(policyIds: string[] = []): Promise<Record<string, never>[]> {
+export function deletePolicies(policyIds: string[] = []): Promise<Empty[]> {
     return Promise.all(policyIds.map((policyId) => deletePolicy(policyId)));
 }
 
@@ -108,9 +55,9 @@ export function enableDisablePolicyNotifications(
     policyId: string,
     notifierIds: string[],
     disable: boolean
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     return axios
-        .patch<Record<string, never>>(`${baseUrl}/${policyId}/notifiers`, { notifierIds, disable })
+        .patch<Empty>(`${baseUrl}/${policyId}/notifiers`, { notifierIds, disable })
         .then((response) => response.data);
 }
 
@@ -121,7 +68,7 @@ export function enableDisableNotificationsForPolicies(
     policyIds: string[],
     notifierIds: string[],
     disable: boolean
-): Promise<Record<string, never>[]> {
+): Promise<Empty[]> {
     return Promise.all(
         policyIds.map((policyId) =>
             enableDisablePolicyNotifications(policyId, notifierIds, disable)
@@ -132,57 +79,45 @@ export function enableDisableNotificationsForPolicies(
 /*
  * Save a policy.
  */
-export function savePolicy(policy: Policy): Promise<Record<string, never>> {
+export function savePolicy(policy: Policy): Promise<Empty> {
     if (!policy.id) {
         throw new Error('Policy entity must have an id to be saved');
     }
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
     return axios
-        .put<Record<string, never>>(`${baseUrl}/${policy.id}`, transformedPolicy)
+        .put<Empty>(`${baseUrl}/${policy.id}`, transformedPolicy)
         .then((response) => response.data);
 }
 
 /*
  * Create a new policy.
  */
-export function createPolicy(policy: Policy): Promise<{ data: Policy }> {
-    /*
-     * TODO after policiesSagas.js has been deleted:
-     * function return type: Promise<Policy>
-     * add method: then((response) => response.data)
-     */
+export function createPolicy(policy: Policy): Promise<Policy> {
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
-    return axios.post(`${baseUrl}?enableStrictValidation=true`, transformedPolicy); // TODO prop?
+    return axios
+        .post<Policy>(`${baseUrl}?enableStrictValidation=true`, transformedPolicy)
+        .then((response) => response.data);
 }
 
 /*
  * Start a dry run for a policy. Return the jobId.
  */
-export function startDryRun(policy: Policy): Promise<{ data: { jobId: string } }> {
-    /*
-     * TODO after policiesSagas.js has been deleted:
-     * function return type: Promise<string>
-     * add method: then((response) => response?.data?.jobId)
-     */
+export function startDryRun(policy: Policy): Promise<string> {
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
-    return axios.post(`${baseUrl}/dryrunjob`, transformedPolicy);
+    return axios
+        .post<{ jobId: string }>(`${baseUrl}/dryrunjob`, transformedPolicy)
+        .then((response) => response.data.jobId);
 }
-
 /*
  * Get status of a dry run job.
  */
-export function checkDryRun(
-    jobId: string
-): Promise<{ data: { pending: boolean; result: { alerts: DryRunAlert[] } } }> {
-    /*
-     * TODO after policiesSagas.js has been deleted:
-     * function return type: Promise<DryRunJobStatusResponse>
-     * add method: then((response) => response.data)
-     */
-    return axios.get(`${baseUrl}/dryrunjob/${jobId}`);
+export function checkDryRun(jobId: string): Promise<DryRunJobStatusResponse> {
+    return axios
+        .get<DryRunJobStatusResponse>(`${baseUrl}/dryrunjob/${jobId}`)
+        .then((response) => response.data);
 }
 
 export type DryRunJobStatusResponse = {
@@ -200,10 +135,8 @@ export type DryRunAlert = {
 /*
  * Cancel a dry run job.
  */
-export function cancelDryRun(jobId: string): Promise<Record<string, never>> {
-    return axios
-        .delete<Record<string, never>>(`${baseUrl}/dryrunjob/${jobId}`)
-        .then((response) => response.data);
+export function cancelDryRun(jobId: string): Promise<Empty> {
+    return axios.delete<Empty>(`${baseUrl}/dryrunjob/${jobId}`).then((response) => response.data);
 }
 
 /*
@@ -212,7 +145,7 @@ export function cancelDryRun(jobId: string): Promise<Record<string, never>> {
 export async function excludeDeployments(
     policyId: string,
     deploymentNames: string[]
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const policy = await getPolicy(policyId);
 
     const deploymentEntries = deploymentNames.map((name) => ({
@@ -222,20 +155,15 @@ export async function excludeDeployments(
         expiration: null,
     }));
     policy.exclusions = [...policy.exclusions, ...deploymentEntries];
-    return axios
-        .put<Record<string, never>>(`${baseUrl}/${policy.id}`, policy)
-        .then((response) => response.data);
+    return axios.put<Empty>(`${baseUrl}/${policy.id}`, policy).then((response) => response.data);
 }
 
 /*
  * Enable or disable a policy.
  */
-export function updatePolicyDisabledState(
-    policyId: string,
-    disabled: boolean
-): Promise<Record<string, never>> {
+export function updatePolicyDisabledState(policyId: string, disabled: boolean): Promise<Empty> {
     return axios
-        .patch<Record<string, never>>(`${baseUrl}/${policyId}`, { disabled })
+        .patch<Empty>(`${baseUrl}/${policyId}`, { disabled })
         .then((response) => response.data);
 }
 
@@ -245,7 +173,7 @@ export function updatePolicyDisabledState(
 export function updatePoliciesDisabledState(
     policyIds: string[],
     disabled: boolean
-): Promise<Record<string, never>[]> {
+): Promise<Empty[]> {
     return Promise.all(policyIds.map((policyId) => updatePolicyDisabledState(policyId, disabled)));
 }
 

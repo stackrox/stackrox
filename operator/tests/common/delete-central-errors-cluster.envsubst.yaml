@@ -1,0 +1,34 @@
+# The following resources are obtained by running the following:
+# 1. install RHACS operator on an OpenShift cluster
+# 2. cluster_kinds=$(kubectl api-resources --verbs="list" -o name --no-headers --namespaced=false | sed -z 's/\n/,/g;s/,$/\n/')
+# 3. create a namespace "kuttl-ns"
+# 4. kubectl get "${cluster_kinds}" -o yaml > cluster_resources_before.yaml
+# 5. deploy a Central to that namespace and wait for it to become healthy
+# 6. kubectl get "${cluster_kinds}" -o yaml > cluster_resources_after.yaml
+# 7. ./operator/bin/yq-* --null-input  '[load("cluster_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("cluster_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] | .[] | split_doc' | sed 's,kuttl-ns,${NAMESPACE},g'
+# 8. Massage the output to omit the PersistentVolume whose name is unpredictable
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-central-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-scanner-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-central-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-${NAMESPACE}-scanner-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rhacs-central-auth-reader-${NAMESPACE}
+  namespace: kube-system

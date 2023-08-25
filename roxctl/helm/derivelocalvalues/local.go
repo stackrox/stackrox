@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -24,7 +25,7 @@ func (k localK8sObjectDescription) get(_ context.Context, kind string, name stri
 	}
 	resource, ok := resources[name]
 	if !ok {
-		return nil, errors.New("resource not found")
+		return nil, errox.NotFound.New("resource not found")
 	}
 
 	return &resource, nil
@@ -92,5 +93,5 @@ func newLocalK8sObjectDescriptionFromPath(inputPath string) (*localK8sObjectDesc
 		}
 	}
 
-	return &localK8sObjectDescription{cache: cache}, err
+	return &localK8sObjectDescription{cache: cache}, nil
 }

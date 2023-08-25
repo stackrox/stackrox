@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -23,7 +24,8 @@ type centralRestoreCancelCommand struct {
 
 func v2RestoreCancelCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "cancel",
+		Use:   "cancel",
+		Short: "Cancel the ongoing database restore process.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return makeCentralRestoreCancelCommand(cliEnvironment, c).cancelActiveRestore()
 		}),
@@ -37,7 +39,7 @@ func makeCentralRestoreCancelCommand(cliEnvironment environment.Environment, cbr
 		env:     cliEnvironment,
 		timeout: flags.Timeout(cbr),
 		confirm: func() error {
-			return flags.CheckConfirmation(cbr)
+			return flags.CheckConfirmation(cbr, cliEnvironment.Logger(), cliEnvironment.InputOutput())
 		},
 	}
 }
@@ -62,7 +64,7 @@ func (cmd *centralRestoreCancelCommand) cancelActiveRestore() error {
 
 	processStatus := activeRestoreProcessResp.GetActiveStatus()
 	if processStatus == nil {
-		return errors.New("No restore process is currently in progress")
+		return errox.NotFound.New("no restore process is currently in progress")
 	}
 
 	cmd.env.Logger().PrintfLn("Active database restore process information")

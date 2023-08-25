@@ -1,17 +1,11 @@
+import { Traits } from 'types/traits.proto';
+import qs from 'qs';
 import axios from './instance';
+import { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
-export function fetchResources(): Promise<{ response: { resources: string[] } }> {
-    return axios.get<{ resources: string[] }>(resourcesUrl).then((response) => ({
-        response: response.data,
-    }));
-}
-
-// TODO After classic Access Control code has been deleted,
-// delete preceding function fetchResources also its Redux support,
-// and then rename the following function as fetchResources.
-export function fetchResourcesAsArray(): Promise<string[]> {
+export function fetchResources(): Promise<string[]> {
     return axios
         .get<{ resources: string[] }>(resourcesUrl)
         .then((response) => response?.data?.resources ?? []);
@@ -33,6 +27,7 @@ export type Role = {
     description: string;
     permissionSetId: string;
     accessScopeId: string;
+    traits?: Traits;
 };
 
 /**
@@ -54,7 +49,7 @@ export function fetchRolesAsArray(): Promise<Role[]> {
 /*
  * Create entity and return empty object (unlike most create requests).
  */
-export function createRole(entity: Role): Promise<Record<string, never>> {
+export function createRole(entity: Role): Promise<Empty> {
     const { name } = entity;
     return axios.post(`${rolesUrl}/${name}`, entity);
 }
@@ -62,7 +57,7 @@ export function createRole(entity: Role): Promise<Record<string, never>> {
 /**
  * Update entity and return empty object.
  */
-export function updateRole(entity: Role): Promise<Record<string, never>> {
+export function updateRole(entity: Role): Promise<Empty> {
     const { name } = entity;
     return axios.put(`${rolesUrl}/${name}`, entity);
 }
@@ -70,7 +65,7 @@ export function updateRole(entity: Role): Promise<Record<string, never>> {
 /*
  * Delete entity which has name and return empty object.
  */
-export function deleteRole(name: string): Promise<Record<string, never>> {
+export function deleteRole(name: string): Promise<Empty> {
     return axios.delete(`${rolesUrl}/${name}`);
 }
 
@@ -92,6 +87,7 @@ export type PermissionSet = {
     name: string;
     description: string;
     resourceToAccess: PermissionsMap;
+    traits?: Traits;
 };
 
 /*
@@ -113,7 +109,7 @@ export function createPermissionSet(entity: PermissionSet): Promise<PermissionSe
 /*
  * Update entity and return empty object.
  */
-export function updatePermissionSet(entity: PermissionSet): Promise<Record<string, never>> {
+export function updatePermissionSet(entity: PermissionSet): Promise<Empty> {
     const { id } = entity;
     return axios.put(`${permissionSetsUrl}/${id}`, entity);
 }
@@ -121,6 +117,57 @@ export function updatePermissionSet(entity: PermissionSet): Promise<Record<strin
 /*
  * Delete entity which has id and return empty object.
  */
-export function deletePermissionSet(id: string): Promise<Record<string, never>> {
+export function deletePermissionSet(id: string): Promise<Empty> {
     return axios.delete(`${permissionSetsUrl}/${id}`);
+}
+
+const clustersForPermissionsUrl = '/v1/sac/clusters';
+
+type ClustersForPermissionRequest = {
+    permissions: string[];
+};
+
+// ScopeObject represents the (ID, name) pair identifying elements that belong to
+// the access scope of a user.
+type ScopeObject = {
+    id: string;
+    name: string;
+};
+
+// Aliases to increase readability of server responses with the same shape but different semantics.
+export type ClusterScopeObject = ScopeObject;
+export type NamespaceScopeObject = ScopeObject;
+
+export type ClustersForPermissionsResponse = {
+    clusters: ClusterScopeObject[];
+};
+
+export function getClustersForPermissions(
+    permissions: string[]
+): Promise<ClustersForPermissionsResponse> {
+    const request: ClustersForPermissionRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    return axios
+        .get<ClustersForPermissionsResponse>(`${clustersForPermissionsUrl}?${params}`)
+        .then((response) => response.data);
+}
+
+type NamespacesForClusterAndPermissionsRequest = {
+    permissions: string[];
+};
+
+export type NamespacesForClusterAndPermissionsResponse = {
+    namespaces: NamespaceScopeObject[];
+};
+
+export function getNamespacesForClusterAndPermissions(
+    clusterID: string,
+    permissions: string[]
+): Promise<NamespacesForClusterAndPermissionsResponse> {
+    const request: NamespacesForClusterAndPermissionsRequest = { permissions };
+    const params = qs.stringify(request, { arrayFormat: 'repeat' });
+    const targetUrl = `${clustersForPermissionsUrl}/${clusterID}/namespaces?${params}`;
+    return axios
+        .get<NamespacesForClusterAndPermissionsResponse>(targetUrl)
+        .then((response) => response.data);
 }

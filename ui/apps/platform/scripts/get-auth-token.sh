@@ -4,11 +4,13 @@
 # Env vars ROX_USERNAME and ROX_PASSWORD are expected to be set for basic auth,
 # otherwise k8s deployment assumed from where basic auth creds are retrieved.
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
 api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
-  source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
+  source "${DIR}/../../../../scripts/k8s/export-basic-auth-creds.sh" "${DIR}/../../../../deploy/k8s"
 fi
 
 if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then

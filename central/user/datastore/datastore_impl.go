@@ -3,14 +3,14 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/user/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
-	userSAC = sac.ForResource(resources.User)
+	accessSAC = sac.ForResource(resources.Access)
 )
 
 type dataStoreImpl struct {
@@ -18,7 +18,7 @@ type dataStoreImpl struct {
 }
 
 func (ds *dataStoreImpl) GetUser(ctx context.Context, name string) (*storage.User, error) {
-	if ok, err := userSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -28,7 +28,7 @@ func (ds *dataStoreImpl) GetUser(ctx context.Context, name string) (*storage.Use
 }
 
 func (ds *dataStoreImpl) GetAllUsers(ctx context.Context) ([]*storage.User, error) {
-	if ok, err := userSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
@@ -38,7 +38,7 @@ func (ds *dataStoreImpl) GetAllUsers(ctx context.Context) ([]*storage.User, erro
 }
 
 func (ds *dataStoreImpl) Upsert(ctx context.Context, user *storage.User) error {
-	if ok, err := userSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := accessSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied

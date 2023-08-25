@@ -12,7 +12,7 @@ type RoxGatherer struct {
 	cluster *ClusterGatherer
 }
 
-// NewRoxGatherer creates and returns a RoxGatherer object
+// newRoxGatherer creates and returns a RoxGatherer object
 func newRoxGatherer(central *CentralGatherer, cluster *ClusterGatherer) *RoxGatherer {
 	return &RoxGatherer{
 		central: central,
@@ -21,9 +21,14 @@ func newRoxGatherer(central *CentralGatherer, cluster *ClusterGatherer) *RoxGath
 }
 
 // Gather returns telemetry information about this Rox
-func (c *RoxGatherer) Gather(ctx context.Context, pullFromSensors bool) *data.TelemetryData {
-	return &data.TelemetryData{
-		Central:  c.central.Gather(ctx),
+func (c *RoxGatherer) Gather(ctx context.Context, pullFromSensors bool, pullFromCentral bool) *data.TelemetryData {
+	telemetryData := &data.TelemetryData{
 		Clusters: c.cluster.Gather(ctx, pullFromSensors),
 	}
+
+	if pullFromCentral {
+		telemetryData.Central = c.central.Gather(ctx)
+	}
+
+	return telemetryData
 }

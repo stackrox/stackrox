@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/roxctl/summaries/policy"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -200,21 +201,29 @@ var (
 			Violations: multipleViolationMessages,
 		},
 	}
+
+	testIgnoredObjRefs = []string{
+		"some-namespace/some-name[my.custom.resource/v1, Kind=CRD]",
+		"some--other-namespace/some--other-name[my.custom.resource/v1, Kind=CRD]",
+	}
 )
 
 // mock for testing implementing v1.DetectionServiceServer
 type mockDetectionServiceServer struct {
-	v1.DetectionServiceServer
-	alerts []*storage.Alert
+	v1.UnimplementedDetectionServiceServer
+
+	alerts         []*storage.Alert
+	ignoredObjRefs []string
 }
 
-func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(ctx context.Context, req *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
+func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context, _ *v1.DeployYAMLDetectionRequest) (*v1.DeployDetectionResponse, error) {
 	return &v1.DeployDetectionResponse{
 		Runs: []*v1.DeployDetectionResponse_Run{
 			{
 				Alerts: m.alerts,
 			},
 		},
+		IgnoredObjectRefs: m.ignoredObjRefs,
 	}, nil
 }
 
@@ -228,12 +237,14 @@ type deployCheckTestSuite struct {
 	defaultDeploymentCheckCommand deploymentCheckCommand
 }
 
-func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.Alert) (*grpc.ClientConn, func()) {
+func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.Alert,
+	ignoredObjRefs []string) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
 	server := grpc.NewServer()
-	v1.RegisterDetectionServiceServer(server, &mockDetectionServiceServer{alerts: alerts})
+	v1.RegisterDetectionServiceServer(server,
+		&mockDetectionServiceServer{alerts: alerts, ignoredObjRefs: ignoredObjRefs})
 
 	go func() {
 		utils.IgnoreError(func() error { return server.Serve(listener) })
@@ -241,7 +252,7 @@ func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	d.Require().NoError(err)
 
 	closeFunction := func() {
@@ -304,7 +315,7 @@ func (d *deployCheckTestSuite) TestConstruct() {
 			timeout:    expectedTimeout,
 			f:          invalidObjectPrinterFactory,
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 
@@ -337,7 +348,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 		"should fail with non existing file name": {
 			file:       "invalidfile",
 			shouldFail: true,
-			error:      errorhelpers.ErrInvalidArgs,
+			error:      errox.InvalidArgs,
 		},
 	}
 
@@ -359,6 +370,7 @@ func (d *deployCheckTestSuite) TestValidate() {
 
 type outputFormatTest struct {
 	alerts                     []*storage.Alert
+	ignoredObjRefs             []string
 	expectedOutput             string
 	expectedErrOutput          string
 	expectedErrOutputColorized string
@@ -405,6 +417,15 @@ func (d *deployCheckTestSuite) TestCheck_JSONOutput() {
 			expectedOutput: "testDeploymentAlertsWithFailure.json",
 			shouldFail:     true,
 			error:          policy.ErrBreakingPolicies,
+		},
+		"should not fail with non failing enforcement actions and ignored obj refs": {
+			alerts:         testDeploymentAlertsWithoutFailure,
+			ignoredObjRefs: testIgnoredObjRefs,
+			expectedOutput: "testDeploymentAlertsWithoutFailure.json",
+			expectedErrOutput: "INFO:\tIgnored object \"some-namespace/some-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n" +
+				"INFO:\tIgnored object \"some--other-namespace/some--other-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n",
+			expectedErrOutputColorized: "\x1b[94mINFO:\tIgnored object \"some-namespace/some-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n" +
+				"\x1b[0m\x1b[94mINFO:\tIgnored object \"some--other-namespace/some--other-name[my.custom.resource/v1, Kind=CRD]\" as its schema was not registered.\n\x1b[0m",
 		},
 	}
 
@@ -477,7 +498,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 	for name, c := range cases {
 		d.Run(name, func() {
 			var out *bytes.Buffer
-			conn, closeFunction := d.createGRPCMockDetectionService(c.alerts)
+			conn, closeFunction := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
 			defer closeFunction()
 
 			deployCheckCmd := d.defaultDeploymentCheckCommand
@@ -540,8 +561,9 @@ func (d *deployCheckTestSuite) assertError(deployCheckCmd deploymentCheckCommand
 	}
 }
 
-func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter, standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
-	conn, closeF := d.createGRPCMockDetectionService(c.alerts)
+func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter,
+	standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
+	conn, closeF := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
 
 	deployCheckCmd := d.defaultDeploymentCheckCommand
 	deployCheckCmd.printer = printer

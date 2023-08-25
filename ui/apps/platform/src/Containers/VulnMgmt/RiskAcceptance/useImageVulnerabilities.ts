@@ -7,21 +7,20 @@ import {
 
 function useImageVulnerabilities({ imageId, vulnsQuery, pagination }) {
     const client = useApolloClient();
+    const queryToUse = GET_IMAGE_VULNERABILITIES;
+
     const {
         loading: isLoading,
         data,
         error,
-    } = useQuery<GetImageVulnerabilitiesData, GetImageVulnerabilitiesVars>(
-        GET_IMAGE_VULNERABILITIES,
-        {
-            variables: {
-                imageId,
-                vulnsQuery,
-                pagination,
-            },
-            fetchPolicy: 'network-only',
-        }
-    );
+    } = useQuery<GetImageVulnerabilitiesData, GetImageVulnerabilitiesVars>(queryToUse, {
+        variables: {
+            imageId,
+            vulnsQuery,
+            pagination,
+        },
+        fetchPolicy: 'network-only',
+    });
 
     async function refetchQuery() {
         await client.refetchQueries({

@@ -125,7 +125,7 @@ func (s *SearchMapperTestSuite) TestConvertAnnotation() {
 			},
 		},
 	}
-	s.testMapSearchString(search.Annotation, searchTerms, expectedGroup, false, true)
+	s.testMapSearchString(search.DeploymentAnnotation, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageLabel() {

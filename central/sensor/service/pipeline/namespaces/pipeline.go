@@ -137,7 +137,8 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, ns *storage.NamespaceM
 
 func (s *pipelineImpl) persistNamespace(ctx context.Context, action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE:
+	// Sync resource is treated as a CREATE because it updates the idMap which is used for SAC within the AddNamespace Function
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return s.namespaces.AddNamespace(ctx, ns)
 	case central.ResourceAction_UPDATE_RESOURCE:
 		return s.namespaces.UpdateNamespace(ctx, ns)
@@ -148,4 +149,4 @@ func (s *pipelineImpl) persistNamespace(ctx context.Context, action central.Reso
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

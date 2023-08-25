@@ -28,9 +28,25 @@ func CancelContextOnSignal(ctx context.Context, cancel context.CancelFunc, signa
 
 type contextWrapper struct {
 	ErrorWaitable
+	isDone func() bool
+}
+
+func (w *contextWrapper) IsDone() bool {
+	if w.isDone != nil {
+		return w.isDone()
+	}
+	select {
+	case <-w.Done():
+		return true
+	default:
+		return false
+	}
 }
 
 func (w *contextWrapper) Err() error {
+	if !w.IsDone() {
+		return nil
+	}
 	err := w.ErrorWaitable.Err()
 	if err != context.DeadlineExceeded {
 		return context.Canceled
@@ -38,7 +54,7 @@ func (w *contextWrapper) Err() error {
 	return err
 }
 
-func (w *contextWrapper) Value(key interface{}) interface{} {
+func (w *contextWrapper) Value(_ interface{}) interface{} {
 	return nil
 }
 
@@ -51,8 +67,13 @@ func AsContext(w Waitable) context.Context {
 	if ctx, _ := w.(context.Context); ctx != nil {
 		return ctx
 	}
+	var isDone func() bool
+	if supportsIsDone, _ := w.(interface{ IsDone() bool }); supportsIsDone != nil {
+		isDone = supportsIsDone.IsDone
+	}
 
 	return &contextWrapper{
 		ErrorWaitable: AsErrorWaitable(w),
+		isDone:        isDone,
 	}
 }

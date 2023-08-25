@@ -5,22 +5,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/environment"
 )
 
 // ResolveClusterID returns the cluster ID corresponding to the given id or name,
 // or an error if no matching cluster was found.
-func ResolveClusterID(idOrName string, timeout time.Duration) (string, error) {
+func ResolveClusterID(idOrName string, timeout time.Duration, env environment.Environment) (string, error) {
 	if _, err := uuid.FromString(idOrName); err == nil {
 		return idOrName, nil
 	}
 
-	conn, err := common.GetGRPCConnection()
+	conn, err := env.GRPCConnection()
 	if err != nil {
 		return "", err
 	}
@@ -42,5 +42,5 @@ func ResolveClusterID(idOrName string, timeout time.Duration) (string, error) {
 			return cluster.GetId(), nil
 		}
 	}
-	return "", errors.Errorf("no cluster with name %q found", idOrName)
+	return "", errox.NotFound.Newf("no cluster with name %q found", idOrName)
 }

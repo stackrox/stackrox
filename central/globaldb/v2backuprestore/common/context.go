@@ -13,6 +13,7 @@ type RestoreProcessContext interface {
 	ResolvePath(relativePath string) (string, error)
 	OpenFile(relativePath string, flags int, perm os.FileMode) (*os.File, error)
 	Mkdir(relativePath string, perm os.FileMode) (string, error)
+	IsPostgresBundle() bool
 }
 
 // RestoreFileContext is the context active during the restoration of a single file from a database export.

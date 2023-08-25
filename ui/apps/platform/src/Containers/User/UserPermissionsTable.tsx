@@ -7,6 +7,11 @@ import {
     ReadAccessIcon,
     WriteAccessIcon,
 } from 'Containers/AccessControl/PermissionSets/AccessIcons';
+import {
+    deprecatedResourceRowStyle,
+    resourceRemovalReleaseVersions,
+} from '../../constants/accessControl';
+import { ResourceName } from '../../types/roleResources';
 
 export type UserPermissionsTableProps = {
     permissions: PermissionsMap;
@@ -24,7 +29,14 @@ function UserPermissionsTable({ permissions }: UserPermissionsTableProps): React
             </Thead>
             <Tbody>
                 {Object.entries(permissions).map(([resource, accessLevel]) => (
-                    <Tr key={resource}>
+                    <Tr
+                        key={resource}
+                        style={
+                            resourceRemovalReleaseVersions.has(resource as ResourceName)
+                                ? deprecatedResourceRowStyle
+                                : {}
+                        }
+                    >
                         <Td key="resourceName" dataLabel="Resource">
                             {resource}
                         </Td>

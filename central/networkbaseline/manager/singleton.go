@@ -4,6 +4,7 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,6 +26,7 @@ func Singleton() Manager {
 				networkEntityDS.Singleton(),
 				deploymentDS.Singleton(),
 				networkPolicyDS.Singleton(),
+				nfDS.Singleton(),
 				connection.ManagerSingleton())
 		utils.CrashOnError(err)
 	})

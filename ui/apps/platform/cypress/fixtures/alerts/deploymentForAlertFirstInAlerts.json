@@ -1,0 +1,468 @@
+{
+    "id": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+    "name": "ip-masq-agent",
+    "version": "606",
+    "type": "DaemonSet",
+    "namespace": "kube-system",
+    "replicas": "0",
+    "labels": {
+        "addonmanager.kubernetes.io/mode": "Reconcile"
+    },
+    "updatedAt": "2018-09-27T19:35:08Z",
+    "clusterId": "b313290a-6539-42b1-afdf-7892256115f0",
+    "clusterName": "remote",
+    "containers": [
+        {
+            "id": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9:ip-masq-agent",
+            "config": {
+                "env": [],
+                "command": [],
+                "args": [],
+                "directory": "",
+                "user": "",
+                "uid": "0"
+            },
+            "image": {
+                "name": {
+                    "sha": "sha256:723cd85422e644427dd00c0d2b1ece9e618f3c1789543f8d68edceb65ef610f5",
+                    "registry": "gcr.io",
+                    "remote": "google-containers/ip-masq-agent-amd64",
+                    "tag": "v2.0.2",
+                    "fullName": "gcr.io/google-containers/ip-masq-agent-amd64:v2.0.2"
+                },
+                "metadata": null,
+                "scan": null
+            },
+            "securityContext": {
+                "privileged": true,
+                "selinux": null,
+                "dropCapabilities": [],
+                "addCapabilities": []
+            },
+            "volumes": [
+                {
+                    "name": "config",
+                    "source": "ip-masq-agent",
+                    "destination": "/etc/config",
+                    "readOnly": false,
+                    "type": "ConfigMap"
+                }
+            ],
+            "ports": [],
+            "secrets": [],
+            "resources": {
+                "cpuCoresRequest": 0.01,
+                "cpuCoresLimit": 0,
+                "memoryMbRequest": 16,
+                "memoryMbLimit": 0
+            },
+            "instances": [
+                {
+                    "instanceId": {
+                        "containerRuntime": "DOCKER_CONTAINER_RUNTIME",
+                        "id": "9ec57a6fc645cd04d25988171a912f73e0db0faa6bde222a5b2288feb0064f36",
+                        "node": "gke-setup-devd8560-default-pool-2e3081b0-zrlr"
+                    },
+                    "containingPodId": "ip-masq-agent-4c5fg.kube-system@73505a2b-c28c-11e8-b8c4-42010a8a0fe9",
+                    "containerIps": ["10.1.160.4"]
+                },
+                {
+                    "instanceId": {
+                        "containerRuntime": "DOCKER_CONTAINER_RUNTIME",
+                        "id": "f293f940725e5b173dd1363885ba6971a39a042050bcd55772cc534c2576c318",
+                        "node": "gke-setup-devd8560-default-pool-2e3081b0-zghf"
+                    },
+                    "containingPodId": "ip-masq-agent-hhxjp.kube-system@71d090da-c28c-11e8-b8c4-42010a8a0fe9",
+                    "containerIps": ["10.1.160.5"]
+                },
+                {
+                    "instanceId": {
+                        "containerRuntime": "DOCKER_CONTAINER_RUNTIME",
+                        "id": "8752b7975f10a73ed226fd44d921994065b6a785c9c278322a6186b75854ae3e",
+                        "node": "gke-setup-devd8560-default-pool-2e3081b0-bm5g"
+                    },
+                    "containingPodId": "ip-masq-agent-pqcnb.kube-system@72351972-c28c-11e8-b8c4-42010a8a0fe9",
+                    "containerIps": ["10.1.160.6"]
+                },
+                {
+                    "instanceId": {
+                        "containerRuntime": "DOCKER_CONTAINER_RUNTIME",
+                        "id": "066e2adae0e8324631c20e93c6d1643501e8312182ce5c66a4aaf89ec3ad824e",
+                        "node": "gke-setup-devd8560-default-pool-2e3081b0-w3t6"
+                    },
+                    "containingPodId": "ip-masq-agent-887fr.kube-system@7162afe6-c28c-11e8-b8c4-42010a8a0fe9",
+                    "containerIps": ["10.1.160.2"]
+                },
+                {
+                    "instanceId": {
+                        "containerRuntime": "DOCKER_CONTAINER_RUNTIME",
+                        "id": "aa290fa0aaf22533716e12cb7e133918cc4a604abed69677e1a6f514800af572",
+                        "node": "gke-setup-devd8560-default-pool-2e3081b0-pc8t"
+                    },
+                    "containingPodId": "ip-masq-agent-67mnx.kube-system@7268d9ef-c28c-11e8-b8c4-42010a8a0fe9",
+                    "containerIps": ["10.1.160.3"]
+                }
+            ]
+        }
+    ],
+    "tombstone": null,
+    "annotations": {
+        "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"extensions/v1beta1\",\"kind\":\"DaemonSet\",\"metadata\":{\"annotations\":{},\"labels\":{\"addonmanager.kubernetes.io/mode\":\"Reconcile\"},\"name\":\"ip-masq-agent\",\"namespace\":\"kube-system\"},\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"scheduler.alpha.kubernetes.io/critical-pod\":\"\"},\"labels\":{\"k8s-app\":\"ip-masq-agent\"}},\"spec\":{\"containers\":[{\"image\":\"gcr.io/google-containers/ip-masq-agent-amd64:v2.0.2\",\"name\":\"ip-masq-agent\",\"resources\":{\"requests\":{\"cpu\":\"10m\",\"memory\":\"16Mi\"}},\"securityContext\":{\"privileged\":true},\"volumeMounts\":[{\"mountPath\":\"/etc/config\",\"name\":\"config\"}]}],\"hostNetwork\":true,\"nodeSelector\":{\"beta.kubernetes.io/masq-agent-ds-ready\":\"true\"},\"serviceAccountName\":\"ip-masq-agent\",\"tolerations\":[{\"key\":\"CriticalAddonsOnly\",\"operator\":\"Exists\"}],\"volumes\":[{\"configMap\":{\"items\":[{\"key\":\"config\",\"path\":\"ip-masq-agent\"}],\"name\":\"ip-masq-agent\",\"optional\":true},\"name\":\"config\"}]}}}}\n"
+    },
+    "priority": "8",
+    "inactive": false,
+    "imagePullSecrets": [],
+    "serviceAccount": "ip-masq-agent",
+    "processes": [
+        {
+            "id": "004783f6-d808-48d0-a484-fb02db48f523",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:23.488464776Z",
+            "signal": {
+                "id": "e5692066-c28c-11e8-b5e7-92386806e2d4",
+                "containerId": "066e2adae0e8",
+                "time": "2018-09-27T19:38:23.482464814Z",
+                "name": "iptables",
+                "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6974,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "170c6056-3705-4bae-9002-cf4cff6676d3",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:28.201079851Z",
+            "signal": {
+                "id": "c474e516-c28c-11e8-b5e7-92386806e2d4",
+                "containerId": "066e2adae0e8",
+                "time": "2018-09-27T19:35:23.395303Z",
+                "name": "ip-masq-agent",
+                "args": "",
+                "execFilePath": "/ip-masq-agent",
+                "pid": 3999,
+                "uid": 0,
+                "gid": 0
+            }
+        },
+        {
+            "id": "18ca2575-5f0a-4a2b-88a1-79be40a3b641",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:26.595664492Z",
+            "signal": {
+                "id": "c37f8d00-c28c-11e8-b2fc-66a1c0eb9ad1",
+                "containerId": "9ec57a6fc645",
+                "time": "2018-09-27T19:37:26.572116684Z",
+                "name": "iptables-restor",
+                "args": "--noflush",
+                "execFilePath": "/sbin/iptables-restore",
+                "pid": 6584,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "3816045c-bf5e-4b03-bb86-386c72467fb2",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:24.628033940Z",
+            "signal": {
+                "id": "e61708de-c28c-11e8-8b63-2a9ca9c2a8fc",
+                "containerId": "8752b7975f10",
+                "time": "2018-09-27T19:38:24.617104830Z",
+                "name": "iptables",
+                "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6250,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "4e204df1-e0a5-4ade-b862-beb1eaeb8902",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:26.589265059Z",
+            "signal": {
+                "id": "c37ef624-c28c-11e8-b2fc-66a1c0eb9ad1",
+                "containerId": "9ec57a6fc645",
+                "time": "2018-09-27T19:37:26.568775287Z",
+                "name": "iptables",
+                "args": "-w2 -N IP-MASQ-AGENT -t nat",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6582,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "4fd7cc4f-83ea-4fe3-80f7-5088fc617ab2",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:17.329880343Z",
+            "signal": {
+                "id": "e1bd57b6-c28c-11e8-a580-e2bed353bb65",
+                "containerId": "aa290fa0aaf2",
+                "time": "2018-09-27T19:38:17.317080286Z",
+                "name": "iptables",
+                "args": "-w2 -N IP-MASQ-AGENT -t nat",
+                "execFilePath": "/sbin/iptables",
+                "pid": 5851,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "50f6b73d-1846-45cb-9a92-11425dfadfd5",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:21.400771646Z",
+            "signal": {
+                "id": "c0673564-c28c-11e8-b2fc-66a1c0eb9ad1",
+                "containerId": "9ec57a6fc645",
+                "time": "2018-09-27T19:35:26.469564Z",
+                "name": "ip-masq-agent",
+                "args": "",
+                "execFilePath": "/ip-masq-agent",
+                "pid": 3880,
+                "uid": 0,
+                "gid": 0
+            }
+        },
+        {
+            "id": "5524040b-ae69-4a05-9853-6daa8c4f131a",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:23.489761535Z",
+            "signal": {
+                "id": "e5695a2c-c28c-11e8-b5e7-92386806e2d4",
+                "containerId": "066e2adae0e8",
+                "time": "2018-09-27T19:38:23.484095315Z",
+                "name": "iptables-restor",
+                "args": "--noflush",
+                "execFilePath": "/sbin/iptables-restore",
+                "pid": 6975,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "658aaed2-8296-41fd-b026-2351f684b656",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:23.486789425Z",
+            "signal": {
+                "id": "e568dad4-c28c-11e8-b5e7-92386806e2d4",
+                "containerId": "066e2adae0e8",
+                "time": "2018-09-27T19:38:23.480865835Z",
+                "name": "iptables",
+                "args": "-w2 -N IP-MASQ-AGENT -t nat",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6973,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "6da96f0b-73e4-4866-b913-753932c0a3ae",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:29.697424992Z",
+            "signal": {
+                "id": "c556b450-c28c-11e8-a580-e2bed353bb65",
+                "containerId": "aa290fa0aaf2",
+                "time": "2018-09-27T19:35:17.232590Z",
+                "name": "ip-masq-agent",
+                "args": "",
+                "execFilePath": "/ip-masq-agent",
+                "pid": 3793,
+                "uid": 0,
+                "gid": 0
+            }
+        },
+        {
+            "id": "947b4cc6-b447-4555-abd0-bc2de67fee2c",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:24.695807082Z",
+            "signal": {
+                "id": "e6173fa2-c28c-11e8-8b63-2a9ca9c2a8fc",
+                "containerId": "8752b7975f10",
+                "time": "2018-09-27T19:38:24.618893677Z",
+                "name": "iptables-restor",
+                "args": "--noflush",
+                "execFilePath": "/sbin/iptables-restore",
+                "pid": 6251,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "99c01590-accf-42ab-9ee5-7492e9f7dedd",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:29.696607125Z",
+            "signal": {
+                "id": "c552da74-c28c-11e8-8b63-2a9ca9c2a8fc",
+                "containerId": "8752b7975f10",
+                "time": "2018-09-27T19:35:24.532751460Z",
+                "name": "ip-masq-agent",
+                "args": "",
+                "execFilePath": "/ip-masq-agent",
+                "pid": 3874,
+                "uid": 0,
+                "gid": 0
+            }
+        },
+        {
+            "id": "bc030882-a439-4d36-a6fe-0ba2be871a61",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:24.626821095Z",
+            "signal": {
+                "id": "e616ca86-c28c-11e8-8b63-2a9ca9c2a8fc",
+                "containerId": "8752b7975f10",
+                "time": "2018-09-27T19:38:24.615423778Z",
+                "name": "iptables",
+                "args": "-w2 -N IP-MASQ-AGENT -t nat",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6249,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "c256d189-ebd3-42d9-89d4-a5114636f8fc",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:17.332192632Z",
+            "signal": {
+                "id": "e1bdbd3c-c28c-11e8-a580-e2bed353bb65",
+                "containerId": "aa290fa0aaf2",
+                "time": "2018-09-27T19:38:17.320398069Z",
+                "name": "iptables-restor",
+                "args": "--noflush",
+                "execFilePath": "/sbin/iptables-restore",
+                "pid": 5853,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "c274a3df-07eb-4d56-b3a9-75d487c5aba4",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:26.591030985Z",
+            "signal": {
+                "id": "c37f423c-c28c-11e8-b2fc-66a1c0eb9ad1",
+                "containerId": "9ec57a6fc645",
+                "time": "2018-09-27T19:37:26.570350485Z",
+                "name": "iptables",
+                "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6583,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "c47feb3a-54a0-4eda-9bd0-ecb28298d35f",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:17.330825502Z",
+            "signal": {
+                "id": "e1bd8c04-c28c-11e8-a580-e2bed353bb65",
+                "containerId": "aa290fa0aaf2",
+                "time": "2018-09-27T19:38:17.318716799Z",
+                "name": "iptables",
+                "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                "execFilePath": "/sbin/iptables",
+                "pid": 5852,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "d9ccb264-6f00-4aeb-9b79-7dd3ad6bed07",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:37:29.696503009Z",
+            "signal": {
+                "id": "c54b298c-c28c-11e8-89b1-7acb63520539",
+                "containerId": "f293f940725e",
+                "time": "2018-09-27T19:35:23.885665358Z",
+                "name": "ip-masq-agent",
+                "args": "",
+                "execFilePath": "/ip-masq-agent",
+                "pid": 3880,
+                "uid": 0,
+                "gid": 0
+            }
+        },
+        {
+            "id": "db12c51a-2882-4bfd-94b2-df5d3cf1d992",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:24.006450521Z",
+            "signal": {
+                "id": "e5b82c9c-c28c-11e8-89b1-7acb63520539",
+                "containerId": "f293f940725e",
+                "time": "2018-09-27T19:38:23.972932019Z",
+                "name": "iptables-restor",
+                "args": "--noflush",
+                "execFilePath": "/sbin/iptables-restore",
+                "pid": 6358,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "e5a8d8a8-4955-45de-9033-2d37fc92a953",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:23.972780922Z",
+            "signal": {
+                "id": "e5b2fcf4-c28c-11e8-89b1-7acb63520539",
+                "containerId": "f293f940725e",
+                "time": "2018-09-27T19:38:23.969739052Z",
+                "name": "iptables",
+                "args": "-w2 -N IP-MASQ-AGENT -t nat",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6356,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        },
+        {
+            "id": "e7433ed0-af40-44f3-820b-35e936425c37",
+            "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+            "containerName": "app",
+            "emitTimestamp": "2018-09-27T19:38:24.005285573Z",
+            "signal": {
+                "id": "e5b7eec6-c28c-11e8-89b1-7acb63520539",
+                "containerId": "f293f940725e",
+                "time": "2018-09-27T19:38:23.971347077Z",
+                "name": "iptables",
+                "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                "execFilePath": "/sbin/iptables",
+                "pid": 6357,
+                "uid": 4294967295,
+                "gid": 4294967295
+            }
+        }
+    ],
+    "serviceAccountPermissionLevel": "NONE",
+    "automountServiceAccountToken": true,
+    "hostNetwork": false,
+    "hostPid": false,
+    "hostIpc": false,
+    "runtimeClass": "",
+    "tolerations": [],
+    "ports": [],
+    "stateTimestamp": "1688993859040137",
+    "riskScore": 5.7972984
+}

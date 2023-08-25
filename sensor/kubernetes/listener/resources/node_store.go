@@ -3,9 +3,11 @@ package resources
 import (
 	"sort"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -31,20 +33,39 @@ func wrapNode(node *v1.Node) *nodeWrap {
 	return wrap
 }
 
-type nodeStore struct {
+// nodeStore represents a collection of NodeWraps
+type nodeStore interface {
+	addOrUpdateNode(node *nodeWrap) bool
+	removeNode(node *storage.Node)
+	getNode(nodeName string) *nodeWrap
+	getNodes() []*nodeWrap
+}
+
+var _ nodeStore = (*nodeStoreImpl)(nil)
+var _ store.NodeStore = (*nodeStoreImpl)(nil)
+
+// nodeStoreImpl stores nodes in memory
+type nodeStoreImpl struct {
 	mutex sync.RWMutex
 	nodes map[string]*nodeWrap
 }
 
-func newNodeStore() *nodeStore {
-	return &nodeStore{
+func newNodeStore() *nodeStoreImpl {
+	return &nodeStoreImpl{
 		nodes: make(map[string]*nodeWrap),
 	}
 }
 
-// addOrUpdateNode upserts a node to the store.
+// Cleanup deletes all entries from store
+func (s *nodeStoreImpl) Cleanup() {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.nodes = make(map[string]*nodeWrap)
+}
+
+// addOrUpdateNode upserts node into store.
 // It returns true if the IP addresses of the node changed as a result.
-func (s *nodeStore) addOrUpdateNode(node *nodeWrap) bool {
+func (s *nodeStoreImpl) addOrUpdateNode(node *nodeWrap) bool {
 	var oldNode *nodeWrap
 	concurrency.WithLock(&s.mutex, func() {
 		oldNode = s.nodes[node.Name]
@@ -62,21 +83,32 @@ func (s *nodeStore) addOrUpdateNode(node *nodeWrap) bool {
 	return false
 }
 
-func (s *nodeStore) removeNode(node *v1.Node) {
+// removeNode removes node from the store
+func (s *nodeStoreImpl) removeNode(node *storage.Node) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	delete(s.nodes, node.Name)
 }
 
-func (s *nodeStore) getNode(nodeName string) *nodeWrap {
+// getNode returns nodeWrap with a given name
+func (s *nodeStoreImpl) getNode(nodeName string) *nodeWrap {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
 	return s.nodes[nodeName]
 }
 
-func (s *nodeStore) getNodes() []*nodeWrap {
+// GetNode returns node with a given name or nil if not found
+func (s *nodeStoreImpl) GetNode(nodeName string) *storage.Node {
+	if wrap := s.getNode(nodeName); wrap != nil {
+		return buildNode(wrap.Node)
+	}
+	return nil
+}
+
+// getNodes returns a slice with all nodes stored in the store
+func (s *nodeStoreImpl) getNodes() []*nodeWrap {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 

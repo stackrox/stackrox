@@ -29,7 +29,7 @@ func GenerateNotifierImplFile(variables, implementations []Code, props *operatio
 	return f.Save("notifier_impl.go")
 }
 
-func generateNewFunc(props *operations.GeneratorProperties) Code {
+func generateNewFunc(_ *operations.GeneratorProperties) Code {
 	return Func().Id("newNotifier").Params().Parens(Op("*").Id("notifier")).Block(
 		Return(Op("&").Id("notifier").Block()),
 	)

@@ -1,66 +1,22 @@
 import entityTypes from 'constants/entityTypes';
-import relationshipTypes from 'constants/relationshipTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
-import { getEntityTypesByRelationship, useCaseEntityMap } from './entityRelationships';
+import {
+    entityId1,
+    entityId2,
+    entityId3,
+    getEntityState,
+    getListState,
+    searchParamValues,
+    sortParamValues,
+    pagingParamValues,
+} from 'test-utils/workflowUtils';
+import {
+    getVulnerabilityManagementEntityTypesByRelationship as getEntityTypesByRelationship,
+    getVulnerabilityManagementEntityTypes,
+} from './entityRelationships';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
-
-const entityId1 = '1234';
-const entityId2 = '5678';
-const entityId3 = '1111';
-
-const searchParamValues = {
-    [searchParams.page]: {
-        sk1: 'v1',
-        sk2: 'v2',
-    },
-    [searchParams.sidePanel]: {
-        sk3: 'v3',
-        sk4: 'v4',
-    },
-};
-
-const sortParamValues = {
-    [sortParams.page]: entityTypes.CLUSTER,
-    [sortParams.sidePanel]: entityTypes.DEPLOYMENT,
-};
-
-const pagingParamValues = {
-    [pagingParams.page]: 1,
-    [pagingParams.sidePanel]: 2,
-};
-
-function getEntityState(isSidePanelOpen) {
-    const stateStack = [new WorkflowEntity(entityTypes.CLUSTER, entityId1)];
-    if (isSidePanelOpen) {
-        stateStack.push(new WorkflowEntity(entityTypes.DEPLOYMENT));
-        stateStack.push(new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2));
-    }
-
-    return new WorkflowState(
-        useCases.CONFIG_MANAGEMENT,
-        stateStack,
-        searchParamValues,
-        sortParamValues,
-        pagingParamValues
-    );
-}
-
-function getListState(isSidePanelOpen) {
-    const stateStack = [new WorkflowEntity(entityTypes.CLUSTER)];
-    if (isSidePanelOpen) {
-        stateStack.push(new WorkflowEntity(entityTypes.CLUSTER, entityId1));
-    }
-
-    return new WorkflowState(
-        useCases.CONFIG_MANAGEMENT,
-        stateStack,
-        searchParamValues,
-        sortParamValues,
-        pagingParamValues
-    );
-}
 
 describe('WorkflowState', () => {
     it('clears current state on current use case', () => {
@@ -326,24 +282,24 @@ describe('WorkflowState', () => {
 
         it('cves -> cve -> deployment should not nav away (from table count link as well)', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
-                new WorkflowEntity(entityTypes.CVE),
-                new WorkflowEntity(entityTypes.CVE, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE_CVE),
+                new WorkflowEntity(entityTypes.IMAGE_CVE, entityId1),
             ]);
             expect(workflowState.pushList(entityTypes.DEPLOYMENT).stateStack).toEqual([
-                { t: entityTypes.CVE },
-                { t: entityTypes.CVE, i: entityId1 },
+                { t: entityTypes.IMAGE_CVE },
+                { t: entityTypes.IMAGE_CVE, i: entityId1 },
                 { t: entityTypes.DEPLOYMENT },
             ]);
         });
 
         it('components -> images link in table count should not nav away', () => {
             const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
-                new WorkflowEntity(entityTypes.COMPONENT),
-                new WorkflowEntity(entityTypes.COMPONENT, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId1),
             ]);
             expect(workflowState.pushList(entityTypes.IMAGE).stateStack).toEqual([
-                { t: entityTypes.COMPONENT },
-                { t: entityTypes.COMPONENT, i: entityId1 },
+                { t: entityTypes.IMAGE_COMPONENT },
+                { t: entityTypes.IMAGE_COMPONENT, i: entityId1 },
                 { t: entityTypes.IMAGE },
             ]);
         });
@@ -380,30 +336,30 @@ describe('WorkflowState', () => {
         // contained relationship (entity page)
         let workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
             new WorkflowEntity(entityTypes.IMAGE, entityId2),
-            new WorkflowEntity(entityTypes.COMPONENT),
-            new WorkflowEntity(entityTypes.COMPONENT, entityId3),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId3),
         ]);
-        const newWorkflowState = workflowState.pushList(entityTypes.CVE);
+        const newWorkflowState = workflowState.pushList(entityTypes.IMAGE_CVE);
         expect(newWorkflowState.stateStack).toEqual([
             { t: entityTypes.IMAGE, i: entityId2 },
-            { t: entityTypes.COMPONENT },
-            { t: entityTypes.COMPONENT, i: entityId3 },
-            { t: entityTypes.CVE },
+            { t: entityTypes.IMAGE_COMPONENT },
+            { t: entityTypes.IMAGE_COMPONENT, i: entityId3 },
+            { t: entityTypes.IMAGE_CVE },
         ]);
 
         // contained relationship (list page)
         workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
             new WorkflowEntity(entityTypes.IMAGE),
             new WorkflowEntity(entityTypes.IMAGE, entityId1),
-            new WorkflowEntity(entityTypes.COMPONENT),
-            new WorkflowEntity(entityTypes.COMPONENT, entityId2),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId2),
         ]);
-        expect(workflowState.pushList(entityTypes.CVE).stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.IMAGE_CVE).stateStack).toEqual([
             { t: entityTypes.IMAGE },
             { t: entityTypes.IMAGE, i: entityId1 },
-            { t: entityTypes.COMPONENT },
-            { t: entityTypes.COMPONENT, i: entityId2 },
-            { t: entityTypes.CVE },
+            { t: entityTypes.IMAGE_COMPONENT },
+            { t: entityTypes.IMAGE_COMPONENT, i: entityId2 },
+            { t: entityTypes.IMAGE_CVE },
         ]);
 
         // drilling down from cluster to leaf
@@ -415,23 +371,23 @@ describe('WorkflowState', () => {
             new WorkflowEntity(entityTypes.DEPLOYMENT),
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId3),
         ]);
-        expect(workflowState.pushList(entityTypes.COMPONENT).stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.IMAGE_COMPONENT).stateStack).toEqual([
             { t: entityTypes.CLUSTER },
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE },
             { t: entityTypes.NAMESPACE, i: entityId2 },
             { t: entityTypes.DEPLOYMENT },
             { t: entityTypes.DEPLOYMENT, i: entityId3 },
-            { t: entityTypes.COMPONENT },
+            { t: entityTypes.IMAGE_COMPONENT },
         ]);
-        expect(workflowState.pushList(entityTypes.CVE).stateStack).toEqual([
+        expect(workflowState.pushList(entityTypes.IMAGE_CVE).stateStack).toEqual([
             { t: entityTypes.CLUSTER },
             { t: entityTypes.CLUSTER, i: entityId1 },
             { t: entityTypes.NAMESPACE },
             { t: entityTypes.NAMESPACE, i: entityId2 },
             { t: entityTypes.DEPLOYMENT },
             { t: entityTypes.DEPLOYMENT, i: entityId3 },
-            { t: entityTypes.CVE },
+            { t: entityTypes.IMAGE_CVE },
         ]);
     });
 
@@ -440,14 +396,14 @@ describe('WorkflowState', () => {
         const workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
             new WorkflowEntity(entityTypes.IMAGE),
             new WorkflowEntity(entityTypes.IMAGE, entityId1),
-            new WorkflowEntity(entityTypes.COMPONENT),
-            new WorkflowEntity(entityTypes.COMPONENT, entityId2),
-            new WorkflowEntity(entityTypes.CVE),
-            new WorkflowEntity(entityTypes.CVE, entityId3),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId2),
+            new WorkflowEntity(entityTypes.IMAGE_CVE),
+            new WorkflowEntity(entityTypes.IMAGE_CVE, entityId3),
         ]);
         const newWorkflowState = workflowState.pushList(entityTypes.DEPLOYMENT);
         expect(newWorkflowState.stateStack).toEqual([
-            { t: entityTypes.CVE, i: entityId3 },
+            { t: entityTypes.IMAGE_CVE, i: entityId3 },
             { t: entityTypes.DEPLOYMENT },
         ]);
     });
@@ -543,24 +499,24 @@ describe('WorkflowState', () => {
         it('overflows stack properly when pushing a duplicate entity onto stack', () => {
             // duplicate entity type on stack (list page)
             let workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
-                new WorkflowEntity(entityTypes.CVE),
-                new WorkflowEntity(entityTypes.CVE, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE_CVE),
+                new WorkflowEntity(entityTypes.IMAGE_CVE, entityId1),
                 new WorkflowEntity(entityTypes.IMAGE),
                 new WorkflowEntity(entityTypes.IMAGE, entityId2),
             ]);
-            expect(workflowState.pushRelatedEntity(entityTypes.CVE, entityId3).stateStack).toEqual([
-                { t: entityTypes.CVE, i: entityId3 },
-            ]);
+            expect(
+                workflowState.pushRelatedEntity(entityTypes.IMAGE_CVE, entityId3).stateStack
+            ).toEqual([{ t: entityTypes.IMAGE_CVE, i: entityId3 }]);
 
             // duplicate entity type on stack (entity page)
             workflowState = new WorkflowState(useCases.VULN_MANAGEMENT, [
-                new WorkflowEntity(entityTypes.CVE, entityId1),
+                new WorkflowEntity(entityTypes.IMAGE_CVE, entityId1),
                 new WorkflowEntity(entityTypes.IMAGE),
                 new WorkflowEntity(entityTypes.IMAGE, entityId2),
             ]);
-            expect(workflowState.pushRelatedEntity(entityTypes.CVE, entityId3).stateStack).toEqual([
-                { t: entityTypes.CVE, i: entityId3 },
-            ]);
+            expect(
+                workflowState.pushRelatedEntity(entityTypes.IMAGE_CVE, entityId3).stateStack
+            ).toEqual([{ t: entityTypes.IMAGE_CVE, i: entityId3 }]);
         });
     });
 
@@ -581,11 +537,11 @@ describe('WorkflowState', () => {
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
             new WorkflowEntity(entityTypes.IMAGE),
             new WorkflowEntity(entityTypes.IMAGE, entityId3),
-            new WorkflowEntity(entityTypes.COMPONENT),
-            new WorkflowEntity(entityTypes.COMPONENT, entityId1),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+            new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId1),
         ]);
         expect(workflowState.pushList(entityTypes.IMAGE).stateStack).toEqual([
-            { t: entityTypes.COMPONENT, i: entityId1 },
+            { t: entityTypes.IMAGE_COMPONENT, i: entityId1 },
             { t: entityTypes.IMAGE },
         ]);
     });
@@ -596,10 +552,10 @@ describe('WorkflowState', () => {
             [
                 new WorkflowEntity(entityTypes.IMAGE),
                 new WorkflowEntity(entityTypes.IMAGE, entityId1),
-                new WorkflowEntity(entityTypes.COMPONENT),
-                new WorkflowEntity(entityTypes.COMPONENT, entityId2),
-                new WorkflowEntity(entityTypes.CVE),
-                new WorkflowEntity(entityTypes.CVE, entityId3),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT, entityId2),
+                new WorkflowEntity(entityTypes.IMAGE_CVE),
+                new WorkflowEntity(entityTypes.IMAGE_CVE, entityId3),
             ],
             {},
             {},
@@ -741,18 +697,20 @@ describe('WorkflowState', () => {
 
         it('should return true when the top-level in the state stack is the entity list specified, with no child selected', () => {
             const workflowState = new WorkflowState(useCase, [
-                new WorkflowEntity(entityTypes.COMPONENT),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
             ]);
 
-            const actual = workflowState.isBaseList(entityTypes.COMPONENT);
+            const actual = workflowState.isBaseList(entityTypes.IMAGE_COMPONENT);
 
             expect(actual).toEqual(true);
         });
 
         it('should return false when the top-level in the state stack is not the entity list specified', () => {
-            const workflowState = new WorkflowState(useCase, [new WorkflowEntity(entityTypes.CVE)]);
+            const workflowState = new WorkflowState(useCase, [
+                new WorkflowEntity(entityTypes.IMAGE_CVE),
+            ]);
 
-            const actual = workflowState.isBaseList(entityTypes.COMPONENT);
+            const actual = workflowState.isBaseList(entityTypes.IMAGE_COMPONENT);
 
             expect(actual).toEqual(false);
         });
@@ -763,11 +721,11 @@ describe('WorkflowState', () => {
 
         it('should return true when the preceding entity type of leaf state is the given entity', () => {
             const workflowState = new WorkflowState(useCase, [
-                new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
-                new WorkflowEntity(entityTypes.COMPONENT),
+                new WorkflowEntity(entityTypes.IMAGE_CVE, 'abcd-ef09'),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
             ]);
 
-            const actual = workflowState.isPreceding(entityTypes.CVE);
+            const actual = workflowState.isPreceding(entityTypes.IMAGE_CVE);
 
             expect(actual).toEqual(true);
         });
@@ -775,7 +733,7 @@ describe('WorkflowState', () => {
         it('should return true when the preceding entity type of leaf state is given entity, alternate test', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
-                new WorkflowEntity(entityTypes.COMPONENT),
+                new WorkflowEntity(entityTypes.IMAGE_COMPONENT),
             ]);
 
             const actual = workflowState.isPreceding(entityTypes.DEPLOYMENT);
@@ -789,7 +747,7 @@ describe('WorkflowState', () => {
                 new WorkflowEntity(entityTypes.DEPLOYMENT),
             ]);
 
-            const actual = workflowState.isPreceding(entityTypes.CVE);
+            const actual = workflowState.isPreceding(entityTypes.IMAGE_CVE);
 
             expect(actual).toEqual(false);
         });
@@ -806,12 +764,12 @@ describe('WorkflowState', () => {
      */
 
     /*
-     * CLUSTER CLUSTER-0 COMPONENT
+     * CLUSTER CLUSTER-0 IMAGE_COMPONENT
      *
      * main/vulnerability-management/clusters
      * ?workflowState[0][t]=CLUSTER
      * &workflowState[0][i]=00000000-0000-0000-0000-000000000000
-     * &workflowState[1][t]=COMPONENT
+     * &workflowState[1][t]=IMAGE_COMPONENT
      *
      * 1. In Vulnerability Management Dashboard, click View All
      *    at the right of Clusters with the most orchestrator & istio vulnerabilities
@@ -820,21 +778,21 @@ describe('WorkflowState', () => {
      */
 
     /*
-     * CLUSTER CLUSTER-0 COMPONENT COMPONENT-2 CVE
+     * CLUSTER CLUSTER-0 IMAGE_COMPONENT IMAGE_COMPONENT-2 IMAGE_CVE
      *
      * main/vulnerability-management/clusters
      * ?workflowState[0][t]=CLUSTER
      * &workflowState[0][i]=00000000-0000-0000-0000-000000000000
-     * &workflowState[1][t]=COMPONENT
-     * &workflowState[2][t]=COMPONENT
+     * &workflowState[1][t]=IMAGE_COMPONENT
+     * &workflowState[2][t]=IMAGE_COMPONENT
      * &workflowState[2][i]=22222222222222222222222222222
-     * &workflowState[3][t]=CVE
+     * &workflowState[3][t]=IMAGE_CVE
      *
      * 4. In Components Entity List, click a link in the CVEs column
      */
 
     /*
-     * COMPONENT-2 DEPLOYMENT
+     * IMAGE_COMPONENT-2 DEPLOYMENT
      *
      * main/vulnerability-management/component/2222222:2222222222222222222/deployments
      *
@@ -845,7 +803,7 @@ describe('WorkflowState', () => {
      *
      * The preceding state stack is the nearest preceding line
      * whose last entity has same type and next lesser even integer index
-     * for example, CLUSTER CLUSTER-0 COMPONENT
+     * for example, CLUSTER CLUSTER-0 IMAGE_COMPONENT
      */
 
     describe('nav list-item-list for', () => {
@@ -860,16 +818,15 @@ describe('WorkflowState', () => {
          * which eventually returns false, so skimStack returns a shorter slice.
          */
         const pushStacks = (workflowState1, entityTypesForUseCase, output) => {
-            const { stateStack: stateStack1, useCase: useCase1 } = workflowState1;
+            const { stateStack: stateStack1 } = workflowState1;
             const length1 = stateStack1.length; // assume stack has odd length
             const id = String(length1 - 1); // 0, 2, 4, and so on (see examples above)
             const workflowState2 = workflowState1.pushListItem(id);
 
             const { entityType: entityType0 } = stateStack1[length1 - 1];
-            const { CONTAINS, MATCHES, PARENTS } = relationshipTypes;
-            const contains = getEntityTypesByRelationship(entityType0, CONTAINS, useCase1);
-            const matches = getEntityTypesByRelationship(entityType0, MATCHES, useCase1);
-            const parents = getEntityTypesByRelationship(entityType0, PARENTS, useCase1);
+            const contains = getEntityTypesByRelationship(entityType0, 'CONTAINS');
+            const matches = getEntityTypesByRelationship(entityType0, 'MATCHES');
+            const parents = getEntityTypesByRelationship(entityType0, 'PARENTS');
 
             entityTypesForUseCase.forEach((entityType2) => {
                 if (stateStack1.every(({ entityType }) => entityType !== entityType2)) {
@@ -896,23 +853,19 @@ describe('WorkflowState', () => {
 
         const stateStackMapper = (stateStack) => stateStack.map(workflowEntityMapper).join(' ');
 
-        // Add other use cases when they use workflow state.
-        [useCases.VULN_MANAGEMENT].forEach((useCase) => {
-            // Template literal for jest/valid-title which forbids a variable.
-            describe(`${useCase}`, () => {
-                const entityTypesForUseCase = [...useCaseEntityMap[useCase]].sort(); // copy before sort
-                const workflowState0 = new WorkflowState(useCase);
+        describe('Vulnerability Management', () => {
+            const entityTypesForUseCase = [...getVulnerabilityManagementEntityTypes()].sort(); // copy before sort
+            const workflowState0 = new WorkflowState('vulnerability-management');
 
-                entityTypesForUseCase.forEach((entityType) => {
-                    describe(`${entityType}`, () => {
-                        it('has trimmed stacks', () => {
-                            const workflowState1 = workflowState0.pushList(entityType);
-                            const stateStacks = [];
-                            pushStacks(workflowState1, entityTypesForUseCase, stateStacks);
-                            const receivedStacks = stateStacks.map(stateStackMapper);
+            entityTypesForUseCase.forEach((entityType) => {
+                describe(`${entityType}`, () => {
+                    it('has trimmed stacks', () => {
+                        const workflowState1 = workflowState0.pushList(entityType);
+                        const stateStacks = [];
+                        pushStacks(workflowState1, entityTypesForUseCase, stateStacks);
+                        const receivedStacks = stateStacks.map(stateStackMapper);
 
-                            expect(receivedStacks).toMatchSnapshot();
-                        });
+                        expect(receivedStacks).toMatchSnapshot();
                     });
                 });
             });

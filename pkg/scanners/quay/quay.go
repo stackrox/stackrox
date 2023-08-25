@@ -58,7 +58,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) 
 	}
 	config := quayConfig.Quay
 
-	registry, err := quayRegistry.NewRegistryFromConfig(quayConfig.Quay, protoImageIntegration)
+	registry, err := quayRegistry.NewRegistryFromConfig(quayConfig.Quay, protoImageIntegration, false)
 	if err != nil {
 		return nil, err
 	}

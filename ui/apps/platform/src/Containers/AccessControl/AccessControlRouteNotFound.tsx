@@ -1,8 +1,7 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import { Alert, AlertVariant, List, ListItem, Stack, StackItem } from '@patternfly/react-core';
+import { Alert, AlertVariant, List, ListItem, PageSection } from '@patternfly/react-core';
 
 import AccessControlHeading from './AccessControlHeading';
-import AccessControlNav from './AccessControlNav';
 
 // Separate list from the title with same margin-top as second list item from the first.
 const styleList = {
@@ -11,12 +10,9 @@ const styleList = {
 
 function AccessControlRouteNotFound(): ReactElement {
     return (
-        <Stack hasGutter>
-            <StackItem>
-                <AccessControlHeading />
-                <AccessControlNav />
-            </StackItem>
-            <StackItem>
+        <>
+            <AccessControlHeading />
+            <PageSection variant="light">
                 <Alert
                     title="Access Control route not found"
                     variant={AlertVariant.warning}
@@ -27,8 +23,8 @@ function AccessControlRouteNotFound(): ReactElement {
                         <ListItem>Click a tab under Access Control</ListItem>
                     </List>
                 </Alert>
-            </StackItem>
-        </Stack>
+            </PageSection>
+        </>
     );
 }
 

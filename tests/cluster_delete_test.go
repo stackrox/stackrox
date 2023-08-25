@@ -1,5 +1,4 @@
 //go:build destructive
-// +build destructive
 
 package tests
 
@@ -9,7 +8,7 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +51,7 @@ func getSummaryCounts(t *testing.T) summaryCountsResp {
 
 func getAllCounts(t *testing.T) allCounts {
 	summaryCounts := getSummaryCounts(t)
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	podSvc := v1.NewPodServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -75,7 +74,7 @@ func TestClusterDeletion(t *testing.T) {
 	assert.NotZero(t, counts.PodCount)
 	log.Infof("the initial counts are: %+v", counts)
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewClustersServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	getClustersResp, err := service.GetClusters(ctx, &v1.GetClustersRequest{})

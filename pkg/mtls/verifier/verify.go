@@ -9,6 +9,8 @@ import (
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.
+//
+//go:generate mockgen-wrapper
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
 }

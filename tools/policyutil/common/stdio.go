@@ -16,7 +16,7 @@ var (
 
 // PrintLog prints to STDERR and appends a newline.
 func PrintLog(format string, arg ...interface{}) {
-	print(os.Stderr, true, format, arg...)
+	printf(os.Stderr, true, format, arg...)
 }
 
 // PrintVerboseLog redirects to PrintLog if verbose output is on.
@@ -28,10 +28,10 @@ func PrintVerboseLog(format string, arg ...interface{}) {
 
 // PrintResult prints to STDOUT and appends a newline.
 func PrintResult(format string, arg ...interface{}) {
-	print(os.Stdout, true, format, arg...)
+	printf(os.Stdout, true, format, arg...)
 }
 
-func print(w io.Writer, eol bool, format string, arg ...interface{}) {
+func printf(w io.Writer, eol bool, format string, arg ...interface{}) {
 	if len(arg) > 0 {
 		fmt.Fprintf(w, format, arg...)
 	} else {
@@ -56,8 +56,8 @@ func ReadUserInput(prompt string) (string, error) {
 		PrintLog("%v", err)
 		tty = os.Stdout
 	}
-	print(tty, false, prompt)
-	defer print(tty, true, "")
+	printf(tty, false, prompt)
+	defer printf(tty, true, "")
 
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')

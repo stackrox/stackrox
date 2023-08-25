@@ -2,13 +2,9 @@ package resolvers
 
 import (
 	"context"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
-	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -29,8 +25,6 @@ func init() {
 			"lastScanned: Time",
 			"createdAt: Time", // Discovered At System
 			"discoveredAtImage(query: String): Time",
-			"components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!",
-			"componentCount(query: String): Int!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageCount(query: String): Int!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
@@ -51,14 +45,6 @@ func init() {
 			"vulnerabilityState: String!",
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
-		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("vulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("vulnerabilityCount(query: String): Int!"),
-		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("k8sVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
-		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("istioVulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
-		schema.AddExtraResolver("EmbeddedVulnerability", `unusedVarSink(query: String): Int`),
 	)
 }
 
@@ -66,7 +52,7 @@ func init() {
 // Values may come from either an embedded vulnerability context, or a top level vulnerability context.
 type VulnerabilityResolver interface {
 	ID(ctx context.Context) graphql.ID
-	Cve(ctx context.Context) string
+	CVE(ctx context.Context) string
 	Cvss(ctx context.Context) float64
 	Link(ctx context.Context) string
 	Summary(ctx context.Context) string
@@ -85,9 +71,6 @@ type VulnerabilityResolver interface {
 	VulnerabilityType() string
 	VulnerabilityTypes() []string
 
-	Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error)
-	ComponentCount(ctx context.Context, args RawQuery) (int32, error)
-
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
 
@@ -96,6 +79,9 @@ type VulnerabilityResolver interface {
 
 	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
 	NodeCount(ctx context.Context, args RawQuery) (int32, error)
+
+	ClusterCount(ctx context.Context, args RawQuery) (int32, error)
+	Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error)
 
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 
@@ -109,94 +95,6 @@ type VulnerabilityResolver interface {
 	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 }
 
-// Vulnerability resolves a single vulnerability based on an id (the CVE value).
-func (resolver *Resolver) Vulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerability")
-	return resolver.vulnerabilityV2(ctx, args)
-}
-
-// Vulnerabilities resolves a set of vulnerabilities based on a query.
-func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
-	return resolver.vulnerabilitiesV2(ctx, q)
-}
-
-// VulnerabilityCount returns count of all clusters across infrastructure
-func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnerabilityCount")
-	return resolver.vulnerabilityCountV2(ctx, args)
-}
-
-// VulnCounter returns a VulnerabilityCounterResolver for the input query.s
-func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "VulnCounter")
-	return resolver.vulnCounterV2(ctx, args)
-}
-
-// Legacy K8s and Istio specific vuln resolvers.
-// These can be replaced by hitting the basic vuln resolvers with a query for the K8s or Istio type.
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
-func (resolver *Resolver) K8sVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerability")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.k8sVulnerabilityV2(ctx, args)
-}
-
-// K8sVulnerabilities resolves a set of k8s vulnerabilities based on a query.
-func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sVulnerabilities")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.k8sVulnerabilitiesV2(ctx, args)
-}
-
-// IstioVulnerability resolves a single istio vulnerability based on an id (the CVE value).
-func (resolver *Resolver) IstioVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerability")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.istioVulnerabilityV2(ctx, args)
-}
-
-// IstioVulnerabilities resolves a set of istio vulnerabilities based on a query.
-func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioVulnerabilities")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.istioVulnerabilitiesV2(ctx, args)
-}
-
-// OpenShiftVulnerability resolves a single OpenShift vulnerability based on an id (the CVE value).
-func (resolver *Resolver) OpenShiftVulnerability(ctx context.Context, args IDQuery) (VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerability")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.openShiftVulnerabilityV2(ctx, args)
-}
-
-// OpenShiftVulnerabilities resolves a set of OpenShift vulnerabilities based on a query.
-func (resolver *Resolver) OpenShiftVulnerabilities(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftVulnerabilities")
-	if err := readClusters(ctx); err != nil {
-		return nil, err
-	}
-
-	return resolver.openShiftVulnerabilitiesV2(ctx, args)
-}
-
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 	var isSearchBySuppressed, isSearchByVulnState bool
 	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
@@ -205,11 +103,9 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 			isSearchBySuppressed = true
 			return
 		}
-		if features.VulnRiskManagement.Enabled() {
-			if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
-				isSearchByVulnState = true
-				return
-			}
+		if ok && mfQ.MatchFieldQuery.GetField() == search.VulnerabilityState.String() {
+			isSearchByVulnState = true
+			return
 		}
 	})
 	// If search query is explicitly requesting vulns by its observed state using the legacy way or the new way,

@@ -60,11 +60,9 @@ func Run(upgradeCtx *upgradectx.UpgradeContext) error {
 		return errors.New("no gRPC client to Central found")
 	}
 	svc := central.NewSensorUpgradeControlServiceClient(client)
-	if err := runLoop(upgradeCtx, svc); err != nil {
-		log.Errorf("Couldn't successfully run remote control service, despite retries: %v. Giving up now, and cleaning up...", err)
-		return runner.Run(upgradeCtx, sensorupgrader.CleanupWorkflow)
-	}
-	return nil
+	err := runLoop(upgradeCtx, svc)
+	log.Errorf("Couldn't successfully run remote control service, despite retries: %v. Giving up now, and cleaning up...", err)
+	return runner.Run(upgradeCtx, sensorupgrader.CleanupWorkflow)
 }
 
 func runLoop(upgradeCtx *upgradectx.UpgradeContext, svc central.SensorUpgradeControlServiceClient) error {

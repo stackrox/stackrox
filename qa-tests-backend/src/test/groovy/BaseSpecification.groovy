@@ -1,12 +1,9 @@
-import com.jayway.restassured.RestAssured
-import common.Constants
-import groovy.util.logging.Slf4j
-import io.grpc.StatusRuntimeException
-import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
-import io.stackrox.proto.storage.RoleOuterClass
-import objects.K8sServiceAccount
-import objects.Secret
+import static util.Helpers.withRetry
+
+import java.security.SecureRandom
+import java.util.concurrent.TimeUnit
+
+import io.restassured.RestAssured
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import orchestratormanager.OrchestratorTypes
@@ -14,41 +11,51 @@ import org.javers.core.Javers
 import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
 import org.javers.core.diff.ListCompareAlgorithm
-import org.junit.Rule
-import org.junit.rules.TestName
-import org.junit.rules.Timeout
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+
+import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
+
+import common.Constants
+import objects.K8sServiceAccount
+import objects.Secret
 import services.BaseService
 import services.ClusterService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
-import services.SACService
-import spock.lang.Retry
-import spock.lang.Shared
-import spock.lang.Specification
 import util.Env
 import util.Helpers
 import util.OnFailure
 
-import java.security.SecureRandom
-import java.util.concurrent.TimeUnit
-import java.text.SimpleDateFormat
+import org.junit.Rule
+import org.junit.rules.TestName
+import org.junit.rules.Timeout
+import spock.lang.Shared
+import spock.lang.Specification
 
-@Slf4j
-@Retry(condition = { Helpers.determineRetry(failure) })
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
-    static final String TEST_IMAGE = "nginx:1.7.9"
+    static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
+
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-7-9"
 
     static final String RUN_ID
+
+    public static final String UNRESTRICTED_SCOPE_ID = isPostgresRun() ?
+        "ffffffff-ffff-fff4-f5ff-ffffffffffff" :
+        "io.stackrox.authz.accessscope.unrestricted"
 
     static {
         String idStr
         try {
             idStr = new File("/proc/self").getCanonicalFile().getName()
-        } catch (Exception ignored) {
-            println "Could not determine pid, using a random ID"
+        } catch (Exception e) {
+            LOG.warn("Could not determine pid, using a random ID", e)
             idStr = new SecureRandom().nextInt().toString()
         }
         RUN_ID = idStr
@@ -60,19 +67,27 @@ class BaseSpecification extends Specification {
 
     public static strictIntegrationTesting = false
 
-    Map<String, List<String>> resourceRecord = [:]
+    private static Map<String, List<String>> resourceRecord = [:]
+
+    public static String coreImageIntegrationId = null
+
+    private static synchronizedGlobalSetup() {
+        synchronized(BaseSpecification) {
+            globalSetup()
+        }
+    }
 
     private static globalSetup() {
         if (globalSetupDone) {
             return
         }
 
-        println "Performing global setup"
+        LOG.info "Performing global setup"
 
-        if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
+        if (!Env.IN_CI || Env.get("BUILD_TAG")) {
             // Strictly test integration with external services when running in
             // a dev environment or in CI against tagged builds (e.g. nightly builds).
-            println "Will perform strict integration testing (if any is required)"
+            LOG.info "Will perform strict integration testing (if any is required)"
             strictIntegrationTesting = true
         }
 
@@ -96,16 +111,16 @@ class BaseSpecification extends Specification {
             assert ClusterService.getClusterId(), "There is no default cluster. Check if all pods are running"
             try {
                 def metadata = MetadataService.getMetadataServiceClient().getMetadata()
-                println "Testing against:"
-                println metadata
-                println "isGKE: ${orchestrator.isGKE()}"
-                println "isEKS: ${ClusterService.isEKS()}"
-                println "isOpenShift3: ${ClusterService.isOpenShift3()}"
-                println "isOpenShift4: ${ClusterService.isOpenShift4()}"
+                LOG.info "Testing against:"
+                LOG.info metadata.toString()
+                LOG.info "isGKE: ${orchestrator.isGKE()}"
+                LOG.info "isEKS: ${ClusterService.isEKS()}"
+                LOG.info "isOpenShift3: ${ClusterService.isOpenShift3()}"
+                LOG.info "isOpenShift4: ${ClusterService.isOpenShift4()}"
             }
             catch (Exception ex) {
-                println "Cannot connect to central : ${ex.message}"
-                println "Check the test target deployment, auth credentials, kube service proxy, etc."
+                LOG.info "Cannot connect to central : ${ex.message}"
+                LOG.info "Check the test target deployment, auth credentials, kube service proxy, etc."
                 throw(ex)
             }
         }
@@ -125,25 +140,63 @@ class BaseSpecification extends Specification {
             allResources.getResourcesList().each { res ->
                 resourceAccess.put(res, RoleOuterClass.Access.READ_WRITE_ACCESS) }
 
-            testRole = RoleOuterClass.Role.newBuilder()
-                    .setName("Test Automation Role - ${RUN_ID}")
-                    .build()
+            String testRoleName = "Test Automation Role - ${RUN_ID}"
 
-            RoleService.deleteRole(testRole.name)
-            RoleService.createRoleWithPermissionSet(testRole, resourceAccess)
+            if (RoleService.checkRoleExists(testRoleName)) {
+                RoleService.deleteRole(testRoleName)
+            }
+            testRole = RoleService.createRoleWithScopeAndPermissionSet(
+                testRoleName, UNRESTRICTED_SCOPE_ID, resourceAccess)
 
-            tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRole.name)
+            tokenResp = services.ApiTokenService.generateToken("allAccessToken-${RUN_ID}", testRoleName)
         }
 
+        assert tokenResp
         allAccessToken = tokenResp.token
+        assert allAccessToken
+
+        setupCoreImageIntegration()
+
+        RestAssured.useRelaxedHTTPSValidation()
+
+        try {
+            orchestrator.setup()
+        } catch (Exception e) {
+            LOG.error("Error setting up orchestrator", e)
+            throw e
+        }
+
+        // ROX-9950 Limit to GKE due to issues on other providers.
+        if (orchestrator.isGKE()) {
+            recordResourcesAtRunStart(orchestrator)
+        }
 
         addShutdownHook {
-            println "Performing global shutdown"
+            LOG.info "Performing global shutdown"
             BaseService.useBasicAuth()
             BaseService.setUseClientCert(false)
             withRetry(30, 1) {
                 services.ApiTokenService.revokeToken(tokenResp.metadata.id)
-                RoleService.deleteRole(testRole.name)
+                if (testRole) {
+                    RoleService.deleteRole(testRole.name)
+                }
+            }
+
+            LOG.info "Removing core image registry integration"
+            if (coreImageIntegrationId != null) {
+                ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
+            }
+
+            try {
+                orchestrator.cleanup()
+            } catch (Exception e) {
+                LOG.error("Failed to clean up orchestrator", e)
+                throw e
+            }
+
+            // ROX-9950 Limit to GKE due to issues on other providers.
+            if (orchestrator.isGKE()) {
+                compareResourcesAtRunEnd(orchestrator)
             }
         }
 
@@ -152,11 +205,14 @@ class BaseSpecification extends Specification {
 
     @Rule
     Timeout globalTimeout = new Timeout(
-            isRaceBuild() ? 2500 : 500,
+            isRaceBuild() ? 2500 : 800,
             TimeUnit.SECONDS
     )
     @Rule
     TestName name = new TestName()
+
+    @Shared
+    Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
 
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(
@@ -168,50 +224,26 @@ class BaseSpecification extends Specification {
     long orchestratorCreateTime = System.currentTimeSeconds()
 
     @Shared
-    String coreImageIntegrationId = null
-
-    @Shared
-    private long testStartTimeMillis
-
-    @Shared
-    private String pluginConfigID
-
-    def disableAuthzPlugin() {
-        if (pluginConfigID != null) {
-            SACService.deleteAuthPluginConfig(pluginConfigID)
-        }
-        pluginConfigID = null
-    }
+    private long testSpecStartTimeMillis
 
     def setupSpec() {
-        printlnDated("Starting testsuite")
+        MDC.put("logFileName", this.class.getSimpleName())
+        MDC.put("specification", this.class.getSimpleName())
+        log.info("Starting testsuite")
 
-        testStartTimeMillis = System.currentTimeMillis()
+        testSpecStartTimeMillis = System.currentTimeMillis()
 
-        RestAssured.useRelaxedHTTPSValidation()
-        globalSetup()
+        synchronizedGlobalSetup()
 
-        try {
-            orchestrator.setup()
-        } catch (Exception e) {
-            e.printStackTrace()
-            println "Error setting up orchestrator: ${e.message}"
-            throw e
-        }
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-        try {
-            def response = SACService.addAuthPlugin()
-            pluginConfigID = response.getId()
-            println response.toString()
-        } catch (StatusRuntimeException e) {
-            println("Unable to enable the authz plugin, defaulting to basic auth: ${e.message}")
-        }
+    }
 
+    static setupCoreImageIntegration() {
         coreImageIntegrationId = ImageIntegrationService.getImageIntegrationByName(
-                Constants.CORE_IMAGE_INTEGRATION_NAME)
+                Constants.CORE_IMAGE_INTEGRATION_NAME)?.id
         if (!coreImageIntegrationId) {
-            println "Adding core image integration"
+            LOG.info "Adding core image registry integration"
             coreImageIntegrationId = ImageIntegrationService.createImageIntegration(
                     ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                             .setName(Constants.CORE_IMAGE_INTEGRATION_NAME)
@@ -227,14 +259,12 @@ class BaseSpecification extends Specification {
             )
         }
         if (!coreImageIntegrationId) {
-            println "WARNING: Could not create the core image integration."
-            println "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
+            LOG.warn "Could not create the core image integration."
+            LOG.warn "Check that REGISTRY_USERNAME and REGISTRY_PASSWORD are valid for quay.io."
         }
-
-        recordResourcesAtSpecStart()
     }
 
-    def recordResourcesAtSpecStart() {
+    private static void recordResourcesAtRunStart(OrchestratorMain orchestrator) {
         resourceRecord = [
                 "namespaces": orchestrator.getNamespaces(),
                 "deployments": orchestrator.getDeployments("default") +
@@ -242,52 +272,56 @@ class BaseSpecification extends Specification {
         ]
     }
 
-    def resetAuth() {
+    // useDesiredServiceAuth() - configure the central gRPC connection auth as
+    // desired for test.
+    def useDesiredServiceAuth() {
         BaseService.setUseClientCert(false)
-        if (allAccessToken) {
-            BaseService.useApiToken(allAccessToken)
-        } else {
-            BaseService.useBasicAuth()
-        }
+        useTokenServiceAuth()
+    }
+
+    // useTokenServiceAuth() - configure the central gRPC connection auth to
+    // use an all access token.
+    def useTokenServiceAuth() {
+        assert allAccessToken
+        BaseService.useApiToken(allAccessToken)
     }
 
     def setup() {
-        printlnDated("Starting testcase")
+        // These .puts() have to be repeated here or else the key is cleared.
+        MDC.put("logFileName", this.class.getSimpleName())
+        MDC.put("specification", this.class.getSimpleName())
+        log.info("Starting testcase: ${name.getMethodName()}")
 
-        //Always make sure to revert back to the allAccessToken before each test
-        resetAuth()
+        // Make sure to use or revert back to the desired central gRPC auth
+        // before each test.
+        useDesiredServiceAuth()
 
-        if (ClusterService.isEKS() && System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+        if (ClusterService.isEKS()) {
             // Avoid EKS k8s client time out which occurs at approx. 15 minutes.
-            orchestrator = OrchestratorType.create(
-                    Env.mustGetOrchestratorType(),
-                    Constants.ORCHESTRATOR_NAMESPACE
-            )
-            orchestratorCreateTime = System.currentTimeSeconds()
+            synchronized(orchestrator) {
+                // synchronized() because orchestrator would be shared amongst
+                // concurrent feature threads.
+                if (System.currentTimeSeconds() > orchestratorCreateTime + 600) {
+                    orchestrator = OrchestratorType.create(
+                            Env.mustGetOrchestratorType(),
+                            Constants.ORCHESTRATOR_NAMESPACE
+                    )
+                    orchestratorCreateTime = System.currentTimeSeconds()
+                }
+            }
         }
     }
 
     def cleanupSpec() {
-        printlnDated("Ending testsuite")
+        log.info("Ending testsuite")
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
 
-        println "Removing integration"
-        ImageIntegrationService.deleteImageIntegration(coreImageIntegrationId)
-
-        try {
-            orchestrator.cleanup()
-        } catch (Exception e) {
-            println "Error to clean up orchestrator: ${e.message}"
-            throw e
-        }
-        disableAuthzPlugin()
-
-        compareResourcesAtSpecEnd()
+        MDC.remove("specification")
     }
 
-    def compareResourcesAtSpecEnd() {
+    private static void compareResourcesAtRunEnd(OrchestratorMain orchestrator) {
         Javers javers = JaversBuilder.javers()
                 .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
                 .build()
@@ -295,8 +329,8 @@ class BaseSpecification extends Specification {
         List<String> namespaces = orchestrator.getNamespaces()
         Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
-            println "There is a difference in namespaces between the start and end of this test spec:"
-            println diff.prettyPrint()
+            LOG.info "There is a difference in namespaces between the start and end of this test run:"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Namespaces have changed. Ensure that any namespace created " +
                     "in a test spec is deleted in that test spec.")
         }
@@ -305,17 +339,15 @@ class BaseSpecification extends Specification {
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
         diff = javers.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
-            println "There is a difference in deployments between the start and end of this test spec"
-            println diff.prettyPrint()
+            LOG.info "There is a difference in deployments between the start and end of this test run"
+            LOG.info diff.prettyPrint()
             throw new TestSpecRuntimeException("Deployments have changed. Ensure that any deployments created " +
                     "in a test spec are destroyed in that test spec.")
         }
     }
 
     def cleanup() {
-        printlnDated("Ending testcase")
-
-        Helpers.resetRetryAttempts()
+        log.info("Ending testcase")
     }
 
     static addStackroxImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
@@ -326,7 +358,7 @@ class BaseSpecification extends Specification {
                            Env.get("REGISTRY_PASSWORD", null) == null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
-            println "WARNING: The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
+            LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from docker.io/stackrox)"
             return
         }
@@ -360,7 +392,7 @@ class BaseSpecification extends Specification {
     static addGCRImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
         if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER", null) == null) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
-            println "WARNING: The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
+            LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
             return
         }
@@ -393,14 +425,12 @@ class BaseSpecification extends Specification {
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
     }
 
-    static Boolean isRaceBuild() {
-        return Env.get("IS_RACE_BUILD", null) == "true"
+    static Boolean isPostgresRun() {
+        return Env.get("ROX_POSTGRES_DATASTORE", null) == "true"
     }
 
-    static Void printlnDated(String msg) {
-        def date = new Date()
-        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        println "${sdf.format(date)} ${msg}"
+    static Boolean isRaceBuild() {
+        return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
     }
 }
 

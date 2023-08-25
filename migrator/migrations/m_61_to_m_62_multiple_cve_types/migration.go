@@ -18,7 +18,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 61,
-		VersionAfter:   storage.Version{SeqNum: 62},
+		VersionAfter:   &storage.Version{SeqNum: 62},
 		Run: func(databases *types.Databases) error {
 			return migrateCVEs(databases.RocksDB)
 		},

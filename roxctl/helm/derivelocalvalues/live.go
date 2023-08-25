@@ -68,9 +68,6 @@ func (k liveK8sObjectDescription) get(ctx context.Context, kind string, name str
 		panic(fmt.Sprintf("Unknown resource kind %q", kind))
 	}
 
-	if gvr == nil {
-		panic(fmt.Sprintf("No group version resource defined for kind %q", kind))
-	}
 	resClient := k.client.Resource(*gvr)
 
 	resp, err := resClient.
@@ -103,5 +100,6 @@ func loadKubeCtlConfig() (*rest.Config, error) {
 		return nil, errors.Wrap(err, "loading default Kubernetes client config")
 	}
 
-	return clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	clientConfig, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
+	return clientConfig, errors.Wrap(err, "could not load new default Kubernetes client config")
 }

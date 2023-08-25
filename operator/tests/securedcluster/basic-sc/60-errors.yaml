@@ -1,0 +1,9 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central

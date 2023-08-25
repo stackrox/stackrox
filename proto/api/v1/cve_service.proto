@@ -10,28 +10,68 @@ import "api/v1/empty.proto";
 package v1;
 
 message SuppressCVERequest {
-    repeated string             ids         = 1;
+    // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+    // For example, CVE-2021-44832.
+    repeated string          cves     = 1;
     reserved 2;
-    google.protobuf.Duration    duration    = 3;
+    google.protobuf.Duration duration = 3;
 }
 
 message UnsuppressCVERequest {
-    repeated string             ids         = 1;
+    // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+    // For example, CVE-2021-44832.
+    repeated string cves  = 1;
 }
 
-// CVEService APIs can be used to manage cves.
-service CVEService {
-    // SuppressCVE suppresses cves.
+// ImageCVEService APIs can be used to manage image cves.
+service ImageCVEService {
+    // SuppressCVE suppresses image cves.
     rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
-            patch: "/v1/cves/suppress"
+            patch: "/v1/imagecves/suppress"
             body: "*"
         };
     }
-    // UnsuppressCVE unsuppresse    s cves.
+    // UnsuppressCVE unsuppresses image cves.
     rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
-            patch: "/v1/cves/unsuppress"
+            patch: "/v1/imagecves/unsuppress"
+            body: "*"
+        };
+    }
+}
+
+// NodeCVEService APIs can be used to manage node cves.
+service NodeCVEService {
+    // SuppressCVE suppresses node cves.
+    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/nodecves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresses node cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/nodecves/unsuppress"
+            body: "*"
+        };
+    }
+}
+
+// ClusterCVEService APIs can be used to manage cluster cves.
+service ClusterCVEService {
+    // SuppressCVE suppresses cluster cves.
+    rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/clustercves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresses cluster cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/clustercves/unsuppress"
             body: "*"
         };
     }

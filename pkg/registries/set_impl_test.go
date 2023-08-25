@@ -1,6 +1,7 @@
 package registries
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -8,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newFakeRegistry(name string, username string, auto bool) fakeRegistry {
-	return fakeRegistry{
+func newFakeRegistry(name string, username string, auto bool) *fakeRegistry {
+	return &fakeRegistry{
 		name: name,
 		config: &types.Config{
 			Username:      username,
@@ -18,34 +19,40 @@ func newFakeRegistry(name string, username string, auto bool) fakeRegistry {
 	}
 }
 
+var _ types.ImageRegistry = (*fakeRegistry)(nil)
+
 type fakeRegistry struct {
 	name   string
 	config *types.Config
 }
 
-func (f fakeRegistry) Match(image *storage.ImageName) bool { return false }
+func (f *fakeRegistry) Match(_ *storage.ImageName) bool { return false }
 
-func (f fakeRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) {
 	return nil, nil
 }
 
-func (f fakeRegistry) Test() error {
+func (f *fakeRegistry) Test() error {
 	return nil
 }
 
-func (f fakeRegistry) Global() bool {
-	return false
-}
-
-func (f fakeRegistry) Config() *types.Config {
+func (f *fakeRegistry) Config() *types.Config {
 	return f.config
 }
 
-func (f fakeRegistry) Name() string {
+func (f *fakeRegistry) Name() string {
 	return f.name
 }
 
-func (f fakeRegistry) DataSource() *storage.DataSource {
+func (f *fakeRegistry) HTTPClient() *http.Client {
+	return nil
+}
+
+func (f *fakeRegistry) DataSource() *storage.DataSource {
+	return nil
+}
+
+func (f *fakeRegistry) Source() *storage.ImageIntegration {
 	return nil
 }
 

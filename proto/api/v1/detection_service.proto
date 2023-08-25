@@ -16,6 +16,7 @@ message BuildDetectionRequest {
     }
     bool no_external_metadata         = 2;
     bool send_notifications           = 4;
+    bool force                        = 6;
     repeated string policy_categories = 5;
 }
 
@@ -36,6 +37,7 @@ message DeployYAMLDetectionRequest {
     string yaml                       = 1;
     bool no_external_metadata         = 2;
     bool enforcement_only             = 3;
+    bool force                        = 5;
     repeated string policy_categories = 4;
 }
 
@@ -45,7 +47,9 @@ message DeployDetectionResponse {
         string   type                 = 2;
         repeated storage.Alert alerts = 3;
     }
-    repeated Run runs = 1;
+    repeated Run runs                   = 1;
+    // The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
+    repeated string ignored_object_refs = 2;
 }
 
 // DetectionService APIs can be used to check for build and deploy time policy violations.

@@ -1,7 +1,7 @@
 package service
 
 import (
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -17,7 +17,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), cveDataStore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton())
+	as = New(datastore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), scanwaiter.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

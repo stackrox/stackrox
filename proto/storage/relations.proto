@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "storage/cve.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+//// Image related relations.
+
+message ImageComponentEdge {
+  // id is base 64 encoded Image:Component ids.
+  string    id                                = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  /// Layer that contains this component
+  oneof has_layer_index {
+    int32   layer_index                       = 2;
+  }
+
+  string    location                          = 3 [(gogoproto.moretags) = 'search:"Component Location,store,hidden"'];
+  string    image_id                          = 4 [(gogoproto.moretags) = 'sql:"fk(Image:id),index=hash"'];
+  string    image_component_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"'];
+}
+
+message ComponentCVEEdge {
+  // base 64 encoded Component:CVE ids.
+  string     id                               = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+
+  bool       is_fixable                       = 2 [(gogoproto.moretags) = 'search:"Fixable,store"'];
+
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string  fixed_by                          = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
+  }
+  string    image_component_id                = 4 [(gogoproto.moretags) = 'sql:"fk(ImageComponent:id),index=hash"'];
+  string    image_cve_id                      = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"'];
+}
+
+message ImageCVEEdge {
+  // base 64 encoded Image:CVE ids.
+  string                    id                          = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  google.protobuf.Timestamp first_image_occurrence      = 2 [(gogoproto.moretags) = 'search:"First Image Occurrence Timestamp,hidden"'];
+  VulnerabilityState        state                       = 3 [(gogoproto.moretags) = 'search:"Vulnerability State"'];
+  string                    image_id                    = 4 [(gogoproto.moretags) = 'sql:"fk(Image:id),index=hash"'];
+  string                    image_cve_id                = 5 [(gogoproto.moretags) = 'sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"'];
+}
+
+//// Node related relations.
+
+message NodeComponentEdge {
+  // base 64 encoded Node:Component ids.
+  string id                = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  string node_id           = 2 [(gogoproto.moretags) = 'sql:"fk(Node:id),index=hash,type(uuid)"'];
+  string node_component_id = 3 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"'];
+}
+
+message NodeComponentCVEEdge {
+  string     id                 = 1 [(gogoproto.moretags) = 'sql:"pk,id"'];
+  bool       is_fixable         = 2 [(gogoproto.moretags) = 'search:"Fixable,store"'];
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string  fixed_by            = 3 [(gogoproto.moretags) = 'search:"Fixed By,store,hidden"'];
+  }
+  string    node_component_id   = 4 [(gogoproto.moretags) = 'sql:"fk(NodeComponent:id),index=hash"'];
+  string    node_cve_id         = 5 [(gogoproto.moretags) = 'sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"'];
+}
+
+//// Cluster related relations.
+
+message ClusterCVEEdge {
+  // base 64 encoded Cluster:CVE ids.
+  string        id          = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
+
+  // TODO: search fields `Cluster CVE Fixable` and `Cluster CVE Fixed By` should be renamed to `Fixable` and `Fixed By` resp.
+  //  For now we need to keep those for backwards compatibility and the search field transformer handles the transformation.
+
+  bool          is_fixable  = 2 [(gogoproto.moretags) = 'search:"Cluster CVE Fixable,store,hidden"'];
+  // Whether there is a version the CVE is fixed in the Cluster.
+  oneof has_fixed_by {
+    string    fixed_by      = 3 [(gogoproto.moretags) = 'search:"Cluster CVE Fixed By,store,hidden"'];
+  }
+  string      cluster_id    = 4 [(gogoproto.moretags) = 'sql:"fk(Cluster:id),type(uuid)"'];
+  string      cve_id        = 5 [(gogoproto.moretags) = 'sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"'];
+}
+
+// Policy relations
+
+message PolicyCategoryEdge {
+    string        id                 = 1[(gogoproto.moretags) = 'sql:"pk,id"'];
+    string        policy_id          = 2[(gogoproto.moretags) = 'sql:"fk(Policy:id)" search:"Policy ID,store,hidden"'];
+    string        category_id        = 3[(gogoproto.moretags) = 'sql:"fk(PolicyCategory:id)"'];
+}

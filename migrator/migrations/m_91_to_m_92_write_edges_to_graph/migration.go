@@ -18,7 +18,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 91,
-		VersionAfter:   storage.Version{SeqNum: 92},
+		VersionAfter:   &storage.Version{SeqNum: 92},
 		Run:            writeImageCVEEdgesToGraph,
 	}
 

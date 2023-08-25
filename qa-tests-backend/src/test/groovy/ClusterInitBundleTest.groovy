@@ -2,23 +2,21 @@ import static java.util.UUID.randomUUID
 
 import io.stackrox.proto.api.v1.ApiTokenService
 
-import groups.BAT
 import services.BaseService
 import services.ClusterInitBundleService
 import services.ClusterService
 
 import org.junit.Assume
-import org.junit.experimental.categories.Category
 import spock.lang.Shared
+import spock.lang.Tag
 
-@Category(BAT)
+@Tag("BAT")
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared
     private ApiTokenService.GenerateTokenResponse adminToken
 
     def setupSpec() {
-        disableAuthzPlugin()
         adminToken = services.ApiTokenService.generateToken(randomUUID().toString(), "Admin")
     }
 
@@ -52,7 +50,7 @@ class ClusterInitBundleTest extends BaseSpecification {
         assert response.initBundleRevokedIdsCount == 0
         and:
         "impacted cluster is listed"
-        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(clusterId)
+        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(cluster.id)
     }
 
     def "Test that cluster init bundle can be revoked when it has no impacted clusters"() {

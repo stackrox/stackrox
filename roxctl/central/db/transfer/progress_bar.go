@@ -42,7 +42,7 @@ type unknownTotalSizeFiller struct {
 	tick int
 }
 
-func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, stat *decor.Statistics) {
+func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, _ *decor.Statistics) {
 	f.tick++
 
 	effectiveWidth := width - 2
@@ -64,8 +64,8 @@ func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, stat *decor.Statis
 	_, _ = w.Write([]byte(bar.String()))
 }
 
-func createProgressBars(ctx context.Context, name string, totalSize int64) (*mpb.Bar, func()) {
-	outFile := os.Stderr
+func createProgressBars(_ context.Context, name string, totalSize int64) (*mpb.Bar, func()) {
+	outFile := os.Stderr //nolint:forbidigo // TODO(ROX-13473)
 
 	opts := []mpb.ContainerOption{
 		mpb.WithWidth(progressBarWidth),

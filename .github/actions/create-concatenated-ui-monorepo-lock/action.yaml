@@ -1,0 +1,16 @@
+name: Create combined mono repo lock file
+description: Create combined mono repo lock file
+inputs:
+  lockFile: 
+    description: Where the lockfile is written
+    required: true
+    default: "ui/monorepo.lock"
+runs:
+  using: composite
+  steps:
+    - name: Create combined mono repo lock file
+      run: |
+        echo "Creating combined lock in: ${{ inputs.lockFile }}"
+        find ui/ -type d \( -name node_modules \) -prune -false -o -name package.json -print0 | sort -z | xargs -r0 cat > ${{ inputs.lockFile }}
+        cat ui/yarn.lock >> ${{ inputs.lockFile }}
+      shell: bash

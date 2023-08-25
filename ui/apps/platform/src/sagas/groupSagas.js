@@ -1,6 +1,4 @@
 import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
-import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
-import { accessControlPath } from 'routePaths';
 import * as service from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
 import { actions as authActions } from 'reducers/auth';
@@ -36,8 +34,12 @@ function* saveRuleGroup(action) {
             );
         }
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
+        const defaultGroup = yield call(service.getDefaultGroup, {
+            authProviderId: id,
+            roleName: defaultRole,
+        });
         yield call(service.updateOrAddGroup, {
-            newGroups: getGroupsWithDefault(group, id, defaultRole),
+            newGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
             oldGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
         yield call(getRuleGroups);
@@ -79,7 +81,6 @@ function* watchDeleteRuleGroup() {
 
 export default function* groups() {
     yield all([
-        takeEveryNewlyMatchedLocation(accessControlPath, getRuleGroups),
         takeLatest(types.FETCH_RULE_GROUPS.REQUEST, getRuleGroups),
         fork(watchSaveRuleGroup),
         fork(watchDeleteRuleGroup),

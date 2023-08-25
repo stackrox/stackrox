@@ -1,82 +1,38 @@
-@font-face {
-  font-family: 'stackrox';
-  src:
-    url('../fonts/stackrox.ttf?uhta7p') format('truetype'),
-    url('../fonts/stackrox.woff?uhta7p') format('woff'),
-    url('../fonts/stackrox.svg?uhta7p#stackrox') format('svg');
-  font-weight: normal;
-  font-style: normal;
+/* Document assumptions for layout that are specified in PatternFly base.css file. */
+
+/*
+html {
+  height: 100%;
 }
+*/
 
-[class^="icon-"], [class*=" icon-"] {
-  /* use !important to prevent issues with browser extensions that change fonts */
-  font-family: 'stackrox' !important;
-  speak: none;
-  font-style: normal;
-  font-weight: normal;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 1;
-
-  /* Better Font Rendering =========== */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/*
+body {
+  height: 100%;
 }
+*/
 
-.ReactModal__Content,
-#main-page-container > div > :not(.pf-c-page__main-section) {
-  font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--base-600);
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+
+  /*
+   * Borrow rules from Red Hat OpenShift Container Platform,
+   * but #root instead of body to avoid conflict with background-color from base.css
+   */
+  background-color: #151515;
 }
 
 /*
- * Borrow rules from Red Hat OpenShift Container Platform,
- * but #root instead of body to avoid conflict with background-color from base.css
+ * MainPage is the only child because of its height: 100% style rule.
  */
-#root {
-  background-color: #151515;
-  background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDI0LjAuMiwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHdpZHRoPSIxOTJweCIgaGVpZ2h0PSIxNDVweCIgdmlld0JveD0iMCAwIDE5MiAxNDUiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDE5MiAxNDU7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojMDIwMzAzO30KPC9zdHlsZT4KPGc+Cgk8cGF0aCBjbGFzcz0ic3QwIiBkPSJNMTI3LjUsODMuNWMxMi41LDAsMzAuNi0yLjYsMzAuNi0xNy41YzAtMS4yLDAtMi4zLTAuMy0zLjRsLTcuNC0zMi40Yy0xLjctNy4xLTMuMi0xMC4zLTE1LjctMTYuNgoJCWMtOS43LTUtMzAuOC0xMy4xLTM3LjEtMTMuMUM5MS43LDAuNSw5MCw4LDgzLjEsOGMtNi43LDAtMTEuNi01LjYtMTcuOS01LjZjLTYsMC05LjksNC4xLTEyLjksMTIuNWMwLDAtOC40LDIzLjctOS41LDI3LjIKCQljLTAuMiwwLjYtMC4yLDEuNC0wLjIsMS45QzQyLjUsNTMuMyw3OC44LDgzLjUsMTI3LjUsODMuNSBNMTYwLDcyLjFjMS43LDguMiwxLjcsOS4xLDEuNywxMC4xYzAsMTQtMTUuNywyMS44LTM2LjQsMjEuOAoJCWMtNDYuOCwwLTg3LjctMjcuNC04Ny43LTQ1LjVjMC0yLjgsMC42LTUuNCwxLjUtNy4zQzIyLjMsNTIsMC41LDU1LDAuNSw3NC4yYzAsMzEuNSw3NC42LDcwLjMsMTMzLjcsNzAuMwoJCWM0NS4zLDAsNTYuNy0yMC41LDU2LjctMzYuNkMxOTAuOCw5NS4xLDE3OS45LDgwLjcsMTYwLDcyLjEiLz4KPC9nPgo8L3N2Zz4K);
-  background-position: 110% 105%;
-  background-repeat: no-repeat;
-  background-size: 90%;
-}
-
-/* Media queries must have increasing min-width */
-@media (min-width: 768px) {
-  #root {
-    background-size: 80%;
-  }
-}
-
-@media (min-width: 1000px) {
-  #root {
-    background-position: 110% 100%;
-    background-size: 70%;
-  }
-}
-
-@media (min-width: 1200px) {
-  #root {
-    background-position: 100% 70%;
-    background-size: 70%;
-  }
-}
-
-@media (min-width: 1800px) {
-  #root {
-    background-position: 75% 80%;
-    background-size: 60%;
-  }
-}
-
-.icon-potential:before {
-  content: "\e900";
-}
-.icon-ingress-egress:before {
-  content: "\e901";
-}
-.icon-node:before {
-  content: "\e902";
+#PageParent {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: hidden;
+  position: relative;
 }

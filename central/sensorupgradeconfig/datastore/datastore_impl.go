@@ -3,31 +3,19 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensorupgradeconfig/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 type dataStore struct {
 	store store.Store
-
-	autoTrigger concurrency.Flag
 }
 
 var (
-	sacHelper = sac.ForResource(resources.SensorUpgradeConfig)
+	sacHelper = sac.ForResource(resources.Administration)
 )
-
-func (d *dataStore) initialize() error {
-	cfg, err := d.store.GetSensorUpgradeConfig()
-	if err != nil {
-		return err
-	}
-	d.autoTrigger.Set(cfg.GetEnableAutoUpgrade())
-	return nil
-}
 
 func (d *dataStore) GetSensorUpgradeConfig(ctx context.Context) (*storage.SensorUpgradeConfig, error) {
 	if ok, err := sacHelper.ReadAllowed(ctx); err != nil {
@@ -35,7 +23,8 @@ func (d *dataStore) GetSensorUpgradeConfig(ctx context.Context) (*storage.Sensor
 	} else if !ok {
 		return nil, nil
 	}
-	return d.store.GetSensorUpgradeConfig()
+	config, _, err := d.store.Get(ctx)
+	return config, err
 }
 
 func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgradeConfig *storage.SensorUpgradeConfig) error {
@@ -45,13 +34,8 @@ func (d *dataStore) UpsertSensorUpgradeConfig(ctx context.Context, sensorUpgrade
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.store.UpsertSensorUpgradeConfig(sensorUpgradeConfig); err != nil {
+	if err := d.store.Upsert(ctx, sensorUpgradeConfig); err != nil {
 		return err
 	}
-	d.autoTrigger.Set(sensorUpgradeConfig.GetEnableAutoUpgrade())
 	return nil
-}
-
-func (d *dataStore) AutoTriggerSetting() *concurrency.Flag {
-	return &d.autoTrigger
 }

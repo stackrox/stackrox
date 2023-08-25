@@ -6,12 +6,18 @@ import {
     AlertActionCloseButton,
     AlertVariant,
     Bullseye,
+    Button,
+    PageSection,
+    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getIsDefaultRoleName } from 'constants/accessControl';
-import { AccessScope, fetchAccessScopes } from 'services/AccessScopesService';
+import {
+    AccessScope,
+    fetchAccessScopes,
+    defaultAccessScopeIds,
+} from 'services/AccessScopesService';
 import { Group, fetchAuthProviders } from 'services/AuthService';
 import { fetchGroups } from 'services/GroupsService';
 import {
@@ -25,25 +31,24 @@ import {
 } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import RoleForm from './RoleForm';
 import RolesList from './RolesList';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlHeading from '../AccessControlHeading';
+import usePermissions from '../../../hooks/usePermissions';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import { isUserResource } from '../traits';
 
 const entityType = 'ROLE';
 
-const roleNew: Role = {
-    name: '',
-    resourceToAccess: {},
-    description: '',
-    permissionSetId: '',
-    accessScopeId: '',
-};
-
 function Roles(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -63,6 +68,18 @@ function Roles(): ReactElement {
 
     const [accessScopes, setAccessScopes] = useState<AccessScope[]>([]);
     const [alertAccessScopes, setAlertAccessScopes] = useState<ReactElement | null>(null);
+
+    function getDefaultAccessScopeID() {
+        return defaultAccessScopeIds.Unrestricted;
+    }
+
+    const roleNew: Role = {
+        name: '',
+        resourceToAccess: {},
+        description: '',
+        permissionSetId: '',
+        accessScopeId: getDefaultAccessScopeID(),
+    };
 
     useEffect(() => {
         // The primary request has unclosable alert.
@@ -170,6 +187,15 @@ function Roles(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="roles" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -219,55 +245,72 @@ function Roles(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add role' : role?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
-            <AccessControlDescription>
-                Add user roles by selecting the permission sets and access scopes required for
-                user&apos;s jobs
-            </AccessControlDescription>
-            {alertRoles}
-            {alertPermissionSets}
-            {alertAccessScopes}
-            {alertGroups}
-            {counterFetching !== 0 ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
-                <RolesList
-                    roles={roles}
-                    s={s}
-                    groups={groups}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    handleCreate={handleCreate}
-                    handleDelete={handleDelete}
-                />
-            ) : typeof entityName === 'string' && !role ? (
-                <NotFoundMessage
-                    title="Role does not exist"
-                    message={`Role name: ${entityName}`}
-                    actionText="Roles"
-                    url={getEntityPath(entityType)}
-                />
+            {isList ? (
+                <>
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Create user roles by selecting the permission sets and access scopes
+                                required for user&apos;s jobs
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
+                                Create role
+                            </Button>
+                        }
+                    />
+                </>
             ) : (
-                <RoleForm
-                    isActionable={!role || !getIsDefaultRoleName(role.name)}
-                    action={action}
-                    role={role ?? roleNew}
-                    roles={roles}
-                    permissionSets={permissionSets}
-                    accessScopes={accessScopes}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={action === 'create' ? 'Create role' : role?.name}
                 />
             )}
+            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+                {alertRoles}
+                {alertPermissionSets}
+                {alertAccessScopes}
+                {alertGroups}
+                {counterFetching !== 0 ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <RolesList
+                        roles={roles}
+                        s={s}
+                        groups={groups}
+                        permissionSets={permissionSets}
+                        accessScopes={accessScopes}
+                        handleDelete={handleDelete}
+                    />
+                ) : typeof entityName === 'string' && !role ? (
+                    <NotFoundMessage
+                        title="Role does not exist"
+                        message={`Role name: ${entityName}`}
+                        actionText="Roles"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <RoleForm
+                        isActionable={!role || isUserResource(role.traits)}
+                        action={action}
+                        role={role ?? roleNew}
+                        roles={roles}
+                        permissionSets={permissionSets}
+                        accessScopes={accessScopes}
+                        handleCancel={handleCancel}
+                        handleEdit={handleEdit}
+                        handleSubmit={handleSubmit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

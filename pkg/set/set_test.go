@@ -18,7 +18,7 @@ func assertSetContainsExactly(t *testing.T, set StringSet, elements ...string) {
 
 	falseCases := []string{"BLAH", "blah", "BLACK", "SheeP"}
 	for _, elem := range falseCases {
-		if sliceutils.StringFind(falseCases, elem) == -1 {
+		if sliceutils.Find(falseCases, elem) == -1 {
 			a.False(set.Contains(elem))
 		}
 	}
@@ -61,7 +61,7 @@ func TestAddMatching(t *testing.T) {
 
 func TestStringSet(t *testing.T) {
 	elements := []string{"a", "bcd"}
-	set := NewStringSet(elements[0])
+	set := NewSet(elements[0])
 	assertSetContainsExactly(t, set, elements[0])
 	assert.Equal(t, elements[0], set.GetArbitraryElem())
 	set.AddAll(elements[1:]...)
@@ -79,14 +79,14 @@ func TestStringSet(t *testing.T) {
 
 	assertSetContainsExactly(t, set, "foo", "bar", "baz")
 
-	emptyFS := NewStringSet()
+	emptyFS := NewSet[string]()
 	assertSetContainsExactly(t, emptyFS)
 	assert.Equal(t, "", emptyFS.GetArbitraryElem())
 }
 
 func TestUnion(t *testing.T) {
-	a := NewStringSet("a", "b", "c")
-	b := NewStringSet("b", "c", "d")
+	a := NewSet("a", "b", "c")
+	b := NewSet("b", "c", "d")
 	aPlusB := a.Union(b)
 
 	assertSetContainsExactly(t, aPlusB, "a", "b", "c", "d")
@@ -104,8 +104,8 @@ func TestUnion(t *testing.T) {
 }
 
 func TestIntersection(t *testing.T) {
-	a := NewStringSet("a", "b", "c")
-	b := NewStringSet("b", "c", "d")
+	a := NewSet("a", "b", "c")
+	b := NewSet("b", "c", "d")
 	aAndB := a.Intersect(b)
 
 	assertSetContainsExactly(t, aAndB, "b", "c")
@@ -126,8 +126,8 @@ func TestIntersection(t *testing.T) {
 }
 
 func TestDifference(t *testing.T) {
-	a := NewStringSet("a", "b", "c")
-	b := NewStringSet("b", "c", "d")
+	a := NewSet("a", "b", "c")
+	b := NewSet("b", "c", "d")
 	aMinusB := a.Difference(b)
 
 	assertSetContainsExactly(t, aMinusB, "a")

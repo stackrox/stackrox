@@ -1,0 +1,58 @@
+name: Create Clusters
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of the images
+        required: true
+        default: "4.1.1"
+        type: string
+      create-k8s-cluster:
+        description: Create a GKE demo cluster
+        default: false
+        type: boolean
+      create-os4-cluster:
+        description: Create an Openshift 4 demo cluster
+        default: false
+        type: boolean
+      create-long-cluster:
+        description: Create a long-running cluster on RC1
+        default: false
+        type: boolean
+      dry-run:
+        description: Dry-run
+        default: false
+        type: boolean
+
+env:
+  main_branch: ${{github.event.repository.default_branch}}
+  script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+  TIMEOUT_WAIT_FOR_IMAGES_SECONDS: 3600
+
+run-name: >-
+  ${{
+    format('Create clusters for {0}', inputs.version)
+  }}
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
+jobs:
+  clusters:
+    name: Setup demo clusters
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    secrets: inherit
+    with:
+      version: ${{github.event.inputs.version}}
+      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster == 'true'}}
+      create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
+      create-long-cluster: ${{github.event.inputs.create-long-cluster == 'true'}}
+      dry-run: ${{github.event.inputs.dry-run == 'true'}}
+      workflow-ref: v1
+      kube-burner-config-ref: ${{ github.event.inputs.version }}
+      kube-burner-config-repo: stackrox
+      cluster-with-fake-load-name: gke-long-running-fake-load-${{ github.event.inputs.version }}
+      cluster-with-real-load-name: gke-long-running-real-load-${{ github.event.inputs.version }}

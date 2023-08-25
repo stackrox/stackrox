@@ -8,9 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	framework "github.com/stackrox/rox/central/compliance/framework"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockRepositoryFactory is a mock of RepositoryFactory interface.

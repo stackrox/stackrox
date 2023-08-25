@@ -3,11 +3,19 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
 package storage;
 
 message Version {
     // This is a strictly incrementing integer describing the DB version.
-    int32 seq_num = 1;
+    int32 seq_num = 1 [(gogoproto.moretags) = 'search:"Current Sequence Number"'];
     // Associated version metadata. (For example, the corresponding product version.)
-    string version = 2;
+    string version = 2 [(gogoproto.moretags) = 'search:"Version"'];
+    // Last time version was updated
+    google.protobuf.Timestamp last_persisted = 3 [(gogoproto.moretags) = 'search:"Last Persisted"'];
+    // The minimum sequence number supported by this iteration of the database.  Rollbacks
+    // to versions prior to this sequence number are not supported.
+    int32 min_seq_num = 4[(gogoproto.moretags) = 'search:"Minimum Sequence Number"'];
 }

@@ -1,10 +1,12 @@
 package indexer
 
 import (
+	"fmt"
+	"hash"
+	"hash/fnv"
 	"strings"
 	"time"
 
-	"github.com/blevesearch/bleve"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
@@ -31,12 +33,13 @@ type Lazy interface {
 
 // NewLazy returns a new instance of a lazy indexer that reads in the values to index from the toIndex queue, indexes
 // them with the given indexer, then acks indexed values with the given acker.
-func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, acker Acker) Lazy {
+func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, _ interface{}, acker Acker) Lazy {
 	return &lazyImpl{
 		wrapper:    wrapper,
-		index:      index,
 		acker:      acker,
 		toIndex:    toIndex,
+		deduper:    make(map[string]uint64),
+		hasher:     fnv.New64a(),
 		buff:       NewBuffer(maxBatchSize),
 		stopSignal: concurrency.NewSignal(),
 	}
@@ -44,9 +47,10 @@ func NewLazy(toIndex queue.WaitableQueue, wrapper Wrapper, index bleve.Index, ac
 
 type lazyImpl struct {
 	wrapper Wrapper
-	index   bleve.Index
 	acker   Acker
 	toIndex queue.WaitableQueue
+	deduper map[string]uint64
+	hasher  hash.Hash64
 
 	buff Buffer
 
@@ -82,6 +86,10 @@ func (li *lazyImpl) runIndexing() {
 	}
 }
 
+func (li *lazyImpl) evaluateDeduping(_ interface{}) bool {
+	return false
+}
+
 func (li *lazyImpl) consumeFromQueue() {
 	for li.toIndex.Length() > 0 {
 		key, value, signal := li.toIndex.Pop()
@@ -105,7 +113,7 @@ func (li *lazyImpl) consumeFromQueue() {
 func (li *lazyImpl) handleKeyValue(key []byte, value proto.Message) {
 	indexedKey, indexedValue := li.wrapper.Wrap(key, value)
 	if indexedKey == "" {
-		log.Errorf("no wrapper registered for key: %s", key)
+		log.Errorf("no wrapper registered for key: %q", key)
 		return
 	}
 	li.buff.AddKeyToAck(key)
@@ -125,22 +133,7 @@ func (li *lazyImpl) flush() {
 	li.buff.Reset()
 }
 
-func (li *lazyImpl) indexItems(itemsToIndex map[string]interface{}) {
-	batch := li.index.NewBatch()
-	for key, value := range itemsToIndex {
-		if value != nil {
-			if err := batch.Index(key, value); err != nil {
-				log.Errorf("unable to index item: %s, %v", key, err)
-			}
-		} else {
-			batch.Delete(key)
-		}
-	}
-	err := li.index.Batch(batch)
-	if err != nil {
-		log.Errorf("unable to index batch of items: %v", err)
-	}
-}
+func (li *lazyImpl) indexItems(_ map[string]interface{}) {}
 
 func (li *lazyImpl) ackKeys(keysToAck [][]byte) {
 	err := li.acker(keysToAck...)
@@ -161,7 +154,7 @@ type printableKeys [][]byte
 func (pk printableKeys) String() string {
 	keys := make([]string, 0, len(pk))
 	for _, key := range pk {
-		keys = append(keys, string(key))
+		keys = append(keys, fmt.Sprintf("%q", key))
 	}
 	return strings.Join(keys, ", ")
 }

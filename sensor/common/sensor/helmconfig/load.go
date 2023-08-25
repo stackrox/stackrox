@@ -1,24 +1,18 @@
 package helmconfig
 
 import (
-	"bytes"
 	"os"
 	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-)
-
-const (
-	configFile      = "/run/secrets/stackrox.io/helm-cluster-config/config.yaml"
-	clusterNameFile = "/run/secrets/stackrox.io/helm-effective-cluster-name/cluster-name"
+	"github.com/stackrox/rox/pkg/jsonutil"
 )
 
 // Load loads the cluster configuration for Helm-managed cluster from its canonical location.
 func Load() (*central.HelmManagedConfigInit, error) {
-	contents, err := os.ReadFile(configFile)
+	contents, err := os.ReadFile(HelmConfigFile.Setting())
 	if err != nil {
 		return nil, errors.Wrap(err, "loading cluster config file")
 	}
@@ -32,16 +26,16 @@ func load(data []byte) (*central.HelmManagedConfigInit, error) {
 	}
 
 	var config central.HelmManagedConfigInit
-	if err := jsonpb.Unmarshal(bytes.NewReader(contentsJSON), &config); err != nil {
+	if err := jsonutil.JSONBytesToProto(contentsJSON, &config); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling config proto")
 	}
 
 	return &config, nil
 }
 
-// GetEffectiveClusterName returns the cluster name which is currently used within central.
+// getEffectiveClusterName returns the cluster name which is currently used within central.
 func getEffectiveClusterName() (string, error) {
-	name, err := os.ReadFile(clusterNameFile)
+	name, err := os.ReadFile(HelmClusterNameFile.Setting())
 	if err != nil {
 		return "", err
 	}

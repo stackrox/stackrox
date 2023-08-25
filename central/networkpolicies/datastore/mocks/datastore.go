@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockUndoDataStore is a mock of UndoDataStore interface.
@@ -52,17 +52,17 @@ func (mr *MockUndoDataStoreMockRecorder) GetUndoRecord(ctx, clusterID interface{
 }
 
 // UpsertUndoRecord mocks base method.
-func (m *MockUndoDataStore) UpsertUndoRecord(ctx context.Context, clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
+func (m *MockUndoDataStore) UpsertUndoRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertUndoRecord", ctx, clusterID, undoRecord)
+	ret := m.ctrl.Call(m, "UpsertUndoRecord", ctx, undoRecord)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertUndoRecord indicates an expected call of UpsertUndoRecord.
-func (mr *MockUndoDataStoreMockRecorder) UpsertUndoRecord(ctx, clusterID, undoRecord interface{}) *gomock.Call {
+func (mr *MockUndoDataStoreMockRecorder) UpsertUndoRecord(ctx, undoRecord interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockUndoDataStore)(nil).UpsertUndoRecord), ctx, clusterID, undoRecord)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockUndoDataStore)(nil).UpsertUndoRecord), ctx, undoRecord)
 }
 
 // MockDataStore is a mock of DataStore interface.
@@ -86,20 +86,6 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
-}
-
-// AddNetworkPolicy mocks base method.
-func (m *MockDataStore) AddNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNetworkPolicy", ctx, np)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddNetworkPolicy indicates an expected call of AddNetworkPolicy.
-func (mr *MockDataStoreMockRecorder) AddNetworkPolicy(ctx, np interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNetworkPolicy", reflect.TypeOf((*MockDataStore)(nil).AddNetworkPolicy), ctx, np)
 }
 
 // CountMatchingNetworkPolicies mocks base method.
@@ -194,18 +180,18 @@ func (mr *MockDataStoreMockRecorder) RemoveNetworkPolicy(ctx, id interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNetworkPolicy", reflect.TypeOf((*MockDataStore)(nil).RemoveNetworkPolicy), ctx, id)
 }
 
-// UpdateNetworkPolicy mocks base method.
-func (m *MockDataStore) UpdateNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
+// UpsertNetworkPolicy mocks base method.
+func (m *MockDataStore) UpsertNetworkPolicy(ctx context.Context, np *storage.NetworkPolicy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNetworkPolicy", ctx, np)
+	ret := m.ctrl.Call(m, "UpsertNetworkPolicy", ctx, np)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateNetworkPolicy indicates an expected call of UpdateNetworkPolicy.
-func (mr *MockDataStoreMockRecorder) UpdateNetworkPolicy(ctx, np interface{}) *gomock.Call {
+// UpsertNetworkPolicy indicates an expected call of UpsertNetworkPolicy.
+func (mr *MockDataStoreMockRecorder) UpsertNetworkPolicy(ctx, np interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNetworkPolicy", reflect.TypeOf((*MockDataStore)(nil).UpdateNetworkPolicy), ctx, np)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNetworkPolicy", reflect.TypeOf((*MockDataStore)(nil).UpsertNetworkPolicy), ctx, np)
 }
 
 // UpsertUndoDeploymentRecord mocks base method.
@@ -223,17 +209,17 @@ func (mr *MockDataStoreMockRecorder) UpsertUndoDeploymentRecord(ctx, undoRecord 
 }
 
 // UpsertUndoRecord mocks base method.
-func (m *MockDataStore) UpsertUndoRecord(ctx context.Context, clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
+func (m *MockDataStore) UpsertUndoRecord(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertUndoRecord", ctx, clusterID, undoRecord)
+	ret := m.ctrl.Call(m, "UpsertUndoRecord", ctx, undoRecord)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertUndoRecord indicates an expected call of UpsertUndoRecord.
-func (mr *MockDataStoreMockRecorder) UpsertUndoRecord(ctx, clusterID, undoRecord interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpsertUndoRecord(ctx, undoRecord interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockDataStore)(nil).UpsertUndoRecord), ctx, clusterID, undoRecord)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertUndoRecord", reflect.TypeOf((*MockDataStore)(nil).UpsertUndoRecord), ctx, undoRecord)
 }
 
 // MockUndoDeploymentDataStore is a mock of UndoDeploymentDataStore interface.

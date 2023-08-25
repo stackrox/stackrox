@@ -78,7 +78,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), binding)
-	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return s.runGeneralPipeline(ctx, event.GetAction(), binding)
 	default:
 		return fmt.Errorf("Event action '%s' for k8s role binding does not exist", event.GetAction())
@@ -86,7 +86,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.K8SRoleBinding) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, _ central.ResourceAction, event *storage.K8SRoleBinding) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -109,7 +109,7 @@ func enrichSubjects(binding *storage.K8SRoleBinding) {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, binding *storage.K8SRoleBinding) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, _ central.ResourceAction, binding *storage.K8SRoleBinding) error {
 	if err := s.validateInput(binding); err != nil {
 		return err
 	}

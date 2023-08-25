@@ -6,31 +6,32 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
 var (
+	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
 			"/v1.ConfigService/GetPublicConfig",
 		},
-		user.With(permissions.View(resources.Config)): {
+		user.With(permissions.View(resources.Administration)): {
+			"/v1.ConfigService/GetConfig",
 			"/v1.ConfigService/GetPrivateConfig",
 		},
-		user.With(permissions.View(resources.Config)): {
-			"/v1.ConfigService/GetConfig",
-		},
-		user.With(permissions.Modify(resources.Config)): {
+		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.ConfigService/PutConfig",
 		},
 	})
@@ -53,6 +54,8 @@ func New(datastore datastore.DataStore) Service {
 }
 
 type serviceImpl struct {
+	v1.UnimplementedConfigServiceServer
+
 	datastore datastore.DataStore
 }
 
@@ -110,10 +113,15 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 // PutConfig updates Central's config
 func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (*storage.Config, error) {
 	if req.GetConfig() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "config must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
+	}
+	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
+		centralclient.Enable()
+	} else {
+		centralclient.Disable()
 	}
 	return req.GetConfig(), nil
 }

@@ -44,6 +44,18 @@ export type ResourceAlert = {
 
 export type AlertResourceType = 'UNKNOWN' | 'SECRETS' | 'CONFIGMAPS';
 
+export function isDeploymentAlert(alert: Alert): alert is DeploymentAlert {
+    return 'deployment' in alert && Boolean(alert.deployment);
+}
+
+export function isImageAlert(alert: Alert): alert is ImageAlert {
+    return 'image' in alert && Boolean(alert.image);
+}
+
+export function isResourceAlert(alert: Alert): alert is ResourceAlert {
+    return 'resource' in alert && Boolean(alert.resource);
+}
+
 export type BaseAlert = {
     id: string;
     policy: Policy;
@@ -56,7 +68,6 @@ export type BaseAlert = {
     resolvedAt: string | null; // ISO 8601 date string only if ViolationState is RESOLVED
     state: ViolationState;
     snoozeTill: string | null; // ISO 8601 date string
-    tags: string[];
 };
 
 export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation;

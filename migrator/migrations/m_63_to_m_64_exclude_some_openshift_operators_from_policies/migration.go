@@ -22,7 +22,7 @@ type policyUpdate struct {
 var (
 	migration = types.Migration{
 		StartingSeqNum: 63,
-		VersionAfter:   storage.Version{SeqNum: 64},
+		VersionAfter:   &storage.Version{SeqNum: 64},
 		Run: func(databases *types.Databases) error {
 			err := updatePoliciesWithOSExclusions(databases.BoltDB)
 			if err != nil {

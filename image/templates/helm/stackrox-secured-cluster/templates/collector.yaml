@@ -28,7 +28,7 @@ spec:
     spec:
       {{- if not ._rox.collector.disableTaintTolerations }}
       tolerations:
-      - operator: "Exists"
+      {{- toYaml ._rox.collector.tolerations | nindent 6 }}
       {{- end }}
       {{- if ._rox.collector._nodeSelector }}
       nodeSelector:
@@ -64,9 +64,6 @@ spec:
           privileged: true
           readOnlyRootFilesystem: true
         volumeMounts:
-        - mountPath: /host/var/run/docker.sock
-          name: var-run-docker-sock
-          readOnly: true
         - mountPath: /host/proc
           name: proc-ro
           readOnly: true
@@ -91,6 +88,22 @@ spec:
       - command:
         - stackrox/compliance
         env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: ROX_CALL_NODE_INVENTORY_ENABLED
+          value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
+        - name: ROX_METRICS_PORT
+        {{- if ._rox.collector.exposeMonitoring }}
+          value: ":9091"
+        {{- else}}
+          value: "disabled"
+        {{- end }}
         - name: ROX_NODE_NAME
           valueFrom:
             fieldRef:
@@ -98,10 +111,17 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ quote ._rox.sensor.endpoint }}
+        - name: ROX_NODE_SCANNING_ENDPOINT
+          value: {{ quote ._rox.collector.nodescanningEndpoint }}
         {{- include "srox.envVars" (list . "daemonset" "collector" "compliance") | nindent 8 }}
         image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.collector.complianceImagePullPolicy }}
         name: compliance
+        {{- if ._rox.collector.exposeMonitoring }}
+        ports:
+        - containerPort: 9091
+          name: monitoring
+        {{- end }}
         resources:
           {{- ._rox.collector._complianceResources | nindent 10 }}
         securityContext:
@@ -122,10 +142,33 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+      {{- if eq ._rox.env.openshift 4 }}
+      - name: node-inventory
+        image: {{ quote ._rox.image.scanner.fullRef }}
+        imagePullPolicy: IfNotPresent
+        command: ["/scanner", "--nodeinventory", "--config=", ""]
+        ports:
+          - containerPort: 8444
+            name: grpc
+        resources:
+          {{- ._rox.collector._nodeScanningResources | nindent 10 }}
+        env:
+        - name: ROX_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
+        volumeMounts:
+         - mountPath: /host
+           name: host-root-ro
+           readOnly: true
+         - mountPath: /tmp/
+           name: tmp-volume
+         - mountPath: /cache
+           name: cache-volume
+      {{- end }}
       volumes:
-      - hostPath:
-          path: /var/run/docker.sock
-        name: var-run-docker-sock
       - hostPath:
           path: /proc
         name: proc-ro
@@ -161,3 +204,8 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
+      - name: tmp-volume
+        emptyDir: {}
+      - name: cache-volume
+        emptyDir:
+          sizeLimit: 200Mi

@@ -1,6 +1,8 @@
+import { Traits } from 'types/traits.proto';
 import axios from './instance';
 
 import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
+import { Empty } from './types';
 
 const notifierIntegrationsUrl = '/v1/notifiers';
 
@@ -12,6 +14,7 @@ export type NotifierIntegrationBase = {
     uiEndpoint: string;
     labelKey: string;
     labelDefault: string;
+    traits?: Traits;
 } & IntegrationBase;
 
 /*
@@ -45,7 +48,7 @@ export function fetchNotifierIntegrations(): Promise<NotifierIntegrationBase[]> 
 export function saveNotifierIntegration(
     integration: NotifierIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const { id } = integration;
 
     if (!id) {
@@ -74,7 +77,7 @@ export function saveNotifierIntegration(
 export function testNotifierIntegration(
     integration: NotifierIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     if (typeof updatePassword === 'boolean') {
         return axios.post(`${notifierIntegrationsUrl}/test/updated`, {
             [updateIntegrationKey]: integration,
@@ -88,13 +91,13 @@ export function testNotifierIntegration(
 /*
  * Delete integration (singular).
  */
-export function deleteNotifierIntegration(id: string): Promise<Record<string, never>> {
+export function deleteNotifierIntegration(id: string): Promise<Empty> {
     return axios.delete(`${notifierIntegrationsUrl}/${id}`);
 }
 
 /*
  * Delete integrations (plural).
  */
-export function deleteNotifierIntegrations(ids: string[]): Promise<Record<string, never>[]> {
+export function deleteNotifierIntegrations(ids: string[]): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteNotifierIntegration(id)));
 }

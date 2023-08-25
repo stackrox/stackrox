@@ -2,25 +2,32 @@ package processor
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	"github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	// When we fail to notify on an alert, retry every hour for 4 hours, and only retry up to 100 alerts
+	retryAlertsEvery = 5 * time.Minute
+	retryAlertsFor   = 1 * time.Hour
 )
 
 var (
 	once sync.Once
 
-	ns   NotifierSet
-	loop Loop
-	pr   Processor
+	ns   notifier.Set
+	loop notifier.Loop
+	pr   notifier.Processor
 )
 
 func initialize() {
@@ -28,14 +35,14 @@ func initialize() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Notifier, resources.Namespace)))
+			sac.ResourceScopeKeys(resources.Integration, resources.Namespace)))
 
 	// Keep track of the notifiers in use.
-	ns = NewNotifierSet()
+	ns = notifier.NewNotifierSet(retryAlertsFor)
 
 	// When alerts are generated, we will want to notify.
 	pr = New(ns, reporter.Singleton())
-	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx, &v1.GetNotifiersRequest{})
+	protoNotifiers, err := datastore.Singleton().GetNotifiers(ctx)
 	if err != nil {
 		log.Panicf("unable to fetch notifiers: %v", err)
 	}
@@ -51,12 +58,12 @@ func initialize() {
 	}
 
 	// When alerts have failed, we will want to retry the notifications.
-	loop = NewLoop(ns)
+	loop = notifier.NewLoop(ns, retryAlertsEvery)
 	loop.Start(ctx)
 }
 
 // Singleton provides the interface for processing notifications.
-func Singleton() Processor {
+func Singleton() notifier.Processor {
 	once.Do(initialize)
 	return pr
 }

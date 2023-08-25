@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
-	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_permissionChecker_Authorized(t *testing.T) {
@@ -30,7 +29,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		Resource: "dummy-3", Scope: permissions.GlobalScope,
 	}
 
-	testRole := roletest.NewResolvedRoleWithGlobalScope("Dummy", nil)
+	testRole := roletest.NewResolvedRoleWithDenyAll("Dummy", nil)
 
 	id := mocks.NewMockIdentity(gomock.NewController(t))
 	ctx := authn.ContextWithIdentity(context.Background(), id, t)
@@ -39,14 +38,22 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		string(clusterScopedResource.Resource): storage.Access_READ_WRITE_ACCESS,
 	}).AnyTimes()
 
+	// There is a slight difference between idWithNoPermissions and
+	// idWithEmptyPermissions in the way what Permissions() returns.
+	// There is an assumption that identity implementations use nil when no
+	// Roles are associated with the identity and empty map when Role(s) has
+	// no permissions.
+
 	idWithNoPermissions := mocks.NewMockIdentity(gomock.NewController(t))
 	ctxWithNoPermissions := authn.ContextWithIdentity(context.Background(), idWithNoPermissions, t)
 	idWithNoPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
 	idWithNoPermissions.EXPECT().Permissions().Return(nil).AnyTimes()
 
-	contextWithPermissionCheck, _ := permissioncheck.ContextWithPermissionCheck()
+	idWithEmptyPermissions := mocks.NewMockIdentity(gomock.NewController(t))
+	ctxWithEmptyPermissions := authn.ContextWithIdentity(context.Background(), idWithEmptyPermissions, t)
+	idWithEmptyPermissions.EXPECT().Roles().Return([]permissions.ResolvedRole{testRole}).AnyTimes()
+	idWithEmptyPermissions.EXPECT().Permissions().Return(map[string]storage.Access{}).AnyTimes()
 
-	err := errors.New("some error")
 	tests := []struct {
 		name                string
 		requiredPermissions []permissions.ResourceWithAccess
@@ -56,7 +63,7 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 		{
 			name: "no ID in context => error",
 			ctx:  context.Background(),
-			err:  errorhelpers.ErrNoCredentials,
+			err:  errox.NoCredentials,
 		},
 		{
 			name: "permissions equal access => no error",
@@ -66,9 +73,14 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			ctx: ctx,
 		},
 		{
-			name: "ErrPermissionCheckOnly",
-			ctx:  contextWithPermissionCheck,
-			err:  permissioncheck.ErrPermissionCheckOnly,
+			name:                "authenticated with no permissions => no error",
+			requiredPermissions: []permissions.ResourceWithAccess{},
+			ctx:                 ctxWithEmptyPermissions,
+		},
+		{
+			name:                "authenticated with no permissions and deny all scope => no error",
+			requiredPermissions: []permissions.ResourceWithAccess{},
+			ctx:                 sac.WithNoAccess(ctxWithEmptyPermissions),
 		},
 		{
 			name: "built-in scoped authz check permissions not sufficient permissions",
@@ -77,62 +89,31 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			}, {
 				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
-			err: errorhelpers.ErrNotAuthorized,
+			ctx: sac.WithNoAccess(ctx),
+			err: errox.NotAuthorized,
 		},
 		{
 			name: "built-in scoped authz check permissions",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctx)),
+			ctx: sac.WithNoAccess(ctx),
 		},
 		{
 			name: "built-in scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextBuiltinScopedAuthzEnabled(ctxWithNoPermissions)),
-			err: errorhelpers.ErrNoCredentials,
+			ctx: sac.WithNoAccess(ctxWithNoPermissions),
+			err: errox.NoCredentials,
 		},
 		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}, {
-				Resource: nsScopedResource, Access: storage.Access_READ_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: clusterScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions",
+			name: "built-in global scoped authz check permissions but nil permissions in ID",
 			requiredPermissions: []permissions.ResourceWithAccess{{
 				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
 			}},
-			ctx: sac.WithNoAccess(sac.SetContextSACEnabled(ctx)),
-			err: errorhelpers.ErrNotAuthorized,
-		},
-		{
-			name: "plugin SAC check only global permissions",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithAllAccess(sac.SetContextSACEnabled(ctx)),
-		},
-		{
-			name: "plugin SAC check only global permissions with errored scope checker",
-			requiredPermissions: []permissions.ResourceWithAccess{{
-				Resource: globalScopedResource, Access: storage.Access_READ_WRITE_ACCESS,
-			}},
-			ctx: sac.WithGlobalAccessScopeChecker(sac.SetContextSACEnabled(ctx), sac.ErrorAccessScopeCheckerCore(err)),
-			err: err,
+			ctx: sac.WithNoAccess(ctxWithNoPermissions),
+			err: errox.NoCredentials,
 		},
 	}
 	for _, tt := range tests {
@@ -140,6 +121,17 @@ func Test_permissionChecker_Authorized(t *testing.T) {
 			p := With(tt.requiredPermissions...)
 			err := p.Authorized(tt.ctx, "not used")
 			assert.ErrorIs(t, err, tt.err)
+
+			// Once authentication is successful, Authenticated authorizer shall
+			// not return errox.NotAuthorized in contrast to With authorizer;
+			// otherwise the two should behave the same.
+			a := Authenticated()
+			err2 := a.Authorized(tt.ctx, "not used")
+			if errors.Is(err, errox.NotAuthorized) {
+				assert.ErrorIs(t, err2, nil)
+			} else {
+				assert.ErrorIs(t, err2, tt.err)
+			}
 		})
 	}
 }

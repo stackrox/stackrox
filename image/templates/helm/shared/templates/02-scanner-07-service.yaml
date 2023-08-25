@@ -5,12 +5,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ ._rox.scanner.name }}
+  name: scanner
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "service" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "scanner") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "service" ._rox.scanner.name) | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "scanner") | nindent 4 }}
 spec:
   ports:
     - name: https-scanner
@@ -19,8 +19,13 @@ spec:
     - name: grpcs-scanner
       port: 8443
       targetPort: 8443
+    {{ if ._rox.scanner.exposeMonitoring -}}
+    - name: monitoring
+      port: 9090
+      targetPort: monitoring
+    {{- end}}
   selector:
-    app: {{ ._rox.scanner.name }}
+    app: scanner
   type: ClusterIP
 
 ---
@@ -28,19 +33,19 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ ._rox.scanner.name }}-db
+  name: scanner-db
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "service" (print ._rox.scanner.name "-db")) | nindent 4 }}
+    {{- include "srox.labels" (list . "service" "scanner-db") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "service" (print ._rox.scanner.name "-db")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "service" "scanner-db") | nindent 4 }}
 spec:
   ports:
     - name: tcp-db
       port: 5432
       targetPort: 5432
   selector:
-    app: {{ ._rox.scanner.name }}-db
+    app: scanner-db
   type: ClusterIP
 
 {{ if ._rox.env.istio }}
@@ -49,15 +54,15 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: {{ ._rox.scanner.name }}-internal-no-istio-mtls
+  name: scanner-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "destinationrule" (print ._rox.scanner.name "-internal-no-istio-mtls")) | nindent 4 }}
+    {{- include "srox.labels" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
   annotations:
     stackrox.io/description: "Disable Istio mTLS for ports 8080 and 8443, since StackRox services use built-in mTLS."
-    {{- include "srox.annotations" (list . "destinationrule" (print ._rox.scanner.name "-internal-no-istio-mtls")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-internal-no-istio-mtls") | nindent 4 }}
 spec:
-  host: {{ ._rox.scanner.name }}.{{ .Release.Namespace }}.svc.cluster.local
+  host: scanner.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:
     portLevelSettings:
     - port:
@@ -74,15 +79,15 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: {{ ._rox.scanner.name }}-db-internal-no-istio-mtls
+  name: scanner-db-internal-no-istio-mtls
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "srox.labels" (list . "destinationrule" (print ._rox.scanner.name "-db-internal-no-istio-mtls")) | nindent 4 }}
+    {{- include "srox.labels" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
   annotations:
     stackrox.io/description: "Disable Istio mTLS for port 5432, since StackRox services use built-in mTLS."
-    {{- include "srox.annotations" (list . "destinationrule" (print ._rox.scanner.name "-db-internal-no-istio-mtls")) | nindent 4 }}
+    {{- include "srox.annotations" (list . "destinationrule" "scanner-db-internal-no-istio-mtls") | nindent 4 }}
 spec:
-  host: {{ ._rox.scanner.name }}-db.{{ .Release.Namespace }}.svc.cluster.local
+  host: scanner-db.{{ .Release.Namespace }}.svc.cluster.local
   trafficPolicy:
     portLevelSettings:
     - port:

@@ -1,9 +1,9 @@
 package runner
 
 import (
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func transferMetadataMap(oldMap, newMap map[string]string) map[string]string {
@@ -20,7 +20,7 @@ func transferMetadataMap(oldMap, newMap map[string]string) map[string]string {
 	return result
 }
 
-func transferMetadata(newObjects []k8sutil.Object, oldObjects map[k8sobjects.ObjectRef]k8sutil.Object) {
+func transferMetadata(newObjects []*unstructured.Unstructured, oldObjects map[k8sobjects.ObjectRef]*unstructured.Unstructured) {
 	for _, newObj := range newObjects {
 		newObjRef := k8sobjects.RefOf(newObj)
 		oldObj := oldObjects[newObjRef]

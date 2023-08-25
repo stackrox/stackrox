@@ -4,8 +4,9 @@ import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
 import { vulnManagementPath } from 'routePaths';
-import KeyValuePairs from 'Components/KeyValuePairs';
 import CollapsibleCard from 'Components/CollapsibleCard';
+
+import KeyValuePairs from './KeyValuePairs';
 
 const containerConfigMap = {
     command: { label: 'Commands' },
@@ -36,7 +37,7 @@ const ContainerImage = ({ image }) => {
                 <div className="pr-1 ">Image Name:</div>
                 <div className="font-500">
                     {image.name.fullName}
-                    <span className="italic pl-1">({unavailableText})</span>{' '}
+                    <span className="pl-1">({unavailableText})</span>{' '}
                 </div>
             </div>
         );
@@ -45,7 +46,7 @@ const ContainerImage = ({ image }) => {
         <div className="py-3 pb-2 leading-normal border-b border-base-300">
             <div className="font-700 inline">Image Name: </div>
             <Link
-                className="font-600 text-primary-600 hover:text-primary-800 leading-normal word-break"
+                className="hover:text-primary-800 leading-normal word-break"
                 to={`${vulnManagementPath}/image/${image.id}`}
             >
                 {image.name.fullName}
@@ -56,7 +57,7 @@ const ContainerImage = ({ image }) => {
 
 const Resources = ({ resources }) => {
     if (!resources) {
-        return <span className="py-3 font-600 italic">None</span>;
+        return <span className="py-3">None</span>;
     }
     const resourceMap = {
         cpuCoresRequest: { label: 'CPU Request (cores)' },
@@ -70,7 +71,7 @@ const Resources = ({ resources }) => {
 
 const ContainerVolumes = ({ volumes }) => {
     if (!volumes?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1">None</span>;
     }
     return volumes.map((volume, idx) => (
         <li
@@ -80,9 +81,9 @@ const ContainerVolumes = ({ volumes }) => {
             {Object.keys(volume).map(
                 (key) =>
                     volume[key] && (
-                        <div key={key} className="py-1 font-600">
-                            <span className=" pr-1">{capitalize(lowerCase(key))}:</span>
-                            <span className="text-accent-800 italic">{volume[key].toString()}</span>
+                        <div key={key} className="py-1">
+                            <span className="font-700 pr-1">{capitalize(lowerCase(key))}:</span>
+                            <span>{volume[key].toString()}</span>
                         </div>
                     )
             )}
@@ -92,17 +93,17 @@ const ContainerVolumes = ({ volumes }) => {
 
 const ContainerSecrets = ({ secrets }) => {
     if (!secrets?.length) {
-        return <span className="py-1 font-600 italic">None</span>;
+        return <span className="py-1">None</span>;
     }
     return secrets.map(({ name, path }) => (
         <div key={name} className="py-2">
-            <div className="py-1 font-600">
-                <span className="pr-1">Name:</span>
-                <span className="text-accent-800 italic">{name}</span>
+            <div className="py-1">
+                <span className="font-700 pr-1">Name:</span>
+                <span>{name}</span>
             </div>
-            <div className="py-1 font-600">
-                <span className="pr-1">Container Path:</span>
-                <span className="text-accent-800 italic">{path}</span>
+            <div className="py-1">
+                <span className="font-700 pr-1">Container Path:</span>
+                <span>{path}</span>
             </div>
         </div>
     ));
@@ -123,9 +124,9 @@ const ContainerConfigurations = ({ deployment }) => {
                         <>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700 ">Resources:</div>
-                                <ul className="ml-2 mt-2 w-full">
+                                <div className="ml-2 mt-2 w-full">
                                     <Resources resources={resources} />
-                                </ul>
+                                </div>
                             </div>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700">Volumes:</div>
@@ -135,9 +136,9 @@ const ContainerConfigurations = ({ deployment }) => {
                             </div>
                             <div className="py-3 border-b border-base-300">
                                 <div className="pr-1 font-700">Secrets:</div>
-                                <ul className="ml-2 mt-2 w-full">
+                                <div className="ml-2 mt-2 w-full">
                                     <ContainerSecrets secrets={secrets} />
-                                </ul>
+                                </div>
                             </div>
                         </>
                     )}
@@ -145,7 +146,7 @@ const ContainerConfigurations = ({ deployment }) => {
             );
         });
     } else {
-        containers = <span className="py-1 font-600 italic">None</span>;
+        containers = <span className="py-1">None</span>;
     }
     return (
         <div className="px-3 pt-5">

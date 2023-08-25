@@ -10,15 +10,15 @@ import (
 	"github.com/stackrox/rox/central/processbaseline"
 	baselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -26,17 +26,18 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Indicator)): {
+		user.With(permissions.View(resources.DeploymentExtension)): {
+			"/v1.ProcessService/CountProcesses",
 			"/v1.ProcessService/GetProcessesByDeployment",
 			"/v1.ProcessService/GetGroupedProcessByDeployment",
-		},
-		user.With(permissions.View(resources.Indicator), permissions.View(resources.ProcessWhitelist)): {
 			"/v1.ProcessService/GetGroupedProcessByDeploymentAndContainer",
 		},
 	})
 )
 
 type serviceImpl struct {
+	v1.UnimplementedProcessServiceServer
+
 	processIndicators processIndicatorStore.DataStore
 	deployments       deploymentStore.DataStore
 	baselines         baselineStore.DataStore
@@ -57,6 +58,21 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
+// CountProcesses counts the number of processes that match the input query.
+func (s *serviceImpl) CountProcesses(ctx context.Context, request *v1.RawQuery) (*v1.CountProcessesResponse, error) {
+	// Fill in Query.
+	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	numProcesses, err := s.processIndicators.Count(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.CountProcessesResponse{Count: int32(numProcesses)}, nil
+}
+
 // GetDeployment returns the deployment with given id.
 func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetProcessesResponse, error) {
 	if req.GetDeploymentId() == "" {
@@ -67,7 +83,7 @@ func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetP
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
@@ -111,7 +127,7 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with id '%s' does not exist", deploymentID)
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", deploymentID)
 	}
 
 	key := &storage.ProcessBaselineKey{
@@ -127,7 +143,7 @@ func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, co
 	return processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked), nil
 }
 
-// IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
+// indicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
 // name group items.
 func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndicator) []*v1.ProcessNameAndContainerNameGroup {
 	type groupKey struct {

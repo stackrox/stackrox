@@ -24,7 +24,7 @@ describe('dateUtils', () => {
 
             const latestItem = getLatestDatedItemByKey('time', deployAlerts);
 
-            expect(latestItem.time).toEqual('2019-10-21T14:49:50.1567707Z');
+            expect(latestItem).toHaveProperty('time', '2019-10-21T14:49:50.1567707Z');
         });
     });
 

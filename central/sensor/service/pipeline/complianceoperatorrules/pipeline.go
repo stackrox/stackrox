@@ -3,6 +3,7 @@ package complianceoperatorrules
 import (
 	"context"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
 	"github.com/stackrox/rox/central/complianceoperator/rules/datastore"
@@ -12,8 +13,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -37,14 +38,16 @@ type pipelineImpl struct {
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	existingIDs := set.NewStringSet()
-
-	err := s.datastore.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
-		if rule.GetClusterId() == clusterID {
-			existingIDs.Add(rule.GetId())
-		}
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		existingIDs.Clear()
+		return s.datastore.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
+			if rule.GetClusterId() == clusterID {
+				existingIDs.Add(rule.GetId())
+			}
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return err
 	}
 	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRule)(nil))
@@ -58,7 +61,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorRule)
 
 	event := msg.GetEvent()

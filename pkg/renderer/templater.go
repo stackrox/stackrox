@@ -10,7 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
@@ -21,22 +21,34 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
-type ExternalPersistence struct {
-	Name         string `json:"name,omitempty"`
-	StorageClass string `json:"storageClass,omitempty"`
-	Size         uint32 `json:"size,omitempty"`
+// ExternalPersistenceInstance holds the data for a volume that is already created (e.g. docker volume, PV, etc)
+type ExternalPersistenceInstance struct {
+	Name         string
+	StorageClass string
+	Size         uint32
 }
 
-// HostPathPersistence describes the parameters for a bind mount
-type HostPathPersistence struct {
+// ExternalPersistence is wrapper around the definitions for data held in a volume
+type ExternalPersistence struct {
+	Central *ExternalPersistenceInstance
+	DB      *ExternalPersistenceInstance
+}
+
+// HostPathPersistenceInstance describes the parameters for a bind mount
+type HostPathPersistenceInstance struct {
 	HostPath          string
 	NodeSelectorKey   string
 	NodeSelectorValue string
 }
 
+// HostPathPersistence wraps the instances of bind mounts for Central and Central DB
+type HostPathPersistence struct {
+	Central *HostPathPersistenceInstance
+	DB      *HostPathPersistenceInstance
+}
+
 // WithNodeSelector is a helper function for the templater that returns if node selectors are used
-func (h *HostPathPersistence) WithNodeSelector() bool {
+func (h *HostPathPersistenceInstance) WithNodeSelector() bool {
 	if h == nil {
 		return false
 	}
@@ -48,19 +60,32 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // at the top level
 type CommonConfig struct {
 	MainImage      string
+	CentralDBImage string
 	ScannerImage   string
 	ScannerDBImage string
 }
 
+// TelemetryConfig contains config to set up the transimission of telemtry and diagnostic data.
+type TelemetryConfig struct {
+	Enabled         bool
+	StorageEndpoint string
+	StorageKey      string
+}
+
+// MonitoringConfig contains config to set up monitoring infrastructure.
+type MonitoringConfig struct {
+	OpenShiftMonitoring *bool
+}
+
+// DeclarativeConfigMounts contains mounts to config maps holding configuration to create resources in a declarative
+// manner.
+type DeclarativeConfigMounts struct {
+	ConfigMaps []string
+	Secrets    []string
+}
+
 // PersistenceType describes the type of persistence
 type PersistenceType string
-
-// Types of persistence
-var (
-	PersistenceNone     = newPersistentType("none")
-	PersistenceHostpath = newPersistentType("hostpath")
-	PersistencePVC      = newPersistentType("pvc")
-)
 
 // StringToPersistentTypes is a map from the persistenttype string value to its object
 var StringToPersistentTypes = make(map[string]PersistenceType)
@@ -79,6 +104,15 @@ func (m PersistenceType) String() string {
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
+
+	// Telemetry holds the configuration for telemetry.
+	Telemetry TelemetryConfig
+
+	// Monitoring holds the monitoring configuration.
+	Monitoring MonitoringConfig
+
+	// DeclarativeConfigMounts holds the mounts for specifying resources to be created in a declarative manner.
+	DeclarativeConfigMounts DeclarativeConfigMounts
 
 	// ImageFlavorName is the name of the flavor selected by the user with CLI parameters
 	ImageFlavorName string
@@ -105,12 +139,12 @@ type K8sConfig struct {
 
 	OfflineMode bool
 
-	EnableTelemetry bool
-
 	// IstioVersion is the version of Istio to render for (if any)
 	IstioVersion string
 
 	ImageOverrides map[string]interface{}
+
+	EnableCentralDB bool
 }
 
 // Config configures the deployer for the central service.
@@ -143,6 +177,28 @@ type Config struct {
 
 	RenderOpts *helmUtil.Options // additional render options, if any (only legal in non-Helm mode).
 	HelmImage  *image.Image
+
+	EnablePodSecurityPolicies bool
+}
+
+// HasCentralHostPath returns if a Central is configured with host path
+func (c Config) HasCentralHostPath() bool {
+	return c.HostPath != nil && c.HostPath.Central != nil
+}
+
+// HasCentralDBHostPath returns if a Central DB is configured with host path
+func (c Config) HasCentralDBHostPath() bool {
+	return c.HostPath != nil && c.HostPath.DB != nil
+}
+
+// HasCentralExternal returns if a Central is configured with an external volume
+func (c Config) HasCentralExternal() bool {
+	return c.External != nil && c.External.Central != nil
+}
+
+// HasCentralDBExternal returns if a Central DB is configured with an external volume
+func (c Config) HasCentralDBExternal() bool {
+	return c.External != nil && c.External.DB != nil
 }
 
 func generateReadmeFile(c *Config, mode mode) (*zip.File, error) {

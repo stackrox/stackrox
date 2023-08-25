@@ -8,6 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ***********************************************************************************************
+// If postgres is enabled, EdgeID should not be used, instead use pgSearch.IDFromPks(
+// ***********************************************************************************************
+
 // EdgeID is a synthetic ID generated for a parent child relationship.
 type EdgeID struct {
 	ParentID string

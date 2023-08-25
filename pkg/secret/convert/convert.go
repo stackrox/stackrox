@@ -1,18 +1,17 @@
 package convert
 
 import (
-	mapset "github.com/deckarep/golang-set"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // SecretToSecretList converts a secret to list secret
 func SecretToSecretList(s *storage.Secret) *storage.ListSecret {
-	typeSet := mapset.NewSet()
+	typeSet := set.NewSet[storage.SecretType]()
 	var typeSlice []storage.SecretType
 	for _, f := range s.GetFiles() {
-		if !typeSet.Contains(f.GetType()) {
-			typeSlice = append(typeSlice, f.GetType())
-			typeSet.Add(f.GetType())
+		if ty := f.GetType(); typeSet.Add(ty) {
+			typeSlice = append(typeSlice, ty)
 		}
 	}
 	if len(typeSlice) == 0 {
@@ -22,6 +21,7 @@ func SecretToSecretList(s *storage.Secret) *storage.ListSecret {
 	return &storage.ListSecret{
 		Id:          s.GetId(),
 		Name:        s.GetName(),
+		ClusterId:   s.GetClusterId(),
 		ClusterName: s.GetClusterName(),
 		Namespace:   s.GetNamespace(),
 		Types:       typeSlice,

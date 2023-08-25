@@ -1,0 +1,22 @@
+spec:
+  ports:
+  - port: 443
+    name: api
+  - port: 8080
+    name: multiplex-8080
+  - port: 8081
+    name: grpc-8081
+  - port: 8082
+    name: http-8082
+  - port: 8443
+    name: default-8443
+  - port: 8444
+    name: service-8444
+  - port: 8445
+    name: user-8445
+  - port: 8446
+    name: http-8446
+  - port: 8447
+    name: grpc-8447
+  - port: 8448
+    name: multiplex-8448

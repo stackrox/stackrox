@@ -8,11 +8,11 @@ import (
 )
 
 var (
-	namespacePool = newPool()
-	numNamespaces = 30
+	namespacePool                 = newPool()
+	namespacesWithDeploymentsPool = newPool()
 )
 
-func getNamespace(name string) *corev1.Namespace {
+func getNamespace(name, id string) *corev1.Namespace {
 	return &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Namespace",
@@ -20,7 +20,7 @@ func getNamespace(name string) *corev1.Namespace {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
-			UID:  newUUID(),
+			UID:  idOrNewUID(id),
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
 			},
@@ -31,14 +31,15 @@ func getNamespace(name string) *corev1.Namespace {
 	}
 }
 
-func getNamespaces() []*corev1.Namespace {
+func getNamespaces(numNamespaces int, ids []string) []*corev1.Namespace {
 	namespaces := make([]*corev1.Namespace, 0, numNamespaces)
-	namespaces = append(namespaces, getNamespace("default"))
+
+	namespaces = append(namespaces, getNamespace("default", getID(ids, 0)))
 	namespacePool.add("default")
 	for i := 0; i < numNamespaces-1; i++ {
 		name := randStringWithLength(16)
 		namespacePool.add(name)
-		namespaces = append(namespaces, getNamespace(name))
+		namespaces = append(namespaces, getNamespace(name, getID(ids, i+1)))
 	}
 	return namespaces
 }

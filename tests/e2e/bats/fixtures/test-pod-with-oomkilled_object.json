@@ -1,0 +1,487 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "annotations": {
+            "cni.projectcalico.org/containerID": "8151436347c4c2b76de203c9def8eee17ef277608a72f71e6276c0feedbf91bd",
+            "cni.projectcalico.org/podIP": "10.176.2.9/32",
+            "cni.projectcalico.org/podIPs": "10.176.2.9/32",
+            "email": "support@stackrox.com",
+            "meta.helm.sh/release-name": "stackrox-central-services",
+            "meta.helm.sh/release-namespace": "stackrox",
+            "owner": "stackrox",
+            "traffic.sidecar.istio.io/excludeInboundPorts": "8443"
+        },
+        "creationTimestamp": "2023-01-12T22:35:04Z",
+        "generateName": "central-84bf956f94-",
+        "labels": {
+            "app": "central",
+            "app.kubernetes.io/component": "central",
+            "app.kubernetes.io/instance": "stackrox-central-services",
+            "app.kubernetes.io/managed-by": "Helm",
+            "app.kubernetes.io/name": "stackrox",
+            "app.kubernetes.io/part-of": "stackrox-central-services",
+            "app.kubernetes.io/version": "3.73.0",
+            "helm.sh/chart": "stackrox-central-services-73.0.0",
+            "pod-template-hash": "84bf956f94"
+        },
+        "name": "central-84bf956f94-bg6hr",
+        "namespace": "stackrox",
+        "ownerReferences": [
+            {
+                "apiVersion": "apps/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "ReplicaSet",
+                "name": "central-84bf956f94",
+                "uid": "05a3f3bd-1b79-4d39-abd7-23843c00c076"
+            }
+        ],
+        "resourceVersion": "10991",
+        "uid": "d397fce3-9233-4a2d-a379-765eb043a3db"
+    },
+    "spec": {
+        "affinity": {
+            "nodeAffinity": {
+                "preferredDuringSchedulingIgnoredDuringExecution": [
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "cloud.google.com/gke-preemptible",
+                                    "operator": "NotIn",
+                                    "values": [
+                                        "true"
+                                    ]
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/infra",
+                                    "operator": "Exists"
+                                }
+                            ]
+                        },
+                        "weight": 50
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/compute",
+                                    "operator": "Exists"
+                                }
+                            ]
+                        },
+                        "weight": 25
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/master",
+                                    "operator": "DoesNotExist"
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "preference": {
+                            "matchExpressions": [
+                                {
+                                    "key": "node-role.kubernetes.io/control-plane",
+                                    "operator": "DoesNotExist"
+                                }
+                            ]
+                        },
+                        "weight": 100
+                    }
+                ]
+            }
+        },
+        "containers": [
+            {
+                "command": [
+                    "/stackrox/central-entrypoint.sh"
+                ],
+                "env": [
+                    {
+                        "name": "ROX_NAMESPACE",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.namespace"
+                            }
+                        }
+                    },
+                    {
+                        "name": "ROX_OFFLINE_MODE",
+                        "value": "false"
+                    }
+                ],
+                "image": "quay.io/rhacs-eng/main:3.73.0",
+                "imagePullPolicy": "IfNotPresent",
+                "name": "central",
+                "ports": [
+                    {
+                        "containerPort": 8443,
+                        "name": "api",
+                        "protocol": "TCP"
+                    }
+                ],
+                "readinessProbe": {
+                    "failureThreshold": 3,
+                    "httpGet": {
+                        "path": "/v1/ping",
+                        "port": 8443,
+                        "scheme": "HTTPS"
+                    },
+                    "periodSeconds": 10,
+                    "successThreshold": 1,
+                    "timeoutSeconds": 1
+                },
+                "resources": {
+                    "limits": {
+                        "cpu": "1",
+                        "memory": "100Mi"
+                    },
+                    "requests": {
+                        "cpu": "1",
+                        "memory": "100Mi"
+                    }
+                },
+                "securityContext": {
+                    "capabilities": {
+                        "drop": [
+                            "NET_RAW"
+                        ]
+                    },
+                    "readOnlyRootFilesystem": true
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/log/stackrox/",
+                        "name": "varlog"
+                    },
+                    {
+                        "mountPath": "/tmp",
+                        "name": "central-tmp-volume"
+                    },
+                    {
+                        "mountPath": "/etc/ssl",
+                        "name": "central-etc-ssl-volume"
+                    },
+                    {
+                        "mountPath": "/etc/pki/ca-trust",
+                        "name": "central-etc-pki-volume"
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/certs/",
+                        "name": "central-certs-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/default-tls-cert/",
+                        "name": "central-default-tls-cert-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/htpasswd/",
+                        "name": "central-htpasswd-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/jwt/",
+                        "name": "central-jwt-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/usr/local/share/ca-certificates/",
+                        "name": "additional-ca-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/central-license/",
+                        "name": "central-license-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/var/lib/stackrox",
+                        "name": "stackrox-db"
+                    },
+                    {
+                        "mountPath": "/etc/stackrox",
+                        "name": "central-config-volume"
+                    },
+                    {
+                        "mountPath": "/run/secrets/stackrox.io/proxy-config/",
+                        "name": "proxy-config-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/etc/stackrox.d/endpoints/",
+                        "name": "endpoints-config-volume",
+                        "readOnly": true
+                    },
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "kube-api-access-9thvp",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "imagePullSecrets": [
+            {
+                "name": "stackrox"
+            },
+            {
+                "name": "stackrox-scanner"
+            }
+        ],
+        "nodeName": "gke-kejbcvve-default-pool-25567488-zc1p",
+        "preemptionPolicy": "PreemptLowerPriority",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {
+            "fsGroup": 4000,
+            "runAsUser": 4000
+        },
+        "serviceAccount": "central",
+        "serviceAccountName": "central",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            }
+        ],
+        "volumes": [
+            {
+                "emptyDir": {},
+                "name": "varlog"
+            },
+            {
+                "emptyDir": {},
+                "name": "central-tmp-volume"
+            },
+            {
+                "emptyDir": {},
+                "name": "central-etc-ssl-volume"
+            },
+            {
+                "emptyDir": {},
+                "name": "central-etc-pki-volume"
+            },
+            {
+                "name": "central-certs-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "secretName": "central-tls"
+                }
+            },
+            {
+                "name": "central-default-tls-cert-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "central-default-tls-cert"
+                }
+            },
+            {
+                "name": "central-htpasswd-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "central-htpasswd"
+                }
+            },
+            {
+                "name": "central-jwt-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "items": [
+                        {
+                            "key": "jwt-key.pem",
+                            "path": "jwt-key.pem"
+                        }
+                    ],
+                    "secretName": "central-tls"
+                }
+            },
+            {
+                "name": "additional-ca-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "additional-ca"
+                }
+            },
+            {
+                "name": "central-license-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "central-license"
+                }
+            },
+            {
+                "configMap": {
+                    "defaultMode": 420,
+                    "name": "central-config",
+                    "optional": true
+                },
+                "name": "central-config-volume"
+            },
+            {
+                "name": "proxy-config-volume",
+                "secret": {
+                    "defaultMode": 420,
+                    "optional": true,
+                    "secretName": "proxy-config"
+                }
+            },
+            {
+                "configMap": {
+                    "defaultMode": 420,
+                    "name": "central-endpoints"
+                },
+                "name": "endpoints-config-volume"
+            },
+            {
+                "name": "stackrox-db",
+                "persistentVolumeClaim": {
+                    "claimName": "stackrox-db"
+                }
+            },
+            {
+                "name": "kube-api-access-9thvp",
+                "projected": {
+                    "defaultMode": 420,
+                    "sources": [
+                        {
+                            "serviceAccountToken": {
+                                "expirationSeconds": 3607,
+                                "path": "token"
+                            }
+                        },
+                        {
+                            "configMap": {
+                                "items": [
+                                    {
+                                        "key": "ca.crt",
+                                        "path": "ca.crt"
+                                    }
+                                ],
+                                "name": "kube-root-ca.crt"
+                            }
+                        },
+                        {
+                            "downwardAPI": {
+                                "items": [
+                                    {
+                                        "fieldRef": {
+                                            "apiVersion": "v1",
+                                            "fieldPath": "metadata.namespace"
+                                        },
+                                        "path": "namespace"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-12T22:35:04Z",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-12T22:35:04Z",
+                "message": "containers with unready status: [central]",
+                "reason": "ContainersNotReady",
+                "status": "False",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-12T22:35:04Z",
+                "message": "containers with unready status: [central]",
+                "reason": "ContainersNotReady",
+                "status": "False",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2023-01-12T22:35:04Z",
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "containerID": "containerd://bbdca534cde9a55af6d45506a617618ad65e26f2830da8737fd2021692fb64f9",
+                "image": "quay.io/rhacs-eng/main:3.73.0",
+                "imageID": "quay.io/rhacs-eng/main@sha256:a9b4ceac14ed662e800a2b411b3567449c8454d1aa156cb69a6b9eb7dfa10d2f",
+                "lastState": {
+                    "terminated": {
+                        "containerID": "containerd://06f466c74cdd27486e8b3a2e63650e4f7a90eb2592f1957154469fe1e1d18922",
+                        "exitCode": 137,
+                        "finishedAt": "2023-01-12T22:35:24Z",
+                        "reason": "OOMKilled",
+                        "startedAt": "2023-01-12T22:35:15Z"
+                    }
+                },
+                "name": "central",
+                "ready": false,
+                "restartCount": 1,
+                "started": false,
+                "state": {
+                    "terminated": {
+                        "containerID": "containerd://bbdca534cde9a55af6d45506a617618ad65e26f2830da8737fd2021692fb64f9",
+                        "exitCode": 137,
+                        "finishedAt": "2023-01-12T22:35:34Z",
+                        "reason": "OOMKilled",
+                        "startedAt": "2023-01-12T22:35:25Z"
+                    }
+                }
+            }
+        ],
+        "hostIP": "10.0.0.6",
+        "phase": "Running",
+        "podIP": "10.176.2.9",
+        "podIPs": [
+            {
+                "ip": "10.176.2.9"
+            }
+        ],
+        "qosClass": "Guaranteed",
+        "startTime": "2023-01-12T22:35:04Z"
+    }
+}

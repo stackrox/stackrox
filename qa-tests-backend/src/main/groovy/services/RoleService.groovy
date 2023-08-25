@@ -1,11 +1,15 @@
 package services
 
+import groovy.util.logging.Slf4j
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.RoleServiceGrpc
 import io.stackrox.proto.api.v1.RoleServiceOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 import io.stackrox.proto.storage.RoleOuterClass.Role
 
+@Slf4j
 class RoleService extends BaseService {
     static getRoleService() {
         return RoleServiceGrpc.newBlockingStub(getChannel())
@@ -19,27 +23,54 @@ class RoleService extends BaseService {
         return getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
     }
 
+    static Boolean checkRoleExists(String roleId) {
+        try {
+            getRoleService().getRole(Common.ResourceByID.newBuilder().setId(roleId).build())
+        } catch (StatusRuntimeException e) {
+            if (e.status.code == Status.Code.NOT_FOUND) {
+                return false
+            }
+            throw e
+        }
+        return true
+    }
+
     static RoleServiceOuterClass.GetResourcesResponse getResources() {
         try {
             return getRoleService().getResources(EMPTY)
         } catch (Exception e) {
-            println "Failed to fetch resources: ${e}"
+            log.warn("Failed to fetch resources", e)
         }
     }
 
-    static Role createRoleWithPermissionSet(Role role, Map<String, RoleOuterClass.Access> resourceToAccess) {
+    static Role createRoleWithScopeAndPermissionSet(String name, String accessScopeId,
+        Map<String, RoleOuterClass.Access> resourceToAccess) {
+
         def permissionSet = createPermissionSet(
-                "Test Automation Permission Set ${UUID.randomUUID()} for ${role.name}", resourceToAccess)
-        Role r = Role.newBuilder(role)
-                .clearResourceToAccess()
-                .setPermissionSetId(permissionSet.id).build()
+                "Test Automation Permission Set ${UUID.randomUUID()} for ${name}", resourceToAccess)
+        Role role = Role.newBuilder()
+            .setName(name)
+            .setAccessScopeId(accessScopeId)
+            .setPermissionSetId(permissionSet.id)
+            .build()
         getRoleService().createRole(RoleServiceOuterClass.CreateRoleRequest
                 .newBuilder()
-                .setName(r.name)
-                .setRole(r)
+                .setName(role.name)
+                .setRole(role)
                 .build()
         )
-        r
+        role
+    }
+
+    static Role createRole(Role role) {
+        getRoleService().createRole(RoleServiceOuterClass.CreateRoleRequest
+                .newBuilder()
+                .setName(role.name)
+                .setRole(role)
+                .build()
+        )
+        log.info "Created role: ${role.name}"
+        role
     }
 
     static deleteRole(String name) {
@@ -47,8 +78,18 @@ class RoleService extends BaseService {
             def role = getRole(name)
             getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
             deletePermissionSet(role.permissionSetId)
+            log.info "Deleted role: ${name} and permission set"
         } catch (Exception e) {
-            println "Error deleting role ${name}: ${e}"
+            log.warn("Error deleting role ${name} or permission set", e)
+        }
+    }
+
+    static deleteRoleWithoutPermissionSet(String name, Boolean alsoDeletePermissionSet = true) {
+        try {
+            getRoleService().deleteRole(Common.ResourceByID.newBuilder().setId(name).build())
+            log.info "Deleted role: ${name}"
+        } catch (Exception e) {
+            log.warn("Error deleting role ${name}", e)
         }
     }
 
@@ -62,7 +103,7 @@ class RoleService extends BaseService {
         try {
             getRoleService().deletePermissionSet(Common.ResourceByID.newBuilder().setId(id).build())
         } catch (Exception e) {
-            println "Error deleting permission set ${id}: ${e}"
+            log.warn("Error deleting permission set ${id}", e)
         }
     }
 

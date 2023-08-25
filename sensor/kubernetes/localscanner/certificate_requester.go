@@ -6,31 +6,23 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requester is not initialized.
 	ErrCertificateRequesterStopped                      = errors.New("stopped")
-	log                                                 = logging.LoggerForModule()
 	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
 )
-
-// CertificateRequester requests a new set of local scanner certificates from central.
-type CertificateRequester interface {
-	Start()
-	Stop()
-	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
-}
 
 // NewCertificateRequester creates a new certificate requester that communicates through
 // the specified channels and initializes a new request ID for reach request.
 // To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
 // This assumes that the returned certificate requester is the only consumer of `receiveC`.
-func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
+func NewCertificateRequester(sendC chan<- *message.ExpiringMessage,
 	receiveC <-chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
 	return &certificateRequesterImpl{
 		sendC:    sendC,
@@ -39,7 +31,7 @@ func NewCertificateRequester(sendC chan<- *central.MsgFromSensor,
 }
 
 type certificateRequesterImpl struct {
-	sendC    chan<- *central.MsgFromSensor
+	sendC    chan<- *message.ExpiringMessage
 	receiveC <-chan *central.IssueLocalScannerCertsResponse
 	stopC    concurrency.ErrorSignal
 	requests sync.Map
@@ -110,7 +102,7 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 		return r.stopC.ErrorWithDefault(ErrCertificateRequesterStopped)
 	case <-ctx.Done():
 		return ctx.Err()
-	case r.sendC <- msg:
+	case r.sendC <- message.New(msg):
 		return nil
 	}
 }

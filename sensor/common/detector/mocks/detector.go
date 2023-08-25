@@ -5,12 +5,15 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	common "github.com/stackrox/rox/sensor/common"
+	message "github.com/stackrox/rox/sensor/common/message"
+	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
 
@@ -51,28 +54,40 @@ func (mr *MockDetectorMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockDetector)(nil).Capabilities))
 }
 
-// ProcessDeployment mocks base method.
-func (m *MockDetector) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
+// Notify mocks base method.
+func (m *MockDetector) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessDeployment", deployment, action)
+	m.ctrl.Call(m, "Notify", e)
+}
+
+// Notify indicates an expected call of Notify.
+func (mr *MockDetectorMockRecorder) Notify(e interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notify", reflect.TypeOf((*MockDetector)(nil).Notify), e)
+}
+
+// ProcessDeployment mocks base method.
+func (m *MockDetector) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ProcessDeployment", ctx, deployment, action)
 }
 
 // ProcessDeployment indicates an expected call of ProcessDeployment.
-func (mr *MockDetectorMockRecorder) ProcessDeployment(deployment, action interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), deployment, action)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), ctx, deployment, action)
 }
 
 // ProcessIndicator mocks base method.
-func (m *MockDetector) ProcessIndicator(indicator *storage.ProcessIndicator) {
+func (m *MockDetector) ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessIndicator", indicator)
+	m.ctrl.Call(m, "ProcessIndicator", ctx, indicator)
 }
 
 // ProcessIndicator indicates an expected call of ProcessIndicator.
-func (mr *MockDetectorMockRecorder) ProcessIndicator(indicator interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessIndicator(ctx, indicator interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicator", reflect.TypeOf((*MockDetector)(nil).ProcessIndicator), indicator)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicator", reflect.TypeOf((*MockDetector)(nil).ProcessIndicator), ctx, indicator)
 }
 
 // ProcessMessage mocks base method.
@@ -90,15 +105,71 @@ func (mr *MockDetectorMockRecorder) ProcessMessage(msg interface{}) *gomock.Call
 }
 
 // ProcessNetworkFlow mocks base method.
-func (m *MockDetector) ProcessNetworkFlow(flow *storage.NetworkFlow) {
+func (m *MockDetector) ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessNetworkFlow", flow)
+	m.ctrl.Call(m, "ProcessNetworkFlow", ctx, flow)
 }
 
 // ProcessNetworkFlow indicates an expected call of ProcessNetworkFlow.
-func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(flow interface{}) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessNetworkFlow(ctx, flow interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), flow)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNetworkFlow", reflect.TypeOf((*MockDetector)(nil).ProcessNetworkFlow), ctx, flow)
+}
+
+// ProcessPolicySync mocks base method.
+func (m *MockDetector) ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessPolicySync", ctx, sync)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessPolicySync indicates an expected call of ProcessPolicySync.
+func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), ctx, sync)
+}
+
+// ProcessReassessPolicies mocks base method.
+func (m *MockDetector) ProcessReassessPolicies() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessReassessPolicies")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessReassessPolicies indicates an expected call of ProcessReassessPolicies.
+func (mr *MockDetectorMockRecorder) ProcessReassessPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReassessPolicies", reflect.TypeOf((*MockDetector)(nil).ProcessReassessPolicies))
+}
+
+// ProcessReprocessDeployments mocks base method.
+func (m *MockDetector) ProcessReprocessDeployments() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessReprocessDeployments")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessReprocessDeployments indicates an expected call of ProcessReprocessDeployments.
+func (mr *MockDetectorMockRecorder) ProcessReprocessDeployments() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReprocessDeployments", reflect.TypeOf((*MockDetector)(nil).ProcessReprocessDeployments))
+}
+
+// ProcessUpdatedImage mocks base method.
+func (m *MockDetector) ProcessUpdatedImage(image *storage.Image) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessUpdatedImage", image)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessUpdatedImage indicates an expected call of ProcessUpdatedImage.
+func (mr *MockDetectorMockRecorder) ProcessUpdatedImage(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessUpdatedImage", reflect.TypeOf((*MockDetector)(nil).ProcessUpdatedImage), image)
 }
 
 // ReprocessDeployments mocks base method.
@@ -118,10 +189,10 @@ func (mr *MockDetectorMockRecorder) ReprocessDeployments(deploymentIDs ...interf
 }
 
 // ResponsesC mocks base method.
-func (m *MockDetector) ResponsesC() <-chan *central.MsgFromSensor {
+func (m *MockDetector) ResponsesC() <-chan *message.ExpiringMessage {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResponsesC")
-	ret0, _ := ret[0].(<-chan *central.MsgFromSensor)
+	ret0, _ := ret[0].(<-chan *message.ExpiringMessage)
 	return ret0
 }
 

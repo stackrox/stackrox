@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
+import { toast } from 'react-toastify';
 
 import downloadCSV from 'services/CSVDownloadService';
 import WorkflowPDFExportButton from 'Components/WorkflowPDFExportButton';
@@ -21,7 +22,13 @@ const queryParamMap = {
 const complianceDownloadUrl = '/api/compliance/export/csv';
 
 function checkVulnMgmtSupport(page, type) {
-    return page === useCaseTypes.VULN_MANAGEMENT && type === entityTypes.CVE;
+    return (
+        page === useCaseTypes.VULN_MANAGEMENT &&
+        (type === entityTypes.CVE ||
+            type === entityTypes.IMAGE_CVE ||
+            type === entityTypes.NODE_CVE ||
+            type === entityTypes.CLUSTER_CVE)
+    );
 }
 
 function checkComplianceSupport(page, type) {
@@ -39,6 +46,8 @@ class ExportButton extends Component {
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
         disabled: PropTypes.bool,
+        isExporting: PropTypes.bool.isRequired,
+        setIsExporting: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -75,9 +84,13 @@ class ExportButton extends Component {
             }
 
             this.setState({ csvIsDownloading: true });
-            customCsvExportHandler(csvName).finally(() => {
-                this.setState({ toggleWidget: false, csvIsDownloading: false });
-            });
+            customCsvExportHandler(csvName)
+                .catch((err) => {
+                    toast(`An error occurred while trying to export: ${err}`);
+                })
+                .finally(() => {
+                    this.setState({ toggleWidget: false, csvIsDownloading: false });
+                });
         } else {
             // otherwise, use legacy compliance CSV export
             let queryStr = '';
@@ -118,21 +131,27 @@ class ExportButton extends Component {
 
         const fileName = addBrandedTimestampToString(headerText);
 
-        return (
-            <div className="absolute right-0 z-20 uppercase flex flex-col text-base-600 min-w-64">
+        const wrapperClass = !!this.props.pdfId && !this.isCsvSupported() ? 'min-w-64' : '';
+
+        return !!this.props.pdfId || this.isCsvSupported() ? (
+            <div className={`absolute right-0 z-20 flex flex-col text-base-600 ${wrapperClass}`}>
                 <div className="arrow-up self-end mr-5" />
                 <ul className=" bg-base-100 border-2 border-primary-600 rounded">
                     <li className="p-4 border-b border-base-400">
-                        <div className="flex uppercase">
-                            <WorkflowPDFExportButton
-                                id={this.props.pdfId}
-                                className={`${btnClassName}  ${
-                                    this.isCsvSupported() ? 'mr-2' : 'w-full'
-                                }`}
-                                tableOptions={this.props.tableOptions}
-                                fileName={fileName}
-                                pdfTitle={headerText}
-                            />
+                        <div className="flex">
+                            {!!this.props.pdfId && (
+                                <WorkflowPDFExportButton
+                                    id={this.props.pdfId}
+                                    className={`${btnClassName}  min-w-48 ${
+                                        this.isCsvSupported() ? 'mr-2' : 'w-full'
+                                    }`}
+                                    tableOptions={this.props.tableOptions}
+                                    fileName={fileName}
+                                    pdfTitle={headerText}
+                                    isExporting={this.props.isExporting}
+                                    setIsExporting={this.props.setIsExporting}
+                                />
+                            )}
                             {this.isCsvSupported() && (
                                 <Button
                                     data-testid="download-csv-button"
@@ -152,11 +171,11 @@ class ExportButton extends Component {
                     </li>
                 </ul>
             </div>
-        );
+        ) : null;
     };
 
-    openWidget = () => {
-        this.setState({ toggleWidget: true });
+    toggleWidget = () => {
+        this.setState(({ toggleWidget }) => ({ toggleWidget: !toggleWidget }));
     };
 
     render() {
@@ -169,7 +188,7 @@ class ExportButton extends Component {
                     textCondensed="Export"
                     textClass={this.props.textClass}
                     icon={<Icon.FileText size="14" className="mx-1 lg:ml-1 lg:mr-3" />}
-                    onClick={this.openWidget}
+                    onClick={this.toggleWidget}
                 />
                 {this.renderContent()}
             </div>

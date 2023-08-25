@@ -1,24 +1,25 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	ListDeployment(id string) (*storage.ListDeployment, bool, error)
-	ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error)
+	GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
+	GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error)
 
-	GetDeployment(id string) (*storage.Deployment, bool, error)
-	GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error)
+	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
+	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
 
-	CountDeployments() (int, error)
-	UpsertDeployment(deployment *storage.Deployment) error
-	RemoveDeployment(id string) error
+	Count(ctx context.Context) (int, error)
+	Upsert(ctx context.Context, deployment *storage.Deployment) error
+	Delete(ctx context.Context, id string) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
-
-	GetDeploymentIDs() ([]string, error)
+	GetIDs(ctx context.Context) ([]string, error)
 }

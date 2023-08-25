@@ -11,7 +11,7 @@ fi
 
 rm -rf "${DIR}/database-restore"
 mkdir -p "${DIR}/database-restore"
-unzip -d "${DIR}/database-restore/expanded" $1
+unzip -d "${DIR}/database-restore/expanded" "$1"
 mkdir -p "${DIR}/database-restore/expanded/rocksdb"
 tar -xvf "${DIR}/database-restore/expanded/rocks.db" -C "${DIR}/database-restore/expanded/rocksdb"
 mkdir -p "${DIR}/database-restore/full/rocksdb"

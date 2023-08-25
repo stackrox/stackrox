@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
@@ -72,6 +73,12 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			}
 			resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 			if err != nil {
+				logging.GetRateLimitedLogger().WarnL(
+					ri.Hostname,
+					"Token validation failed for hostname %v: %v",
+					ri.Hostname,
+					err,
+				)
 				return nil, err
 			}
 			identity.resolvedRoles = resolvedRoles
@@ -92,7 +99,7 @@ func (a attributes) add(key string, values ...string) {
 }
 
 // ExtractAttributes converts a subset of CertInfo into an attribute map for authorization
-func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
+func ExtractAttributes(userCerts ...mtls.CertInfo) map[string][]string {
 	output := make(attributes)
 
 	for _, userCert := range userCerts {

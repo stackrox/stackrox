@@ -11,6 +11,7 @@ import (
 )
 
 // Manager is responsible for managing all active connections from sensors.
+//
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Need to register cluster manager to avoid cyclic dependencies with cluster datastore
@@ -19,11 +20,14 @@ type Manager interface {
 		policyMgr common.PolicyManager,
 		baselineMgr common.ProcessBaselineManager,
 		networkBaselineMgr common.NetworkBaselineManager,
+		delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
+		imageIntegrationMgr common.ImageIntegrationManager,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
 	HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
+	CloseConnection(clusterID string)
 	GetActiveConnections() []SensorConnection
 	PreparePoliciesAndBroadcast(policies []*storage.Policy)
 	BroadcastMessage(msg *central.MsgToSensor)

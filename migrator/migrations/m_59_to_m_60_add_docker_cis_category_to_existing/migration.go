@@ -17,7 +17,7 @@ const (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 59,
-		VersionAfter:   storage.Version{SeqNum: 60},
+		VersionAfter:   &storage.Version{SeqNum: 60},
 		Run: func(databases *types.Databases) error {
 			return migrateNewPolicyCategories(databases.BoltDB)
 		},

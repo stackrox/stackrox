@@ -38,6 +38,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- if isEnum $td.Data.Type }}
 	generator.RegisterProtoEnum(builder, reflect.TypeOf({{ importedName $td.Data.Type }}(0)))
 {{- else }}
+{{- if not $td.Data.Name }}
+{{- continue}}
+{{- end}}
 {{- if $td.Data.IsInputType }}
 	utils.Must(builder.AddInput("{{ $td.Data.Name }}", []string{
 {{- else }}
@@ -102,6 +105,24 @@ func (resolver *Resolver) wrap{{plural .Data.Name}}(values []*{{importedName .Da
 	output := make([]*{{lower .Data.Name}}Resolver, len(values))
 	for i, v := range values {
 		output[i] = &{{lower .Data.Name}}Resolver{root: resolver, data: v{{if .ListData}}, list: nil{{end}}}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrap{{.Data.Name}}WithContext(ctx context.Context, value *{{importedName .Data.Type}}, ok bool, err error) (*{{lower .Data.Name}}Resolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &{{lower .Data.Name}}Resolver{ctx: ctx, root: resolver, data: value{{if .ListData}}, list: nil{{end}}}, nil
+}
+
+func (resolver *Resolver) wrap{{plural .Data.Name}}WithContext(ctx context.Context, values []*{{importedName .Data.Type}}, err error) ([]*{{lower .Data.Name}}Resolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*{{lower .Data.Name}}Resolver, len(values))
+	for i, v := range values {
+		output[i] = &{{lower .Data.Name}}Resolver{ctx: ctx, root: resolver, data: v{{if .ListData}}, list: nil{{end}}}
 	}
 	return output, nil
 }
@@ -207,6 +228,8 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 		return "raw", "float64"
 	case reflect.Bool:
 		return "raw", "bool"
+	case reflect.Uint8:
+		return "raw", "byte"
 	case reflect.Map:
 		if fd.Type.Key().Kind() == reflect.String && fd.Type.Elem().Kind() == reflect.String {
 			return "label", "labels"

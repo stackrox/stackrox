@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, ReactElement } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import {
     Alert,
     AlertVariant,
@@ -18,8 +18,9 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import { searchCategories } from 'constants/entityTypes';
 import usePermissions from 'hooks/usePermissions';
 import useSearchOptions from 'hooks/useSearchOptions';
@@ -28,11 +29,11 @@ import useTableSort from 'hooks/useTableSort';
 import { vulnManagementReportsPath } from 'routePaths';
 import { deleteReport, runReport } from 'services/ReportsService';
 import { SearchFilter } from 'types/search';
-import { filterAllowedSearch } from 'utils/searchUtils';
+import { filterAllowedSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getQueryString } from 'utils/queryStringUtils';
 import VulnMgmtReportTablePanel from './VulnMgmtReportTablePanel';
 import VulnMgmtReportTableColumnDescriptor from './VulnMgmtReportTableColumnDescriptor';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
+import { VulnMgmtReportQueryObject, getWriteAccessForReport } from './VulnMgmtReport.utils';
 
 type ReportTablePageProps = {
     query: VulnMgmtReportQueryObject;
@@ -41,12 +42,8 @@ type ReportTablePageProps = {
 function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
     const history = useHistory();
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
-    const canWriteReports =
-        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const searchOptions = useSearchOptions(searchCategories.REPORT_CONFIGURATIONS) || [];
 
@@ -106,6 +103,8 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
         });
     }
 
+    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+
     return (
         <>
             <PageSection variant={PageSectionVariants.light}>
@@ -122,17 +121,13 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                                 </Text>
                             </TextContent>
                         </ToolbarItem>
-                        {canWriteReports && (
+                        {hasWriteAccessForReport && (
                             <ToolbarItem alignment={{ default: 'alignRight' }}>
                                 <Button
                                     variant={ButtonVariant.primary}
                                     isInline
-                                    component={(props) => (
-                                        <Link
-                                            {...props}
-                                            to={`${vulnManagementReportsPath}?action=create`}
-                                        />
-                                    )}
+                                    component={LinkShim}
+                                    href={`${vulnManagementReportsPath}?action=create`}
                                 >
                                     Create report
                                 </Button>
@@ -156,7 +151,7 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     </Bullseye>
                 </PageSection>
             )}
-            {!isLoading && reports && reports?.length > 0 && (
+            {!isLoading && (reports?.length || hasSearchApplied) && (
                 <VulnMgmtReportTablePanel
                     reports={reports || []}
                     reportCount={reportCount}
@@ -175,9 +170,12 @@ function ReportTablePage({ query }: ReportTablePageProps): ReactElement {
                     onDeleteReports={onDeleteReports}
                 />
             )}
-            {!isLoading && !reports?.length && (
+            {!isLoading && !reports?.length && !hasSearchApplied && (
                 <PageSection variant={PageSectionVariants.light} isFilled>
-                    <ACSEmptyState title="No reports are currently configured." />
+                    <EmptyStateTemplate
+                        title="No reports are currently configured."
+                        headingLevel="h2"
+                    />
                 </PageSection>
             )}
         </>

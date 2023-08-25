@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 const RowActionButton = ({ text, icon, border, className, onClick, dataTestId, disabled }) => (
-    <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
+    <Tooltip content={text}>
         <button
             type="button"
             className={`p-1 px-4 ${className} ${border}`}

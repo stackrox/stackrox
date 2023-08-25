@@ -18,7 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -36,7 +37,7 @@ var (
 )
 
 type commandHandler struct {
-	responsesC      chan *central.MsgFromSensor
+	responsesC      chan *message.ExpiringMessage
 	clusterGatherer *gatherers.ClusterGatherer
 
 	stopSig concurrency.ErrorSignal
@@ -46,14 +47,14 @@ type commandHandler struct {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
-	return newCommandHandler(client)
+func NewCommandHandler(client kubernetes.Interface, provider store.Provider) common.SensorComponent {
+	return newCommandHandler(client, provider)
 }
 
-func newCommandHandler(k8sClient kubernetes.Interface) *commandHandler {
+func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) *commandHandler {
 	return &commandHandler{
-		responsesC:            make(chan *central.MsgFromSensor),
-		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, resources.DeploymentStoreSingleton()),
+		responsesC:            make(chan *message.ExpiringMessage),
+		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, provider.Deployments()),
 		stopSig:               concurrency.NewErrorSignal(),
 		pendingContextCancels: make(map[string]context.CancelFunc),
 	}
@@ -79,6 +80,8 @@ func (h *commandHandler) Stop(err error) {
 	}
 	h.stopSig.SignalWithError(err)
 }
+
+func (h *commandHandler) Notify(common.SensorComponentEvent) {}
 
 func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
@@ -125,14 +128,14 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 		},
 	}
 	select {
-	case h.responsesC <- msg:
+	case h.responsesC <- message.New(msg):
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	}
 }
 
-func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+func (h *commandHandler) ResponsesC() <-chan *message.ExpiringMessage {
 	return h.responsesC
 }
 

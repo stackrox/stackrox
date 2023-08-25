@@ -61,9 +61,9 @@ class TableGroup extends Component {
                     <div className="flex ml-4 mr-3 rounded-full bg-base-100 h-5 w-5 justify-center text-tertiary-700 items-center border border-tertiary-400">
                         {icons[state]}
                     </div>
-                    <h1 className="p-3 pl-0 font-600 text-lg leading-normal">{name}</h1>
+                    <h1 className="p-3 pl-0 font-700 text-lg leading-normal">{name}</h1>
                 </div>
-                <div className="flex items-center flex-shrink-0 italic font-700 text-sm p-3 pr-4 opacity-50">{`${
+                <div className="flex items-center flex-shrink-0 font-700 text-sm p-3 pr-4 opacity-50">{`${
                     rows.length
                 } ${pluralize(this.props.entityType, rows.length)}`}</div>
             </div>

@@ -1,0 +1,41 @@
+{
+  "id": "e9635b83-4ec5-4e7a-9be1-1bcdd6d82bb7",
+  "name": "Cryptocurrency Mining Process Execution",
+  "description": "Cryptocurrency mining process spawned",
+  "rationale": "Cryptocurrency mining binaries are often evidence of malicious activity or a hijacked cluster.",
+  "remediation": "Ensure that the base image used to create the Dockerfile doesn't have cryptocurrency mining software packaged with it. Check for open ports that may allow for remote code execution",
+  "categories": [
+    "Cryptocurrency Mining"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak.*|.*xmrminer|.*cpuminer-multi|.*xmrig"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0040",
+      "techniques": [
+        "T1496"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

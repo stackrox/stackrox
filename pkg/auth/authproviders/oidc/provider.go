@@ -58,11 +58,11 @@ type extraDiscoveryInfo struct {
 }
 
 func (i *extraDiscoveryInfo) SupportsScope(scope string) bool {
-	return sliceutils.StringFind(i.ScopesSupported, scope) != -1
+	return sliceutils.Find(i.ScopesSupported, scope) != -1
 }
 
 func (i *extraDiscoveryInfo) SupportsResponseType(responseType string) bool {
-	return sliceutils.StringFind(i.ResponseTypesSupported, responseType) != -1
+	return sliceutils.Find(i.ResponseTypesSupported, responseType) != -1
 }
 
 func (i *extraDiscoveryInfo) SupportsResponseMode(responseMode string) bool {
@@ -70,7 +70,7 @@ func (i *extraDiscoveryInfo) SupportsResponseMode(responseMode string) bool {
 		// Some providers do not set this (Google). Assume all modes are supported.
 		return true
 	}
-	return sliceutils.StringFind(i.ResponseModesSupported, responseMode) != -1
+	return sliceutils.Find(i.ResponseModesSupported, responseMode) != -1
 }
 
 func (i *extraDiscoveryInfo) SelectResponseMode(hasClientSecret bool) (string, error) {
@@ -133,7 +133,7 @@ func (i *extraDiscoveryInfo) SelectResponseType(responseMode string, hasClientSe
 
 func selectPreferred(options, preferences []string) (string, bool) {
 	for _, pref := range preferences {
-		if sliceutils.StringFind(options, pref) != -1 {
+		if sliceutils.Find(options, pref) != -1 {
 			return pref, true
 		}
 	}

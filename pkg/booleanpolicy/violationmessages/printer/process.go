@@ -18,7 +18,7 @@ func UpdateProcessAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 
 	pathSet := set.NewStringSet()
 	argsSet := set.NewStringSet()
-	uidSet := set.NewIntSet()
+	uidSet := set.NewSet[int]()
 
 	for _, process := range processes {
 		pathSet.Add(process.GetSignal().GetExecFilePath())

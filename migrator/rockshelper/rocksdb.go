@@ -7,20 +7,32 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/option"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/tecbot/gorocksdb"
 )
 
 const (
-	// RocksDBDirName it the name of the RocksDB directory on the PVC
+	// rocksDBDirName it the name of the RocksDB directory on the PVC
 	rocksDBDirName = `rocksdb`
 )
 
-// New returns a new RocksDB
-func New() (*gorocksdb.DB, error) {
-	opts := gorocksdb.NewDefaultOptions()
-	opts.SetCreateIfMissing(true)
-	opts.SetCompression(gorocksdb.LZ4Compression)
-	return gorocksdb.OpenDb(opts, filepath.Join(option.MigratorOptions.DBPathBase, rocksDBDirName))
+var (
+	rocksInit sync.Once
+
+	rocksDB *rocksdb.RocksDB
+)
+
+// GetRocksDB returns the global rocksdb instance
+func GetRocksDB() *rocksdb.RocksDB {
+	rocksInit.Do(func() {
+		db, err := rocksdb.New(filepath.Join(option.MigratorOptions.DBPathBase, rocksDBDirName))
+		if err != nil {
+			panic(err)
+		}
+		rocksDB = db
+	})
+	return rocksDB
 }
 
 // ReadFromRocksDB return unmarshalled proto object read from rocksDB for given prefix and id.

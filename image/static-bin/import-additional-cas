@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-[ -d /usr/local/share/ca-certificates ] || exit 0
-[ "$(find /usr/local/share/ca-certificates -maxdepth 1 -name '*.crt' | wc -l)" -gt 0 ] || exit 0
-cp -L /usr/local/share/ca-certificates/* /etc/pki/ca-trust/source/anchors
-update-ca-trust

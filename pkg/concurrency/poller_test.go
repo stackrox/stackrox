@@ -50,12 +50,11 @@ func TestPollWithTimeout(t *testing.T) {
 	assert.False(t, PollWithTimeout(func() bool {
 		return false
 	}, 5*time.Millisecond, 50*time.Millisecond))
-	var ctr int
+	var ctr int32
 	assert.True(t, PollWithTimeout(func() bool {
-		ctr++
-		return ctr > 2
+		return atomic.AddInt32(&ctr, 1) > 2
 	}, 5*time.Millisecond, 50*time.Millisecond))
-	assert.Equal(t, 3, ctr)
+	assert.Equal(t, int32(3), atomic.LoadInt32(&ctr))
 }
 
 func TestPollerStops(t *testing.T) {

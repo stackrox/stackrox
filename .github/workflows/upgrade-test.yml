@@ -1,0 +1,179 @@
+name: Prepare manual upgrade test
+on:
+  workflow_dispatch:
+    inputs:
+      previous-version:
+        description: Previous release version (A.B.C)
+        required: true
+        default: 0.0.0
+        type: string
+      milestone:
+        description: Stable release candidate milestone (A.B.C[-N])
+        required: true
+        default: 0.0.0
+        type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: false
+        type: boolean
+
+env:
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+run-name: >-
+  ${{
+    format('Prepare clusters for manual upgrade test from {0} to {1}{2}',
+      inputs.previous-version,
+      inputs.milestone,
+      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+    )
+  }}
+
+# Ensure that only a single release automation workflow can run at a time.
+concurrency: Release automation
+
+jobs:
+  properties:
+    name: Read repository properties
+    runs-on: ubuntu-latest
+    outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.properties.outputs.dry-slack-channel, steps.properties.outputs.slack-channel))[inputs.dry-run != 'true'] }}
+    steps:
+      - name: Read workflow properties file
+        id: properties
+        env:
+          PROPERTIES_URL: /repos/${{ github.repository }}/contents/.github/properties?ref=${{ github.ref_name }}
+        run: gh api -H "$ACCEPT_RAW" "$PROPERTIES_URL" >> "$GITHUB_OUTPUT"
+
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "$DRY_RUN" = "true" ] && echo "::warning::This is a dry run"
+          echo "Event: ${{github.event_name}}" >>"$GITHUB_STEP_SUMMARY"
+          cat <<EOF >>"$GITHUB_STEP_SUMMARY"
+          \`\`\`
+          ${{toJSON(inputs)}}
+          \`\`\`
+          EOF
+
+  create-clusters:
+    needs: [properties]
+    if: github.event.inputs.dry-run != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        name: [test1, test2]
+    steps:
+      - name: Create the ${{ matrix.name }} cluster
+        uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: upgrade-${{ matrix.name }}-${{ inputs.milestone }}
+          lifespan: 48h
+          args: nodes=5,machine-type=e2-standard-8
+          wait: true
+
+  prepare-clusters:
+    needs: [properties, create-clusters]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+      - name: Prepare clusters for upgrade test
+        if: env.DRY_RUN == 'false'
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            prepare-upgrade-test \
+            "${{inputs.previous-version}}" \
+            "${{inputs.milestone}}"
+      - name: Post to Slack about cluster creation
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            {
+              "text": "Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone. Consult the upgrade test documentation for next steps.",
+
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":${{ fromJSON('["desert", "tada"]')[github.event.inputs.dry-run != 'true'] }}: *Upgrade clusters have been prepared for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":arrow_right: Setup your local access to Central by running in your clone of `${{ github.repository }}`:\n```./scripts/release-tools/upgrade-cluster-client.sh ${{ inputs.milestone }}```"
+                  }
+                }
+              ]
+            }
+
+  notify-failed-clusters:
+    name: Notify about failed cluster creation
+    needs: [properties, prepare-clusters]
+    if: always() && needs.prepare-clusters.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Slack
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          channel-id: ${{ needs.properties.outputs.slack-channel }}
+          payload: >-
+            {
+              "text": "Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone. Investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run.",
+
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":${{ fromJSON('["desert", "red_circle"]')[github.event.inputs.dry-run != 'true'] }}: *Couldn't create upgrade clusters for ${{ inputs.milestone }} milestone of <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}> by ${{ github.event.sender.login }}.*"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":arrow_right: *Please investigate the output of the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|${{github.workflow}}> workflow run and then restart the script from where it failed.*"
+                  }
+                }
+              ]
+            }

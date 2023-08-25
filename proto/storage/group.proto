@@ -3,26 +3,34 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "gogoproto/gogo.proto";
+import "storage/traits.proto";
+
 package storage;
 
 // Group is a GroupProperties : Role mapping.
 message Group {
-    // GroupProperties uniquely identifies a group.
+    // GroupProperties define the properties of a group, applying to users when their properties match.
+    // They also uniquely identify the group with the props.id field.
     GroupProperties props = 1;
 
     // This is the name of the role that will apply to users in this group.
-    string role_name = 3;
+    string role_name = 3 [(gogoproto.moretags) = 'search:"Role,hidden" sql:"index=name:groups_unique_indicator;category:unique"'];
 }
 
-// GroupProperties defines the properties of a unique group.
-// Groups apply to users when their properties match. For instance:
-// If the GroupProperties on has a auth_provider_id, then that group applies to all users logged in
-// with that auth provider. If it has a claim key, then it applies to all users with that auth provider
-// and claim key, etc.
-// This can be used to create default groups/roles for All source provider (no fields set), a specific
-// auth provider (only auth_provider_id field set) etc.
+// GroupProperties defines the properties of a group. Groups apply to users when
+// their properties match. For instance:
+//   - If GroupProperties has only an auth_provider_id, then that group applies
+//     to all users logged in with that auth provider.
+//   - If GroupProperties in addition has a claim key, then it applies to all
+//     users with that auth provider and the claim key, etc.
+// Note: Changes to GroupProperties may require changes to v1.DeleteGroupRequest.
 message GroupProperties {
-    string auth_provider_id = 1;
-    string key = 2;
-    string value = 3;
+    // Unique identifier for group properties and respectively the group.
+    string id               = 4 [(gogoproto.moretags) = 'sql:"pk"'];
+    Traits traits           = 5;
+
+    string auth_provider_id = 1 [(gogoproto.moretags) = 'search:"Group Auth Provider,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+    string key              = 2 [(gogoproto.moretags) = 'search:"Group Key,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
+    string value            = 3 [(gogoproto.moretags) = 'search:"Group Value,hidden" sql:"index=category:unique;name:groups_unique_indicator"'];
 }

@@ -11,15 +11,15 @@ import (
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/complianceoperator/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 )
 
@@ -28,12 +28,15 @@ var (
 		user.With(permissions.View(resources.Compliance)): {
 			"/v1.ComplianceService/GetStandards",
 			"/v1.ComplianceService/GetStandard",
-			"/v1.ComplianceService/GetComplianceControlResults",
 			"/v1.ComplianceService/GetComplianceStatistics",
 			"/v1.ComplianceService/GetRunResults",
 			"/v1.ComplianceService/GetAggregatedResults",
 		},
+		user.With(permissions.Modify(resources.Compliance)): {
+			"/v1.ComplianceService/UpdateComplianceStandardConfig",
+		},
 	})
+	log = logging.LoggerForModule()
 )
 
 // New returns a service object for registering with grpc.
@@ -48,6 +51,8 @@ func New(aggregator aggregation.Aggregator, complianceDataStore complianceDS.Dat
 }
 
 type serviceImpl struct {
+	v1.UnimplementedComplianceServiceServer
+
 	aggregator          aggregation.Aggregator
 	complianceDataStore complianceDS.DataStore
 	standardsRepo       standards.Repository
@@ -71,15 +76,20 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetStandards returns a list of available standardsRepo
-func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianceStandardsResponse, error) {
+func (s *serviceImpl) GetStandards(ctx context.Context, _ *v1.Empty) (*v1.GetComplianceStandardsResponse, error) {
 	standards, err := s.standardsRepo.Standards()
+
 	if err != nil {
 		return nil, err
 	}
 	// Filter standards by active
 	filteredStandards := standards[:0]
 	for _, standard := range standards {
+		hide, exists, _ := s.complianceDataStore.GetConfig(ctx, standard.GetId())
 		if s.manager.IsStandardActive(standard.GetId()) {
+			if exists {
+				standard.HideScanResults = hide.HideScanResults
+			}
 			filteredStandards = append(filteredStandards, standard)
 		}
 	}
@@ -96,29 +106,15 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrap(errorhelpers.ErrNotFound, req.GetId())
+		return nil, errors.Wrap(errox.NotFound, req.GetId())
+	}
+
+	hide, exists, _ := s.complianceDataStore.GetConfig(ctx, req.GetId())
+	if exists {
+		standard.Metadata.HideScanResults = hide.HideScanResults
 	}
 	return &v1.GetComplianceStandardResponse{
 		Standard: standard,
-	}, nil
-}
-
-// GetComplianceControlResults returns controls and evidence
-func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1.RawQuery) (*v1.ComplianceControlResultsResponse, error) {
-	q := search.EmptyQuery()
-	var err error
-	if query.GetQuery() != "" {
-		q, err = search.ParseQuery(query.GetQuery())
-		if err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
-		}
-	}
-	results, err := s.complianceDataStore.QueryControlResults(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return &v1.ComplianceControlResultsResponse{
-		Results: results,
 	}, nil
 }
 
@@ -131,9 +127,21 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 		return nil, err
 	}
 
+	filteredSources := sources[:0]
+	for _, source := range sources {
+		config, exists, err := s.complianceDataStore.GetConfig(ctx, source.GetStandardId())
+		if err != nil {
+			return nil, err
+		}
+		// Not exists implies standards is not hidden
+		if exists && config.GetHideScanResults() {
+			continue
+		}
+		filteredSources = append(filteredSources, source)
+	}
 	return &storage.ComplianceAggregation_Response{
 		Results: validResults,
-		Sources: sources,
+		Sources: filteredSources,
 	}, nil
 }
 
@@ -152,4 +160,22 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 		Results:    results.LastSuccessfulResults,
 		FailedRuns: results.FailedRuns,
 	}, nil
+}
+
+// UpdateComplianceStandardConfig updates compliance standards config
+func (s *serviceImpl) UpdateComplianceStandardConfig(ctx context.Context, req *v1.UpdateComplianceRequest) (*v1.Empty, error) {
+	_, exists, err := s.standardsRepo.Standard(req.GetId())
+
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrap(errox.NotFound, req.GetId())
+	}
+	err = s.complianceDataStore.UpdateConfig(ctx, req.GetId(), req.GetHideScanResults())
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.Empty{}, nil
 }

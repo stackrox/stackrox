@@ -37,13 +37,10 @@ const ClusterVersion = ({ clusterId }) => {
                         }
                         contents = (
                             <div className="py-8 w-full flex flex-col items-center justify-between">
-                                <div
-                                    className="text-4xl text-primary-700 font-500 text-center"
-                                    data-testid="cluster-version"
-                                >
+                                <div className="text-4xl text-center" data-testid="cluster-version">
                                     {version}
                                 </div>
-                                <div className="text-base-500">
+                                <div>
                                     Build date:&nbsp;
                                     {dateFormat(orchestratorMetadata.buildDate, 'MMMM DD, YYYY')}
                                 </div>

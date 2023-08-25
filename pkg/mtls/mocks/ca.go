@@ -9,8 +9,8 @@ import (
 	x509 "crypto/x509"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	mtls "github.com/stackrox/rox/pkg/mtls"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCA is a mock of CA interface.

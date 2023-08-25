@@ -6,24 +6,24 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is the interface for accessing stored compliance data
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
-	QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error)
-
 	GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error)
 	GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error)
 	GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
-	GetLatestRunResultsForClustersAndStandards(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
 	IsComplianceRunSuccessfulOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error)
 
 	StoreRunResults(ctx context.Context, results *storage.ComplianceRunResults) error
 	StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error
 	StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error
+
+	UpdateConfig(ctx context.Context, id string, hide bool) error
+	GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error)
 
 	PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 	ClearAggregationResults(ctx context.Context) error

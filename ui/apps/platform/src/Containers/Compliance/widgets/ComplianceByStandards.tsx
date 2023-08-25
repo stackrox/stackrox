@@ -1,17 +1,33 @@
 import React, { ReactElement } from 'react';
 import { useQuery } from '@apollo/client';
 
-import { ResourceType } from 'constants/entityTypes';
 import Loader from 'Components/Loader';
 import { STANDARDS_QUERY } from 'queries/standard';
+import { ComplianceStandardScope } from 'services/ComplianceService';
+
 import ComplianceByStandard from './ComplianceByStandard';
 
-type ComplianceByStandardsProps = {
-    entityType?: ResourceType;
+type StandardsQueryDataType = {
+    results: {
+        id: string;
+        name: string;
+        scopes: ComplianceStandardScope[];
+        hidden: boolean;
+    }[];
 };
 
-function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): ReactElement {
-    const { loading, data, error } = useQuery(STANDARDS_QUERY);
+type ComplianceByStandardsProps = {
+    entityId?: string;
+    entityName?: string;
+    entityType?: ComplianceStandardScope;
+};
+
+function ComplianceByStandards({
+    entityId,
+    entityName,
+    entityType,
+}: ComplianceByStandardsProps): ReactElement {
+    const { loading, data, error } = useQuery<StandardsQueryDataType>(STANDARDS_QUERY);
     if (loading) {
         return <Loader />;
     }
@@ -25,12 +41,14 @@ function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): Reac
         );
     }
 
-    let standards = data?.results || [];
-    if (entityType && Array.isArray(data?.results)) {
-        standards = data.results.filter(
-            ({ scopes }): boolean => scopes.includes(entityType) as boolean
-        );
-    }
+    /* eslint-disable no-nested-ternary */
+    const standards = !data?.results
+        ? []
+        : !entityType
+        ? data.results
+        : data.results.filter(({ scopes }) => scopes.includes(entityType));
+    /* eslint-enable no-nested-ternary */
+
     return (
         <>
             {standards.map(({ name: standardName, id: standardId }) => (
@@ -38,6 +56,9 @@ function ComplianceByStandards({ entityType }: ComplianceByStandardsProps): Reac
                     key={standardId}
                     standardName={standardName}
                     standardId={standardId}
+                    entityId={entityId}
+                    entityName={entityName}
+                    entityType={entityType}
                     className="pdf-page"
                 />
             ))}

@@ -4,6 +4,8 @@ export type ClusterType =
     | 'OPENSHIFT_CLUSTER'
     | 'OPENSHIFT4_CLUSTER';
 
+export type ClusterLabels = Record<string, string>;
+
 export type ClusterProviderMetadata =
     | ClusterGoogleProviderMetadata
     | ClusterAWSProviderMetadata
@@ -28,7 +30,7 @@ export type AWSProviderMetadata = {
 
 export type ClusterAzureProviderMetadata = {
     azure: AzureProviderMetadata;
-};
+} & ClusterBaseProviderMetadata;
 
 export type AzureProviderMetadata = {
     subscriptionId: string;
@@ -47,7 +49,7 @@ export type ClusterOrchestratorMetadata = {
     apiVersions: string[];
 };
 
-export type CollectionMethod = 'UNSET_COLLECTION' | 'NO_COLLECTION' | 'KERNEL_MODULE' | 'EBPF';
+export type CollectionMethod = 'UNSET_COLLECTION' | 'NO_COLLECTION' | 'EBPF' | 'CORE_BPF';
 
 export type AdmissionControllerConfig = {
     enabled: boolean;
@@ -89,7 +91,7 @@ export type CompleteClusterConfig = {
     clusterLabels: Record<string, string>;
 };
 
-// StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine
+// SensorDeploymentIdentification aims at uniquely identifying a Sensor deployment. It is used to determine
 // whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
 // partition), or from a deployment in a different namespace or cluster.
 export type SensorDeploymentIdentification = {
@@ -105,7 +107,7 @@ export type Cluster = {
     id: string;
     name: string;
     type: ClusterType;
-    labels: Record<string, string>;
+    labels: ClusterLabels;
     mainImage: string;
     collectorImage: string;
     centralApiEndpoint: string;
@@ -131,10 +133,10 @@ export type Cluster = {
     auditLogState: Record<string, AuditLogFileState>;
 
     initBundleId: string;
-    managedBy: ManagerType;
+    managedBy: ClusterManagerType;
 };
 
-export type ManagerType =
+export type ClusterManagerType =
     | 'MANAGER_TYPE_UNKNOWN'
     | 'MANAGER_TYPE_MANUAL'
     | 'MANAGER_TYPE_HELM_CHART'

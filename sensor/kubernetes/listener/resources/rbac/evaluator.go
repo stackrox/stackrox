@@ -4,11 +4,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 type namespacedSubject string
+
+func (ns namespacedSubject) splitNamespaceAndName() (string, string, error) {
+	parts := strings.Split(string(ns), "#")
+	if len(parts) != 2 {
+		return "", "", errors.Errorf("unpacking namespaced subject: expected value to be split by # symbol: %s", string(ns))
+	}
+	return parts[0], parts[1], nil
+}
 
 func nsSubjectFromSubject(s *storage.Subject) namespacedSubject {
 	b := strings.Builder{}
@@ -42,7 +51,7 @@ func rolePermissionLevelToClusterPermissionLevel(permissionLevel rolePermissionL
 	case permissionNone:
 		return storage.PermissionLevel_NONE
 	}
-	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
+	utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
 	return storage.PermissionLevel_UNSET
 }
 
@@ -55,7 +64,7 @@ func rolePermissionLevelToNamespacePermissionLevel(permissionLevel rolePermissio
 	case permissionNone:
 		return storage.PermissionLevel_NONE
 	}
-	_ = utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
+	utils.Should(fmt.Errorf("unhandled permission level %d", permissionLevel))
 	return storage.PermissionLevel_UNSET
 }
 

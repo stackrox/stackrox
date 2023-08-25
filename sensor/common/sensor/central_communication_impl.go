@@ -10,12 +10,16 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -31,20 +35,24 @@ type centralCommunicationImpl struct {
 	sender     CentralSender
 	components []common.SensorComponent
 
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopper concurrency.Stopper
+
+	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
+	allFinished *sync.WaitGroup
+
+	isReconnect bool
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
 	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(err error) {
-	s.stopC.SignalWithError(err)
+func (s *centralCommunicationImpl) Stop(_ error) {
+	s.stopper.Client().Stop()
 }
 
 func (s *centralCommunicationImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &s.stoppedC
+	return s.stopper.Client().Stopped()
 }
 
 func isUnimplemented(err error) bool {
@@ -81,10 +89,24 @@ func communicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 	}
 }
 
+func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorState {
+	if s.isReconnect {
+		return central.SensorHello_RECONNECT
+	}
+	return central.SensorHello_STARTUP
+}
+
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+	var stream central.SensorService_CommunicateClient
 	defer func() {
-		s.stoppedC.SignalWithError(s.stopC.Err())
-		runAll(s.stopC.Err(), onStops...)
+		s.stopper.Flow().ReportStopped()
+		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		s.allFinished.Wait()
+		if stream != nil {
+			if err := stream.CloseSend(); err != nil {
+				log.Errorf("Failed to close stream cleanly: %v", err)
+			}
+		}
 	}()
 
 	// Start the stream client.
@@ -99,8 +121,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: configHandler.GetDeploymentIdentification(),
+		SensorState:              s.getSensorState(),
 	}
-	capsSet := centralsensor.NewSensorCapabilitySet()
+	capsSet := set.NewSet[centralsensor.SensorCapability]()
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
@@ -126,26 +149,21 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
-	stream, err := communicateWithAutoSensedEncoding(ctx, client)
+	stream, err = communicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
 	if err := s.initialSync(stream, sensorHello, configHandler, detector); err != nil {
-		s.stopC.SignalWithError(err)
+		s.stopper.Flow().StopWithError(err)
 		return
 	}
 
-	defer func() {
-		if err := stream.CloseSend(); err != nil {
-			log.Errorf("Failed to close stream cleanly: %v", err)
-		}
-	}()
 	log.Info("Established connection to Central.")
 
 	centralReachable.Set(true)
@@ -159,7 +177,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Wait for stop.
 	/////////////////
-	_ = s.stopC.Wait()
+	<-s.stopper.Flow().StopRequested()
 	log.Info("Communication with central ended.")
 }
 
@@ -189,11 +207,18 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		}
 	} else {
 		// No sensor hello :(
-		log.Warnf("Central is running a legacy version that might not support all current features")
+		log.Warn("Central is running a legacy version that might not support all current features")
 	}
 
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
+
+	if centralHello.GetManagedCentral() {
+		log.Info("Central is managed")
+	}
+
+	managedcentral.Set(centralHello.GetManagedCentral())
+	centralid.Set(centralHello.GetCentralId())
 
 	if hello.HelmManagedConfigInit != nil {
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
@@ -239,7 +264,7 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	if msg.GetPolicySync() == nil {
 		return errors.Errorf("second message received from Sensor was not a policy sync: %T", msg.Msg)
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessPolicySync(context.Background(), msg.GetPolicySync()); err != nil {
 		return errors.Wrap(err, "policy sync could not be successfully processed")
 	}
 

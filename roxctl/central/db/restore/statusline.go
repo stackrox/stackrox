@@ -71,6 +71,6 @@ func (l *statusLine) currentLine(width int) string {
 	return line
 }
 
-func (l *statusLine) Fill(w io.Writer, width int, stat *decor.Statistics) {
+func (l *statusLine) Fill(w io.Writer, width int, _ *decor.Statistics) {
 	_, _ = fmt.Fprint(w, l.currentLine(width))
 }

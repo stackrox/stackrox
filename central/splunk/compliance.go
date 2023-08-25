@@ -58,6 +58,11 @@ func getMessageLines(evidence []*storage.ComplianceResultValue_Evidence) string 
 
 // NewComplianceHandler is an HTTP handler that outputs CSV exports of compliance data
 func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
+	return newComplianceHandler(complianceDS, getClusterIDs)
+}
+
+// Internal function that accepts an additional argument, getClusterIDs, that simplifies mocking in tests.
+func newComplianceHandler(complianceDS datastore.DataStore, getClusterIDs func(ctx context.Context) ([]string, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		arrayWriter := jsonutil.NewJSONArrayWriter(w)
 		if err := arrayWriter.Init(); err != nil {
@@ -75,7 +80,7 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 		// Iterate over the cluster-standard pairs to minimize memory pressure
 		for _, clusterID := range clusterIDs {
 			for _, standardID := range standardIDs {
-				data, err := complianceDS.GetLatestRunResultsForClustersAndStandards(r.Context(), []string{clusterID}, []string{standardID}, types.RequireMessageStrings)
+				data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), []string{clusterID}, []string{standardID}, types.RequireMessageStrings)
 				if err != nil {
 					httputil.WriteError(w, err)
 					return
@@ -136,6 +141,7 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 							}
 						}
 					}
+
 					for nodeKey, nodeValue := range d.GetNodeResults() {
 						node := d.GetDomain().GetNodes()[nodeKey]
 						for controlID, result := range nodeValue.GetControlResults() {
@@ -148,6 +154,27 @@ func NewComplianceHandler(complianceDS datastore.DataStore) http.HandlerFunc {
 								Cluster:    d.GetDomain().GetCluster().GetName(),
 								ObjectType: "Node",
 								ObjectName: node.GetName(),
+								Control:    controlName,
+								State:      stateToString(result.OverallState),
+								Evidence:   getMessageLines(result.GetEvidence()),
+							}
+							if err := arrayWriter.WriteObject(res); err != nil {
+								httputil.WriteError(w, err)
+								return
+							}
+						}
+					}
+					for machineKey, machineValue := range d.GetMachineConfigResults() {
+						for controlID, result := range machineValue.GetControlResults() {
+							controlName := controlID
+							if control, ok := controls[controlID]; ok {
+								controlName = control.GetName()
+							}
+							res := &splunkComplianceResult{
+								Standard:   standardName,
+								Cluster:    d.GetDomain().GetCluster().GetName(),
+								ObjectType: "Machine Config",
+								ObjectName: machineKey,
 								Control:    controlName,
 								State:      stateToString(result.OverallState),
 								Evidence:   getMessageLines(result.GetEvidence()),

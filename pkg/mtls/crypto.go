@@ -56,10 +56,15 @@ const (
 	certLifetime = 365 * 24 * time.Hour
 
 	ephemeralProfileWithExpirationInHours             = "ephemeralWithExpirationInHours"
-	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour
+	ephemeralProfileWithExpirationInHoursCertLifetime = 3 * time.Hour // NB: keep in sync with operator's InitBundleReconcilePeriod
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
+
+	// CentralDBCertFileName is the default file name for Central DB certificate.
+	CentralDBCertFileName = "central-db-cert.pem"
+	// CentralDBKeyFileName is the default file name for Central DB key.
+	CentralDBKeyFileName = "central-db-key.pem"
 )
 
 var (
@@ -83,6 +88,9 @@ func init() {
 var (
 	// CentralSubject is the identity used in certificates for Central.
 	CentralSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
+
+	// CentralDBSubject is the identity used in certificates for Central DB.
+	CentralDBSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_DB_SERVICE, Identifier: "Central DB"}
 
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
@@ -256,7 +264,7 @@ func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer, opts []IssueCe
 	}
 
 	csr := &cfcsr.CertificateRequest{
-		KeyRequest:   cfcsr.NewBasicKeyRequest(),
+		KeyRequest:   cfcsr.NewKeyRequest(),
 		SerialNumber: serial.String(),
 	}
 	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
@@ -326,10 +334,8 @@ func RandomSerial() (*big.Int, error) {
 
 func generateIdentity(subj Subject, serial *big.Int) *storage.ServiceIdentity {
 	return &storage.ServiceIdentity{
-		Id:   subj.Identifier,
-		Type: subj.ServiceType,
-		Srl: &storage.ServiceIdentity_SerialStr{
-			SerialStr: serial.String(),
-		},
+		Id:        subj.Identifier,
+		Type:      subj.ServiceType,
+		SerialStr: serial.String(),
 	}
 }

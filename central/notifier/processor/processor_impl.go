@@ -5,22 +5,25 @@ import (
 	"fmt"
 
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/logging"
+	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	// Replacing with a background context such that outside context cancellation
-	// does not affect long running go routines.
+	// does not affect long-running go routines.
 	ctxBackground = context.Background()
+	log           = logging.LoggerForModule()
 )
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
-	ns       NotifierSet
+	ns       pkgNotifier.Set
 	reporter integrationhealth.Reporter
 }
 
@@ -53,10 +56,11 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 		return
 	}
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
-	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
+
+	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures pkgNotifier.AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
 			go func() {
-				err := tryToAlert(ctx, notifier, alert)
+				err := pkgNotifier.TryToAlert(ctx, notifier, alert)
 				if err != nil {
 					p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_UNHEALTHY, err.Error())
 					failures.Add(alert)
@@ -73,7 +77,7 @@ func (p *processorImpl) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_M
 	// TODO: Turn processorImpl into a work queue and introduce func (p *processorImpl) run(context.Context) error.
 	// With that, we wouldn't have to fan out n go routines (n = # notifiers in p.ns) and ensure ordering
 	// of audit messages.
-	p.ns.ForEach(ctx, func(_ context.Context, notifier notifiers.Notifier, _ AlertSet) {
+	p.ns.ForEach(ctx, func(_ context.Context, notifier notifiers.Notifier, _ pkgNotifier.AlertSet) {
 		go p.tryToSendAudit(ctxBackground, notifier, msg)
 	})
 }
@@ -104,12 +108,20 @@ func (p *processorImpl) tryToSendAudit(ctx context.Context, notifier notifiers.N
 // Used for testing.
 func (p *processorImpl) processAlertSync(ctx context.Context, alert *storage.Alert) {
 	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
-	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures AlertSet) {
+	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures pkgNotifier.AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
-			err := tryToAlert(ctx, notifier, alert)
+			err := pkgNotifier.TryToAlert(ctx, notifier, alert)
 			if err != nil {
 				failures.Add(alert)
 			}
 		}
 	})
+}
+
+// New returns a new Processor
+func New(ns pkgNotifier.Set, reporter integrationhealth.Reporter) pkgNotifier.Processor {
+	return &processorImpl{
+		ns:       ns,
+		reporter: reporter,
+	}
 }

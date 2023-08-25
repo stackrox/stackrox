@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -13,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/safe"
 )
 
 var (
@@ -20,14 +23,16 @@ var (
 )
 
 // NewClusterPipeline returns a new instance of a ClusterPipeline that handles all event types.
-func NewClusterPipeline(clusterID string, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {
+func NewClusterPipeline(clusterID string, deduper hashManager.Deduper, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {
 	return &pipelineImpl{
+		deduper:   deduper,
 		fragments: fragments,
 		clusterID: clusterID,
 	}
 }
 
 type pipelineImpl struct {
+	deduper   hashManager.Deduper
 	clusterID string
 	fragments []pipeline.Fragment
 }
@@ -49,17 +54,31 @@ func (s *pipelineImpl) Run(ctx context.Context, msg *central.MsgFromSensor, inje
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg), msg.GetEvent().GetAction().String())
 
 	var matchCount int
-	errorList := errorhelpers.NewErrorList("error processing message from sensor")
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {
 			matchCount++
-			errorList.AddError(fragment.Run(ctx, s.clusterID, msg, injector))
+
+			var err error
+			panicErr := safe.Run(func() {
+				err = fragment.Run(ctx, s.clusterID, msg, injector)
+			})
+			if err != nil {
+				if errors.Is(err, context.Canceled) {
+					return nil
+				}
+				return errors.Wrap(err, "processing message from sensor")
+			}
+			if panicErr != nil {
+				metrics.IncrementPipelinePanics(msg)
+				return errors.Wrap(panicErr, "panic in pipeline execution")
+			}
 		}
 	}
 	if matchCount == 0 {
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
-	return errorList.ToError()
+	s.deduper.MarkSuccessful(msg)
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish(clusterID string) {

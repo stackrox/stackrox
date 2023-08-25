@@ -1,26 +1,8 @@
 [
     {
-        "vuln": "CVE-2020-28928",
-        "image": "^scanner.*$",
-        "tag": ".*",
-        "reason": "This is a Quay false positive on musl:1.2.2_pre2-r0, scanner has musl:1.2.2-r0"
-    },
-    {
-        "vuln": "CVE-2020-28928",
-        "image": "^main.*$",
-        "tag": ".*",
-        "reason": "This is a Quay false positive on musl:1.2.2_pre2-r0, main starting from at least 3.64.0 has musl:1.2.2-r3"
-    },
-    {
         "vuln": "CVE-XXXX-YYYY",
         "image": ".*",
         "tag": ".*",
         "reason": "An example"
-    },
-    {
-        "vuln": "*",
-        "image": "^docs.*",
-        "tag": ".*",
-        "reason": "The docs image is not deployed in production"
     }
 ]

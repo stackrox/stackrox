@@ -1,86 +1,64 @@
-import { accessScopesUrl, selectors } from '../../constants/AccessControlPage';
-import {
-    accessScopes as accessScopesApi,
-    permissions as permissionsApi,
-} from '../../constants/apiEndpoints';
-
 import withAuth from '../../helpers/basicAuth';
+import { assertCannotFindThePage } from '../../helpers/visit';
 
-const h1 = 'Access Control';
-const h2 = 'Access scopes';
+import {
+    accessScopesKey as entitiesKey,
+    assertAccessControlEntityDoesNotExist,
+    clickEntityNameInTable,
+    visitAccessControlEntities,
+    visitAccessControlEntitiesWithStaticResponseForPermissions,
+    visitAccessControlEntity,
+} from './accessControl.helpers';
+import { selectors } from './accessControl.selectors';
 
-const defaultNames = ['Deny All'];
+const defaultNames = ['Unrestricted', 'Deny All'];
 
 describe('Access Control Access scopes', () => {
     withAuth();
 
-    function visitAccessScopes() {
-        cy.intercept('GET', accessScopesApi.list).as('GetAccessScopes');
-        cy.visit(accessScopesUrl);
-        cy.wait('@GetAccessScopes');
-    }
-
-    it('displays alert if no permission', () => {
-        cy.intercept('GET', permissionsApi.mypermissions, {
+    it('cannot find the page if no permission', () => {
+        const staticResponseForPermissions = {
             fixture: 'auth/mypermissionsMinimalAccess.json',
-        }).as('GetMyPermissions');
-        cy.visit(accessScopesUrl);
-        cy.wait('@GetMyPermissions');
-
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLink).should('not.exist');
-
-        cy.get(selectors.h2).should('not.exist');
-
-        cy.get(selectors.alertTitle).should(
-            'contain', // not have.text because it contains "Info alert:" for screen reader
-            'You do not have permission to view Access Control'
+        };
+        visitAccessControlEntitiesWithStaticResponseForPermissions(
+            entitiesKey,
+            staticResponseForPermissions
         );
+
+        assertCannotFindThePage();
     });
 
-    it('list has breadcrumbs, headings, link, button, and table head cells', () => {
-        visitAccessScopes();
+    it('list has heading, button, and table head cells', () => {
+        visitAccessControlEntities(entitiesKey);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
+        cy.contains('h2', /^\d+ results? found$/);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
+        cy.get('button:contains("Create access scope")');
 
-        cy.get(selectors.h2).should('have.text', h2);
-        cy.get(selectors.list.addButton).should('have.text', 'Add access scope');
-
-        cy.get(`${selectors.list.th}:contains("Name")`);
-        cy.get(`${selectors.list.th}:contains("Description")`);
-        cy.get(`${selectors.list.th}:contains("Roles")`);
+        cy.get('th:contains("Name")');
+        cy.get('th:contains("Origin")');
+        cy.get('th:contains("Description")');
+        cy.get('th:contains("Roles")');
+        cy.get('th[aria-label="Row actions"]');
     });
 
     it('list has default names', () => {
-        visitAccessScopes();
+        visitAccessControlEntities(entitiesKey);
 
-        // Unrestricted is special case, because it does not have a link.
-        cy.get(`${selectors.list.tdName}:contains("Unrestricted")`);
-        cy.get(`${selectors.list.tdNameLink}:contains("Unrestricted")`).should('not.exist');
-
-        defaultNames.forEach((name) => {
-            cy.get(`${selectors.list.tdNameLink}:contains("${name}")`);
+        defaultNames.forEach((defaultName) => {
+            cy.get(`td[data-label="Name"] a:contains("${defaultName}")`);
         });
     });
 
     it('list link for default Deny All goes to form which has label instead of button and disabled input values', () => {
-        visitAccessScopes();
+        visitAccessControlEntities(entitiesKey);
 
-        const name = defaultNames[0];
-        cy.get(`${selectors.list.tdNameLink}:contains("${name}")`).click();
+        const entityName = 'Deny All';
+        clickEntityNameInTable(entitiesKey, entityName);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3):contains("${name}")`);
+        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`li.pf-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
-        cy.get(selectors.h2).should('have.text', name);
         cy.get(selectors.form.notEditableLabel).should('exist');
         cy.get(selectors.form.editButton).should('not.exist');
 
@@ -89,22 +67,9 @@ describe('Access Control Access scopes', () => {
     });
 
     it('displays message instead of form if entity id does not exist', () => {
-        cy.intercept('GET', accessScopesApi.list).as('GetAccessScopes');
-        cy.visit(`${accessScopesUrl}/bogus`);
-        cy.wait('@GetAccessScopes');
+        const entityId = 'bogus';
+        visitAccessControlEntity(entitiesKey, entityId);
 
-        cy.get(`${selectors.breadcrumbItem}:nth-child(1):contains("${h1}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(2):contains("${h2}")`);
-        cy.get(`${selectors.breadcrumbItem}:nth-child(3)`).should('not.exist');
-
-        cy.get(selectors.h1).should('have.text', h1);
-        cy.get(selectors.navLinkCurrent).should('have.text', h2);
-
-        cy.get(selectors.h2).should('not.exist');
-
-        cy.get(selectors.notFound.title).should('have.text', 'Access scope does not exist');
-        cy.get(selectors.notFound.a)
-            .should('have.text', h2)
-            .should('have.attr', 'href', accessScopesUrl);
+        assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });

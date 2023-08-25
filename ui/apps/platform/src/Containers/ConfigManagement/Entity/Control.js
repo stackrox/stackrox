@@ -17,7 +17,7 @@ import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import Nodes from '../List/Nodes';
 
 const QUERY = gql`
-    query controlById($id: ID!, $where: String) {
+    query getControl($id: ID!, $where: String) {
         results: complianceControl(id: $id) {
             interpretationText
             description

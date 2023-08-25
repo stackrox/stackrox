@@ -1,15 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import dateFns from 'date-fns';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import Button from 'Components/Button';
-import { actions } from 'reducers/pdfDownload';
-import StackroxLogo from 'images/stackrox-logo.png';
 import { enhanceWordBreak } from 'utils/pdfUtils';
+import { getProductBranding } from 'constants/productBranding';
 
 const printClassName = 'pdf-page';
 const imagesClassName = 'pdf-page-image';
@@ -24,7 +22,7 @@ const printProperties = [
     'font-size',
 ];
 const defaultPageLandscapeWidth = 297;
-const defaultPagePotraitWidth = 210;
+const defaultPagePortraitWidth = 210;
 const WIDGET_WIDTH = 203;
 
 class WorkflowPDFExportButton extends Component {
@@ -36,12 +34,12 @@ class WorkflowPDFExportButton extends Component {
             marginType: PropTypes.string,
         }),
         fileName: PropTypes.string,
-        setPDFRequestState: PropTypes.func,
-        setPDFSuccessState: PropTypes.func,
         onClick: PropTypes.func,
         className: PropTypes.string,
         tableOptions: PropTypes.shape({}),
         pdfTitle: PropTypes.string,
+        isExporting: PropTypes.bool.isRequired,
+        setIsExporting: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -53,8 +51,6 @@ class WorkflowPDFExportButton extends Component {
         },
         tableOptions: null,
         fileName: 'export',
-        setPDFRequestState: null,
-        setPDFSuccessState: null,
         onClick: null,
         className: '',
         pdfTitle: '',
@@ -66,7 +62,7 @@ class WorkflowPDFExportButton extends Component {
 
         const promises = [];
         const div = `<div class="theme-light flex justify-between bg-primary-800 items-center text-primary-100 h-32">
-            <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
+            <img alt="stackrox-logo" src=${getProductBranding().logoSvg} class="h-20 pl-2" />
             <div class="pr-4 text-right">
                 <div class="text-2xl">${this.props.pdfTitle}</div>
                 <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
@@ -124,9 +120,8 @@ class WorkflowPDFExportButton extends Component {
     };
 
     saveFn = () => {
-        const { id, options, fileName, setPDFRequestState, setPDFSuccessState, onClick } =
-            this.props;
-        setPDFRequestState();
+        const { id, options, fileName, setIsExporting, onClick } = this.props;
+        setIsExporting(true);
         if (onClick) {
             onClick();
         }
@@ -135,7 +130,7 @@ class WorkflowPDFExportButton extends Component {
         const imgElements = element.getElementsByClassName(imagesClassName);
         const printElements = Array.from(element.getElementsByClassName(printClassName));
 
-        let imgWidth = options.mode === 'l' ? defaultPageLandscapeWidth : defaultPagePotraitWidth;
+        let imgWidth = options.mode === 'l' ? defaultPageLandscapeWidth : defaultPagePortraitWidth;
         // eslint-disable-next-line new-cap
         const doc = new jsPDF(mode, marginType, paperSize, true);
         let positionX = 0;
@@ -283,7 +278,7 @@ class WorkflowPDFExportButton extends Component {
                 });
                 element.removeChild(header);
                 doc.save(`${fileName}.pdf`);
-                setPDFSuccessState();
+                setIsExporting(false);
             });
         }, 0);
     };
@@ -291,18 +286,15 @@ class WorkflowPDFExportButton extends Component {
     render() {
         return (
             <Button
+                isLoading={this.props.isExporting}
+                disabled={this.props.isExporting}
                 dataTestId="download-pdf-button"
                 className={this.props.className}
-                text="DOWNLOAD PAGE AS PDF"
+                text="Download Page as PDF"
                 onClick={this.saveFn}
             />
         );
     }
 }
 
-const mapDispatchToProps = {
-    setPDFRequestState: actions.fetchPdf.request,
-    setPDFSuccessState: actions.fetchPdf.success,
-};
-
-export default connect(null, mapDispatchToProps)(WorkflowPDFExportButton);
+export default WorkflowPDFExportButton;

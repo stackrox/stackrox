@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -euo pipefail
-
-[ -d /.init-dirs ] || exit 0
-
-cp -rfP /.init-dirs/* /

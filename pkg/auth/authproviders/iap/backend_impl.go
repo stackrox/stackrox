@@ -64,13 +64,13 @@ func (p *backendImpl) Config() map[string]string {
 	}
 }
 
-func (p *backendImpl) OnEnable(provider authproviders.Provider) {
+func (p *backendImpl) OnEnable(_ authproviders.Provider) {
 }
 
-func (p *backendImpl) OnDisable(provider authproviders.Provider) {
+func (p *backendImpl) OnDisable(_ authproviders.Provider) {
 }
 
-func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
+func (p *backendImpl) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
 	return p.loginURL, nil
 }
 
@@ -78,7 +78,7 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
+func (p *backendImpl) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	token := r.Header.Get(jwtAssertion)
 	if token == "" {
 		return nil, errors.New("invalid request, expected assertion not found")
@@ -86,7 +86,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	return p.getAuthResponse(token)
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ExchangeToken(_ context.Context, _, _ string) (*authproviders.AuthResponse, string, error) {
 	return nil, "", status.Errorf(codes.Unimplemented, "ExchangeToken not implemented for provider type %q", TypeName)
 }
 
@@ -110,7 +110,7 @@ func (p *backendImpl) Validate(ctx context.Context, roxClaims *tokens.Claims) er
 		return errFingerPrintChanged
 	}
 
-	if !sliceutils.StringEqual([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
+	if !sliceutils.Equal([]string{extraClaims.Hd}, []string{roxClaims.ExternalUser.Attributes["hd"][0]}) {
 		return errFingerPrintChanged
 	}
 
@@ -124,7 +124,7 @@ func (p *backendImpl) RefreshAccessToken(ctx context.Context, _ authproviders.Re
 	return p.getAuthResponse(token)
 }
 
-func (p *backendImpl) RevokeRefreshToken(ctx context.Context, _ authproviders.RefreshTokenData) error {
+func (p *backendImpl) RevokeRefreshToken(_ context.Context, _ authproviders.RefreshTokenData) error {
 	// Not required to be implemented for this provider
 	return nil
 }

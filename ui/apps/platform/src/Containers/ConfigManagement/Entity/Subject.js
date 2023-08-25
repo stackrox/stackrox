@@ -58,7 +58,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext, paginati
         );
 
         return gql`
-            query subject_${entityListType}($id: ID, $query: String, $pagination: Pagination) {
+            query getSubject_${entityListType}($id: ID, $query: String, $pagination: Pagination) {
                 subject(id: $id) {
                     id
                     name

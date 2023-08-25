@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package backend
 
 import (
@@ -11,22 +13,25 @@ import (
 	"path"
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
-	rocksdbStore "github.com/stackrox/rox/central/clusterinit/store/rocksdb"
+	"github.com/stackrox/rox/central/clusterinit/store"
+	pgStore "github.com/stackrox/rox/central/clusterinit/store/postgres"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -105,7 +110,7 @@ type clusterInitBackendTestSuite struct {
 	suite.Suite
 	backend      Backend
 	ctx          context.Context
-	rocksDB      *rocksdb.RocksDB
+	db           postgres.DB
 	certProvider *mocks.MockProvider
 	mockCtrl     *gomock.Controller
 	certBundle   clusters.CertBundle
@@ -117,10 +122,12 @@ func (s *clusterInitBackendTestSuite) SetupTest() {
 	s.Require().NoError(err, "retrieving test data for mocking")
 	s.mockCtrl = gomock.NewController(s.T())
 	m := mocks.NewMockProvider(s.mockCtrl)
-	s.rocksDB = rocksdbtest.RocksDBForT(s.T())
-	store, err := rocksdbStore.NewStore(s.rocksDB)
+
+	s.db = pgtest.ForT(s.T())
+
+	pgStore := pgStore.New(s.db)
 	s.Require().NoError(err)
-	s.backend = newBackend(store, m)
+	s.backend = newBackend(store.NewStore(pgStore), m)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	s.certProvider = m
 
@@ -297,7 +304,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEmptyChain() 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 	ctx := s.ctx
 	id := uuid.NewV4()
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{id.String()}}},
 	}
 
@@ -309,7 +316,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {
 	ctx := s.ctx
 	id := uuid.NewV4()
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{
 			CommonName:   centralsensor.EphemeralInitCertClusterID,
 			Organization: []string{id.String()},
@@ -329,7 +336,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificate() {
 	meta, err := s.backend.Issue(s.ctx, "revoke-check")
 	s.Require().NoError(err)
 
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{meta.Meta.Id}}},
 	}
 
@@ -350,7 +357,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateShouldIgnoreN
 	// To access the revoke check a token should be passed without any access rights.
 	ctxWithoutSAC := context.Background()
 
-	certs := []requestinfo.CertInfo{
+	certs := []mtls.CertInfo{
 		{Subject: pkix.Name{Organization: []string{}}},
 	}
 
@@ -380,6 +387,80 @@ func (s *clusterInitBackendTestSuite) TestIssuingAfterRevoking() {
 	s.Require().NoError(err)
 }
 
+func (s *clusterInitBackendTestSuite) TestCheckAccess() {
+	cases := map[string]struct {
+		ctx         context.Context
+		access      storage.Access
+		shouldFail  bool
+		expectedErr error
+	}{
+		"read access to both Administration and Integration should allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access: storage.Access_READ_ACCESS,
+		},
+		"read access to both Administration and Integration should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"read access to only Administration should not allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration))),
+			access:      storage.Access_READ_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"read access to only Integration should not allow read access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration))),
+			access:      storage.Access_READ_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"write access to both should allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration, resources.Integration))),
+			access: storage.Access_READ_WRITE_ACCESS,
+		},
+		"write access to only Administration should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+		"write access to only Integration should not allow write access": {
+			ctx: sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Integration))),
+			access:      storage.Access_READ_WRITE_ACCESS,
+			shouldFail:  true,
+			expectedErr: errox.NotAuthorized,
+		},
+	}
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			err := access.CheckAccess(c.ctx, c.access)
+			if c.shouldFail {
+				s.Require().Error(err)
+				s.ErrorIs(err, c.expectedErr)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
 func (s *clusterInitBackendTestSuite) TearDownTest() {
-	rocksdbtest.TearDownRocksDB(s.rocksDB)
+	s.db.Close()
 }

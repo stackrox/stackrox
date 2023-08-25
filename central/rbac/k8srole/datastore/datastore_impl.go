@@ -3,19 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-)
-
-const (
-	batchSize = 1000
 )
 
 var (
@@ -24,46 +18,17 @@ var (
 
 type datastoreImpl struct {
 	storage  store.Store
-	indexer  index.Indexer
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) buildIndex() error {
-	defer debug.FreeOSMemory()
-
-	log.Info("[STARTUP] Indexing roles")
-
-	var roles []*storage.K8SRole
-	var count int
-	err := d.storage.Walk(func(role *storage.K8SRole) error {
-		roles = append(roles, role)
-		if len(roles) == batchSize {
-			if err := d.indexer.AddK8SRoles(roles); err != nil {
-				return err
-			}
-			roles = roles[:0]
-		}
-		count++
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if err := d.indexer.AddK8SRoles(roles); err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Successfully indexed %d roles", count)
-	return nil
-}
-
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
-	role, found, err := d.storage.Get(id)
+	role, found, err := d.storage.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
 
-	if ok, err := k8sRolesSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(role).Allowed(ctx); err != nil || !ok {
-		return nil, false, err
+	if !k8sRolesSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(role).IsAllowed() {
+		return nil, false, nil
 	}
 	return role, true, nil
 }
@@ -83,10 +48,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Upsert(request); err != nil {
-		return err
-	}
-	return d.indexer.AddK8SRole(request)
+	return d.storage.Upsert(ctx, request)
 }
 
 func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
@@ -96,10 +58,7 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := d.storage.Delete(id); err != nil {
-		return err
-	}
-	return d.indexer.DeleteK8SRole(id)
+	return d.storage.Delete(ctx, id)
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {

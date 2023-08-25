@@ -26,9 +26,13 @@ const MockPagination = ({ defaultPage = 1 }) => {
     );
 };
 
+const options = {
+    name: 'Go to next page', // aria-label attribute
+};
+
 test('can press the next button when on the first page', async () => {
     render(<MockPagination defaultPage={1} />);
-    const button = screen.getByTestId('next-page-button');
+    const button = screen.getByRole('button', options);
 
     // button should not be disabled
     expect(button).not.toHaveAttribute('disabled');
@@ -36,7 +40,7 @@ test('can press the next button when on the first page', async () => {
 
 test('can not press the next button when on the last page', async () => {
     render(<MockPagination defaultPage={5} />);
-    const button = screen.getByTestId('next-page-button');
+    const button = screen.getByRole('button', options);
 
     // button should be disabled
     expect(button).toHaveAttribute('disabled');
@@ -45,7 +49,7 @@ test('can not press the next button when on the last page', async () => {
 test('pressing the button increases the page count', async () => {
     const currentPage = 1;
     render(<MockPagination defaultPage={currentPage} />);
-    const button = screen.getByTestId('next-page-button');
+    const button = screen.getByRole('button', options);
     const input = screen.getByTestId('pagination-input');
 
     fireEvent.click(button);

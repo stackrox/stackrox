@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/objects"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -134,13 +134,9 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 	// Filter out only those deployments for which we can see network flows. We cannot reliably generate network
 	// policies for other deployments.
 	networkFlowsChecker := networkFlowsSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterID)
-	filteredSlice, err := sac.FilterSliceReflect(ctx, networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
+	relevantDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.Deployment) sac.ScopePredicate {
 		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
 	})
-	if err != nil {
-		return nil, errors.Wrap(err, "could not determine network flow access for deployments")
-	}
-	relevantDeployments := filteredSlice.([]*storage.Deployment)
 	relevantDeploymentsMap := objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments)
 
 	// Since we are generating ingress policies only, retrieve all flows incoming to one of the relevant deployments.
@@ -192,7 +188,7 @@ func (g *generator) populateNode(elevatedCtx context.Context, id string, entityT
 	return n
 }
 
-func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
+func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, _ map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
 	if hasMatchingPolicy(node.deployment, ingressPolicies[node.deployment.GetNamespace()]) {
 		return nil
 	}

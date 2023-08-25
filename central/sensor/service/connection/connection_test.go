@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
@@ -26,19 +26,10 @@ func TestHandler(t *testing.T) {
 
 type testSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
-}
-
-func (s *testSuite) SetupSuite() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
-}
-
-func (s *testSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 }
 
 func (s *testSuite) SetupTest() {
-	err := testutilsMTLS.LoadTestMTLSCerts(s.envIsolator)
+	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 
@@ -56,29 +47,36 @@ func (c *mockServer) Recv() (*central.MsgFromSensor, error) {
 	return nil, nil
 }
 
-// TestGetPolicySyncMsgFromPolicies verifies that the sensor connection is
-// capable of downgrading policies to the version known of the underlying
-// sensor. The test uses specific policy versions and not a general approach.
-func (s *testSuite) TestGetPolicySyncMsgFromPolicies() {
-	centralVersion := policyversion.CurrentVersion()
-	sensorVersion := policyversion.Version1()
-	sensorHello := &central.SensorHello{
-		PolicyVersion: sensorVersion.String(),
-	}
+func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumVersion() {
 	sensorMockConn := &sensorConnection{
-		sensorHello: sensorHello,
-	}
-	policy := &storage.Policy{
-		PolicyVersion: centralVersion.String(),
+		sensorHello: &central.SensorHello{
+			PolicyVersion: "1",
+		},
 	}
 
-	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{policy})
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
 	s.NoError(err)
 
 	policySync := msg.GetPolicySync()
 	s.Require().NotNil(policySync)
 	s.NotEmpty(policySync.Policies)
-	s.Equal(sensorVersion.String(), policySync.Policies[0].GetPolicyVersion())
+	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
+}
+
+func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersions() {
+	sensorMockConn := &sensorConnection{
+		sensorHello: &central.SensorHello{
+			PolicyVersion: "this ain't a version",
+		},
+	}
+
+	msg, err := sensorMockConn.getPolicySyncMsgFromPolicies([]*storage.Policy{{PolicyVersion: policyversion.CurrentVersion().String()}})
+	s.NoError(err)
+
+	policySync := msg.GetPolicySync()
+	s.Require().NotNil(policySync)
+	s.NotEmpty(policySync.Policies)
+	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
 }
 
 func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
@@ -106,7 +104,7 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 	server := &mockServer{
 		sentList: make([]*central.MsgToSensor, 0),
 	}
-	caps := centralsensor.NewSensorCapabilitySet(centralsensor.AuditLogEventsCap)
+	caps := set.NewSet(centralsensor.AuditLogEventsCap)
 
 	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
 
@@ -123,10 +121,6 @@ func (s *testSuite) TestSendsAuditLogSyncMessageIfEnabledOnRun() {
 }
 
 func (s *testSuite) TestIssueLocalScannerCerts() {
-	s.envIsolator.Setenv(features.LocalImageScanning.EnvVar(), "true")
-	if !features.LocalImageScanning.Enabled() {
-		s.T().Skip()
-	}
 	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
 	testCases := map[string]struct {
 		requestID  string
@@ -186,4 +180,209 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 			s.NoError(handleErr)
 		})
 	}
+}
+
+func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
+	ctx := context.Background()
+	clusterID := "this-cluster"
+	cluster := &storage.Cluster{
+		Id: clusterID,
+	}
+
+	ctrl := gomock.NewController(s.T())
+	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+	deleRegMgr := clusterMgrMock.NewMockDelegatedRegistryConfigManager(ctrl)
+	iiMgr := clusterMgrMock.NewMockImageIntegrationManager(ctrl)
+
+	sensorMockConn := &sensorConnection{
+		clusterID:                  clusterID,
+		clusterMgr:                 mgrMock,
+		delegatedRegistryConfigMgr: deleRegMgr,
+		imageIntegrationMgr:        iiMgr,
+	}
+	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
+	iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).AnyTimes()
+
+	s.Run("send", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		config := &storage.DelegatedRegistryConfig{EnabledFor: storage.DelegatedRegistryConfig_ALL}
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(config, true, nil)
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.Equal(central.DelegatedRegistryConfig_ALL, deleConfig.EnabledFor)
+				return
+			}
+		}
+
+		s.FailNow("Delegated registry config msg was not sent")
+	})
+
+	s.Run("no send on no cap", func() {
+		caps := set.NewSet[centralsensor.SensorCapability]()
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Delegated registry config msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on nil config", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, nil)
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Delegated registry config msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on err", func() {
+		caps := set.NewSet(centralsensor.DelegatedRegistryCap)
+
+		deleRegMgr.EXPECT().GetConfig(ctx).Return(nil, false, errors.New("fake error"))
+
+		server := &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+		err := sensorMockConn.Run(ctx, server, caps)
+		s.ErrorContains(err, "unable to get delegated registry config")
+	})
+}
+
+func (s *testSuite) TestImageIntegrationsOnRun() {
+	ctx := context.Background()
+	clusterID := "this-cluster"
+	cluster := &storage.Cluster{
+		Id: clusterID,
+	}
+
+	withCap := set.NewSet(centralsensor.DelegatedRegistryCap)
+	withoutCap := set.NewSet[centralsensor.SensorCapability]()
+	withRegCategory := []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY}
+	withoutRegCategory := []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER}
+
+	genServer := func() *mockServer {
+		return &mockServer{sentList: make([]*central.MsgToSensor, 0)}
+	}
+
+	ctrl := gomock.NewController(s.T())
+	mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+	deleRegMgr := clusterMgrMock.NewMockDelegatedRegistryConfigManager(ctrl)
+	iiMgr := clusterMgrMock.NewMockImageIntegrationManager(ctrl)
+
+	sensorMockConn := &sensorConnection{
+		clusterID:                  clusterID,
+		clusterMgr:                 mgrMock,
+		delegatedRegistryConfigMgr: deleRegMgr,
+		imageIntegrationMgr:        iiMgr,
+	}
+	mgrMock.EXPECT().GetCluster(ctx, clusterID).Return(cluster, true, nil).AnyTimes()
+	deleRegMgr.EXPECT().GetConfig(ctx).AnyTimes()
+
+	iis := []*storage.ImageIntegration{
+		{
+			Name: "valid",
+			Id:   "id1",
+		},
+	}
+
+	s.Run("send", func() {
+		iis[0].Autogenerated = false
+		iis[0].Categories = withRegCategory
+		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
+
+		server := genServer()
+		s.NoError(sensorMockConn.Run(ctx, server, withCap))
+		for _, msg := range server.sentList {
+			if imgInts := msg.GetImageIntegrations(); imgInts != nil {
+				s.Len(imgInts.DeletedIntegrationIds, 0)
+				s.Len(imgInts.UpdatedIntegrations, 1)
+				s.Equal(imgInts.UpdatedIntegrations[0].Name, "valid")
+				s.Equal(imgInts.UpdatedIntegrations[0].Id, "id1")
+				return
+			}
+		}
+
+		s.FailNow("Image integration msg was not sent")
+	})
+
+	s.Run("no send on autogenerated", func() {
+		iis[0].Autogenerated = true
+		iis[0].Categories = withRegCategory
+		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
+
+		server := genServer()
+		s.NoError(sensorMockConn.Run(ctx, server, withCap))
+		for _, msg := range server.sentList {
+			if imgInts := msg.GetImageIntegrations(); imgInts != nil {
+				s.FailNow("Image integrations msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on no category", func() {
+		iis[0].Autogenerated = false
+		iis[0].Categories = withoutRegCategory
+
+		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(iis, nil)
+
+		server := genServer()
+		s.NoError(sensorMockConn.Run(ctx, server, withCap))
+		for _, msg := range server.sentList {
+			if imgInts := msg.GetImageIntegrations(); imgInts != nil {
+				s.FailNow("Image integrations msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on no cap", func() {
+		iis[0].Autogenerated = false
+		iis[0].Categories = withRegCategory
+
+		server := genServer()
+		s.NoError(sensorMockConn.Run(ctx, server, withoutCap))
+		for _, msg := range server.sentList {
+			if deleConfig := msg.GetDelegatedRegistryConfig(); deleConfig != nil {
+				s.FailNow("Image integrations msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on no integrations", func() {
+		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+		server := genServer()
+		s.NoError(sensorMockConn.Run(ctx, server, withCap))
+		for _, msg := range server.sentList {
+			if imgInts := msg.GetImageIntegrations(); imgInts != nil {
+				s.FailNow("Image integrations msg was sent")
+				return
+			}
+		}
+	})
+
+	s.Run("no send on err", func() {
+		iiMgr.EXPECT().GetImageIntegrations(gomock.Any(), gomock.Any()).Return(nil, errors.New("broken"))
+
+		server := genServer()
+		err := sensorMockConn.Run(ctx, server, withCap)
+		s.ErrorContains(err, "unable to get image integrations")
+	})
 }

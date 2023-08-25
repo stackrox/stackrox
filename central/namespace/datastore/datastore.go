@@ -3,29 +3,23 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/pkg/errors"
-	cveSAC "github.com/stackrox/rox/central/cve/sac"
-	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
-	"github.com/stackrox/rox/central/idmap"
-	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
-	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
+	pgStore "github.com/stackrox/rox/central/namespace/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -34,7 +28,9 @@ import (
 // DataStore provides storage and indexing functionality for namespaces.
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
-	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
+
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
 	RemoveNamespace(ctx context.Context, id string) error
@@ -46,26 +42,30 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker, idMapStorage idmap.Storage) (DataStore, error) {
-	ds := &datastoreImpl{
-		store:             store,
-		indexer:           indexer,
-		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
+func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
+	return &datastoreImpl{
+		store:             nsStore,
 		deployments:       deploymentDataStore,
 		namespaceRanker:   namespaceRanker,
-		idMapStorage:      idMapStorage,
+		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
-	if err := ds.buildIndex(); err != nil {
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
+	dbstore := pgStore.New(pool)
+	indexer := pgStore.NewIndexer(pool)
+	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
 		return nil, err
 	}
-	return ds, nil
+	namespaceRanker := ranking.NamespaceRanker()
+	return New(dbstore, indexer, deploymentStore, namespaceRanker), nil
 }
 
 var (
-	namespaceSAC             = sac.ForResource(resources.Namespace)
-	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
-
-	log = logging.LoggerForModule()
+	namespaceSAC                     = sac.ForResource(resources.Namespace)
+	namespaceSACPostgresSearchHelper = namespaceSAC.MustCreatePgSearchHelper()
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Namespace.String(),
@@ -79,69 +79,65 @@ type datastoreImpl struct {
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
 
-	idMapStorage idmap.Storage
-
 	deployments deploymentDataStore.DataStore
-}
-
-func (b *datastoreImpl) buildIndex() error {
-	log.Info("[STARTUP] Indexing namespaces")
-	var namespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(func(ns *storage.NamespaceMetadata) error {
-		namespaces = append(namespaces, ns)
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	if b.idMapStorage != nil {
-		b.idMapStorage.OnNamespaceAdd(namespaces...)
-	}
-
-	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed namespaces")
-	return nil
 }
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
-	namespace, found, err := b.store.Get(id)
+	namespace, found, err := b.store.Get(ctx, id)
 	if err != nil || !found {
 		return nil, false, err
 	}
 
-	if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS,
+	if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS,
 		sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())).
-		Allowed(ctx); err != nil || !ok {
-		return nil, false, err
+		IsAllowed() {
+		return nil, false, nil
 	}
 	b.updateNamespacePriority(namespace)
 	return namespace, true, err
 }
 
-// GetNamespaces retrieves namespaces matching the request from bolt
-func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+// GetAllNamespaces retrieves namespaces matching the request
+func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	var allowedNamespaces []*storage.NamespaceMetadata
-	err := b.store.Walk(func(namespace *storage.NamespaceMetadata) error {
-		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
-		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
-			Allowed(ctx); err != nil || !ok {
-			return err
-		}
-		allowedNamespaces = append(allowedNamespaces, namespace)
-		return nil
-	})
-	if err != nil {
+	walkFn := func() error {
+		allowedNamespaces = allowedNamespaces[:0]
+		return b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
+			scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
+			if !namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
+				IsAllowed() {
+				return nil
+			}
+			allowedNamespaces = append(allowedNamespaces, namespace)
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, err
 	}
 	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
 }
 
-// AddNamespace adds a namespace to bolt
+func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
+	var namespaces []*storage.NamespaceMetadata
+	var err error
+	if ok, err := namespaceSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		query := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
+		return b.SearchNamespaces(ctx, query)
+	}
+	namespaces, _, err = b.store.GetMany(ctx, ids)
+	b.updateNamespacePriority(namespaces...)
+	if err != nil {
+		return nil, err
+	}
+	return namespaces, nil
+}
+
+// AddNamespace adds a namespace.
 func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	if ok, err := namespaceSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -149,13 +145,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
-		return err
-	}
-	if b.idMapStorage != nil {
-		b.idMapStorage.OnNamespaceAdd(namespace)
-	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return b.store.Upsert(ctx, namespace)
 }
 
 // UpdateNamespace updates a namespace to bolt
@@ -166,10 +156,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Upsert(namespace); err != nil {
-		return err
-	}
-	return b.indexer.AddNamespaceMetadata(namespace)
+	return b.store.Upsert(ctx, namespace)
 }
 
 // RemoveNamespace removes a namespace.
@@ -180,16 +167,13 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	if err := b.store.Delete(id); err != nil {
+	if err := b.store.Delete(ctx, id); err != nil {
 		return err
-	}
-	if b.idMapStorage != nil {
-		b.idMapStorage.OnNamespaceRemove(id)
 	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace
 	b.namespaceRanker.Remove(id)
 
-	return b.indexer.DeleteNamespaceMetadata(id)
+	return nil
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -239,7 +223,7 @@ func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 		}
 		if !exists {
 			// This could be due to a race where it's deleted in the time between
-			// the search and the query to Bolt.
+			// the search and the query.
 			continue
 		}
 		nsSlice = append(nsSlice, ns)
@@ -263,20 +247,10 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
-	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher, namespaceRanker)
-	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-	return defaultSortedSearcher
-}
-
-func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, namespaceRanker)
-
-	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
-		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToDeploymentPath, deploymentSAC.GetSACFilter()),
-		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToImagePath, imageSAC.GetSACFilter()),
-		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToCVEPath, cveSAC.GetSACFilter()),
-	})
+func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	scopedSearcher := pkgPostgres.WithScoping(namespaceSACPostgresSearchHelper.FilteredSearcher(searcher))
+	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
+	// This is currently required due to the priority searcher
+	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
+	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }

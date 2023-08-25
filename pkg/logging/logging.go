@@ -2,21 +2,24 @@
 //
 // This package supports runtime configuration via the following
 // environment variables:
-//   * LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
-//     * fatal
-//     * panic
-//     * error
-//     * warn
-//     * info
-//     * debug
-//   * LOGENCODING supporting the following values:
-//     * json
-//     * console
-//   * MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
-//   * MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
-//   * PERSISTENT_LOG supporting the following values for additional log file on persistent storage
-//     * true
-//     * false
+//
+// 1. LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
+//
+//   - fatal
+//   - panic
+//   - error
+//   - warn
+//   - info
+//   - debug
+//
+// 2. LOGENCODING supporting the following values:
+//
+//   - json
+//   - console
+//
+// 3. MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
+//
+// 4. MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
 //
 // LOGLEVEL semantics follow common conventions, i.e., any log message with a level less than the
 // currently set log level will be discarded.
@@ -48,9 +51,6 @@ const (
 	// LoggingPath is the common log file so we can export it.
 	LoggingPath = "/var/log/stackrox/log.txt"
 
-	// PersistentLoggingPath is the additional logs on persistent storage for migration related logs.
-	PersistentLoggingPath = "/var/lib/stackrox/migration_log/log.txt"
-
 	// defaultLevel is the default log level.
 	defaultLevel = zapcore.InfoLevel
 
@@ -58,20 +58,8 @@ const (
 	// implementation and not to require clients to import zapcore lib
 	// explicitly.
 
-	// FatalLevel log level
-	FatalLevel = zapcore.FatalLevel
-	// PanicLevel log level
-	PanicLevel = zapcore.PanicLevel
-	// ErrorLevel log level
-	ErrorLevel = zapcore.ErrorLevel
 	// WarnLevel log level
 	WarnLevel = zapcore.WarnLevel
-	// InfoLevel log level
-	InfoLevel = zapcore.InfoLevel
-	// DebugLevel log level
-	DebugLevel = zapcore.DebugLevel
-
-	persistentLogEnvVar = "PERSISTENT_LOG"
 )
 
 var (
@@ -159,10 +147,10 @@ var (
 	}()
 
 	// rootLogger is the convenience logger used when module specific loggers are not specified
-	rootLogger *Logger
+	rootLogger Logger
 
 	// thisModuleLogger is the logger for logging in this module.
-	thisModuleLogger *Logger
+	thisModuleLogger Logger
 )
 
 func init() {
@@ -190,9 +178,6 @@ func init() {
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
 	// such that we can easily propagate changes to log levels.
 	addOutput(&config, LoggingPath)
-	if strings.ToLower(os.Getenv(persistentLogEnvVar)) == "true" {
-		addOutput(&config, PersistentLoggingPath)
-	}
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true
@@ -272,19 +257,11 @@ func GetGlobalLogLevel() zapcore.Level {
 }
 
 // LoggerForModule returns a logger for the current module.
-func LoggerForModule() *Logger {
-	return currentModule(3).Logger()
+func LoggerForModule(opts ...OptionsFunc) Logger {
+	return currentModule(3).Logger(opts...)
 }
 
 // convenience methods log apply to root logger
-
-// Log implements logging.Logger interface.
-func Log(level zapcore.Level, args ...interface{}) { rootLogger.Log(level, args...) }
-
-// Logf implements logging.Logger interface.
-func Logf(level zapcore.Level, template string, args ...interface{}) {
-	rootLogger.Logf(level, template, args...)
-}
 
 // Debug implements logging.Logger interface.
 func Debug(args ...interface{}) { rootLogger.Debug(args...) }
@@ -298,14 +275,8 @@ func Error(args ...interface{}) { rootLogger.Error(args...) }
 // Errorf implements logging.Logger interface.
 func Errorf(format string, args ...interface{}) { rootLogger.Errorf(format, args...) }
 
-// Fatal implements logging.Logger interface.
-func Fatal(args ...interface{}) { rootLogger.Fatal(args...) }
-
 // Fatalf implements logging.Logger interface.
 func Fatalf(format string, args ...interface{}) { rootLogger.Fatalf(format, args...) }
-
-// Fatalln implements logging.Logger interface.
-func Fatalln(args ...interface{}) { rootLogger.Fatal(args...) }
 
 // Info implements logging.Logger interface.
 func Info(args ...interface{}) { rootLogger.Info(args...) }
@@ -313,23 +284,8 @@ func Info(args ...interface{}) { rootLogger.Info(args...) }
 // Infof implements logging.Logger interface.
 func Infof(format string, args ...interface{}) { rootLogger.Infof(format, args...) }
 
-// Panic implements logging.Logger interface.
-func Panic(args ...interface{}) { rootLogger.Panic(args...) }
-
 // Panicf implements logging.Logger interface.
 func Panicf(format string, args ...interface{}) { rootLogger.Panicf(format, args...) }
-
-// Panicln implements logging.Logger interface.
-func Panicln(args ...interface{}) { rootLogger.Panic(args...) }
-
-// Print implements logging.Logger interface.
-func Print(args ...interface{}) { rootLogger.Info(args...) }
-
-// Printf implements logging.Logger interface.
-func Printf(format string, args ...interface{}) { rootLogger.Infof(format, args...) }
-
-// Println implements logging.Logger interface.
-func Println(args ...interface{}) { rootLogger.Info(args...) }
 
 // Warn implements logging.Logger interface.
 func Warn(args ...interface{}) { rootLogger.Warn(args...) }
@@ -370,21 +326,14 @@ func SortedLevels() []zapcore.Level {
 
 // CreateLogger creates (but does not register) a new logger instance.
 // Skip allows to specify how much layers of nested calls we will skip during logging.
-func CreateLogger(module *Module, skip int) *Logger {
+func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	lc := config
-	return createLoggerWithConfig(&lc, module, skip)
+	// Need to increase the skip by 1 by default since we call the logger inline. Otherwise, the location of the caller
+	// would also be set to this file.
+	return createLoggerWithConfig(&lc, module, skip+1, opts...)
 }
 
-// CreatePersistentLogger creates (but does not register) a new logger instance logging
-// also to persistent location.
-// Skip allows to specify how much layers of nested calls we will skip during logging.
-func CreatePersistentLogger(module *Module, skip int) *Logger {
-	lc := config
-	addOutput(&lc, PersistentLoggingPath)
-	return createLoggerWithConfig(&lc, module, skip)
-}
-
-func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *Logger {
+func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	lc.Level = module.logLevel
 
 	logger, err := lc.Build(zap.AddCallerSkip(skip))
@@ -392,12 +341,18 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *Logger {
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}
 
-	result := &Logger{
-		SugaredLogger: logger.Named(module.name).Sugar(),
-		module:        module,
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
 	}
 
-	runtime.SetFinalizer(result, (*Logger).finalize)
+	result := &LoggerImpl{
+		InnerLogger: logger.Named(module.name).Sugar(),
+		module:      module,
+		opts:        o,
+	}
+
+	runtime.SetFinalizer(result, (*LoggerImpl).finalize)
 
 	return result
 }

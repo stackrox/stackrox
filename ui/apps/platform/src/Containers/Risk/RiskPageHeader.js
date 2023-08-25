@@ -3,39 +3,50 @@ import PropTypes from 'prop-types';
 
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
-import URLSearchInput from 'Components/URLSearchInput';
 import {
-    ORCHESTRATOR_COMPONENT_KEY,
-    orchestratorComponentOption,
-} from 'Containers/Navigation/OrchestratorComponentsToggle';
+    ORCHESTRATOR_COMPONENTS_KEY,
+    orchestratorComponentsOption,
+} from 'utils/orchestratorComponents';
+import SearchFilterInput from 'Components/SearchFilterInput';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
+import useURLSearch from 'hooks/useURLSearch';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+
 import CreatePolicyFromSearch from './CreatePolicyFromSearch';
 
-function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions }) {
-    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
-    const autoCompleteCategories = [searchCategories[entityTypes.DEPLOYMENT]];
+function RiskPageHeader({ isViewFiltered, searchOptions }) {
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
 
-    let prependAutocompleteQuery;
-    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY);
-    if (orchestratorComponentShowState !== 'true') {
-        prependAutocompleteQuery = orchestratorComponentOption;
-    }
+    // Require READ_WRITE_ACCESS to create plus READ_ACCESS to other resources for Policies route.
+    const hasWriteAccessForCreatePolicy =
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
+
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
+    const autoCompleteCategory = searchCategories[entityTypes.DEPLOYMENT];
+
+    const orchestratorComponentShowState = localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY);
+    const prependAutocompleteQuery =
+        orchestratorComponentShowState !== 'true' ? orchestratorComponentsOption : [];
     return (
         <PageHeader header="Risk" subHeader={subHeader}>
-            <URLSearchInput
+            <SearchFilterInput
                 className="w-full"
-                categoryOptions={searchOptions}
-                categories={autoCompleteCategories}
-                placeholder="Add one or more resource filters"
-                autoFocus={autoFocusSearchInput}
-                prependAutocompleteQuery={prependAutocompleteQuery}
+                searchFilter={searchFilter}
+                searchOptions={searchOptions}
+                searchCategory={autoCompleteCategory}
+                placeholder="Filter deployments"
+                handleChangeSearchFilter={(filter) => setSearchFilter(filter, 'push')}
+                autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
             />
-            <CreatePolicyFromSearch />
+            {hasWriteAccessForCreatePolicy && <CreatePolicyFromSearch />}
         </PageHeader>
     );
 }
 
 RiskPageHeader.propTypes = {
-    autoFocusSearchInput: PropTypes.bool.isRequired,
     isViewFiltered: PropTypes.bool.isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.string).isRequired,
 };

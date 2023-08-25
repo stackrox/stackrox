@@ -1,0 +1,52 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  selector:
+    matchLabels:
+      app: backendservice
+  template:
+    metadata:
+      labels:
+        app: backendservice
+    spec:
+      containers:
+      - name: server
+        image: backendservice
+        ports:
+        - containerPort: 9090
+        readinessProbe:
+          initialDelaySeconds: 10
+          httpGet:
+            path: "/_healthz"
+            port: 9090
+        livenessProbe:
+          initialDelaySeconds: 10
+          httpGet:
+            path: "/_healthz"
+            port: 9090
+        env:
+        - name: PORT
+          value: "9090"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backendservice
+spec:
+  type: ClusterIP
+  selector:
+    app: backendservice
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090

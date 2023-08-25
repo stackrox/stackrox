@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -148,6 +148,21 @@ func (mr *MockDataStoreMockRecorder) GetImagesBatch(ctx, shas interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBatch", reflect.TypeOf((*MockDataStore)(nil).GetImagesBatch), ctx, shas)
 }
 
+// GetManyImageMetadata mocks base method.
+func (m *MockDataStore) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyImageMetadata", ctx, ids)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManyImageMetadata indicates an expected call of GetManyImageMetadata.
+func (mr *MockDataStoreMockRecorder) GetManyImageMetadata(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyImageMetadata", reflect.TypeOf((*MockDataStore)(nil).GetManyImageMetadata), ctx, ids)
+}
+
 // ListImage mocks base method.
 func (m *MockDataStore) ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error) {
 	m.ctrl.T.Helper()
@@ -222,6 +237,20 @@ func (m *MockDataStore) SearchRawImages(ctx context.Context, q *v1.Query) ([]*st
 func (mr *MockDataStoreMockRecorder) SearchRawImages(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImages", reflect.TypeOf((*MockDataStore)(nil).SearchRawImages), ctx, q)
+}
+
+// UpdateVulnerabilityState mocks base method.
+func (m *MockDataStore) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateVulnerabilityState", ctx, cve, images, state)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateVulnerabilityState indicates an expected call of UpdateVulnerabilityState.
+func (mr *MockDataStoreMockRecorder) UpdateVulnerabilityState(ctx, cve, images, state interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilityState", reflect.TypeOf((*MockDataStore)(nil).UpdateVulnerabilityState), ctx, cve, images, state)
 }
 
 // UpsertImage mocks base method.

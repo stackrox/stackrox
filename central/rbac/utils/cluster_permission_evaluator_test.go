@@ -1,18 +1,25 @@
+//go:build sql_integration
+
 package utils
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	roleDS "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDS "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsClusterAdmin(t *testing.T) {
+	clusterID := uuid.NewV4().String()
+	role1ID := uuid.NewV4().String()
+
 	cases := []struct {
 		name          string
 		inputRoles    []*storage.K8SRole
@@ -24,15 +31,15 @@ func TestIsClusterAdmin(t *testing.T) {
 			name: "Cluster admin true",
 			inputRoles: []*storage.K8SRole{
 				{
-					Id:          "role1",
+					Id:          role1ID,
 					Name:        "cluster-admin",
 					ClusterRole: true,
-					ClusterId:   "cluster",
+					ClusterId:   clusterID,
 				},
 			},
 			inputBindings: []*storage.K8SRoleBinding{
 				{
-					RoleId: "role1",
+					RoleId: role1ID,
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
@@ -40,7 +47,21 @@ func TestIsClusterAdmin(t *testing.T) {
 						},
 					},
 					ClusterRole: true,
-					ClusterId:   "cluster",
+					ClusterId:   clusterID,
+					Id:          uuid.NewV4().String(),
+				},
+				{
+					RoleId: role1ID,
+					Subjects: []*storage.Subject{
+						{
+							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+							Name: "foo",
+						},
+					},
+					ClusterRole: true,
+					ClusterId:   clusterID,
+					Namespace:   "something",
+					Id:          uuid.NewV4().String(),
 				},
 			},
 			inputSubject: &storage.Subject{
@@ -53,9 +74,9 @@ func TestIsClusterAdmin(t *testing.T) {
 			name: "Cluster admin false",
 			inputRoles: []*storage.K8SRole{
 				{
-					Id:          "role1",
+					Id:          role1ID,
 					Name:        "not-cluster-admin",
-					ClusterId:   "cluster",
+					ClusterId:   clusterID,
 					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
@@ -74,8 +95,9 @@ func TestIsClusterAdmin(t *testing.T) {
 			},
 			inputBindings: []*storage.K8SRoleBinding{
 				{
-					RoleId:    "role1",
-					ClusterId: "cluster",
+					RoleId:    role1ID,
+					Id:        uuid.NewV4().String(),
+					ClusterId: clusterID,
 					Subjects: []*storage.Subject{
 						{
 							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
@@ -93,120 +115,117 @@ func TestIsClusterAdmin(t *testing.T) {
 		},
 	}
 
-	mockCtrl := gomock.NewController(t)
-
-	clusterScopeQuery := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, "cluster").
-		AddExactMatches(search.SubjectName, "foo").
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, true).ProtoQuery()
+	pool := pgtest.ForT(t)
+	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ctx := context.Background()
-			mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
-			mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
-
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
-
-			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
+			ctx := sac.WithAllAccess(context.Background())
+			for _, role := range c.inputRoles {
+				require.NoError(t, roleStore.UpsertRole(ctx, role))
+			}
+			for _, binding := range c.inputBindings {
+				require.NoError(t, bindingStore.UpsertRoleBinding(ctx, binding))
+			}
+			evaluator := NewClusterPermissionEvaluator(clusterID, roleStore, bindingStore)
 			assert.Equal(t, c.expected, evaluator.IsClusterAdmin(ctx, c.inputSubject))
+
+			for _, role := range c.inputRoles {
+				require.NoError(t, roleStore.RemoveRole(ctx, role.GetId()))
+			}
+			for _, binding := range c.inputBindings {
+				require.NoError(t, bindingStore.RemoveRoleBinding(ctx, binding.GetId()))
+			}
 		})
 	}
 
 }
 
 func TestClusterPermissionsForSubject(t *testing.T) {
-	cases := []struct {
-		name          string
-		inputRoles    []*storage.K8SRole
-		inputBindings []*storage.K8SRoleBinding
-		inputSubject  *storage.Subject
-		expected      []*storage.PolicyRule
-	}{
+	clusterID := uuid.NewV4().String()
+	role1ID := uuid.NewV4().String()
 
+	inputRoles := []*storage.K8SRole{
 		{
-			name: "get all pods",
-			inputRoles: []*storage.K8SRole{
+			Id:          role1ID,
+			Name:        "get-pods-role",
+			ClusterId:   clusterID,
+			ClusterRole: true,
+			Rules: []*storage.PolicyRule{
 				{
-					Id:          "role1",
-					Name:        "get-pods-role",
-					ClusterId:   "cluster",
-					ClusterRole: true,
-					Rules: []*storage.PolicyRule{
-						{
-							Verbs: []string{
-								"get",
-							},
-							ApiGroups: []string{
-								"",
-							},
-							Resources: []string{
-								"pods",
-							},
-						},
+					Verbs: []string{
+						"get",
 					},
-				},
-			},
-			inputBindings: []*storage.K8SRoleBinding{
-				{
-					RoleId:    "role1",
-					ClusterId: "cluster",
-					Subjects: []*storage.Subject{
-						{
-							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "foo",
-						},
+					ApiGroups: []string{
+						"",
 					},
-					ClusterRole: true,
-				},
-				{
-					RoleId:    "role1",
-					ClusterId: "cluster",
-					Subjects: []*storage.Subject{
-						{
-							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-							Name: "foo",
-						},
+					Resources: []string{
+						"pods",
 					},
-					ClusterRole: true,
-				},
-			},
-			inputSubject: &storage.Subject{
-				Name: "foo",
-				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-			},
-			expected: []*storage.PolicyRule{
-				{
-					Verbs:     []string{"get"},
-					Resources: []string{"pods"},
-					ApiGroups: []string{""},
 				},
 			},
 		},
 	}
-
-	mockCtrl := gomock.NewController(t)
-	mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
-	mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
-
-	clusterScopeQuery := search.NewQueryBuilder().
-		AddExactMatches(search.ClusterID, "cluster").
-		AddExactMatches(search.SubjectName, "foo").
-		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, true).ProtoQuery()
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			mockBindingDatastore.EXPECT().SearchRawRoleBindings(ctx, clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
-			mockRoleDatastore.EXPECT().GetRole(ctx, "role1").Return(c.inputRoles[0], true, nil).AnyTimes()
-
-			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
-			assert.Equal(t, c.expected, evaluator.ForSubject(ctx, c.inputSubject).ToSlice())
-		})
+	inputBindings := []*storage.K8SRoleBinding{
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    role1ID,
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "foo",
+				},
+			},
+			ClusterRole: true,
+		},
+		{
+			Id:        uuid.NewV4().String(),
+			RoleId:    role1ID,
+			ClusterId: clusterID,
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "foo",
+				},
+			},
+			ClusterRole: true,
+		},
+	}
+	inputSubject := &storage.Subject{
+		Name: "foo",
+		Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+	}
+	expected := []*storage.PolicyRule{
+		{
+			Verbs:     []string{"get"},
+			Resources: []string{"pods"},
+			ApiGroups: []string{""},
+		},
 	}
 
+	pool := pgtest.ForT(t)
+	roleStore := roleDS.GetTestPostgresDataStore(t, pool)
+	bindingStore := roleBindingDS.GetTestPostgresDataStore(t, pool)
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	for _, role := range inputRoles {
+		require.NoError(t, roleStore.UpsertRole(ctx, role))
+	}
+
+	for _, binding := range inputBindings {
+		require.NoError(t, bindingStore.UpsertRoleBinding(ctx, binding))
+	}
+
+	evaluator := NewClusterPermissionEvaluator(clusterID, roleStore, bindingStore)
+	assert.Equal(t, expected, evaluator.ForSubject(ctx, inputSubject).ToSlice())
+
+	for _, role := range inputRoles {
+		require.NoError(t, roleStore.RemoveRole(ctx, role.GetId()))
+	}
+	for _, binding := range inputBindings {
+		require.NoError(t, bindingStore.RemoveRoleBinding(ctx, binding.GetId()))
+	}
 }

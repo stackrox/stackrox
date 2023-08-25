@@ -2,12 +2,18 @@
 all: style test
 
 GRADLE := ./gradlew
+GRADLE_TEST_ARGS =
+# Stop testing after the first test failure by defining FAIL_FAST. (Can be
+# achieved on a PR with a ci-fail-fast label)
+ifdef FAIL_FAST
+GRADLE_TEST_ARGS = --fail-fast
+endif
 
 ###########
 ## Style ##
 ###########
 .PHONY: style
-style:
+style: compile
 	@echo "+ $@"
 	@$(GRADLE) --continue codenarcMain codenarcTest ; \
 	STATUS=$$? ; \
@@ -16,17 +22,27 @@ style:
 	fi ; \
 	exit $$STATUS
 
+.PHONY: compile
+compile: build/generated
+	@echo "+ $@"
+	@$(GRADLE) assemble testClasses
+
 .PHONY: style-fix
 style-fix:
 	@echo "+ $@"
 	@scripts/fix_lint.py .
 
 .PHONY: proto-generated-srcs
-proto-generated-srcs:
+proto-generated-srcs: build/generated
+
+build/generated: src/main/proto
 	@echo "+ $@"
+	$(GRADLE) generateProto generateTestProto
+
+src/main/proto: $(shell find ../proto)
+	@echo "+ migrate protos"
 	-rm -r src/main/proto
 	@scripts/migrate_protos.sh
-	$(GRADLE) generateProto generateTestProto
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
@@ -34,57 +50,56 @@ clean-generated-srcs:
 	git clean -xdf build/generated
 
 .PHONY: test
-test: proto-generated-srcs
+test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) testBegin testParallel testRest $(GRADLE_TEST_ARGS)
 
 .PHONY: bat-test
-bat-test: proto-generated-srcs
+bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=BAT
+	$(GRADLE) testBegin testParallelBAT testBAT $(GRADLE_TEST_ARGS)
 
 .PHONY: smoke-test
-smoke-test: proto-generated-srcs
+smoke-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SMOKE
+	$(GRADLE) testSMOKE $(GRADLE_TEST_ARGS)
+
+.PHONY: compatibility-test
+compatibility-test: compile
+	@echo "+ $@"
+	$(GRADLE) testCOMPATIBILITY testCOMPATIBILITYSensorBounce $(GRADLE_TEST_ARGS)
 
 .PHONY: runtime-test
-runtime-test: proto-generated-srcs
+runtime-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=RUNTIME
+	$(GRADLE) testRUNTIME $(GRADLE_TEST_ARGS)
 
 .PHONY: enforcement-test
-enforcement-test: proto-generated-srcs
+enforcement-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=PolicyEnforcement
+	$(GRADLE) testPolicyEnforcement $(GRADLE_TEST_ARGS)
 
 .PHONY: integration-test
-integration-test: proto-generated-srcs
+integration-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Integration
+	$(GRADLE) testIntegration $(GRADLE_TEST_ARGS)
 
 .PHONY: networkpolicy-simulator-test
-networkpolicy-simulator-test: proto-generated-srcs
+networkpolicy-simulator-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=NetworkPolicySimulation
-
-.PHONY: non-bat-test
-non-bat-test: proto-generated-srcs
-	@echo "+ $@"
-	$(GRADLE) test -Dgroups=-BAT,-Upgrade,-SensorBounce,-SensorBounceNext
+	$(GRADLE) testNetworkPolicySimulation $(GRADLE_TEST_ARGS)
 
 .PHONY: upgrade-test
-upgrade-test: proto-generated-srcs
+upgrade-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=Upgrade
+	$(GRADLE) testUpgrade $(GRADLE_TEST_ARGS)
 
 .PHONY: graphql-test
-graphql-test: proto-generated-srcs
+graphql-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=GraphQL
+	$(GRADLE) testGraphQL $(GRADLE_TEST_ARGS)
 
 .PHONY: sensor-bounce-test
-sensor-bounce-test: proto-generated-srcs
+sensor-bounce-test: compile
 	@echo "+ $@"
-	$(GRADLE) test -Dgroups=SensorBounce
-	$(GRADLE) test -Dgroups=SensorBounceNext
+	$(GRADLE) testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)

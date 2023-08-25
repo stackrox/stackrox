@@ -1,0 +1,6 @@
+tests:
+- name: validate image defaults
+  expect: |
+    assertCentral("quay.io/stackrox-io/main:3.0.99.0")
+    assertScanner("quay.io/stackrox-io/scanner:3.0.99.0")
+    assertScannerDB("quay.io/stackrox-io/scanner-db:3.0.99.0")

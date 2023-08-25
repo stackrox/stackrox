@@ -4,19 +4,21 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/mitre/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/mitre/datastore"
 	"google.golang.org/grpc"
 )
 
 var (
-	// No permission enforcement since the APIs do not leak any information about RHACS resources,
-	// and that MITRE ATT&CK is a globally available knowledge base. Unlike CVEs, we do not add any extra insights to MITRE data.
+	// While the data served by these endpoints is globally available knowledge,
+	// we limit access to authenticated users only to reduce the surface for DoS
+	// attacks. Note that `ListMitreAttackVectors()`'s response size is around
+	// 1 MB.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		allow.Anonymous(): {
+		user.Authenticated(): {
 			"/v1.MitreAttackService/ListMitreAttackVectors",
 			"/v1.MitreAttackService/GetMitreAttackVector",
 		},
@@ -24,7 +26,9 @@ var (
 )
 
 type serviceImpl struct {
-	store datastore.MitreAttackReadOnlyDataStore
+	v1.UnimplementedMitreAttackServiceServer
+
+	store datastore.AttackReadOnlyDataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -42,13 +46,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) ListMitreAttackVectors(ctx context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
+func (s *serviceImpl) ListMitreAttackVectors(_ context.Context, _ *v1.Empty) (*v1.ListMitreAttackVectorsResponse, error) {
 	return &v1.ListMitreAttackVectorsResponse{
 		MitreAttackVectors: s.store.GetAll(),
 	}, nil
 }
 
-func (s *serviceImpl) GetMitreAttackVector(ctx context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
+func (s *serviceImpl) GetMitreAttackVector(_ context.Context, req *v1.ResourceByID) (*v1.GetMitreVectorResponse, error) {
 	vector, err := s.store.Get(req.GetId())
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 import axios from './instance';
 
 import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
+import { Empty } from './types';
 
 const imageIntegrationsUrl = '/v1/imageintegrations';
 
@@ -49,7 +50,7 @@ export function fetchImageIntegrations(): Promise<ImageIntegrationBase[]> {
 export function saveImageIntegration(
     integration: ImageIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     const { id } = integration;
 
     if (!id) {
@@ -78,7 +79,7 @@ export function saveImageIntegration(
 export function testImageIntegration(
     integration: ImageIntegrationBase,
     { updatePassword }: IntegrationOptions = {}
-): Promise<Record<string, never>> {
+): Promise<Empty> {
     if (typeof updatePassword === 'boolean') {
         return axios.post(`${imageIntegrationsUrl}/test/updated`, {
             [updateIntegrationKey]: integration,
@@ -92,13 +93,13 @@ export function testImageIntegration(
 /*
  * Delete integration (singular).
  */
-export function deleteImageIntegration(id: string): Promise<Record<string, never>> {
+export function deleteImageIntegration(id: string): Promise<Empty> {
     return axios.delete(`${imageIntegrationsUrl}/${id}`);
 }
 
 /*
  * Delete integrations (plural).
  */
-export function deleteImageIntegrations(ids: string[]): Promise<Record<string, never>[]> {
+export function deleteImageIntegrations(ids: string[]): Promise<Empty[]> {
     return Promise.all(ids.map((id) => deleteImageIntegration(id)));
 }

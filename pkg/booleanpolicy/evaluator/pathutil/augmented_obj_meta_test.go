@@ -178,7 +178,7 @@ func TestOnDeployment(t *testing.T) {
 	require.NoError(t, err)
 	path, found := pathMap.Get("Container Name")
 	assert.True(t, found)
-	assert.Equal(t, []string{"Containers", "Name"}, sliceutils.Map(path, func(s *MetaStep) string {
+	assert.Equal(t, []string{"Containers", "Name"}, sliceutils.Map(path, func(s MetaStep) string {
 		return s.FieldName
-	}).([]string))
+	}))
 }

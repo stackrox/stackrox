@@ -3,22 +3,23 @@ import { routerMiddleware } from 'connected-react-router';
 import createSagaMiddleware from 'redux-saga';
 import createRavenMiddleware from 'raven-for-redux';
 import Raven from 'raven-js';
+import thunk from 'redux-thunk';
 
 import rootSaga from 'sagas';
 import createRootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import * as AuthService from 'services/AuthService';
-import { actions as serverErrorActions } from 'reducers/serverError';
 import registerServerErrorHandler from 'services/serverErrorHandler';
 
 const sagaMiddleware = createSagaMiddleware({
     onError: (error) => Raven.captureException(error),
 });
 
-const ravenMiddleware = createRavenMiddleware(Raven);
+// Omit Redux state to reduce size of payload in /api/logimbue request.
+const ravenMiddleware = createRavenMiddleware(Raven, { stateTransformer: () => null });
 
 export default function configureStore(initialState = {}, history) {
-    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware];
+    const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware, thunk];
     const enhancers = [applyMiddleware(...middlewares)];
 
     // If Redux DevTools Extension is installed use it, otherwise use Redux compose
@@ -41,8 +42,8 @@ export default function configureStore(initialState = {}, history) {
     );
 
     registerServerErrorHandler(
-        () => store.dispatch(serverErrorActions.recordServerSuccess()),
-        () => store.dispatch(serverErrorActions.recordServerError())
+        () => store.dispatch({ type: 'serverStatus/RESPONSE_SUCCESS' }),
+        () => store.dispatch({ type: 'serverStatus/RESPONSE_FAILURE', now: Date.now() })
     );
     sagaMiddleware.run(rootSaga);
     return store;

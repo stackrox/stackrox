@@ -1,5 +1,5 @@
 Scan results for image: nginx:test
-(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 17, [34;2mLOW[0m: 3, MODERATE: 0, [31mIMPORTANT[0m: 4, [31;1mCRITICAL[0m: 5)
+(TOTAL-COMPONENTS: 5, TOTAL-VULNERABILITIES: 11, [34;2mLOW[0m: 2, MODERATE: 3, [31mIMPORTANT[0m: 3, [31;1mCRITICAL[0m: 3)
 
 +-----------+------------+--------------+-----------+--------------------+
 | COMPONENT |  VERSION   |     CVE      | SEVERITY  |        LINK        |

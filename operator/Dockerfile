@@ -1,13 +1,9 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-# Use CentOS Stream 8 image as the base builder because it has recent Go and git packages needed for the build.
-# https://wiki.centos.org/FAQ/CentOSStream#Where_do_I_get_CentOS_Stream_container_images.3F
-FROM quay.io/centos/centos:stream8 as builder-base
-RUN yum update --security -y && yum install -y golang git
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
 
 # Build the manager binary
-FROM builder-base as builder
 ARG roxpath
 
 WORKDIR ${roxpath}/
@@ -16,13 +12,6 @@ ENV GOPATH=/workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
-
-# Add GitHub hosts as known ones so that git does not complain.
-RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-# Make sure that private and source-only packages on github.com can be downloaded successfully as go modules.
-RUN echo '[url "git@github.com:"]' >> ~/.gitconfig && echo -e '\tinsteadOf = https://github.com/' >> ~/.gitconfig
-ENV GOPRIVATE="github.com/stackrox/*"
 
 # Cache deps before building and copying source so that we don't need to re-download as much and so that source changes
 # don't invalidate our downloaded layer.
@@ -36,7 +25,9 @@ ENV GOPRIVATE="github.com/stackrox/*"
 # However it does _not_ seem to resolve packages _incorrectly_ and so should be safe especially given that downloaded
 # packages are only used during build and later this docker layer is discarded (only resulting binary goes in the final
 # image).
-RUN --mount=type=ssh,required=true go mod download
+# Retry as the proxy can be unavailable at times.
+ENV GOPROXY=https://proxy.golang.org|https://goproxy.io|direct
+RUN go mod download || go mod download || go mod download
 
 # Copy operator source
 COPY operator/ operator/
@@ -56,20 +47,21 @@ COPY operator/build/status.sh status.sh
 # This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
 RUN git init && git add .
 
-# Build the operator binary.
-RUN GOOS=$(go env GOOS) scripts/go-build.sh operator
-# Copy the operator binary to a location from where it will be taken into the final image.
-RUN cp -a bin/$(go env GOOS)/operator stackrox-operator
+# We've been historically building operator without CGO both upstream and downstream. The apollo-ci image has that
+# enabled by default, therefore we disable CGO here to keep doing the thing we used to.
+ENV CGO_ENABLED=0
 
-# https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi8-minimal
-FROM registry.access.redhat.com/ubi8-minimal:8.5
+# Build the operator binary.
+RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
+# Copy the operator binary to a location from where it will be taken into the final image.
+RUN cp -a bin/$(go env GOOS)_$(go env GOARCH)/operator stackrox-operator
+
+FROM registry.access.redhat.com/ubi8-micro:8.8
 
 ARG roxpath
 
 ARG ROX_IMAGE_FLAVOR
 ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
-
-RUN microdnf update && microdnf clean all && rm -rf /var/cache/yum/*
 
 COPY --from=builder ${roxpath}/stackrox-operator /usr/local/bin/
 

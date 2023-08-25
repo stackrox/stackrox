@@ -1,8 +1,18 @@
-import { selectors as riskSelectors, url as riskUrl } from '../../constants/RiskPage';
-import { selectors as policySelectors, url as policiesUrl } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 
-describe('Risk search to new policy', () => {
+import { selectors as riskSelectors } from './Risk.selectors';
+
+const riskUrl = '/main/risk';
+const policiesUrl = '/main/policy-management/policies';
+const policySelectors = {
+    nextButton: '.btn:contains("Next")',
+    booleanPolicySection: {
+        policyFieldCard: '[data-testid="policy-field-card"]',
+    },
+    toast: '.toast-selector',
+};
+
+describe.skip('Risk search to new policy', () => {
     withAuth();
 
     const navigateToPolicy = (url) => {

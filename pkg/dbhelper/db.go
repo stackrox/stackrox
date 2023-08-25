@@ -30,7 +30,7 @@ func GetPrefix(key []byte) (prefix []byte) {
 	if idx == -1 {
 		return nil
 	}
-	return sliceutils.ByteClone(key[:idx])
+	return sliceutils.ShallowClone(key[:idx])
 }
 
 // HasPrefix returns if the given key has the given prefix.

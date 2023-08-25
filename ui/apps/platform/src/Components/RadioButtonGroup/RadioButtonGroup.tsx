@@ -40,13 +40,9 @@ const RadioButtonGroup = ({
             <button
                 key={text}
                 type="button"
-                className={`flex flex-1 justify-center items-center px-2 text-sm font-600 font-condensed text-base-600 hover:text-primary-600 uppercase ${
+                className={`flex flex-1 justify-center items-center px-2 text-base-600 ${
                     index !== 0 ? 'border-l border-base-400' : ''
-                } ${
-                    selected === modifiedValue
-                        ? 'bg-primary-200 text-primary-700 hover:text-primary-700 hover:bg-primary-200'
-                        : 'hover:bg-base-200 bg-base-100'
-                }`}
+                } ${selected === modifiedValue ? 'bg-primary-200 font-700' : ''}`}
                 onClick={onClickHandler}
                 value={modifiedValue}
                 disabled={disabled}
@@ -57,16 +53,12 @@ const RadioButtonGroup = ({
     });
     return (
         <div
-            className={`text-xs flex flex-col uppercase rounded border-2 border-base-400 text-center font-condensed text-base-600 font-600 ${
+            className={`text-sm flex flex-col rounded border-2 border-base-400 text-center bg-base-100 text-base-600 ${
                 groupClassName || ''
             }`}
             data-testid={testId}
         >
-            {headerText && (
-                <div className="bg-base-100 border-b-2 border-base-400 px-2 text-base-500">
-                    {headerText}
-                </div>
-            )}
+            {headerText && <div className="border-b-2 border-base-400 px-2">{headerText}</div>}
             <div className="flex h-full">{content}</div>
         </div>
     );

@@ -3,6 +3,7 @@ tests:
   expect: |
     .deployments.sensor.spec.template.spec.tolerations | assertThat(. == null)
     .deployments["admission-control"].spec.template.spec.tolerations | assertThat(. == null)
+    .daemonsets["collector"].spec.template.spec.tolerations | assertThat(length == 1)
 
 - name: "with empty string settings"
   values:
@@ -15,6 +16,7 @@ tests:
   expect: |
     .deployments.sensor.spec.template.spec.tolerations | assertThat(. == null)
     .deployments["admission-control"].spec.template.spec.tolerations | assertThat(. == null)
+    .daemonsets["collector"].spec.template.spec.tolerations | assertThat(length == 1)
 
 - name: "with empty dict settings"
   values:
@@ -27,11 +29,13 @@ tests:
   expect: |
     .deployments.sensor.spec.template.spec.tolerations | assertThat(length == 0)
     .deployments["admission-control"].spec.template.spec.tolerations | assertThat(length == 0)
+    .daemonsets["collector"].spec.template.spec.tolerations | assertThat(length == 1)
 
 - name: "with populated settings"
   expect: |
     .deployments.sensor.spec.template.spec.tolerations | assertThat(length == 2)
     .deployments["admission-control"].spec.template.spec.tolerations | assertThat(length == 2)
+    .daemonsets["collector"].spec.template.spec.tolerations | assertThat(length == 2)
 
   tests:
   - name: "via dictionary"
@@ -43,6 +47,12 @@ tests:
           - key: "node-role.kubernetes.io/master"
             operator: "Exists"
       admissionControl:
+        tolerations:
+          - key: "node-role.kubernetes.io/infra"
+            operator: "Exists"
+          - key: "node-role.kubernetes.io/master"
+            operator: "Exists"
+      collector:
         tolerations:
           - key: "node-role.kubernetes.io/infra"
             operator: "Exists"

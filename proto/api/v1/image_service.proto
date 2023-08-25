@@ -6,14 +6,17 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
+import "scanner/api/v1/component.proto";
+import "scanner/api/v1/note.proto";
 import "storage/image.proto";
 import "storage/deployment.proto";
 
 package v1;
 
 message GetImageRequest {
-    string id              = 1;
-    bool   include_snoozed = 2;
+    string id                = 1;
+    bool   include_snoozed   = 2;
+    bool   strip_description = 3;
 }
 
 message ListImagesResponse {
@@ -31,13 +34,47 @@ message ScanImageRequest {
 }
 
 message ScanImageInternalRequest {
-    storage.ContainerImage image = 1;
-    reserved                       2;
-    bool cached_only             = 3;
+    message Source {
+        string          cluster_id         = 1;
+        string          namespace          = 2;
+        repeated string image_pull_secrets = 3;
+    }
+
+    storage.ContainerImage image              = 1;
+    reserved                                    2;
+    bool                   cached_only        = 3;
+    Source                 source             = 4;
 }
 
 message ScanImageInternalResponse {
     storage.Image image = 1;
+}
+
+message GetImageVulnerabilitiesInternalRequest {
+    string                  image_id         = 1;
+    storage.ImageName       image_name       = 2;
+    storage.ImageMetadata   metadata         = 3;
+    bool                    is_cluster_local = 6;
+    scannerV1.Components    components       = 4;
+    repeated scannerV1.Note notes            = 5;
+}
+
+message EnrichLocalImageInternalRequest {
+    string                      image_id         = 1;
+    storage.ImageName           image_name       = 2;
+    storage.ImageMetadata       metadata         = 3;
+    storage.ImageSignature      image_signature  = 4;
+    scannerV1.Components        components       = 5;
+    repeated scannerV1.Note     notes            = 6;
+    repeated storage.Image.Note image_notes      = 7;
+    string                      error            = 8;
+    string                      request_id       = 9;
+    bool                        force            = 10;
+}
+
+message UpdateLocalScanStatusInternalRequest {
+    string request_id = 1;
+    string error      = 2;
 }
 
 message DeleteImagesRequest {
@@ -129,8 +166,21 @@ service ImageService {
         };
     }
 
-    // ScanImageInternal is used solely by the Sensor to send scan requests
+    // ScanImageInternal is used solely by the Sensor and Admission Controller to send scan requests
     rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
+
+    // Deprecated: GetImageVulnerabilities is used solely by the Sensor to send vulnerability matching requests.
+    rpc GetImageVulnerabilitiesInternal (GetImageVulnerabilitiesInternalRequest) returns (ScanImageInternalResponse) {
+        option deprecated = true;
+    };
+
+    // EnrichLocalImageInternal is used solely by the Sensor to send enrichment requests for local images. This
+    // includes the image's vulnerabilities as well as the signature verification data.
+    rpc EnrichLocalImageInternal (EnrichLocalImageInternalRequest) returns (ScanImageInternalResponse);
+
+    // UpdateLocalScanStatusInternal is used solely by Sensor to send delegated scanning errors to central that
+    // prevent local enrichment from occurring (such as no scanner, throttled, etc.).
+    rpc UpdateLocalScanStatusInternal (UpdateLocalScanStatusInternalRequest) returns (Empty);
 
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {

@@ -30,6 +30,7 @@ export type RiskSubjectType =
     | 'CLUSTER'
     | 'NODE'
     | 'NODE_COMPONENT'
+    | 'IMAGE_COMPONENT'
     | 'IMAGE'
     | 'IMAGE_COMPONENT'
     | 'SERVICEACCOUNT';

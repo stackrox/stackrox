@@ -8,20 +8,16 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message SignatureIntegration {
-    string id   = 1;
-    string name = 2;
+    string id   = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
 
-    repeated SignatureVerificationConfig signature_verification_configs = 3;
-}
-
-message SignatureVerificationConfig {
-    string id = 1;
-
-    oneof config {
-        CosignPublicKeyVerification public_key = 2;
-    }
+    CosignPublicKeyVerification cosign = 3;
 }
 
 message CosignPublicKeyVerification {
-    repeated string public_keys_base64_enc = 2;
+    message PublicKey {
+        string name               = 1;
+        string public_key_pem_enc = 2;
+    }
+    repeated PublicKey public_keys = 3;
 }

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useRouteMatch, useLocation } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -7,9 +7,9 @@ import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import URLService from 'utils/URLService';
-import ResourceTabs from 'Components/ResourceTabs';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
 /* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
@@ -23,6 +23,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
 import Header from './Header';
+import ResourceTabs from './ResourceTabs';
 
 function processData(data) {
     if (!data || !data.deployment) {
@@ -43,6 +44,7 @@ const DeploymentPage = ({
     query,
     sidePanelMode,
 }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const searchParam = useContext(searchContext);
     const match = useRouteMatch();
     const location = useLocation();
@@ -142,7 +144,11 @@ const DeploymentPage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-                                <ComplianceByStandards entityType={entityTypes.DEPLOYMENT} />
+                                <ComplianceByStandards
+                                    entityId={id}
+                                    entityName={name}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                />
                             </div>
                         </div>
                     );
@@ -157,6 +163,8 @@ const DeploymentPage = ({
                                     listEntityType={listEntityType1}
                                     entityName={name}
                                     entityId={id}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
                                 />
                                 <ResourceTabs
                                     entityId={id}
@@ -167,6 +175,7 @@ const DeploymentPage = ({
                             </>
                         )}
                         {contents}
+                        {isExporting && <BackdropExporting />}
                     </section>
                 );
             }}

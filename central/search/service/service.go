@@ -6,13 +6,13 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	categoryDataStore "github.com/stackrox/rox/central/policycategory/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -44,37 +44,35 @@ type Builder interface {
 	WithPolicyStore(store policyDataStore.DataStore) Builder
 	WithSecretStore(store secretDataStore.DataStore) Builder
 	WithServiceAccountStore(store serviceAccountDataStore.DataStore) Builder
-	WithNodeStore(store nodeDataStore.GlobalDataStore) Builder
+	WithNodeStore(store nodeDataStore.DataStore) Builder
 	WithNamespaceStore(store namespaceDataStore.DataStore) Builder
 	WithRiskStore(store riskDataStore.DataStore) Builder
 	WithRoleStore(store roleDataStore.DataStore) Builder
 	WithRoleBindingStore(store roleBindingDataStore.DataStore) Builder
 	WithClusterDataStore(store clusterDataStore.DataStore) Builder
-	WithCVEDataStore(store cveDataStore.DataStore) Builder
-	WithComponentDataStore(store componentDataStore.DataStore) Builder
-
+	WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder
 	WithAggregator(aggregation.Aggregator) Builder
+	WithImageIntegrationStore(store imageIntegrationDataStore.DataStore) Builder
 
 	Build() Service
 }
 
 type serviceBuilder struct {
-	alerts          alertDataStore.DataStore
-	deployments     deploymentDataStore.DataStore
-	images          imageDataStore.DataStore
-	policies        policyDataStore.DataStore
-	secrets         secretDataStore.DataStore
-	serviceAccounts serviceAccountDataStore.DataStore
-	nodes           nodeDataStore.GlobalDataStore
-	namespaces      namespaceDataStore.DataStore
-	risks           riskDataStore.DataStore
-	roles           roleDataStore.DataStore
-	bindings        roleBindingDataStore.DataStore
-	clusters        clusterDataStore.DataStore
-	cves            cveDataStore.DataStore
-	components      componentDataStore.DataStore
-
-	aggregator aggregation.Aggregator
+	alerts            alertDataStore.DataStore
+	deployments       deploymentDataStore.DataStore
+	images            imageDataStore.DataStore
+	policies          policyDataStore.DataStore
+	secrets           secretDataStore.DataStore
+	serviceAccounts   serviceAccountDataStore.DataStore
+	nodes             nodeDataStore.DataStore
+	namespaces        namespaceDataStore.DataStore
+	risks             riskDataStore.DataStore
+	roles             roleDataStore.DataStore
+	bindings          roleBindingDataStore.DataStore
+	clusters          clusterDataStore.DataStore
+	categories        categoryDataStore.DataStore
+	aggregator        aggregation.Aggregator
+	imageIntegrations imageIntegrationDataStore.DataStore
 }
 
 // NewBuilder returns an instance of a builder to build a search service
@@ -112,7 +110,7 @@ func (b *serviceBuilder) WithServiceAccountStore(store serviceAccountDataStore.D
 	return b
 }
 
-func (b *serviceBuilder) WithNodeStore(store nodeDataStore.GlobalDataStore) Builder {
+func (b *serviceBuilder) WithNodeStore(store nodeDataStore.DataStore) Builder {
 	b.nodes = store
 	return b
 }
@@ -147,33 +145,33 @@ func (b *serviceBuilder) WithClusterDataStore(store clusterDataStore.DataStore) 
 	return b
 }
 
-func (b *serviceBuilder) WithCVEDataStore(store cveDataStore.DataStore) Builder {
-	b.cves = store
+func (b *serviceBuilder) WithPolicyCategoryDataStore(store categoryDataStore.DataStore) Builder {
+	b.categories = store
 	return b
 }
 
-func (b *serviceBuilder) WithComponentDataStore(store componentDataStore.DataStore) Builder {
-	b.components = store
+func (b *serviceBuilder) WithImageIntegrationStore(store imageIntegrationDataStore.DataStore) Builder {
+	b.imageIntegrations = store
 	return b
 }
 
 func (b *serviceBuilder) Build() Service {
 	s := serviceImpl{
-		alerts:          b.alerts,
-		deployments:     b.deployments,
-		images:          b.images,
-		policies:        b.policies,
-		secrets:         b.secrets,
-		serviceaccounts: b.serviceAccounts,
-		nodes:           b.nodes,
-		namespaces:      b.namespaces,
-		risks:           b.risks,
-		roles:           b.roles,
-		bindings:        b.bindings,
-		aggregator:      b.aggregator,
-		clusters:        b.clusters,
-		cves:            b.cves,
-		components:      b.components,
+		alerts:            b.alerts,
+		deployments:       b.deployments,
+		images:            b.images,
+		policies:          b.policies,
+		secrets:           b.secrets,
+		serviceaccounts:   b.serviceAccounts,
+		nodes:             b.nodes,
+		namespaces:        b.namespaces,
+		risks:             b.risks,
+		roles:             b.roles,
+		bindings:          b.bindings,
+		aggregator:        b.aggregator,
+		clusters:          b.clusters,
+		categories:        b.categories,
+		imageIntegrations: b.imageIntegrations,
 	}
 	s.initializeAuthorizer()
 	return &s
@@ -181,10 +179,7 @@ func (b *serviceBuilder) Build() Service {
 
 // NewService returns a new search service
 func NewService() Service {
-
-	builder := NewBuilder()
-
-	builder = builder.
+	builder := NewBuilder().
 		WithAlertStore(alertDataStore.Singleton()).
 		WithDeploymentStore(deploymentDataStore.Singleton()).
 		WithImageStore(imageDataStore.Singleton()).
@@ -198,8 +193,7 @@ func NewService() Service {
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
 		WithClusterDataStore(clusterDataStore.Singleton()).
-		WithCVEDataStore(cveDataStore.Singleton()).
-		WithComponentDataStore(componentDataStore.Singleton())
-
+		WithImageIntegrationStore(imageIntegrationDataStore.Singleton()).
+		WithPolicyCategoryDataStore(categoryDataStore.Singleton())
 	return builder.Build()
 }

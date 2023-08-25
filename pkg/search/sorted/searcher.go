@@ -9,6 +9,7 @@ import (
 )
 
 // Ranker returns the rank for the given id for the given field.
+//
 //go:generate mockgen-wrapper
 type Ranker interface {
 	// GetRankForID returns the rank of the object referenced by the given ID.

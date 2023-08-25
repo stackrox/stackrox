@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -29,7 +28,6 @@ func getCollectorVersion() string {
 
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
-	BuildDate time.Time `json:"BuildDate"`
 	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
 	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
@@ -43,12 +41,14 @@ type Versions struct {
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
 	ScannerVersion string `json:"ScannerVersion"`
 	ChartVersion   string `json:"ChartVersion"`
+	// The Database versioning needs to be added by the caller due to scoping issues of config availabilty
+	Database              string `json:"Database,omitempty"`
+	DatabaseServerVersion string `json:"DatabaseServerVersion,omitempty"`
 }
 
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
 func GetAllVersionsDevelopment() Versions {
 	return Versions{
-		BuildDate:        buildinfo.BuildTimestamp(),
 		CollectorVersion: getCollectorVersion(),
 		GitCommit:        internal.GitShortSha,
 		GoVersion:        runtime.Version(),
@@ -97,6 +97,10 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 	var marketingMinorOpt *int
 	engReleaseOfs := 1
 	if len(components) == 4 {
+		// It's highly unlikely we're going to ever use non-SemVer product versions that include four components.
+		// However, there's a lot of test code that was written when this was the way of versioning. Therefore this
+		// parsing still exists.
+		// TODO: clean up all versioning and test code that deals with "marketing minor".
 		marketingMinor, err := strconv.Atoi(components[1])
 		if err != nil {
 			return parsedMainVersion{}, errors.Wrapf(err, "invalid marketing minor major version (%q)", components[1])
@@ -135,10 +139,13 @@ func parseMainVersion(mainVersion string) (parsedMainVersion, error) {
 
 // GetChartVersion derives a Chart Version string from the provided Main Version string.
 func GetChartVersion() string {
-	return DeriveChartVersion(GetMainVersion())
+	chartVersion, err := deriveChartVersion(GetMainVersion())
+	utils.Should(err)
+	return chartVersion
 }
 
-func doDeriveChartVersion(mainVersion string) (string, error) {
+// deriveChartVersion derives a Chart Version string from the provided Main Version string.
+func deriveChartVersion(mainVersion string) (string, error) {
 	parsedMainVersion, err := parseMainVersion(mainVersion)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to parse main version %q", mainVersion)
@@ -153,23 +160,34 @@ func doDeriveChartVersion(mainVersion string) (string, error) {
 		}
 	}
 
-	// We need to make sure that the patch suffix will begin with a number for obtaining a valid SemVer 2 version string.
-	patchSuffixWithInitialNumber := parsedMainVersion.PatchSuffix
-	if patchSuffixWithInitialNumber == "" {
-		// For release versions.
-		patchSuffixWithInitialNumber = "0"
-	} else if c := patchSuffixWithInitialNumber[0]; !(c >= '0' && c <= '9') {
-		// Prefix with "0-".
-		patchSuffixWithInitialNumber = fmt.Sprintf("0-%s", patchSuffixWithInitialNumber)
+	if parsedMainVersion.MarketingMajor != 3 && parsedMainVersion.MarketingMinor != nil {
+		return "", errors.Errorf(
+			"unexpected main version %s: minor marketing version component is not supported after the product version 3",
+			mainVersion)
 	}
 
-	chartVersion := fmt.Sprintf("%d.%d.%s", parsedMainVersion.EngRelease, patchLevelInteger, patchSuffixWithInitialNumber)
+	// In 3[.0].y.z era Y/Minor versions were used as Helm Major (Main Major, 3, was ignored). Main Minor versions got
+	// up to 74 and occupied Helm chart versions 74.something.something. Because of that, we have to assign even bigger
+	// Major Helm chart version for release 4.0.0 and later. Otherwise, if we simply take Main Major (e.g. 4) and assign
+	// it to Helm Major, it will be recognized as old according to SemVer (4.0.0<74.0.0). Therefore, we pad Main Major
+	// with two trailing zeroes making such chart appear newer than charts from 3[.0].y.z era, as it should.
+	chartMajor := parsedMainVersion.MarketingMajor * 100
+
+	chartMinor := parsedMainVersion.EngRelease
+	chartPatch := patchLevelInteger
+
+	chartSuffix := ""
+	if parsedMainVersion.PatchSuffix != "" {
+		chartSuffix = "-" + parsedMainVersion.PatchSuffix
+	}
+
+	chartVersion := fmt.Sprintf("%d.%d.%d%s", chartMajor, chartMinor, chartPatch, chartSuffix)
 	return chartVersion, nil
 }
 
-// DeriveChartVersion derives a Chart Version string from the provided Main Version string.
-func DeriveChartVersion(mainVersion string) string {
-	chartVersion, err := doDeriveChartVersion(mainVersion)
-	utils.Should(err)
-	return chartVersion
+// IsReleaseVersion tells whether the binary is built for a release.
+func IsReleaseVersion() bool {
+	return buildinfo.ReleaseBuild && !buildinfo.TestBuild &&
+		GetMainVersion() != "" &&
+		!strings.Contains(GetMainVersion(), "-")
 }

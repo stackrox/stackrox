@@ -18,12 +18,12 @@ type CompiledPolicy interface {
 	// Note that the Match* functions DO NOT care about excludes scopes, or the policy being disabled.
 	// Callers are responsible for doing those checks separately.
 	// For MatchAgainstDeployment* functions, images _must_ correspond one-to-one with the container specs in the deployment.
-	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error)
-	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhanced booleanpolicy.EnhancedDeployment, pi *storage.ProcessIndicator, processNotInBaseline bool) (booleanpolicy.Violations, error)
+	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, enhanced booleanpolicy.EnhancedDeployment) (booleanpolicy.Violations, error)
 	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 	MatchAgainstKubeResourceAndEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent, kubeResource interface{}) (booleanpolicy.Violations, error)
 	MatchAgainstAuditLogEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, kubeEvent *storage.KubernetesEvent) (booleanpolicy.Violations, error)
-	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
+	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 
 	Predicate
 }
@@ -270,8 +270,7 @@ func (cp *compiledPolicy) MatchAgainstKubeResourceAndEvent(
 
 func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(
 	cache *booleanpolicy.CacheReceptacle,
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	pi *storage.ProcessIndicator,
 	processNotInBaseline bool,
 ) (booleanpolicy.Violations, error) {
@@ -281,13 +280,13 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(
 	if cp.deploymentWithProcessMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments and processes", cp.Policy().GetName())
 	}
-	return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processNotInBaseline)
+
+	return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, enhancedDeployment, pi, processNotInBaseline)
 }
 
 func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
 	cache *booleanpolicy.CacheReceptacle,
-	deployment *storage.Deployment,
-	images []*storage.Image,
+	enhancedDeployment booleanpolicy.EnhancedDeployment,
 	flow *augmentedobjs.NetworkFlowDetails,
 ) (booleanpolicy.Violations, error) {
 	if !cp.hasNetworkFlowSection {
@@ -296,14 +295,14 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndNetworkFlow(
 	if cp.deploymentWithNetworkFlowMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against network baseline", cp.Policy().GetName())
 	}
-	return cp.deploymentWithNetworkFlowMatcher.MatchDeploymentWithNetworkFlowInfo(cache, deployment, images, flow)
+	return cp.deploymentWithNetworkFlowMatcher.MatchDeploymentWithNetworkFlowInfo(cache, enhancedDeployment, flow)
 }
 
-func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error) {
+func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment) (booleanpolicy.Violations, error) {
 	if cp.deploymentMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
-	return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
+	return cp.deploymentMatcher.MatchDeployment(cache, enhancedDeployment)
 }
 
 func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error) {

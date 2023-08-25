@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -27,7 +28,7 @@ func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...Namesp
 }
 
 // ProcessEvent processes namespace resource events, and returns the sensor events to emit in response.
-func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	ns := obj.(*v1.Namespace)
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {
@@ -46,12 +47,11 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 
 	h.nsStore.addNamespace(roxNamespace)
 
-	return []*central.SensorEvent{{
+	return component.NewEvent(&central.SensorEvent{
 		Id:     string(ns.GetUID()),
 		Action: action,
 		Resource: &central.SensorEvent_Namespace{
 			Namespace: roxNamespace,
 		},
-	},
-	}
+	})
 }

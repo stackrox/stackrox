@@ -55,8 +55,9 @@ message OrchestratorMetadata {
 enum CollectionMethod {
     UNSET_COLLECTION = 0;
     NO_COLLECTION    = 1;
-    KERNEL_MODULE    = 2;
+    KERNEL_MODULE    = 2 [deprecated=true];
     EBPF             = 3;
+    CORE_BPF         = 4;
 }
 
 message AdmissionControllerConfig {
@@ -72,6 +73,7 @@ message TolerationsConfig {
         bool  disabled  = 1;
 }
 
+// The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 message StaticClusterConfig {
     ClusterType               type                         = 1;
     string                    main_image                   = 2;
@@ -85,6 +87,7 @@ message StaticClusterConfig {
     bool                      admission_controller_events  = 10;
 }
 
+// The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 message DynamicClusterConfig {
     AdmissionControllerConfig admission_controller_config = 1;
     string registry_override                              = 2;
@@ -113,10 +116,10 @@ message SensorDeploymentIdentification {
 }
 
 message Cluster {
-    string                    id                               = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden,store\""];
-    string                    name                             = 2 [(gogoproto.moretags) = "search:\"Cluster,store\""];
+    string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"'];
+    string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
     ClusterType               type                             = 3;
-    map<string, string>       labels                           = 27 [(gogoproto.moretags) = "search:\"Cluster Label\""];
+    map<string, string>       labels                           = 27 [(gogoproto.moretags) = 'search:"Cluster Label"'];
     string                    main_image                       = 4;
     string                    collector_image                  = 16;
     string                    central_api_endpoint             = 5;
@@ -135,7 +138,7 @@ message Cluster {
     DynamicClusterConfig      dynamic_config                   = 18;
     TolerationsConfig         tolerations_config               = 19;
     int64                     priority                         = 20;
-    ClusterHealthStatus       health_status                    = 22;
+    ClusterHealthStatus       health_status                    = 22 [(gogoproto.moretags) = 'sql:"-"'];
     bool                      slim_collector                   = 23;
     // The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
     CompleteClusterConfig     helm_config                      = 24;
@@ -159,6 +162,7 @@ enum ManagerType {
 
 message ClusterCertExpiryStatus {
     google.protobuf.Timestamp sensor_cert_expiry = 1;
+    google.protobuf.Timestamp sensor_cert_not_before = 2;
 }
 
 message ClusterStatus {
@@ -249,18 +253,6 @@ message UpgradeProgress {
     google.protobuf.Timestamp since    = 3;
 }
 
-message ClusterCVEEdge {
-    // base 64 encoded Cluster:CVE ids.
-    string      id          = 1;
-
-    bool        is_fixable  = 2 [(gogoproto.moretags) = "search:\"Cluster CVE Fixable,store,hidden\""];
-
-    // Whether there is a version the CVE is fixed in the Cluster.
-    oneof has_fixed_by {
-        string  fixed_by    = 3 [(gogoproto.moretags) = "search:\"Cluster CVE Fixed By,store,hidden\""];
-    }
-}
-
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 message AuditLogFileState {
@@ -269,6 +261,7 @@ message AuditLogFileState {
 }
 
 message ClusterHealthStatus {
+    string                    id                               = 9 [(gogoproto.moretags) = 'sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
         // Only collector can have unavailable status
@@ -278,22 +271,28 @@ message ClusterHealthStatus {
         HEALTHY       = 4;
     }
 
-    CollectorHealthInfo       collector_health_info             = 1;
+    CollectorHealthInfo        collector_health_info            = 1;
     AdmissionControlHealthInfo admission_control_health_info    = 8;
+    // scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
+    // Please do not confuse this with the default scanner deployment on a central cluster.
+    ScannerHealthInfo          scanner_health_info              = 10;
 
     // The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-    HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = "search:\"Sensor Status,store\""];
-    HealthStatusLabel         collector_health_status           = 3 [(gogoproto.moretags) = "search:\"Collector Status,store\""];
+    HealthStatusLabel         sensor_health_status              = 2 [(gogoproto.moretags) = 'search:"Sensor Status,store"'];
+    HealthStatusLabel         collector_health_status           = 3 [(gogoproto.moretags) = 'search:"Collector Status,store"'];
 
-    HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = "search:\"Cluster Status,store\""];
-    HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = "search:\"Admission Control Status,store\""];
+    HealthStatusLabel         overall_health_status             = 4 [(gogoproto.moretags) = 'search:"Cluster Status,store"'];
+    HealthStatusLabel         admission_control_health_status   = 7 [(gogoproto.moretags) = 'search:"Admission Control Status,store"'];
+    HealthStatusLabel         scanner_health_status             = 11 [(gogoproto.moretags) = 'search:"Scanner Status,store"'];
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
-    google.protobuf.Timestamp last_contact                      = 5;
+    google.protobuf.Timestamp last_contact                      = 5 [(gogoproto.moretags) = 'search:"Last Contact,store"'];;
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
-    bool                      health_info_complete                  = 6;
+    bool                      health_info_complete              = 6;
+
+    // Note that the tags are out of order. The next tag number is 12.
 }
 
 // CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.
@@ -339,5 +338,32 @@ message AdmissionControlHealthInfo {
 
     // Collection of errors that occurred while trying to obtain admission control health info.
     repeated string status_errors = 3;
+}
 
+// ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
+// When the scanner is deployed on a central cluster, the following message is NOT used.
+// ScannerHealthInfo carries data about scanner deployment but does not include scanner health status
+// derived from this data.
+// Aggregated scanner health status is not included because it is derived in central and not in the component that
+// first reports ScannerHealthInfo (sensor).
+message ScannerHealthInfo {
+    // The following fields are made optional/nullable because there can be errors when trying to obtain them and
+    // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
+    // a certain field, it will be absent (instead of having the default value).
+
+    oneof total_desired_analyzer_pods_opt {
+        int32 total_desired_analyzer_pods = 1;
+    }
+    oneof total_ready_analyzer_pods_opt {
+        int32 total_ready_analyzer_pods = 2;
+    }
+    oneof total_desired_db_pods_opt {
+        int32 total_desired_db_pods = 3;
+    }
+    oneof total_ready_db_pods_opt {
+        int32 total_ready_db_pods = 4;
+    }
+
+    // Collection of errors that occurred while trying to obtain scanner health info.
+    repeated string status_errors = 5;
 }

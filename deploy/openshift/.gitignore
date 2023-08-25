@@ -1,2 +1,5 @@
 central-deploy/
 sensor-deploy/
+default_TLS_certs/
+client_TLS_certs/
+webhook_server_certs/

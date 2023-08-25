@@ -5,10 +5,12 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,9 +40,9 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return "err", errors.Wrap(errox.NotFound, "error message")
 			},
-			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -60,6 +62,45 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 			}
 			require.NotNil(t, err)
 			assert.Equal(t, tt.err.Error(), err.Error())
+		})
+	}
+}
+
+func TestLogInternalErrorInterceptor(t *testing.T) {
+	tests := []struct {
+		name    string
+		handler grpc.UnaryHandler
+		logged  bool
+	}{
+		{
+			name: "internal error",
+			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+				return "", errors.New("some internal error")
+			},
+			logged: true,
+		},
+		{
+			name: "non internal error",
+			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+				return "", status.Error(codes.Canceled, "some other error")
+			},
+			logged: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, logs := observer.New(zap.ErrorLevel)
+			module := logging.CurrentModule()
+			log = &logging.LoggerImpl{
+				InnerLogger: zap.New(core).Named(module.Name()).Sugar(),
+			}
+			resp, _ := LogInternalErrorInterceptor(context.Background(), nil, nil, tt.handler)
+			assert.Equal(t, "", resp)
+			if tt.logged {
+				assert.Equal(t, 1, logs.Len())
+			} else {
+				assert.Equal(t, 0, logs.Len())
+			}
 		})
 	}
 }
@@ -87,9 +128,9 @@ func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errors.Wrap(errorhelpers.ErrNotFound, "error message")
+				return errors.Wrap(errox.NotFound, "error message")
 			},
-			err: status.Error(codes.NotFound, errors.Wrap(errorhelpers.ErrNotFound, "error message").Error()),
+			err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
@@ -131,7 +172,7 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is ErrInvariantViolation -> panic",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrInvariantViolation
+				return "err", errox.InvariantViolation
 			},
 			resp: nil, err: nil,
 			panics: true,
@@ -139,9 +180,9 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		{
 			name: "Error is not ErrInvariantViolation -> do nothing, just pass through",
 			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
-				return "err", errorhelpers.ErrNoCredentials
+				return "err", errox.NoCredentials
 			},
-			resp: "err", err: errorhelpers.ErrNoCredentials,
+			resp: "err", err: errox.NoCredentials,
 			panics: false,
 		},
 	}
@@ -180,16 +221,16 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		},
 		"Error is ErrInvariantViolation -> panic": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.NewErrInvariantViolation("some explanation")
+				return errox.InvariantViolation.CausedBy("some explanation")
 			},
 			err:    nil,
 			panics: true,
 		},
 		"Error is not ErrInvariantViolation -> do nothing, just pass through": {
 			handler: func(srv interface{}, stream grpc.ServerStream) error {
-				return errorhelpers.ErrNotFound
+				return errox.NotFound
 			},
-			err:    errorhelpers.ErrNotFound,
+			err:    errox.NotFound,
 			panics: false,
 		},
 	}

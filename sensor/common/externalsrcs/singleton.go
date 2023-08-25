@@ -1,6 +1,7 @@
 package externalsrcs
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
@@ -18,7 +19,7 @@ func newHandler() *handlerImpl {
 		updateSig:                concurrency.NewSignal(),
 		entities:                 make(map[net.IPNetwork]*storage.NetworkEntityInfo),
 		entitiesByID:             make(map[string]*storage.NetworkEntityInfo),
-		ipNetworkListProtoStream: concurrency.NewValueStream(nil),
+		ipNetworkListProtoStream: concurrency.NewValueStream[*sensor.IPNetworkList](nil),
 	}
 }
 

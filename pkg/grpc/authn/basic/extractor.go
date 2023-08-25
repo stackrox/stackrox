@@ -9,12 +9,11 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 )
-
-var log = logging.LoggerForModule()
 
 // Extractor is the identity extractor for the basic auth identity.
 type Extractor struct {
@@ -52,11 +51,21 @@ func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	username, password, err := parseBasicAuthToken(basicAuthToken)
 	if err != nil {
-		log.Warnf("failed to parse basic auth token: %s", err)
+		logging.GetRateLimitedLogger().WarnL(
+			ri.Hostname,
+			"failed to parse basic auth token from %q: %v",
+			ri.Hostname,
+			err,
+		)
 		return nil, errors.New("failed to parse basic auth token")
 	}
 
-	return e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
+	id, err := e.manager.IdentityForCreds(ctx, username, password, e.authProvider)
+	if errors.Is(err, errox.NotAuthorized) {
+		logging.GetRateLimitedLogger().WarnL(ri.Hostname, "%q: %v", ri.Hostname, err)
+		return nil, err
+	}
+	return id, err
 }
 
 // NewExtractor returns a new identity extractor for basic auth.

@@ -3,7 +3,6 @@ package deploymentevents
 import (
 	"context"
 
-	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -17,7 +16,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -161,14 +159,8 @@ func compareMap(m1, m2 map[string]string) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) error {
-	// Validate the the deployment we receive has necessary fields set.
+	// Validate the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
-		return err
-	}
-
-	var err error
-	deployment.Hash, err = hashstructure.Hash(deployment, &hashstructure.HashOptions{})
-	if err != nil {
 		return err
 	}
 
@@ -180,7 +172,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 
 	incrementNetworkGraphEpoch := true
 	// Only need to get if it's an update call
-	if action == central.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_UPDATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
 		oldDeployment, exists, err := s.deployments.GetDeployment(ctx, deployment.GetId())
 		if err != nil {
 			return err
@@ -197,16 +189,14 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 		}
 	}
 
-	if features.ActiveVulnManagement.Enabled() {
-		go s.processAggregator.RefreshDeployment(deployment)
-	}
+	go s.processAggregator.RefreshDeployment(deployment)
 
 	// Add/Update the deployment from persistence depending on the deployment action.
 	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 		return err
 	}
 
-	// Add network baseline for this deployment if it does not exist yet
+	// Inform network baseline manager that a new deployment has been created
 	if err := s.networkBaselines.ProcessDeploymentCreate(
 		deployment.GetId(),
 		deployment.GetName(),

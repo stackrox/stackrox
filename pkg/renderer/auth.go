@@ -2,11 +2,10 @@ package renderer
 
 import (
 	"bytes"
-	"crypto/rand"
-	"math/big"
 
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/random"
 )
 
 const (
@@ -39,14 +38,9 @@ func CreateHtpasswd(password string) ([]byte, error) {
 
 // CreatePassword generates an alphanumeric password
 func CreatePassword() string {
-	var pw string
-	max := big.NewInt(int64(len(pwCharacters)))
-	for i := 0; i < autogenPasswordLength; i++ {
-		randInt, err := rand.Int(rand.Reader, max)
-		if err != nil {
-			panic(err)
-		}
-		pw += string(pwCharacters[randInt.Int64()])
+	password, err := random.GenerateString(autogenPasswordLength, random.AlphanumericCharacters)
+	if err != nil {
+		panic(err)
 	}
-	return pw
+	return password
 }

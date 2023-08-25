@@ -1,20 +1,23 @@
 import React, { FunctionComponent, ReactElement } from 'react';
+import { useHistory } from 'react-router-dom';
 
+import { isUserResource } from 'Containers/AccessControl/traits';
+import useCentralCapabilities from 'hooks/useCentralCapabilities';
+import { integrationsPath } from 'routePaths';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
+
 // image integrations
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import ClairIntegrationForm from './Forms/ClairIntegrationForm';
+import ClairV4IntegrationForm from './Forms/ClairV4IntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
-import AnchoreIntegrationForm from './Forms/AnchoreIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
 import ArtifactRegistryIntegrationForm from './Forms/ArtifactRegistryIntegrationForm';
 import AzureIntegrationForm from './Forms/AzureIntegrationForm';
 import ArtifactoryIntegrationForm from './Forms/ArtifactoryIntegrationForm';
-import DtrIntegrationForm from './Forms/DtrIntegrationForm';
 import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import NexusIntegrationForm from './Forms/NexusIntegrationForm';
-import TenableIntegrationForm from './Forms/TenableIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 // notifiers
@@ -35,8 +38,8 @@ import GcsIntegrationForm from './Forms/GcsIntegrationForm';
 // auth plugins
 import ApiTokenIntegrationForm from './Forms/ApiTokenIntegrationForm';
 import ClusterInitBundleIntegrationForm from './Forms/ClusterInitBundleIntegrationForm';
-// authorization plugins
-import ScopedAccessPluginIntegrationForm from './Forms/ScopedAccessPluginIntegrationForm';
+// signature integrations
+import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 import './IntegrationForm.css';
 
@@ -56,19 +59,20 @@ const ComponentFormMap = {
     imageIntegrations: {
         clairify: ClairifyIntegrationForm,
         clair: ClairIntegrationForm,
+        clairV4: ClairV4IntegrationForm,
         docker: DockerIntegrationForm,
-        anchore: AnchoreIntegrationForm,
         ecr: EcrIntegrationForm,
         google: GoogleIntegrationForm,
         artifactregistry: ArtifactRegistryIntegrationForm,
         azure: AzureIntegrationForm,
         artifactory: ArtifactoryIntegrationForm,
-        dtr: DtrIntegrationForm,
         quay: QuayIntegrationForm,
         nexus: NexusIntegrationForm,
-        tenable: TenableIntegrationForm,
         ibm: IbmIntegrationForm,
         rhel: RhelIntegrationForm,
+    },
+    signatureIntegrations: {
+        signature: SignatureIntegrationForm,
     },
     notifiers: {
         awsSecurityHub: AwsSecurityHubIntegrationForm,
@@ -91,9 +95,6 @@ const ComponentFormMap = {
         apitoken: ApiTokenIntegrationForm,
         clusterInitBundle: ClusterInitBundleIntegrationForm,
     },
-    authPlugins: {
-        scopedAccess: ScopedAccessPluginIntegrationForm,
-    },
 } as Record<IntegrationSource, Record<IntegrationType, FunctionComponent<FormProps>>>;
 
 function IntegrationForm({
@@ -102,13 +103,28 @@ function IntegrationForm({
     initialValues,
     isEditable,
 }: IntegrationFormProps): ReactElement {
+    const history = useHistory();
+
+    const { isCentralCapabilityAvailable } = useCentralCapabilities();
+    const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
+        'centralCanUseCloudBackupIntegrations'
+    );
+    if (!canUseCloudBackupIntegrations && source === 'backups') {
+        history.replace(integrationsPath);
+    }
+
     const Form: FunctionComponent<FormProps> = ComponentFormMap?.[source]?.[type];
     if (!Form) {
         throw new Error(
             `There are no integration form components for source (${source}) and type (${type})`
         );
     }
-    return <Form initialValues={initialValues} isEditable={isEditable} />;
+    return (
+        <Form
+            initialValues={initialValues}
+            isEditable={isEditable && isUserResource(initialValues?.traits)}
+        />
+    );
 }
 
 export default IntegrationForm;

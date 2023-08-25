@@ -1,7 +1,7 @@
 [
     {
         "comment": "ROX-5861: compliance restarts with openshift after sensor bounce tests",
-        "job": "openshift",
+        "job": "^(ocp|openshift)",
         "logfile": "compliance-previous",
         "logline": "Fatal: error initializing stream to sensor"
     },
@@ -13,7 +13,7 @@
     },
     {
         "comment": "collector restart due to slow sensor start",
-        "job": "openshift",
+        "job": "^(ocp|openshift)",
         "logfile": "collector-previous",
         "logline": "Failed to connect to sensor.stackrox.* port 443: No route to host"
     },
@@ -22,5 +22,23 @@
         "job": "scale-tests",
         "logfile": "sensor-previous",
         "logline": "checking central status failed after 15 retries"
+    },
+    {
+        "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "No suitable kernel object downloaded for kernel"
+    },
+    {
+        "comment": "collector restart due to sensor connection failure (likely slow start)",
+        "job": ".*",
+        "logfile": "collector-previous",
+        "logline": "Unable to connect to Sensor at"
+    },
+    {
+        "comment": "collector downloads throttled due to bouncing in upgrade test",
+        "job": "upgrade",
+        "logfile": "collector-previous",
+        "logline": "Failed to initialize collector kernel components"
     }
 ]

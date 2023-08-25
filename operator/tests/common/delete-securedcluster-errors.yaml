@@ -1,9 +1,376 @@
-apiVersion: platform.stackrox.io/v1alpha1
-kind: SecuredCluster
+# The following resources are obtained by running the following:
+#  1. install RHACS operator on an OpenShift cluster
+#  2. ns_kinds=$(kubectl api-resources --verbs="list" -o name --no-headers --namespaced=true | sed -z 's/\n/,/g;s/,$/\n/')
+#  3. cluster_kinds=$(kubectl api-resources --verbs="list" -o name --no-headers --namespaced=false | sed -z 's/\n/,/g;s/,$/\n/')
+#  4. create a namespace "kuttl-ns"
+#  5. deploy a Central to that namespace, wait for it to become healthy, generate an init bundle and deploy it to the same namespace
+#  6. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_before.yaml
+#  7. kubectl get "${cluster_kinds}" -o yaml > cluster_resources_before.yaml
+#  8. deploy a SecuredCluster to that same namespace and wait for it to become healthy
+#  9. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_after.yaml
+# 10. kubectl get "${cluster_kinds}" -o yaml > cluster_resources_after.yaml
+# 11. ./operator/bin/yq-* --null-input  '[load("cluster_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("cluster_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] | .[] | split_doc'
+# 12. echo ---
+# 13. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "ControllerRevision" and .kind != "EndpointSlice") | split_doc'
+# 14. Massage the output from the last command to omit those few Secrets whose names are unpredictable
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
 metadata:
-  name: stackrox-secured-cluster-services
+  name: stackrox
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:create-events-binding
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:enforce-policies
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:monitor-cluster
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:network-policies-binding
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:review-tokens-binding
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:update-namespaces-binding
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-admission-control-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-collector-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-sensor-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:create-events
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:edit-workloads
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:network-policies
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:review-tokens
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:update-namespaces
+---
+apiVersion: authorization.openshift.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:view-cluster
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:create-events-binding
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:enforce-policies
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:monitor-cluster
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:network-policies-binding
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:review-tokens-binding
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stackrox:update-namespaces-binding
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-admission-control-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-collector-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox-sensor-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:create-events
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:edit-workloads
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:network-policies
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:review-tokens
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:update-namespaces
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stackrox:view-cluster
+# namespace-scoped resources follow
+---
+# TODO(ROX-11020): find what creates this configmap and why it's not getting cleaned up
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: admission-control
+#---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: injected-cabundle-stackrox-secured-cluster-services
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: admission-control
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: sensor
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: sensor-webhook
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-cluster-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: service-ca
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sh.helm.release.v1.stackrox-secured-cluster-services.v1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admission-control
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collector
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sensor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-control
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-webhook
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collector
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sensor
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: admission-control-use-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: admission-control-watch-config
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: collector-use-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: manage-namespace
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-admission-control-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-collector-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-sensor-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: edit
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: use-privileged-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: watch-config
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admission-control-no-ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: collector-no-ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor
+---
+apiVersion: platform.stackrox.io/v1alpha1
+kind: SecuredCluster
+metadata:
+  name: stackrox-secured-cluster-services
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admission-control-use-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: admission-control-watch-config
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: collector-use-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: manage-namespace
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-admission-control-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-collector-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-sensor-psp
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: edit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-privileged-scc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: watch-config

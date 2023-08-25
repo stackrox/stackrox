@@ -1,0 +1,44 @@
+{
+  "id": "a5248b33-5027-4aaf-a6b6-896f73fc6d28",
+  "name": "Alpine Linux Package Manager (apk) in Image",
+  "description": "Alert on deployments with the Alpine Linux package manager (apk) present",
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `apk --purge del apk-tools` in the image build for production containers.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on the master-etcd deployment",
+      "deployment": {
+        "name": "master-etcd-openshift-master-.*",
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "apk-tools="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

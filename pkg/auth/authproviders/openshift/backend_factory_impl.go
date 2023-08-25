@@ -31,11 +31,11 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string) (authproviders.Backend, error) {
+func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
 	return newBackend(id, f.callbackURLPath, config)
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
+func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.URL.Path != f.callbackURLPath {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}

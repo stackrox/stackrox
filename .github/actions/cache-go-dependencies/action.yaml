@@ -1,0 +1,22 @@
+name: Cache Go Dependencies
+description: Cache Go Dependencies
+runs:
+  using: composite
+  steps:
+    - name: Determine Go cache paths
+      id: cache-paths
+      run: |
+        echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+      shell: bash
+
+    - name: Cache Go Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+        key: go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          go-v3-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+          go-v3-${{ github.job }}-

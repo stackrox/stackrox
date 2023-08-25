@@ -7,24 +7,24 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/manager"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.ComplianceRuns)): {
+		user.With(permissions.View(resources.Compliance)): {
 			"/v1.ComplianceManagementService/GetRecentRuns",
 			"/v1.ComplianceManagementService/GetRunStatuses",
 		},
-		user.With(permissions.Modify(resources.ComplianceRuns)): {
+		user.With(permissions.Modify(resources.Compliance)): {
 			"/v1.ComplianceManagementService/TriggerRun",
 			"/v1.ComplianceManagementService/TriggerRuns",
 		},
@@ -32,6 +32,8 @@ var (
 )
 
 type service struct {
+	v1.UnimplementedComplianceManagementServiceServer
+
 	manager manager.ComplianceManager
 }
 
@@ -70,7 +72,7 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
 	expanded, err := s.manager.ExpandSelection(ctx, req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "could not expand cluster/standard selection: %v", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "could not expand cluster/standard selection: %v", err)
 	}
 
 	runs, err := s.manager.TriggerRuns(ctx, expanded...)

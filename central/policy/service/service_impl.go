@@ -11,33 +11,38 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
+	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
@@ -53,7 +58,7 @@ var (
 	log = logging.LoggerForModule()
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Policy)): {
+		user.With(permissions.View(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/GetPolicy",
 			"/v1.PolicyService/ListPolicies",
 			"/v1.PolicyService/ReassessPolicies",
@@ -63,7 +68,7 @@ var (
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
 		},
-		user.With(permissions.Modify(resources.Policy)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/PostPolicy",
 			"/v1.PolicyService/PutPolicy",
 			"/v1.PolicyService/PatchPolicy",
@@ -71,8 +76,6 @@ var (
 			"/v1.PolicyService/DryRunPolicy",
 			"/v1.PolicyService/SubmitDryRunPolicyJob",
 			"/v1.PolicyService/CancelDryRunJob",
-			"/v1.PolicyService/RenamePolicyCategory",
-			"/v1.PolicyService/DeletePolicyCategory",
 			"/v1.PolicyService/EnableDisablePolicyNotification",
 			"/v1.PolicyService/ImportPolicies",
 		},
@@ -88,24 +91,27 @@ const (
 var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 
 	partialListPolicyGroups = set.NewStringSet(fieldnames.ImageComponent, fieldnames.DockerfileLine, fieldnames.EnvironmentVariable)
 )
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedPolicyServiceServer
+
 	policies          datastore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
+	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
-	mitreStore        mitreDataStore.MitreAttackReadOnlyDataStore
+	mitreStore        mitreDS.AttackReadOnlyDataStore
 	reprocessor       reprocessor.Loop
 	connectionManager connection.Manager
 
 	buildTimePolicies detection.PolicySet
 	lifecycleManager  lifecycle.Manager
-	processor         notifierProcessor.Processor
+	processor         notifier.Processor
 	metadataCache     expiringcache.Cache
 
 	validator *policyValidator
@@ -135,14 +141,14 @@ func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (
 
 func (s *serviceImpl) getPolicy(ctx context.Context, id string) (*storage.Policy, error) {
 	if id == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy ID must be provided")
+		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be provided")
 	}
 	policy, exists, err := s.policies.GetPolicy(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "policy with ID '%s' does not exist", id)
+		return nil, errors.Wrapf(errox.NotFound, "policy with ID '%s' does not exist", id)
 	}
 	if len(policy.GetCategories()) == 0 {
 		policy.Categories = []string{uncategorizedCategory}
@@ -181,7 +187,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	} else {
 		parsedQuery, err := search.ParseQuery(request.GetQuery())
 		if err != nil {
-			return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+			return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 		}
 		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
 		if err != nil {
@@ -195,11 +201,11 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 
 func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if err := policyversion.EnsureConvertedToLatest(p); err != nil {
-		return errors.Wrapf(errorhelpers.ErrInvalidArgs, "Could not ensure policy format: %v", err.Error())
+		return errors.Wrapf(errox.InvalidArgs, "Could not ensure policy format: %v", err.Error())
 	}
 
 	if err := s.validator.validate(ctx, p, options...); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 	return nil
 }
@@ -210,6 +216,8 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 			return nil, err
 		}
 	}
+
+	options = append(options, booleanpolicy.ValidateNoFromInDockerfileLine())
 
 	if err := s.convertAndValidate(ctx, request, options...); err != nil {
 		return nil, err
@@ -233,7 +241,7 @@ func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Po
 
 func ensureIDEmpty(p *storage.Policy) error {
 	if p.GetId() != "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Id field should be empty when posting a new policy")
+		return errors.Wrap(errox.InvalidArgs, "Id field should be empty when posting a new policy")
 	}
 	return nil
 }
@@ -254,7 +262,7 @@ func (s *serviceImpl) GetPolicyMitreVectors(ctx context.Context, request *v1.Get
 		return nil, err
 	}
 
-	fullVectors, err := policyUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
+	fullVectors, err := mitreUtils.GetFullMitreAttackVectors(s.mitreStore, policy)
 	if err != nil {
 		return nil, errors.Wrapf(err, "fetching MITRE ATT&CK vectors for policy %q", request.GetId())
 	}
@@ -296,7 +304,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy with id '%s' not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "Policy with id '%s' not found", request.GetId())
 	}
 	if request.SetDisabled != nil {
 		policy.Disabled = request.GetDisabled()
@@ -308,7 +316,7 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 // DeletePolicy deletes an policy from the system.
 func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "A policy id must be specified to delete a Policy")
+		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
 	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
@@ -341,6 +349,7 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 	}
 
 	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
+		ctx := contextutil.WithValuesFrom(context.Background(), ctx)
 		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
 
@@ -386,7 +395,7 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
 	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	if err := checkIdentityFromMetadata(ctx, metadata); err != nil {
@@ -394,10 +403,19 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 	}
 
 	if err := s.dryRunPolicyJobManager.CancelTask(jobid.JobId); err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) getNetworkPoliciesForDeployment(ctx context.Context, dep *storage.Deployment) (*augmentedobjs.NetworkPoliciesApplied, error) {
+	storedPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, dep.GetClusterId(), dep.GetNamespace())
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get network policies for clusterId %s on namespace %s", dep.GetClusterId(), dep.GetNamespace())
+	}
+	matchedNetworkPolicies := networkpolicy.FilterForDeployment(storedPolicies, dep)
+	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedNetworkPolicies), nil
 }
 
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
@@ -411,23 +429,24 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	compiledPolicy, err := detection.CompilePolicy(request)
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid policy: %v", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "invalid policy: %v", err)
 	}
 
-	deploymentIds, err := s.deployments.GetDeploymentIDs()
+	deploymentIds, err := s.deployments.GetDeploymentIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	pChan := make(chan struct{}, dryRunParallelism)
 	alertChan := make(chan *v1.DryRunResponse_Alert)
-	var wg sync.WaitGroup
+	allAlertsProcessedSig := concurrency.NewSignal()
 	go func() {
 		for {
 			select {
 			case alert, ok := <-alertChan:
 				// channel is closed
 				if !ok {
+					allAlertsProcessedSig.Signal()
 					return
 				}
 				resp.Alerts = append(resp.Alerts, alert)
@@ -438,6 +457,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		}
 	}()
 
+	var wg sync.WaitGroup
 	for _, id := range deploymentIds {
 		if err := cancelCtx.Err(); err != nil {
 			return nil, err
@@ -450,10 +470,6 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				wg.Done()
 				<-pChan
 			}()
-
-			if compiledPolicy.Policy().GetDisabled() {
-				return
-			}
 
 			deployment, exists, err := s.deployments.GetDeployment(ctx, depId)
 			if !exists || err != nil {
@@ -469,7 +485,17 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			violations, err := compiledPolicy.MatchAgainstDeployment(nil, deployment, images)
+			matched, err := s.getNetworkPoliciesForDeployment(ctx, deployment)
+			if err != nil {
+				log.Errorf("failed to fetch network policies for deployment: %s", err.Error())
+				return
+			}
+
+			violations, err := compiledPolicy.MatchAgainstDeployment(nil, booleanpolicy.EnhancedDeployment{
+				Deployment:             deployment,
+				Images:                 images,
+				NetworkPoliciesApplied: matched,
+			})
 
 			if err != nil {
 				log.Errorf("failed policy matching: %s", err.Error())
@@ -495,7 +521,12 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 	wg.Wait()
 	close(alertChan)
-	return &resp, nil
+	select {
+	case <-allAlertsProcessedSig.Done():
+		return &resp, nil
+	case <-cancelCtx.Done():
+		return nil, cancelCtx.Err()
+	}
 }
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
@@ -519,45 +550,6 @@ func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1
 	sort.Strings(response.Categories)
 
 	return response, nil
-}
-
-// RenamePolicyCategory changes all usage of the category in policies to the requsted name.
-func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.Empty, error) {
-	if request.GetOldCategory() == request.GetNewCategory() {
-		return &v1.Empty{}, nil
-	}
-
-	if err := s.policies.RenamePolicyCategory(ctx, request); err != nil {
-		return nil, err
-	}
-
-	if err := s.syncPoliciesWithSensors(); err != nil {
-		return nil, err
-	}
-
-	return &v1.Empty{}, nil
-}
-
-// DeletePolicyCategory removes all usage of the category in policies. Policies may end up with no configured category.
-func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error) {
-	categorySet, err := s.getPolicyCategorySet(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !categorySet.Contains(request.GetCategory()) {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Policy Category %s does not exist", request.GetCategory())
-	}
-
-	if err := s.policies.DeletePolicyCategory(ctx, request); err != nil {
-		return nil, err
-	}
-
-	if err := s.syncPoliciesWithSensors(); err != nil {
-		return nil, err
-	}
-
-	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set.StringSet, err error) {
@@ -597,7 +589,7 @@ func (s *serviceImpl) removeActivePolicy(id string) error {
 
 func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, request *v1.EnableDisablePolicyNotificationRequest) (*v1.Empty, error) {
 	if request.GetPolicyId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Policy ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Policy ID must be specified")
 	}
 	var err error
 	if request.GetDisable() {
@@ -614,7 +606,7 @@ func (s *serviceImpl) EnableDisablePolicyNotification(ctx context.Context, reque
 
 func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID string, notifierIDs []string) error {
 	if len(notifierIDs) == 0 {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
+		return errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
 	}
 
 	policy, exists, err := s.policies.GetPolicy(ctx, policyID)
@@ -622,7 +614,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -635,12 +627,11 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 		if !exists {
 			errorList.AddStringf("notifier with id: %s not found", notifierID)
 			continue
-		} else {
-			if notifierSet.Contains(notifierID) {
-				continue
-			}
-			policy.Notifiers = append(policy.Notifiers, notifierID)
 		}
+		if notifierSet.Contains(notifierID) {
+			continue
+		}
+		policy.Notifiers = append(policy.Notifiers, notifierID)
 	}
 
 	_, err = s.PutPolicy(ctx, policy)
@@ -671,7 +662,7 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 		return errors.Errorf("failed to retrieve policy: %v", err)
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "Policy %q not found", policyID)
+		return errors.Wrapf(errox.NotFound, "Policy %q not found", policyID)
 	}
 	notifierSet := set.NewStringSet(policy.Notifiers...)
 	if notifierSet.Cardinality() == 0 {
@@ -710,7 +701,7 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 		return err
 	}
 	if identityUID != id.UID() {
-		return errorhelpers.ErrNotAuthorized
+		return errox.NotAuthorized
 	}
 
 	return nil
@@ -718,26 +709,30 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 
 func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
 	// missingIndices and policyErrors should not overlap
-	policyList, missingIndices, policyErrors, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.PolicyIds)
 	if err != nil {
 		return nil, err
 	}
-	if len(policyErrors) > 0 {
-		errDetails := &v1.ExportPoliciesErrorList{}
-		for i, missingIndex := range missingIndices {
-			errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
-				PolicyId: request.PolicyIds[missingIndex],
-				Error: &v1.PolicyError{
-					Error: policyErrors[i].Error(),
-				},
-			})
-		}
+	errDetails := &v1.ExportPoliciesErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.PolicyIds[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+			PolicyId: policyID,
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
+
+	}
+	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
-			return nil, utils.Should(errors.Errorf("unexpected error creating status proto: %v", err))
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
 		return nil, statusMsg.Err()
 	}
+
 	for _, policy := range policyList {
 		removeInternal(policy)
 	}
@@ -833,7 +828,7 @@ func makeValidationError(policy *storage.Policy, err error) *v1.ImportPolicyResp
 func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFromSearchRequest) (*v1.PolicyFromSearchResponse, error) {
 	policy, unconvertableCriteria, hasNestedFields, err := s.parsePolicy(ctx, request.GetSearchParams())
 	if err != nil {
-		return nil, errors.Errorf("error creating policy from search string: %v", err)
+		return nil, errors.Wrap(err, "error creating policy from search string")
 	}
 
 	response := &v1.PolicyFromSearchResponse{
@@ -850,7 +845,7 @@ func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFr
 func (s *serviceImpl) parsePolicy(ctx context.Context, searchString string) (*storage.Policy, []search.FieldLabel, bool, error) {
 	// Handle empty input query case.
 	if len(searchString) == 0 {
-		return nil, nil, false, errors.New("can not generate a policy from an empty query")
+		return nil, nil, false, errox.InvalidArgs.CausedBy("can not generate a policy from an empty query")
 	}
 	// Have a filled query, parse it.
 	fieldMap, err := getFieldMapFromQueryString(searchString)
@@ -895,7 +890,7 @@ func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[s
 	var unconvertableFields []search.FieldLabel
 	policyGroupMap := make(map[string][]*storage.PolicyGroup)
 	for _, field := range sortedFieldLabels {
-		if field == search.Cluster || field == search.Namespace || field == search.Label {
+		if field == search.Cluster || field == search.Namespace || field == search.DeploymentLabel {
 			continue
 		}
 		searchTermPolicyGroup, fieldsDropped, converterExists := booleanpolicy.GetPolicyGroupFromSearchTerms(field, fieldMap[field])
@@ -961,7 +956,7 @@ func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldL
 	if !namespacesOk {
 		namespaces = []string{""}
 	}
-	labels, labelsOk := fieldMap[search.Label]
+	labels, labelsOk := fieldMap[search.DeploymentLabel]
 	if !labelsOk {
 		labels = []string{""}
 	}

@@ -1,0 +1,34 @@
+values:
+  central:
+    persistence:
+      none: true
+  monitoring:
+    openshift:
+      enabled: false
+tests:
+- server:
+    visibleSchemas:
+    - openshift-4.1.0
+  tests:
+  - name: "Injected CA bundle has no data"
+    expect: |
+      assertThat(.configmaps["injected-cabundle-stackrox-central-services"].stringData == null)
+  - name: "Injected CA bundle has a proper label"
+    expect: |
+      assertThat(.configmaps["injected-cabundle-stackrox-central-services"].metadata.labels["config.openshift.io/inject-trusted-cabundle"] == "true")
+- server:
+    visibleSchemas:
+    - openshift-3.11.0
+  set:
+    env.openshift: 3
+  tests:
+  - name: "No injected CA bundle on Openshift 3"
+    expect: |
+      assertThat(.configmaps["injected-cabundle-stackrox-central-services"] == null)
+- server:
+    visibleSchemas:
+    - kubernetes-1.20.2
+  tests:
+  - name: "No injected CA bundle on Kubernetes"
+    expect: |
+      assertThat(.configmaps["injected-cabundle-stackrox-central-services"] == null)

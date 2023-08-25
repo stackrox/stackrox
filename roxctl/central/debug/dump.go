@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	dumpTimeout = 2 * time.Minute
+	dumpTimeout = 5 * time.Minute
 )
 
 // dumpCommand allows pulling logs, profiles, and metrics
@@ -24,10 +24,20 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	)
 
 	c := &cobra.Command{
-		Use: "dump",
+		Use:   "dump",
+		Short: "Download a bundle containing debug information for Central.",
+		Long:  "Download a bundle containing debug information for Central such as log files, memory, and CPU profiles. Bundle generation takes a few minutes.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cliEnvironment.Logger().InfofLn("Retrieving debug metrics. This may take a couple of minutes...")
-			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
+			path := fmt.Sprintf("/debug/dump?logs=%t", withLogs)
+			return zipdownload.GetZip(zipdownload.GetZipOptions{
+				Path:       path,
+				Method:     http.MethodGet,
+				Timeout:    flags.Timeout(c),
+				BundleType: "debug",
+				ExpandZip:  false,
+				OutputDir:  outputDir,
+			}, cliEnvironment)
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
@@ -35,16 +45,4 @@ func dumpCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory for bundle contents (default: auto-generated directory name inside the current directory)")
 
 	return c
-}
-
-func retrieveDump(timeout time.Duration, logs bool, outputDir string) error {
-	path := fmt.Sprintf("/debug/dump?logs=%t", logs)
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
-		Path:       path,
-		Method:     http.MethodGet,
-		Timeout:    timeout,
-		BundleType: "debug",
-		ExpandZip:  false,
-		OutputDir:  outputDir,
-	})
 }

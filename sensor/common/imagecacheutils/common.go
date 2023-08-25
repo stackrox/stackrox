@@ -15,3 +15,11 @@ func GetImageCacheKey(provider CacheKeyProvider) string {
 	}
 	return provider.GetName().GetFullName()
 }
+
+// CompareImageCacheKey given two CacheKeyProvider, compares if they're equal
+func CompareImageCacheKey(a, b CacheKeyProvider) bool {
+	if a.GetId() != "" && b.GetId() != "" {
+		return a.GetId() == b.GetId()
+	}
+	return a.GetName().GetFullName() == b.GetName().GetFullName()
+}

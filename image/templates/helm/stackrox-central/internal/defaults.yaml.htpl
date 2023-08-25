@@ -17,6 +17,40 @@ defaults:
 
     exposeMonitoring: false
 
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        # Central is single-homed, so avoid preemptible nodes.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/master
+              operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+
     image:
       name: [< required "" .ImageRemote >]
       tag: [< required "" .ImageTag >]
@@ -38,7 +72,28 @@ defaults:
         port: null
       route:
         enabled: false
+    db:
+      external: false
 
+      source:
+        minConns: 10
+        maxConns: 90
+        statementTimeoutMs: 1200000
+
+      postgresConfig: "@config/centraldb/postgresql.conf|config/centraldb/postgresql.conf.default"
+      hbaConfig: "@config/centraldb/pg_hba.conf|config/centraldb/pg_hba.conf.default"
+
+      image:
+        name: [< required "" .CentralDBImageRemote >]
+        tag: [< required "" .CentralDBImageTag >]
+
+      resources:
+        requests:
+          memory: "8Gi"
+          cpu: "4"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
   scanner:
     disable: false
     replicas: 3
@@ -50,23 +105,51 @@ defaults:
       minReplicas: 2
       maxReplicas: 5
 
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: scanner
+            topologyKey: kubernetes.io/hostname
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+
     resources:
       requests:
         memory: "1500Mi"
         cpu: "1000m"
       limits:
-        memory: "3000Mi"
+        memory: "4Gi"
         cpu: "2000m"
 
     image:
       name: [< required "" .ScannerImageRemote >]
       tag: [< required "" .ScannerImageTag >]
-
-    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-    slimImage:
-      name: [< required "" .ScannerSlimImageRemote >]
-      tag: [< required "" .ScannerImageTag >]
-    [< end >]
 
     dbResources:
       limits:
@@ -78,19 +161,19 @@ defaults:
 
     dbImage:
       name: [< required "" .ScannerDBImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
-
-    [< if .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING ->]
-    slimDBImage:
-      name: [< required "" .ScannerDBSlimImageRemote >]
-      tag: [< required "" .ScannerDBImageTag >]
-    [< end >]
+      tag: [< required "" .ScannerImageTag >]
 
   system:
     createSCCs: [< not .Operator >]
 
-  enableOpenShiftMonitoring: false
+    [<- if not .AutoSensePodSecurityPolicies >]
+    enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
+    [<- end >]
 
 pvcDefaults:
   claimName: "stackrox-db"
+  size: "100Gi"
+
+dbPVCDefaults:
+  claimName: "central-db"
   size: "100Gi"

@@ -1,24 +1,12 @@
 package datastore
 
 import (
-	clusterIndexer "github.com/stackrox/rox/central/cluster/index"
-	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
-	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
+	"github.com/stackrox/rox/central/globaldb"
+	pgStore "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagecomponent/search"
-	"github.com/stackrox/rox/central/imagecomponent/store/dackbox"
-	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
-	imageCVEEdgeIndexer "github.com/stackrox/rox/central/imagecveedge/index"
-	nodeIndexer "github.com/stackrox/rox/central/node/index"
-	nodeComponentEdgeIndexer "github.com/stackrox/rox/central/nodecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -28,23 +16,9 @@ var (
 )
 
 func initialize() {
-	storage, err := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
-	utils.CrashOnError(err)
-
-	searcher := search.New(storage, globaldb.GetGlobalDackBox(),
-		cveIndexer.New(globalindex.GetGlobalIndex()),
-		componentCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		componentIndexer.New(globalindex.GetGlobalIndex()),
-		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		imageCVEEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		imageIndexer.New(globalindex.GetGlobalIndex()),
-		nodeComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
-		nodeIndexer.New(globalindex.GetGlobalIndex()),
-		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
-		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
-
-	ad, err = New(globaldb.GetGlobalDackBox(), storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
-	utils.CrashOnError(err)
+	storage := pgStore.New(globaldb.GetPostgres())
+	searcher := search.NewV2(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	ad = New(storage, searcher, riskDataStore.Singleton(), ranking.ComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

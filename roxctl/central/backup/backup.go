@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -31,7 +32,10 @@ func Command(cliEnvironment environment.Environment, full *bool) *cobra.Command 
 	centralBackupCmd := &centralBackupCommand{env: cliEnvironment}
 
 	c := &cobra.Command{
-		Use:          "backup",
+		Use:   "backup",
+		Short: "Create a backup of the StackRox database and certificates.",
+		Long: `Create a backup of the StackRox database, certificates and keys (.zip file).
+You can use it to restore central service and the database.`,
 		SilenceUsage: true,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return centralBackupCmd.backup(flags.Timeout(c), *full)
@@ -66,7 +70,7 @@ func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
 		}
 		// If they specified a directory, it must exist.
 		if strings.HasSuffix(userProvidedOutput, string(os.PathSeparator)) {
-			return "", errors.Errorf("invalid output %q: directory does not exist", userProvidedOutput)
+			return "", errox.InvalidArgs.Newf("invalid output %q: directory does not exist", userProvidedOutput)
 		}
 		// Now we know they've provided a filename. We check to make sure the containing directory exists.
 		containingDir := filepath.Dir(userProvidedOutput)
@@ -75,7 +79,8 @@ func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
 			return "", err
 		}
 		if !dirExists {
-			return "", errors.Errorf("invalid output %q: containing directory %q does not exist", userProvidedOutput, containingDir)
+			return "", errox.InvalidArgs.Newf("invalid output %q: containing directory %q does not exist",
+				userProvidedOutput, containingDir)
 		}
 		return userProvidedOutput, nil
 	}
@@ -142,7 +147,7 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusUnauthorized, http.StatusForbidden:
-		return errors.New("Invalid credentials. Please add/fix your credentials")
+		return errox.NotAuthorized.New("Invalid credentials. Please add/fix your credentials")
 	default:
 		return errors.Wrap(httputil.ResponseToError(resp), "Error when trying to get a backup.")
 	}

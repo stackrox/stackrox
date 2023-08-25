@@ -34,10 +34,10 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 }
 
 func testDeploymentSorting(t *testing.T, field string, extractor func(d *storage.Deployment) string) {
-	sorted := sliceutils.Map(getDeploymentsWithSortOption(t, field, false), extractor).([]string)
+	sorted := sliceutils.Map(getDeploymentsWithSortOption(t, field, false), extractor)
 	assert.True(t, sort.StringsAreSorted(sorted), "field %s not sorted in response (got %v)", field, sorted)
 
-	sortedReverse := sliceutils.Map(getDeploymentsWithSortOption(t, field, true), extractor).([]string)
+	sortedReverse := sliceutils.Map(getDeploymentsWithSortOption(t, field, true), extractor)
 	assert.True(t, sort.SliceIsSorted(sortedReverse, func(i, j int) bool {
 		return sortedReverse[i] > sortedReverse[j]
 	}), "field %s not sorted in reverse in response (got %v)", field, sortedReverse)

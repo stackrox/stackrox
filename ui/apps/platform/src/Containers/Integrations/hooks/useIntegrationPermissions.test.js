@@ -14,11 +14,7 @@ const initialStoreWrite = {
         roles: {
             userRolePermissions: {
                 resourceToAccess: {
-                    APIToken: 'READ_WRITE_ACCESS',
-                    AuthPlugin: 'READ_WRITE_ACCESS',
-                    BackupPlugins: 'READ_WRITE_ACCESS',
-                    ImageIntegration: 'READ_WRITE_ACCESS',
-                    Notifier: 'READ_WRITE_ACCESS',
+                    Integration: 'READ_WRITE_ACCESS',
                 },
             },
         },
@@ -29,11 +25,7 @@ const initialStoreRead = {
         roles: {
             userRolePermissions: {
                 resourceToAccess: {
-                    APIToken: 'READ_ACCESS',
-                    AuthPlugin: 'READ_ACCESS',
-                    BackupPlugins: 'READ_ACCESS',
-                    ImageIntegration: 'READ_ACCESS',
-                    Notifier: 'READ_ACCESS',
+                    Integration: 'READ_ACCESS',
                 },
             },
         },
@@ -44,11 +36,7 @@ const initialStoreNone = {
         roles: {
             userRolePermissions: {
                 resourceToAccess: {
-                    APIToken: 'NO_ACCESS',
-                    AuthPlugin: 'NO_ACCESS',
-                    BackupPlugins: 'NO_ACCESS',
-                    ImageIntegration: 'NO_ACCESS',
-                    Notifier: 'NO_ACCESS',
+                    Integration: 'NO_ACCESS',
                 },
             },
         },
@@ -71,8 +59,6 @@ describe('useIntegrationPermissions', () => {
         expect(result.current.imageIntegrations.read).toEqual(true);
         expect(result.current.backups.write).toEqual(true);
         expect(result.current.backups.read).toEqual(true);
-        expect(result.current.authPlugins.write).toEqual(true);
-        expect(result.current.authPlugins.read).toEqual(true);
     });
 
     it('should return read permissions', () => {
@@ -90,8 +76,6 @@ describe('useIntegrationPermissions', () => {
         expect(result.current.imageIntegrations.read).toEqual(true);
         expect(result.current.backups.write).toEqual(false);
         expect(result.current.backups.read).toEqual(true);
-        expect(result.current.authPlugins.write).toEqual(false);
-        expect(result.current.authPlugins.read).toEqual(true);
     });
 
     it('should return no permissions', () => {
@@ -109,7 +93,5 @@ describe('useIntegrationPermissions', () => {
         expect(result.current.imageIntegrations.read).toEqual(false);
         expect(result.current.backups.write).toEqual(false);
         expect(result.current.backups.read).toEqual(false);
-        expect(result.current.authPlugins.write).toEqual(false);
-        expect(result.current.authPlugins.read).toEqual(false);
     });
 });

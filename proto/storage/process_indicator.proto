@@ -11,16 +11,16 @@ package storage;
 
 // Next available tag: 13
 message ProcessIndicator {
-    // A unique uuid for the Indicator message
-    string id                                      = 1 [(gogoproto.moretags) = "search:\"Process ID,store,hidden\""];
+    // A unique UUID for the Indicator message
+    string id                                      = 1 [(gogoproto.moretags) = 'search:"Process ID,store,hidden"  sql:"pk,type(uuid)"'];
 
-    string deployment_id                           = 2 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" policy:\",prefer-parent\""];
+    string deployment_id                           = 2 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" policy:",prefer-parent" sql:"index=hash,fk(Deployment:id),no-fk-constraint,type(uuid)"'];
     reserved 10; // Previously deployment_state_ts
 
-    string container_name                          = 3 [(gogoproto.moretags) = "search:\"Container Name,hidden\" policy:\",prefer-parent\""];
+    string container_name                          = 3 [(gogoproto.moretags) = 'search:"Container Name,hidden" policy:",prefer-parent"'];
     // Pod name
-    string pod_id                                  = 4 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
-    string pod_uid                                 = 11 [(gogoproto.moretags) = "search:\"Pod UID,hidden\""];
+    string pod_id                                  = 4 [(gogoproto.moretags) = 'search:"Pod ID,hidden"'];
+    string pod_uid                                 = 11 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"index=hash,type(uuid)"'];
 
     // The emit timestamp of the message. Used for measuring latency
     reserved 5;
@@ -28,8 +28,8 @@ message ProcessIndicator {
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal                           = 6;
 
-    string cluster_id                              = 7 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\" policy:\",prefer-parent\""];
-    string namespace                               = 8 [(gogoproto.moretags) = "search:\"Namespace,store,hidden\" policy:\",prefer-parent\""];
+    string cluster_id                              = 7 [(gogoproto.moretags) = 'search:"Cluster ID,store,hidden" policy:",prefer-parent" sql:"type(uuid)"'];
+    string namespace                               = 8 [(gogoproto.moretags) = 'search:"Namespace,store,hidden" policy:",prefer-parent"'];
 
     google.protobuf.Timestamp container_start_time = 9;
 
@@ -47,6 +47,13 @@ message ProcessIndicatorUniqueKey {
     string process_args           = 5;
 }
 
+// This is the processes information which is added to endpoint data
+message NetworkProcessUniqueKey {
+    string process_name           = 1;
+    string process_exec_file_path = 2;
+    string process_args           = 3;
+}
+
 message ProcessSignal {
     // A unique UUID for identifying the message
     // We have this here instead of at the top level
@@ -55,25 +62,25 @@ message ProcessSignal {
     string id                         = 1;
 
     // ID of container associated with this process
-    string container_id               = 2 [(gogoproto.moretags) = "search:\"Container ID,hidden\""];
+    string container_id               = 2 [(gogoproto.moretags) = 'search:"Container ID,hidden"'];
 
     // Process creation time
-    google.protobuf.Timestamp time    = 3;
+    google.protobuf.Timestamp time    = 3 [(gogoproto.moretags) = 'search:"Process Creation Time,hidden"'];
 
     // Process name
-    string name                       = 4 [(gogoproto.moretags) = "search:\"Process Name\""];
+    string name                       = 4 [(gogoproto.moretags) = 'search:"Process Name"'];
 
     // Process arguments
-    string args                       = 5 [(gogoproto.moretags) = "search:\"Process Arguments\""];
+    string args                       = 5 [(gogoproto.moretags) = 'search:"Process Arguments"'];
 
     // Process executable file path
-    string exec_file_path             = 6 [(gogoproto.moretags) = "search:\"Process Path\""];
+    string exec_file_path             = 6 [(gogoproto.moretags) = 'search:"Process Path"'];
 
     // Host process ID
     uint32 pid                        = 7;
 
     // Real user ID
-    uint32 uid                        = 8 [(gogoproto.moretags) = "search:\"Process UID\""];
+    uint32 uid                        = 8 [(gogoproto.moretags) = 'search:"Process UID"'];
 
     // Real group ID
     uint32 gid                        = 9;
@@ -89,6 +96,6 @@ message ProcessSignal {
 
     message LineageInfo {
         uint32 parent_uid            = 1;
-        string parent_exec_file_path = 2 [(gogoproto.moretags) = "search:\"Process Ancestor\""];
+        string parent_exec_file_path = 2 [(gogoproto.moretags) = 'policy:"Process Ancestor"'];
     }
 }

@@ -3,6 +3,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { searchParams } from 'constants/searchParams';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
@@ -20,6 +21,7 @@ import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
 const EntityPage = ({ match, location }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -69,6 +71,8 @@ const EntityPage = ({ match, location }) => {
                     entityType={pageEntityType}
                     entityId={pageEntityId}
                     urlParams={urlParams}
+                    isExporting={isExporting}
+                    setIsExporting={setIsExporting}
                 />
                 <Tabs
                     pageEntityId={pageEntityId}
@@ -107,6 +111,7 @@ const EntityPage = ({ match, location }) => {
                     </searchContext.Provider>
                 </div>
             </div>
+            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

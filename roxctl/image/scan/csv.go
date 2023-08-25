@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
 )
@@ -24,7 +25,7 @@ func PrintCSV(imageResult *storage.Image, out io.Writer) error {
 
 	header := []string{"CVE", "CVSS Score", "Severity Rating", "Summary", "Component", "Version", "Fixed By", "Layer Instruction"}
 	if err := w.Write(header); err != nil {
-		return err
+		return errors.Wrap(err, "could not write CSV header")
 	}
 
 	layers := imageResult.GetMetadata().GetV1().GetLayers()
@@ -65,7 +66,7 @@ func sortAndPrint(w *csv.Writer, records [][]string, sortRecords []sortRecord) e
 	sort.SliceStable(sortRecords, func(p, q int) bool { return sortRecords[p].severity > sortRecords[q].severity })
 	for _, sr := range sortRecords {
 		if err := w.Write(records[sr.index]); err != nil {
-			return err
+			return errors.Wrap(err, "could not write CSV record")
 		}
 	}
 	return nil

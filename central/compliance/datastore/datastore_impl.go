@@ -9,12 +9,11 @@ import (
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
-	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,9 +21,6 @@ var (
 	complianceSAC = sac.ForResource(resources.Compliance)
 
 	log = logging.LoggerForModule()
-
-	// ErrNotAvailable is returned by the aggregation storage/retrieval methods when SAC is enabled.  Those methods cannot be used under SAC.
-	ErrNotAvailable = errors.New("precomputed compliance is not available when SAC is enabled")
 )
 
 type datastoreImpl struct {
@@ -35,11 +31,6 @@ type datastoreImpl struct {
 	aggregationSequenceNumber uint64
 }
 
-func (ds *datastoreImpl) QueryControlResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceControlResult, error) {
-	// TODO(ROX-2575): this might need implementing.
-	return nil, errors.New("not yet implemented")
-}
-
 func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
 	if !standards.IsSupported(standardID) {
 		return types.ResultsWithStatus{}, standards.UnSupportedStandardsErr(standardID)
@@ -48,10 +39,10 @@ func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, s
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
+		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
-	res, err := ds.storage.GetSpecificRunResults(clusterID, standardID, runID, flags)
+	res, err := ds.storage.GetSpecificRunResults(ctx, clusterID, standardID, runID, flags)
 	if err != nil {
 		return types.ResultsWithStatus{}, err
 	}
@@ -72,10 +63,10 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
-		return types.ResultsWithStatus{}, errorhelpers.ErrNotFound
+		return types.ResultsWithStatus{}, errox.NotFound
 	}
 
-	res, err := ds.storage.GetLatestRunResults(clusterID, standardID, flags)
+	res, err := ds.storage.GetLatestRunResults(ctx, clusterID, standardID, flags)
 	if err != nil {
 		return types.ResultsWithStatus{}, err
 	}
@@ -88,25 +79,27 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 	return res, err
 }
 
+func (ds *datastoreImpl) UpdateConfig(ctx context.Context, id string, hide bool) error {
+
+	config := &storage.ComplianceConfig{
+		StandardId:      id,
+		HideScanResults: hide,
+	}
+	return ds.storage.UpdateConfig(ctx, config)
+}
+
+func (ds *datastoreImpl) GetConfig(ctx context.Context, id string) (*storage.ComplianceConfig, bool, error) {
+
+	return ds.storage.GetConfig(ctx, id)
+}
+
 func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
 	standardIDs, unsupported := standards.FilterSupported(standardIDs)
 	if len(unsupported) > 0 {
 		return nil, standards.UnSupportedStandardsErr(unsupported...)
 	}
 
-	results, err := ds.storage.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
-	if err != nil {
-		return nil, err
-	}
-	filteredResults, err := ds.filter.FilterBatchResults(ctx, results)
-	if err != nil {
-		return nil, err
-	}
-	return filteredResults, err
-}
-
-func (ds *datastoreImpl) GetLatestRunResultsForClustersAndStandards(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
-	results, err := ds.storage.GetLatestRunResultsByClusterAndStandard(clusterIDs, standardIDs, flags)
+	results, err := ds.storage.GetLatestRunResultsBatch(ctx, clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +119,9 @@ func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context,
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {
-		return false, errors.Wrapf(errorhelpers.ErrNotFound, "ClusterID %s", clusterID)
+		return false, errors.Wrapf(errox.NotFound, "ClusterID %s", clusterID)
 	}
-	results, err := ds.storage.GetLatestRunMetadataBatch(clusterID, standardIDs)
+	results, err := ds.storage.GetLatestRunMetadataBatch(ctx, clusterID, standardIDs)
 	if err != nil || len(results) == 0 {
 		return false, err
 	}
@@ -155,11 +148,11 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 		atomic.AddUint64(&ds.aggregationSequenceNumber, 1)
 	}()
 
-	if err := ds.storage.ClearAggregationResults(); err != nil {
+	if err := ds.storage.ClearAggregationResults(ctx); err != nil {
 		log.Errorf("unable to clear old stored aggregations: %v", err)
 	}
 
-	return ds.storage.StoreRunResults(results)
+	return ds.storage.StoreRunResults(ctx, results)
 }
 
 func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.ComplianceRunMetadata) error {
@@ -168,7 +161,7 @@ func (ds *datastoreImpl) StoreFailure(ctx context.Context, metadata *storage.Com
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.StoreFailure(metadata)
+	return ds.storage.StoreFailure(ctx, metadata)
 }
 
 func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *storage.ComplianceDomain) error {
@@ -177,17 +170,12 @@ func (ds *datastoreImpl) StoreComplianceDomain(ctx context.Context, domain *stor
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.StoreComplianceDomain(domain)
+	return ds.storage.StoreComplianceDomain(ctx, domain)
 }
 
 func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *StoredAggregationArgs) ([]*storage.ComplianceAggregation_Result, []*storage.ComplianceAggregation_Source, map[*storage.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	// Using stored aggregation results is not allowed when SAC is enabled
-	if sac.IsContextSACEnabled(ctx) {
-		return args.AggregationFunc()
-	}
-
 	// Check for a pre-computed aggregation for this query
-	results, sources, domainMap, err := ds.storage.GetAggregationResult(args.QueryString, args.GroupBy, args.Unit)
+	results, sources, domainMap, err := ds.storage.GetAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit)
 	if err != nil {
 		// Log the error and continue.  We can skip this optimization and do the aggregation
 		log.Errorf("error getting pre-computed compliance aggregation: %v", err)
@@ -216,7 +204,7 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 			return
 		}
 
-		err = ds.storage.StoreAggregationResult(args.QueryString, args.GroupBy, args.Unit, results, sources, domainMap)
+		err = ds.storage.StoreAggregationResult(ctx, args.QueryString, args.GroupBy, args.Unit, results, sources, domainMap)
 		if err != nil {
 			// Log the error and continue.  We can skip this optimization without issue
 			log.Errorf("error storing compliance aggregation: %v", err)
@@ -232,5 +220,5 @@ func (ds *datastoreImpl) ClearAggregationResults(ctx context.Context) error {
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-	return ds.storage.ClearAggregationResults()
+	return ds.storage.ClearAggregationResults(ctx)
 }

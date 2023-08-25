@@ -3,8 +3,7 @@ package singleton
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/common"
-	"github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/rocksdb"
+	pgStore "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,9 +16,8 @@ var (
 // information.
 func Singleton() store.ClusterStore {
 	once.Do(func() {
-		instance = rocksdb.NewClusterStore(globaldb.GetRocksDB())
-		globaldb.RegisterBucket([]byte(common.GlobalPrefix), "NetworkFlow")
-
+		instance = pgStore.NewClusterStore(globaldb.GetPostgres())
 	})
+
 	return instance
 }

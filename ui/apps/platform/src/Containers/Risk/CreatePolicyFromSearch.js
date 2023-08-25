@@ -1,32 +1,27 @@
 import React, { useContext, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { Plus } from 'react-feather';
+import { Button } from '@patternfly/react-core';
 
-import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import workflowStateContext from 'Containers/workflowStateContext';
-import PanelButton from 'Components/PanelButton';
 import { actions as formMessageActions } from 'reducers/formMessages';
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as pageActions } from 'reducers/policies/page';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import { generatePolicyFromSearch } from 'services/PoliciesService';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { convertToRestSearch } from 'utils/searchUtils';
+import { policiesBasePath } from 'routePaths';
 
 function CreatePolicyFromSearch({
-    history,
-    openWizard,
     setWizardPolicy,
-    setWizardStage,
     addToast,
     removeToast,
     addFormMessage,
     clearFormMessages,
 }) {
     const workflowState = useContext(workflowStateContext);
+    const history = useHistory();
 
     // this utility filters out incomplete search pairs
     const currentSearch = workflowState.getCurrentSearchState();
@@ -42,7 +37,8 @@ function CreatePolicyFromSearch({
         generatePolicyFromSearch(queryString)
             .then((response) => {
                 history.push({
-                    pathname: `/main/policies`,
+                    pathname: policiesBasePath,
+                    search: '?action=generate',
                 });
 
                 const newPolicy = {
@@ -65,8 +61,6 @@ function CreatePolicyFromSearch({
                 }
 
                 setWizardPolicy(newPolicy);
-                setWizardStage(wizardStages.edit);
-                openWizard();
             })
             .catch((err) => {
                 // to get the actual error returned by the server, we have to dereference the response object first
@@ -82,33 +76,26 @@ function CreatePolicyFromSearch({
     const isPolicyBtnDisabled = !policySearchOptions?.length;
 
     return (
-        <PanelButton
-            icon={<Plus className="h-4 w-4" />}
-            className="btn-icon btn-tertiary whitespace-nowrap h-10 ml-4"
+        <Button
+            variant="secondary"
+            className="ml-4"
             onClick={createPolicyFromSearch}
-            disabled={isPolicyBtnDisabled}
-            tooltip="Create Policy from Current Search"
-            dataTestId="panel-button-create-policy-from-search"
+            isDisabled={isPolicyBtnDisabled}
         >
-            Create Policy
-        </PanelButton>
+            Create policy
+        </Button>
     );
 }
 
 CreatePolicyFromSearch.propTypes = {
-    openWizard: PropTypes.func.isRequired,
-    setWizardStage: PropTypes.func.isRequired,
     setWizardPolicy: PropTypes.func.isRequired,
     addToast: PropTypes.func.isRequired,
     removeToast: PropTypes.func.isRequired,
     addFormMessage: PropTypes.func.isRequired,
     clearFormMessages: PropTypes.func.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 const mapDispatchToProps = {
-    openWizard: pageActions.openWizard,
-    setWizardStage: wizardActions.setWizardStage,
     setWizardPolicy: wizardActions.setWizardPolicy,
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification,
@@ -116,4 +103,4 @@ const mapDispatchToProps = {
     clearFormMessages: formMessageActions.clearFormMessages,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(CreatePolicyFromSearch));
+export default connect(null, mapDispatchToProps)(CreatePolicyFromSearch);

@@ -1,49 +1,76 @@
-import React, { useContext, useState, useReducer } from 'react';
+import React, { useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import { DownloadCloud, Plus, Trash2 } from 'react-feather';
 import get from 'lodash/get';
+import {
+    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownPosition,
+    DropdownToggle,
+} from '@patternfly/react-core';
 
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
 import Dialog from 'Components/Dialog';
-import PanelButton from 'Components/PanelButton';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
-import { searchParams } from 'constants/searchParams';
-import workflowStateContext from 'Containers/workflowStateContext';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
+import usePermissions from 'hooks/usePermissions';
+import useURLSearch from 'hooks/useURLSearch';
 import {
-    fetchClustersAsArray,
+    fetchClustersWithRetentionInfo,
     deleteClusters,
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { filterAllowedSearch, convertToRestSearch } from 'utils/searchUtils';
+import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { getVersionedDocs } from 'utils/versioning';
 
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
+import AddClusterPrompt from './AddClusterPrompt';
 
 function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
-    const workflowState = useContext(workflowStateContext);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
+    const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
+
+    function onToggleInstallMenu(newIsInstallMenuOpen) {
+        setIsInstallMenuOpen(newIsInstallMenuOpen);
+    }
+
+    function onFocusInstallMenu() {
+        const element = document.getElementById('toggle-descriptions');
+        element.focus();
+    }
+
+    function onSelectInstallMenuItem() {
+        setIsInstallMenuOpen(false);
+        onFocusInstallMenu();
+    }
+
     const metadata = useMetadata();
 
-    const pageSearch = workflowState.search[searchParams.page];
+    const { searchFilter: pageSearch } = useURLSearch();
 
     const [checkedClusterIds, setCheckedClusters] = useState([]);
     const [upgradableClusters, setUpgradableClusters] = useState([]);
     const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState(null);
     const [showDialog, setShowDialog] = useState(false);
+    const [fetchingClusters, setFetchingClusters] = useState(false);
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     const [currentClusters, setCurrentClusters] = useState([]);
+    const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] = useState({});
 
     function notificationsReducer(state, action) {
         switch (action.type) {
@@ -75,16 +102,45 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         </div>
     ));
 
+    const { version } = metadata;
+
+    const installMenuOptions = [
+        version ? (
+            <DropdownItem
+                key="link"
+                description="Cluster installation guides"
+                href={getVersionedDocs(version, 'installing/acs-installation-platforms.html')}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                View instructions
+            </DropdownItem>
+        ) : (
+            <DropdownItem key="version-missing" isPlainText>
+                Instructions unavailable; version missing
+            </DropdownItem>
+        ),
+        <DropdownItem key="add" onClick={onAddCluster}>
+            New cluster
+        </DropdownItem>,
+    ];
+
     function refreshClusterList(restSearch) {
-        return fetchClustersAsArray(restSearch).then((clusters) => {
-            setCurrentClusters(clusters);
-        });
+        setFetchingClusters(true);
+        return fetchClustersWithRetentionInfo(restSearch)
+            .then((clustersResponse) => {
+                setCurrentClusters(clustersResponse.clusters);
+                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
+                setFetchingClusters(false);
+            })
+            .catch(() => {
+                setFetchingClusters(false);
+            });
     }
 
+    const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+    const restSearch = convertToRestSearch(filteredSearch || {});
     useDeepCompareEffect(() => {
-        const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-        const restSearch = convertToRestSearch(filteredSearch || {});
-
         if (restSearch.length) {
             setIsViewFiltered(true);
         } else {
@@ -92,7 +148,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         }
 
         refreshClusterList(restSearch);
-    }, [pageSearch, searchOptions, pollingCount]);
+    }, [restSearch, pollingCount]);
 
     // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
     useInterval(() => {
@@ -143,8 +199,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
             .then(() => {
                 setCheckedClusters([]);
 
-                fetchClustersAsArray().then((clusters) => {
-                    setCurrentClusters(clusters);
+                fetchClustersWithRetentionInfo().then((clustersResponse) => {
+                    setCurrentClusters(clustersResponse.clusters);
+                    setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
             })
             .finally(() => {
@@ -155,41 +212,54 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     const headerComponent = (
         <TableHeader
             length={currentClusters?.length || 0}
-            type="Cluster"
+            type="cluster"
             isViewFiltered={isViewFiltered}
         />
     );
 
     const headerActions = (
         <>
-            <AutoUpgradeToggle />
-            <PanelButton
-                icon={<DownloadCloud className="h-4 w-4 ml-1" />}
-                tooltip={`Upgrade (${upgradableClusters.length})`}
-                className="btn btn-tertiary ml-2"
-                onClick={upgradeSelectedClusters}
-                disabled={upgradableClusters.length === 0 || !!selectedClusterId}
-            >
-                {`Upgrade (${upgradableClusters.length})`}
-            </PanelButton>
-            <PanelButton
-                icon={<Trash2 className="h-4 w-4 ml-1" />}
-                tooltip={`Delete (${checkedClusterIds.length})`}
-                className="btn btn-alert ml-2"
-                onClick={deleteSelectedClusters}
-                disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
-            >
-                {`Delete (${checkedClusterIds.length})`}
-            </PanelButton>
-            <PanelButton
-                icon={<Plus className="h-4 w-4 ml-1" />}
-                tooltip="New Cluster"
-                className="btn btn-base ml-2 mr-4"
-                onClick={onAddCluster}
-                disabled={!!selectedClusterId}
-            >
-                New Cluster
-            </PanelButton>
+            {hasWriteAccessForAdministration && (
+                <>
+                    <AutoUpgradeToggle />
+                    <Button
+                        variant="secondary"
+                        className="pf-u-ml-sm"
+                        onClick={upgradeSelectedClusters}
+                        isDisabled={upgradableClusters.length === 0 || !!selectedClusterId}
+                    >
+                        {`Upgrade (${upgradableClusters.length})`}
+                    </Button>
+                </>
+            )}
+            {hasWriteAccessForCluster && (
+                <>
+                    <Button
+                        variant="danger"
+                        className="pf-u-ml-sm pf-u-mr-sm"
+                        onClick={deleteSelectedClusters}
+                        isDisabled={checkedClusterIds.length === 0 || !!selectedClusterId}
+                    >
+                        {`Delete (${checkedClusterIds.length})`}
+                    </Button>
+                    <Dropdown
+                        className="mr-4"
+                        onSelect={onSelectInstallMenuItem}
+                        toggle={
+                            <DropdownToggle
+                                id="install-toggle"
+                                toggleVariant="secondary"
+                                onToggle={onToggleInstallMenu}
+                            >
+                                Install cluster
+                            </DropdownToggle>
+                        }
+                        position={DropdownPosition.right}
+                        isOpen={isInstallMenuOpen}
+                        dropdownItems={installMenuOptions}
+                    />
+                </>
+            )}
         </>
     );
 
@@ -226,6 +296,8 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     }
 
     const columnOptions = {
+        clusterIdToRetentionInfo,
+        hasWriteAccessForCluster,
         metadata,
         rowActions: {
             onDeleteHandler,
@@ -237,6 +309,8 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     // Because clusters are not paginated, make the list display them all.
     const pageSize =
         currentClusters.length <= DEFAULT_PAGE_SIZE ? DEFAULT_PAGE_SIZE : currentClusters.length;
+
+    const hasSearchApplied = getHasSearchApplied(filteredSearch);
 
     return (
         <div className="overflow-hidden w-full">
@@ -251,29 +325,35 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                             {messages}
                         </div>
                     )}
-                    <div data-testid="clusters-table" className="h-full w-full">
-                        <CheckboxTable
-                            ref={(table) => {
-                                setTableRef(table);
-                            }}
-                            rows={currentClusters}
-                            columns={clusterColumns}
-                            onRowClick={setSelectedClusterId}
-                            toggleRow={toggleCluster}
-                            toggleSelectAll={toggleAllClusters}
-                            selection={checkedClusterIds}
-                            selectedRowId={selectedClusterId}
-                            noDataText="No clusters to show."
-                            minRows={20}
-                            pageSize={pageSize}
-                        />
-                    </div>
+                    {(!fetchingClusters || pollingCount > 0) &&
+                        currentClusters.length <= 0 &&
+                        !hasSearchApplied && <AddClusterPrompt />}
+                    {(!fetchingClusters || pollingCount > 0) &&
+                        (currentClusters.length > 0 || hasSearchApplied) && (
+                            <div data-testid="clusters-table" className="h-full w-full">
+                                <CheckboxTable
+                                    ref={(table) => {
+                                        setTableRef(table);
+                                    }}
+                                    rows={currentClusters}
+                                    columns={clusterColumns}
+                                    onRowClick={setSelectedClusterId}
+                                    toggleRow={toggleCluster}
+                                    toggleSelectAll={toggleAllClusters}
+                                    selection={checkedClusterIds}
+                                    selectedRowId={selectedClusterId}
+                                    noDataText="No clusters to show."
+                                    minRows={20}
+                                    pageSize={pageSize}
+                                />
+                            </div>
+                        )}
                 </PanelBody>
             </PanelNew>
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
-                text={`Deleting a cluster configuration doesn't remove StackRox services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
+                text={`Deleting a cluster configuration doesn't remove security services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
                 onConfirm={makeDeleteRequest}
                 confirmText="Delete"
                 onCancel={hideDialog}

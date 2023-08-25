@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
@@ -8,7 +7,7 @@ import { findUpgradeState, formatSensorVersion, sensorUpgradeStyles } from '../c
 import { SensorUpgradeStatus } from '../clusterTypes';
 
 const trClassName = 'align-top leading-normal';
-const thClassName = 'font-600 pl-0 pr-1 py-0 text-left';
+const thClassName = 'font-700 pl-0 pr-1 py-0 text-left';
 const tdClassName = 'p-0 text-left';
 
 const testId = 'sensorUpgrade';
@@ -46,16 +45,10 @@ function SensorUpgrade({
             let actionElement: ReactElement | null = null;
 
             if (displayValue) {
-                const { bgColor, fgColor } = sensorUpgradeStyles[type];
-                displayElement = (
-                    <span className={`${bgColor as string} ${fgColor as string}`}>
-                        {displayValue}
-                    </span>
-                );
+                displayElement = <span>{displayValue}</span>;
             }
 
             if (actionText) {
-                const actionStyle = sensorUpgradeStyles.download;
                 if (actionProps) {
                     const { clusterId, upgradeSingleCluster } = actionProps;
                     const onClick = (event) => {
@@ -63,11 +56,10 @@ function SensorUpgrade({
                         upgradeSingleCluster(clusterId);
                     };
 
-                    const { fgColor } = actionStyle;
                     actionElement = (
                         <button
                             type="button"
-                            className={`bg-transparent leading-normal m-0 p-0 ${fgColor} underline`}
+                            className="bg-transparent leading-normal m-0 p-0 pf-u-link-color underline"
                             onClick={onClick}
                         >
                             {actionText}
@@ -76,8 +68,7 @@ function SensorUpgrade({
                 } else if (!displayElement) {
                     // Upgrade available is not an action in Cluster side panel,
                     // but it might become an action in the future.
-                    const { bgColor, fgColor } = actionStyle;
-                    displayElement = <span className={`${bgColor} ${fgColor}`}>{actionText}</span>;
+                    displayElement = <span>{actionText}</span>;
                 }
             }
 
@@ -89,7 +80,7 @@ function SensorUpgrade({
                 </div>
             );
 
-            const { Icon, bgColor, fgColor } = sensorUpgradeStyles[type];
+            const { Icon, fgColor } = sensorUpgradeStyles[type];
             const icon = <Icon className="h-4 w-4" />;
 
             // Use table instead of TooltipFieldValue to align version numbers.
@@ -102,9 +93,7 @@ function SensorUpgrade({
                             </th>
                             <td className={tdClassName} data-testid="sensorVersion">
                                 {sensorVersion && type === 'current' ? (
-                                    <span className={`${bgColor as string} ${fgColor as string}`}>
-                                        {sensorVersion}
-                                    </span>
+                                    <span>{sensorVersion}</span>
                                 ) : (
                                     formatSensorVersion(sensorVersion)
                                 )}
@@ -115,13 +104,7 @@ function SensorUpgrade({
                                 Central version:
                             </th>
                             <td className={tdClassName} data-testid="centralVersion">
-                                {type === 'download' ? (
-                                    <span className={`${bgColor as string} ${fgColor as string}`}>
-                                        {centralVersion}
-                                    </span>
-                                ) : (
-                                    centralVersion
-                                )}
+                                {centralVersion}
                             </td>
                         </tr>
                     </tbody>
@@ -152,7 +135,7 @@ function SensorUpgrade({
                 );
 
                 return (
-                    <Tooltip content={<TooltipOverlay>{overlayElement}</TooltipOverlay>}>
+                    <Tooltip content={overlayElement}>
                         <div>
                             <HealthStatus icon={icon} iconColor={fgColor}>
                                 {upgradeElement}

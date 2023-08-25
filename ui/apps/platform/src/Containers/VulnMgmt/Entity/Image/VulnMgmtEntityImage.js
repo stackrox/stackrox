@@ -6,11 +6,11 @@ import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+import WorkflowEntityPage from '../WorkflowEntityPage';
 import {
     VULN_CVE_ONLY_FRAGMENT,
-    VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
-} from 'Containers/VulnMgmt/VulnMgmt.fragments';
+    VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT,
+} from '../../VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -49,9 +49,9 @@ const VulnMgmtImage = ({
                     }
                 }
                 notes
-                vulnCount(query: $query)
+                imageVulnerabilityCount(query: $query)
                 priority
-                topVuln {
+                topVuln: topImageVulnerability {
                     cvss
                     scoreVersion
                 }
@@ -68,7 +68,7 @@ const VulnMgmtImage = ({
                         name
                     }
                     notes
-                    components {
+                    components: imageComponents {
                         id
                         priority
                         name
@@ -76,7 +76,7 @@ const VulnMgmtImage = ({
                         version
                         source
                         location
-                        vulns {
+                        vulns: imageVulnerabilities {
                             ...cveFields
                         }
                     }
@@ -87,9 +87,10 @@ const VulnMgmtImage = ({
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        const activeStatusFragment = VULN_IMAGE_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT;
         const fragmentToUse =
-            fragmentName === 'componentFields'
-                ? VULN_COMPONENT_ACTIVE_STATUS_LIST_FRAGMENT
+            fragmentName === 'componentFields' || fragmentName === 'imageComponentFields'
+                ? activeStatusFragment
                 : fragment;
         return gql`
         query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {

@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// AlertGetter provides the required access to alerts for risk scoring.
-type AlertGetter interface {
-	ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
+// AlertSearcher provides the required access to alerts for risk scoring.
+type AlertSearcher interface {
+	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
 }

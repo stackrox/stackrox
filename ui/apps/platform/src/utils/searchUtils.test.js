@@ -4,6 +4,9 @@ import {
     convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
+    searchOptionsToSearchFilter,
+    getListQueryParams,
+    searchValueAsArray,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -259,6 +262,135 @@ describe('searchUtils', () => {
                 field: 'Priority',
                 reversed: true,
             });
+        });
+    });
+
+    describe('searchOptionsToSearchFilter', () => {
+        it('should translate an array of SearchEntries to a SearchFilter object', () => {
+            expect(
+                searchOptionsToSearchFilter([
+                    { type: 'categoryOption', value: 'Image', label: 'Image' },
+                    { value: 'nginx:latest', label: 'nginx:latest' },
+                    { type: 'categoryOption', value: 'Status', label: 'Status' },
+                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
+                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
+                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
+                ])
+            ).toEqual({
+                Image: 'nginx:latest',
+                Status: '',
+                Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'],
+            });
+        });
+
+        it('should return an empty string value when no search options is provided for a category', () => {
+            expect(
+                searchOptionsToSearchFilter([
+                    { type: 'categoryOption', value: 'Status', label: 'Status' },
+                ])
+            ).toEqual({ Status: '' });
+        });
+
+        it('should return a string value when a single search options is provided for a category', () => {
+            expect(
+                searchOptionsToSearchFilter([
+                    { type: 'categoryOption', value: 'Image', label: 'Image' },
+                    { value: 'nginx:latest', label: 'nginx:latest' },
+                ])
+            ).toEqual({ Image: 'nginx:latest' });
+        });
+
+        it('should return an array value when multiple search options are provided for a category', () => {
+            expect(
+                searchOptionsToSearchFilter([
+                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
+                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
+                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
+                ])
+            ).toEqual({ Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'] });
+        });
+    });
+
+    describe('getListQueryParams', () => {
+        it('should include all provided parameters in the query string', () => {
+            expect(
+                getListQueryParams(
+                    { Deployment: ['visa-processor', 'scanner'] },
+                    { field: 'Name', reversed: false },
+                    0,
+                    20
+                )
+            ).toEqual(
+                [
+                    'query=Deployment%3Avisa-processor%2Cscanner',
+                    'pagination.offset=0',
+                    'pagination.limit=20',
+                    'pagination.sortOption.field=Name',
+                    'pagination.sortOption.reversed=false',
+                ].join('&')
+            );
+        });
+
+        it('should include pagination parameters when the search filter is empty', () => {
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, 0, 20)).toEqual(
+                [
+                    'query=',
+                    'pagination.offset=0',
+                    'pagination.limit=20',
+                    'pagination.sortOption.field=Name',
+                    'pagination.sortOption.reversed=false',
+                ].join('&')
+            );
+        });
+
+        it('should ensure that negative pages result in an offset of 0', () => {
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -1, 20)).toContain(
+                'pagination.offset=0'
+            );
+            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -100, 20)).toContain(
+                'pagination.offset=0'
+            );
+            expect(
+                getListQueryParams({}, { field: 'Name', reversed: false }, -Infinity, 20)
+            ).toContain('pagination.offset=0');
+        });
+
+        it('should ensure that the offset is always a multiple of the page number', () => {
+            const testValues = [
+                [1, 10],
+                [3, 10],
+                [5, 5],
+                [10, 3],
+                [10, 1],
+            ];
+
+            testValues.forEach(([page, pageSize]) => {
+                const params = getListQueryParams(
+                    {},
+                    { field: 'Name', reversed: false },
+                    page,
+                    pageSize
+                );
+                const [, offsetParam] = params.match(/pagination.offset=(\d+)/);
+                expect(offsetParam).not.toBe('');
+                const offset = parseInt(offsetParam, 10);
+                expect(offset % page).toBe(0);
+            });
+        });
+    });
+
+    describe('searchValueAsArray', () => {
+        it('converts an undefined value to an empty array', () => {
+            expect(searchValueAsArray(undefined)).toEqual([]);
+        });
+
+        it('converts a string value to an array with the string as the only element', () => {
+            expect(searchValueAsArray('cluster')).toEqual(['cluster']);
+        });
+
+        it('converts an array value to an array with the same elements', () => {
+            expect(searchValueAsArray([])).toEqual([]);
+            expect(searchValueAsArray(['cluster', 'namespace'])).toEqual(['cluster', 'namespace']);
         });
     });
 });

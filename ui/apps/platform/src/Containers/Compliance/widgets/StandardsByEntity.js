@@ -9,21 +9,22 @@ import chunk from 'lodash/chunk';
 
 import entityTypes from 'constants/entityTypes';
 import URLService from 'utils/URLService';
-import { resourceLabels } from 'messages/common';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
-import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS_STANDARDS_BY_ENTITY } from 'queries/controls';
 import searchContext from 'Containers/searchContext';
+
+import { entityNounOrdinaryCaseSingular } from '../entitiesForCompliance';
+import VerticalClusterBar from './VerticalClusterBar';
 
 function processData(match, location, data, entityType, searchParam) {
     if (!data || !data.results.results.length || !data.entityList) {
         return [];
     }
     const standardsGrouping = {};
-    const { results, controls, entityList, complianceStandards } = data;
+    const { results, entityList, complianceStandards } = data;
     results.results.forEach((result) => {
         const entity = entityList.find(
             (entityObject) => entityObject.id === result.aggregationKeys[1].id
@@ -47,18 +48,9 @@ function processData(match, location, data, entityType, searchParam) {
                 },
             })
             .url();
-        const controlResult = controls.results.find(
-            (controlsResult) =>
-                controlsResult.aggregationKeys[0].id === result.aggregationKeys[0].id
-        );
-        const { numFailing: numFailingControls } = controlResult;
         const dataPoint = {
             x: entity?.name,
             y: percentagePassing,
-            hint: {
-                title: standardLabels[standard.id] || standard.id,
-                body: `${numFailingControls} controls failing in this ${resourceLabels[entityType]}`,
-            },
             link,
         };
         const standardGroup = standardsGrouping[standard.id];
@@ -101,13 +93,13 @@ function getLabelLinks(match, location, data, entityType) {
 
 const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
-    const headerText = `Passing standards by ${entityType}`;
+    const headerText = `Passing standards by ${entityNounOrdinaryCaseSingular[entityType]}`;
 
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CHECK,
     };
-    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_STANDARDS_BY_ENTITY, {
+    const { loading, error, data } = useQuery(AGGREGATED_RESULTS_STANDARDS_BY_ENTITY(entityType), {
         variables,
     });
 
@@ -145,7 +137,7 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
 
             if (pages) {
                 const VerticalBarChartPaged = ({ currentPage }) => (
-                    <VerticalBarChart
+                    <VerticalClusterBar
                         id={`passing-standards-by-${entityType.toLowerCase()}`}
                         data={results[currentPage]}
                         labelLinks={labelLinks}

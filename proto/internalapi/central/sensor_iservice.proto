@@ -4,34 +4,45 @@ option go_package = "central";
 
 import "internalapi/central/cluster_config.proto";
 import "internalapi/central/cluster_status.proto";
+import "internalapi/central/compliance_operator.proto";
+import "internalapi/central/delegated_registry_config.proto";
+import "internalapi/central/image.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/policy_sync.proto";
 import "internalapi/central/sensor_events.proto";
 import "internalapi/central/sensor_upgrade.proto";
+import "internalapi/central/cluster_metrics.proto";
 import "internalapi/central/telemetry.proto";
 import "internalapi/central/baseline_sync.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/local_scanner.proto";
+import "internalapi/central/process_listening_on_ports_update.proto";
 import "storage/cluster.proto";
 import "storage/image.proto";
 
 package central;
 
+// next available tag: 18
 message MsgFromSensor {
-    string hash_key          = 7;
-    string dedupe_key        = 8;
+    string hash_key                                                     = 7;
+    string dedupe_key                                                   = 8;
+    int32  processing_attempt                                           = 15;
     oneof msg {
-        SensorEvent                  event                           = 1;
-        NetworkFlowUpdate            network_flow_update             = 2;
-        ScrapeUpdate                 scrape_update                   = 3;
-        NetworkPoliciesResponse      network_policies_response       = 4;
-        ClusterStatusUpdate          cluster_status_update           = 5;
-        PullTelemetryDataResponse    telemetry_data_response         = 6;
-        RawClusterHealthInfo         cluster_health_info             = 9;
-        SensorHello                  hello                           = 10;
-        AuditLogStatusInfo           audit_log_status_info           = 11;
+        SensorEvent                   event                             = 1;
+        NetworkFlowUpdate             network_flow_update               = 2;
+        ScrapeUpdate                  scrape_update                     = 3;
+        NetworkPoliciesResponse       network_policies_response         = 4;
+        ClusterStatusUpdate           cluster_status_update             = 5;
+        PullTelemetryDataResponse     telemetry_data_response           = 6;
+        RawClusterHealthInfo          cluster_health_info               = 9;
+        SensorHello                   hello                             = 10;
+        AuditLogStatusInfo            audit_log_status_info             = 11;
         IssueLocalScannerCertsRequest issue_local_scanner_certs_request = 12;
+        ClusterMetrics                cluster_metrics                   = 13;
+        ProcessListeningOnPortsUpdate process_listening_on_port_update  = 14;
+        ComplianceOperatorInfo        compliance_operator_info          = 16;
+        ComplianceResponse            compliance_response               = 17;
     }
 }
 
@@ -39,6 +50,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
+// next available tag: 26
 message MsgToSensor {
     oneof msg {
         SensorEnforcement              enforcement                        =  1;
@@ -60,6 +72,23 @@ message MsgToSensor {
         IssueLocalScannerCertsResponse issue_local_scanner_certs_response = 17;
         storage.Image                  updated_image                      = 18;
         ReprocessDeployments           reprocess_deployments              = 19;
+        NodeInventoryACK               node_inventory_ack                 = 20;
+        DelegatedRegistryConfig        delegated_registry_config          = 21;
+        ScanImage                      scan_image                         = 22;
+        ImageIntegrations              image_integrations                 = 23;
+        ComplianceRequest              compliance_request                 = 24;
+        ClusterHealthResponse          cluster_health_response            = 25;
+    }
+}
+
+message NodeInventoryACK {
+    string  cluster_id   = 1;
+    string  node_name = 2;
+    Action  action = 3;
+
+    enum Action {
+        ACK = 0;
+        NACK = 1;
     }
 }
 

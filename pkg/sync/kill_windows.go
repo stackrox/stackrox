@@ -1,5 +1,4 @@
 //go:build !release && windows
-// +build !release,windows
 
 package sync
 

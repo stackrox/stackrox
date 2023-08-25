@@ -24,7 +24,7 @@ type cacheTracker struct {
 	cacheMiss int
 }
 
-func (m *cacheTracker) fakeMetricFunc(a, b string) {
+func (m *cacheTracker) fakeMetricFunc(a, _ string) {
 	if a == "hit" {
 		m.cacheHit++
 	} else {

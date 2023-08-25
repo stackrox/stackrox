@@ -16,7 +16,7 @@ type TLSConfigurerProvider interface {
 
 type tlsConfigurerProviderForValidation struct{}
 
-func (tlsConfigurerProviderForValidation) TLSConfigurer(opts tlsconfig.Options) (verifier.TLSConfigurer, error) {
+func (tlsConfigurerProviderForValidation) TLSConfigurer(_ tlsconfig.Options) (verifier.TLSConfigurer, error) {
 	return nil, nil
 }
 

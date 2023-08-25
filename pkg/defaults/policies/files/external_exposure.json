@@ -1,0 +1,44 @@
+{
+  "id": "78cd366c-4e06-4d9a-9b78-e547f18e7f0b",
+  "name": "Deployments with externally exposed endpoints",
+  "description": "Deployments with externally exposed endpoints represent a higher risk",
+  "rationale": "Deployments with services exposed outside the cluster are at a higher risk of attempted intrusions because they are reachable outside of the cluster.",
+  "remediation": "Verify that service exposure outside of the cluster is required. If the service is only needed for intra-cluster communication, use service type ClusterIP.",
+  "disabled": true,
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Policy Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Port Exposure Method",
+          "values": [
+            {
+              "value": "ROUTE"
+            },
+            {
+              "value": "EXTERNAL"
+            },
+            {
+              "value": "NODE"
+            },
+            {
+              "value": "HOST"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -1,7 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: central
-status:
-  # Wait for pod to be ready again
-  availableReplicas: 1

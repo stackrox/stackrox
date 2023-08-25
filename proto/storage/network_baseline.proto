@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
@@ -34,18 +35,18 @@ message NetworkBaselinePeer {
 // next available tag: 8
 message NetworkBaseline {
     // This is the ID of the baseline.
-    string deployment_id                             = 1;
+    string deployment_id                             = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
-    string cluster_id                                = 2;
-    string namespace                                 = 3;
+    string cluster_id                                = 2 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"type(uuid)"'];
+    string namespace                                 = 3 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
 
-    repeated NetworkBaselinePeer peers               = 4;
+    repeated NetworkBaselinePeer peers               = 4 [(gogoproto.moretags) = 'search:"-"'];
 
     // A list of peers that will never be added to the baseline.
     // For now, this contains peers that the user has manually removed.
     // This is used to ensure we don't add it back in the event
     // we see the flow again.
-    repeated NetworkBaselinePeer forbidden_peers     = 5;
+    repeated NetworkBaselinePeer forbidden_peers     = 5 [(gogoproto.moretags) = 'search:"-"'];
 
     google.protobuf.Timestamp observation_period_end = 6;
 

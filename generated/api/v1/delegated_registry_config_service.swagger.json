@@ -1,0 +1,199 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/delegated_registry_config_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/delegatedregistryconfig": {
+      "get": {
+        "summary": "GetConfig returns the current delegated registry configuration",
+        "operationId": "DelegatedRegistryConfigService_GetConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "DelegatedRegistryConfigService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateConfig updates the stored delegated registry configuration",
+        "operationId": "DelegatedRegistryConfigService_UpdateConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1DelegatedRegistryConfig"
+            }
+          }
+        ],
+        "tags": [
+          "DelegatedRegistryConfigService"
+        ]
+      }
+    },
+    "/v1/delegatedregistryconfig/clusters": {
+      "get": {
+        "summary": "GetClusters returns the list of clusters (id + name) and a flag indicating whether or not \nthe cluster is valid for use in the delegated registry config",
+        "operationId": "DelegatedRegistryConfigService_GetClusters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DelegatedRegistryClustersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "DelegatedRegistryConfigService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "DelegatedRegistryConfigDelegatedRegistry": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "Registry + optional path, ie: quay.example.com/prod"
+        },
+        "clusterId": {
+          "type": "string",
+          "title": "ID of the cluster to delegate ad-hoc requests to"
+        }
+      }
+    },
+    "DelegatedRegistryConfigEnabledFor": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "ALL",
+        "SPECIFIC"
+      ],
+      "default": "NONE",
+      "title": "- NONE: Scan all images via central services except for images from the OCP integrated registry\n - ALL: Scan all images via the secured clusters\n - SPECIFIC: Scan images that match `registries` or are from the OCP integrated registry via the secured clusters\notherwise scan via central services"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1DelegatedRegistryCluster": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "isValid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DelegatedRegistryClustersResponse": {
+      "type": "object",
+      "properties": {
+        "clusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1DelegatedRegistryCluster"
+          }
+        }
+      }
+    },
+    "v1DelegatedRegistryConfig": {
+      "type": "object",
+      "properties": {
+        "enabledFor": {
+          "$ref": "#/definitions/DelegatedRegistryConfigEnabledFor",
+          "title": "Determines if delegation is enabled for no registries, all registries, or specific registries"
+        },
+        "defaultClusterId": {
+          "type": "string",
+          "title": "The default cluster to delegate ad-hoc requests to if no match found in registries, not used\nif `enabled for` is NONE"
+        },
+        "registries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DelegatedRegistryConfigDelegatedRegistry"
+          },
+          "description": "If `enabled for` is NONE registries has no effect. \n \nIf `ALL` registries directs ad-hoc requests to the specified secured clusters if the path matches. \n\nIf `SPECIFIC` registries directs ad-hoc requests to the specified secured clusters just like with `ALL`,\nbut in addition images that match the specified paths will be scanned locally by the secured clusters \n(images from the OCP integrated registry are always scanned locally). Images that do not match a path\nwill be scanned via central services"
+        }
+      },
+      "description": "DelegatedRegistryConfig determines if and where scan requests are delegated to, such as kept in \ncentral services or sent to particular secured clusters."
+    }
+  }
+}

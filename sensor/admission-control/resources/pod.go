@@ -30,9 +30,7 @@ func (m *PodStore) ProcessEvent(action central.ResourceAction, pod *storage.Pod)
 	defer m.mutex.Unlock()
 
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE:
-		fallthrough
-	case central.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		// Build the pod map.
 		depMap := m.pods[pod.GetNamespace()]
 		if depMap == nil {

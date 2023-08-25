@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // ValidateCertChain can be implemented to provide cert chain validation callbacks
 type ValidateCertChain interface {
 	// ValidateClientCertificate validates the given certificate chain
-	ValidateClientCertificate(context.Context, []requestinfo.CertInfo) error
+	ValidateClientCertificate(context.Context, []mtls.CertInfo) error
 }
 
 // IdentityExtractor extracts the identity of a user making a request from a request info.

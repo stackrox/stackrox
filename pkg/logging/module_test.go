@@ -88,9 +88,9 @@ func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
 		module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 		logger := module.Logger()
 		module.SetLogLevel(zapLevel)
-		assert.True(t, logger.Desugar().Core().Enabled(zapLevel))
+		assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapLevel))
 		// uses internal knowledge of how Enabled(level) method works
-		assert.False(t, logger.Desugar().Core().Enabled(zapLevel-1))
+		assert.False(t, logger.SugaredLogger().Desugar().Core().Enabled(zapLevel-1))
 	}
 }
 
@@ -103,11 +103,11 @@ func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
 
 	// verify the global level remains unchanged
 	assert.Equal(t, level, GetGlobalLogLevel())
-	assert.True(t, logger.Desugar().Core().Enabled(zapcore.DebugLevel))
+	assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.DebugLevel))
 
 	SetGlobalLogLevel(zapcore.WarnLevel)
 	// verify logger level changes with global level
 	assert.Equal(t, zapcore.WarnLevel, GetGlobalLogLevel())
-	assert.True(t, logger.Desugar().Core().Enabled(zapcore.WarnLevel))
-	assert.False(t, logger.Desugar().Core().Enabled(zapcore.InfoLevel))
+	assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.WarnLevel))
+	assert.False(t, logger.SugaredLogger().Desugar().Core().Enabled(zapcore.InfoLevel))
 }

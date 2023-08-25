@@ -12,16 +12,19 @@ import {
 import { vulnManagementReportsPath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
+import { ReportScope } from 'hooks/useFetchReport';
 import { ReportConfiguration } from 'types/report.proto';
 import VulnMgmtReportForm from '../VulnMgmtReportForm';
 
 type VulnMgmtEditReportPageProps = {
     report: ReportConfiguration;
+    reportScope: ReportScope | null;
     refreshQuery: () => void;
 };
 
 function VulnMgmtEditReportPage({
     report,
+    reportScope,
     refreshQuery,
 }: VulnMgmtEditReportPageProps): ReactElement {
     const { id, name } = report;
@@ -48,7 +51,11 @@ function VulnMgmtEditReportPage({
                 </TextContent>
             </PageSection>
             <Divider component="div" />
-            <VulnMgmtReportForm initialValues={report} refreshQuery={refreshQuery} />
+            <VulnMgmtReportForm
+                initialValues={report}
+                initialReportScope={reportScope}
+                refreshQuery={refreshQuery}
+            />
         </>
     );
 }

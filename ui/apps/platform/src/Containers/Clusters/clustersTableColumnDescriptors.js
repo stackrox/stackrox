@@ -10,13 +10,19 @@ import {
 } from 'Components/Table';
 
 import { formatCloudProvider } from './cluster.helpers';
+import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
 import HelmIndicator from './Components/HelmIndicator';
 import OperatorIndicator from './Components/OperatorIndicator';
 
-export function getColumnsForClusters({ metadata, rowActions }) {
+export function getColumnsForClusters({
+    clusterIdToRetentionInfo,
+    hasWriteAccessForCluster,
+    metadata,
+    rowActions,
+}) {
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
@@ -31,13 +37,13 @@ export function getColumnsForClusters({ metadata, rowActions }) {
     }
 
     // Because of fixed checkbox width, total of column ratios must be less than 1
-    // 6/8 + 1/9 + 1/10 = 0.961
-    const clusterColumnsWithHealth = [
+    // 5/7 + 1/4 = 0.964
+    const clusterColumns = [
         {
             accessor: 'name',
             Header: 'Name',
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
             Cell: ({ original }) => (
                 <span className="flex items-center" data-testid="cluster-name">
                     {original.name}
@@ -59,8 +65,8 @@ export function getColumnsForClusters({ metadata, rowActions }) {
         {
             Header: 'Cloud Provider',
             Cell: ({ original }) => formatCloudProvider(original.status?.providerMetadata),
-            headerClassName: `w-1/9 ${defaultHeaderClassName}`,
-            className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Cluster Status',
@@ -87,8 +93,8 @@ export function getColumnsForClusters({ metadata, rowActions }) {
                     }}
                 />
             ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Credential Expiration',
@@ -99,19 +105,32 @@ export function getColumnsForClusters({ metadata, rowActions }) {
                     isList
                 />
             ),
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
+            Header: 'Cluster Deletion',
+            Cell: ({ original }) => (
+                <ClusterDeletion
+                    clusterRetentionInfo={clusterIdToRetentionInfo[original.id] ?? null}
+                />
+            ),
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+        },
+    ];
+
+    if (hasWriteAccessForCluster) {
+        clusterColumns.push({
             Header: '',
             accessor: '',
             headerClassName: 'hidden',
             className: rtTrActionsClassName,
             Cell: ({ original }) => renderRowActionButtons(original),
-        },
-    ];
+        });
+    }
 
-    return clusterColumnsWithHealth;
+    return clusterColumns;
 }
 
 export default {

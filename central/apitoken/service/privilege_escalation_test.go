@@ -3,6 +3,7 @@ package service
 import (
 	"testing"
 
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/testutils/roletest"
@@ -12,25 +13,28 @@ import (
 
 func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	devScope := &storage.SimpleAccessScope{
+		Id:   "devScopeId",
 		Name: "Dev",
 		Rules: &storage.SimpleAccessScope_Rules{
 			IncludedClusters: []string{"Dev"},
 		},
 	}
 
-	writeRole := roletest.NewResolvedRoleWithGlobalScope(
+	writeRole := roletest.NewResolvedRole(
 		"Admin",
 		map[string]storage.Access{
 			"Image":      storage.Access_READ_WRITE_ACCESS,
 			"Deployment": storage.Access_READ_WRITE_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
-	readRole := roletest.NewResolvedRoleWithGlobalScope(
+	readRole := roletest.NewResolvedRole(
 		"Analyst",
 		map[string]storage.Access{
 			"Image":      storage.Access_READ_ACCESS,
 			"Deployment": storage.Access_READ_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
 	devWriteRole := roletest.NewResolvedRole(
 		"Admin",
@@ -57,8 +61,8 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	// 1. User roles are empty.
 	err = verifyNoPrivilegeEscalation(make([]permissions.ResolvedRole, 0), []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
 
 	// 2. Requested roles are empty.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{writeRole}, make([]permissions.ResolvedRole, 0))
@@ -88,11 +92,12 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 		},
 		devScope,
 	)
-	deploymentWriteRole := roletest.NewResolvedRoleWithGlobalScope(
+	deploymentWriteRole := roletest.NewResolvedRole(
 		"DeploymentWrite",
 		map[string]storage.Access{
 			"Deployment": storage.Access_READ_WRITE_ACCESS,
 		},
+		role.AccessScopeIncludeAll,
 	)
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devImageWriteRole, deploymentWriteRole}, []permissions.ResolvedRole{devWriteRole})
 	assert.NoError(t, err)
@@ -106,12 +111,12 @@ func TestVerifyNoPrivilegeEscalation(t *testing.T) {
 	// 9. User has read permissions, requested are write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{readRole}, []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_READ_ACCESS).Error())
 
 	// 10. User has "dev" write permissions, requested are unrestricted write permissions.
 	err = verifyNoPrivilegeEscalation([]permissions.ResolvedRole{devWriteRole}, []permissions.ResolvedRole{writeRole})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
-	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", defaultScopeName, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Image", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
+	assert.Contains(t, err.Error(), newPrivilegeEscalationError("Deployment", role.AccessScopeIncludeAll.Name, storage.Access_READ_WRITE_ACCESS, storage.Access_NO_ACCESS).Error())
 }

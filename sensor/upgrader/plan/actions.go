@@ -1,8 +1,8 @@
 package plan
 
 import (
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -20,7 +20,7 @@ const (
 type ActionDesc struct {
 	ActionName ActionName // "create", "update", or "delete"
 	ObjectRef  k8sobjects.ObjectRef
-	Object     k8sutil.Object
+	Object     *unstructured.Unstructured
 }
 
 // Actions returns all actions performed as part of an execution plan, in the correct order (creations, then updates,
@@ -33,7 +33,7 @@ func (p *ExecutionPlan) Actions() []ActionDesc {
 	return allActions
 }
 
-func actionsForObjects(actionName ActionName, objects []k8sutil.Object) []ActionDesc {
+func actionsForObjects(actionName ActionName, objects []*unstructured.Unstructured) []ActionDesc {
 	descs := make([]ActionDesc, 0, len(objects))
 	for _, obj := range objects {
 		descs = append(descs, ActionDesc{

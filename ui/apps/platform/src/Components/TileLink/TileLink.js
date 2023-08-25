@@ -30,7 +30,6 @@ const TileLink = ({
     isError,
     position,
     short,
-    dataTestId,
 }) => {
     const { isDarkMode } = useTheme();
 
@@ -45,6 +44,7 @@ const TileLink = ({
             icon={icon}
             subText={subText}
             short={short}
+            textWrap
         />
     );
     let classes = '';
@@ -64,7 +64,7 @@ const TileLink = ({
     }
     classes += ` ${positionClassName} ${colorClasses} ${short ? 'h-full' : 'min-h-14'}`;
     return (
-        <Link to={url} className="no-underline mr-2 flex w-full" data-testid={dataTestId}>
+        <Link to={url} className="no-underline mr-2 flex w-full" data-testid="tile-link">
             <div className={classes}>{content}</div>
         </Link>
     );
@@ -81,7 +81,6 @@ TileLink.propTypes = {
     isError: PropTypes.bool,
     position: PropTypes.oneOf(Object.values(POSITION)),
     short: PropTypes.bool,
-    dataTestId: PropTypes.string,
 };
 
 TileLink.defaultProps = {
@@ -93,7 +92,6 @@ TileLink.defaultProps = {
     subText: null,
     icon: null,
     short: false,
-    dataTestId: 'tile-link',
 };
 
 export default TileLink;

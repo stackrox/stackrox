@@ -12,41 +12,48 @@ updates:
       day: 'wednesday'
     # always update package.json files to match new version for any package in UI monorepo
     versioning-strategy: increase
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
     labels:
-      - "ci-no-api-tests"
-      - "ci-no-qa-tests"
-      - "ci-no-upgrade-tests"
       - "dependencies"
+      - "area/ui"
     reviewers:
       - "stackrox/ui-dep-updaters"
-
+    commit-message:
+      include: scope
+      prefix: chore
 
   - package-ecosystem: 'gradle'
     directory: 'qa-tests-backend/'
     schedule:
-      interval: 'weekly'
-      day: 'wednesday'
+      interval: 'daily'
     open-pull-requests-limit: 1
     labels:
       - "ci-all-qa-tests"
-      - "ci-no-api-tests"
-      - "ci-no-ui-tests"
-      - "ci-eks-tests"
-      - "ci-openshift-4-tests"
-      - "ci-rhel-tests"
       - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/'
     schedule:
-      interval: 'weekly'
-      day: 'wednesday'
+      interval: 'daily'
     open-pull-requests-limit: 3
+    labels:
+      - "ci-all-qa-tests"
+      - "dependencies"
+      - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+    ignore:
+      - dependency-name: "github.com/aws/aws-sdk-go"
+        update-types: ["version-update:semver-patch"]
 
   - package-ecosystem: 'gomod'
     directory: '/tools/linters/'
@@ -54,8 +61,14 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
 
   - package-ecosystem: 'gomod'
     directory: '/tools/test/'
@@ -63,8 +76,46 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 3
+    labels:
+    - "dependencies"
+    - "auto-merge"
     reviewers:
       - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/operator/tools/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'gomod'
+    directory: '/scanner/tools/'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "area/scanner"
+    - "auto-merge"
+    reviewers:
+    - "stackrox/scanner"
+    commit-message:
+      include: scope
+      prefix: chore
 
   - package-ecosystem: 'docker'
     directory: 'operator/'
@@ -72,5 +123,84 @@ updates:
       interval: 'weekly'
       day: 'wednesday'
     open-pull-requests-limit: 1
+    labels:
+    - "dependencies"
+    - "area/operator"
+    - "auto-merge"
     reviewers:
     - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'image/rhel'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'image/postgres'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'scanner/image/scanner'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/scanner"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: 'docker'
+    directory: 'scanner/image/db'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    labels:
+    - "ci-all-qa-tests"
+    - "dependencies"
+    reviewers:
+    - "stackrox/scanner"
+    commit-message:
+      include: scope
+      prefix: chore
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    open-pull-requests-limit: 1
+    reviewers:
+    - "stackrox/backend-dep-updaters"
+    commit-message:
+      include: scope
+      prefix: chore

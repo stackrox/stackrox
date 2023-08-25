@@ -1,29 +1,15 @@
 package undostore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/logging"
-	bolt "go.etcd.io/bbolt"
-)
-
-var undoBucket = []byte("networkpolicies-undo")
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // UndoStore provides storage functionality for undo records.
+//
 //go:generate mockgen-wrapper
 type UndoStore interface {
-	GetUndoRecord(clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
-	UpsertUndoRecord(clusterID string, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error
-}
-
-// New returns a new UndoStore instance using the provided bolt DB instance.
-func New(db *bolt.DB) UndoStore {
-	bolthelper.RegisterBucketOrPanic(db, undoBucket)
-	return &undoStore{
-		db: db,
-	}
+	Get(ctx context.Context, clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error)
+	Upsert(ctx context.Context, undoRecord *storage.NetworkPolicyApplicationUndoRecord) error
 }

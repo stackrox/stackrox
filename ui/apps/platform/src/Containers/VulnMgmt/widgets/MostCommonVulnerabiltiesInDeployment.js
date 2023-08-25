@@ -9,29 +9,25 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import NumberedList from 'Components/NumberedList';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-const MOST_COMMON_VULNERABILITIES = gql`
-    query mostCommonVulnerabilitiesInDeployment(
-        $query: String
-        $scopeQuery: String
-        $vulnPagination: Pagination
-    ) {
-        results: vulnerabilities(query: $query, pagination: $vulnPagination) {
-            id: cve
+import ViewAllButton from './ViewAllButton';
+
+const MOST_COMMON_IMAGE_VULNERABILITIES = gql`
+    query mostCommonImageVulnerabilities($query: String, $vulnPagination: Pagination) {
+        results: imageVulnerabilities(query: $query, pagination: $vulnPagination) {
+            id
             cve
             cvss
             scoreVersion
-            imageCount
+            isFixable
             deploymentCount
-            createdAt
             summary
-            isFixable(query: $scopeQuery)
-            envImpact
+            imageCount
+            lastScanned
         }
     }
 `;
@@ -44,7 +40,7 @@ const processData = (data, workflowState) => {
 };
 
 const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
-    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
+    const { loading, data = {} } = useQuery(MOST_COMMON_IMAGE_VULNERABILITIES, {
         variables: {
             query: queryService.objectToWhereClause({
                 'Deployment ID': deploymentId,
@@ -93,7 +89,7 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            header="Most Common Vulnerabilities"
+            header="Most common image vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
             {content}

@@ -35,7 +35,7 @@ function usage {
 	echo
 	echo "The argument may be:"
 	echo "  - a single file"
-	echo "  - a directory (all files ending in .crt will be added)"
+	echo "  - a directory (all files ending in .crt and .pem will be added)"
 	echo "Each file must contain exactly one PEM-encoded certificate."
 	echo
 	echo "If the -u (update) argument is passed, the existing additional CAs will be"
@@ -57,14 +57,14 @@ function create_directory {
 	local dir="$1"
 	echo "The following certificates will be used as additional CAs:"
 	from_file_args=()
-	for f in $dir/*.crt; do
+	for f in "$dir/*.crt" "$dir/*.pem"; do
     	if [ -f "$f" ] ; then
     		from_file_args+=("--from-file=$(basename "$f")=$f")
 			echo "  - $f"
 		fi
 	done
 	if [ "${#from_file_args[@]}" -eq 0 ]; then
-		echo "Error: No filenames ending in \".crt\" in $dir. Please add some."
+		echo "Error: No filenames ending in \".crt\" or \".pem\" in $dir. Please add some."
 		exit 2
 	fi
 	create_or_replace secret -n "stackrox" generic {{$secretName}} "${from_file_args[@]}"

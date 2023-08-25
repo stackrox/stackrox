@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+import "storage/signature_integration.proto";
+
+package v1;
+
+message ListSignatureIntegrationsResponse {
+    repeated storage.SignatureIntegration integrations = 1;
+}
+
+service SignatureIntegrationService {
+    rpc ListSignatureIntegrations (Empty) returns (ListSignatureIntegrationsResponse) {
+        option (google.api.http) = {
+            get: "/v1/signatureintegrations"
+        };
+    }
+
+    rpc GetSignatureIntegration (ResourceByID) returns (storage.SignatureIntegration) {
+        option (google.api.http) = {
+            get: "/v1/signatureintegrations/{id}"
+        };
+    }
+
+    // Integration id should not be set.
+    // Returns signature integration with id filled.
+    rpc PostSignatureIntegration (storage.SignatureIntegration) returns (storage.SignatureIntegration) {
+        option (google.api.http) = {
+            post: "/v1/signatureintegrations"
+            body: "*"
+        };
+    }
+
+    rpc PutSignatureIntegration (storage.SignatureIntegration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/signatureintegrations/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteSignatureIntegration (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/signatureintegrations/{id}"
+        };
+    }
+}

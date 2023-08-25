@@ -1,20 +1,23 @@
 package store
 
 import (
+	"context"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Store provides storage functionality for process indicators.
+//
 //go:generate mockgen-wrapper
 type Store interface {
-	Get(id string) (*storage.ProcessIndicator, bool, error)
-	GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error)
+	Get(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
+	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error)
 
-	UpsertMany([]*storage.ProcessIndicator) error
-	DeleteMany(id []string) error
+	UpsertMany(context.Context, []*storage.ProcessIndicator) error
+	DeleteMany(ctx context.Context, id []string) error
 
-	AckKeysIndexed(keys ...string) error
-	GetKeysToIndex() ([]string, error)
-
-	Walk(func(pi *storage.ProcessIndicator) error) error
+	Walk(context.Context, func(pi *storage.ProcessIndicator) error) error
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
 }

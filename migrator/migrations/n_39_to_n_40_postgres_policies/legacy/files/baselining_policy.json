@@ -1,0 +1,33 @@
+{
+  "id": "89cae2e6-0cb7-4329-8692-c2c3717c1237",
+  "name": "Unauthorized Process Execution",
+  "description": "This policy generates a violation for any process execution that is not explicitly allowed by a locked process baseline for a given container specification within a Kubernetes deployment.",
+  "rationale": "A locked process baseline communicates high confidence that execution of a process not included in the baseline positively indicates malicious activity.",
+  "remediation": "Evaluate this process execution for malicious intent, examine other accessible resources for abnormal activity, then kill the pod in which this process executed.",
+  "categories": [
+    "Anomalous Activity"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Unexpected Process Executed",
+          "values": [
+            {
+              "value": "true"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -1,29 +1,20 @@
 package maputil
 
 import (
-	"github.com/mauricelam/genny/generic"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-//go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string ValueType=string"
-
-// KeyType represents a generic type that we want to use as a map key.
-type KeyType generic.Type
-
-// ValueType represents a generic type that we want to use as a map value.
-type ValueType generic.Type
-
-// CloneKeyTypeValueTypeMap clones a map of the given type.
-func CloneKeyTypeValueTypeMap(inputMap map[KeyType]ValueType) map[KeyType]ValueType {
-	cloned := make(map[KeyType]ValueType, len(inputMap))
+// ShallowClone creates a shallow clone of the given map.
+func ShallowClone[K comparable, V any](inputMap map[K]V) map[K]V {
+	cloned := make(map[K]V, len(inputMap))
 	for k, v := range inputMap {
 		cloned[k] = v
 	}
 	return cloned
 }
 
-// KeyTypeValueTypeMapsEqual compares if two maps of the given type are equal.
-func KeyTypeValueTypeMapsEqual(a, b map[KeyType]ValueType) bool {
+// Equal compares if two maps of the given type are equal.
+func Equal[K, V comparable](a, b map[K]V) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -35,21 +26,39 @@ func KeyTypeValueTypeMapsEqual(a, b map[KeyType]ValueType) bool {
 	return true
 }
 
-// KeyTypeValueTypeFastRMap is a thread-safe map from KeyType to ValueType that is optimized for read-heavy access patterns.
+// Keys retrieves the keys of the given map.
+func Keys[K comparable, V any](inputMap map[K]V) []K {
+	keys := make([]K, 0, len(inputMap))
+	for k := range inputMap {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// Values retrieves the values of the given map.
+func Values[K comparable, V any](inputMap map[K]V) []V {
+	values := make([]V, 0, len(inputMap))
+	for _, v := range inputMap {
+		values = append(values, v)
+	}
+	return values
+}
+
+// FastRMap is a thread-safe map from K to V that is optimized for read-heavy access patterns.
 // Writes are expensive because it clones, mutates and replaces the map instead of an in-place addition.
-// Use NewKeyTypeValueType to instantiate.
-type KeyTypeValueTypeFastRMap struct {
+// Use NewFastRMap to instantiate.
+type FastRMap[K comparable, V any] struct {
 	lock sync.RWMutex
-	m    *map[KeyType]ValueType
+	m    *map[K]V
 }
 
-// NewKeyTypeValueTypeFastRMap returns an empty, read-to-use, KeyTypeValueTypeFastRMap.
-func NewKeyTypeValueTypeFastRMap() KeyTypeValueTypeFastRMap {
-	initialMap := make(map[KeyType]ValueType)
-	return KeyTypeValueTypeFastRMap{m: &initialMap}
+// NewFastRMap returns an empty, ready-to-use, KeyTypeValueTypeFastRMap.
+func NewFastRMap[K comparable, V any]() *FastRMap[K, V] {
+	initialMap := make(map[K]V)
+	return &FastRMap[K, V]{m: &initialMap}
 }
 
-func (m *KeyTypeValueTypeFastRMap) getCurrentMapPtr() *map[KeyType]ValueType {
+func (m *FastRMap[K, V]) getCurrentMapPtr() *map[K]V {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	return m.m
@@ -59,14 +68,14 @@ func (m *KeyTypeValueTypeFastRMap) getCurrentMapPtr() *map[KeyType]ValueType {
 // Please don't hold on to it for too long because the map can be out-of-date.
 // Further, do not mutate its contents UNLESS you know that you are the only
 // user who will mutate the map.
-func (m *KeyTypeValueTypeFastRMap) GetMap() map[KeyType]ValueType {
+func (m *FastRMap[K, V]) GetMap() map[K]V {
 	currentPtr := m.getCurrentMapPtr()
 	return *currentPtr
 }
 
 // DeleteMany deletes the specified keys.
-func (m *KeyTypeValueTypeFastRMap) DeleteMany(keys ...KeyType) {
-	m.cloneAndMutate(func(clonedMap map[KeyType]ValueType) {
+func (m *FastRMap[K, V]) DeleteMany(keys ...K) {
+	m.cloneAndMutate(func(clonedMap map[K]V) {
 		for _, k := range keys {
 			delete(clonedMap, k)
 		}
@@ -75,8 +84,8 @@ func (m *KeyTypeValueTypeFastRMap) DeleteMany(keys ...KeyType) {
 
 // SetMany merges the passed map into the current map.
 // If there are key collisions, the passed-in map's elements take precedence.
-func (m *KeyTypeValueTypeFastRMap) SetMany(elements map[KeyType]ValueType) {
-	m.cloneAndMutate(func(clonedMap map[KeyType]ValueType) {
+func (m *FastRMap[K, V]) SetMany(elements map[K]V) {
+	m.cloneAndMutate(func(clonedMap map[K]V) {
 		for k, v := range elements {
 			clonedMap[k] = v
 		}
@@ -84,14 +93,14 @@ func (m *KeyTypeValueTypeFastRMap) SetMany(elements map[KeyType]ValueType) {
 }
 
 // Set sets the value for the given key.
-func (m *KeyTypeValueTypeFastRMap) Set(k KeyType, v ValueType) {
-	m.cloneAndMutate(func(clonedMap map[KeyType]ValueType) {
+func (m *FastRMap[K, V]) Set(k K, v V) {
+	m.cloneAndMutate(func(clonedMap map[K]V) {
 		clonedMap[k] = v
 	})
 }
 
 // Get retrieves the value for the given key.
-func (m *KeyTypeValueTypeFastRMap) Get(k KeyType) (ValueType, bool) {
+func (m *FastRMap[K, V]) Get(k K) (V, bool) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	val, exists := (*m.m)[k]
@@ -99,8 +108,8 @@ func (m *KeyTypeValueTypeFastRMap) Get(k KeyType) (ValueType, bool) {
 }
 
 // Delete deletes the value for the given key.
-func (m *KeyTypeValueTypeFastRMap) Delete(k KeyType) {
-	m.cloneAndMutate(func(clonedMap map[KeyType]ValueType) {
+func (m *FastRMap[K, V]) Delete(k K) {
+	m.cloneAndMutate(func(clonedMap map[K]V) {
 		delete(clonedMap, k)
 	})
 }
@@ -111,15 +120,15 @@ func (m *KeyTypeValueTypeFastRMap) Delete(k KeyType) {
 // we acquire the lock, and check whether the current map pointer is the same as the one we started out with.
 // If it is not (which means the map was mutated by another goroutine), we go back to the beginning.
 // If it is, then we replace the map pointer with our cloned map.
-func (m *KeyTypeValueTypeFastRMap) cloneAndMutate(mutateFunc func(clonedMap map[KeyType]ValueType)) {
+func (m *FastRMap[K, V]) cloneAndMutate(mutateFunc func(clonedMap map[K]V)) {
 	m.cloneAndMutateWithInitialPtr(m.getCurrentMapPtr(), mutateFunc)
 }
 
-func (m *KeyTypeValueTypeFastRMap) cloneAndMutateWithInitialPtr(initialMapPtr *map[KeyType]ValueType, mutateFunc func(clonedMap map[KeyType]ValueType)) {
+func (m *FastRMap[K, V]) cloneAndMutateWithInitialPtr(initialMapPtr *map[K]V, mutateFunc func(clonedMap map[K]V)) {
 	defer m.lock.Unlock()
 
 	for {
-		cloned := CloneKeyTypeValueTypeMap(*initialMapPtr)
+		cloned := ShallowClone(*initialMapPtr)
 		mutateFunc(cloned)
 
 		m.lock.Lock()

@@ -1,5 +1,4 @@
 //go:build integration
-// +build integration
 
 package quay
 
@@ -26,7 +25,7 @@ func TestQuay(t *testing.T) {
 		},
 	}
 
-	q, err := newRegistry(integration)
+	q, err := newRegistry(integration, false)
 	assert.NoError(t, err)
 	assert.NoError(t, filterOkErrors(q.Test()))
 }

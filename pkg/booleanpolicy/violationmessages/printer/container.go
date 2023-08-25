@@ -156,6 +156,44 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
+	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' image` +
+		`{{else}}Image{{end}} signature is {{.Status}}`
+)
+
+func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		Status        string
+	}
+	r := resultFields{
+		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
+		Status:        "unverified",
+	}
+
+	var result []string
+	if ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok {
+		for _, id := range ids {
+			if id != "" && id != "<empty>" {
+				r.Status = "verified by " + id
+				message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, message...)
+			}
+		}
+	}
+	if len(result) == 0 {
+		message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, message...)
+	}
+	return result, nil
+}
+
+const (
 	seccompProfileTypeTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} has Seccomp profile type '{{.SeccompProfileType}}'`
 )
 
@@ -189,4 +227,26 @@ func appArmorProfilePrinter(fieldMap map[string][]string) ([]string, error) {
 		return nil, err
 	}
 	return executeTemplate(appArmorProfileTemplate, r)
+}
+
+const (
+	allowPrivilegeEscalationTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} 
+	{{- if .AllowPrivilegeEscalation}} allows{{else}} does not allow{{end}} privilege escalation`
+)
+
+func allowPrivilegeEscalationPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName            string
+		AllowPrivilegeEscalation bool
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	allowPrivilegeEscalation, err := getSingleValueFromFieldMap(search.AllowPrivilegeEscalation.String(), fieldMap)
+	if err != nil {
+		return nil, err
+	}
+	if r.AllowPrivilegeEscalation, err = strconv.ParseBool(allowPrivilegeEscalation); err != nil {
+		return nil, err
+	}
+	return executeTemplate(allowPrivilegeEscalationTemplate, r)
 }

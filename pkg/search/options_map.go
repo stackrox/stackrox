@@ -18,6 +18,7 @@ func HasApplicableOptions(specifiedFields []string, optionsMap OptionsMap) bool 
 }
 
 // An OptionsMap is a mapping from field labels to search field that permits case-insensitive lookups.
+//
 //go:generate mockgen-wrapper
 type OptionsMap interface {
 	// Get looks for the given string in the OptionsMap. The string is usually user-entered.

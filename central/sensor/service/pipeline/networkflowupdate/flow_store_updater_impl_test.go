@@ -7,18 +7,17 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/golang/mock/gomock"
 	baselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	nfDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestFlowStoreUpdater(t *testing.T) {
@@ -35,8 +34,6 @@ type FlowStoreUpdaterTestSuite struct {
 	mockCtrl    *gomock.Controller
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
-
-	envIsolator *envisolator.EnvIsolator
 }
 
 func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
@@ -53,12 +50,10 @@ func (suite *FlowStoreUpdaterTestSuite) SetupSuite() {
 	suite.mockFlows = nfDSMocks.NewMockFlowDataStore(suite.mockCtrl)
 	suite.mockBaselines = baselineMocks.NewMockManager(suite.mockCtrl)
 	suite.tested = newFlowPersister(suite.mockFlows, suite.mockBaselines)
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
@@ -137,7 +132,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
+	suite.mockFlows.EXPECT().GetAllFlows(suite.hasWriteCtx, gomock.Any()).Return(storedFlows, firstTimestamp, nil)
 
 	suite.mockBaselines.EXPECT().ProcessFlowUpdate(testutils.PredMatcher("equivalent map except for timestamp", func(got map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) bool {
 		expectedMap := map[networkgraph.NetworkConnIndicator]timestamp.MicroTS{

@@ -15,16 +15,28 @@ import IntegrationsListPage from './IntegrationsListPage';
 import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
 import IntegrationDetailsPage from './IntegrationDetailsPage';
+import usePermissions from '../../hooks/usePermissions';
+import IntegrationsNoPermission from './IntegrationsNoPermission';
 
-const Page = (): ReactElement => (
-    <Switch>
-        <Route exact path={integrationsPath} component={IntegrationTilesPage} />
-        <Route exact path={integrationsListPath} component={IntegrationsListPage} />
-        <Route path={integrationCreatePath} component={CreateIntegrationPage} />
-        <Route path={integrationEditPath} component={EditIntegrationPage} />
-        <Route path={integrationDetailsPath} component={IntegrationDetailsPage} />
-        <Route component={IntegrationsNotFoundPage} />
-    </Switch>
-);
+const Page = (): ReactElement => {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForIntegrations = hasReadAccess('Integration');
+    return (
+        <>
+            {hasReadAccessForIntegrations ? (
+                <Switch>
+                    <Route exact path={integrationsPath} component={IntegrationTilesPage} />
+                    <Route exact path={integrationsListPath} component={IntegrationsListPage} />
+                    <Route path={integrationCreatePath} component={CreateIntegrationPage} />
+                    <Route path={integrationEditPath} component={EditIntegrationPage} />
+                    <Route path={integrationDetailsPath} component={IntegrationDetailsPage} />
+                    <Route component={IntegrationsNotFoundPage} />
+                </Switch>
+            ) : (
+                <IntegrationsNoPermission />
+            )}
+        </>
+    );
+};
 
 export default Page;

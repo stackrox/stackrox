@@ -12,6 +12,9 @@ const (
 	DockerfileLineCustomTag            = "Dockerfile Line"
 	EnvironmentVarCustomTag            = "Environment Variable"
 	ImageScanCustomTag                 = "Image Scan"
+	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
+	HasIngressPolicyCustomTag          = "Has Ingress Network Policy"
+	HasEgressPolicyCustomTag           = "Has Egress Network Policy"
 	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
 	NotInProcessBaselineCustomTag      = "Not In Baseline"
 	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
@@ -42,6 +45,13 @@ type impersonatedEventResult struct {
 	IsImpersonatedUser bool `search:"Is Impersonated User"`
 }
 
+// NetworkPoliciesApplied holds the intermediate information about Network Policy presence in a cluster.
+type NetworkPoliciesApplied struct {
+	HasIngressNetworkPolicy bool `policy:"Has Ingress Network Policy"`
+	HasEgressNetworkPolicy  bool `policy:"Has Egress Network Policy"`
+	Policies                map[string]*storage.NetworkPolicy
+}
+
 // NetworkFlowDetails captures information about a particular network flow.
 // Used with MatchAgainstDeploymentAndNetworkFlow to validate network flows
 // Note that as of now only the field NotInNetworkBaseline is captured as a
@@ -68,4 +78,8 @@ type NetworkFlowDetails struct {
 
 type envVar struct {
 	EnvVar string `search:"Environment Variable"`
+}
+
+type imageSignatureVerification struct {
+	VerifierIDs []string `search:"Image Signature Verified By"`
 }

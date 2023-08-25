@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	clusters "github.com/stackrox/rox/central/clusters"
 	uuid "github.com/stackrox/rox/pkg/uuid"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockProvider is a mock of Provider interface.

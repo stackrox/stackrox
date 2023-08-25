@@ -1,3 +1,5 @@
+//go:build amd64
+
 package roxdbv1
 
 import (
@@ -17,7 +19,7 @@ const (
 	scratchPath = "rocksdbScratch"
 )
 
-func restoreRocksDB(ctx common.RestoreFileContext, fileReader io.Reader, size int64) error {
+func restoreRocksDB(ctx common.RestoreFileContext, fileReader io.Reader, _ int64) error {
 	absDirPath, err := ctx.Mkdir(rocksDBPath, 0700)
 	if err != nil {
 		return errors.Wrap(err, "could not create rocksdb database directory")

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
@@ -87,7 +88,7 @@ func (s *sourceImpl) Backend() authproviders.Backend {
 	return nil
 }
 
-func (s *sourceImpl) GetOrCreateBackend(ctx context.Context) (authproviders.Backend, error) {
+func (s *sourceImpl) GetOrCreateBackend(_ context.Context) (authproviders.Backend, error) {
 	return nil, nil
 }
 
@@ -101,7 +102,7 @@ func (s *sourceImpl) Issuer() tokens.Issuer {
 	return nil
 }
 
-func (s *sourceImpl) ApplyOptions(options ...authproviders.ProviderOption) error {
+func (s *sourceImpl) ApplyOptions(_ ...authproviders.ProviderOption) error {
 	// API token sources are not modified through Options methods as they aren't in the registry
 	return nil
 }
@@ -111,5 +112,9 @@ func (s *sourceImpl) Active() bool {
 }
 
 func (s *sourceImpl) MarkAsActive() error {
+	return nil
+}
+
+func (s *sourceImpl) AttributeVerifier() user.AttributeVerifier {
 	return nil
 }

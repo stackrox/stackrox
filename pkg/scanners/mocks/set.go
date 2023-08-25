@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSet is a mock of Set interface.
@@ -48,10 +48,10 @@ func (mr *MockSetMockRecorder) Clear() *gomock.Call {
 }
 
 // GetAll mocks base method.
-func (m *MockSet) GetAll() []types.ImageScanner {
+func (m *MockSet) GetAll() []types.ImageScannerWithDataSource {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]types.ImageScanner)
+	ret0, _ := ret[0].([]types.ImageScannerWithDataSource)
 	return ret0
 }
 

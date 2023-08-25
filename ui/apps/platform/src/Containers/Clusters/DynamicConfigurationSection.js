@@ -28,10 +28,7 @@ const DynamicConfigurationSection = ({
 
     // @TODO, replace open prop with dynamic logic, based on clusterType
     return (
-        <CollapsibleSection
-            title="Dynamic Configuration (syncs with Sensor)"
-            titleClassName="text-xl"
-        >
+        <CollapsibleSection title="Dynamic Configuration (syncs with Sensor)">
             <div className="bg-base-100 pb-3 pt-1 px-3 rounded shadow">
                 <div className={wrapperMarginClassName}>
                     <label htmlFor="dynamicConfig.registryOverride" className={labelClassName}>
@@ -110,8 +107,7 @@ const DynamicConfigurationSection = ({
                 <div className={wrapperMarginClassName}>
                     <div className={`pl-2 ${justifyBetweenClassName}`}>
                         <label
-                            htmlFor="dynamicConfig.admissionControllerConfig
-                    .timeoutSeconds"
+                            htmlFor="dynamicConfig.admissionControllerConfig.timeoutSeconds"
                             className={labelClassName}
                         >
                             Timeout (seconds)

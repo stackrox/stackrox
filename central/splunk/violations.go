@@ -470,7 +470,6 @@ func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkVio
 	return &integrations.SplunkViolation_AlertInfo{
 		AlertId:            from.GetId(),
 		LifecycleStage:     from.GetLifecycleStage(),
-		AlertTags:          from.GetTags(),
 		AlertFirstOccurred: firstOccurred,
 	}
 	// from.State and from.SnoozeTill are ignored because they might change over time.
@@ -616,6 +615,7 @@ func refineDeploymentInfo(alertID string, deploymentInfo *integrations.SplunkVio
 // splunkCheckpoint represents parsed checkpoint. Possible checkpoint formats are:
 //  1. "FromTimestamp__ToTimestamp__FromAlertID"
 //  2. "FromTimestamp"
+//
 // #2 is used as initial checkpoint setting in Splunk TA config and when there were no more alerts in the previous request.
 // #1 is used when there were more alerts between FromTimestamp and ToTimestamp and response had to stop because
 // sufficient number of violations was returned.

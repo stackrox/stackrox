@@ -1,55 +1,47 @@
+//go:build sql_integration
+
 package manager
 
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/central/compliance/datastore/mocks"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	checkResultsDatastore "github.com/stackrox/rox/central/complianceoperator/checkresults/datastore"
-	checkResultsStore "github.com/stackrox/rox/central/complianceoperator/checkresults/store"
+	checkResultsStore "github.com/stackrox/rox/central/complianceoperator/checkresults/store/postgres"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/profiles/datastore"
-	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store"
+	profileStore "github.com/stackrox/rox/central/complianceoperator/profiles/store/postgres"
 	rulesDatastore "github.com/stackrox/rox/central/complianceoperator/rules/datastore"
-	rulesStore "github.com/stackrox/rox/central/complianceoperator/rules/store"
+	rulesStore "github.com/stackrox/rox/central/complianceoperator/rules/store/postgres"
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/scans/datastore"
-	scansStore "github.com/stackrox/rox/central/complianceoperator/scans/store"
+	scansStore "github.com/stackrox/rox/central/complianceoperator/scans/store/postgres"
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
-	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store"
+	scanSettingBindingStore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/complianceoperator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func newManager(t *testing.T) *managerImpl {
-	registry, err := standards.NewRegistry(nil, framework.RegistrySingleton(), metadata.AllStandards...)
+	registry, err := standards.NewRegistry(framework.RegistrySingleton(), metadata.AllStandards...)
 	require.NoError(t, err)
 
-	db := rocksdbtest.RocksDBForT(t)
-	prof, err := profileStore.New(db)
-	require.NoError(t, err)
-
-	ssb, err := scanSettingBindingStore.New(db)
-	require.NoError(t, err)
-
-	rules, err := rulesStore.New(db)
-	require.NoError(t, err)
-
+	db := pgtest.ForT(t)
+	prof := profileStore.New(db)
+	ssb := scanSettingBindingStore.New(db)
+	rules := rulesStore.New(db)
 	rulesDS, err := rulesDatastore.NewDatastore(rules)
 	require.NoError(t, err)
-
-	scans, err := scansStore.New(db)
-	require.NoError(t, err)
-
+	scans := scansStore.New(db)
 	scansDS := scansDatastore.NewDatastore(scans)
 
-	checks, err := checkResultsStore.New(db)
-	require.NoError(t, err)
+	checks := checkResultsStore.New(db)
 
 	ctrl := gomock.NewController(t)
 	compliance := mocks.NewMockDataStore(ctrl)

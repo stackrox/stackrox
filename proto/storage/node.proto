@@ -8,26 +8,26 @@ import "storage/container_runtime.proto";
 import "storage/taints.proto";
 import "storage/vulnerability.proto";
 
+
 import "gogoproto/gogo.proto";
 
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 27
+// next available tag: 28
 message Node {
     // A unique ID identifying this node.
-    string id                              = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
+    string id                              = 1 [(gogoproto.moretags) = 'search:"Node ID,store" sql:"pk,type(uuid)"'];
     // The (host)name of the node. Might or might not be the same as ID.
-    string name                            = 2 [(gogoproto.moretags) = "search:\"Node,store\""];
+    string name                            = 2 [(gogoproto.moretags) = 'search:"Node,store"'];
     // Taints on the host
     repeated Taint taints                  = 3;
-    string cluster_id                      = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
-    string cluster_name                    = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-    // TODO(ROX-6895): "Label" search term is ambiguous.
-    map<string, string> labels             = 6 [(gogoproto.moretags) = "search:\"Label\""];
-    map<string, string> annotations        = 7 [(gogoproto.moretags) = "search:\"Annotation\""];
+    string cluster_id                      = 4 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string cluster_name                    = 5 [(gogoproto.moretags) = 'search:"Cluster,store"'];
+    map<string, string> labels             = 6 [(gogoproto.moretags) = 'search:"Node Label"'];
+    map<string, string> annotations        = 7 [(gogoproto.moretags) = 'search:"Node Annotation"'];
     // When the cluster reported the node was added
-    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = "search:\"Node Join Time,store\""];
+    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = 'search:"Node Join Time,store"'];
     // node internal IP addresses
     repeated string internal_ip_addresses  = 8;
     // node external IP addresses
@@ -39,55 +39,105 @@ message Node {
     // From NodeInfo. Operating system reported by the node (ex: linux).
     string operating_system                = 17;
     // From NodeInfo. OS image reported by the node from /etc/os-release.
-    string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
+    string os_image                        = 12 [(gogoproto.moretags) = 'search:"Operating System,store"'];
     string kubelet_version                 = 15;
     string kube_proxy_version              = 16;
 
-    google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
+    google.protobuf.Timestamp last_updated = 25 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
     // Time we received an update from Kubernetes.
-    google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    google.protobuf.Timestamp k8s_updated  = 26 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
-    NodeScan scan                          = 18 [(gogoproto.moretags) = "policy:\"Node Scan\""];
+    NodeScan scan                          = 18 [(gogoproto.moretags) = 'policy:"Node Scan"'];
     oneof set_components {
-        int32 components                   = 19 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
+        int32 components                   = 19 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
     }
     oneof set_cves {
-        int32 cves                         = 20 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
+        int32 cves                         = 20 [(gogoproto.moretags) = 'search:"CVE Count,store,hidden"'];
     }
     oneof set_fixable {
-        int32 fixable_cves                 = 21 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
+        int32 fixable_cves                 = 21 [(gogoproto.moretags) = 'search:"Fixable CVE Count,store,hidden"'];
     }
-    int64 priority                         = 22;
-    float risk_score                       = 23 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+    int64 priority                         = 22 [(gogoproto.moretags) = 'search:"Node Risk Priority,hidden"'];
+    float risk_score                       = 23 [(gogoproto.moretags) = 'search:"Node Risk Score,hidden"'];
     oneof set_top_cvss {
-        float top_cvss                     = 24 [(gogoproto.moretags) = "search:\"Node Top CVSS,store\""];
+        float top_cvss                     = 24 [(gogoproto.moretags) = 'search:"Node Top CVSS,store"'];
     }
+
+    enum Note {
+        MISSING_SCAN_DATA = 0;
+    }
+    repeated Note notes                    = 27;
 }
 
+// Next tag: 5
 message NodeScan {
-    google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = "search:\"Node Scan Time,store\""];
+    google.protobuf.Timestamp          scan_time        = 1 [(gogoproto.moretags) = 'search:"Node Scan Time,store"'];
     string                             operating_system = 3;
-    repeated EmbeddedNodeScanComponent components       = 2;
+    repeated EmbeddedNodeScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
+
+    enum Note {
+        UNSET                           = 0;
+        UNSUPPORTED                     = 1;
+        KERNEL_UNSUPPORTED              = 2;
+        CERTIFIED_RHEL_CVES_UNAVAILABLE = 3;
+    }
+    repeated Note                      notes            = 4;
+}
+
+message NodeInventory {
+    string                           node_id = 1;
+    string                         node_name = 2;
+    google.protobuf.Timestamp      scan_time = 3;
+
+    // Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
+    // Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
+    // func convertAndDedupRHELComponents (in pkg 'nodeinventorizer'), and the respective reverse convertion in pkg 'clairify'.
+    // We are not using scannerV1.Components here for the following reasons:
+    // - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
+    // - to not expose scanner v1 API over stackrox graphql API
+    Components                     components = 4;
+    message Components {
+        string                     namespace = 1;
+        repeated RHELComponent     rhel_components = 2;
+        message RHELComponent {
+            int64               id = 1;
+            string              name = 2;
+            string              namespace = 3;
+            string              version = 4;
+            string              arch = 5;
+            string              module = 6;
+            string              added_by = 7;
+            repeated Executable executables = 8;
+            message Executable {
+                string                      path = 1;
+                repeated FeatureNameVersion required_features = 2;
+                message FeatureNameVersion {
+                    string name = 1;
+                    string version = 2;
+                }
+            }
+        }
+        repeated string rhel_content_sets = 3;
+    }
+
+    // Note represents scannerV1.Note
+    repeated Note        notes = 5;
+    enum Note {
+        OS_CVES_UNAVAILABLE = 0;
+        OS_CVES_STALE = 1;
+        LANGUAGE_CVES_UNAVAILABLE = 2;
+        CERTIFIED_RHEL_SCAN_UNAVAILABLE = 3;
+    }
 }
 
 message EmbeddedNodeScanComponent {
-    string                         name       = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
-    string                         version    = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
-    repeated EmbeddedVulnerability vulns      = 3;
-    int64                          priority   = 4;
+    string                         name             = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
+    string                         version          = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
+    repeated EmbeddedVulnerability vulns            = 3;
+    repeated NodeVulnerability     vulnerabilities  = 7;
+    int64                          priority         = 4;
     oneof set_top_cvss {
-        float                      top_cvss   = 5;
+        float                      top_cvss         = 5;
     }
-    float                          risk_score = 6;
-}
-
-message NodeComponentEdge {
-    // base 64 encoded Node:Component ids.
-    string id = 1;
-}
-
-message NodeCVEEdge {
-    // base 64 encoded Node:CVE ids.
-    string                    id                    = 1;
-    google.protobuf.Timestamp first_node_occurrence = 2;
+    float                          risk_score       = 6;
 }

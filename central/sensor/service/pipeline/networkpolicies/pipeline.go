@@ -141,10 +141,8 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, np *storage.NetworkPol
 
 func (s *pipelineImpl) persistNetworkPolicy(ctx context.Context, action central.ResourceAction, np *storage.NetworkPolicy) error {
 	switch action {
-	case central.ResourceAction_CREATE_RESOURCE:
-		return s.networkPolicies.AddNetworkPolicy(ctx, np)
-	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.networkPolicies.UpdateNetworkPolicy(ctx, np)
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+		return s.networkPolicies.UpsertNetworkPolicy(ctx, np)
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.networkPolicies.RemoveNetworkPolicy(ctx, string(np.GetId()))
 	default:
@@ -152,4 +150,4 @@ func (s *pipelineImpl) persistNetworkPolicy(ctx context.Context, action central.
 	}
 }
 
-func (s *pipelineImpl) OnFinish(clusterID string) {}
+func (s *pipelineImpl) OnFinish(_ string) {}

@@ -4,34 +4,37 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/enrichment/mocks"
+	enrichMocks "github.com/stackrox/rox/central/enrichment/mocks"
 	integrationMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	loopMocks "github.com/stackrox/rox/central/reprocessor/mocks"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
 
+var _ types.Scanner = (*fakeScanner)(nil)
+
 type fakeScanner struct{}
 
-func (*fakeScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
+func (*fakeScanner) GetScan(*storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	panic("implement me")
-}
-
-func (*fakeScanner) Match(image *storage.ImageName) bool {
+func (*fakeScanner) Match(*storage.ImageName) bool {
 	panic("implement me")
 }
 
@@ -39,32 +42,77 @@ func (*fakeScanner) Test() error {
 	return nil
 }
 
-func (*fakeScanner) TestNodeScanner() error {
-	return nil
-}
-
 func (*fakeScanner) Name() string {
 	panic("implement me")
 }
 
-func (f *fakeScanner) Type() string {
+func (*fakeScanner) Type() string {
 	return "type"
 }
 
-func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
+func (*fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
-func (f *fakeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
-	return semaphore.NewWeighted(10)
+func (*fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
+	return &v1.VulnDefinitionsInfo{}, nil
 }
 
-func (f *fakeScanner) DataSource() *storage.DataSource {
+var _ types.NodeScanner = (*fakeNodeScanner)(nil)
+
+type fakeNodeScanner struct{}
+
+func (*fakeNodeScanner) Name() string {
+	panic("implement me")
+}
+
+func (*fakeNodeScanner) Type() string {
+	return "type"
+}
+
+func (*fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
+	panic("implement me")
+}
+
+func (*fakeNodeScanner) GetNodeInventoryScan(_ *storage.Node, _ *storage.NodeInventory) (*storage.NodeScan, error) {
+	panic("implement me")
+}
+
+func (*fakeNodeScanner) TestNodeScanner() error {
 	return nil
 }
 
-func (f *fakeScanner) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return &v1.VulnDefinitionsInfo{}, nil
+func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	return semaphore.NewWeighted(10)
+}
+
+var (
+	_ types.ImageScannerWithDataSource = (*fakeImageAndNodeScanner)(nil)
+	_ types.NodeScannerWithDataSource  = (*fakeImageAndNodeScanner)(nil)
+)
+
+type fakeImageAndNodeScanner struct {
+	scanner     types.Scanner
+	nodeScanner types.NodeScanner
+}
+
+func newFakeImageAndNodeScanner() *fakeImageAndNodeScanner {
+	return &fakeImageAndNodeScanner{
+		scanner:     &fakeScanner{},
+		nodeScanner: &fakeNodeScanner{},
+	}
+}
+
+func (f *fakeImageAndNodeScanner) GetScanner() types.Scanner {
+	return f.scanner
+}
+
+func (f *fakeImageAndNodeScanner) GetNodeScanner() types.NodeScanner {
+	return f.nodeScanner
+}
+
+func (*fakeImageAndNodeScanner) DataSource() *storage.DataSource {
+	return nil
 }
 
 func TestValidateIntegration(t *testing.T) {
@@ -136,7 +184,7 @@ func TestValidateIntegration(t *testing.T) {
 
 	_, err := s.TestUpdatedImageIntegration(testCtx, request)
 	assert.Error(t, err)
-	assert.EqualError(t, err, errors.Wrap(errorhelpers.ErrInvalidArgs, "the request doesn't have a valid integration config type").Error())
+	assert.EqualError(t, err, errors.Wrap(errox.InvalidArgs, "the request doesn't have a valid integration config type").Error())
 
 	dockerConfig := &storage.DockerConfig{
 		Endpoint: "endpoint",
@@ -269,8 +317,8 @@ func TestValidateNodeIntegration(t *testing.T) {
 		gomock.Any(),
 		&v1.GetImageIntegrationsRequest{Name: "name"},
 	).Return([]*storage.ImageIntegration{clairifyIntegrationConfigStored}, nil).AnyTimes()
-	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
-	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(&fakeScanner{}, nil).Times(1)
+	scannerFactory.EXPECT().CreateScanner(clairifyIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
+	nodeEnricher.EXPECT().CreateNodeScanner(clairifyNodeIntegrationConfig).Return(newFakeImageAndNodeScanner(), nil).Times(1)
 	_, err := s.TestImageIntegration(testCtx, clairifyIntegrationConfig)
 	assert.NoError(t, err)
 
@@ -284,4 +332,113 @@ func TestValidateNodeIntegration(t *testing.T) {
 	reprocessorLoop.EXPECT().ShortCircuit().Times(1)
 	_, err = s.PutImageIntegration(testCtx, clairifyIntegrationConfig)
 	assert.NoError(t, err)
+}
+
+func TestBroadcast(t *testing.T) {
+	var connMgr *connMocks.MockManager
+	var conn *connMocks.MockSensorConnection
+	var s *serviceImpl
+	var msg *central.MsgToSensor
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		connMgr = connMocks.NewMockManager(ctrl)
+		conn = connMocks.NewMockSensorConnection(ctrl)
+		s = &serviceImpl{connManager: connMgr}
+		msg = &central.MsgToSensor{}
+	}
+
+	ii := &storage.ImageIntegration{}
+
+	t.Run("success", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID()
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), msg)
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", ii, msg)
+	})
+
+	t.Run("noop on no conns", func(t *testing.T) {
+		setup(t)
+		connMgr.EXPECT().GetActiveConnections().Return(nil)
+
+		s.broadcast(context.Background(), "action", ii, msg)
+	})
+
+	t.Run("noop on conns not valid", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().HasCapability(gomock.Any()).Return(false)
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", ii, msg)
+	})
+
+	t.Run("noop on inject err", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID()
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Return(errors.New("broken"))
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		s.broadcast(context.Background(), "action", ii, msg)
+	})
+}
+
+func TestBroadcastOnDelete(t *testing.T) {
+	var s *serviceImpl
+	var iiDS *integrationMocks.MockDataStore
+	var intMgr *enrichMocks.MockManager
+	var connMgr *connMocks.MockManager
+	var conn *connMocks.MockSensorConnection
+
+	ii := &storage.ImageIntegration{Id: "id", Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY}}
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		connMgr = connMocks.NewMockManager(ctrl)
+		conn = connMocks.NewMockSensorConnection(ctrl)
+		iiDS = integrationMocks.NewMockDataStore(ctrl)
+		intMgr = enrichMocks.NewMockManager(ctrl)
+		s = &serviceImpl{connManager: connMgr, datastore: iiDS, integrationManager: intMgr}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		setup(t)
+		conn.EXPECT().ClusterID().Return(ii.GetId())
+		conn.EXPECT().HasCapability(gomock.Any()).Return(true)
+		conn.EXPECT().InjectMessage(gomock.Any(), gomock.Any()).Return(nil)
+
+		connMgr.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{conn})
+
+		intMgr.EXPECT().Remove(gomock.Any()).Return(nil)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(ii, true, nil)
+		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("no broadcast on no exist", func(t *testing.T) {
+		setup(t)
+
+		intMgr.EXPECT().Remove(gomock.Any()).Return(nil)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, nil)
+		iiDS.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).Return(nil)
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.NoError(t, err)
+	})
+
+	t.Run("err on failure to get existing", func(t *testing.T) {
+		setup(t)
+
+		iiDS.EXPECT().GetImageIntegration(gomock.Any(), gomock.Any()).Return(nil, false, errors.New("broken"))
+
+		_, err := s.DeleteImageIntegration(context.Background(), &v1.ResourceByID{Id: "id"})
+		assert.Error(t, err)
+	})
 }

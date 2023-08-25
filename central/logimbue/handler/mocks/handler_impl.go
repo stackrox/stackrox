@@ -5,8 +5,9 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockCompressor is a mock of Compressor interface

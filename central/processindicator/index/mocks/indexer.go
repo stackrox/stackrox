@@ -5,13 +5,12 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
-	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockIndexer is a mock of Indexer interface.
@@ -37,127 +36,32 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 	return m.recorder
 }
 
-// AddProcessIndicator mocks base method.
-func (m *MockIndexer) AddProcessIndicator(processindicator *storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessIndicator", processindicator)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProcessIndicator indicates an expected call of AddProcessIndicator.
-func (mr *MockIndexerMockRecorder) AddProcessIndicator(processindicator interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicator", reflect.TypeOf((*MockIndexer)(nil).AddProcessIndicator), processindicator)
-}
-
-// AddProcessIndicators mocks base method.
-func (m *MockIndexer) AddProcessIndicators(processindicators []*storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessIndicators", processindicators)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProcessIndicators indicates an expected call of AddProcessIndicators.
-func (mr *MockIndexerMockRecorder) AddProcessIndicators(processindicators interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicators", reflect.TypeOf((*MockIndexer)(nil).AddProcessIndicators), processindicators)
-}
-
 // Count mocks base method.
-func (m *MockIndexer) Count(q *v1.Query, opts ...blevesearch.SearchOption) (int, error) {
+func (m *MockIndexer) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockIndexerMockRecorder) Count(q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), varargs...)
-}
-
-// DeleteProcessIndicator mocks base method.
-func (m *MockIndexer) DeleteProcessIndicator(id string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProcessIndicator", id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteProcessIndicator indicates an expected call of DeleteProcessIndicator.
-func (mr *MockIndexerMockRecorder) DeleteProcessIndicator(id interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessIndicator", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessIndicator), id)
-}
-
-// DeleteProcessIndicators mocks base method.
-func (m *MockIndexer) DeleteProcessIndicators(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteProcessIndicators", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteProcessIndicators indicates an expected call of DeleteProcessIndicators.
-func (mr *MockIndexerMockRecorder) DeleteProcessIndicators(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProcessIndicators", reflect.TypeOf((*MockIndexer)(nil).DeleteProcessIndicators), ids)
-}
-
-// MarkInitialIndexingComplete mocks base method.
-func (m *MockIndexer) MarkInitialIndexingComplete() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete.
-func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
-}
-
-// NeedsInitialIndexing mocks base method.
-func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing.
-func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), ctx, q)
 }
 
 // Search mocks base method.
-func (m *MockIndexer) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{q}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Search", varargs...)
+	ret := m.ctrl.Call(m, "Search", ctx, q)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockIndexerMockRecorder) Search(q interface{}, opts ...interface{}) *gomock.Call {
+func (mr *MockIndexerMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{q}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), ctx, q)
 }

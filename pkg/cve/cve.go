@@ -1,6 +1,16 @@
 package cve
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
 
 var clusterCVETypes = map[storage.CVE_CVEType]struct{}{
 	storage.CVE_ISTIO_CVE:     {},
@@ -41,4 +51,22 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 		}
 	}
 	return false
+}
+
+// ID creates a CVE ID from the given cve id (and os if postgres is enabled).
+func ID(cve, os string) string {
+	return pgSearch.IDFromPks([]string{cve, os})
+}
+
+// IDToParts return the CVE ID parts—cve and operating system.
+func IDToParts(id string) (string, string) {
+	parts := pgSearch.IDToParts(id)
+	if len(parts) > 2 {
+		utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
+		return "", ""
+	}
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return parts[0], ""
 }

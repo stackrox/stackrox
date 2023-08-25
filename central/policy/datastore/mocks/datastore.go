@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -67,20 +67,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// DeletePolicyCategory mocks base method.
-func (m *MockDataStore) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeletePolicyCategory", ctx, request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeletePolicyCategory indicates an expected call of DeletePolicyCategory.
-func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(ctx, request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).DeletePolicyCategory), ctx, request)
-}
-
 // GetAllPolicies mocks base method.
 func (m *MockDataStore) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
@@ -97,14 +83,13 @@ func (mr *MockDataStoreMockRecorder) GetAllPolicies(ctx interface{}) *gomock.Cal
 }
 
 // GetPolicies mocks base method.
-func (m *MockDataStore) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error) {
+func (m *MockDataStore) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPolicies", ctx, ids)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].([]int)
-	ret2, _ := ret[2].([]error)
-	ret3, _ := ret[3].(error)
-	return ret0, ret1, ret2, ret3
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetPolicies indicates an expected call of GetPolicies.
@@ -173,20 +158,6 @@ func (m *MockDataStore) RemovePolicy(ctx context.Context, id string) error {
 func (mr *MockDataStoreMockRecorder) RemovePolicy(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), ctx, id)
-}
-
-// RenamePolicyCategory mocks base method.
-func (m *MockDataStore) RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RenamePolicyCategory", ctx, request)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RenamePolicyCategory indicates an expected call of RenamePolicyCategory.
-func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(ctx, request interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), ctx, request)
 }
 
 // Search mocks base method.

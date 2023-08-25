@@ -12,7 +12,7 @@ const (
 	// lowestMigrationNumber is the lowest migration number that currently exists
 	// we will periodically bump this number and delete outdated migrations once enough releases
 	// have passed and we are sure customers are not on those releases
-	lowestMigrationNumber = 44
+	lowestMigrationNumber = 55
 )
 
 func TestValidityOfRegistry(t *testing.T) {

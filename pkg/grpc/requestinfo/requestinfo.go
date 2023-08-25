@@ -5,16 +5,13 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/base64"
 	"encoding/gob"
 	"fmt"
-	"math/big"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -22,8 +19,9 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -50,15 +48,6 @@ var (
 
 type requestInfoKey struct{}
 
-// CertInfo is the relevant (for us) fraction of a X.509 certificate that can safely be serialized.
-type CertInfo struct {
-	Subject             pkix.Name
-	NotBefore, NotAfter time.Time
-	EmailAddresses      []string
-	SerialNumber        *big.Int
-	CertFingerprint     string
-}
-
 // HTTPRequest provides a gob encodeable way of passing HTTP Request parameters
 type HTTPRequest struct {
 	Method  string
@@ -69,10 +58,10 @@ type HTTPRequest struct {
 // RequestInfo provides a unified view of a GRPC request, regardless of whether it came through the HTTP/1.1 gateway
 // or directly via GRPC.
 // When forwarding requests in the HTTP/1.1 gateway, there are two independent mechanisms to defend against spoofing:
-// - Only requests originating from a local loopback address are permitted to carry a RequestInfo in their metadata.
-// - RequestInfos are timestamped, and expire after 200ms. The timestamp is derived from a monotonic clock reading;
-//   to prevent attackers from fabricating a RequestInfo with timestamp (in case a monotonic clock reading should ever
-//   leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
+//   - Only requests originating from a local loopback address are permitted to carry a RequestInfo in their metadata.
+//   - RequestInfos are timestamped, and expire after 200ms. The timestamp is derived from a monotonic clock reading;
+//     to prevent attackers from fabricating a RequestInfo with timestamp (in case a monotonic clock reading should ever
+//     leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
 type RequestInfo struct {
 	// Hostname is the hostname specified in a request, as intended by the client. This is derived from the
 	// `X-Forwarded-Host` (if present) or the `Hostname` header for a HTTP/1.1 request, and from the TLS ServerName
@@ -90,7 +79,7 @@ type RequestInfo struct {
 	// Importantly, chain[0] should be the same, and equal to the leaf cert presented by the client, for all VerifiedChains.
 	// (If clients present multiple certs, the first one that matches the basic server constraints are picked, and the others
 	// are all ignored.)
-	VerifiedChains [][]CertInfo
+	VerifiedChains [][]mtls.CertInfo
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
 	// these are only the headers that make it to the GRPC handler.
 	Metadata metadata.MD
@@ -99,8 +88,8 @@ type RequestInfo struct {
 }
 
 // ExtractCertInfo gets the cert info from a cert.
-func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
-	return CertInfo{
+func ExtractCertInfo(fullCert *x509.Certificate) mtls.CertInfo {
+	return mtls.CertInfo{
 		Subject:         fullCert.Subject,
 		NotBefore:       fullCert.NotBefore,
 		NotAfter:        fullCert.NotAfter,
@@ -111,8 +100,8 @@ func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 }
 
 // ExtractCertInfoChains gets the cert infos from a cert chain
-func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
-	result := make([][]CertInfo, 0, len(fullCertChains))
+func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]mtls.CertInfo {
+	result := make([][]mtls.CertInfo, 0, len(fullCertChains))
 	for _, chain := range fullCertChains {
 		// This should never happen in practice based on the Go standard library's documented guarantees,
 		// but we're being extra defensive here.
@@ -122,7 +111,7 @@ func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 			}
 			continue
 		}
-		subjectChain := make([]CertInfo, 0, len(chain))
+		subjectChain := make([]mtls.CertInfo, 0, len(chain))
 		for _, cert := range chain {
 			subjectChain = append(subjectChain, ExtractCertInfo(cert))
 		}
@@ -154,7 +143,7 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 
 // AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1 gateway, and returns it in serialized
 // form as GRPC metadata.
-func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
+func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 	tlsState := req.TLS
 
 	var ri RequestInfo
@@ -240,7 +229,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		// This should only happen if someone is trying to spoof a RequestInfo. Log, but don't return any details in the
 		// error message.
 		log.Errorf("error extracting RequestInfo from incoming metadata: %v", err)
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "malformed request")
+		return nil, errors.Wrap(errox.InvalidArgs, "malformed request")
 	}
 
 	tlsState := tlsStateFromContext(ctx)

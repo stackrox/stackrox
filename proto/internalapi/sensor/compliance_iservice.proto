@@ -6,6 +6,7 @@ import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
+import "storage/node.proto";
 
 package sensor;
 
@@ -23,8 +24,9 @@ message MsgFromCompliance {
     string node = 1;
 
     oneof msg {
-        compliance.ComplianceReturn return       = 2;
-        AuditEvents                 audit_events = 3;
+        compliance.ComplianceReturn            return = 2;
+        AuditEvents                      audit_events = 3;
+        storage.NodeInventory          node_inventory = 4;
     }
 }
 
@@ -49,15 +51,23 @@ message MsgToCompliance {
             StopRequest  stop_req  = 2;
         }
     }
+    message NodeInventoryACK {
+        Action  action = 1;
+        enum Action {
+            ACK = 0;
+            NACK = 1;
+        }
+    }
 
     oneof msg {
         ScrapeConfig              config                       = 1;
         TriggerRun                trigger                      = 2;
         AuditLogCollectionRequest audit_log_collection_request = 3;
+        NodeInventoryACK          ack                          = 4;
     }
 }
 
-// A Sensor service that allows Compliance to report node scrapes results and audit events.
+// A Sensor service that allows Compliance to report node scrapes results, audit events, and node scans v2.
 service ComplianceService {
     rpc Communicate (stream MsgFromCompliance) returns (stream MsgToCompliance);
 }

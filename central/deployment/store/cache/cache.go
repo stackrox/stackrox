@@ -1,212 +1,166 @@
 package cache
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/size"
-	"github.com/stackrox/rox/pkg/sizeboundedcache"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	maxCachedDeploymentSize = 50 * size.KB  // if it's larger than 50KB then we aren't going to cache it
-	maxCacheSize            = 200 * size.MB // 200 MB
-)
-
-var (
-	log = logging.LoggerForModule()
-)
-
-type deploymentTombstone struct{}
-
-func sizeFunc(k, v interface{}) int64 {
-	if dep, ok := v.(*storage.Deployment); ok {
-		return int64(len(k.(string)) + dep.Size())
-	}
-	return int64(len(k.(string)))
-}
-
-// NewCachedStore returns an deployment store implementation that caches deployments
-func NewCachedStore(store store.Store) store.Store {
-	// This is a size based cache, where we use LRU to determine which of the oldest elements should
-	// be removed to allow a new element
-	cache, err := sizeboundedcache.New(maxCacheSize, maxCachedDeploymentSize, sizeFunc)
-	utils.CrashOnError(err)
-
-	return &cachedStore{
+// NewCachedStore caches the deployment store
+func NewCachedStore(store store.Store) (store.Store, error) {
+	impl := &cacheImpl{
 		store: store,
-		cache: cache,
+
+		cache: make(map[string]*storage.Deployment),
 	}
+
+	if err := impl.populate(); err != nil {
+		return nil, err
+	}
+	return impl, nil
 }
 
-// This cached store implementation relies on the usage of the Deployment store so this may not be easily portable
-// to other sections of the code.
-type cachedStore struct {
+type cacheImpl struct {
 	store store.Store
-	cache sizeboundedcache.Cache
+
+	cache map[string]*storage.Deployment
+	lock  sync.RWMutex
 }
 
-func (c *cachedStore) testAndSetCacheEntry(id string, deployment *storage.Deployment) {
-	c.cache.TestAndSet(id, deployment, func(_ interface{}, exists bool) bool {
-		return !exists
-	})
-	c.updateStats()
-}
+func (c *cacheImpl) GetListDeployment(_ context.Context, id string) (*storage.ListDeployment, bool, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-func (c *cachedStore) getCachedDeployment(id string) (*storage.Deployment, bool, error) {
-	entry, ok := c.cache.Get(id)
+	deployment, ok := c.cache[id]
 	if !ok {
 		return nil, false, nil
 	}
-	if _, ok := entry.(*deploymentTombstone); ok {
-		return nil, true, nil
-	}
-	return entry.(*storage.Deployment).Clone(), true, nil
+	return types.ConvertDeploymentToDeploymentList(deployment), true, nil
 }
 
-func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
-	deployment, hadEntry, err := c.getCachedDeployment(id)
-	if err != nil {
-		return nil, false, err
-	}
-	if hadEntry {
-		if deployment == nil {
-			return nil, false, nil
-		}
-		return types.ConvertDeploymentToDeploymentList(deployment), true, nil
-	}
-	return c.store.ListDeployment(id)
-}
+func (c *cacheImpl) GetManyListDeployments(_ context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
-	var deployments []*storage.ListDeployment
+	listDeployments := make([]*storage.ListDeployment, 0, len(ids))
 	var missingIndices []int
 	for i, id := range ids {
-		fullDeployment, hadEntry, err := c.getCachedDeployment(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if hadEntry {
-			deploymentStoreCacheHits.Inc()
-			// Tombstone entry existed
-			if fullDeployment == nil {
-				missingIndices = append(missingIndices, i)
-			} else {
-				deployments = append(deployments, types.ConvertDeploymentToDeploymentList(fullDeployment))
-			}
-			continue
-		}
-		deploymentStoreCacheMisses.Inc()
-
-		listDeployment, exists, err := c.store.ListDeployment(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
+		deployment, ok := c.cache[id]
+		if !ok {
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-		deployments = append(deployments, listDeployment)
+		listDeployments = append(listDeployments, types.ConvertDeploymentToDeploymentList(deployment))
+	}
+	return listDeployments, missingIndices, nil
+}
+
+func (c *cacheImpl) addNoLock(deployment *storage.Deployment) {
+	c.cache[deployment.GetId()] = deployment
+}
+
+func (c *cacheImpl) populate() error {
+	// Locking isn't strictly necessary
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	ctx := sac.WithAllAccess(context.Background())
+	return c.store.Walk(ctx, func(d *storage.Deployment) error {
+		c.cache[d.GetId()] = d
+		return nil
+	})
+}
+
+func (c *cacheImpl) GetIDs(_ context.Context) ([]string, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	ids := make([]string, 0, len(c.cache))
+	for id := range c.cache {
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func (c *cacheImpl) Count(_ context.Context) (int, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	return len(c.cache), nil
+}
+
+func (c *cacheImpl) Exists(_ context.Context, id string) (bool, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	_, ok := c.cache[id]
+	return ok, nil
+}
+
+func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Deployment, bool, error) {
+	c.lock.RLock()
+	deployment, ok := c.cache[id]
+	c.lock.RUnlock()
+	if !ok {
+		return nil, false, nil
+	}
+	return deployment.Clone(), true, nil
+}
+
+func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Deployment, []int, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	deployments := make([]*storage.Deployment, 0, len(ids))
+	var missingIndices []int
+	for i, id := range ids {
+		deployment, ok := c.cache[id]
+		if !ok {
+			missingIndices = append(missingIndices, i)
+			continue
+		}
+		deployments = append(deployments, deployment.Clone())
 	}
 	return deployments, missingIndices, nil
 }
 
-func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error) {
-	deployment, entryExists, err := c.getCachedDeployment(id)
-	if err != nil {
-		return nil, false, err
-	}
-	if entryExists {
-		deploymentStoreCacheHits.Inc()
-		// if entry is a tombstone entry, return that the deployment doesn't exist
-		return deployment, deployment != nil, nil
-	}
+func (c *cacheImpl) Walk(_ context.Context, fn func(deployment *storage.Deployment) error) error {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-	deploymentStoreCacheMisses.Inc()
-	deployment, exists, err := c.store.GetDeployment(id)
-	if err != nil || !exists {
-		return nil, exists, err
-	}
-
-	c.testAndSetCacheEntry(id, deployment)
-	return deployment, true, nil
-}
-
-func (c *cachedStore) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
-	var deployments []*storage.Deployment
-	var missingIndices []int
-	for i, id := range ids {
-		deployment, hadEntry, err := c.getCachedDeployment(id)
-		if err != nil {
-			return nil, nil, err
+	for _, deployment := range c.cache {
+		if err := fn(deployment.Clone()); err != nil {
+			return err
 		}
-		if hadEntry {
-			deploymentStoreCacheHits.Inc()
-			// Tombstone entry existed
-			if deployment == nil {
-				missingIndices = append(missingIndices, i)
-			} else {
-				deployments = append(deployments, deployment)
-			}
-			continue
-		}
-		deploymentStoreCacheMisses.Inc()
-
-		deployment, exists, err := c.store.GetDeployment(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
-			missingIndices = append(missingIndices, i)
-			continue
-		}
-
-		// Add the deployment to the cache
-		c.testAndSetCacheEntry(id, deployment)
-		deployments = append(deployments, deployment)
 	}
-	return deployments, missingIndices, nil
-}
-
-func (c *cachedStore) CountDeployments() (int, error) {
-	return c.store.CountDeployments()
-}
-
-func (c *cachedStore) UpsertDeployment(deployment *storage.Deployment) error {
-	if err := c.store.UpsertDeployment(deployment); err != nil {
-		return err
-	}
-
-	c.cache.Add(deployment.GetId(), deployment)
-	c.updateStats()
 	return nil
 }
 
-func (c *cachedStore) RemoveDeployment(id string) error {
-	if err := c.store.RemoveDeployment(id); err != nil {
+func (c *cacheImpl) Upsert(ctx context.Context, deployment *storage.Deployment) error {
+	if err := c.store.Upsert(ctx, deployment); err != nil {
 		return err
 	}
-	c.cache.Add(id, &deploymentTombstone{})
-	c.updateStats()
+	clonedDeployment := deployment.Clone()
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.addNoLock(clonedDeployment)
 	return nil
 }
 
-func (c *cachedStore) updateStats() {
-	objects, size := c.cache.Stats()
-	deploymentStoreCacheObjects.Set(float64(objects))
-	deploymentStoreCacheSize.Set(float64(size))
-}
+func (c *cacheImpl) Delete(ctx context.Context, id string) error {
+	if err := c.store.Delete(ctx, id); err != nil {
+		return err
+	}
 
-func (c *cachedStore) GetDeploymentIDs() ([]string, error) {
-	return c.store.GetDeploymentIDs()
-}
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
-func (c *cachedStore) AckKeysIndexed(keys ...string) error {
-	return c.store.AckKeysIndexed(keys...)
-}
+	delete(c.cache, id)
 
-func (c *cachedStore) GetKeysToIndex() ([]string, error) {
-	return c.store.GetKeysToIndex()
+	return nil
 }

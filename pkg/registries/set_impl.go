@@ -53,19 +53,37 @@ func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
+	reg := e.getRegistryByImageNoLock(image)
+	if reg != nil {
+		return reg.Config()
+	}
+
+	return nil
+}
+
+// GetRegistryByImage returns the registry that contains the input image.
+func (e *setImpl) GetRegistryByImage(image *storage.Image) types.Registry {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	return e.getRegistryByImageNoLock(image)
+}
+
+func (e *setImpl) getRegistryByImageNoLock(image *storage.Image) types.Registry {
 	if sourceID := image.GetMetadata().GetDataSource().GetId(); sourceID != "" {
 		reg, ok := e.integrations[sourceID]
 		if ok {
-			return reg.Config()
+			return reg
 		}
 	}
 
 	integrations := e.getSortedRegistriesNoLock()
 	for _, i := range integrations {
 		if i.Match(image.GetName()) {
-			return i.Config()
+			return i
 		}
 	}
+
 	return nil
 }
 
@@ -100,6 +118,7 @@ func (e *setImpl) Clear() {
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
+// This does not update a pre-existing registry, instead it replaces it with a new one.
 func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	i, err := e.factory.CreateRegistry(integration)
 	if err != nil {

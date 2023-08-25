@@ -5,18 +5,16 @@
         "permissions": {
             "name": "Admin",
             "resourceToAccess": {
-                "AuthProvider": "READ_WRITE_ACCESS",
-                "Cluster": "READ_WRITE_ACCESS",
-                "User": "READ_WRITE_ACCESS"
+                "Access": "READ_WRITE_ACCESS",
+                "Cluster": "READ_WRITE_ACCESS"
             }
         },
         "roles": [
             {
                 "name": "Admin",
                 "resourceToAccess": {
-                    "AuthProvider": "READ_WRITE_ACCESS",
-                    "Cluster": "READ_WRITE_ACCESS",
-                    "User": "READ_WRITE_ACCESS"
+                    "Access": "READ_WRITE_ACCESS",
+                    "Cluster": "READ_WRITE_ACCESS"
                 }
             }
         ],

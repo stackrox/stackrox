@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -33,6 +34,8 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 	if err != nil {
 		return nil, err
 	}
+
+	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	return resolver.wrapListAlerts(
 		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
 }
@@ -47,11 +50,11 @@ func (resolver *Resolver) ViolationCount(ctx context.Context, args RawQuery) (in
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Violation returns the violation with the requested ID
@@ -72,7 +75,7 @@ func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Aler
 	return alert
 }
 
-func (resolver *alertResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *alertResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
@@ -109,8 +112,8 @@ func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bo
 		return false, err
 	}
 
-	alertsQuery := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
-		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+	alertsQuery := search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
 		ProtoQuery()
 
 	q, err := search.AddAsConjunction(q, alertsQuery)

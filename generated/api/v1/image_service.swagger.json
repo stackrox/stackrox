@@ -61,6 +61,25 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -113,6 +132,25 @@
           },
           {
             "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -215,6 +253,12 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "stripDescription",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -269,6 +313,25 @@
           },
           {
             "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -408,20 +471,6 @@
       ],
       "default": "UI_NONE"
     },
-    "EmbeddedImageScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -449,7 +498,7 @@
       "properties": {
         "typeUrl": {
           "type": "string",
-          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
         },
         "value": {
           "type": "string",
@@ -457,7 +506,7 @@
           "description": "Must be a valid serialized protocol buffer of the above specified type."
         }
       },
-      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
     "runtimeError": {
       "type": "object",
@@ -479,6 +528,216 @@
           }
         }
       }
+    },
+    "scannerV1Components": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "osComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1OSComponent"
+          }
+        },
+        "rhelComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1RHELComponent"
+          }
+        },
+        "languageComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1LanguageComponent"
+          }
+        },
+        "rhelContentSets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scannerV1Executable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "requiredFeatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1FeatureNameVersion"
+          }
+        }
+      }
+    },
+    "scannerV1FeatureNameVersion": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1JavaComponent": {
+      "type": "object",
+      "properties": {
+        "implementationVersion": {
+          "type": "string"
+        },
+        "mavenVersion": {
+          "type": "string"
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "specificationVersion": {
+          "type": "string"
+        },
+        "bundleName": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1LanguageComponent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/scannerV1SourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "java": {
+          "$ref": "#/definitions/scannerV1JavaComponent"
+        },
+        "python": {
+          "$ref": "#/definitions/scannerV1PythonComponent"
+        },
+        "addedBy": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1Note": {
+      "type": "string",
+      "enum": [
+        "OS_CVES_UNAVAILABLE",
+        "OS_CVES_STALE",
+        "LANGUAGE_CVES_UNAVAILABLE",
+        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
+      ],
+      "default": "OS_CVES_UNAVAILABLE"
+    },
+    "scannerV1OSComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1PythonComponent": {
+      "type": "object",
+      "properties": {
+        "homepage": {
+          "type": "string"
+        },
+        "authorEmail": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "scannerV1RHELComponent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "cpes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "addedBy": {
+          "type": "string"
+        },
+        "executables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scannerV1Executable"
+          }
+        }
+      }
+    },
+    "scannerV1SourceType": {
+      "type": "string",
+      "enum": [
+        "UNSET_SOURCE_TYPE",
+        "JAVA",
+        "PYTHON",
+        "NPM",
+        "GEM",
+        "DOTNETCORERUNTIME"
+      ],
+      "default": "UNSET_SOURCE_TYPE"
     },
     "storageCVSSV2": {
       "type": "object",
@@ -639,22 +898,30 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "These tags maintain backwards compatibility with the previously embedded storage.Image"
+          "type": "string"
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
         },
         "notPullable": {
           "type": "boolean"
+        },
+        "isClusterLocal": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 12"
     },
     "storageCosignSignature": {
       "type": "object",
       "properties": {
-        "rawSignatureBase64Enc": {
-          "type": "string"
+        "rawSignature": {
+          "type": "string",
+          "format": "byte"
+        },
+        "signaturePayload": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
@@ -665,6 +932,9 @@
           "type": "string"
         },
         "name": {
+          "type": "string"
+        },
+        "mirror": {
           "type": "string"
         }
       }
@@ -716,12 +986,26 @@
         "executables": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/EmbeddedImageScanComponentExecutable"
+            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         }
       },
       "title": "Next Tag: 13"
+    },
+    "storageEmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "storageEmbeddedVulnerability": {
       "type": "object",
@@ -783,17 +1067,12 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the system."
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the image."
-        },
-        "firstNodeOccurrence": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Time when the CVE was first seen in the node."
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
@@ -820,6 +1099,13 @@
         },
         "name": {
           "$ref": "#/definitions/storageImageName"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageImageName"
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
@@ -852,6 +1138,9 @@
         "notPullable": {
           "type": "boolean"
         },
+        "isClusterLocal": {
+          "type": "boolean"
+        },
         "priority": {
           "type": "string",
           "format": "int64"
@@ -871,7 +1160,7 @@
           }
         }
       },
-      "title": "Next Tag: 17"
+      "title": "Next Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",
@@ -945,13 +1234,18 @@
       "type": "string",
       "enum": [
         "MISSING_METADATA",
-        "MISSING_SCAN_DATA"
+        "MISSING_SCAN_DATA",
+        "MISSING_SIGNATURE",
+        "MISSING_SIGNATURE_VERIFICATION_DATA"
       ],
       "default": "MISSING_METADATA"
     },
     "storageImageScan": {
       "type": "object",
       "properties": {
+        "scannerVersion": {
+          "type": "string"
+        },
         "scanTime": {
           "type": "string",
           "format": "date-time"
@@ -975,7 +1269,8 @@
             "$ref": "#/definitions/storageImageScanNote"
           }
         }
-      }
+      },
+      "title": "Next tag: 7"
     },
     "storageImageScanNote": {
       "type": "string",
@@ -998,6 +1293,10 @@
           "items": {
             "$ref": "#/definitions/storageSignature"
           }
+        },
+        "fetched": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -1025,9 +1324,20 @@
         },
         "status": {
           "$ref": "#/definitions/storageImageSignatureVerificationResultStatus"
+        },
+        "description": {
+          "type": "string",
+          "description": "description is set in the case of an error with the specific error's message. Otherwise, this will not be set."
+        },
+        "verifiedImageReferences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The full image names that are verified by this specific signature integration ID."
         }
       },
-      "title": "Next Tag: 4"
+      "title": "Next Tag: 6"
     },
     "storageImageSignatureVerificationResultStatus": {
       "type": "string",
@@ -1036,10 +1346,11 @@
         "VERIFIED",
         "FAILED_VERIFICATION",
         "INVALID_SIGNATURE_ALGO",
-        "CORRUPTED_SIGNATURE"
+        "CORRUPTED_SIGNATURE",
+        "GENERIC_ERROR"
       ],
       "default": "UNSET",
-      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding."
+      "description": "Status represents the status of the result.\n\n - VERIFIED: VERIFIED is set when the signature's verification was successful.\n - FAILED_VERIFICATION: FAILED_VERIFICATION is set when the signature's verification failed.\n - INVALID_SIGNATURE_ALGO: INVALID_SIGNATURE_ALGO is set when the signature's algorithm is invalid and unsupported.\n - CORRUPTED_SIGNATURE: CORRUPTED_SIGNATURE is set when the raw signature is corrupted, i.e. wrong base64 encoding.\n - GENERIC_ERROR: GENERIC_ERROR is set when an error occurred during verification that cannot be associated with a specific\nstatus."
     },
     "storageLicense": {
       "type": "object",
@@ -1196,6 +1507,27 @@
         }
       }
     },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
     "v1CountImagesResponse": {
       "type": "object",
       "properties": {
@@ -1255,6 +1587,13 @@
         },
         "sortOption": {
           "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },
@@ -1269,6 +1608,23 @@
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"\u003cfield name\u003e:\u003cvalue,value,...\u003e+\u003cfield name\u003e:\u003cvalue, value,...\u003e+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v1ScanImageInternalRequestSource": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "v1ScanImageInternalResponse": {
       "type": "object",
@@ -1300,6 +1656,10 @@
         },
         "reversed": {
           "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     },

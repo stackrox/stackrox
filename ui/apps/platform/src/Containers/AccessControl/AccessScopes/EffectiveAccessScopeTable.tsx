@@ -243,10 +243,16 @@ function EffectiveAccessScopeTable({
             <Flex className="pf-u-pt-sm pf-u-pb-sm pf-u-pl-lg">
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
-                        <span className="pf-u-font-size-sm pf-u-text-nowrap">Cluster filter:</span>
+                        <label
+                            htmlFor="Cluster_filter"
+                            className="pf-u-font-size-sm pf-u-text-nowrap"
+                        >
+                            Cluster filter:
+                        </label>
                     </FlexItem>
                     <FlexItem>
                         <TextInput
+                            id="Cluster_filter"
                             value={clusterNameFilter}
                             onChange={setClusterNameFilter}
                             className="pf-m-small"
@@ -258,12 +264,16 @@ function EffectiveAccessScopeTable({
                 </Flex>
                 <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-u-pb-sm">
                     <FlexItem>
-                        <span className="pf-u-font-size-sm pf-u-text-nowrap">
+                        <label
+                            htmlFor="Namespace_filter"
+                            className="pf-u-font-size-sm pf-u-text-nowrap"
+                        >
                             Namespace filter:
-                        </span>
+                        </label>
                     </FlexItem>
                     <FlexItem>
                         <TextInput
+                            id="Namespace_filter"
                             value={namespaceNameFilter}
                             onChange={setNamespaceNameFilter}
                             className="pf-m-small"

@@ -1,0 +1,40 @@
+defs: |
+  def container(obj; name):
+  obj.spec.template.spec.containers[] | select(.name == name);
+
+  def envVars(obj; container):
+  container(obj; container) | .env | from_entries;
+values:
+  central:
+    persistence:
+      none: true
+  monitoring:
+    openshift:
+      enabled: false
+
+server:
+  availableSchemas:
+  - openshift-4.1.0
+tests:
+- name: OpenShift Auth should be disabled by default
+  expect: |
+    envVars(.deployments.central; "central")| assertThat(has("ROX_ENABLE_OPENSHIFT_AUTH") == false)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirectreference.main" | assertThat(. == null)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirecturi.main" | assertThat(. == null)
+
+- name: OpenShift Auth should be enabled when OpenShift 4 is detected
+  set:
+    env.openshift: 4
+  expect: |
+    envVars(.deployments.central; "central")| assertThat(has("ROX_ENABLE_OPENSHIFT_AUTH") == true)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirectreference.main" | assertThat(. != null)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirecturi.main" | assertThat(. != null)
+
+- name: OpenShift Auth should be disabled when env.managedServices is set irrespective of OpenShift 4 being set
+  set:
+    env.openshift: 4
+    env.managedServices: true
+  expect: |
+    envVars(.deployments.central; "central")| assertThat(has("ROX_ENABLE_OPENSHIFT_AUTH") == false)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirectreference.main" | assertThat(. == null)
+    .serviceaccounts.central.metadata.annotations | ."serviceaccounts.openshift.io/oauth-redirecturi.main" | assertThat(. == null)

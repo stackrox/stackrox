@@ -16,7 +16,7 @@ image:
     collector: [< required "" .CollectorRegistry >]
 
 config:
-  collectionMethod: [< default "KERNEL_MODULE" .CollectionMethod >]
+  collectionMethod: [< default "EBPF" .CollectionMethod >]
   admissionControl:
     createService: [< default false .AdmissionController >]
     listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
@@ -25,7 +25,7 @@ config:
     enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default false .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
-    timeout: [< default 3 .TimeoutSeconds >]
+    timeout: [< default 20 .TimeoutSeconds >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]

@@ -1,47 +1,41 @@
-import withAuth from '../helpers/basicAuth';
-import { selectors as userPageSelectors, url as userPageUrl } from '../constants/UserPage';
-import { url as dashboardURL } from '../constants/DashboardPage';
+import { selectors as userPageSelectors } from '../constants/UserPage';
 import { selectors as topNavSelectors } from '../constants/TopNavigation';
-import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth';
+import { getRegExpForTitleWithBranding } from '../helpers/title';
+import {
+    visitUserProfile,
+    visitUserProfileFromTopNav,
+    visitUserProfileWithStaticResponseForAuthStatus,
+} from '../helpers/user';
 
-describe('User Info', () => {
+const staticResponseForAdminRoleWithoutProvider = {
+    fixture: 'auth/adminUserStatus',
+};
+
+const staticResponseForMultiRolesWithOidcProvider = {
+    fixture: 'auth/multiRolesUserStatus',
+};
+
+const staticResponseForAdminRoleWithBasicProvider = {
+    fixture: 'auth/basicAuthAdminStatus',
+};
+
+describe('User Profile', () => {
     withAuth();
 
-    function interceptWithoutMockUser() {
-        cy.intercept('GET', api.auth.authStatus).as('authStatus');
-    }
-
-    function interceptWithMockAdminUser() {
-        cy.intercept('GET', api.auth.authStatus, {
-            fixture: 'auth/adminUserStatus',
-        }).as('authStatus');
-    }
-
-    function interceptWithMockMultiRolesUser() {
-        cy.intercept('GET', api.auth.authStatus, {
-            fixture: 'auth/multiRolesUserStatus',
-        }).as('authStatus');
-    }
-
-    function interceptWithMockBasicUser() {
-        cy.intercept('GET', api.auth.authStatus, {
-            fixture: 'auth/basicAuthAdminStatus',
-        }).as('authStatus');
-    }
-
-    describe('User Info in Top Navigation', () => {
+    describe('in top navigation', () => {
         it('should show initials in the user avatar', () => {
-            interceptWithMockAdminUser();
-            cy.visit(dashboardURL);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForAdminRoleWithoutProvider
+            );
 
             cy.get(topNavSelectors.menuButton).should('contain.text', 'AI');
         });
 
         it('should show name, email and a single role', () => {
-            interceptWithMockAdminUser();
-            cy.visit(dashboardURL);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForAdminRoleWithoutProvider
+            );
 
             cy.get(topNavSelectors.menuButton).click();
 
@@ -54,9 +48,9 @@ describe('User Info', () => {
         });
 
         it('should show username when name is missed, and all roles', () => {
-            interceptWithMockMultiRolesUser();
-            cy.visit(dashboardURL);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForMultiRolesWithOidcProvider
+            );
 
             cy.get(topNavSelectors.menuButton).click();
 
@@ -73,32 +67,30 @@ describe('User Info', () => {
         });
 
         it('should navigate to the user page', () => {
-            interceptWithoutMockUser();
-            cy.visit(dashboardURL);
-            cy.wait('@authStatus');
-
-            cy.get(topNavSelectors.menuButton).click();
-            cy.get(topNavSelectors.menuList.userName).click();
-            cy.wait('@authStatus');
-
-            cy.location('pathname').should('eq', userPageUrl);
+            visitUserProfileFromTopNav();
         });
     });
 
-    describe('User Page', () => {
+    describe('page', () => {
+        it('should have title', () => {
+            visitUserProfile();
+
+            cy.title().should('match', getRegExpForTitleWithBranding('User Profile'));
+        });
+
         it('should show user name and email', () => {
-            interceptWithMockAdminUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForAdminRoleWithoutProvider
+            );
 
             cy.get(userPageSelectors.userName).should('contain.text', 'Artificial Intelligence');
             cy.get(userPageSelectors.userEmail).should('contain.text', 'ai@stackrox.com');
         });
 
         it('should show all the user roles', () => {
-            interceptWithMockMultiRolesUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForMultiRolesWithOidcProvider
+            );
 
             cy.get(`${userPageSelectors.userRoleNames}:contains("Admin")`);
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`);
@@ -106,21 +98,19 @@ describe('User Info', () => {
         });
 
         it('should show correct permissions for the role', () => {
-            interceptWithMockMultiRolesUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForMultiRolesWithOidcProvider
+            );
 
             cy.get(`${userPageSelectors.userRoleNames}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
-            cy.get(userPageSelectors.permissionsTable.allowedIcon('User', 'read'));
-            cy.get(userPageSelectors.permissionsTable.forbiddenIcon('User', 'write'));
+            cy.get(userPageSelectors.permissionsTable.allowedIcon('Access', 'read'));
+            cy.get(userPageSelectors.permissionsTable.forbiddenIcon('Access', 'write'));
         });
 
         it('should properly highlight current nav item', () => {
-            interceptWithoutMockUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfile();
 
             const { userPermissionsForRoles, userRoleNames } = userPageSelectors;
             const userRoleAdmin = `${userRoleNames}:contains("Admin")`;
@@ -142,33 +132,33 @@ describe('User Info', () => {
         });
 
         it('should display aggregated permissions for basic auth user', () => {
-            interceptWithMockBasicUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForAdminRoleWithBasicProvider
+            );
 
             cy.get(userPageSelectors.userName).should('contain.text', 'admin');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'Basic');
 
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'read'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'write'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
         });
 
         it('should show correct aggregated permissions for multi roles user', () => {
-            interceptWithMockMultiRolesUser();
-            cy.visit(userPageUrl);
-            cy.wait('@authStatus');
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForMultiRolesWithOidcProvider
+            );
 
             cy.get(userPageSelectors.userName).should('contain.text', 'ai');
             cy.get(userPageSelectors.authProviderName).should('contain.text', 'My OIDC Provider');
 
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'read'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'read'))
                 .should('contain.text', 'Admin')
                 .should('contain.text', 'Analyst');
-            cy.get(userPageSelectors.permissionsTable.permissionColumn('User', 'write'))
+            cy.get(userPageSelectors.permissionsTable.permissionColumn('Access', 'write'))
                 .should('contain.text', 'Admin')
                 .should('not.contain.text', 'Analyst');
         });

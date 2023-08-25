@@ -28,13 +28,13 @@ var (
 // If you see this test failing, the right course of action is most likely to extend the OrderedBundleResourceTypes
 // list. However, if you are convinced that one of the reported GVKs is a false positive, you have the following
 // options:
-// - If the GVK in question can never appear in YAML bundle mode, use meta-templating ([< if not .KubectlOutput >])
-//   blocks to exclude the resources from the chart.
-// - If the GVK is reported due to the approximative nature of the GVK from chart extractor, often small reformatting
-//   of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
-//   start of the object definition.
-// - If the false positive cannot be suppressed using the above methods, you can add it to the above
-//   ExcludedFromCompletenessTest list to explicitly suppress it in this test.
+//   - If the GVK in question can never appear in YAML bundle mode, use meta-templating ([< if not .KubectlOutput >])
+//     blocks to exclude the resources from the chart.
+//   - If the GVK is reported due to the approximative nature of the GVK from chart extractor, often small reformatting
+//     of the chart can be helpful. It's often sufficient to include an extra "---" document separator before the
+//     start of the object definition.
+//   - If the false positive cannot be suppressed using the above methods, you can add it to the above
+//     ExcludedFromCompletenessTest list to explicitly suppress it in this test.
 func TestBundleResourcesComplete(t *testing.T) {
 	featureFlags := make(map[string]interface{})
 	for _, ff := range features.Flags {
@@ -48,13 +48,18 @@ func TestBundleResourcesComplete(t *testing.T) {
 		},
 		MainRegistry:             "stackrox.io", // TODO: custom?
 		ImageRemote:              "main",
+		ImageTag:                 "3.0.49.0",
 		CollectorRegistry:        "collector.stackrox.io",
 		CollectorFullImageRemote: "collector",
 		CollectorSlimImageRemote: "collector",
 		CollectorSlimImageTag:    "1.2.3-slim",
 		CollectorFullImageTag:    "1.2.3",
+		ScannerImageRemote:       "scanner",
+		ScannerSlimImageRemote:   "scanner",
+		ScannerImageTag:          "1.2.3",
 		ChartRepo: defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
+			URL:     "http://mirror.openshift.com/pub/rhacs/charts",
+			IconURL: "https://raw.githubusercontent.com/stackrox/stackrox/master/image/templates/helm/shared/assets/Red_Hat-Hat_icon.png",
 		},
 		KubectlOutput: true,
 		FeatureFlags:  featureFlags,

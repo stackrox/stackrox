@@ -1,497 +1,445 @@
-import { selectors, systemHealthUrl } from '../../constants/SystemHealth';
-import { clusters as clustersApi } from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
-import navigationSelectors from '../../selectors/navigation';
+import { interactAndVisitClusters } from '../clusters/Clusters.helpers';
+import { setClock, visitSystemHealth } from '../../helpers/systemHealth';
 
-describe('System Health Clusters local deployment', () => {
+function visitSystemHealthWithClustersFixtureFilteredByNames(fixturePath, clusterNames) {
+    cy.fixture(fixturePath).then(({ clusters }) => {
+        visitSystemHealth({
+            clusters: {
+                body: { clusters: clusters.filter(({ name }) => clusterNames.includes(name)) },
+            },
+        });
+    });
+}
+
+function getCardHeaderDescendantSelector(cardTitle, descendant) {
+    return `.pf-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
+}
+
+const clustersLink = 'a:contains("View clusters")';
+
+describe('System Health Clusters without fixture', () => {
     withAuth();
 
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list).as('GetClusters');
-    });
+    it('should go to Clusters via click link in Cluster status card', () => {
+        visitSystemHealth();
 
-    it('should go from left navigation to Dashboard and have widgets', () => {
-        cy.visit('/');
-        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
-        cy.wait('@GetClusters');
-
-        cy.get('[data-testid="header-text"]').should('have.text', 'System Health');
-
-        Object.entries({
-            clusterOverview: 'Cluster Overview',
-            collectorStatus: 'Collector Status',
-            sensorStatus: 'Sensor Status',
-            sensorUpgrade: 'Sensor Upgrade',
-            credentialExpiration: 'Credential Expiration',
-        }).forEach(([key, text]) => {
-            cy.get(`${selectors.clusters.widgets[key]} [data-testid="widget-header"]`).should(
-                'have.text',
-                text
-            );
+        interactAndVisitClusters(() => {
+            cy.get(getCardHeaderDescendantSelector('Cluster status', clustersLink)).click();
         });
     });
 
-    it('should go from Dashboard to Clusters via click View All', () => {
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
+    it('should go to Clusters via click link in Sensor upgrade card', () => {
+        visitSystemHealth();
 
-        cy.get(selectors.clusters.viewAllButton).click();
-        cy.wait('@GetClusters');
+        interactAndVisitClusters(() => {
+            cy.get(getCardHeaderDescendantSelector('Sensor upgrade', clustersLink)).click();
+        });
+    });
 
-        cy.get('[data-testid="header-text"]').should('have.text', 'Clusters');
-        cy.get('[data-testid="clusters-side-panel-header"]').should('not.exist');
+    it('should go to Clusters via click link in Credential expiration card', () => {
+        visitSystemHealth();
+
+        interactAndVisitClusters(() => {
+            cy.get(getCardHeaderDescendantSelector('Credential expiration', clustersLink)).click();
+        });
     });
 });
 
-describe('System Health Clusters health fixture', () => {
+function getCardBodyDescendantSelector(cardTitle, descendant) {
+    return `.pf-c-card:has('h2:contains("${cardTitle}")') .pf-c-card__body ${descendant}`;
+}
+
+function getTableCellContainsSelector(cardTitle, nthRow, dataLabel, contents) {
+    return getCardBodyDescendantSelector(
+        cardTitle,
+        `tbody tr:nth-child(${nthRow}) td[data-label="${dataLabel}"]:contains("${contents}")`
+    );
+}
+
+// For comparison to `lastContact` and `sensorCertExpiry` in clusters fixture.
+const currentDatetime = new Date('2020-08-31T13:01:00Z');
+
+const clustersFixturePath = 'clusters/health.json';
+
+describe('System Health Clusters with fixture', () => {
     withAuth();
 
-    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
-        selectors.clusters;
-
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
-
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
-
-        cy.intercept('GET', clustersApi.list, {
-            fixture: 'clusters/health.json',
-        }).as('GetClusters');
-
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
-    });
-
-    it('should have counts in Cluster Overview', () => {
-        const widgetSelector = selectors.clusters.widgets.clusterOverview;
-
-        Object.entries({
-            HEALTHY: {
-                label: 'Healthy',
-                count: 2,
-            },
-            UNINITIALIZED: {
-                label: 'Uninitialized',
-                count: 1,
-            },
-            DEGRADED: {
-                label: 'Degraded',
-                count: 2,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 2,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-        });
-    });
-
-    it('should have counts in Collector Status', () => {
-        const widgetSelector = selectors.clusters.widgets.collectorStatus;
-        let total = 0;
-
-        Object.entries({
-            DEGRADED: {
-                label: 'Degraded',
-                count: 1,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
+    it('should have phrase in Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
         });
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        const cardTitle = 'Cluster status';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 unhealthy")'));
     });
 
-    it('should have counts in Sensor Status', () => {
-        const widgetSelector = selectors.clusters.widgets.sensorStatus;
-        let total = 0;
-
-        Object.entries({
-            DEGRADED: {
-                label: 'Degraded',
-                count: 1,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
+    it('should have counts in row 1 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
         });
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        const cardTitle = 'Cluster status';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
-    it('should have counts in Sensor Updgrade', () => {
-        const widgetSelector = selectors.clusters.widgets.sensorUpgrade;
-        let total = 0;
-
-        Object.entries({
-            download: {
-                label: 'Upgrade available',
-                count: 2,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
+    it('should have counts in row 2 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
         });
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        const cardTitle = 'Cluster status';
+        const nthRow = 2; // Clusters because of sensor
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 4));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 
-    it('should have counts in Credential Expiration', () => {
-        const widgetSelector = selectors.clusters.widgets.credentialExpiration;
-        let total = 0;
-
-        Object.entries({
-            DEGRADED: {
-                label: 'Expiring in < 30 days',
-                count: 1,
-            },
-            UNHEALTHY: {
-                label: 'Expiring in < 7 days',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
+    it('should have counts in row 3 of Cluster status', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
         });
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        const cardTitle = 'Cluster status';
+        const nthRow = 3; // Clusters because of collector
+
+        // Unavailable from fixture has inconsistent value from first 2 tests.
+        // Okay for testing, but unlikely to occur in reality.
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 3));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
+    });
+
+    it('should have counts in row 4 of Cluster status', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Cluster status';
+        const nthRow = 4; // Clusters because of admission control
+
+        // Unavailable from fixture has inconsistent value from first 2 tests.
+        // Okay for testing, but unlikely to occur in reality.
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 4));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
+    });
+
+    it('should have phrase in Sensor upgrade card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Sensor upgrade';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("2 degraded")'));
+    });
+
+    it('should have counts in Sensor upgrade card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Sensor upgrade';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Up to date', 4));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Failed', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Out of date', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
+    });
+
+    it('should have phrase in Credential expiration card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Credential expiration';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 unhealthy")'));
+    });
+
+    it('should have counts in Credential expiration card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealth({
+            clusters: { fixture: clustersFixturePath },
+        });
+
+        const cardTitle = 'Credential expiration';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 4));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
     });
 });
 
 describe('System Health Clusters subset 3', () => {
     withAuth();
 
-    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
-        selectors.clusters;
+    const clusterNames = ['eta-7', 'kappa-kilogramme-10', 'lambda-liverpool-11'];
 
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+    it('should have phrase in Cluster status card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-    let clusters;
+        const cardTitle = 'Cluster status';
 
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return eta-7, kappa-kilogramme-10, lambda-liverpool-11.
-            clusters = response.clusters.slice(2, 5);
-        });
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 unhealthy")'));
     });
 
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+    it('should have counts in row 1 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
+        const cardTitle = 'Cluster status';
+        const nthRow = 1; // Clusters
 
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
-    it('should have counts in Cluster Overview', () => {
-        const widgetSelector = selectors.clusters.widgets.clusterOverview;
+    it('should have counts in row 2 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            HEALTHY: {
-                label: 'Healthy',
-                count: 0,
-            },
-            UNINITIALIZED: {
-                label: 'Uninitialized',
-                count: 0,
-            },
-            DEGRADED: {
-                label: 'Degraded',
-                count: 2,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-        });
+        const cardTitle = 'Cluster status';
+        const nthRow = 2; // Clusters because of sensor
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
-    it('should have problem counts in Collector Status', () => {
-        const widgetSelector = selectors.clusters.widgets.collectorStatus;
-        let total = 0;
+    it('should have counts in row 3 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            DEGRADED: {
-                label: 'Degraded',
-                count: 1,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
-        });
+        const cardTitle = 'Cluster status';
+        const nthRow = 3; // Clusters because of collector
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
-    it('should have problem count in Sensor Status', () => {
-        const widgetSelector = selectors.clusters.widgets.sensorStatus;
-        let total = 0;
+    it('should have counts in row 4 of Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            DEGRADED: {
-                label: 'Degraded',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
-        });
+        const cardTitle = 'Cluster status';
+        const nthRow = 4; // Clusters because of admission control
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 
-    it('should have healthy count in Sensor Updgrade', () => {
-        const widgetSelector = selectors.clusters.widgets.sensorUpgrade;
-        const nbsp = '\u00A0';
+    it('should have not have counts in Sensor upgrade card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        cy.get(`${widgetSelector} ${healthyText}`).should(
-            'have.text',
-            `3 clusters up${nbsp}to${nbsp}date with${nbsp}central`
-        );
-        cy.get(`${widgetSelector} ${healthySubtext}`).should(
-            'have.text',
-            'All sensor versions match central version'
-        );
-        cy.get(`${widgetSelector} ${categoryLabel}`).should('not.exist');
-        cy.get(`${widgetSelector} ${categoryCount}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('not.exist');
+        const cardTitle = 'Sensor upgrade';
+
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("3 healthy")'));
+        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
-    it('should have problem count in Credential Expiration', () => {
-        const widgetSelector = selectors.clusters.widgets.credentialExpiration;
-        let total = 0;
+    it('should have phrase in Credential expiration card header', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            DEGRADED: {
-                label: 'Expiring in < 30 days',
-                count: 1,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-            total += count;
-        });
+        const cardTitle = 'Credential expiration';
 
-        cy.get(`${widgetSelector} ${healthyText}`).should('not.exist');
-        cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-        cy.get(`${widgetSelector} ${problemCount}`).should('have.text', String(total));
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 degraded")'));
+    });
+
+    it('should have counts in Credential expiration card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Credential expiration';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
     });
 });
 
 describe('System Health Clusters subset 1 Uninitialized', () => {
     withAuth();
 
-    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
-        selectors.clusters;
+    const clusterNames = ['alpha-amsterdam-1']; // which has Uninitialized status
 
-    let clusters;
+    // No phrases in card header if no unhealthy, degraded, nor healthy.
 
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return only alpha-amsterdam-1, which has Uninitialized status.
-            clusters = response.clusters.slice(0, 1);
-        });
+    it('should have counts in row 1 of Cluster status card', () => {
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Cluster status';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
+    it('should have counts in row 2 of Cluster status card', () => {
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
+        const cardTitle = 'Cluster status';
+        const nthRow = 2; // Clusters because of sensor
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
-    it('should have counts in Cluster Overview', () => {
-        const widgetSelector = selectors.clusters.widgets.clusterOverview;
+    it('should have counts in row 3 of Cluster status card', () => {
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            HEALTHY: {
-                label: 'Healthy',
-                count: 0,
-            },
-            UNINITIALIZED: {
-                label: 'Uninitialized',
-                count: 1,
-            },
-            DEGRADED: {
-                label: 'Degraded',
-                count: 0,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 0,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-        });
+        const cardTitle = 'Cluster status';
+        const nthRow = 3; // Clusters because of collector
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 
-    it('should have 0 clusters in other widgets', () => {
-        const { collectorStatus, credentialExpiration, sensorStatus, sensorUpgrade } =
-            selectors.clusters.widgets;
-        [collectorStatus, sensorStatus, sensorUpgrade, credentialExpiration].forEach(
-            (widgetSelector) => {
-                cy.get(`${widgetSelector} ${healthyText}`).should('contain', '0 clusters');
-                cy.get(`${widgetSelector} ${healthySubtext}`).should('not.exist');
-                cy.get(`${widgetSelector} ${categoryLabel}`).should('not.exist');
-                cy.get(`${widgetSelector} ${categoryCount}`).should('not.exist');
-                cy.get(`${widgetSelector} ${problemCount}`).should('not.exist');
-            }
-        );
+    it('should have counts in row 4 of Cluster status card', () => {
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Cluster status';
+        const nthRow = 4; // Clusters because of admission control
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
+    });
+
+    it('should have counts in Sensor upgrade card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Sensor upgrade';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Up to date', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Failed', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Out of date', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
+    });
+
+    it('should have counts in Credential expiration card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
+
+        const cardTitle = 'Credential expiration';
+        const nthRow = 1; // Clusters
+
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));
     });
 });
 
 describe('System Health Clusters subset 1 Healthy', () => {
     withAuth();
 
-    const { categoryCount, categoryLabel, healthySubtext, healthyText, problemCount } =
-        selectors.clusters;
+    const clusterNames = ['nu-york-13']; // which has Healthy status
 
-    // For comparison to `sensorCertExpiry` in clusters fixture.
-    const currentDatetime = new Date('2020-08-31T13:01:00Z');
+    it('should have not have counts in Cluster status card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-    let clusters;
+        const cardTitle = 'Cluster status';
 
-    before(() => {
-        cy.fixture('clusters/health.json').then((response) => {
-            // Return only nu-york-13, which has Healthy status.
-            clusters = response.clusters.slice(6, 7);
-        });
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
+        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
-    beforeEach(() => {
-        cy.clock(currentDatetime.getTime(), ['Date', 'setInterval']);
+    it('should have not have counts in Sensor upgrade card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        cy.intercept('GET', clustersApi.list, {
-            body: { clusters },
-        }).as('GetClusters');
+        const cardTitle = 'Sensor upgrade';
 
-        cy.visit(systemHealthUrl);
-        cy.wait('@GetClusters');
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
+        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 
-    it('should have counts in Cluster Overview', () => {
-        const widgetSelector = selectors.clusters.widgets.clusterOverview;
+    it('should have not have counts in Credential expiration card', () => {
+        setClock(currentDatetime); // call before visit
+        visitSystemHealthWithClustersFixtureFilteredByNames(clustersFixturePath, clusterNames);
 
-        Object.entries({
-            HEALTHY: {
-                label: 'Healthy',
-                count: 1,
-            },
-            UNINITIALIZED: {
-                label: 'Uninitialized',
-                count: 0,
-            },
-            DEGRADED: {
-                label: 'Degraded',
-                count: 0,
-            },
-            UNHEALTHY: {
-                label: 'Unhealthy',
-                count: 0,
-            },
-        }).forEach(([key, { label, count }]) => {
-            const itemSelector = `${widgetSelector} [data-testid="${key}"]`;
-            cy.get(`${itemSelector} ${categoryLabel}`).should('have.text', label);
-            cy.get(`${itemSelector} ${categoryCount}`).should('have.text', String(count));
-        });
-    });
+        const cardTitle = 'Credential expiration';
 
-    it('should have 1 cluster in other widgets', () => {
-        Object.entries({
-            collectorStatus: 'All expected collector pods are ready',
-            sensorStatus: 'All sensors last contacted less than 1 minute ago',
-            sensorUpgrade: 'All sensor versions match central version',
-            credentialExpiration: 'There are no credential expirations this month',
-        }).forEach(([key, subtext]) => {
-            const widgetSelector = selectors.clusters.widgets[key];
-            cy.get(`${widgetSelector} ${healthyText}`).should('contain', '1 cluster');
-            cy.get(`${widgetSelector} ${healthySubtext}`).should('have.text', subtext);
-            cy.get(`${widgetSelector} ${categoryLabel}`).should('not.exist');
-            cy.get(`${widgetSelector} ${categoryCount}`).should('not.exist');
-            cy.get(`${widgetSelector} ${problemCount}`).should('not.exist');
-        });
-    });
-});
-
-describe('System Health, PatternFly version', () => {
-    withAuth();
-
-    before(function beforeHook() {
-        if (!hasFeatureFlag('ROX_SYSTEM_HEALTH_PF')) {
-            this.skip();
-        }
-    });
-
-    beforeEach(() => {
-        cy.intercept('GET', clustersApi.list).as('GetClusters');
-    });
-
-    it('should go from left navigation to Dashboard and have widgets', () => {
-        cy.visit('/');
-        cy.get(`${navigationSelectors.navExpandable}:contains("Platform Configuration")`).click();
-        cy.get(`${navigationSelectors.nestedNavLinks}:contains("System Health")`).click();
-
-        // TODO: remove this direct access shim after the PF version of the page is the default
-        cy.visit('/main/system-health-pf');
-
-        cy.wait('@GetClusters');
-
-        cy.get('h1:contains("System Health")');
+        cy.get(getCardHeaderDescendantSelector(cardTitle, 'div:contains("1 healthy")'));
+        cy.get(getCardBodyDescendantSelector(cardTitle, 'table')).should('not.exist');
     });
 });

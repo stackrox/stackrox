@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/cve/converter"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -108,9 +108,12 @@ func (m *CVEMatcher) IsClusterAffectedByK8sOrIstioCVE(ctx context.Context, clust
 
 // IsClusterAffectedByK8sCVE returns true if cluster is affected by k8s cve
 func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
+	if cve.Configurations == nil {
+		return false, nil
+	}
 	clusterVersion := cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
 	for _, node := range cve.Configurations.Nodes {
-		matched, err := m.MatchVersions(node, clusterVersion, converter.K8s)
+		matched, err := m.MatchVersions(node, clusterVersion, utils.K8s)
 		// If we could determine CVE impact from one of cpe string, we skip logging error
 		if matched {
 			return true, nil
@@ -124,21 +127,16 @@ func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *stora
 
 // IsClusterAffectedByIstioCVE returns true if cluster is affected by istio cve
 func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
-	ok, err := m.isIstioControlPlaneRunning(ctx)
+	versions, err := m.GetValidIstioVersions(ctx, cluster)
 	if err != nil {
 		return false, err
 	}
-	if !ok {
+	if len(versions) == 0 {
 		return false, nil
-	}
-
-	versions, err := m.getAllIstioComponentsVersionsInCluster(ctx, cluster)
-	if err != nil {
-		return false, err
 	}
 	for _, node := range cve.Configurations.Nodes {
 		for _, version := range versions.AsSlice() {
-			matched, err := m.MatchVersions(node, version, converter.Istio)
+			matched, err := m.MatchVersions(node, version, utils.Istio)
 			// If we could determine CVE impact from one of cpe string, we skip logging error
 			if matched {
 				return true, nil
@@ -149,6 +147,24 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 		}
 	}
 	return false, nil
+}
+
+// GetValidIstioVersions returns all running Istio versions in the given cluster, if there are any, and nil otherwise
+func (m *CVEMatcher) GetValidIstioVersions(ctx context.Context, cluster *storage.Cluster) (set.StringSet, error) {
+	ok, err := m.isIstioControlPlaneRunning(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+
+	versions, err := m.getAllIstioComponentsVersionsInCluster(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return versions, nil
 }
 
 func (m *CVEMatcher) isIstioControlPlaneRunning(ctx context.Context) (bool, error) {
@@ -178,7 +194,7 @@ func (m *CVEMatcher) getAllIstioComponentsVersionsInCluster(ctx context.Context,
 }
 
 // MatchVersions returns if versionToMatch is affected by cve according to its config node.
-func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct converter.CVEType) (bool, error) {
+func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct utils.CVEType) (bool, error) {
 	if node.Operator != "OR" {
 		return false, nil
 	}
@@ -323,7 +339,7 @@ func getBaseVersion(v *version.Version) (*version.Version, error) {
 	return bv, nil
 }
 
-func getVersionAndUpdateFromCpe(cpe string, ct converter.CVEType) string {
+func getVersionAndUpdateFromCpe(cpe string, ct utils.CVEType) string {
 	if ok := strings.HasPrefix(cpe, "cpe:2.3:a:"); !ok {
 		return ""
 	}
@@ -332,16 +348,16 @@ func getVersionAndUpdateFromCpe(cpe string, ct converter.CVEType) string {
 	if len(ss) != 13 {
 		return ""
 	}
-	if ct != converter.K8s && ct != converter.Istio && ct != converter.OpenShift {
+	if ct != utils.K8s && ct != utils.Istio && ct != utils.OpenShift {
 		return ""
 	}
-	if ct == converter.K8s && (ss[3] != "kubernetes" || ss[4] != "kubernetes") {
+	if ct == utils.K8s && (ss[3] != "kubernetes" || ss[4] != "kubernetes") {
 		return ""
 	}
-	if ct == converter.Istio && (ss[3] != "istio" || ss[4] != "istio") {
+	if ct == utils.Istio && (ss[3] != "istio" || ss[4] != "istio") {
 		return ""
 	}
-	if ct == converter.OpenShift && (ss[3] != "openshift" || ss[4] != "openshift") {
+	if ct == utils.OpenShift && (ss[3] != "openshift" || ss[4] != "openshift") {
 		return ""
 	}
 

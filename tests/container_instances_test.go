@@ -33,7 +33,7 @@ func TestContainerInstances(testT *testing.T) {
 		pod := pods[0]
 
 		// Retry to ensure all processes start up.
-		testutils.Retry(retryT, 20, 3*time.Second, func(retryEventsT testutils.T) {
+		testutils.Retry(retryT, 20, 4*time.Second, func(retryEventsT testutils.T) {
 			// Get the container groups.
 			groupedContainers := getGroupedContainerInstances(retryEventsT, string(pod.ID))
 
@@ -46,12 +46,12 @@ func TestContainerInstances(testT *testing.T) {
 			// Expecting 1 process: nginx
 			require.Len(retryEventsT, groupedContainers[0].Events, 1)
 			firstContainerEvents :=
-				sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name }).([]string)
+				sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
 			require.ElementsMatch(retryEventsT, firstContainerEvents, []string{"/usr/sbin/nginx"})
 			// Expecting 3 processes: sh, date, sleep
 			require.Len(retryEventsT, groupedContainers[1].Events, 3)
 			secondContainerEvents :=
-				sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name }).([]string)
+				sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
 			require.ElementsMatch(retryEventsT, secondContainerEvents, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
 
 			// Verify the container group's timestamp is no later than the timestamp of the first event

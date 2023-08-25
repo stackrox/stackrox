@@ -6,10 +6,10 @@ import * as yup from 'yup';
 import { ClusterInitBundle } from 'services/ClustersService';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import NotFoundMessage from 'Components/NotFoundMessage';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
-import FormCancelButton from '../../FormCancelButton';
-import FormSaveButton from '../../FormSaveButton';
 import ClusterInitBundleFormMessageAlert, {
     ClusterInitBundleFormResponseMessage,
 } from './ClusterInitBundleFormMessageAlert';
@@ -73,6 +73,17 @@ function ClusterInitBundleIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onSubmit(e) {
+        // Press enter to submit as client-rendered form instead of server-rendered form.
+        e.preventDefault();
+
+        if (!dirty || !isValid || isSubmitting || isTesting) {
+            return; // because Generate button is disabled
+        }
+
+        onSave();
+    }
+
     // The edit flow doesn't make sense for Cluster Init Bundles so we'll show an empty state message here
     if (isEditing) {
         return (
@@ -92,7 +103,7 @@ function ClusterInitBundleIntegrationForm({
                 {isViewingDetails && initialValues ? (
                     <ClusterInitBundleDetails meta={initialValues} />
                 ) : (
-                    <Form isWidthLimited>
+                    <Form isWidthLimited onSubmit={onSubmit}>
                         <FormLabelGroup
                             label="Cluster init bundle name"
                             isRequired
@@ -117,6 +128,7 @@ function ClusterInitBundleIntegrationForm({
                 (!isGenerated ? (
                     <IntegrationFormActions>
                         <FormSaveButton
+                            type="submit"
                             onSave={onSave}
                             isSubmitting={isSubmitting}
                             isTesting={isTesting}

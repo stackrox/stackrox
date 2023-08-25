@@ -81,7 +81,7 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 @test "checks them all" {
     run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
-    [ "${#lines[@]}" -eq 6 ]
+    [ "${#lines[@]}" -eq 7 ]
 }
 
 @test "this kernel flavor restart is OK" {

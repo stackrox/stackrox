@@ -6,19 +6,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	v1 "k8s.io/api/core/v1"
 )
 
 type nodeDispatcher struct {
-	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
-	nodeStore       *nodeStore
+	nodeStore       nodeStore
 	endpointManager endpointManager
 }
 
-func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager endpointManager) *nodeDispatcher {
+func newNodeDispatcher(deploymentStore *DeploymentStore, nodeStore nodeStore, endpointManager endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
-		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		nodeStore:       nodeStore,
 		endpointManager: endpointManager,
@@ -37,10 +36,11 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 	return roxTaints
 }
 
-func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	node := obj.(*v1.Node)
+	protoNode := buildNode(node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		h.nodeStore.removeNode(node)
+		h.nodeStore.removeNode(protoNode)
 		h.endpointManager.OnNodeUpdateOrRemove()
 	} else {
 		wrap := wrapNode(node)
@@ -55,6 +55,16 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		}
 	}
 
+	return component.NewEvent(&central.SensorEvent{
+		Id:     protoNode.GetId(),
+		Action: action,
+		Resource: &central.SensorEvent_Node{
+			Node: protoNode,
+		},
+	})
+}
+
+func buildNode(node *v1.Node) *storage.Node {
 	var internal, external []string
 
 	for _, entry := range node.Status.Addresses {
@@ -67,7 +77,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	}
 
 	creation := node.CreationTimestamp.ProtoTime()
-	nodeResource := &storage.Node{
+	return &storage.Node{
 		Id:                      string(node.UID),
 		Name:                    node.Name,
 		Taints:                  convertTaints(node.Spec.Taints),
@@ -79,21 +89,10 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 		ContainerRuntime:        k8sutil.ParseContainerRuntimeVersion(node.Status.NodeInfo.ContainerRuntimeVersion),
 		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
 		KernelVersion:           node.Status.NodeInfo.KernelVersion,
+		OperatingSystem:         node.Status.NodeInfo.OperatingSystem,
 		OsImage:                 node.Status.NodeInfo.OSImage,
 		KubeletVersion:          node.Status.NodeInfo.KubeletVersion,
 		KubeProxyVersion:        node.Status.NodeInfo.KubeProxyVersion,
 		K8SUpdated:              types.TimestampNow(),
 	}
-
-	events := []*central.SensorEvent{
-		{
-			Id:     nodeResource.GetId(),
-			Action: action,
-			Resource: &central.SensorEvent_Node{
-				Node: nodeResource,
-			},
-		},
-	}
-
-	return events
 }

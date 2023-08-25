@@ -26,7 +26,7 @@ func init() {
 // Roles returns GraphQL resolvers for all roles
 func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Roles")
-	err := readRoles(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 // Role returns a GraphQL resolver for the matching role, if it exists
 func (resolver *Resolver) Role(ctx context.Context, args struct{ *graphql.ID }) (*roleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Role")
-	err := readRoles(ctx)
+	err := readAccess(ctx)
 	if err != nil {
 		return nil, err
 	}

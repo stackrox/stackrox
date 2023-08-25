@@ -1,0 +1,84 @@
+.network-graph.pf-c-page__main-section.no-padding {
+    --pf-c-page__main-section--PaddingTop: 0;
+    --pf-c-page__main-section--PaddingBottom: 0;
+    --pf-c-page__main-section--PaddingLeft: 0;
+    --pf-c-page__main-section--PaddingRight: 0;
+}
+
+.pf-topology-resizable-side-bar {
+    /* we use the page header min height thrice to account for: nav header + page header + secondary header */
+    /* @TODO: Consider a more future-proof way of doing this. See https://github.com/stackrox/stackrox/pull/3703#discussion_r1014292340 */
+    height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 3));
+}
+
+/* Similar to above, but for the simulation drawer when the secondary header is not visible */
+.cluster-simulation-drawer-panel {
+    height: calc(100vh - (var(--pf-c-page__header--MinHeight) * 2));
+}
+
+/* simple solution to prevent user from making sidebar too narrow */
+.pf-c-drawer__panel.pf-m-resizable {
+    min-width: 430px !important;
+}
+
+.pf-c-drawer__panel .pf-c-dropdown__toggle.pf-m-plain:not(.pf-m-text) {
+    padding-left: var(--pf-global--spacer--xs) !important;
+    padding-right: var(--pf-global--spacer--xs) !important;
+}
+
+/* Create a stacking context that is higher than the context for the network-graph-toolbar component
+   that is rendered below this toolbar, so that the hierarchy dropdowns will render above everything when open */
+.network-graph-selector-bar {
+    z-index: 350;
+}
+
+/* Create a stacking context that is higher than the context for the react-topology component
+   that is rendered below the toolbar, so that the search filter dropdown will render above the graph when open */
+[data-testid="network-graph-toolbar"] {
+    z-index: 250;
+}
+[data-testid="network-graph-toolbar"] .pf-search-shim,
+[data-testid="network-graph-toolbar"] .react-select__menu {
+    z-index: 250;
+}
+
+/* Restore grayed out background for disabled checkboxes */
+.network-graph-selector-bar .pf-c-check__input:disabled {
+    background-color: rgba(59, 59, 59, 0.3);
+}
+
+div#topology-resize-panel table td {
+    vertical-align: inherit;
+}
+
+.pf-topology-node-faded {
+    opacity: 30%;
+}
+
+[data-id="External to cluster"] .pf-topology__group__label .pf-topology__node__label__background {
+    fill: #6853ae;
+}
+
+.related-namespace.pf-m-selected text, .related-namespace.pf-m-selected .pf-topology__node__action-icon svg {
+    fill: #ffffff;
+}
+
+.related-namespace path.pf-topology__group__background {
+    stroke-dasharray: 5;
+}
+
+.pf-c-check__input {
+    height: 16px;
+    width: 16px;
+}
+
+.namespace-select .pf-c-select__menu,
+.deployment-select .pf-c-select__menu {
+    padding-top: 0;
+    padding-bottom: 0;
+    min-width: 220px;
+}
+
+.pf-topology__node__label__badge {
+    fill: #ffffff;
+}

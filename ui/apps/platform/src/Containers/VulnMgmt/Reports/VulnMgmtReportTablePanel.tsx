@@ -1,10 +1,11 @@
 import React, { useState, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
 import {
     Alert,
     AlertGroup,
     AlertVariant,
+    Bullseye,
     Button,
+    ButtonVariant,
     DropdownItem,
     Divider,
     PageSection,
@@ -14,20 +15,25 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import usePermissions from 'hooks/usePermissions';
 import useTableSelection from 'hooks/useTableSelection';
-import { TableColumn, SortDirection } from 'hooks/useTableSort';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
+import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterResults from 'Components/PatternFly/SearchFilterResults';
 import TableCell from 'Components/PatternFly/TableCell';
 import { vulnManagementReportsPath } from 'routePaths';
 import { ReportConfiguration } from 'types/report.proto';
 import { SearchFilter } from 'types/search';
+import { TableColumn, SortDirection } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { getWriteAccessForReport } from './VulnMgmtReport.utils';
 import ReportsSearchFilter from './Components/ReportsSearchFilter';
 
 export type ActionItem = {
@@ -56,7 +62,7 @@ type ReportingTablePanelProps = {
     activeSortDirection: SortDirection;
     setActiveSortDirection: (dir) => void;
     columns: TableColumn[];
-    onRunReports: (reportIds: string[]) => Promise<any>; // return value not used
+    onRunReports: (reportIds: string[]) => Promise<void[]>; // return value not used
     onDeleteReports: (reportIds: string[]) => Promise<void>; // return value not used
 };
 
@@ -80,12 +86,8 @@ function ReportingTablePanel({
     const [alerts, setAlerts] = useState<AlertInfo[]>([]);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
-    const hasAccessScopeWriteAccess = hasReadWriteAccess('AuthProvider');
-    const hasNotifierIntegrationWriteAccess = hasReadWriteAccess('Notifier');
-    const canWriteReports =
-        hasVulnReportWriteAccess && hasAccessScopeWriteAccess && hasNotifierIntegrationWriteAccess;
+    const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
     const {
         selected,
@@ -263,25 +265,26 @@ function ReportingTablePanel({
                                 }}
                             />
                             {columns.map(({ Header, sortField }, idx) => {
-                                const sortParams = sortField
-                                    ? {
-                                          sort: {
-                                              sortBy: {
-                                                  index: activeSortIndex,
-                                                  direction: activeSortDirection,
+                                const sortParams =
+                                    sortField && Boolean(reports.length)
+                                        ? {
+                                              sort: {
+                                                  sortBy: {
+                                                      index: activeSortIndex,
+                                                      direction: activeSortDirection,
+                                                  },
+                                                  onSort,
+                                                  columnIndex: idx,
                                               },
-                                              onSort,
-                                              columnIndex: idx,
-                                          },
-                                      }
-                                    : {};
+                                          }
+                                        : {};
                                 return (
                                     <Th key={Header} modifier="wrap" {...sortParams}>
                                         {Header}
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            <Td />
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -289,19 +292,14 @@ function ReportingTablePanel({
                             const { id } = report;
 
                             const actionItems: ActionItem[] = [];
-                            if (canWriteReports) {
+                            if (hasWriteAccessForReport) {
                                 actionItems.push({
                                     title: (
                                         <Button
-                                            variant="link"
+                                            variant={ButtonVariant.link}
                                             isInline
-                                            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-                                            component={(props) => (
-                                                <Link
-                                                    {...props}
-                                                    to={`${vulnManagementReportsPath}/${id}?action=edit`}
-                                                />
-                                            )}
+                                            component={LinkShim}
+                                            href={`${vulnManagementReportsPath}/${id}?action=edit`}
                                         >
                                             Edit report
                                         </Button>
@@ -350,6 +348,21 @@ function ReportingTablePanel({
                                 </Tr>
                             );
                         })}
+                        {!reports.length && (
+                            <Tr>
+                                <Td colSpan={8}>
+                                    <Bullseye>
+                                        <EmptyStateTemplate
+                                            title="No results found"
+                                            headingLevel="h2"
+                                            icon={SearchIcon}
+                                        >
+                                            Try clearing some of the filters
+                                        </EmptyStateTemplate>
+                                    </Bullseye>
+                                </Td>
+                            </Tr>
+                        )}
                     </Tbody>
                 </TableComposable>
             </PageSection>

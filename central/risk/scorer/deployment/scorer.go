@@ -4,13 +4,10 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/processbaseline/evaluator"
-	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
-	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers/deployment"
 	"github.com/stackrox/rox/central/risk/multipliers/image"
-	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -25,14 +22,14 @@ type Scorer interface {
 }
 
 // NewDeploymentScorer returns a new scorer that encompasses multipliers for evaluating deployment risk
-func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, allowlistEvaluator evaluator.Evaluator) Scorer {
-	scoreImpl := &deploymentScorerImpl{
+func NewDeploymentScorer(alertSearcher getters.AlertSearcher, allowlistEvaluator evaluator.Evaluator) Scorer {
+	return &deploymentScorerImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
 		// with how important a specific multiplier is.
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []deployment.Multiplier{
-			deployment.NewViolations(alertGetter),
+			deployment.NewViolations(alertSearcher),
 			deployment.NewProcessBaselines(allowlistEvaluator),
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
 			deployment.NewServiceConfig(),
@@ -40,11 +37,8 @@ func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataSt
 			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
 			deployment.NewImageMultiplier(image.ComponentCountHeading),
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
-			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
 		},
 	}
-
-	return scoreImpl
 }
 
 type deploymentScorerImpl struct {

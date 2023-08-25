@@ -1,0 +1,252 @@
+{{- include "srox.init" . -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "deployment" "central") | nindent 4 }}
+    app: central
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central
+        {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+        {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}
+    spec:
+      {{- if ._rox.central._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.central._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.central.affinity | nindent 8 }}
+      serviceAccountName: central
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      containers:
+      - name: central
+        image: {{ ._rox.central.image.fullRef | quote }}
+        command:
+          - /stackrox/central-entrypoint.sh
+        ports:
+          {{- toYaml ._rox.central._containerPorts | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /v1/ping
+            port: 8443
+        resources:
+          {{- ._rox.central._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
+        env:
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: ROX_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
+        {{- if ._rox.central.telemetry.storage.endpoint }}
+        - name: ROX_TELEMETRY_ENDPOINT
+          value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
+        {{- end }}
+        {{- if ._rox.central.telemetry.storage.key }}
+        - name: ROX_TELEMETRY_STORAGE_KEY_V1
+          value: {{ ._rox.central.telemetry.storage.key | quote }}
+        {{- end }}
+        {{- end }}
+        - name: ROX_OFFLINE_MODE
+          value: {{ ._rox.env.offlineMode | quote }}
+        {{- if and (eq ._rox.env.openshift 4) (not ._rox.env.managedServices) }}
+        - name: ROX_ENABLE_OPENSHIFT_AUTH
+          value: "true"
+        {{- end }}
+        {{- if ._rox.env.openshift }}
+        - name: ROX_OPENSHIFT
+          value: "true"
+        {{- end }}
+        {{- if ._rox.env.managedServices }}
+        - name: ROX_MANAGED_CENTRAL
+          value: "true"
+        - name: ROX_ENABLE_CENTRAL_DIAGNOSTICS
+          value: "false"
+        - name: ROX_ENABLE_KERNEL_PACKAGE_UPLOAD
+          value: "false"
+        - name: ROX_TENANT_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['rhacs.redhat.com/tenant']
+        {{- end }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        {{- end }}
+        - name: ROX_INSTALL_METHOD
+          value: {{ ._rox.env.installMethod | quote }}
+        {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: central-tmp-volume
+          mountPath: /tmp
+        - name: central-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: central-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-default-tls-cert-volume
+          mountPath: /run/secrets/stackrox.io/default-tls-cert/
+          readOnly: true
+        - name: central-htpasswd-volume
+          mountPath: /run/secrets/stackrox.io/htpasswd/
+          readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: central-license-volume
+          mountPath: /run/secrets/stackrox.io/central-license/
+          readOnly: true
+        - name: stackrox-db
+          mountPath: /var/lib/stackrox
+        - name: central-config-volume
+          mountPath: /etc/stackrox
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: endpoints-config-volume
+          mountPath: /etc/stackrox.d/endpoints/
+          readOnly: true
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/db-password
+        - name: central-external-db-volume
+          mountPath: /etc/ext-db
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        {{- end }}
+        {{- range $extraMount := (default list ._rox.central.extraMounts) }}
+        - name: {{ $extraMount.name }}
+          {{- $extraMount.mount | toYaml | nindent 10 }}
+        {{- end }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
+        - name: {{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
+          readOnly: true
+        {{- end }}
+        {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
+        - name: {{ $mount }}
+          mountPath: /run/stackrox.io/declarative-configuration/{{ $mount }}
+          readOnly: true
+        {{- end }}
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      volumes:
+      - name: varlog
+        emptyDir: {}
+      - name: central-tmp-volume
+        emptyDir: {}
+      - name: central-etc-ssl-volume
+        emptyDir: {}
+      - name: central-etc-pki-volume
+        emptyDir: {}
+      - name: central-certs-volume
+        secret:
+          secretName: central-tls
+      - name: central-default-tls-cert-volume
+        secret:
+          secretName: {{ default "central-default-tls-cert" ._rox.central.defaultTLS.reference }}
+          optional: true
+      - name: central-htpasswd-volume
+        secret:
+          secretName: central-htpasswd
+          optional: true
+      - name: central-jwt-volume
+        secret:
+          secretName: central-tls
+          items:
+            - key: jwt-key.pem
+              path: jwt-key.pem
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca
+          optional: true
+      - name: central-license-volume
+        secret:
+          secretName: central-license
+          optional: true
+      - name: central-config-volume
+        configMap:
+          name: central-config
+          optional: true
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: endpoints-config-volume
+        configMap:
+          name: central-endpoints
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-external-db-volume
+        configMap:
+          name: central-external-db
+          optional: true
+      - name: stackrox-db
+        {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
+      {{- if ._rox.monitoring.openshift.enabled }}
+      - name: monitoring-tls
+        secret:
+          secretName: central-monitoring-tls
+          optional: true
+      {{- end }}
+      {{- range $extraMount := (default list ._rox.central.extraMounts) }}
+      - name: {{ $extraMount.name }}
+        {{- $extraMount.source | toYaml | nindent 8 }}
+      {{- end }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.configMaps) }}
+      - name: {{ $mount }}
+        configMap:
+          name: {{ $mount }}
+          optional: true
+      {{- end }}
+      {{- range $mount := (default list ._rox.central.declarativeConfiguration.mounts.secrets) }}
+      - name: {{ $mount }}
+        secret:
+          secretName: {{ $mount }}
+          optional: true
+      {{- end }}
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}

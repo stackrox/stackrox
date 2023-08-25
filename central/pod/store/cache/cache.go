@@ -1,164 +1,149 @@
 package cache
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/pod/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/size"
-	"github.com/stackrox/rox/pkg/sizeboundedcache"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
-const (
-	maxCachedPodSize = 5 * size.KB // if it's larger than 5KB, then we aren't going to cache it
-	maxCacheSize     = 20 * size.MB
-)
-
-var (
-	log = logging.LoggerForModule()
-)
-
-type podTombstone struct{}
-
-func sizeFunc(k, v interface{}) int64 {
-	if pod, ok := v.(*storage.Pod); ok {
-		return int64(len(k.(string)) + pod.Size())
-	}
-	return int64(len(k.(string)))
-}
-
-// NewCachedStore returns an deployment store implementation that caches pods
-func NewCachedStore(store store.Store) store.Store {
-	// This is a size based cache, where we use LRU to determine which of the oldest elements should
-	// be removed to allow a new element
-	cache, err := sizeboundedcache.New(maxCacheSize, maxCachedPodSize, sizeFunc)
-	utils.CrashOnError(err)
-
-	return &cachedStore{
+// NewCachedStore caches the pod store
+func NewCachedStore(store store.Store) (store.Store, error) {
+	impl := &cacheImpl{
 		store: store,
-		cache: cache,
+
+		cache: make(map[string]*storage.Pod),
 	}
+
+	if err := impl.populate(); err != nil {
+		return nil, err
+	}
+	return impl, nil
 }
 
-// This cached store implementation relies on the usage of the Pod store,
-// so this may not be easily portable to other sections of the code.
-type cachedStore struct {
+type cacheImpl struct {
 	store store.Store
-	cache sizeboundedcache.Cache
+
+	cache map[string]*storage.Pod
+	lock  sync.RWMutex
 }
 
-func (c *cachedStore) testAndSetCacheEntry(id string, pod *storage.Pod) {
-	c.cache.TestAndSet(id, pod, func(_ interface{}, exists bool) bool {
-		return !exists
+func (c *cacheImpl) addNoLock(pod *storage.Pod) {
+	c.cache[pod.GetId()] = pod
+}
+
+func (c *cacheImpl) populate() error {
+	// Locking isn't strictly necessary
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	ctx := sac.WithAllAccess(context.Background())
+	return c.store.Walk(ctx, func(pod *storage.Pod) error {
+		// No need to clone objects pulled directly from the store
+		c.cache[pod.GetId()] = pod
+		return nil
 	})
-	c.updateStats()
 }
 
-func (c *cachedStore) getCachedPod(id string) (*storage.Pod, bool, error) {
-	entry, ok := c.cache.Get(id)
+func (c *cacheImpl) GetIDs(_ context.Context) ([]string, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	ids := make([]string, 0, len(c.cache))
+	for id := range c.cache {
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func (c *cacheImpl) Count(_ context.Context) (int, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	return len(c.cache), nil
+}
+
+func (c *cacheImpl) Exists(_ context.Context, id string) (bool, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	_, ok := c.cache[id]
+	return ok, nil
+}
+
+func (c *cacheImpl) GetKeys() ([]string, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	keys := make([]string, 0, len(c.cache))
+	for key := range c.cache {
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+func (c *cacheImpl) Get(_ context.Context, id string) (*storage.Pod, bool, error) {
+	c.lock.RLock()
+	pod, ok := c.cache[id]
+	c.lock.RUnlock()
 	if !ok {
 		return nil, false, nil
 	}
-	if _, ok := entry.(*podTombstone); ok {
-		return nil, true, nil
-	}
-	return entry.(*storage.Pod).Clone(), true, nil
+	return pod.Clone(), true, nil
 }
 
-func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
-	pod, entryExists, err := c.getCachedPod(id)
-	if err != nil {
-		return nil, false, err
-	}
-	if entryExists {
-		podStoreCacheHits.Inc()
-		// if entry is a tombstone entry, return that the pod doesn't exist
-		return pod, pod != nil, nil
-	}
+func (c *cacheImpl) GetMany(_ context.Context, ids []string) ([]*storage.Pod, []int, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-	podStoreCacheMisses.Inc()
-	pod, exists, err := c.store.Get(id)
-	if err != nil || !exists {
-		return nil, exists, err
-	}
-
-	c.testAndSetCacheEntry(id, pod)
-	return pod, true, nil
-}
-
-func (c *cachedStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
-	var pods []*storage.Pod
+	pods := make([]*storage.Pod, 0, len(ids))
 	var missingIndices []int
 	for i, id := range ids {
-		pod, hadEntry, err := c.getCachedPod(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if hadEntry {
-			podStoreCacheHits.Inc()
-			// Tombstone entry existed
-			if pod == nil {
-				missingIndices = append(missingIndices, i)
-			} else {
-				pods = append(pods, pod)
-			}
-			continue
-		}
-		podStoreCacheMisses.Inc()
-
-		pod, exists, err := c.store.Get(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if !exists {
+		pod, ok := c.cache[id]
+		if !ok {
 			missingIndices = append(missingIndices, i)
 			continue
 		}
-
-		// Add the pod to the cache
-		c.testAndSetCacheEntry(id, pod)
-		pods = append(pods, pod)
+		pods = append(pods, pod.Clone())
 	}
 	return pods, missingIndices, nil
 }
 
-func (c *cachedStore) Upsert(pod *storage.Pod) error {
-	if err := c.store.Upsert(pod); err != nil {
-		return err
-	}
+func (c *cacheImpl) Walk(_ context.Context, fn func(pod *storage.Pod) error) error {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 
-	c.cache.Add(pod.GetId(), pod)
-	c.updateStats()
+	for _, pod := range c.cache {
+		if err := fn(pod.Clone()); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (c *cachedStore) Delete(id string) error {
-	if err := c.store.Delete(id); err != nil {
+func (c *cacheImpl) Upsert(ctx context.Context, pod *storage.Pod) error {
+	if err := c.store.Upsert(ctx, pod); err != nil {
 		return err
 	}
-	c.cache.Add(id, &podTombstone{})
-	c.updateStats()
+	clonedPod := pod.Clone()
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.addNoLock(clonedPod)
 	return nil
 }
 
-func (c *cachedStore) updateStats() {
-	objects, size := c.cache.Stats()
-	podStoreCacheObjects.Set(float64(objects))
-	podStoreCacheSize.Set(float64(size))
-}
+func (c *cacheImpl) Delete(ctx context.Context, id string) error {
+	if err := c.store.Delete(ctx, id); err != nil {
+		return err
+	}
 
-func (c *cachedStore) AckKeysIndexed(keys ...string) error {
-	return c.store.AckKeysIndexed(keys...)
-}
+	c.lock.Lock()
+	defer c.lock.Unlock()
 
-func (c *cachedStore) GetKeysToIndex() ([]string, error) {
-	return c.store.GetKeysToIndex()
-}
+	delete(c.cache, id)
 
-func (c *cachedStore) GetIDs() ([]string, error) {
-	return c.store.GetIDs()
-}
-
-func (c *cachedStore) Walk(fn func(pod *storage.Pod) error) error {
-	return c.store.Walk(fn)
+	return nil
 }

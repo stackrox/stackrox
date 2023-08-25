@@ -36,6 +36,7 @@ var (
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
+//
 //go:generate mockgen-wrapper
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool
@@ -58,6 +59,7 @@ func newLevel() *level {
 
 type filterImpl struct {
 	maxExactPathMatches int   // maximum number of exact path (same pod + container and same process and args) matches to tolerate
+	maxUniqueProcesses  int   // maximum number of unique process exec file paths
 	maxFanOut           []int // maximum fan out starting at the process level
 
 	containersInDeployment map[string]map[string]*level
@@ -90,9 +92,10 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 }
 
 // NewFilter returns an empty filter to start loading processes into
-func NewFilter(maxExactPathMatches int, fanOut []int) Filter {
+func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
 	return &filterImpl{
 		maxExactPathMatches: maxExactPathMatches,
+		maxUniqueProcesses:  maxUniqueProcesses,
 		maxFanOut:           fanOut,
 
 		containersInDeployment: make(map[string]map[string]*level),
@@ -124,6 +127,9 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	// Handle the process level independently as we will never reject a new process
 	processLevel := rootLevel.children[indicator.GetSignal().GetExecFilePath()]
 	if processLevel == nil {
+		if len(rootLevel.children) >= f.maxUniqueProcesses {
+			return false
+		}
 		processLevel = newLevel()
 		rootLevel.children[indicator.GetSignal().GetExecFilePath()] = processLevel
 	}

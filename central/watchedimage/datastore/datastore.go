@@ -13,6 +13,7 @@ var (
 )
 
 // DataStore returns a datastore for watched images.
+//
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Exists(ctx context.Context, name string) (bool, error)

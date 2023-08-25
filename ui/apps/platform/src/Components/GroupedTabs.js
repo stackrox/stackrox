@@ -1,21 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import upperFirst from 'lodash/upperFirst';
+
 import { useTheme } from 'Containers/ThemeProvider';
 
 const Tab = ({ text, index, active, to }) => (
     <li
-        className={`hover:bg-primary-200 flex-grow ${
-            active ? 'bg-base-100 text-primary-700' : ''
-        } ${index !== 0 ? 'border-l border-base-400' : ''}`}
+        className={`flex flex-grow items-center border-t border-base-400 ${
+            active ? 'bg-primary-200' : 'bg-base-100'
+        } ${index !== 0 ? 'border-l' : ''}`}
     >
         <Link to={to} data-testid="tab" className={`w-full no-underline ${active && 'active'}`}>
-            <div
-                className={`${
-                    active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
-                } cursor-pointer uppercase tracking-wide font-700 p-3 flex justify-center`}
-            >
-                {text}
+            <div className="cursor-pointer text-base-600 p-3 flex justify-center">
+                {upperFirst(text)}
             </div>
         </Link>
     </li>
@@ -50,17 +48,14 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                     key={group}
                 >
                     {showGroupTab && (
-                        <span
-                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-2xs tracking-wide py-1 px-2 rounded-t-lg text-base-500 w-full"
-                            style={{ transform: 'translateY(-100%)' }}
-                        >
+                        <span className="truncate border-l border-t border-r border-base-400 text-xs mt-2 py-1 px-2 rounded-t-lg w-full">
                             {group}
                         </span>
                     )}
                     <ul
                         className={`${
                             showGroupTab ? `flex-1` : ''
-                        } flex  border-l border-base-400 border-r h-full`}
+                        } flex border-l border-base-400 border-r`}
                     >
                         {grouppedTabs.map((datum, i) => (
                             <Tab
@@ -79,7 +74,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-testid="grouped-tabs"
-                className={` flex border-b border-base-400 px-4 uppercase text-sm ignore-react-onclickoutside ${
+                className={` flex border-b border-base-400 px-4 text-sm ignore-react-onclickoutside ${
                     !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
                 }`}
             >

@@ -1,6 +1,7 @@
 import queryString from 'qs';
 
-import { ORCHESTRATOR_COMPONENT_KEY } from 'Containers/Navigation/OrchestratorComponentsToggle';
+import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
+
 import axios from './instance';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
@@ -64,7 +65,7 @@ export function fetchBaselineComparison({ deploymentId }) {
 
 // TODO: wire this through redux saga, like the `fetchBaselineComparison` above
 /*
- * Fetches the diff view of flows between the network policies last applied by ACS to the
+ * Fetches the diff view of flows between the network policies last applied to the
  * specified deployment and the previous state before that application.
  *
  * @returns {Promise<Object, Error>}
@@ -133,7 +134,7 @@ export function toggleAlertBaselineViolations({ deploymentId, enable }) {
 }
 
 /*
- * Retrieves the last StackRox-applied policy for a deployement
+ * Retrieves the last security policy applied for a deployment
  *
  * @param   {string}  deploymentId
  * @returns {Promise<Object, Error>}
@@ -152,14 +153,30 @@ export function getUndoModificationForDeployment(deploymentId) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkPolicyGraph(clusterId, query, modification, includePorts) {
+export function fetchNetworkPolicyGraph(
+    clusterId,
+    namespaces,
+    deployments,
+    query,
+    modification,
+    includePorts,
+    includeOrchestratorComponents = false
+) {
     const urlParams = query ? { query } : {};
+    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
+    urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
+    urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
+
     if (includePorts) {
         urlParams.includePorts = true;
     }
 
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+    if (
+        !includeOrchestratorComponents &&
+        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
+    ) {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
@@ -194,18 +211,45 @@ export function fetchNetworkPolicyGraph(clusterId, query, modification, includeP
  * Fetches nodes and links for the network flow graph.
  * Returns response with nodes and links
  *
+ * @param {!String} clusterId
+ * @param {String[]} namespaces
+ * @param {String[]} deployments
+ * @param {String} query
+ * @param {Date} date
+ * @param {boolean} includePorts
+ * @param {boolean} includeOrchestratorComponents
+ *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkFlowGraph(clusterId, query, date, includePorts) {
+export function fetchNetworkFlowGraph(
+    clusterId,
+    namespaces,
+    deployments,
+    query = '',
+    date = null,
+    includePorts = false,
+    includeOrchestratorComponents = false,
+    includePolicies = false
+) {
     const urlParams = query ? { query } : {};
+    const namespaceQuery = namespaces.length > 0 ? `Namespace:${namespaces.join(',')}` : '';
+    const deploymentQuery = deployments.length > 0 ? `Deployment:${deployments.join(',')}` : '';
+    urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
+    urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
     if (date) {
         urlParams.since = date.toISOString();
     }
     if (includePorts) {
         urlParams.includePorts = true;
     }
+    if (includePolicies) {
+        urlParams.include_policies = true;
+    }
     // for openshift filtering toggle
-    if (localStorage.getItem(ORCHESTRATOR_COMPONENT_KEY) !== 'true') {
+    if (
+        !includeOrchestratorComponents &&
+        localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true'
+    ) {
         urlParams.scope = {
             query: 'Orchestrator Component:false',
         };
@@ -224,6 +268,20 @@ export function fetchNetworkFlowGraph(clusterId, query, date, includePorts) {
 /**
  * Fetches policies details for given array of ids.
  *
+ * @param {!String} namespaceId
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNetworkPoliciesInNamespace(clusterId, namespaceId) {
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?cluster_id=${clusterId}&namespace=${namespaceId}`,
+    };
+    return axios(options).then((response) => response.data.networkPolicies);
+}
+
+/**
+ * Fetches policies details for given array of ids.
+ *
  * @param {!array} policyIds
  * @returns {Promise<Object, Error>}
  */
@@ -231,9 +289,21 @@ export function fetchNetworkPolicies(policyIds) {
     const networkPoliciesPromises = policyIds.map((policyId) =>
         axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
-    return Promise.all(networkPoliciesPromises).then((response) => ({
-        response: response.map((networkPolicy) => networkPolicy.data),
-    }));
+    return Promise.allSettled(networkPoliciesPromises).then((responses) => {
+        const responseData = {
+            policies: [],
+            errors: [],
+        };
+
+        responses.forEach((response) => {
+            if (response.status === 'fulfilled') {
+                responseData.policies.push(response.value.data);
+            } else {
+                responseData.errors.push(response.reason);
+            }
+        });
+        return responseData;
+    });
 }
 
 /**
@@ -277,6 +347,26 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
 }
 
 /**
+ * Fetches the network policies applied to deployments in the given scope.
+ * @param {!String} clusterId The cluster ID.
+ * @param {!String} deploymentQuery A search filter string.
+ * @returns {Promise<import("../types/networkPolicy.proto").NetworkPolicy[]>}
+ */
+export function fetchNetworkPoliciesByClusterId(clusterId, deploymentQuery) {
+    if (clusterId === '') {
+        return Promise.reject(new Error('A cluster ID must be provided to fetch network policies'));
+    }
+    // The `deploymentQuery` param functions identically to the general `query` param used in
+    // other API calls and accepts the same search filter syntax.
+    const params = queryString.stringify({ clusterId, deploymentQuery });
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?${params}`,
+    };
+    return axios(options).then((response) => response.data.networkPolicies ?? []);
+}
+
+/**
  * Retrieves the modification that will undo the last action done through the stackrox UI.
  *
  * @param {!String} clusterId
@@ -295,15 +385,20 @@ export function getUndoNetworkModification(clusterId) {
  * Generates a modification to policies based on a graph.
  *
  * @param {!String} clusterId
- * @param {!Object} query
- * @param {!String} date
+ * @param {!String} query
+ * @param {!String} networkDataSince
  * @param {Boolean} excludePortsProtocols
  * @returns {Promise<Object, Error>}
  */
-export function generateNetworkModification(clusterId, query, date, excludePortsProtocols = null) {
+export function generateNetworkModification(
+    clusterId,
+    query,
+    networkDataSince,
+    excludePortsProtocols = null
+) {
     const urlParams = query ? { query } : {};
-    if (date) {
-        urlParams.networkDataSince = date.toISOString();
+    if (networkDataSince) {
+        urlParams.networkDataSince = networkDataSince.toISOString();
     }
 
     if (excludePortsProtocols !== null) {
@@ -414,7 +509,7 @@ export function deleteCIDRBlock(blockId) {
 }
 
 /**
- * Gets the default StackRox generated CIDR blocks toggle state.
+ * Gets the default application generated CIDR blocks toggle state.
  *
  * @returns {Promise<Object, Error>}
  */
@@ -425,7 +520,7 @@ export function getHideDefaultExternalSrcs() {
 }
 
 /**
- * Sets the default StackRox generated CIDR blocks to be on or off.
+ * Sets the default application generated CIDR blocks to be on or off.
  *
  * @returns {Promise<Object, Error>}
  */

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -33,25 +33,25 @@ type IDQuery struct {
 	ID *graphql.ID
 }
 
-// StringListEntryResolver represents a set of values keyed by a string
+// stringListEntryResolver represents a set of values keyed by a string
 type stringListEntryResolver struct {
 	key    string
 	values set.StringSet
 }
 
-// ScopedPermissionsResolver represents the scoped permissions of a subject/service account
+// scopedPermissionsResolver represents the scoped permissions of a subject/service account
 type scopedPermissionsResolver struct {
 	scope       string
 	permissions []*stringListEntryResolver
 }
 
 // Key represents the key value of the string list entry
-func (resolver *stringListEntryResolver) Key(ctx context.Context) string {
+func (resolver *stringListEntryResolver) Key(_ context.Context) string {
 	return resolver.key
 }
 
 // Values represents the set of values of the string list entry
-func (resolver *stringListEntryResolver) Values(ctx context.Context) []string {
+func (resolver *stringListEntryResolver) Values(_ context.Context) []string {
 	return resolver.values.AsSlice()
 }
 
@@ -69,16 +69,16 @@ func wrapStringListEntries(values map[string]set.StringSet) []*stringListEntryRe
 }
 
 // Scope represents the scope of the permissions - cluster wide or the namespace name to which the permissions are scoped
-func (resolver *scopedPermissionsResolver) Scope(ctx context.Context) string {
+func (resolver *scopedPermissionsResolver) Scope(_ context.Context) string {
 	return resolver.scope
 }
 
 // Permissions represents the verbs and the resources to which those verbs are granted
-func (resolver *scopedPermissionsResolver) Permissions(ctx context.Context) []*stringListEntryResolver {
+func (resolver *scopedPermissionsResolver) Permissions(_ context.Context) []*stringListEntryResolver {
 	return resolver.permissions
 }
 
-// WrapPermissions wraps the input into a scopedPermissionsResolver
+// wrapPermissions wraps the input into a scopedPermissionsResolver
 func wrapPermissions(values map[string]map[string]set.StringSet) []*scopedPermissionsResolver {
 	if len(values) == 0 {
 		return nil
@@ -264,27 +264,16 @@ func (resolver *ClusterWithK8sCVEInfoResolver) K8sCVEInfo() *K8sCVEInfoResolver 
 	return resolver.k8sCVEInfo
 }
 
-type paginationWrapper struct {
-	pv *v1.QueryPagination
-}
-
-func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface{}, error) {
-	if err != nil || pw.pv == nil {
-		return datSlice, err
+func paginate[T any](pv *v1.QueryPagination, slice []T, err error) ([]T, error) {
+	if err != nil || pv == nil {
+		return slice, err
+	}
+	if len(slice) == 0 {
+		return slice, nil
 	}
 
-	datType := reflect.TypeOf(datSlice)
-	if datType.Kind() != reflect.Slice {
-		return datSlice, errors.New("not a slice")
-	}
-
-	datValue := reflect.ValueOf(datSlice)
-	if datValue.Len() == 0 {
-		return datSlice, nil
-	}
-
-	offset := int(pw.pv.GetOffset())
-	limit := int(pw.pv.GetLimit())
+	offset := int(pv.GetOffset())
+	limit := int(pv.GetLimit())
 	if offset < 0 {
 		offset = 0
 	}
@@ -292,9 +281,9 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 		limit = 0
 	}
 
-	remnants := datValue.Len() - offset
+	remnants := len(slice) - offset
 	if remnants <= 0 {
-		return reflect.Zero(datType).Interface(), nil
+		return nil, nil
 	}
 
 	var end int
@@ -303,7 +292,7 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 	} else {
 		end = offset + limit
 	}
-	return datValue.Slice(offset, end).Interface(), nil
+	return slice[offset:end], nil
 }
 
 func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args RawQuery) (string, error) {
@@ -356,4 +345,89 @@ func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 			},
 		},
 	}
+}
+
+// logErrorOnQueryContainingField logs error if the query contains the given field label.
+func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, resolver string) {
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == label.String() {
+			log.Errorf("Unexpected field (%s) found in query to resolver (%s). Response maybe unexpected.", label.String(), resolver)
+		}
+	})
+}
+
+func imageComponentToNodeComponent(comp *storage.ImageComponent) (*storage.NodeComponent, error) {
+	if comp == nil {
+		return nil, nil
+	}
+	if comp.GetSource() != storage.SourceType_INFRASTRUCTURE {
+		return nil, errors.Errorf("incorrect component source type '%s', should be '%s'", comp.GetSource().String(), storage.SourceType_INFRASTRUCTURE)
+	}
+	nodeComp := &storage.NodeComponent{
+		Id:              comp.GetId(),
+		Name:            comp.GetName(),
+		Version:         comp.GetVersion(),
+		Priority:        comp.GetPriority(),
+		RiskScore:       comp.GetRiskScore(),
+		OperatingSystem: comp.GetOperatingSystem(),
+	}
+	if comp.GetSetTopCvss() != nil {
+		nodeComp.SetTopCvss = &storage.NodeComponent_TopCvss{TopCvss: comp.GetTopCvss()}
+	}
+	return nodeComp, nil
+}
+
+func imageComponentsToNodeComponents(comps []*storage.ImageComponent) ([]*storage.NodeComponent, error) {
+	ret := make([]*storage.NodeComponent, 0, len(comps))
+	for _, comp := range comps {
+		nodeComp, err := imageComponentToNodeComponent(comp)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, nodeComp)
+	}
+	return ret, nil
+}
+
+// FilterFieldFromRawQuery removes the given field from RawQuery
+func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
+	return RawQuery{
+		Query: pointers.String(search.FilterFields(rq.String(), func(field string) bool {
+			return label.String() != field
+		})),
+		ScopeQuery: rq.ScopeQuery,
+	}
+}
+
+// processWithAuditLog runs handler and logs to the audit log pipeline (assuming there is a notifier setup for audit logging).
+// It logs details of the request and if there was an error. processWithAuditLog will return the response and error directly
+// from handler. You may need to cast it back to your desired type.
+// This is required because currently audit logs are only automatically added for GRPC calls and not GraphQL.
+// However, mutating calls should also log. This is a workaround for this limitation.
+func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface{}, method string, handler func() (interface{}, error)) (interface{}, error) {
+	resp, err := handler()
+	if resolver.AuditLogger != nil {
+		go resolver.AuditLogger.SendAuditMessage(ctx, req, method, interceptor.AuthStatus{}, err)
+	}
+	return resp, err
+}
+
+func getImageIDFromQuery(q *v1.Query) string {
+	if q == nil {
+		return ""
+	}
+	var imageID string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+			imageID = matchFieldQuery.MatchFieldQuery.Value
+			imageID = strings.TrimRight(imageID, `"`)
+			imageID = strings.TrimLeft(imageID, `"`)
+		}
+	})
+	return imageID
 }

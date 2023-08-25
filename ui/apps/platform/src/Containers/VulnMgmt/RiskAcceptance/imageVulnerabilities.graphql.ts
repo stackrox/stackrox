@@ -16,7 +16,7 @@ export type VulnerabilityRequest = {
     deferralReq: DeferralRequest;
     updatedDeferralReq: DeferralRequest;
     cves: {
-        ids: string[];
+        cves: string[];
     };
 };
 
@@ -39,6 +39,11 @@ export type EmbeddedImageScanComponent = {
     name: string;
     version: string;
     fixedIn: string;
+    dockerfileLine?: {
+        line: number;
+        instruction: string;
+        value: string;
+    };
 };
 
 export type GetImageVulnerabilitiesData = {
@@ -75,16 +80,16 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                 remote
                 tag
             }
-            vulnCount(query: $vulnsQuery)
-            vulns(query: $vulnsQuery, pagination: $pagination) {
-                id: cve
+            vulnCount: imageVulnerabilityCount(query: $vulnsQuery)
+            vulns: imageVulnerabilities(query: $vulnsQuery, pagination: $pagination) {
+                id
                 cve
                 isFixable
                 severity
                 scoreVersion
                 cvss
                 discoveredAtImage
-                components {
+                components: imageComponents {
                     id
                     name
                     version
@@ -128,7 +133,7 @@ export const GET_IMAGE_VULNERABILITIES = gql`
                         }
                     }
                     cves {
-                        ids
+                        cves
                     }
                 }
             }

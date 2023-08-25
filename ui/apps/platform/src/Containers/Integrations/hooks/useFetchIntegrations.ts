@@ -7,10 +7,10 @@ import { actions as clusterInitBundleActions } from 'reducers/clusterInitBundles
 import { IntegrationSource } from '../utils/integrationUtils';
 
 const fetchIntegrationsActionMap = {
-    authPlugins: integrationsActions.fetchAuthPlugins.request(),
     authProviders: authActions.fetchAuthProviders.request(),
     backups: integrationsActions.fetchBackups.request(),
     imageIntegrations: integrationsActions.fetchImageIntegrations.request(),
+    signatureIntegrations: integrationsActions.fetchSignatureIntegrations.request(),
     notifiers: integrationsActions.fetchNotifiers.request(),
 };
 

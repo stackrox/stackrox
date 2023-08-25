@@ -9,7 +9,7 @@ import (
 )
 
 func TestBasicFilterFunctions(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1})
+	filter := NewFilter(2, 2, []int{3, 2, 1})
 
 	pi := fixtures.GetProcessIndicator()
 	assert.True(t, filter.Add(pi))
@@ -71,7 +71,7 @@ func TestBasicFilter(t *testing.T) {
 	for _, c := range cases {
 		currCase := c
 		t.Run(currCase.name, func(t *testing.T) {
-			filter := NewFilter(2, []int{3, 2, 1})
+			filter := NewFilter(2, 2, []int{3, 2, 1})
 			for i, arg := range currCase.args {
 				result := filter.Add(&storage.ProcessIndicator{
 					PodId:         "pod",
@@ -89,7 +89,7 @@ func TestBasicFilter(t *testing.T) {
 }
 
 func TestMultiProcessFilter(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1})
+	filter := NewFilter(2, 2, []int{3, 2, 1})
 
 	// Ensure that different (pod, container name) pairs are isolated
 	pi := fixtures.GetProcessIndicator()
@@ -103,8 +103,22 @@ func TestMultiProcessFilter(t *testing.T) {
 	assert.False(t, filter.Add(pi))
 }
 
+func TestMaxFilePaths(t *testing.T) {
+	filter := NewFilter(2, 2, []int{3, 2, 1})
+
+	// Ensure that different (pod, container name) pairs are isolated
+	pi := fixtures.GetProcessIndicator()
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Name = "signal2"
+	assert.True(t, filter.Add(pi))
+
+	pi.Signal.Name = "signal3"
+	assert.False(t, filter.Add(pi))
+}
+
 func TestPodUpdate(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+	filter := NewFilter(2, 2, []int{3, 2, 1}).(*filterImpl)
 
 	pi := fixtures.GetProcessIndicator()
 	filter.Add(pi)
@@ -129,7 +143,7 @@ func TestPodUpdate(t *testing.T) {
 }
 
 func TestPodUpdateWithInstanceTruncation(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+	filter := NewFilter(2, 2, []int{3, 2, 1}).(*filterImpl)
 
 	pi := fixtures.GetProcessIndicator()
 	pi.Signal.ContainerId = "0123456789ab"

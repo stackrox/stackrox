@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+// DelegatedRegistryConfig determines how to handle scan requests.
+//
+// Compared to the Public and Storage variations of this proto, the default cluster id and registry cluster ids
+// are not included (not used by the secured clusters).
+//
+// Refer to v1.DelegatedRegistryConfig for more detailed docs.
+//
+// Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
+message DelegatedRegistryConfig {
+    enum EnabledFor {
+        NONE     = 0;
+        ALL      = 1;
+        SPECIFIC = 2;
+    }
+
+    message DelegatedRegistry {
+        string path = 1;
+    }
+
+    EnabledFor                 enabled_for = 1;
+    repeated DelegatedRegistry registries  = 2;
+}

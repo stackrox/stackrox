@@ -7,9 +7,12 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
+// manifestFuncs explicitly lists the container image manifest handlers.
+// Note: Any updates here must be accompanied by updates to docker.go.
 var manifestFuncs = []func(registry *Registry, remote, ref string) (*storage.ImageMetadata, error){
 	HandleV2ManifestList,
 	HandleV2Manifest,
+	HandleOCIImageIndex,
 	HandleOCIManifest,
 	HandleV1SignedManifest,
 	HandleV1Manifest,
@@ -21,8 +24,8 @@ type RegistryWithoutManifestCall struct {
 }
 
 // NewRegistryWithoutManifestCall creates a new basic docker registry without a manifest digest call
-func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration) (*RegistryWithoutManifestCall, error) {
-	dockerRegistry, err := NewDockerRegistry(integration)
+func NewRegistryWithoutManifestCall(integration *storage.ImageIntegration, disableRepoList bool) (*RegistryWithoutManifestCall, error) {
+	dockerRegistry, err := NewDockerRegistry(integration, disableRepoList)
 	if err != nil {
 		return nil, err
 	}

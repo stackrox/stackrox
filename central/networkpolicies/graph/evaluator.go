@@ -3,12 +3,12 @@ package graph
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -25,6 +25,7 @@ var (
 )
 
 // Evaluator implements the interface for the network graph generator
+//
 //go:generate mockgen-wrapper
 type Evaluator interface {
 	// GetGraph returns the network policy graph. If `queryDeploymentIDs` is nil, it is assumed that all deployments are queried/relevant.
@@ -35,7 +36,7 @@ type Evaluator interface {
 }
 
 type namespaceProvider interface {
-	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
@@ -96,7 +97,7 @@ func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, ne
 }
 
 func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {
-	namespaces, err := g.namespaceStore.GetNamespaces(allNamespaceReadAccess)
+	namespaces, err := g.namespaceStore.GetAllNamespaces(allNamespaceReadAccess)
 	if err != nil {
 		log.Errorf("unable to read namespaces: %v", err)
 		return nil

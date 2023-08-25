@@ -15,27 +15,35 @@ import (
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/cryptoutils/mocks"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
 	endpoint = "localhost:8000"
 
-	// Receiving trust info examples from a running cluster:
-	// roxcurl /v1/tls-challenge?"challengeToken=h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
+	// 1. Deploy a new StackRox instance
+	// 2. Create and generate a new CA and replace it in the additional-ca.yaml:
+	// $ openssl genrsa -des3 -out myCA.key 2048
+	// $ openssl req -x509 -new -nodes -key myCA.key -sha256 -out myCA.pem -days 100000 -subj '/CN=Root LoadBalancer Certificate Authority'
+	// $ kubectl -n stackrox apply -f additional-ca.yaml
+	//
+	// 3. Receiving trust info examples from a running cluster:
+	// $ roxcurl /v1/tls-challenge?"challengeToken=h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
 	// Copy trust-info and signature from the json response
-	// Note that tests here are likely to start failing again some time in November 2022 due to cert expiration.
-	// TODO(ROX-8661): Make these tests not fail after a year.
-	trustInfoExample = "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"
-	signatureExample = "MEYCIQDaJRmuxWGArjO4us5XVjukNZqQz78zAWydzBZISxXKfQIhAN47i+VSmyGVpI5WlzR5Tq4GN74l9vml0VWxyopsGtl4"
+	//
+	// 4. Update certificates central cert in ./testdata/central-ca.pem
+	// $ kubectl -n stackrox get secrets central-tls -o json | jq '.data["ca.pem"]' -r | base64 --decode > ./testdata/central-ca.pem
+	//
+	// TODO(ROX-8661): Make these tests not fail after cert expiration.
+	trustInfoExample = "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"
+	signatureExample = "MEUCIQCZKFQR1lgX99ZwP0LesThASckZWtxzPuuhf1oG+XelGwIgA4N3p0Rza3ZfZ3Za6Ub6loSRV8z1TWH8gszEKRxHGrA="
 	// invalidSignature signature signed by a different private key
 	invalidSignature = "MEUCIQDTYU+baqRR2RPy9Y50u5xc+ZrwrxCbqgHsgyf+QrjZQQIgJgqMmvRRvtgLU9O6WfzNifA1X8vwaBZ98CCniRH2pGs="
 
@@ -43,6 +51,7 @@ const (
 	trustInfoUntrustedCentral = "CtIEMIICTjCCAfSgAwIBAgIJANYUBtnEPMvRMAoGCCqGSM49BAMCMEcxJzAlBgNVBAMTHlN0YWNrUm94IENlcnRpZmljYXRlIEF1dGhvcml0eTEcMBoGA1UEBRMTNTkzMTk2NjM4NzcxMzkwNTgzMjAeFw0yMTEwMjEwOTAyMDBaFw0yMjEwMjExMDAyMDBaMFwxGDAWBgNVBAsMD0NFTlRSQUxfU0VSVklDRTEhMB8GA1UEAwwYQ0VOVFJBTF9TRVJWSUNFOiBDZW50cmFsMR0wGwYDVQQFExQxNTQyNTk2MjE1NjAyMDc3OTk4NTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABNeN6Vr6JzdqYuhbMYywuGzVxNLYmuiOt7vBd0n3y/0+hqhw57u9cRlVUqDYzrQgV5kWLqOG8x9eW+FGbyP4ZM6jgbMwgbAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQCPd9tI81J+WfhCi3tfZHw0vwPZTAfBgNVHSMEGDAWgBSsFJ+sB5YiXsxIwlyAOZk/z4aVSTAxBgNVHREEKjAoghBjZW50cmFsLnN0YWNrcm94ghRjZW50cmFsLnN0YWNrcm94LnN2YzAKBggqhkjOPQQDAgNIADBFAiEAtgK8ueDNBKtowtHSQl6+DdXJNiJZIyNteRqO2lK2LNkCIGeMhGX5gNli98NU26odZ+QrxWsLa39iK710jsVTj6nwCtYDMIIB0jCCAXigAwIBAgIUYDi0j/ypoh0u5w8FU70RzDHH9MMwCgYIKoZIzj0EAwIwRzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRwwGgYDVQQFExM1OTMxOTY2Mzg3NzEzOTA1ODMyMB4XDTIxMTAyMTA5NTcwMFoXDTI2MTAyMDA5NTcwMFowRzEnMCUGA1UEAxMeU3RhY2tSb3ggQ2VydGlmaWNhdGUgQXV0aG9yaXR5MRwwGgYDVQQFExM1OTMxOTY2Mzg3NzEzOTA1ODMyMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEASqFQTVprF72w5TH2C62JjnHRlA50n/xRgRCLCWmnSj8V8jgXc5wOpc8dbSLh1fn0cZ320j6F5erwQaloZc3GaNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFKwUn6wHliJezEjCXIA5mT/PhpVJMAoGCCqGSM49BAMCA0gAMEUCIQDbiBkLqvuX6YC32zion11nYTO9p5eo3RVVFkvusgNAWQIgX/BADqhoAuGNXTO6qosJwwO40E/0bT5rtVjBNoN4XTASLGg4M19QR2hTcVM4T0F2cGxiOGFzWU1mUEh5MUpoVlZNS2Nhall5S21ySVU9GixGRm5sT2tqc29HcVJmZkYxczl0MUdJamNUYTBnMkN3eXo2UGp5b0NVUEpjPQ=="
 	signatureUntrustedCentral = "MEUCIQDz2vnle9zrByV7KgwawvQkkXPNTMHxeAt2+hlLRch2QQIgFU+uu9w7LrjzuknVnZRq2ZzdmIbYVkzWYQkZhCH8kSQ="
 
+	//#nosec G101 -- This is a false positive
 	exampleChallengeToken = "h83_PGhSqS8OAvplb8asYMfPHy1JhVVMKcajYyKmrIU="
 )
 
@@ -53,45 +62,37 @@ func TestClient(t *testing.T) {
 type ClientTestSuite struct {
 	suite.Suite
 
-	envIsolator   *envisolator.EnvIsolator
 	clientCertDir string
 	mockCtrl      *gomock.Controller
 }
 
 func (t *ClientTestSuite) SetupSuite() {
-	t.envIsolator = envisolator.NewEnvIsolator(t.T())
 
 	t.mockCtrl = gomock.NewController(t.T())
 
 	cwd, err := os.Getwd()
 	t.Require().NoError(err)
-	t.envIsolator.Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
+	t.T().Setenv(mtls.CAFileEnvName, filepath.Join(cwd, "testdata", "central-ca.pem"))
 
 	// Generate a client certificate (this does not need to be related to the central CA from testdata).
 	ca, err := certgen.GenerateCA()
 	t.Require().NoError(err)
 
-	t.clientCertDir, err = os.MkdirTemp("", "client-certs")
-	t.Require().NoError(err)
+	t.clientCertDir = t.T().TempDir()
 
 	leafCert, err := ca.IssueCertForSubject(mtls.SensorSubject)
 	t.Require().NoError(err)
 
 	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "cert.pem"), leafCert.CertPEM, 0644))
 	t.Require().NoError(os.WriteFile(filepath.Join(t.clientCertDir, "key.pem"), leafCert.KeyPEM, 0600))
-	t.envIsolator.Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
-	t.envIsolator.Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
-}
-
-func (t *ClientTestSuite) TearDownSuite() {
-	_ = os.RemoveAll(t.clientCertDir)
-	t.envIsolator.RestoreAll()
+	t.T().Setenv(mtls.CertFilePathEnvName, filepath.Join(t.clientCertDir, "cert.pem"))
+	t.T().Setenv(mtls.KeyFileEnvName, filepath.Join(t.clientCertDir, "key.pem"))
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
 	req := csr.CertificateRequest{
 		CN:         commonName,
-		KeyRequest: csr.NewBasicKeyRequest(),
+		KeyRequest: csr.NewKeyRequest(),
 		Hosts:      []string{"host"},
 	}
 
@@ -103,28 +104,37 @@ func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certi
 	return &cert
 }
 
-func (t *ClientTestSuite) TestGetMetadata() {
+func (t *ClientTestSuite) TestGetPingOK() {
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Equal(metadataRoute, r.URL.Path)
+		t.Equal(pingRoute, r.URL.Path)
 
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"version":       "3.0.51.x-47-g15440b8be2",
-			"buildFlavor":   "development",
-			"releaseBuild":  false,
-			"licenseStatus": "VALID",
-		})
+		_ = json.NewEncoder(w).Encode(
+			v1.PongMessage{Status: "ok"},
+		)
 	}))
 	defer ts.Close()
 
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	metadata, err := c.GetMetadata(context.Background())
+	pong, err := c.GetPing(context.Background())
+	t.Require().NoError(err)
+	t.Equal("ok", pong.GetStatus())
+}
+
+func (t *ClientTestSuite) TestGetPingFailure() {
+	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Equal(pingRoute, r.URL.Path)
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	t.Equal("3.0.51.x-47-g15440b8be2", metadata.GetVersion())
-	t.Equal(v1.Metadata_LicenseStatus(4), metadata.GetLicenseStatus())
-	t.False(metadata.GetReleaseBuild())
+	_, err = c.GetPing(context.Background())
+	t.Require().Error(err)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {

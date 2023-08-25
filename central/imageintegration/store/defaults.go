@@ -4,13 +4,8 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
-)
-
-var (
-	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -28,12 +23,23 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	},
 	{
 		Id:         "c6a1a26d-8947-4cb0-a50d-a018856f9390",
-		Name:       "Public Kubernetes GCR",
+		Name:       "Public Kubernetes GCR (deprecated)",
 		Type:       "docker",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: "k8s.gcr.io",
+			},
+		},
+	},
+	{
+		Id:         "f6ce8982-1a75-4430-96f3-9b22b4b66604",
+		Name:       "Public Kubernetes Registry",
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "registry.k8s.io",
 			},
 		},
 	},
@@ -126,7 +132,7 @@ var (
 		},
 		IntegrationConfig: &storage.ImageIntegration_Clairify{
 			Clairify: &storage.ClairifyConfig{
-				Endpoint: fmt.Sprintf("https://%s:8080", scannerEndpoint),
+				Endpoint: fmt.Sprintf("https://%s:8080", clairify.GetScannerEndpoint()),
 			},
 		},
 	}

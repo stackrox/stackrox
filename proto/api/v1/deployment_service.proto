@@ -33,7 +33,7 @@ message CountDeploymentsResponse {
 message ListDeploymentsWithProcessInfoResponse {
     message DeploymentWithProcessInfo {
         storage.ListDeployment                          deployment         = 1;
-        repeated storage.ContainerNameAndBaselineStatus whitelist_statuses = 2 [deprecated = true];
+        reserved                                                             2; // formerly whitelist_statuses
         repeated storage.ContainerNameAndBaselineStatus baseline_statuses  = 3;
     }
     repeated DeploymentWithProcessInfo deployments = 1;

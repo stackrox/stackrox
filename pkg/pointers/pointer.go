@@ -10,6 +10,11 @@ func Int32(i int32) *int32 {
 	return &i
 }
 
+// Int64 returns a pointer of the passed int64
+func Int64(i int64) *int64 {
+	return &i
+}
+
 // Int returns a pointer of the passed int
 func Int(i int) *int {
 	return &i

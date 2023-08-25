@@ -3,11 +3,11 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/config/store"
+	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -27,6 +27,14 @@ const (
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
+	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
+	DefaultDecommissionedClusterRetentionDays = 0
+	// DefaultReportHistoryRetentionWindow number of days to retain reports
+	DefaultReportHistoryRetentionWindow = 7
+	// DefaultDownloadableReportRetentionDays number of days to retain downloadable reports
+	DefaultDownloadableReportRetentionDays = 7
+	// DefaultDownloadableReportGlobalRetentionBytes is the maximum total upper limit in bytes for all downloadable reports
+	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 )
 
 var (
@@ -50,25 +58,47 @@ var (
 )
 
 func initialize() {
-	d = New(store.New(globaldb.GetGlobalDB()))
+	store := pgStore.New(globaldb.GetPostgres())
+
+	d = New(store)
 
 	ctx := sac.WithGlobalAccessScopeChecker(
 		context.Background(),
-		sac.OneStepSCC{
-			sac.AccessModeScopeKey(storage.Access_READ_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-			sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(
-				sac.ResourceScopeKeys(resources.Config)),
-		})
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
 	config, err := d.GetConfig(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	if config.GetPrivateConfig() == nil {
+	privateConfig := config.GetPrivateConfig()
+	needsUpsert := false
+	if privateConfig == nil {
+		privateConfig = &defaultPrivateConfig
+		needsUpsert = true
+	}
+
+	if privateConfig.GetDecommissionedClusterRetention() == nil {
+		privateConfig.DecommissionedClusterRetention = &storage.DecommissionedClusterRetentionConfig{
+			RetentionDurationDays: DefaultDecommissionedClusterRetentionDays,
+		}
+		needsUpsert = true
+	}
+
+	if privateConfig.GetReportRetentionConfig() == nil {
+		privateConfig.ReportRetentionConfig = &storage.ReportRetentionConfig{
+			HistoryRetentionDurationDays:           DefaultReportHistoryRetentionWindow,
+			DownloadableReportRetentionDays:        DefaultDownloadableReportRetentionDays,
+			DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
+		}
+		needsUpsert = true
+	}
+
+	if needsUpsert {
 		utils.Must(d.UpsertConfig(ctx, &storage.Config{
 			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: &defaultPrivateConfig,
+			PrivateConfig: privateConfig,
 		}))
 	}
 }

@@ -1,11 +1,12 @@
 import React, { ReactElement } from 'react';
+import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import useSearch from 'hooks/useSearch';
+import { getHasSearchApplied } from 'utils/searchUtils';
+import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
-import { PageSection, PageSectionVariants } from '@patternfly/react-core';
-import ACSEmptyState from 'Components/ACSEmptyState';
+import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import PendingApprovalsTable from './PendingApprovalsTable';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
 
@@ -19,7 +20,7 @@ function setDefaultSearchFields(searchFilter: SearchFilter): SearchFilter {
 }
 
 function PendingApprovals(): ReactElement {
-    const { searchFilter, setSearchFilter } = useSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
     const modifiedSearchObject = setDefaultSearchFields(searchFilter);
     /*
@@ -48,11 +49,12 @@ function PendingApprovals(): ReactElement {
 
     const rows = data?.vulnerabilityRequests || [];
     const itemCount = data?.vulnerabilityRequestsCount || 0;
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
-    if (!isLoading && rows && rows.length === 0) {
+    if (!isLoading && rows && rows.length === 0 && !hasSearchApplied) {
         return (
             <PageSection variant={PageSectionVariants.light} isFilled>
-                <ACSEmptyState title="No pending requests to approve." />
+                <EmptyStateTemplate title="No pending requests to approve." headingLevel="h2" />
             </PageSection>
         );
     }

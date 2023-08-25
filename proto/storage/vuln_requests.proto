@@ -13,7 +13,7 @@ package storage;
 message RequestComment {
     string                    id         = 1;
     string                    message    = 2;
-    SlimUser                  user       = 3;
+    SlimUser                  user       = 3 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
     google.protobuf.Timestamp created_at = 4;
 }
 
@@ -33,9 +33,9 @@ enum RequestStatus {
 message RequestExpiry {
     oneof expiry {
         // Indicates that this request expires when the associated vulnerability is fixed.
-        bool                       expires_when_fixed = 1 [(gogoproto.moretags) = "search:\"Request Expires When Fixed\""];
+        bool                       expires_when_fixed = 1 [(gogoproto.moretags) = 'search:"Request Expires When Fixed"'];
         // Indicates the timestamp when this request expires.
-        google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = "search:\"Request Expiry Time\""];
+        google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = 'search:"Request Expiry Time"'];
     }
 }
 
@@ -49,7 +49,9 @@ message FalsePositiveRequest { }
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
-        repeated string ids = 1 [(gogoproto.moretags) = "search:\"CVE\""];
+        // These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
+        // For example, CVE-2021-44832.
+        repeated string cves = 1 [(gogoproto.moretags) = 'search:"CVE"'];
     }
     message Scope {
         message Image {
@@ -75,18 +77,18 @@ message VulnerabilityRequest {
             Global global_scope = 2;
         }
     }
-    string                           id                 = 1;
+    string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     // Indicates the state the vulnerabilities will move to once the request is complete.
-    VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = "search:\"Requested Vulnerability State\""];
+    VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = 'search:"Requested Vulnerability State"'];
     // Indicates the status of a request.
-    RequestStatus                    status             = 3 [(gogoproto.moretags) = "search:\"Request Status\""];
+    RequestStatus                    status             = 3 [(gogoproto.moretags) = 'search:"Request Status"'];
     // Indicates if this request is a historical request that is no longer in effect
     // due to deferral expiry, cancellation, or restarting cve observation.
-    bool                             expired            = 4 [(gogoproto.moretags) = "search:\"Expired Request\""];
-    SlimUser                         requestor          = 5;
-    repeated SlimUser                approvers          = 6;
-    google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = "search:\"Created Time\""];
-    google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = "search:\"Last Updated\""];
+    bool                             expired            = 4 [(gogoproto.moretags) = 'search:"Expired Request"'];
+    SlimUser                         requestor          = 5 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    repeated SlimUser                approvers          = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    google.protobuf.Timestamp        created_at         = 7 [(gogoproto.moretags) = 'search:"Created Time"'];
+    google.protobuf.Timestamp        last_updated       = 8 [(gogoproto.moretags) = 'search:"Last Updated"'];
     repeated RequestComment          comments           = 9;
     Scope                            scope              = 10;
 
@@ -103,7 +105,7 @@ message VulnerabilityRequest {
 
     // 21 to 25 reserved for the updated request type oneof.
     oneof updated_req {
-        DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = "search:\"-\""];
+        DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = 'search:"-"'];
     }
 
 }

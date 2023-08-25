@@ -1,0 +1,15 @@
+{
+  "roles": [
+    {
+      "name": "test-role-name",
+      "description": "test role description",
+      "permissionSetId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+      "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+      "globalAccess": "NO_ACCESS",
+      "resourceToAccess": {},
+      "traits": {
+        "origin": "DECLARATIVE"
+      }
+    }
+  ]
+}

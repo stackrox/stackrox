@@ -13,29 +13,37 @@ import {
 import RowActionButton from 'Components/RowActionButton';
 import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
-import LabelChip from 'Components/LabelChip';
+import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import Menu from 'Components/Menu';
 import TableCountLinks from 'Components/workflow/TableCountLinks';
-import CveType from 'Components/CveType';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import queryService from 'utils/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
+import queryService from 'utils/queryService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import {
+    IMAGE_CVE_LIST_FRAGMENT,
+    NODE_CVE_LIST_FRAGMENT,
+    CLUSTER_CVE_LIST_FRAGMENT,
+} from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
-import CVSSSeverityLabel from 'Components/CVSSSeverityLabel';
+import CveType from 'Components/CveType';
+
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
+import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
+import WorkflowListPage from '../WorkflowListPage';
 import { getFilteredCVEColumns } from './ListCVEs.utils';
 
 export const defaultCveSort = [
@@ -45,9 +53,16 @@ export const defaultCveSort = [
     },
 ];
 
-export function getCveTableColumns(workflowState) {
+export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
-    const inFindingsSection = workflowState.getCurrentEntity().entityType !== entityTypes.CVE;
+    const currentEntityType = workflowState.getCurrentEntity().entityType;
+    const isCveType = [
+        entityTypes.CVE, // TODO: remove this type after it's removed from workflow
+        entityTypes.IMAGE_CVE,
+        entityTypes.NODE_CVE,
+        entityTypes.CLUSTER_CVE,
+    ].includes(currentEntityType);
+    const inFindingsSection = !isCveType;
 
     const tableColumns = [
         {
@@ -86,15 +101,12 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `Fixable`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const fixableFlag = original.isFixable ? (
-                    <LabelChip text="Fixable" type="success" size="large" />
-                ) : (
-                    'No'
+            Cell: ({ original, pdf }) => {
+                return (
+                    <VulnerabilityFixableIconText isFixable={original.isFixable} isTextOnly={pdf} />
                 );
-                return <div className="mx-auto">{fixableFlag}</div>;
             },
             id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
@@ -103,32 +115,15 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `Active`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original }) => {
-                const activeStatus = original.activeState?.state || 'Undetermined';
-                switch (activeStatus) {
-                    case 'Active': {
-                        return (
-                            <div className="mx-auto">
-                                <LabelChip text={activeStatus} type="alert" size="large" />
-                            </div>
-                        );
-                    }
-                    // TODO: uncomment the following case,  once Inactive can be determined with precision
-                    // case 'Inactive': {
-                    //     return <div className="mx-auto">{activeStatus}</div>;
-                    // }
-                    case 'Undetermined':
-                    default: {
-                        return <div className="mx-auto">Undetermined</div>;
-                    }
-                }
+                return original.activeState?.state || 'Undetermined';
             },
-            id: cveSortFields.FIXABLE,
+            id: cveSortFields.ACTIVE,
             accessor: 'isActive',
-            sortField: cveSortFields.FIXABLE,
+            sortField: cveSortFields.ACTIVE,
             sortable: false,
         },
         {
@@ -144,8 +139,10 @@ export function getCveTableColumns(workflowState) {
             Header: `Severity`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 text-center ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                return <CVSSSeverityLabel severity={original.severity} />;
+            Cell: ({ original, pdf }) => {
+                return (
+                    <VulnerabilitySeverityIconText severity={original.severity} isTextOnly={pdf} />
+                );
             },
             id: cveSortFields.SEVERITY,
             accessor: 'severity',
@@ -153,7 +150,7 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `CVSS Score`,
-            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { cvss, scoreVersion } = original;
@@ -235,9 +232,24 @@ export function getCveTableColumns(workflowState) {
         },
     ];
 
+    if (currentEntityType === entityTypes.NODE_CVE || currentEntityType === entityTypes.IMAGE_CVE) {
+        tableColumns.splice(3, 0, {
+            Header: `Operating System`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            id: cveSortFields.OPERATING_SYSTEM,
+            accessor: 'operatingSystem',
+            sortField: cveSortFields.OPERATING_SYSTEM,
+        });
+    }
+
     const nonNullTableColumns = tableColumns.filter((col) => col);
 
-    const cveColumnsBasedOnContext = getFilteredCVEColumns(nonNullTableColumns, workflowState);
+    const cveColumnsBasedOnContext = getFilteredCVEColumns(
+        nonNullTableColumns,
+        workflowState,
+        isFeatureFlagEnabled
+    );
 
     return removeEntityContextColumns(cveColumnsBasedOnContext, workflowState);
 }
@@ -246,7 +258,7 @@ export function renderCveDescription(row) {
     const { original } = row;
     return (
         <div
-            className="pointer-events-none bottom-0 absolute px-2 pb-3 pt-1 text-base-500 flex h-12 items-center"
+            className="pointer-events-none bottom-0 absolute px-2 pb-3 pt-1 flex h-12 items-center"
             data-testid="subcomponent-row"
         >
             <div className="line-clamp leading-normal" data-testid="cve-description">
@@ -269,20 +281,68 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
+
+    // Although request requires only WorkflowAdministration,
+    // also require require resources for Policies route.
+    const hasWriteAccessForAddToPolicy =
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
+
+    // Forbidden failures are explicit for Approvals and Requests but only implicit for Image.
+    const hasWriteAccessForRiskAcceptance =
+        hasReadWriteAccess('Image') &&
+        hasReadWriteAccess('VulnerabilityManagementApprovals') &&
+        hasReadWriteAccess('VulnerabilityManagementRequests');
+
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
 
     const workflowState = useContext(workflowStateContext);
 
-    const CVES_QUERY = gql`
-        query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
-            results: vulnerabilities(query: $query, pagination: $pagination) {
-                ...cveFields
-            }
-            count: vulnerabilityCount(query: $query)
+    const cveType = workflowState.getCurrentEntityType();
+
+    let cveQuery = '';
+
+    switch (cveType) {
+        case entityTypes.NODE_CVE: {
+            cveQuery = gql`
+                query getNodeCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: nodeVulnerabilities(query: $query, pagination: $pagination) {
+                        ...nodeCVEFields
+                    }
+                    count: nodeVulnerabilityCount(query: $query)
+                }
+                ${NODE_CVE_LIST_FRAGMENT}
+            `;
+            break;
         }
-        ${VULN_CVE_LIST_FRAGMENT}
-    `;
+        case entityTypes.CLUSTER_CVE: {
+            cveQuery = gql`
+                query getClusterCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: clusterVulnerabilities(query: $query, pagination: $pagination) {
+                        ...clusterCVEFields
+                    }
+                    count: clusterVulnerabilityCount(query: $query)
+                }
+                ${CLUSTER_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+        case entityTypes.IMAGE_CVE:
+        default: {
+            cveQuery = gql`
+                query getImageCves($query: String, $scopeQuery: String, $pagination: Pagination) {
+                    results: imageVulnerabilities(query: $query, pagination: $pagination) {
+                        ...imageCVEFields
+                    }
+                    count: imageVulnerabilityCount(query: $query)
+                }
+                ${IMAGE_CVE_LIST_FRAGMENT}
+            `;
+            break;
+        }
+    }
 
     const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
 
@@ -298,10 +358,10 @@ const VulnMgmtCves = ({
         },
     };
 
-    const addToPolicy = (cveId) => (e) => {
+    const addToPolicy = (cve) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToAdd = cveId ? [cveId] : selectedCveIds;
+        const cveIdsToAdd = cve ? [cve] : selectedCveIds;
 
         if (cveIdsToAdd.length) {
             setBulkActionCveIds(cveIdsToAdd);
@@ -312,22 +372,23 @@ const VulnMgmtCves = ({
         }
     };
 
-    const suppressCves = (cveId, duration) => (e) => {
+    const suppressCves = (cve, duration) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-        suppressVulns(cveIdsToToggle, duration)
+        const currentEntityType = workflowState.getCurrentEntity().entityType;
+        const cvesToToggle = cve ? [cve] : selectedCveIds;
+        suppressVulns(cveType, cvesToToggle, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
-
                 addToast(
-                    `Successfully deferred and approved ${cveIdsToToggle.length} ${pluralizedCVEs}`
+                    `Successfully deferred and approved ${entityCountNounOrdinaryCase(
+                        cvesToToggle.length,
+                        currentEntityType
+                    )} globally`
                 );
                 setTimeout(removeToast, 2000);
             })
@@ -337,21 +398,24 @@ const VulnMgmtCves = ({
             });
     };
 
-    const unsuppressCves = (cveId) => (e) => {
+    const unsuppressCves = (cve) => (e) => {
         e.stopPropagation();
 
-        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-        unsuppressVulns(cveIdsToToggle, false)
+        const currentEntityType = workflowState.getCurrentEntity().entityType;
+        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
+        unsuppressVulns(cveType, cveIdsToToggle)
             .then(() => {
                 setSelectedCveIds([]);
 
                 // changing this param value on the query vars, to force the query to refetch
                 setRefreshTrigger(Math.random());
 
-                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
-
-                addToast(`Successfully reobserved ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                addToast(
+                    `Successfully reobserved ${entityCountNounOrdinaryCase(
+                        cveIdsToToggle.length,
+                        currentEntityType
+                    )} globally`
+                );
                 setTimeout(removeToast, 2000);
             })
             .catch((evt) => {
@@ -380,79 +444,79 @@ const VulnMgmtCves = ({
         setSelectedCveIds(idsToStaySelected);
     }
 
-    const snoozeOptions = (cveId) => {
+    const snoozeOptions = (cve) => {
         return Object.keys(snoozeDurations).map((d) => {
-            return { label: snoozeDurations[d], onClick: suppressCves(cveId, durations[d]) };
+            return { label: snoozeDurations[d], onClick: suppressCves(cve, durations[d]) };
         });
     };
 
-    const renderRowActionButtons = ({ id }) => (
-        <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
-            <RowActionButton
-                text="Add to Policy"
-                onClick={addToPolicy(id)}
-                date-testid="row-action-add-to-policy"
-                icon={<Icon.Plus className="my-1 h-4 w-4" />}
-            />
-            {!viewingSuppressed && (
-                <RowActionMenu
-                    className="h-full min-w-30"
-                    border="border-l-2 border-base-400"
-                    icon={<Icon.BellOff className="h-4 w-4" />}
-                    options={snoozeOptions(id)}
-                    text="Defer and Approve CVE"
-                    dataTestId="row-action-suppress"
-                />
-            )}
-            {viewingSuppressed && (
-                <RowActionButton
-                    text="Reobserve CVE"
-                    border="border-l-2 border-base-400"
-                    onClick={unsuppressCves(id)}
-                    date-testid="row-action-unsuppress"
-                    icon={<Icon.Bell className="my-1 h-4 w-4" />}
-                    dataTestId="row-action-unsuppress"
-                />
-            )}
-        </div>
-    );
+    const renderRowActionButtons =
+        hasWriteAccessForAddToPolicy || hasWriteAccessForRiskAcceptance
+            ? ({ cve }) => (
+                  <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+                      {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                          <RowActionButton
+                              text="Add to policy"
+                              onClick={addToPolicy(cve)}
+                              icon={<Icon.Plus className="my-1 h-4 w-4" />}
+                          />
+                      )}
+                      {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
+                          <RowActionMenu
+                              className="h-full min-w-30"
+                              border="border-l-2 border-base-400"
+                              icon={<Icon.BellOff className="h-4 w-4" />}
+                              options={snoozeOptions(cve)}
+                              text="Defer and approve CVE"
+                          />
+                      )}
+                      {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
+                          <RowActionButton
+                              text="Reobserve CVE"
+                              border="border-l-2 border-base-400"
+                              onClick={unsuppressCves(cve)}
+                              icon={<Icon.Bell className="my-1 h-4 w-4" />}
+                          />
+                      )}
+                  </div>
+              )
+            : null;
 
-    const viewButtonText = viewingSuppressed ? 'View Observed' : 'View Deferred';
+    const viewButtonText = viewingSuppressed ? 'View observed' : 'View deferred';
 
     const tableHeaderComponents = (
         <>
-            <PanelButton
-                icon={<Icon.Plus className="h-4 w-4" />}
-                className="btn-icon btn-tertiary"
-                onClick={addToPolicy()}
-                disabled={selectedCveIds.length === 0}
-                tooltip="Add Selected CVEs to Policy"
-                dataTestId="panel-button-add-cves-to-policy"
-            >
-                Add to Policy
-            </PanelButton>
-            {!viewingSuppressed && (
+            {hasWriteAccessForAddToPolicy && cveType === entityTypes.IMAGE_CVE && (
+                <PanelButton
+                    icon={<Icon.Plus className="h-4 w-4" />}
+                    className="btn-icon btn-tertiary"
+                    onClick={addToPolicy()}
+                    disabled={selectedCveIds.length === 0}
+                    tooltip="Add Selected CVEs to Policy"
+                >
+                    Add to policy
+                </PanelButton>
+            )}
+            {hasWriteAccessForRiskAcceptance && !viewingSuppressed && (
                 <Menu
                     className="h-full min-w-30 ml-2"
                     menuClassName="bg-base-100 min-w-28"
                     buttonClass="btn-icon btn-tertiary"
-                    buttonText="Defer and Approve"
+                    buttonText="Defer and approve"
                     buttonIcon={<Icon.BellOff className="h-4 w-4 mr-2" />}
                     options={snoozeOptions()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Defer and Approve Selected CVEs"
-                    dataTestId="panel-button-suppress-selected-cves"
+                    tooltip="Defer and approve selected CVEs"
                 />
             )}
 
-            {viewingSuppressed && (
+            {hasWriteAccessForRiskAcceptance && viewingSuppressed && (
                 <PanelButton
                     icon={<Icon.Bell className="h-4 w-4" />}
                     className="btn-icon btn-tertiary ml-2"
                     onClick={unsuppressCves()}
                     disabled={selectedCveIds.length === 0}
-                    tooltip="Reobserve Selected CVEs"
-                    dataTestId="panel-button-unsuppress-selected-cves"
+                    tooltip="Reobserve selected CVEs"
                 >
                     Reobserve
                 </PanelButton>
@@ -470,7 +534,6 @@ const VulnMgmtCves = ({
                 className="btn-icon btn-tertiary ml-2"
                 onClick={toggleSuppressedView}
                 tooltip={`${viewButtonText} CVEs`}
-                dataTestId="panel-button-toggle-suppressed-cves-view"
             >
                 {viewButtonText}
             </PanelButton>
@@ -482,10 +545,10 @@ const VulnMgmtCves = ({
             <WorkflowListPage
                 data={data}
                 totalResults={totalResults}
-                query={CVES_QUERY}
+                query={cveQuery}
                 queryOptions={queryOptions}
-                idAttribute="cve"
-                entityListType={entityTypes.CVE}
+                idAttribute="id"
+                entityListType={cveType}
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}
                 search={search}
@@ -503,6 +566,7 @@ const VulnMgmtCves = ({
                 <CveBulkActionDialogue
                     closeAction={closeDialog}
                     bulkActionCveIds={bulkActionCveIds}
+                    cveType={cveType}
                 />
             )}
         </>

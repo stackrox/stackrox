@@ -1,15 +1,16 @@
 package orchestratormanager
 
-import static io.fabric8.kubernetes.client.utils.InputStreamPumper.pump
+import static util.Helpers.evaluateWithRetry
+import static util.Helpers.withK8sClientRetry
+import static util.Helpers.withRetry
 
 import java.nio.file.Paths
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
+import java.util.concurrent.TimeoutException
 
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
 import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
@@ -18,7 +19,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
-import io.fabric8.kubernetes.api.model.Deployment as K8sDeployment
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.EnvVarBuilder
@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
@@ -50,9 +51,12 @@ import io.fabric8.kubernetes.api.model.ServiceAccount
 import io.fabric8.kubernetes.api.model.ServiceBuilder
 import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
+import io.fabric8.kubernetes.api.model.Status
 import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
 import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
+import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
@@ -78,8 +82,8 @@ import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.fabric8.kubernetes.api.model.rbac.RoleRef
 import io.fabric8.kubernetes.api.model.rbac.Subject
-import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
@@ -88,9 +92,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
-import io.fabric8.kubernetes.client.utils.InputStreamPumper
-import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
-import okhttp3.Response
+import org.apache.commons.exec.CommandLine
 
 import common.YamlGenerator
 import objects.ConfigMap
@@ -108,10 +110,12 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import objects.Secret
 import objects.SecretKeyRef
+import util.Env
 import util.Timer
 
+@CompileStatic
+@Slf4j
 class Kubernetes implements OrchestratorMain {
-
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
@@ -132,11 +136,12 @@ class Kubernetes implements OrchestratorMain {
 
     Kubernetes(String ns) {
         this.namespace = ns
-        this.client = new DefaultKubernetesClient()
+        this.client = new KubernetesClientBuilder().build()
         // On OpenShift, the namespace config is typically non-null (set to the default project), which causes all
         // "any namespace" requests to be scoped to the default project.
         this.client.configuration.namespace = null
-        this.client.configuration.setRollingTimeout(60 * 60 * 1000)
+        this.client.configuration.setRequestTimeout(32*1000)
+        this.client.configuration.setConnectionTimeout(20*1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
         this.statefulsets = this.client.apps().statefulSets()
@@ -144,21 +149,21 @@ class Kubernetes implements OrchestratorMain {
     }
 
     Kubernetes() {
-        Kubernetes("default")
+        this("default")
     }
 
     def ensureNamespaceExists(String ns) {
-        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+        Namespace namespace = newNamespace(ns)
         try {
             client.namespaces().create(namespace)
+            log.info "Created namespace ${ns}"
             defaultPspForNamespace(ns)
             provisionDefaultServiceAccount(ns)
-            println "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
-            // 409 is already exists
             if (kce.code != 409) {
                 throw kce
             }
+            log.debug("Namespace ${ns} already exists")
         }
     }
 
@@ -179,22 +184,22 @@ class Kubernetes implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
-    boolean updateDeploymentNoWait(Deployment deployment) {
+    boolean updateDeploymentNoWait(Deployment deployment, int maxRetries=0) {
         K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
         if (k8sdeployment) {
-            println "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
+            log.debug "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
                     "found in namespace ${deployment.namespace}. Updating..."
         } else {
-            println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+            log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
-        return createDeploymentNoWait(deployment)
+        return createDeploymentNoWait(deployment, maxRetries)
     }
 
     def updateDeployment(Deployment deployment) {
         if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
-            println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
+            log.debug "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
         } else {
-            println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+            log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
         }
         // Our createDeployment actually uses createOrReplace so it should work for these purposes
         return createDeployment(deployment)
@@ -222,11 +227,16 @@ class Kubernetes implements OrchestratorMain {
             }
         }
 
-        println "Timed out waiting for the following pods to be removed"
+        log.debug "Timed out waiting for the following pods to be removed"
         for (Pod pod : list.getItems()) {
-            println "\t- ${pod.metadata.name}"
+            log.debug "\t- ${pod.metadata.name}"
         }
         return false
+    }
+
+    boolean podReady(Pod pod) {
+        def deleted = pod.metadata.deletionTimestamp as boolean
+        return !deleted && pod.status?.containerStatuses?.every { it.ready }
     }
 
     def waitForPodsReady(String ns, Map<String, String> labels, int minReady = 1, int retries = 30,
@@ -236,15 +246,16 @@ class Kubernetes implements OrchestratorMain {
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             def list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
-            def numReady = list.items.sum { Pod p ->
-                p.status.containerStatuses.every { it.ready } ? 1 : 0
-            }
+            def readyPods = list.items.findAll { Pod p -> podReady(p) }
+            def readyPodNames = readyPods.collect { Pod p -> p.metadata.name }
+            def numReady = readyPodNames.size()
             if (numReady >= minReady) {
+                log.debug "Encountered ${numReady} ready pods matching ${labels}: ${readyPodNames}"
                 return true
             }
         }
 
-        println "Timed out waiting for pods to become ready"
+        log.debug "Timed out waiting for pods to become ready"
         return false
     }
 
@@ -254,7 +265,7 @@ class Kubernetes implements OrchestratorMain {
         while (t.IsValid()) {
             def pod = client.pods().inNamespace(ns).withName(name).get()
             if (pod.status.containerStatuses.get(0).restartCount > prevRestartCount) {
-                println "Restarted container ${ns}/${name}"
+                log.debug "Restarted container ${ns}/${name}"
                 return true
             }
         }
@@ -283,12 +294,12 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteAllPods(String ns, Map<String, String> labels) {
-        println "Delete all pods in ${ns} with labels ${labels}"
+        log.debug "Delete all pods in ${ns} with labels ${labels}"
         client.pods().inNamespace(ns).withLabels(labels).delete()
     }
 
     void deleteAllPodsAndWait(String ns, Map<String, String> labels) {
-        println "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
+        log.debug "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
 
         List<Pod> beforePods = evaluateWithRetry(2, 3) {
             client.pods().inNamespace(ns).withLabels(labels).list().getItems()
@@ -308,10 +319,10 @@ class Kubernetes implements OrchestratorMain {
                     client.pods().inNamespace(ns).withName(deleted.metadata.name).get()
                 }
                 if (pod == null) {
-                    println "${deleted.metadata.name} is deleted"
+                    log.debug "${deleted.metadata.name} is deleted"
                 }
                 else {
-                    println "${deleted.metadata.name} is not deleted"
+                    log.debug "${deleted.metadata.name} is not deleted"
                     allDeleted = false
                 }
             }
@@ -323,14 +334,14 @@ class Kubernetes implements OrchestratorMain {
 
     Boolean deletePodAndWait(String ns, String name, int retries, int intervalSeconds) {
         deletePod(ns, name, null)
-        println "Deleting pod ${name}"
+        log.debug "Deleting pod ${name}"
 
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
-            println "Waiting for pod deletion ${name}"
+            log.debug "Waiting for pod deletion ${name}"
             def pod = client.pods().inNamespace(ns).withName(name).get()
             if (pod == null) {
-                println "Deleted pod ${name}"
+                log.debug "Deleted pod ${name}"
                 return true
             }
         }
@@ -340,8 +351,9 @@ class Kubernetes implements OrchestratorMain {
     Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
         Pod pod = getPodsByLabel(ns, labels).get(0)
         int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, "kill 1 &")
-        println "Killed pod ${pod.metadata.name}"
+        def cmds = ["sh", "-c", "kill -15 1"] as String[]
+        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, cmds)
+        log.debug "Killed pod ${pod.metadata.name}"
         return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
 
@@ -353,17 +365,17 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getAndPrintPods(String ns, String name) {
-        println "Status of ${name}'s pods:"
+        log.debug "Status of ${name}'s pods:"
         for (Pod pod : getPodsByLabel(ns, ["deployment": name])) {
-            println "\t- ${pod.metadata.name}"
+            log.debug "\t- ${pod.metadata.name}"
             for (ContainerStatus status : pod.status.containerStatuses) {
-                println "\t  Container status: ${status.state}"
+                log.debug "\t  Container status: ${status.state}"
             }
         }
     }
 
     String getPodLog(String ns, String name) {
-        println "reading logs from ${ns}/${name}"
+        log.debug "reading logs from ${ns}/${name}"
         return client.pods().inNamespace(ns)
                 .withName(name).getLog()
     }
@@ -376,6 +388,13 @@ class Kubernetes implements OrchestratorMain {
                 .upload(Paths.get(fromPath))
     }
 
+    def addPodAnnotationByApp(String ns, String appName, String key, String value) {
+        Pod pod = getPodsByLabel(ns, ["app": appName]).get(0)
+        client.pods().inNamespace(ns).withName(pod.metadata.name).edit {
+            n -> new PodBuilder(n).editMetadata().addToAnnotations(key, value).endMetadata().build()
+        }
+    }
+
     def waitForDeploymentDeletion(Deployment deploy, int retries = 30, int intervalSeconds = 5) {
         Timer t = new Timer(retries, intervalSeconds)
 
@@ -383,12 +402,12 @@ class Kubernetes implements OrchestratorMain {
         while (t.IsValid()) {
             d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
             if (d == null) {
-                println "${deploy.name}: deployment removed."
+                log.debug "${deploy.name}: deployment removed."
                 return
             }
             getAndPrintPods(deploy.namespace, deploy.name)
         }
-        println "Timed out waiting for deployment ${deploy.name} to be deleted"
+        log.debug "Timed out waiting for deployment ${deploy.name} to be deleted"
     }
 
     def deleteAndWaitForDeploymentDeletion(Deployment... deployments) {
@@ -417,14 +436,14 @@ class Kubernetes implements OrchestratorMain {
                 deleted = true
                 break
             } catch (KubernetesClientException ex) {
-                println "Failed to delete deployment: ${ex}"
+                log.warn("Failed to delete deployment:", ex)
             }
         }
         if (deleted) {
-            println "Removed the deployment: ${deployment.name}"
+            log.debug "Removed the deployment: ${deployment.name}"
         }
         else {
-            println "Failed to deleted the deployment: ${deployment.name} after repeated attempts"
+            log.warn "Failed to deleted the deployment: ${deployment.name} after repeated attempts"
         }
     }
 
@@ -449,7 +468,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName(deployment.name)
                 .get()
         if (d != null) {
-            println "${deployment.name}: Replicas=${d.getSpec().getReplicas()}"
+            log.debug "${deployment.name}: Replicas=${d.getSpec().getReplicas()}"
             return d.getSpec().getReplicas()
         }
     }
@@ -460,7 +479,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName(deployment.name)
                 .get()
         if (d != null) {
-            println "${deployment.name}: Unavailable Replicas=${d.getStatus().getUnavailableReplicas()}"
+            log.debug "${deployment.name}: Unavailable Replicas=${d.getStatus().getUnavailableReplicas()}"
             return d.getStatus().getUnavailableReplicas()
         }
     }
@@ -471,7 +490,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName(deployment.name)
                 .get()
         if (d != null) {
-            println "${deployment.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
+            log.debug "${deployment.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
             return d.getSpec().getTemplate().getSpec().getNodeSelector()
         }
     }
@@ -494,7 +513,11 @@ class Kubernetes implements OrchestratorMain {
         return secretSet
     }
 
-    def getDeploymentCount(String ns = null) {
+    List<String> getDeploymentCount() {
+        return this.deployments.list().getItems().collect { it.metadata.name }
+    }
+
+    List<String> getDeploymentCount(String ns) {
         return this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
@@ -540,29 +563,34 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def updateDeploymentEnv(String ns, String name, String key, String value) {
-        println "Update env var in ${ns}/${name}: ${key} = ${value}"
+        log.debug "Update env var in ${ns}/${name}: ${key} = ${value}"
         List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
                 .spec.containers.get(0).env
 
         int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException(
-                    "Could not update env var, did not find env variable ${key} in ${ns}/${name}")
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
         }
-        envVars.get(index).value = value
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+        }
 
-        client.apps().deployments().inNamespace(ns).withName(name)
-            .edit { d -> new DeploymentBuilder(d)
-                .editSpec()
-                .editTemplate()
-                .editSpec()
-                .editContainer(0)
-                .withEnv(envVars)
-                .endContainer()
-                .endSpec()
-                .endTemplate()
-                .endSpec()
-            .build() }
+        withRetry(2, 3) {
+            client.apps().deployments().inNamespace(ns).withName(name)
+                .edit { d -> new DeploymentBuilder(d)
+                    .editSpec()
+                    .editTemplate()
+                    .editSpec()
+                    .editContainer(0)
+                    .withEnv(envVars)
+                    .endContainer()
+                    .endSpec()
+                    .endTemplate()
+                    .endSpec()
+                .build() }
+        }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
@@ -574,16 +602,16 @@ class Kubernetes implements OrchestratorMain {
                 mostRecentException = null
                 break
             } catch (Exception e) {
-                println "Failed to scale the deployment: ${e}"
+                log.warn("Failed to scale the deployment", e)
                 mostRecentException = e
             }
         }
         if (mostRecentException) {
-            println "Giving up trying to scale the deployment ${name} to ${replicas}"
+            log.warn("Giving up trying to scale the deployment ${name} to ${replicas}")
             throw mostRecentException
         }
         else {
-            println "Scaled the deployment ${name} to ${replicas}"
+            log.info("Scaled the deployment ${name} to ${replicas}")
         }
     }
 
@@ -599,21 +627,94 @@ class Kubernetes implements OrchestratorMain {
 
     def deleteDaemonSet(DaemonSet daemonSet) {
         this.daemonsets.inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
-        println "${daemonSet.name}: daemonset removed."
+        log.debug "${daemonSet.name}: daemonset removed."
     }
 
-    def waitForDaemonSetReady(String ns, String name, int retries, int intervalSeconds) {
-        println "Waiting for daemonset ${ns}/${name} being ready"
-        Timer t = new Timer(retries, intervalSeconds)
-        while (t.IsValid()) {
-            def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
-            def numReady = daemonSet.status.numberReady
-            if (numReady >= daemonSet.status.desiredNumberScheduled) {
-                return true
-            }
-            println "Waiting for daemonset ${ns}/${name} being ready, retrying..."
+    boolean containsDaemonSetContainer(String ns, String name, String containerName) {
+        return client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers.findIndexOf { it.name == containerName } > -1
+    }
+
+    def updateDaemonSetEnv(String ns, String name, String containerName, String key, String value) {
+        log.debug "Update env var in ${ns}/${name}/${containerName}: ${key} = ${value}"
+        List<Container> containers = client.apps().daemonSets().inNamespace(ns).withName(name).get().spec.template
+            .spec.containers
+        int containerIndex = containers.findIndexOf { it.name == containerName }
+        if (containerIndex == -1) {
+            throw new RuntimeException("Could not update env var. No container named ${containerName} in ${ns}/${name}")
         }
-        return false
+        log.debug "Container ${ns}/${name}/${containerName} found on index: ${containerIndex}"
+        List<EnvVar> envVars = containers.get(containerIndex).env
+        log.debug "Current env vars of ${ns}/${name}/${containerName}: ${envVars}"
+
+        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
+        if (index > -1) {
+            log.debug "Env var ${key} found on index: ${index}"
+            envVars.get(index).value = value
+        }
+        else {
+            log.debug "Env var ${key} not found. Adding it now"
+            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
+        }
+
+        client.apps().daemonSets().inNamespace(ns).withName(name)
+            .edit { d -> new DaemonSetBuilder(d)
+                .editSpec()
+                .editTemplate()
+                .editSpec()
+                .editContainer(containerIndex)
+                .withEnv(envVars)
+                .endContainer()
+                .endSpec()
+                .endTemplate()
+                .endSpec()
+                .build() }
+    }
+
+    boolean deploymentReady(String ns, String name) {
+        def depl = client.apps().deployments().inNamespace(ns).withName(name).get()
+        if (depl == null) {
+            return false
+        }
+        return depl.status.readyReplicas > 0
+    }
+
+    boolean daemonSetReady(String ns, String name) {
+        def daemonSet = client.apps().daemonSets().inNamespace(ns).withName(name).get()
+        return daemonSet.status.numberReady >= daemonSet.status.desiredNumberScheduled
+    }
+
+    // daemonSetEnvVarUpdated returns true if all pods are ready and the env var has a given value for all pods
+    boolean daemonSetEnvVarUpdated(String ns, String name, String containerName,
+                                   String envVarName, String envVarValue) {
+        def pods = client.pods().inNamespace(ns).withLabel("app", name).list().getItems()
+        int podsPassing = 0
+        for (Pod pod : pods) {
+            log.debug "Found pod \"${pod.getMetadata().name}\" with ${pod.getSpec().containers.size()} containers"
+            int containerIndex = pod.getSpec().containers.findIndexOf { it.name == containerName }
+            if (containerIndex == -1) {
+                log.debug "Pod ${pod.getMetadata().name}: could not find container ${containerName}"
+                return false
+            }
+            List<EnvVar> envVars = pod.getSpec().containers.get(containerIndex).env
+            int index = envVars.findIndexOf { EnvVar it -> it.name == envVarName }
+            if (index == -1) {
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "could not find env variable ${envVarName} in container ${containerName}"
+                return false
+            }
+            def value = envVars.get(index).value
+            log.debug "Pod ${pod.getMetadata().name}: " +
+                "Env var ${envVarName} found on index: ${index} with value ${value}"
+            if (value != envVarValue) {
+                log.debug "Pod ${pod.getMetadata().name}: " +
+                    "Expected value ${envVarValue} does not match current ${value}"
+                return false
+            }
+            log.debug "Pod ${pod.getMetadata().name}: All conditions have been met"
+            podsPassing++
+        }
+        return podsPassing == pods.size()
     }
 
     def createJob(Job job) {
@@ -642,17 +743,17 @@ class Kubernetes implements OrchestratorMain {
         k8sJob.spec.template.spec.restartPolicy = "Never"
 
         try {
-            println "Told the orchestrator to create job " + job.getName()
+            log.debug "Told the orchestrator to create job " + job.getName()
             return this.jobs.inNamespace(job.namespace).createOrReplace(k8sJob)
         } catch (Exception e) {
-            println "Error creating k8s job" + e
+            log.warn("Error creating k8s job", e)
         }
         return null
     }
 
     def deleteJob(Job job) {
         this.jobs.inNamespace(job.namespace).withName(job.name).delete()
-        println "${job.name}: job removed."
+        log.debug "${job.name}: job removed."
     }
 
     def waitForDaemonSetDeletion(String name, String ns = namespace) {
@@ -660,11 +761,11 @@ class Kubernetes implements OrchestratorMain {
 
         while (t.IsValid()) {
             if (this.daemonsets.inNamespace(ns).withName(name).get() == null) {
-                println "Daemonset ${name} has been deleted"
+                log.debug "Daemonset ${name} has been deleted"
                 return
             }
         }
-        println "Timed out waiting for daemonset ${name} to stop"
+        log.debug "Timed out waiting for daemonset ${name} to stop"
     }
 
     def getDaemonSetReplicaCount(DaemonSet daemonSet) {
@@ -673,7 +774,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName(daemonSet.name)
                 .get()
         if (d != null) {
-            println "${daemonSet.name}: Replicas=${d.getStatus().getDesiredNumberScheduled()}"
+            log.debug "${daemonSet.name}: Replicas=${d.getStatus().getDesiredNumberScheduled()}"
             return d.getStatus().getDesiredNumberScheduled()
         }
         return null
@@ -685,7 +786,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName(daemonSet.name)
                 .get()
         if (d != null) {
-            println "${daemonSet.name}: Unavailable Replicas=${d.getStatus().getNumberUnavailable()}"
+            log.debug "${daemonSet.name}: Unavailable Replicas=${d.getStatus().getNumberUnavailable()}"
             return d.getStatus().getNumberUnavailable() == null ? 0 : d.getStatus().getNumberUnavailable()
         }
         return null
@@ -697,14 +798,18 @@ class Kubernetes implements OrchestratorMain {
                 .withName(daemonSet.name)
                 .get()
         if (d != null) {
-            println "${daemonSet.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
+            log.debug "${daemonSet.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
             return d.getSpec().getTemplate().getSpec().getNodeSelector()
         }
         return null
     }
 
-    def getDaemonSetCount(String ns = null) {
+    List<String> getDaemonSetCount(String ns) {
         return this.daemonsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
+    }
+
+    List<String> getDaemonSetCount() {
+        return this.daemonsets.list().getItems().collect { it.metadata.name }
     }
 
     String getDaemonSetId(DaemonSet daemonSet) {
@@ -717,7 +822,11 @@ class Kubernetes implements OrchestratorMain {
         StatefulSet Methods
     */
 
-    def getStatefulSetCount(String ns = null) {
+    List<String> getStatefulSetCount() {
+        return this.statefulsets.list().getItems().collect { it.metadata.name }
+    }
+
+    List<String> getStatefulSetCount(String ns) {
         return this.statefulsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
@@ -739,31 +848,20 @@ class Kubernetes implements OrchestratorMain {
             try {
                 pod = client.pods().inNamespace(namespace).withName(containerName).get()
                 if (pod == null) {
-                    println "Could not query K8S for pod details, assuming pod was killed"
+                    log.debug "Could not query K8S for pod details, assuming pod was killed"
                     return true
                 }
-                println "Pod Deletion Timestamp: ${pod.metadata.deletionTimestamp}"
+                log.debug "Pod Deletion Timestamp: ${pod.metadata.deletionTimestamp}"
                 if (pod.metadata.deletionTimestamp != null ) {
                     return true
                 }
             } catch (Exception e) {
-                println "wasContainerKilled: error fetching pod details ${e} - retrying"
+                log.warn("wasContainerKilled: error fetching pod details - retrying", e)
             }
         }
-        println "wasContainerKilled: did not determine container was killed before 60s timeout"
-        println "container details were found:\n${containerName}: ${pod}"
+        log.warn "wasContainerKilled: did not determine container was killed before 60s timeout"
+        log.warn "container details were found:\n${containerName}: ${pod}"
         return false
-    }
-
-    def isKubeProxyPresent() {
-        return evaluateWithRetry(2, 3) {
-            PodList pods = client.pods().inAnyNamespace().list()
-            return pods.getItems().findAll {
-                it.getSpec().getContainers().find {
-                    it.getImage().contains("kube-proxy")
-                }
-            }
-        }
     }
 
     def isKubeDashboardRunning() {
@@ -782,12 +880,13 @@ class Kubernetes implements OrchestratorMain {
         return client.pods().inNamespace(ns).withName(podName).inContainer(containerName).getLog()
     }
 
-    def getStaticPodCount(String ns = null) {
+    Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
             // This method assumes that a static pod name will contain the node name that the pod is running on
             def nodeNames = client.nodes().list().items.collect { it.metadata.name }
             Set<String> staticPods = [] as Set
-            client.pods().inNamespace(ns).list().items.each {
+            PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
+            podList.items.each {
                 for (String node : nodeNames) {
                     if (it.metadata.name.contains(node)) {
                         staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
@@ -827,10 +926,10 @@ class Kubernetes implements OrchestratorMain {
             )
             def created = client.services().inNamespace(deployment.namespace).createOrReplace(service)
             if (created == null) {
-                println deployment.serviceName ?: deployment.name + " service not created"
+                log.debug deployment.serviceName ?: deployment.name + " service not created"
                 assert created
             }
-            println deployment.serviceName ?: deployment.name + " service created"
+            log.debug deployment.serviceName ?: deployment.name + " service created"
             if (deployment.createLoadBalancer) {
                 deployment.loadBalancerIP = waitForLoadBalancer(deployment.serviceName ?:
                         deployment.name, deployment.namespace)
@@ -863,7 +962,7 @@ class Kubernetes implements OrchestratorMain {
             )
             client.services().inNamespace(s.namespace).createOrReplace(service)
         }
-        println "${s.name}: Service created"
+        log.debug "${s.name}: Service created"
         if (objects.Service.Type.LOADBALANCER == s.type) {
             s.loadBalancerIP = waitForLoadBalancer(s.name, s.namespace)
         }
@@ -880,10 +979,10 @@ class Kubernetes implements OrchestratorMain {
 
     def deleteService(String name, String namespace = this.namespace) {
         withRetry(2, 3) {
-            println "${name}: Service deleting..."
+            log.debug "${name}: Service deleting..."
             client.services().inNamespace(namespace).withName(name).delete()
         }
-        println "${name}: Service deleted"
+        log.debug "${name}: Service deleted"
     }
 
     def waitForServiceDeletion(objects.Service service) {
@@ -895,16 +994,16 @@ class Kubernetes implements OrchestratorMain {
             Service s = client.services().inNamespace(service.namespace).withName(service.name).get()
             beenDeleted = true
 
-            println "Waiting for service ${service.name} to be deleted"
+            log.debug "Waiting for service ${service.name} to be deleted"
             if (s != null) {
                 beenDeleted = false
             }
         }
 
         if (beenDeleted) {
-            println service.name + ": service removed."
+            log.debug service.name + ": service removed."
         } else {
-            println "Timed out waiting for service ${service.name} to be removed"
+            log.debug "Timed out waiting for service ${service.name} to be removed"
         }
     }
 
@@ -936,19 +1035,19 @@ class Kubernetes implements OrchestratorMain {
         Service service
         String loadBalancerIP
         int iterations = (lbWaitTimeSeconds / intervalTime).intValue()
-        println "Waiting for LB external IP for " + serviceName
+        log.debug "Waiting for LB external IP for " + serviceName
         Timer t = new Timer(iterations, intervalTime)
         while (t.IsValid()) {
             service = client.services().inNamespace(namespace).withName(serviceName).get()
             if (service?.status?.loadBalancer?.ingress?.size()) {
                 loadBalancerIP = service.status.loadBalancer.ingress.get(0).
                                   ip ?: service.status.loadBalancer.ingress.get(0).hostname
-                println "LB IP: " + loadBalancerIP
+                log.debug "LB IP: " + loadBalancerIP
                 break
             }
         }
         if (loadBalancerIP == null) {
-            println "Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations"
+            log.debug "Could not get loadBalancer IP in ${t.SecondsSince()} seconds and ${iterations} iterations"
         }
         return loadBalancerIP
     }
@@ -978,11 +1077,11 @@ class Kubernetes implements OrchestratorMain {
         while (t.IsValid()) {
             K8sSecret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
             if (secret != null) {
-                println secretName + ": secret created."
+                log.debug secretName + ": secret created."
                 return secret
             }
         }
-        println "Timed out waiting for secret ${secretName} to be created"
+        log.debug "Timed out waiting for secret ${secretName} to be created"
         return null
     }
 
@@ -1037,6 +1136,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         def sec = client.secrets().inNamespace(secret.namespace).createOrReplace(k8sSecret)
+        log.debug secret.name + ": Secret created."
         return sec.metadata.uid
     }
 
@@ -1063,7 +1163,7 @@ class Kubernetes implements OrchestratorMain {
                     return createdSecret.metadata.uid
                 }
             } catch (Exception e) {
-                println "Error creating secret" + e
+                log.warn("Error creating secret", e)
             }
             return null
         }
@@ -1080,12 +1180,20 @@ class Kubernetes implements OrchestratorMain {
             client.secrets().inNamespace(namespace).withName(name).delete()
         }
         sleep(sleepDurationSeconds * 1000)
-        println name + ": Secret removed."
+        log.debug name + ": Secret removed."
     }
 
-    def getSecretCount(String ns = null) {
+    int getSecretCount(String ns) {
         return evaluateWithRetry(2, 3) {
             return client.secrets().inNamespace(ns).list().getItems().findAll {
+                !it.type.startsWith("kubernetes.io/service-account-token")
+            }.size()
+        }
+    }
+
+    int getSecretCount() {
+        return evaluateWithRetry(2, 3) {
+            return client.secrets().list().getItems().findAll {
                 !it.type.startsWith("kubernetes.io/service-account-token")
             }.size()
         }
@@ -1106,8 +1214,8 @@ class Kubernetes implements OrchestratorMain {
             io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy networkPolicy =
                     createNetworkPolicyObject(policy)
 
-            println "${networkPolicy.metadata.name}: NetworkPolicy created:"
-            println YamlGenerator.toYaml(networkPolicy)
+            log.debug "${networkPolicy.metadata.name}: NetworkPolicy created:"
+            log.debug YamlGenerator.toYaml(networkPolicy)
             io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy createdPolicy =
                     client.network().networkPolicies()
                             .inNamespace(networkPolicy.metadata.namespace ?
@@ -1125,10 +1233,10 @@ class Kubernetes implements OrchestratorMain {
                     .withName(policy.name)
                     .delete()
             if (status) {
-                println "${policy.name}: NetworkPolicy removed."
+                log.debug "${policy.name}: NetworkPolicy removed."
                 return true
             }
-            println "${policy.name}: Failed to remove NetworkPolicy."
+            log.debug "${policy.name}: Failed to remove NetworkPolicy."
             return false
         }
     }
@@ -1243,9 +1351,9 @@ class Kubernetes implements OrchestratorMain {
         Service Accounts
      */
 
-    List<ServiceAccount> getServiceAccounts() {
+    List<K8sServiceAccount> getServiceAccounts() {
         return evaluateWithRetry(1, 2) {
-            def serviceAccounts = []
+            List<K8sServiceAccount> serviceAccounts = []
             client.serviceAccounts().inAnyNamespace().list().items.each {
                 // Ingest the K8s service account to a K8sServiceAccount() in a manner similar to the SR product.
                 def annotations = it.metadata.annotations
@@ -1257,7 +1365,7 @@ class Kubernetes implements OrchestratorMain {
                         namespace: it.metadata.namespace,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
                         annotations: annotations ?: [:],
-                        secrets: it.secrets*.name,
+                        secrets: it.secrets,
                         imagePullSecrets: it.imagePullSecrets*.name,
                         automountToken: it.automountServiceAccountToken == null
                                 ? true : it.automountServiceAccountToken,
@@ -1327,8 +1435,9 @@ class Kubernetes implements OrchestratorMain {
             return
         }
 
-        // Copy image pull secrets from the default service account in the test orchestration namespace (i.e. 'qa') for
-        // use by the default service account in another namespace.
+        log.info """Copy image pull secrets from the default service account
+                    in the test orchestration namespace (${this.namespace})
+                    for use by the default service account in ${forNamespace} namespace.""".stripIndent()
 
         ServiceAccount orchestrationServiceAccount = client.serviceAccounts()
                     .inNamespace(this.namespace)
@@ -1374,7 +1483,7 @@ class Kubernetes implements OrchestratorMain {
 
     List<K8sRole> getRoles() {
         return evaluateWithRetry(1, 2) {
-            def roles = []
+            List<K8sRole> roles = []
             client.rbac().roles().inAnyNamespace().list().items.each {
                 roles.add(new K8sRole(
                         name: it.metadata.name,
@@ -1382,7 +1491,7 @@ class Kubernetes implements OrchestratorMain {
                         clusterRole: false,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
                         annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                        rules: it.rules.collect {
+                        rules: it?.rules ? it.rules.collect {
                             new K8sPolicyRule(
                                     verbs: it.verbs,
                                     apiGroups: it.apiGroups,
@@ -1390,7 +1499,7 @@ class Kubernetes implements OrchestratorMain {
                                     nonResourceUrls: it.nonResourceURLs,
                                     resourceNames: it.resourceNames
                             )
-                        }
+                        } : [],
                 ))
             }
             return roles
@@ -1432,7 +1541,7 @@ class Kubernetes implements OrchestratorMain {
 
     List<K8sRoleBinding> getRoleBindings() {
         return evaluateWithRetry(2, 3) {
-            def bindings = []
+            List<K8sRoleBinding> bindings = []
             client.rbac().roleBindings().inAnyNamespace().list().items.each {
                 def b = new K8sRoleBinding(
                         new K8sRole(
@@ -1494,7 +1603,7 @@ class Kubernetes implements OrchestratorMain {
 
     List<K8sRole> getClusterRoles() {
         return evaluateWithRetry(2, 3) {
-            def clusterRoles = []
+            List<K8sRole> clusterRoles = []
             client.rbac().clusterRoles().list().items.each {
                 clusterRoles.add(new K8sRole(
                         name: it.metadata.name,
@@ -1502,7 +1611,7 @@ class Kubernetes implements OrchestratorMain {
                         clusterRole: true,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
                         annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                        rules: it.rules.collect {
+                        rules: it?.rules ? it.rules.collect {
                             new K8sPolicyRule(
                                     verbs: it.verbs,
                                     apiGroups: it.apiGroups,
@@ -1510,7 +1619,7 @@ class Kubernetes implements OrchestratorMain {
                                     nonResourceUrls: it.nonResourceURLs,
                                     resourceNames: it.resourceNames
                             )
-                        }
+                        } : [],
                 ))
             }
             return clusterRoles
@@ -1551,7 +1660,7 @@ class Kubernetes implements OrchestratorMain {
 
     List<K8sRoleBinding> getClusterRoleBindings() {
         return evaluateWithRetry(2, 3) {
-            def clusterBindings = []
+            List<K8sRoleBinding> clusterBindings = []
             client.rbac().clusterRoleBindings().list().items.each {
                 def b = new K8sRoleBinding(
                         new K8sRole(
@@ -1606,7 +1715,7 @@ class Kubernetes implements OrchestratorMain {
         PodSecurityPolicies
     */
 
-    protected generatePspRole() {
+    protected K8sRole generatePspRole() {
         def rules = [new K8sPolicyRule(
                 apiGroups: ["policy"],
                 resources: ["podsecuritypolicies"],
@@ -1621,7 +1730,7 @@ class Kubernetes implements OrchestratorMain {
         )
     }
 
-    protected generatePspRoleBinding(String namespace) {
+    protected K8sRoleBinding generatePspRoleBinding(String namespace) {
         def roleBinding =  new K8sRoleBinding(
                 name: "allow-all-for-test-" + namespace,
                 namespace: namespace,
@@ -1636,7 +1745,8 @@ class Kubernetes implements OrchestratorMain {
     }
 
     protected defaultPspForNamespace(String namespace) {
-        PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
+        if (Env.get("POD_SECURITY_POLICIES") != "false") {
+            PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
                 .withName("allow-all-for-test")
                 .endMetadata()
                 .withNewSpec()
@@ -1654,18 +1764,25 @@ class Kubernetes implements OrchestratorMain {
                 .withNewFsGroup().withRule("RunAsAny").endFsGroup()
                 .endSpec()
                 .build()
-        client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
-        createClusterRole(generatePspRole())
-        createClusterRoleBinding(generatePspRoleBinding(namespace))
+            client.policy().v1beta1().podSecurityPolicies().createOrReplace(psp)
+            createClusterRole(generatePspRole())
+            createClusterRoleBinding(generatePspRoleBinding(namespace))
+        }
     }
 
     /*
         Jobs
      */
 
-    def getJobCount(String ns = null) {
+    List<String> getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
             return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
+    }
+
+    List<String> getJobCount() {
+        return evaluateWithRetry(2, 3) {
+            return client.batch().v1().jobs().list().getItems().collect { it.metadata.name }
         }
     }
 
@@ -1692,6 +1809,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         def config = client.configMaps().inNamespace(namespace).createOrReplace(configMap)
+        log.debug name + ": ConfigMap created."
         return config.metadata.uid
     }
 
@@ -1711,61 +1829,119 @@ class Kubernetes implements OrchestratorMain {
             client.configMaps().inNamespace(namespace).withName(name).delete()
         }
         sleep(sleepDurationSeconds * 1000)
-        println name + ": ConfigMap removed."
+        log.debug name + ": ConfigMap removed."
     }
 
     /*
         Misc/Helper Methods
     */
 
-    def execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
+    boolean execInContainerByPodName(String name, String namespace, String[] splitCmd, int retries = 1) {
         // Wait for container 0 to be running first.
         def timer = new Timer(retries, 1)
         while (timer.IsValid()) {
             def p = client.pods().inNamespace(namespace).withName(name).get()
             if (p == null || p.status.containerStatuses.size() == 0) {
-                println "First container in pod ${name} not yet running ..."
+                log.debug "First container in pod ${name} not yet running ..."
                 continue
             }
             def status = p.status.containerStatuses.get(0)
             if (status.state.running != null) {
-                println "First container in pod ${name} is running"
+                log.debug "First container in pod ${name} is running"
                 break
             }
-            println "First container in pod ${name} not yet running ..."
+            log.debug "First container in pod ${name} not yet running ..."
         }
 
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
+        final CompletableFuture<ExecStatus> completion = new CompletableFuture<>()
+        final outputStream = new ByteArrayOutputStream()
+        final errorStream = new ByteArrayOutputStream()
+        ExecStatus execStatus = ExecStatus.UNKNOWN
+
+        final listener = new ExecListener() {
+            ExecStatus status = ExecStatus.UNKNOWN
+
+            @Override
+            void onFailure(Throwable t, ExecListener.Response failureResponse) {
+                log.warn("Command failed with response {}", failureResponse, t)
+                completion.completeExceptionally(t)
+            }
+
+            @Override
+            void onClose(int code, String reason) {
+                // We ignore both code and reason because the code is websocket code, not the program exit code.
+                log.debug("Websocket response: $code $reason")
+                completion.complete(status)
+            }
+
+            @Override
+            void onExit(int code, Status s) {
+                // Do not print the full status object here as it triggers prow
+                // error highlighting in CI. There is sufficient debug printed
+                // elsewhere.
+                log.debug("Command exited with $code")
+                switch (code) {
+                    case 0:
+                        status = ExecStatus.SUCCESS
+                        break
+                    case -1:
+                        status = ExecStatus.UNKNOWN
+                        break
+                    default:
+                        status = ExecStatus.FAILURE
+                }
+            }
+        }
+
+        log.debug("Exec-ing the following command in pod {}: {}", name, splitCmd)
         try {
-            CountDownLatch latch = new CountDownLatch(1)
-            ExecWatch watch = client.pods().inNamespace(namespace).withName(name)
-                    .redirectingOutput().usingListener(new ExecListener() {
-                @Override
-                void onOpen(Response response) {
-                }
-
-                @Override
-                void onFailure(Throwable t, Response response) {
-                    latch.countDown()
-                }
-
-                @Override
-                void onClose(int code, String reason) {
-                    latch.countDown()
-                }
-            }).exec(cmd.split(" "))
-            Future<?> outPumpFuture = pump(watch.getOutput(), new SystemOutCallback(), executorService)
-            executorService.scheduleAtFixedRate(
-                    new FutureChecker("Exec", cmd, outPumpFuture), 0, 2, TimeUnit.SECONDS)
-
-            latch.await(30, TimeUnit.SECONDS)
-            watch.close()
+            final ExecWatch execCmd = client.pods()
+                    .inNamespace(namespace)
+                    .withName(name)
+                    .writingOutput(outputStream)
+                    .writingError(errorStream)
+                    .usingListener(listener)
+                    .exec(splitCmd)
+            try {
+                execStatus = completion.get(30, TimeUnit.SECONDS)
+            } catch (TimeoutException ex) {
+                // Note that timeout here does not abort the command once it started on the pod.
+                execStatus = ExecStatus.TIMEOUT
+                log.warn("Timeout occurred when exec-ing command in pod", ex)
+            } finally {
+                execCmd.close()
+                log.debug("""\
+                    Command status: {}
+                    Stdout:
+                    {}
+                    Stderr:
+                    {}""".stripIndent(),
+                        execStatus,
+                        outputStream,
+                        errorStream)
+            }
         } catch (Exception e) {
-            println "Error exec'ing in pod: ${e}"
-            return false
+            log.warn("Error exec-ing command in pod", e)
         }
-        executorService.shutdown()
-        return true
+        return execStatus == ExecStatus.SUCCESS
+    }
+
+    boolean execInContainerByPodName(String name, String namespace, String cmd, int retries = 1) {
+        String[] splitCmd = CommandLine.parse(cmd).with {
+            final List<String> result = new ArrayList()
+            result.add(it.getExecutable())
+            result.addAll(it.getArguments())
+            return result as String[]
+        }
+        return execInContainerByPodName(name, namespace, splitCmd, retries)
+    }
+
+    private enum ExecStatus {
+        UNKNOWN,
+        SUCCESS,
+        /** E.g. no-zero exit code */
+        FAILURE,
+        TIMEOUT
     }
 
     def execInContainer(Deployment deployment, String cmd) {
@@ -1799,7 +1975,7 @@ class Kubernetes implements OrchestratorMain {
                 .withName("sensor")
                 .get().status.readyReplicas < 1
         while (!running && (System.currentTimeMillis() - start) < 30000) {
-            println "waiting for sensor to come back online. Trying again in 1s..."
+            log.debug "waiting for sensor to come back online. Trying again in 1s..."
             sleep 1000
             running = client.apps().deployments()
                     .inNamespace("stackrox")
@@ -1807,11 +1983,11 @@ class Kubernetes implements OrchestratorMain {
                     .get().status.readyReplicas < 1
         }
         if (!running) {
-            println "Failed to detect sensor came back up within 30s... Future tests may be impacted."
+            log.debug "Failed to detect sensor came back up within 30s... Future tests may be impacted."
         }
     }
 
-    int getAllDeploymentTypesCount(String ns = null) {
+    int getAllDeploymentTypesCount(String ns) {
         return getDeploymentCount(ns).size() +
                 getDaemonSetCount(ns).size() +
                 getStaticPodCount(ns).size() +
@@ -1823,7 +1999,7 @@ class Kubernetes implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    def createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment, int maxNumRetries=0) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
 
         // Create service if needed
@@ -1855,9 +2031,11 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            println "Told the orchestrator to createOrReplace " + deployment.name
-            if (deployment.createLoadBalancer) {
+            withK8sClientRetry(maxNumRetries, 1) {
+                client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
+                log.debug "Told the orchestrator to createOrReplace " + deployment.name
+            }
+            if (deployment.exposeAsService && deployment.createLoadBalancer) {
                 waitForLoadBalancer(deployment)
             }
             if (deployment.createRoute) {
@@ -1866,7 +2044,7 @@ class Kubernetes implements OrchestratorMain {
             }
             return true
         } catch (Exception e) {
-            println "Error creating k8s deployment: " + e
+            log.warn("Error creating k8s deployment: ",  e)
             return false
         }
     }
@@ -1880,7 +2058,7 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(deployment)
         } catch (Exception e) {
-            println "Error while waiting for deployment/populating deployment info: " + e
+            log.warn("Error while waiting for deployment/populating deployment info: ", e)
         }
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
             throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
@@ -1888,33 +2066,33 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForDeploymentStart(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        Timer t = new Timer(30, 3)
+        Timer t = new Timer(60, 3)
         while (t.IsValid()) {
-            println "Waiting for ${deploymentName} to start"
+            log.debug "Waiting for ${deploymentName} to start"
             K8sDeployment d = null
             try {
                 d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
             } catch (Exception e) {
-                println "Error getting k8s deployment" + e
+                log.warn("Error getting k8s deployment", e)
             }
             getAndPrintPods(namespace, deploymentName)
             if (d == null) {
-                println "${deploymentName} not found yet"
+                log.debug "${deploymentName} not found yet"
                 continue
             } else if (skipReplicaWait) {
                 // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                 // to work its way through the system.
                 sleep(sleepDurationSeconds * 1000)
-                println "${deploymentName}: deployment created (skipped replica wait)."
+                log.debug "${deploymentName}: deployment created (skipped replica wait)."
                 return
             }
             if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
-                println "All ${d.getSpec().getReplicas()} replicas found " +
+                log.debug "All ${d.getSpec().getReplicas()} replicas found " +
                         "in ready state for ${deploymentName}"
-                println "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
+                log.debug "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
                 return d.getMetadata().getUid()
             }
-            println "${d.getStatus().getReadyReplicas()}/" +
+            log.debug "${d.getStatus().getReadyReplicas() ?: 0}/" +
                     "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
         }
     }
@@ -1944,9 +2122,9 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             this.daemonsets.inNamespace(daemonSet.namespace).createOrReplace(ds)
-            println "Told the orchestrator to create " + daemonSet.getName()
+            log.debug "Told the orchestrator to create " + daemonSet.getName()
         } catch (Exception e) {
-            println "Error creating k8s deployment" + e
+            log.warn("Error creating k8s deployment", e)
         }
     }
 
@@ -1959,36 +2137,36 @@ class Kubernetes implements OrchestratorMain {
             )
             updateDeploymentDetails(daemonSet)
         } catch (Exception e) {
-            println "Error while waiting for daemonset/populating daemonset info: " + e
+            log.warn("Error while waiting for daemonset/populating daemonset info: ", e)
         }
     }
 
     def waitForDaemonSetCreation(String name, String namespace, Boolean skipReplicaWait = false) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for ${name} to start"
+            log.debug "Waiting for ${name} to start"
             K8sDaemonSet d = this.daemonsets.inNamespace(namespace).withName(name).get()
             getAndPrintPods(namespace, name)
             if (d == null) {
-                println "${name} not found yet"
+                log.debug "${name} not found yet"
                 continue
             } else if (skipReplicaWait) {
                 // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                 // to work its way through the system.
                 sleep(sleepDurationSeconds * 1000)
-                println "${name}: daemonset created (skipped replica wait)."
+                log.debug "${name}: daemonset created (skipped replica wait)."
                 return
             }
             if (d.getStatus().getCurrentNumberScheduled() == d.getStatus().getDesiredNumberScheduled()) {
-                println "All ${d.getStatus().getDesiredNumberScheduled()} replicas found in ready state for ${name}"
+                log.debug "All ${d.getStatus().getDesiredNumberScheduled()} replicas found in ready state for ${name}"
                 return d.getMetadata().getUid()
             }
-            println "${d.getStatus().getCurrentNumberScheduled()}/" +
+            log.debug "${d.getStatus().getCurrentNumberScheduled()}/" +
                     "${d.getStatus().getDesiredNumberScheduled()} are in the ready state for ${name}"
         }
     }
 
-    def generatePodSpec(Deployment deployment) {
+    PodSpec generatePodSpec(Deployment deployment) {
         List<ContainerPort> depPorts = deployment.ports.collect {
             k, v -> new ContainerPort(
                     k as Integer,
@@ -2107,7 +2285,7 @@ class Kubernetes implements OrchestratorMain {
                 volumeMounts: volMounts,
                 env: envVars,
                 envFrom: envFrom,
-                resources: new ResourceRequirements(limits, requests),
+                resources: new ResourceRequirements([], limits, requests),
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged,
                                                      readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
@@ -2144,18 +2322,16 @@ class Kubernetes implements OrchestratorMain {
     def updateDeploymentDetails(Deployment deployment) {
         // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
         // object - IF this is ever missing, it may cause problems fetching pod details
-        def deployedPods = evaluateWithRetry(2, 3) {
+        PodList deployedPods = evaluateWithRetry(2, 3) {
             return client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
         }
+        log.debug("Updating deployment ${deployment.name} with ${deployedPods.getItems().size()} pods")
         for (Pod pod : deployedPods.getItems()) {
+            List<String> containerIDs = pod.getStatus().getContainerStatuses()*.getContainerID() ?: []
             deployment.addPod(
                     pod.getMetadata().getName(),
                     pod.getMetadata().getUid(),
-                    pod.getStatus().getContainerStatuses() != null ?
-                            pod.getStatus().getContainerStatuses().stream().map {
-                                container -> container.getContainerID()
-                            }.collect(Collectors.toList()) :
-                            [],
+                    containerIDs,
                     pod.getStatus().getPodIP()
             )
         }
@@ -2184,7 +2360,7 @@ class Kubernetes implements OrchestratorMain {
         }
 
         if (policy.types != null) {
-            def polTypes = []
+            List<String> polTypes = []
             for (NetworkPolicyTypes type : policy.types) {
                 polTypes.add(type.toString())
             }
@@ -2238,25 +2414,38 @@ class Kubernetes implements OrchestratorMain {
         return networkPolicy.endSpec().build()
     }
 
-    V1beta1ValidatingWebhookConfiguration getAdmissionController() {
-        println "get admission controllers stub"
+    ValidatingWebhookConfiguration getAdmissionController() {
+        log.debug "get admission controllers stub"
     }
 
     def deleteAdmissionController(String name) {
-        println "delete admission controllers stub: ${name}"
+        log.debug "delete admission controllers stub: ${name}"
     }
 
-    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
-        println "create admission controllers stub: ${config}"
+    def createAdmissionController(ValidatingWebhookConfiguration config) {
+        log.debug "create admission controllers stub: ${config}"
     }
 
+    /**
+     * Creates namespace.
+     * Note that createNamespace does not provision service account.
+     */
     String createNamespace(String ns) {
         return evaluateWithRetry(2, 3) {
-            Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+            Namespace namespace = newNamespace(ns)
             def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
             defaultPspForNamespace(ns)
             return namespaceId
         }
+    }
+
+    static Namespace newNamespace(String ns) {
+        Namespace namespace = new Namespace()
+        ObjectMeta meta = new ObjectMeta()
+        meta.setNamespace(ns)
+        meta.setName(ns)
+        namespace.setMetadata(meta)
+        return namespace
     }
 
     def deleteNamespace(String ns, Boolean waitForDeletion = true) {
@@ -2269,42 +2458,16 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForNamespaceDeletion(String ns, int retries = 20, int intervalSeconds = 3) {
-        println "Waiting for namespace ${ns} to be deleted"
+        log.debug "Waiting for namespace ${ns} to be deleted"
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (client.namespaces().withName(ns).get() == null ) {
-                println "K8s found that namespace ${ns} was deleted"
+                log.debug "K8s found that namespace ${ns} was deleted"
                 return true
             }
-            println "Retrying in ${intervalSeconds}..."
+            log.debug "Retrying in ${intervalSeconds}..."
         }
-        println "K8s did not detect that namespace ${ns} was deleted"
+        log.info "K8s did not detect that namespace ${ns} was deleted"
         return false
-    }
-
-    private static class SystemOutCallback implements InputStreamPumper.Writable {
-        @Override
-        void write(byte[] b, int off, int len) throws IOException {
-            System.out.print(new String(b))
-        }
-    }
-
-    private static class FutureChecker implements Runnable {
-        private final String name
-        private final String cmd
-        private final Future<?> future
-
-        private FutureChecker(String name, String cmd, Future<?> future) {
-            this.name = name
-            this.cmd = cmd
-            this.future = future
-        }
-
-        @Override
-        void run() {
-            if (!future.isDone()) {
-                System.out.println(name + ":[" + cmd + "] is not done yet")
-            }
-        }
     }
 }

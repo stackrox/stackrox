@@ -14,7 +14,9 @@ import (
 )
 
 // ClusterService is the struct that manages the cluster API
-type serviceImpl struct{}
+type serviceImpl struct {
+	v1.UnimplementedAuthServiceServer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -32,7 +34,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.
-func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1.AuthStatus, error) {
+func (s *serviceImpl) GetAuthStatus(ctx context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -42,7 +44,8 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1
 }
 
 func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
-	exp, err := types.TimestampProto(id.Expiry())
+	_, notValidAfter := id.ValidityPeriod()
+	exp, err := types.TimestampProto(notValidAfter)
 	if err != nil {
 		return nil, errors.Errorf("expiration time: %s", err)
 	}

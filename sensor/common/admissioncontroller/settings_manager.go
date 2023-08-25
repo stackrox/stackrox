@@ -9,6 +9,7 @@ import (
 
 // SettingsManager allows managing admission control settings. It allows updating policies and cluster configuration
 // independently, and makes the settings available via a ValueStream.
+//
 //go:generate mockgen-wrapper
 type SettingsManager interface {
 	UpdatePolicies(allPolicies []*storage.Policy)
@@ -18,6 +19,6 @@ type SettingsManager interface {
 
 	FlushCache()
 
-	SettingsStream() concurrency.ReadOnlyValueStream
-	SensorEventsStream() concurrency.ReadOnlyValueStream
+	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 }

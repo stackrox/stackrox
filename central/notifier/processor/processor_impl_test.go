@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
-	"github.com/golang/mock/gomock"
-	notifierMocks "github.com/stackrox/rox/central/notifiers/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/notifiers/mocks"
+	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessor_LoopDoesNothing(t *testing.T) {
@@ -16,15 +19,15 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor.
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto)
@@ -34,7 +37,7 @@ func TestProcessor_LoopDoesNothing(t *testing.T) {
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -44,7 +47,7 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
@@ -55,9 +58,9 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
@@ -95,7 +98,7 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	processor.processAlertSync(ctx, attemptedAlert)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }
 
@@ -105,7 +108,7 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 
 	alertNotfierProto := &storage.Notifier{Id: "n1"}
-	mockAlertNotifier := notifierMocks.NewMockAlertNotifier(mockCtrl)
+	mockAlertNotifier := mocks.NewMockAlertNotifier(mockCtrl)
 
 	resolvableAlertNotfierProto := &storage.Notifier{Id: "n2"}
 	mockResolvableNotifier := notifierMocks.NewMockResolvableAlertNotifier(mockCtrl)
@@ -116,9 +119,9 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	}
 
 	// Create our tested objects.
-	ns := NewNotifierSet()
+	ns := notifier.NewNotifierSet(time.Hour)
 	processor := &processorImpl{ns: ns}
-	loop := &loopImpl{ns: ns}
+	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
 	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
@@ -170,14 +173,14 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
 	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
 
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (Just the ack on the snoozed)
 	mockResolvableNotifier.EXPECT().AckAlert(context.Background(), snoozedAlert).Return(nil)
 
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 
 	// Retry previous failures. (None)
-	loop.retryFailures(ctx)
+	loop.TestRetryFailures(ctx, t)
 	mockCtrl.Finish()
 }

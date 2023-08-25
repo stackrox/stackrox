@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import { gql, useQuery } from '@apollo/client';
 import { Alert, Flex, FlexItem, Spinner, TreeView, TreeViewDataItem } from '@patternfly/react-core';
 
 import { MitreAttackVector } from 'types/mitre.proto';
@@ -7,50 +6,17 @@ import { MitreAttackVector } from 'types/mitre.proto';
 import MitreAttackLink from './MitreAttackLink';
 import { getMitreTacticUrl, getMitreTechniqueUrl } from './MitreAttackVectors.utils';
 
-const GET_MITRE_ATTACK_VECTORS = gql`
-    query getMitreAttackVectors($id: ID!) {
-        policy(id: $id) {
-            mitreAttackVectors: fullMitreAttackVectors {
-                tactic {
-                    id
-                    name
-                    description
-                }
-                techniques {
-                    id
-                    name
-                    description
-                }
-            }
-        }
-    }
-`;
-
-type GetMitreAttackVectorsData = {
-    policy: {
-        mitreAttackVectors: MitreAttackVector[];
-    };
-};
-
-type GetMitreAttackVectorsVars = {
-    id: string;
-};
-
 type MitreAttackVectorsViewProps = {
-    policyId: string;
+    isLoading: boolean;
+    errorMessage?: string;
+    policyMitreAttackVectors: MitreAttackVector[];
 };
 
-function MitreAttackVectorsView({ policyId }: MitreAttackVectorsViewProps): ReactElement {
-    const {
-        loading: isLoading,
-        data,
-        error,
-    } = useQuery<GetMitreAttackVectorsData, GetMitreAttackVectorsVars>(GET_MITRE_ATTACK_VECTORS, {
-        variables: {
-            id: policyId,
-        },
-    });
-
+function MitreAttackVectorsView({
+    isLoading,
+    errorMessage,
+    policyMitreAttackVectors,
+}: MitreAttackVectorsViewProps): ReactElement {
     if (isLoading) {
         return (
             <Flex className="pf-u-my-md" justifyContent={{ default: 'justifyContentCenter' }}>
@@ -61,25 +27,23 @@ function MitreAttackVectorsView({ policyId }: MitreAttackVectorsViewProps): Reac
         );
     }
 
-    if (error) {
+    if (errorMessage) {
         return (
             <Alert className="pf-u-my-md" title="Request failed" variant="warning" isInline>
-                {error.message}
+                {errorMessage}
             </Alert>
         );
     }
 
-    const mitreAttackVectors = data?.policy?.mitreAttackVectors || [];
-
-    if (mitreAttackVectors.length === 0) {
+    if (policyMitreAttackVectors.length === 0) {
         return <div className="pf-u-my-md">Policy has no MITRE ATT&CK vectors</div>;
     }
 
-    return <TreeView data={getData(mitreAttackVectors)} variant="compactNoBackground" />;
+    return <TreeView data={getData(policyMitreAttackVectors)} variant="compactNoBackground" />;
 }
 
-function getData(mitreAttackVectors: MitreAttackVector[]): TreeViewDataItem[] {
-    return mitreAttackVectors.map(({ tactic, techniques }) => ({
+function getData(policyMitreAttackVectors: MitreAttackVector[]): TreeViewDataItem[] {
+    return policyMitreAttackVectors.map(({ tactic, techniques }) => ({
         title: (
             <Flex>
                 <FlexItem>{tactic.name}</FlexItem>
@@ -89,6 +53,7 @@ function getData(mitreAttackVectors: MitreAttackVector[]): TreeViewDataItem[] {
             </Flex>
         ),
         name: tactic.description,
+        id: tactic.id,
         children:
             techniques.length === 0
                 ? undefined // avoid unneeded toggle icon for empty array

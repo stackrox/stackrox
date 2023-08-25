@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -34,31 +35,32 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetConfig mocks base method.
-func (m *MockStore) GetConfig() (*storage.Config, error) {
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context) (*storage.Config, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfig")
+	ret := m.ctrl.Call(m, "Get", ctx)
 	ret0, _ := ret[0].(*storage.Config)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetConfig indicates an expected call of GetConfig.
-func (mr *MockStoreMockRecorder) GetConfig() *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockStore)(nil).GetConfig))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx)
 }
 
-// UpsertConfig mocks base method.
-func (m *MockStore) UpsertConfig(config *storage.Config) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, config *storage.Config) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertConfig", config)
+	ret := m.ctrl.Call(m, "Upsert", ctx, config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertConfig indicates an expected call of UpsertConfig.
-func (mr *MockStoreMockRecorder) UpsertConfig(config interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, config interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockStore)(nil).UpsertConfig), config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, config)
 }

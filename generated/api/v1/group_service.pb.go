@@ -36,10 +36,13 @@ type GetGroupsRequest struct {
 	KeyOpt isGetGroupsRequest_KeyOpt `protobuf_oneof:"key_opt"`
 	// Types that are valid to be assigned to ValueOpt:
 	//	*GetGroupsRequest_Value
-	ValueOpt             isGetGroupsRequest_ValueOpt `protobuf_oneof:"value_opt"`
-	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
-	XXX_unrecognized     []byte                      `json:"-"`
-	XXX_sizecache        int32                       `json:"-"`
+	ValueOpt isGetGroupsRequest_ValueOpt `protobuf_oneof:"value_opt"`
+	// Types that are valid to be assigned to IdOpt:
+	//	*GetGroupsRequest_Id
+	IdOpt                isGetGroupsRequest_IdOpt `protobuf_oneof:"id_opt"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
 func (m *GetGroupsRequest) Reset()         { *m = GetGroupsRequest{} }
@@ -93,6 +96,12 @@ type isGetGroupsRequest_ValueOpt interface {
 	Size() int
 	Clone() isGetGroupsRequest_ValueOpt
 }
+type isGetGroupsRequest_IdOpt interface {
+	isGetGroupsRequest_IdOpt()
+	MarshalTo([]byte) (int, error)
+	Size() int
+	Clone() isGetGroupsRequest_IdOpt
+}
 
 type GetGroupsRequest_AuthProviderId struct {
 	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3,oneof" json:"auth_provider_id,omitempty"`
@@ -102,6 +111,9 @@ type GetGroupsRequest_Key struct {
 }
 type GetGroupsRequest_Value struct {
 	Value string `protobuf:"bytes,3,opt,name=value,proto3,oneof" json:"value,omitempty"`
+}
+type GetGroupsRequest_Id struct {
+	Id string `protobuf:"bytes,4,opt,name=id,proto3,oneof" json:"id,omitempty"`
 }
 
 func (*GetGroupsRequest_AuthProviderId) isGetGroupsRequest_AuthProviderIdOpt() {}
@@ -134,6 +146,16 @@ func (m *GetGroupsRequest_Value) Clone() isGetGroupsRequest_ValueOpt {
 
 	return cloned
 }
+func (*GetGroupsRequest_Id) isGetGroupsRequest_IdOpt() {}
+func (m *GetGroupsRequest_Id) Clone() isGetGroupsRequest_IdOpt {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetGroupsRequest_Id)
+	*cloned = *m
+
+	return cloned
+}
 
 func (m *GetGroupsRequest) GetAuthProviderIdOpt() isGetGroupsRequest_AuthProviderIdOpt {
 	if m != nil {
@@ -150,6 +172,12 @@ func (m *GetGroupsRequest) GetKeyOpt() isGetGroupsRequest_KeyOpt {
 func (m *GetGroupsRequest) GetValueOpt() isGetGroupsRequest_ValueOpt {
 	if m != nil {
 		return m.ValueOpt
+	}
+	return nil
+}
+func (m *GetGroupsRequest) GetIdOpt() isGetGroupsRequest_IdOpt {
+	if m != nil {
+		return m.IdOpt
 	}
 	return nil
 }
@@ -175,12 +203,20 @@ func (m *GetGroupsRequest) GetValue() string {
 	return ""
 }
 
+func (m *GetGroupsRequest) GetId() string {
+	if x, ok := m.GetIdOpt().(*GetGroupsRequest_Id); ok {
+		return x.Id
+	}
+	return ""
+}
+
 // XXX_OneofWrappers is for the internal use of the proto package.
 func (*GetGroupsRequest) XXX_OneofWrappers() []interface{} {
 	return []interface{}{
 		(*GetGroupsRequest_AuthProviderId)(nil),
 		(*GetGroupsRequest_Key)(nil),
 		(*GetGroupsRequest_Value)(nil),
+		(*GetGroupsRequest_Id)(nil),
 	}
 }
 
@@ -202,6 +238,9 @@ func (m *GetGroupsRequest) Clone() *GetGroupsRequest {
 	}
 	if m.ValueOpt != nil {
 		cloned.ValueOpt = m.ValueOpt.Clone()
+	}
+	if m.IdOpt != nil {
+		cloned.IdOpt = m.IdOpt.Clone()
 	}
 	return cloned
 }
@@ -285,6 +324,7 @@ type GroupBatchUpdateRequest struct {
 	PreviousGroups []*storage.Group `protobuf:"bytes,1,rep,name=previous_groups,json=previousGroups,proto3" json:"previous_groups,omitempty"`
 	// Required groups are the groups we want to mutate the previous groups into.
 	RequiredGroups       []*storage.Group `protobuf:"bytes,2,rep,name=required_groups,json=requiredGroups,proto3" json:"required_groups,omitempty"`
+	Force                bool             `protobuf:"varint,3,opt,name=force,proto3" json:"force,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -337,6 +377,13 @@ func (m *GroupBatchUpdateRequest) GetRequiredGroups() []*storage.Group {
 	return nil
 }
 
+func (m *GroupBatchUpdateRequest) GetForce() bool {
+	if m != nil {
+		return m.Force
+	}
+	return false
+}
+
 func (m *GroupBatchUpdateRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
@@ -362,48 +409,218 @@ func (m *GroupBatchUpdateRequest) Clone() *GroupBatchUpdateRequest {
 	return cloned
 }
 
+type DeleteGroupRequest struct {
+	// We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+	AuthProviderId       string   `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
+	Key                  string   `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value                string   `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	Id                   string   `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty"`
+	Force                bool     `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DeleteGroupRequest) Reset()         { *m = DeleteGroupRequest{} }
+func (m *DeleteGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteGroupRequest) ProtoMessage()    {}
+func (*DeleteGroupRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f3629ea30e241992, []int{3}
+}
+func (m *DeleteGroupRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DeleteGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DeleteGroupRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DeleteGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteGroupRequest.Merge(m, src)
+}
+func (m *DeleteGroupRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DeleteGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteGroupRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteGroupRequest proto.InternalMessageInfo
+
+func (m *DeleteGroupRequest) GetAuthProviderId() string {
+	if m != nil {
+		return m.AuthProviderId
+	}
+	return ""
+}
+
+func (m *DeleteGroupRequest) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *DeleteGroupRequest) GetValue() string {
+	if m != nil {
+		return m.Value
+	}
+	return ""
+}
+
+func (m *DeleteGroupRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *DeleteGroupRequest) GetForce() bool {
+	if m != nil {
+		return m.Force
+	}
+	return false
+}
+
+func (m *DeleteGroupRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DeleteGroupRequest) Clone() *DeleteGroupRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DeleteGroupRequest)
+	*cloned = *m
+
+	return cloned
+}
+
+type UpdateGroupRequest struct {
+	Group                *storage.Group `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Force                bool           `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
+}
+
+func (m *UpdateGroupRequest) Reset()         { *m = UpdateGroupRequest{} }
+func (m *UpdateGroupRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateGroupRequest) ProtoMessage()    {}
+func (*UpdateGroupRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_f3629ea30e241992, []int{4}
+}
+func (m *UpdateGroupRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateGroupRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateGroupRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateGroupRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateGroupRequest.Merge(m, src)
+}
+func (m *UpdateGroupRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateGroupRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateGroupRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateGroupRequest proto.InternalMessageInfo
+
+func (m *UpdateGroupRequest) GetGroup() *storage.Group {
+	if m != nil {
+		return m.Group
+	}
+	return nil
+}
+
+func (m *UpdateGroupRequest) GetForce() bool {
+	if m != nil {
+		return m.Force
+	}
+	return false
+}
+
+func (m *UpdateGroupRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateGroupRequest) Clone() *UpdateGroupRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateGroupRequest)
+	*cloned = *m
+
+	cloned.Group = m.Group.Clone()
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*GetGroupsRequest)(nil), "v1.GetGroupsRequest")
 	proto.RegisterType((*GetGroupsResponse)(nil), "v1.GetGroupsResponse")
 	proto.RegisterType((*GroupBatchUpdateRequest)(nil), "v1.GroupBatchUpdateRequest")
+	proto.RegisterType((*DeleteGroupRequest)(nil), "v1.DeleteGroupRequest")
+	proto.RegisterType((*UpdateGroupRequest)(nil), "v1.UpdateGroupRequest")
 }
 
 func init() { proto.RegisterFile("api/v1/group_service.proto", fileDescriptor_f3629ea30e241992) }
 
 var fileDescriptor_f3629ea30e241992 = []byte{
-	// 506 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0x4f, 0x8b, 0x13, 0x4d,
-	0x10, 0xc6, 0xd3, 0x13, 0xde, 0x7d, 0x9d, 0x9a, 0x25, 0xd9, 0x6d, 0xb3, 0xeb, 0x30, 0x4a, 0x58,
-	0xe6, 0x20, 0x4b, 0x0e, 0x13, 0xb2, 0x1e, 0x04, 0x3d, 0x08, 0xf1, 0x4f, 0x14, 0x3c, 0xac, 0x11,
-	0x41, 0xbc, 0x84, 0xde, 0xa4, 0xc8, 0x36, 0x89, 0xe9, 0xde, 0xee, 0x9e, 0xc1, 0x5c, 0xbd, 0x7a,
-	0xf4, 0x22, 0x7e, 0x1c, 0x4f, 0x1e, 0x05, 0xbf, 0x80, 0x44, 0x3f, 0x88, 0x4c, 0xf7, 0x4c, 0x1c,
-	0x87, 0x55, 0xbc, 0x4d, 0x3f, 0xf5, 0xd4, 0x2f, 0x4f, 0x55, 0x77, 0x20, 0x62, 0x92, 0xf7, 0xb3,
-	0x41, 0x7f, 0xae, 0x44, 0x2a, 0x27, 0x1a, 0x55, 0xc6, 0xa7, 0x98, 0x48, 0x25, 0x8c, 0xa0, 0x5e,
-	0x36, 0x88, 0x6e, 0xcc, 0x85, 0x98, 0x2f, 0xb1, 0x9f, 0xdb, 0xd8, 0x6a, 0x25, 0x0c, 0x33, 0x5c,
-	0xac, 0xb4, 0x73, 0x44, 0xb4, 0xe8, 0xc6, 0xd7, 0xd2, 0xac, 0x0b, 0xed, 0xaa, 0x36, 0x42, 0xb1,
-	0x39, 0x3a, 0xa4, 0x13, 0xe3, 0x8f, 0x04, 0xf6, 0x46, 0x68, 0x46, 0xb9, 0xa4, 0xc7, 0x78, 0x91,
-	0xa2, 0x36, 0xb4, 0x07, 0x7b, 0x2c, 0x35, 0xe7, 0x13, 0xa9, 0x44, 0xc6, 0x67, 0xa8, 0x26, 0x7c,
-	0x16, 0x92, 0x23, 0x72, 0xec, 0x3f, 0x6e, 0x8c, 0x5b, 0x79, 0xe5, 0xb4, 0x28, 0x3c, 0x99, 0x51,
-	0x0a, 0xcd, 0x05, 0xae, 0x43, 0xcf, 0x96, 0xc9, 0x38, 0x3f, 0xd0, 0x43, 0xf8, 0x2f, 0x63, 0xcb,
-	0x14, 0xc3, 0xa6, 0x55, 0xbd, 0xb1, 0x3b, 0x0e, 0x0f, 0xa1, 0x53, 0xe7, 0x4e, 0x84, 0x34, 0x43,
-	0x1f, 0xfe, 0x5f, 0xe0, 0xda, 0x7e, 0x06, 0xe0, 0x5b, 0x6f, 0x7e, 0x88, 0xef, 0xc2, 0x7e, 0x25,
-	0x9b, 0x96, 0x62, 0xa5, 0x91, 0xde, 0x84, 0x1d, 0x3b, 0x80, 0x0e, 0xc9, 0x51, 0xf3, 0x38, 0x38,
-	0x69, 0x25, 0xc5, 0x5c, 0x89, 0x35, 0x8e, 0x8b, 0x6a, 0xfc, 0x8e, 0xc0, 0x35, 0xab, 0x0c, 0x99,
-	0x99, 0x9e, 0xbf, 0x90, 0x33, 0x66, 0xb0, 0x1c, 0xf0, 0x36, 0xb4, 0xa5, 0xc2, 0x8c, 0x8b, 0x54,
-	0x4f, 0xfe, 0x0a, 0x6b, 0x95, 0x36, 0x17, 0x22, 0x6f, 0x54, 0x78, 0x91, 0x72, 0x85, 0xb3, 0xb2,
-	0xd1, 0xbb, 0xbc, 0xb1, 0xb4, 0xb9, 0xc6, 0x93, 0x4f, 0x4d, 0xd8, 0xb5, 0x9f, 0xcf, 0xdd, 0x4d,
-	0xd2, 0xa7, 0xe0, 0x6f, 0x67, 0xa3, 0x9d, 0x24, 0x1b, 0x24, 0xf5, 0x6b, 0x88, 0x0e, 0x6a, 0xaa,
-	0x5b, 0x40, 0x4c, 0xdf, 0x7e, 0xfd, 0xf1, 0xde, 0xdb, 0xa5, 0xb0, 0x7d, 0x1e, 0x9a, 0x8e, 0xe0,
-	0x4a, 0x69, 0xa4, 0xe1, 0xef, 0x51, 0x4e, 0x95, 0x90, 0xa8, 0x0c, 0x47, 0x1d, 0xd5, 0x42, 0xc6,
-	0xfb, 0x96, 0x14, 0x50, 0x7f, 0x4b, 0xa2, 0xcf, 0x20, 0xa8, 0xec, 0x8b, 0x5e, 0xb7, 0x11, 0x2e,
-	0xdf, 0x62, 0xe4, 0xe7, 0xc5, 0x87, 0xf9, 0x0b, 0x8b, 0x23, 0x4b, 0xea, 0xc4, 0xed, 0x5f, 0x99,
-	0xce, 0xf2, 0x86, 0x3b, 0xa4, 0x47, 0xef, 0x41, 0x70, 0x5f, 0x21, 0x33, 0xe8, 0xe2, 0xd5, 0x42,
-	0x54, 0x29, 0x07, 0x96, 0xd2, 0x8e, 0x2b, 0x93, 0x15, 0x00, 0xf7, 0xc3, 0xff, 0x0a, 0x88, 0x6a,
-	0x80, 0x47, 0x10, 0x3c, 0xc0, 0x25, 0x96, 0x80, 0x3f, 0x2f, 0xa8, 0x82, 0x2a, 0xb6, 0xdc, 0xab,
-	0xa0, 0x86, 0xc9, 0xe7, 0x4d, 0x97, 0x7c, 0xd9, 0x74, 0xc9, 0xb7, 0x4d, 0x97, 0x7c, 0xf8, 0xde,
-	0x6d, 0x40, 0xc8, 0x45, 0xa2, 0x0d, 0x9b, 0x2e, 0x94, 0x78, 0xe3, 0xfe, 0x51, 0x09, 0x93, 0x3c,
-	0xc9, 0x06, 0xaf, 0xbc, 0x6c, 0xf0, 0xb2, 0x71, 0xb6, 0x63, 0xb5, 0x5b, 0x3f, 0x03, 0x00, 0x00,
-	0xff, 0xff, 0x86, 0x06, 0xf5, 0x0b, 0xce, 0x03, 0x00, 0x00,
+	// 606 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0x41, 0x8f, 0xd2, 0x4c,
+	0x18, 0xde, 0x96, 0x8f, 0xfd, 0xe8, 0xdb, 0x0d, 0xb0, 0xb3, 0x2c, 0xd6, 0x6a, 0xc8, 0xa6, 0x31,
+	0x86, 0x70, 0x28, 0x61, 0x3d, 0x98, 0xe8, 0xc1, 0x04, 0xd7, 0xa0, 0xd1, 0x03, 0xd6, 0x98, 0x18,
+	0x2f, 0xa4, 0x4b, 0x47, 0x76, 0x02, 0x32, 0xdd, 0x99, 0x69, 0x23, 0x57, 0xcf, 0xde, 0xbc, 0x78,
+	0xf5, 0x4f, 0xf8, 0x1b, 0x3c, 0x78, 0x30, 0xf1, 0x0f, 0x18, 0xf4, 0x87, 0x98, 0xce, 0xb4, 0x30,
+	0xc0, 0xea, 0x8d, 0x79, 0xdf, 0xe7, 0x79, 0x78, 0xde, 0x79, 0xde, 0x29, 0xb8, 0x61, 0x4c, 0xba,
+	0x69, 0xaf, 0x3b, 0x61, 0x34, 0x89, 0x47, 0x1c, 0xb3, 0x94, 0x8c, 0xb1, 0x1f, 0x33, 0x2a, 0x28,
+	0x32, 0xd3, 0x9e, 0x7b, 0x73, 0x42, 0xe9, 0x64, 0x86, 0xbb, 0x19, 0x2c, 0x9c, 0xcf, 0xa9, 0x08,
+	0x05, 0xa1, 0x73, 0xae, 0x10, 0x2e, 0xca, 0xd9, 0xf8, 0x6d, 0x2c, 0x16, 0x79, 0xed, 0x88, 0x0b,
+	0xca, 0xc2, 0x09, 0x56, 0x92, 0xaa, 0xe8, 0x7d, 0x31, 0xa0, 0x3e, 0xc0, 0x62, 0x90, 0x95, 0x78,
+	0x80, 0x2f, 0x13, 0xcc, 0x05, 0xea, 0x40, 0x3d, 0x4c, 0xc4, 0xc5, 0x28, 0x66, 0x34, 0x25, 0x11,
+	0x66, 0x23, 0x12, 0x39, 0xc6, 0x89, 0xd1, 0xb6, 0x1e, 0xef, 0x05, 0xd5, 0xac, 0x33, 0xcc, 0x1b,
+	0x4f, 0x22, 0x84, 0xa0, 0x34, 0xc5, 0x0b, 0xc7, 0x94, 0x6d, 0x23, 0xc8, 0x0e, 0xa8, 0x09, 0xe5,
+	0x34, 0x9c, 0x25, 0xd8, 0x29, 0xc9, 0xaa, 0x19, 0xa8, 0x23, 0xaa, 0x83, 0x49, 0x22, 0xe7, 0x3f,
+	0x59, 0x2c, 0x05, 0x26, 0x89, 0xfa, 0x4d, 0x68, 0x6c, 0xff, 0xd3, 0x88, 0xc6, 0xa2, 0x6f, 0xc1,
+	0xff, 0x53, 0xbc, 0x90, 0x3f, 0x6d, 0xb0, 0x24, 0x5b, 0x1e, 0x2a, 0xb0, 0xaf, 0x10, 0xde, 0x7d,
+	0x38, 0xd4, 0x7c, 0xf3, 0x98, 0xce, 0x39, 0x46, 0xb7, 0x61, 0x5f, 0x0e, 0xc7, 0x1d, 0xe3, 0xa4,
+	0xd4, 0xb6, 0x4f, 0xab, 0x7e, 0x3e, 0xb3, 0x2f, 0x81, 0x41, 0xde, 0xf5, 0x3e, 0x1b, 0x70, 0x4d,
+	0x56, 0xfa, 0xa1, 0x18, 0x5f, 0xbc, 0x8c, 0xa3, 0x50, 0xe0, 0x62, 0xf8, 0xbb, 0x50, 0x8b, 0x19,
+	0x4e, 0x09, 0x4d, 0xf8, 0xe8, 0x9f, 0x62, 0xd5, 0x02, 0xa6, 0x4c, 0x64, 0x44, 0x86, 0x2f, 0x13,
+	0xc2, 0x70, 0x54, 0x10, 0xcd, 0xab, 0x89, 0x05, 0x2c, 0x27, 0x36, 0xa0, 0xfc, 0x86, 0xb2, 0xb1,
+	0xba, 0xae, 0x4a, 0xa0, 0x0e, 0xde, 0x07, 0x03, 0xd0, 0x19, 0x9e, 0x61, 0x81, 0x15, 0x2b, 0xb7,
+	0xd7, 0xfe, 0x5b, 0x36, 0x3b, 0xc9, 0xd4, 0xb5, 0x64, 0x54, 0x2e, 0x8d, 0x8d, 0x5c, 0x8a, 0x54,
+	0xaa, 0xeb, 0x54, 0xb2, 0x4c, 0xd6, 0x76, 0xca, 0xba, 0x9d, 0x21, 0x20, 0x75, 0x4f, 0x1b, 0x6e,
+	0x6e, 0x41, 0x59, 0x8e, 0x2a, 0x2d, 0xec, 0x4e, 0xaa, 0x9a, 0x6b, 0x45, 0x53, 0x53, 0x3c, 0xfd,
+	0x56, 0x82, 0x03, 0x09, 0x7b, 0xa1, 0x96, 0x1b, 0x3d, 0x03, 0x6b, 0x15, 0x29, 0x6a, 0xf8, 0x69,
+	0xcf, 0xdf, 0xde, 0x4c, 0xf7, 0x78, 0xab, 0xaa, 0x72, 0xf7, 0xd0, 0xfb, 0x1f, 0xbf, 0x3f, 0x9a,
+	0x07, 0x08, 0x56, 0x2f, 0x86, 0xa3, 0x01, 0x54, 0x0a, 0x20, 0x72, 0x36, 0x7d, 0x0d, 0x19, 0x8d,
+	0x31, 0x13, 0x04, 0x73, 0x77, 0xcb, 0xb1, 0x77, 0x28, 0x95, 0x6c, 0x64, 0xad, 0x94, 0xd0, 0x73,
+	0xb0, 0xb5, 0x35, 0x41, 0x37, 0xa4, 0x85, 0xab, 0x97, 0xc7, 0xb5, 0xb2, 0xe6, 0xa3, 0xec, 0xd1,
+	0x79, 0xae, 0x54, 0x6a, 0x78, 0xb5, 0xb5, 0xa7, 0xf3, 0x8c, 0x70, 0xcf, 0xe8, 0xa0, 0x07, 0x60,
+	0x3f, 0x64, 0xb8, 0xb8, 0x4c, 0xb4, 0x65, 0x42, 0x57, 0x39, 0x96, 0x2a, 0x35, 0x4f, 0x9b, 0x2c,
+	0x13, 0x78, 0x0a, 0xb6, 0x96, 0x06, 0x6a, 0x66, 0x84, 0xdd, 0x78, 0x74, 0xa1, 0xeb, 0x52, 0xe8,
+	0xc8, 0xd5, 0x85, 0xf2, 0x78, 0xce, 0xc0, 0xd6, 0x16, 0x4d, 0x89, 0xed, 0x6e, 0x9e, 0x2e, 0x96,
+	0xdf, 0x77, 0x47, 0x13, 0xeb, 0xfb, 0x5f, 0x97, 0x2d, 0xe3, 0xfb, 0xb2, 0x65, 0xfc, 0x5c, 0xb6,
+	0x8c, 0x4f, 0xbf, 0x5a, 0x7b, 0xe0, 0x10, 0xea, 0x73, 0x11, 0x8e, 0xa7, 0x8c, 0xbe, 0x53, 0x9f,
+	0x1b, 0x3f, 0x8c, 0x89, 0x9f, 0xf6, 0x5e, 0x9b, 0x69, 0xef, 0xd5, 0xde, 0xf9, 0xbe, 0xac, 0xdd,
+	0xf9, 0x13, 0x00, 0x00, 0xff, 0xff, 0xa9, 0x73, 0xab, 0x40, 0xeb, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -422,8 +639,8 @@ type GroupServiceClient interface {
 	GetGroup(ctx context.Context, in *storage.GroupProperties, opts ...grpc.CallOption) (*storage.Group, error)
 	BatchUpdate(ctx context.Context, in *GroupBatchUpdateRequest, opts ...grpc.CallOption) (*Empty, error)
 	CreateGroup(ctx context.Context, in *storage.Group, opts ...grpc.CallOption) (*Empty, error)
-	UpdateGroup(ctx context.Context, in *storage.Group, opts ...grpc.CallOption) (*Empty, error)
-	DeleteGroup(ctx context.Context, in *storage.GroupProperties, opts ...grpc.CallOption) (*Empty, error)
+	UpdateGroup(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type groupServiceClient struct {
@@ -470,7 +687,7 @@ func (c *groupServiceClient) CreateGroup(ctx context.Context, in *storage.Group,
 	return out, nil
 }
 
-func (c *groupServiceClient) UpdateGroup(ctx context.Context, in *storage.Group, opts ...grpc.CallOption) (*Empty, error) {
+func (c *groupServiceClient) UpdateGroup(ctx context.Context, in *UpdateGroupRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/v1.GroupService/UpdateGroup", in, out, opts...)
 	if err != nil {
@@ -479,7 +696,7 @@ func (c *groupServiceClient) UpdateGroup(ctx context.Context, in *storage.Group,
 	return out, nil
 }
 
-func (c *groupServiceClient) DeleteGroup(ctx context.Context, in *storage.GroupProperties, opts ...grpc.CallOption) (*Empty, error) {
+func (c *groupServiceClient) DeleteGroup(ctx context.Context, in *DeleteGroupRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/v1.GroupService/DeleteGroup", in, out, opts...)
 	if err != nil {
@@ -494,8 +711,8 @@ type GroupServiceServer interface {
 	GetGroup(context.Context, *storage.GroupProperties) (*storage.Group, error)
 	BatchUpdate(context.Context, *GroupBatchUpdateRequest) (*Empty, error)
 	CreateGroup(context.Context, *storage.Group) (*Empty, error)
-	UpdateGroup(context.Context, *storage.Group) (*Empty, error)
-	DeleteGroup(context.Context, *storage.GroupProperties) (*Empty, error)
+	UpdateGroup(context.Context, *UpdateGroupRequest) (*Empty, error)
+	DeleteGroup(context.Context, *DeleteGroupRequest) (*Empty, error)
 }
 
 // UnimplementedGroupServiceServer can be embedded to have forward compatible implementations.
@@ -514,10 +731,10 @@ func (*UnimplementedGroupServiceServer) BatchUpdate(ctx context.Context, req *Gr
 func (*UnimplementedGroupServiceServer) CreateGroup(ctx context.Context, req *storage.Group) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroup not implemented")
 }
-func (*UnimplementedGroupServiceServer) UpdateGroup(ctx context.Context, req *storage.Group) (*Empty, error) {
+func (*UnimplementedGroupServiceServer) UpdateGroup(ctx context.Context, req *UpdateGroupRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGroup not implemented")
 }
-func (*UnimplementedGroupServiceServer) DeleteGroup(ctx context.Context, req *storage.GroupProperties) (*Empty, error) {
+func (*UnimplementedGroupServiceServer) DeleteGroup(ctx context.Context, req *DeleteGroupRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGroup not implemented")
 }
 
@@ -598,7 +815,7 @@ func _GroupService_CreateGroup_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _GroupService_UpdateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(storage.Group)
+	in := new(UpdateGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -610,13 +827,13 @@ func _GroupService_UpdateGroup_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/v1.GroupService/UpdateGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GroupServiceServer).UpdateGroup(ctx, req.(*storage.Group))
+		return srv.(GroupServiceServer).UpdateGroup(ctx, req.(*UpdateGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _GroupService_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(storage.GroupProperties)
+	in := new(DeleteGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -628,7 +845,7 @@ func _GroupService_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/v1.GroupService/DeleteGroup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GroupServiceServer).DeleteGroup(ctx, req.(*storage.GroupProperties))
+		return srv.(GroupServiceServer).DeleteGroup(ctx, req.(*DeleteGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -689,6 +906,15 @@ func (m *GetGroupsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.IdOpt != nil {
+		{
+			size := m.IdOpt.Size()
+			i -= size
+			if _, err := m.IdOpt.MarshalTo(dAtA[i:]); err != nil {
+				return 0, err
+			}
+		}
 	}
 	if m.ValueOpt != nil {
 		{
@@ -762,6 +988,20 @@ func (m *GetGroupsRequest_Value) MarshalToSizedBuffer(dAtA []byte) (int, error) 
 	dAtA[i] = 0x1a
 	return len(dAtA) - i, nil
 }
+func (m *GetGroupsRequest_Id) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetGroupsRequest_Id) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.Id)
+	copy(dAtA[i:], m.Id)
+	i = encodeVarintGroupService(dAtA, i, uint64(len(m.Id)))
+	i--
+	dAtA[i] = 0x22
+	return len(dAtA) - i, nil
+}
 func (m *GetGroupsResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -827,6 +1067,16 @@ func (m *GroupBatchUpdateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
+	if m.Force {
+		i--
+		if m.Force {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
 	if len(m.RequiredGroups) > 0 {
 		for iNdEx := len(m.RequiredGroups) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -858,6 +1108,120 @@ func (m *GroupBatchUpdateRequest) MarshalToSizedBuffer(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
+func (m *DeleteGroupRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DeleteGroupRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DeleteGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Force {
+		i--
+		if m.Force {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintGroupService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintGroupService(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintGroupService(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.AuthProviderId) > 0 {
+		i -= len(m.AuthProviderId)
+		copy(dAtA[i:], m.AuthProviderId)
+		i = encodeVarintGroupService(dAtA, i, uint64(len(m.AuthProviderId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateGroupRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateGroupRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateGroupRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Force {
+		i--
+		if m.Force {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Group != nil {
+		{
+			size, err := m.Group.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGroupService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintGroupService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovGroupService(v)
 	base := offset
@@ -883,6 +1247,9 @@ func (m *GetGroupsRequest) Size() (n int) {
 	}
 	if m.ValueOpt != nil {
 		n += m.ValueOpt.Size()
+	}
+	if m.IdOpt != nil {
+		n += m.IdOpt.Size()
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -917,6 +1284,16 @@ func (m *GetGroupsRequest_Value) Size() (n int) {
 	var l int
 	_ = l
 	l = len(m.Value)
+	n += 1 + l + sovGroupService(uint64(l))
+	return n
+}
+func (m *GetGroupsRequest_Id) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
 	n += 1 + l + sovGroupService(uint64(l))
 	return n
 }
@@ -955,6 +1332,59 @@ func (m *GroupBatchUpdateRequest) Size() (n int) {
 			l = e.Size()
 			n += 1 + l + sovGroupService(uint64(l))
 		}
+	}
+	if m.Force {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DeleteGroupRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AuthProviderId)
+	if l > 0 {
+		n += 1 + l + sovGroupService(uint64(l))
+	}
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovGroupService(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovGroupService(uint64(l))
+	}
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovGroupService(uint64(l))
+	}
+	if m.Force {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateGroupRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Group != nil {
+		l = m.Group.Size()
+		n += 1 + l + sovGroupService(uint64(l))
+	}
+	if m.Force {
+		n += 2
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1092,6 +1522,38 @@ func (m *GetGroupsRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ValueOpt = &GetGroupsRequest_Value{string(dAtA[iNdEx:postIndex])}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IdOpt = &GetGroupsRequest_Id{string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1297,6 +1759,332 @@ func (m *GroupBatchUpdateRequest) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Force", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Force = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGroupService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DeleteGroupRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGroupService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DeleteGroupRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DeleteGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuthProviderId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AuthProviderId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Force", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Force = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGroupService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateGroupRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGroupService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateGroupRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateGroupRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Group", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGroupService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Group == nil {
+				m.Group = &storage.Group{}
+			}
+			if err := m.Group.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Force", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGroupService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Force = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGroupService(dAtA[iNdEx:])

@@ -10,14 +10,11 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	ha http.Handler
 )
 
 func initialize() {
-	storage = store.Singleton()
-	ha = New(storage)
+	ha = New(store.Singleton())
 }
 
 // Singleton returns the HTTP handler to use to serve HTTP requests.

@@ -8,7 +8,7 @@ import (
 func CopyKeys(keys [][]byte) [][]byte {
 	ret := make([][]byte, len(keys))
 	for i := 0; i < len(keys); i++ {
-		ret[i] = sliceutils.ByteClone(keys[i])
+		ret[i] = sliceutils.ShallowClone(keys[i])
 	}
 	return ret
 }

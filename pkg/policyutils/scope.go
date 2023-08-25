@@ -24,7 +24,7 @@ func ScopeToQuery(scopes []*storage.Scope) *v1.Query {
 			qb.AddRegexes(search.Namespace, s.GetNamespace())
 		}
 		if s.GetLabel() != nil {
-			qb.AddMapQuery(search.Label, fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetKey()), fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetValue()))
+			qb.AddMapQuery(search.DeploymentLabel, fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetKey()), fmt.Sprintf("%s%s", search.RegexPrefix, s.GetLabel().GetValue()))
 		}
 		queries = append(queries, qb.ProtoQuery())
 	}

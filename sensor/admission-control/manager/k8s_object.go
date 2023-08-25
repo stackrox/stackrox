@@ -34,7 +34,11 @@ func unmarshalK8sObject(gvk metav1.GroupVersionKind, raw []byte) (k8sutil.Object
 	case kubernetes.ReplicaSet:
 		obj = &apps.ReplicaSet{}
 	case kubernetes.CronJob:
-		obj = &batchV1beta1.CronJob{}
+		if gvk.Version == "v1beta1" {
+			obj = &batchV1beta1.CronJob{}
+		} else {
+			obj = &batchV1.CronJob{}
+		}
 	case kubernetes.Job:
 		obj = &batchV1.Job{}
 	case kubernetes.DeploymentConfig:

@@ -11,7 +11,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 71,
-		VersionAfter:   storage.Version{SeqNum: 72},
+		VersionAfter:   &storage.Version{SeqNum: 72},
 		Run: func(databases *types.Databases) error {
 			return deleteNamespaceSACBucketAndEdges(databases.RocksDB)
 		},

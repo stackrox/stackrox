@@ -1,16 +1,30 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/logimbue/store/mocks"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
+
+type logMatcher struct {
+	x string
+}
+
+func (e logMatcher) Matches(x interface{}) bool {
+	return e.x == string(x.(*storage.LogImbue).Log)
+}
+
+func (e logMatcher) String() string {
+	return fmt.Sprintf("has a log equal to %s", e.x)
+}
 
 func TestLogImbueHandler(t *testing.T) {
 	suite.Run(t, new(LogImbueHandlerTestSuite))
@@ -46,7 +60,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostWritesLogsToDb() {
 		Body:   mockReadCloseMessage(loggedMessage),
 	}
 
-	suite.logsStorage.EXPECT().AddLog(loggedMessage).Return(nil)
+	suite.logsStorage.EXPECT().Upsert(gomock.Any(), logMatcher{x: loggedMessage}).Return(nil)
 
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
@@ -61,7 +75,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesDbError() {
 	}
 
 	dbErr := errors.New("the deebee has failed you")
-	suite.logsStorage.EXPECT().AddLog(loggedMessage).Return(dbErr)
+	suite.logsStorage.EXPECT().Upsert(gomock.Any(), logMatcher{x: loggedMessage}).Return(dbErr)
 
 	recorder := httptest.NewRecorder()
 	suite.logImbueHandler.ServeHTTP(recorder, req)
@@ -92,7 +106,7 @@ func (suite *LogImbueHandlerTestSuite) TestPostHandlesCloseError() {
 }
 
 // Mock ReadCloser implementation to function as the http request body.
-///////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////
 func mockReadCloseMessage(message string) *mockReadCloser {
 	byteSlice := []byte(message)
 	return &mockReadCloser{

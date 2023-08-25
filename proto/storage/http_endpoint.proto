@@ -9,16 +9,16 @@ import "storage/common.proto";
 package storage;
 
 message HTTPEndpointConfig {
-    string endpoint                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string endpoint                    = 1 [(gogoproto.moretags) = 'scrub:"dependent"'];
     bool   skip_tls_verify             = 2;
     string ca_cert                     = 3;
-    string username                    = 4 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username                    = 4 [(gogoproto.moretags) = 'scrub:"dependent"'];
     // The password for the integration. The server will mask the value of this credential in responses and logs.
-    string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
+    string password                    = 5 [(gogoproto.moretags) = 'scrub:"always"'];
     repeated KeyValuePair headers      = 6;
 
     // The client certificate in PEM format for the integration.
     string client_cert_pem             = 7;
     // The client key in PEM format for the integration. The server will mask the value of this credential in responses and logs.
-    string client_key_pem              = 8 [(gogoproto.moretags) = "scrub:\"always\""];
+    string client_key_pem              = 8 [(gogoproto.moretags) = 'scrub:"always"'];
 }

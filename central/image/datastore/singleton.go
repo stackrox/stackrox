@@ -1,8 +1,9 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/image/datastore/keyfence"
+	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,13 +16,8 @@ var (
 )
 
 func initialize() {
-	ad = New(dackbox.GetGlobalDackBox(),
-		dackbox.GetKeyFence(),
-		globalindex.GetGlobalIndex(),
-		false,
-		riskDS.Singleton(),
-		ranking.ImageRanker(),
-		ranking.ComponentRanker())
+	storage := pgStore.New(globaldb.GetPostgres(), false, keyfence.ImageKeyFenceSingleton())
+	ad = NewWithPostgres(storage, pgStore.NewIndexer(globaldb.GetPostgres()), riskDS.Singleton(), ranking.ImageRanker(), ranking.ComponentRanker())
 }
 
 // Singleton provides the interface for non-service external interaction.

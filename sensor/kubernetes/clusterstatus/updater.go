@@ -7,6 +7,7 @@ import (
 	"time"
 
 	v1 "github.com/openshift/api/config/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +39,7 @@ type updaterImpl struct {
 	client     client.Interface
 	kubeClient kubernetes.Interface
 
-	updates chan *central.MsgFromSensor
+	updates chan *message.ExpiringMessage
 	stopSig concurrency.Signal
 }
 
@@ -50,25 +52,27 @@ func (u *updaterImpl) Stop(_ error) {
 	u.stopSig.Signal()
 }
 
+func (u *updaterImpl) Notify(common.SensorComponentEvent) {}
+
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (u *updaterImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return u.updates
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	select {
-	case u.updates <- &central.MsgFromSensor{
+	case u.updates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
 			ClusterStatusUpdate: msg,
 		},
-	}:
+	}):
 		return true
 	case <-u.stopSig.Done():
 		return false
@@ -128,7 +132,7 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 		ApiVersions: u.getAPIVersions(),
 	}
 
-	if env.OpenshiftAPI.Setting() == "true" {
+	if env.OpenshiftAPI.BooleanSetting() {
 		// Update Openshift version
 		openshiftVersion, err := u.getOpenshiftVersion()
 		if kerrors.IsNotFound(err) {
@@ -151,13 +155,25 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 }
 
 func (u *updaterImpl) getOpenshiftVersion() (string, error) {
+	openShiftCfg := u.client.OpenshiftConfig()
+	if openShiftCfg == nil {
+		return "", errors.New("failed to get OpenShift config")
+	}
+	configV1 := openShiftCfg.ConfigV1()
+	if configV1 == nil {
+		return "", errors.Errorf("invalid OpenShift config, %v", openShiftCfg)
+	}
+	operators := configV1.ClusterOperators()
+	if operators == nil {
+		return "", errors.Errorf("cannot get cluster operators from ConfigV1 %v", configV1)
+	}
 	var clusterOperator *v1.ClusterOperator
 	err := retry.WithRetry(
 		func() error {
 			ctx, cancel := context.WithTimeout(context.Background(), getVersionTimeout)
 			defer cancel()
 			var err error
-			clusterOperator, err = u.client.OpenshiftConfig().ConfigV1().ClusterOperators().Get(ctx, "openshift-apiserver", metav1.GetOptions{})
+			clusterOperator, err = operators.Get(ctx, "openshift-apiserver", metav1.GetOptions{})
 			if err != nil {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
@@ -245,7 +261,7 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 	return &updaterImpl{
 		client:     client,
 		kubeClient: client.Kubernetes(),
-		updates:    make(chan *central.MsgFromSensor),
+		updates:    make(chan *message.ExpiringMessage),
 		stopSig:    concurrency.NewSignal(),
 	}
 }

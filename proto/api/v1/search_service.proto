@@ -4,12 +4,11 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
 import "api/v1/pagination.proto";
 
 package v1;
 
-// Next available tag: 32
+// Next available tag: 60
 enum SearchCategory {
     SEARCH_UNSET              = 0;
     ALERTS                    = 1;
@@ -27,23 +26,49 @@ enum SearchCategory {
     CLUSTERS                  = 8;
     NAMESPACES                = 9;
     NODES                     = 10;
+    NODE_COMPONENTS           = 38;
     NODE_VULN_EDGE            = 28;
     NODE_COMPONENT_EDGE       = 29;
+    NODE_COMPONENT_CVE_EDGE   = 33;
     COMPLIANCE_STANDARD       = 11;
     COMPLIANCE_CONTROL_GROUP  = 12;
     COMPLIANCE_CONTROL        = 13;
     SERVICE_ACCOUNTS          = 14;
     ROLES                     = 15;
     ROLEBINDINGS              = 16;
-    REPORT_CONFIGURATIONS     = 33;
+    REPORT_CONFIGURATIONS     = 37;
     PROCESS_BASELINES         = 17;
     SUBJECTS                  = 18;
     RISKS                     = 19;
     VULNERABILITIES           = 21;
+    CLUSTER_VULNERABILITIES   = 34;
+    IMAGE_VULNERABILITIES     = 35;
+    NODE_VULNERABILITIES      = 36;
     COMPONENT_VULN_EDGE       = 22;
     CLUSTER_VULN_EDGE         = 24;
     NETWORK_ENTITY            = 26;
     VULN_REQUEST              = 32;
+    NETWORK_BASELINE          = 39;
+    NETWORK_POLICIES          = 40;
+    PROCESS_BASELINE_RESULTS  = 41;
+    COMPLIANCE_METADATA       = 42;
+    COMPLIANCE_RESULTS        = 43;
+    COMPLIANCE_DOMAIN         = 44;
+    CLUSTER_HEALTH            = 45;
+    POLICY_CATEGORIES         = 46;
+    IMAGE_INTEGRATIONS        = 47;
+    COLLECTIONS               = 48;
+    POLICY_CATEGORY_EDGE      = 49;
+    PROCESS_LISTENING_ON_PORT = 50;
+    API_TOKEN                 = 51;
+    REPORT_METADATA           = 52;
+    REPORT_SNAPSHOT           = 53;
+    COMPLIANCE_INTEGRATIONS   = 54;
+    COMPLIANCE_SCAN_SETTINGS  = 55;
+    COMPLIANCE_SCAN           = 56;
+    COMPLIANCE_CHECK_RESULTS  = 57;
+    BLOB                      = 58;
+    PRODUCT_USAGE             = 59;
 }
 
 enum SearchDataType {
@@ -62,7 +87,7 @@ enum SearchDataType {
 // "Deployment:central,sensor+Namespace:stackrox"
 // RawQuery is used in ListAPIs to search for a particular object.
 message RawQuery {
-    string query          = 1;
+    string     query      = 1;
     Pagination pagination = 2;
 }
 
@@ -74,14 +99,35 @@ message RawSearchRequest {
 }
 
 message QuerySortOption {
-    string field    = 1;
-    bool   reversed = 2;
+    string      field        = 1;
+    bool        reversed     = 2;
     oneof search_after_opt {
         // search_after is alternative to offset for pagination.
         // Each value in search_after corresponds to a field. Only results following a record specified by a combination
         // of field+search_after values in specified sorting order will be returned.
-        string search_after = 3;
+        string  search_after = 3;
     }
+    AggregateBy aggregate_by = 4;
+}
+
+message QueryField {
+    string name           = 1;
+    string aggregate_func = 2;
+    bool   distinct       = 3;
+}
+
+message QuerySelectFilter {
+    string name = 1;
+    Query query = 2;
+}
+
+message QuerySelect {
+    QueryField        field  = 1;
+    QuerySelectFilter filter = 2;
+}
+
+message QueryGroupBy {
+    repeated string fields = 1;
 }
 
 message QueryPagination {
@@ -95,14 +141,17 @@ message BooleanQuery {
     DisjunctionQuery must_not = 2;
 }
 
+// next tag: 9
 message Query {
     oneof query {
-        ConjunctionQuery conjunction   = 1;
-        DisjunctionQuery disjunction   = 2;
-        BaseQuery        base_query    = 3;
-        BooleanQuery     boolean_query = 6;
+        ConjunctionQuery    conjunction   = 1;
+        DisjunctionQuery    disjunction   = 2;
+        BaseQuery           base_query    = 3;
+        BooleanQuery        boolean_query = 6;
     }
-    QueryPagination pagination       = 4;
+    repeated QuerySelect    selects       = 8;
+    QueryGroupBy            group_by      = 7;
+    QueryPagination         pagination    = 4;
     reserved 5; // previously SearchOptions
 }
 

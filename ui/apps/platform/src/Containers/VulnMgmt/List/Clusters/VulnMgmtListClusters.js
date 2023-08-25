@@ -8,18 +8,17 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
-import StatusChip from 'Components/StatusChip';
-import TableCountLink from 'Components/workflow/TableCountLink';
+import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
-import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import CVEStackedPill from 'Components/CVEStackedPill';
 
-import { CLUSTER_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { CLUSTER_LIST_FRAGMENT_UPDATED } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultClusterSort = [
     {
@@ -28,7 +27,7 @@ export const defaultClusterSort = [
     },
 ];
 
-const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getClusters(
             $query: String
@@ -43,7 +42,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             }
             count: clusterCount(query: $query)
         }
-        ${CLUSTER_LIST_FRAGMENT}
+        ${CLUSTER_LIST_FRAGMENT_UPDATED}
     `;
 
     const tableSort = sort || defaultClusterSort;
@@ -72,23 +71,84 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 sortField: clusterSortFields.CLUSTER,
             },
             {
-                Header: `CVEs`,
-                entityType: entityTypes.CVE,
+                Header: `Image CVEs`,
+                entityType: entityTypes.IMAGE_CVE,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
-                    const { vulnCounter, id } = original;
-                    if (!vulnCounter || vulnCounter.all.total === 0) {
+                    const { imageVulnerabilityCounter, id } = original;
+                    if (!imageVulnerabilityCounter || imageVulnerabilityCounter.all.total === 0) {
                         return 'No CVEs';
                     }
 
-                    const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.IMAGE_CVE);
                     const url = newState.toUrl();
                     const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
                     return (
                         <CVEStackedPill
-                            vulnCounter={vulnCounter}
+                            vulnCounter={imageVulnerabilityCounter}
+                            url={url}
+                            fixableUrl={fixableUrl}
+                            hideLink={pdf}
+                        />
+                    );
+                },
+                id: clusterSortFields.CVE_COUNT,
+                accessor: 'vulnCounter.all.total',
+                sortField: clusterSortFields.CVE_COUNT,
+            },
+            {
+                Header: `Node CVEs`,
+                entityType: entityTypes.NODE_CVE,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { nodeVulnerabilityCounter, id } = original;
+                    if (!nodeVulnerabilityCounter || nodeVulnerabilityCounter.all.total === 0) {
+                        return 'No CVEs';
+                    }
+
+                    const newState = workflowState.pushListItem(id).pushList(entityTypes.NODE_CVE);
+                    const url = newState.toUrl();
+                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+
+                    return (
+                        <CVEStackedPill
+                            vulnCounter={nodeVulnerabilityCounter}
+                            url={url}
+                            fixableUrl={fixableUrl}
+                            hideLink={pdf}
+                        />
+                    );
+                },
+                id: clusterSortFields.CVE_COUNT,
+                accessor: 'vulnCounter.all.total',
+                sortField: clusterSortFields.CVE_COUNT,
+            },
+            {
+                Header: `Platform CVEs`,
+                entityType: entityTypes.CLUSTER_CVE,
+                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const { clusterVulnerabilityCounter, id } = original;
+                    if (
+                        !clusterVulnerabilityCounter ||
+                        clusterVulnerabilityCounter.all.total === 0
+                    ) {
+                        return 'No CVEs';
+                    }
+
+                    const newState = workflowState
+                        .pushListItem(id)
+                        .pushList(entityTypes.CLUSTER_CVE);
+                    const url = newState.toUrl();
+                    const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
+
+                    return (
+                        <CVEStackedPill
+                            vulnCounter={clusterVulnerabilityCounter}
                             url={url}
                             fixableUrl={fixableUrl}
                             hideLink={pdf}
@@ -118,93 +178,13 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
             //     sortField: clusterSortFields.CREATED
             // },
             {
-                Header: `Namespaces`,
-                entityType: entityTypes.NAMESPACE,
+                Header: `Entities`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.NAMESPACE}
-                        count={original.namespaceCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
+                    <ClusterTableCountLinks row={original} textOnly={pdf} />
                 ),
-                id: clusterSortFields.NAMESPACE_COUNT,
-                accessor: 'namespaceCount',
-                sortField: clusterSortFields.NAMESPACE_COUNT,
-            },
-            {
-                Header: `Deployments`,
-                entityType: entityTypes.DEPLOYMENT,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.DEPLOYMENT}
-                        count={original.deploymentCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: clusterSortFields.DEPLOYMENT_COUNT,
-                accessor: 'deploymentCount',
-                sortField: clusterSortFields.DEPLOYMENT_COUNT,
-            },
-            {
-                Header: `Nodes`,
-                entityType: entityTypes.NODE,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.NODE}
-                        count={original.nodeCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: clusterSortFields.NODE_COUNT,
-                accessor: 'nodeCount',
-                sortField: clusterSortFields.NODE_COUNT,
-            },
-            // @TODD, restore the Policy Counts column once its performance is improved,
-            //   or remove the comment if we determine that it cannot be made performant
-            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
-            // {
-            //     Header: `Policies`,
-            //     entityType: entityTypes.POLICY,
-            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            //     className: `w-1/10 ${defaultColumnClassName}`,
-            //     // eslint-disable-next-line
-            //     Cell: ({ original, pdf }) => (
-            //         <TableCountLink
-            //             entityType={entityTypes.POLICY}
-            //             count={original.policyCount}
-            //             textOnly={pdf}
-            //             selectedRowId={original.id}
-            //         />
-            //     ),
-            //     id: clusterSortFields.POLICY_COUNT,
-            //     accessor: 'policyCount',
-            //     sortField: clusterSortFields.POLICY_COUNT,
-            //     sortable: false
-            // },
-            {
-                Header: `Policy Status`,
-                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
-                    const { policyStatus } = original;
-                    const policyLabel = (
-                        <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
-                    );
-
-                    return policyLabel;
-                },
-                id: clusterSortFields.POLICY_STATUS,
-                accessor: 'policyStatus.status',
-                sortField: clusterSortFields.POLICY_STATUS,
+                accessor: 'entities',
                 sortable: false,
             },
             {
@@ -230,12 +210,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 sortable: true,
             },
         ];
+
         return removeEntityContextColumns(tableColumns, workflowState);
     }
 
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.CLUSTER}

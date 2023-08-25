@@ -11,7 +11,8 @@ import (
 // Command adds the userpki command
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "userpki",
+		Use:   "userpki",
+		Short: "Commands for managing user certificate authorization providers.",
 	}
 	c.AddCommand(list.Command(cliEnvironment))
 	c.AddCommand(create.Command(cliEnvironment))

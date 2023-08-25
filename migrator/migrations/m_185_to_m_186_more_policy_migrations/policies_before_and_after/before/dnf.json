@@ -1,0 +1,88 @@
+{
+  "id": "f95ff08d-130a-465a-a27e-32ed1fb05555",
+  "name": "Red Hat Package Manager in Image",
+  "description": "Alert on deployments with components of the Red Hat/Fedora/CentOS package management system.",
+  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
+  "remediation": "Run `rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')` in the image build for production containers.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on deployment collector in namespace stackrox",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment sensor in namespace stackrox",
+      "deployment": {
+        "name": "sensor",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment central in namespace stackrox",
+      "deployment": {
+        "name": "central",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on deployment admission-control in namespace stackrox",
+      "deployment": {
+        "name": "admission-control",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox scanner",
+      "deployment": {
+        "name": "scanner",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on system namespaces",
+      "deployment": {
+        "scope": {
+          "namespace": "^kube.*|^openshift.*|^redhat.*|^istio-system$"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "rpm|microdnf|dnf|yum="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

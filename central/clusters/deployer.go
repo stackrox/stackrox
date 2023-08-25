@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/helm/charts"
@@ -26,6 +26,8 @@ type RenderOptions struct {
 	CreateUpgraderSA bool
 	SlimCollector    bool
 	IstioVersion     string
+
+	DisablePodSecurityPolicies bool
 }
 
 // FieldsFromClusterAndRenderOpts gets the template values for values.yaml
@@ -35,8 +37,10 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, imageFlavor *defaults.Im
 		return nil, err
 	}
 
-	baseValues := getBaseMetaValues(c, imageFlavor.Versions, &opts)
+	baseValues := getBaseMetaValues(c, imageFlavor.Versions, imageFlavor.ScannerSlimImageName, imageFlavor.ChartRepo, &opts)
 	setMainOverride(mainImage, baseValues)
+	deriveScannerRemoteFromMain(mainImage, baseValues)
+	baseValues.EnablePodSecurityPolicies = !opts.DisablePodSecurityPolicies
 
 	collectorFull, collectorSlim := determineCollectorImages(mainImage, collectorImage, imageFlavor)
 	setCollectorOverrideToMetaValues(collectorFull, collectorSlim, baseValues)
@@ -62,6 +66,15 @@ func MakeClusterImageNames(flavor *defaults.ImageFlavor, c *storage.Cluster) (*s
 	}
 
 	return mainImageName, collectorImageName, nil
+}
+
+// deriveScannerRemoteFromMain sets scanner-slim image remote, so that it comes from the same location as the main image
+func deriveScannerRemoteFromMain(mainImage *storage.ImageName, metaValues *charts.MetaValues) {
+	scannerRemoteSlice := strings.Split(mainImage.Remote, "/")
+	if len(scannerRemoteSlice) > 0 {
+		scannerRemoteSlice[len(scannerRemoteSlice)-1] = metaValues.ScannerSlimImageRemote
+		metaValues.ScannerSlimImageRemote = strings.Join(scannerRemoteSlice, "/")
+	}
 }
 
 // setMainOverride adds main image values to meta values as defined in secured cluster object.
@@ -123,12 +136,10 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 	}
 }
 
-func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *RenderOptions) *charts.MetaValues {
+func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
 	envVars := make(map[string]string)
-	if devbuild.IsEnabled() {
-		for _, feature := range features.Flags {
-			envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
-		}
+	for _, feature := range features.Flags {
+		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
 	}
 
 	command := "kubectl"
@@ -145,11 +156,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 
 		CollectionMethod: c.CollectionMethod.String(),
 
-		// Hardcoding RHACS charts repo for now.
-		// TODO: fill ChartRepo based on the current image flavor.
-		ChartRepo: defaults.ChartRepo{
-			URL: "http://mirror.openshift.com/pub/rhacs/charts",
-		},
+		ChartRepo: chartRepo,
 
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
 		CreateUpgraderSA:   opts.CreateUpgraderSA,
@@ -161,6 +168,9 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		OfflineMode: env.OfflineModeEnv.BooleanSetting(),
 
 		SlimCollector: opts.SlimCollector,
+
+		ScannerImageTag:        versions.ScannerVersion,
+		ScannerSlimImageRemote: scannerSlimImageRemote,
 
 		KubectlOutput: true,
 
@@ -176,5 +186,8 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, opts *Rend
 		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
 		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+		ReleaseBuild:                     buildinfo.ReleaseBuild,
+
+		EnablePodSecurityPolicies: false,
 	}
 }

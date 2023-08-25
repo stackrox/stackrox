@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/authprovider/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/authprovider/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,7 +15,7 @@ var (
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() authproviders.Store {
 	once.Do(func() {
-		soleInstance = New(store.New(globaldb.GetGlobalDB()))
+		soleInstance = New(pgStore.New(globaldb.GetPostgres()))
 	})
 	return soleInstance
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -27,7 +28,7 @@ func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process 
 
 // ConstructDeploymentWithProcess constructs an augmented deployment with process information.
 func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*storage.Image, process *storage.ProcessIndicator, processNotInBaseline bool) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 		pathutil.FieldStep("Containers"), pathutil.IndexStep(matchingContainerIdx), pathutil.FieldStep(processAugmentKey),
 	)
 	if err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	return obj, nil
 }
@@ -61,7 +62,7 @@ func ConstructKubeResourceWithEvent(kubeResource interface{}, event *storage.Kub
 	}
 
 	if err := obj.AddPlainObjAt(event, pathutil.FieldStep(kubeEventAugKey)); err != nil {
-		return nil, utils.Should(err)
+		return nil, utils.ShouldErr(err)
 	}
 	return obj, nil
 }
@@ -119,7 +120,7 @@ func ConstructDeploymentWithNetworkFlowInfo(
 	images []*storage.Image,
 	flow *NetworkFlowDetails,
 ) (*pathutil.AugmentedObj, error) {
-	obj, err := ConstructDeployment(deployment, images)
+	obj, err := ConstructDeployment(deployment, images, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -137,14 +138,25 @@ func ConstructDeploymentWithNetworkFlowInfo(
 }
 
 // ConstructDeployment constructs the augmented deployment object.
-func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image) (*pathutil.AugmentedObj, error) {
+// It assumes that the given images are in the same order as the containers specified within the given deployment.
+// If there's a mismatch in the amount of containers on the deployment and the given images, an error will be returned.
+func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image, applied *NetworkPoliciesApplied) (*pathutil.AugmentedObj, error) {
 	obj := pathutil.NewAugmentedObj(deployment)
 	if len(images) != len(deployment.GetContainers()) {
 		return nil, errors.Errorf("deployment %s/%s had %d containers, but got %d images",
 			deployment.GetNamespace(), deployment.GetName(), len(deployment.GetContainers()), len(images))
 	}
+
+	appliedPolicies := pathutil.NewAugmentedObj(applied)
+	if err := obj.AddAugmentedObjAt(appliedPolicies, pathutil.FieldStep(networkPoliciesAppliedKey)); err != nil {
+		return nil, utils.ShouldErr(err)
+	}
+
 	for i, image := range images {
-		augmentedImg, err := ConstructImage(image)
+		// Since we ensure that both images and containers have the same length, this will not lead to index out of
+		// bounds panics.
+		containerImageFullName := deployment.GetContainers()[i].GetImage().GetName().GetFullName()
+		augmentedImg, err := ConstructImage(image, containerImageFullName)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +165,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			pathutil.FieldStep("Containers"), pathutil.IndexStep(i), pathutil.FieldStep(imageAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -167,7 +179,7 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			)
 
 			if err != nil {
-				return nil, utils.Should(err)
+				return nil, utils.ShouldErr(err)
 			}
 		}
 	}
@@ -176,8 +188,27 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 }
 
 // ConstructImage constructs the augmented image object.
-func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
-	obj := pathutil.NewAugmentedObj(image)
+func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.AugmentedObj, error) {
+	if image == nil {
+		return pathutil.NewAugmentedObj(image), nil
+	}
+
+	img := *image
+
+	// When evaluating policies, the evaluator will stop when any of the objects within the path
+	// are nil and immediately return, not matching. Within the image signature criteria, we have
+	// a combination of "Match if the signature verification result is not as expected" OR "Match if
+	// there is no signature verification result". This means that we have to add the SignatureVerificationData
+	// and SignatureVerificationResults object here as a workaround and add the placeholder value,
+	// making it possible to also match for nil objects.
+	// We have to do this at the beginning, so the augmented object contains the field steps.
+	if img.GetSignatureVerificationData().GetResults() == nil {
+		img.SignatureVerificationData = &storage.ImageSignatureVerificationData{
+			Results: []*storage.ImageSignatureVerificationResult{{}},
+		}
+	}
+
+	obj := pathutil.NewAugmentedObj(&img)
 
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
@@ -189,7 +220,7 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			pathutil.IndexStep(i), pathutil.FieldStep(dockerfileLineAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
 
@@ -205,8 +236,30 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			pathutil.FieldStep(componentAndVersionAugmentKey),
 		)
 		if err != nil {
-			return nil, utils.Should(err)
+			return nil, utils.ShouldErr(err)
 		}
 	}
+
+	ids := []string{}
+	for _, result := range image.GetSignatureVerificationData().GetResults() {
+		// We only want signature verification results to be added that:
+		// - have a verified result.
+		// - the verified image references contains the image full name that is currently specified. This can either
+		// be equal to `img.GetName().GetFullName()`, or when used within a deployment, the container image's full name.
+		if result.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED &&
+			sliceutils.Find(result.GetVerifiedImageReferences(), imageFullName) != -1 {
+			ids = append(ids, result.GetVerifierId())
+		}
+	}
+	// When the object is not created, the policy will not match, but it should match.
+	if err := obj.AddPlainObjAt(
+		&imageSignatureVerification{
+			VerifierIDs: ids,
+		},
+		pathutil.FieldStep("SignatureVerificationData"),
+		pathutil.FieldStep(imageSignatureVerifiedKey)); err != nil {
+		return nil, utils.ShouldErr(err)
+	}
+
 	return obj, nil
 }

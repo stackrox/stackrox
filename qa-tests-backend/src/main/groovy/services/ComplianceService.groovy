@@ -5,7 +5,7 @@ import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceSta
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsRequest
 import static io.stackrox.proto.api.v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
-
+import groovy.util.logging.Slf4j
 import java.nio.charset.StandardCharsets
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
@@ -29,6 +29,7 @@ import io.stackrox.proto.storage.Compliance.ComplianceControlResult
 
 import util.Env
 
+@Slf4j
 @CompileStatic
 class ComplianceService extends BaseService {
 
@@ -46,7 +47,7 @@ class ComplianceService extends BaseService {
                     .getStandard(Common.ResourceByID.newBuilder()
                     .setId(complianceId).build()).standard
         } catch (Exception e) {
-            println "Could not find Compliance Standard with ID ${complianceId}: ${e}"
+            log.error("Could not find Compliance Standard with ID ${complianceId}", e)
         }
         return null
     }
@@ -54,7 +55,7 @@ class ComplianceService extends BaseService {
     static List<ComplianceControlResult> getComplianceResults(RawQuery query = RawQuery.newBuilder().build()) {
         // return getComplianceClient().getComplianceControlResults(query).resultsList
         // the results api is not sending any data yet... send mock data instead for testing purposes
-        println query
+        log.debug(query.getQuery())
         return [
                 ComplianceControlResult.newBuilder()
                         .setControlId("fake-1.1.1")
@@ -147,7 +148,7 @@ class ComplianceService extends BaseService {
                 }
             }
         } catch (Exception e) {
-            e.toString()
+            log.error(e.toString(), e)
             return ""
         }
         return filename

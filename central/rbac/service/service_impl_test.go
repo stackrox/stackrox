@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestRbacService(t *testing.T) {

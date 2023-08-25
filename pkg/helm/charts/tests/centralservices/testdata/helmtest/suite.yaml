@@ -1,3 +1,28 @@
+defs: |
+  def verifyNodeAffinities(obj):
+    [
+      (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/infra" ) | [
+          assertThat(.weight == 50),
+          assertThat(.preference.matchExpressions[0].operator == "Exists")
+        ]),
+      (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/compute" ) | [
+          assertThat(.weight == 25),
+          assertThat(.preference.matchExpressions[0].operator == "Exists")
+        ]),
+      (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/master" ) | [
+          assertThat(.weight == 100),
+          assertThat(.preference.matchExpressions[0].operator == "DoesNotExist")
+        ]),
+      (obj.spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution[]
+        | select(.preference.matchExpressions[0].key == "node-role.kubernetes.io/control-plane" ) | [
+          assertThat(.weight == 100),
+          assertThat(.preference.matchExpressions[0].operator == "DoesNotExist")
+        ])
+    ][];
+
 server:
   visibleSchemas:
     - kubernetes-1.20.2
@@ -13,6 +38,10 @@ values:
     serviceTLS:
       cert: "Central cert"
       key: "Central key"
+    db:
+      serviceTLS:
+        cert: "Central DB cert"
+        key: "Central DB key"
   scanner:
     serviceTLS:
       cert: "Scanner cert"

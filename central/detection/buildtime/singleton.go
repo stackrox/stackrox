@@ -5,10 +5,10 @@ import (
 
 	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -20,7 +20,7 @@ var (
 	detector  Detector
 	policyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Policy)))
+			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
 )
 
 // SingletonDetector returns the singleton instance of a Detector.
@@ -42,7 +42,7 @@ func initialize() {
 
 	for _, policy := range policies {
 		if policyUtils.AppliesAtBuildTime(policy) {
-			utils.Must(policySet.UpsertPolicy(policy))
+			utils.Should(policySet.UpsertPolicy(policy))
 		}
 	}
 

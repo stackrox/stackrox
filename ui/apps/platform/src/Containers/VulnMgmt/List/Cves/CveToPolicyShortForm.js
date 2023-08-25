@@ -145,7 +145,7 @@ function CveToPolicyShortForm({
                             placeholder="Select severity"
                             onChange={onSeverityChange}
                             className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
-                            wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
+                            wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full text-base-600 hover:border-base-400"
                             triggerClass="border-l border-base-300"
                             value={policy.severity}
                             disabled={!!policy.id}
@@ -195,7 +195,7 @@ function CveToPolicyShortForm({
                         onChange={handleChange}
                         disabled={!!policy.id}
                         placeholder="What does this policy do?"
-                        className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-32"
+                        className="bg-base-100 border-2 rounded p-2 border-base-300 w-full text-base-600 hover:border-base-400 leading-normal min-h-32"
                     />
                 </div>
             </div>
@@ -238,14 +238,14 @@ CveToPolicyShortForm.propTypes = {
     policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })
     ),
-    selectedPolicy: PropTypes.string,
+    selectedPolicy: PropTypes.number,
     setSelectedPolicy: PropTypes.func.isRequired,
     handleChange: PropTypes.func.isRequired,
 };
 
 CveToPolicyShortForm.defaultProps = {
     policies: [],
-    selectedPolicy: '',
+    selectedPolicy: null,
 };
 
 export default CveToPolicyShortForm;

@@ -79,26 +79,26 @@ func newClusterHealthCounterResolver(ctx context.Context, root *Resolver, q *v1.
 }
 
 // Total returns total the number of clusters.
-func (cr *ClusterHealthCounterResolver) Total(ctx context.Context) int32 {
+func (cr *ClusterHealthCounterResolver) Total(_ context.Context) int32 {
 	return cr.total
 }
 
 // Uninitialized returns the number of clusters that are in uninitialized state.
-func (cr *ClusterHealthCounterResolver) Uninitialized(ctx context.Context) int32 {
+func (cr *ClusterHealthCounterResolver) Uninitialized(_ context.Context) int32 {
 	return cr.uninitialized
 }
 
 // Healthy returns the number of clusters that are in healthy state.
-func (cr *ClusterHealthCounterResolver) Healthy(ctx context.Context) int32 {
+func (cr *ClusterHealthCounterResolver) Healthy(_ context.Context) int32 {
 	return cr.healthy
 }
 
 // Degraded returns the number of clusters that are in degraded state.
-func (cr *ClusterHealthCounterResolver) Degraded(ctx context.Context) int32 {
+func (cr *ClusterHealthCounterResolver) Degraded(_ context.Context) int32 {
 	return cr.degraded
 }
 
 // Unhealthy returns the number of clusters that are in unhealthy state.
-func (cr *ClusterHealthCounterResolver) Unhealthy(ctx context.Context) int32 {
+func (cr *ClusterHealthCounterResolver) Unhealthy(_ context.Context) int32 {
 	return cr.unhealthy
 }

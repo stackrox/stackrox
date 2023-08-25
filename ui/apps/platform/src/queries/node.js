@@ -14,10 +14,6 @@ export const NODE_FRAGMENT = gql`
         osImage
         nodeStatus
         priority
-        topVuln {
-            cvss
-            scoreVersion
-        }
         scan {
             scanTime
         }
@@ -28,28 +24,6 @@ export const NODE_FRAGMENT = gql`
         annotations {
             key
             value
-        }
-        vulnCounter {
-            all {
-                total
-                fixable
-            }
-            low {
-                total
-                fixable
-            }
-            moderate {
-                total
-                fixable
-            }
-            important {
-                total
-                fixable
-            }
-            critical {
-                total
-                fixable
-            }
         }
         nodeComplianceControlCount(query: "Standard:CIS") {
             failingCount

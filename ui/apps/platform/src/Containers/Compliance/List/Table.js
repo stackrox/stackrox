@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 import { useQuery } from '@apollo/client';
-import { Message } from '@stackrox/ui-components';
+import { Alert } from '@patternfly/react-core';
 
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
@@ -21,6 +21,8 @@ import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD, STANDARDS_QUERY } from 'queries/standard';
 import queryService from 'utils/queryService';
+
+import { complianceEntityTypes, entityCountNounOrdinaryCase } from '../entitiesForCompliance';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -286,20 +288,27 @@ const ListTable = ({
                 if (!loading || (data && data.results)) {
                     const formattedData = formatData(data, entityType);
                     if (!formattedData) {
-                        headerText = `0 ${pluralize(entityType, totalRows)}`;
+                        headerText = entityCountNounOrdinaryCase(0, entityType);
                         contents = <NoResultsMessage message="No data matched your search." />;
                     } else {
                         tableData = filterByComplianceState(formattedData, query, isControlList);
                         totalRows = getTotalRows(tableData, isControlList);
+                        const entityCountNoun = entityCountNounOrdinaryCase(totalRows, entityType);
                         const { groupBy } = query;
 
+                        // Resouces: CLUSTER, NAMESPACE, NODE, DEPLOYMENT.
+                        // Or CATEGORY from View Standard link of sunburst graph on dashboard.
+                        // Or STANDARD on Controls tab of resource single page.
+                        // Otherwise undefined.
+                        const { length } = tableData;
                         const groupedByText = groupBy
-                            ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
+                            ? ` across ${
+                                  complianceEntityTypes.includes(groupBy)
+                                      ? entityCountNounOrdinaryCase(length, groupBy)
+                                      : `${length} ${pluralize(groupBy.toLowerCase(), length)}`
+                              }`
                             : '';
-                        headerText = `${totalRows} ${pluralize(
-                            entityType,
-                            totalRows
-                        )} ${groupedByText}`;
+                        headerText = `${entityCountNoun}${groupedByText}`;
 
                         if (tableData && tableData.length) {
                             createPDFTable(tableData, entityType, query, pdfId, tableColumns);
@@ -335,7 +344,9 @@ const ListTable = ({
                         contents = (
                             <>
                                 {data.results.errorMessage && (
-                                    <Message type="error">{data.results.errorMessage}</Message>
+                                    <Alert variant="danger" isInline title="Unable to get data">
+                                        {data.results.errorMessage}
+                                    </Alert>
                                 )}
                                 {tableElement}
                             </>
@@ -351,7 +362,7 @@ const ListTable = ({
                 return (
                     <PanelNew testid="panel">
                         <PanelHead>
-                            <PanelTitle isUpperCase testid="panel-header" text={headerText} />
+                            <PanelTitle testid="panel-header" text={headerText} />
                             <PanelHeadEnd>{headerComponent}</PanelHeadEnd>
                         </PanelHead>
                         <PanelBody>{contents}</PanelBody>

@@ -4,16 +4,13 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// secretDataMap represents data stored as part of a secret.
-type secretDataMap = map[string][]byte
 
 type updateStatusFunc func(*platform.CentralStatus) bool
 
@@ -24,7 +21,7 @@ var (
 func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
-			log.Error(errUnexpectedGVK, "unable to reconcile central TLS secrets", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
+			log.Error(errUnexpectedGVK, "unable to reconcile central", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
 			return errUnexpectedGVK
 		}
 

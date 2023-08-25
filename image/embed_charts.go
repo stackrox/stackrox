@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/templates"
-	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -85,7 +84,7 @@ func GetDefaultImage() *Image {
 func (i *Image) LoadFileContents(filename string) (string, error) {
 	content, err := fs.ReadFile(AssetFS, filename)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not read file %q", filename)
 	}
 	return string(content), nil
 }
@@ -97,7 +96,8 @@ func (i *Image) ReadFileAndTemplate(pathToFile string) (*template.Template, erro
 	if err != nil {
 		return nil, err
 	}
-	return helmTemplate.InitTemplate(templatePath).Parse(contents)
+	parse, err := helmTemplate.InitTemplate(templatePath).Parse(contents)
+	return parse, errors.Wrapf(err, "could not render template %q with file %q", templatePath, pathToFile)
 }
 
 // GetChartTemplate loads the chart based on the given prefix.
@@ -113,17 +113,6 @@ func (i *Image) GetChartTemplate(chartPrefixPath ChartPrefix) (*helmTemplate.Cha
 	}
 
 	return chartTpl, nil
-}
-
-func (i *Image) mustGetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
-	ch, err := i.getSensorChart(values, certs)
-	utils.CrashOnError(err)
-	return ch
-}
-
-// GetSensorChart returns the Helm chart for sensor
-func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) *chart.Chart {
-	return i.mustGetSensorChart(values, certs)
 }
 
 // GetCentralServicesChartTemplate retrieves the StackRox Central Services Helm chart template.
@@ -149,6 +138,14 @@ var (
 		GVK:       secretGVK,
 		Name:      "additional-ca-sensor",
 		Namespace: namespaces.StackRox,
+	}
+
+	pspGVK = schema.GroupVersionKind{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"}
+	// SensorPSPObjectRefs are the objects in the sensor bundle that represents pod security policies.
+	SensorPSPObjectRefs = map[k8sobjects.ObjectRef]struct{}{
+		{GVK: pspGVK, Name: "stackrox-sensor"}:            {},
+		{GVK: pspGVK, Name: "stackrox-collector"}:         {},
+		{GVK: pspGVK, Name: "stackrox-admission-control"}: {},
 	}
 )
 
@@ -217,7 +214,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 
 		data, err := fs.ReadFile(i.fs, p)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "could not read file %q", p)
 		}
 
 		newPath := strings.TrimPrefix(p, prefixPath+"/")
@@ -228,7 +225,7 @@ func (i *Image) getFiles(prefixPath string) ([]*loader.BufferedFile, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "errors when reading dir %q", prefixPath)
 	}
 
 	return files, nil
@@ -255,10 +252,12 @@ func (i *Image) GetSensorChartTemplate() (*helmTemplate.ChartTemplate, error) {
 		return nil, errors.Wrap(err, "fetching sensor chart files from embedded filesystem")
 	}
 
-	return helmTemplate.Load(chartTplFiles)
+	load, err := helmTemplate.Load(chartTplFiles)
+	return load, errors.Wrap(err, "could not load chart template")
 }
 
-func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
+// GetSensorChart returns the Helm chart for sensor
+func (i *Image) GetSensorChart(values *charts.MetaValues, certs *sensor.Certs) (*chart.Chart, error) {
 	chartTpl, err := i.GetSensorChartTemplate()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading sensor chart template")
@@ -285,7 +284,8 @@ func (i *Image) getSensorChart(values *charts.MetaValues, certs *sensor.Certs) (
 		renderedFiles = append(renderedFiles, scriptFiles...)
 	}
 
-	return loader.LoadFiles(renderedFiles)
+	files, err := loader.LoadFiles(renderedFiles)
+	return files, errors.Wrap(err, "could not load files")
 }
 
 func (i *Image) addScripts(values *charts.MetaValues) ([]*loader.BufferedFile, error) {
@@ -304,15 +304,15 @@ func (i *Image) scripts(values *charts.MetaValues, filenameMap map[string]string
 	for srcFile, dstFile := range filenameMap {
 		fileData, err := AssetFS.ReadFile(srcFile)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "could not read file: %q", srcFile)
 		}
 		t, err := helmTemplate.InitTemplate(srcFile).Parse(string(fileData))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "could not render template: %q", srcFile)
 		}
 		data, err := templates.ExecuteToBytes(t, values)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "could not execute template")
 		}
 		chartFiles = append(chartFiles, &loader.BufferedFile{
 			Name: dstFile,

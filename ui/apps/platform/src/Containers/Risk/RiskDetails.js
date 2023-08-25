@@ -14,7 +14,7 @@ const Factor = ({ message, url }) => {
 
     return (
         <div className="px-3">
-            <div className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300">
+            <div className="py-3 pb-2 leading-normal border-b border-base-300">
                 {renderedMessage}
             </div>
         </div>
@@ -39,10 +39,7 @@ const RiskDetails = ({ risk }) => {
 
     return risk.results.map((result) => (
         <div className="px-3 pt-5" key={result.name}>
-            <div
-                className="alert-preview bg-base-100 text-primary-600 tracking-wide"
-                key={result.name}
-            >
+            <div className="alert-preview bg-base-100 text-primary-600">
                 <CollapsibleCard title={result.name}>
                     {result.factors.map((factor, index) => (
                         // eslint-disable-next-line react/no-array-index-key

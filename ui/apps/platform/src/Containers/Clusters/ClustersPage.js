@@ -1,23 +1,22 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { generatePath } from 'react-router-dom';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import { useQuery } from '@apollo/client';
-import { HashLink } from 'react-router-hash-link';
+import { Button, ButtonVariant } from '@patternfly/react-core';
 
 import PageHeader from 'Components/PageHeader';
-import URLSearchInput from 'Components/URLSearchInput';
+import LinkShim from 'Components/PatternFly/LinkShim';
+import SearchFilterInput from 'Components/SearchFilterInput';
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
-import { actions as clustersActions } from 'reducers/clusters';
-import { selectors } from 'reducers';
-import { clustersBasePath, clustersPathWithParam, integrationsPath } from 'routePaths';
+import usePermissions from 'hooks/usePermissions';
+import useURLSearch from 'hooks/useURLSearch';
+import { clustersDelegatedScanningPath } from 'routePaths';
 import parseURL from 'utils/URLParser';
 
 import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
+import ManageTokensButton from './Components/ManageTokensButton';
 
 const ClustersPage = ({
     history,
@@ -26,6 +25,11 @@ const ClustersPage = ({
         params: { clusterId: selectedClusterId },
     },
 }) => {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
+    const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
+
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
 
     // Handle changes to the currently selected deployment.
@@ -50,39 +54,39 @@ const ClustersPage = ({
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
-    const autoFocusSearchInput = !selectedClusterId;
 
-    // When the selected cluster changes, update the URL.
-    useEffect(() => {
-        const newPath = selectedClusterId
-            ? generatePath(clustersPathWithParam, { clusterId: selectedClusterId })
-            : clustersBasePath;
-        history.push({
-            pathname: newPath,
-            search,
-        });
-    }, [history, search, selectedClusterId]);
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
 
     const pageHeader = (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="flex flex-1 items-center justify-end">
-                <URLSearchInput
+                <SearchFilterInput
                     className="w-full"
-                    categoryOptions={searchOptions}
-                    categories={['CLUSTERS']}
-                    placeholder="Add one or more filters"
-                    autoFocus={autoFocusSearchInput}
+                    searchFilter={searchFilter}
+                    searchOptions={searchOptions}
+                    searchCategory="CLUSTERS"
+                    placeholder="Filter clusters"
+                    handleChangeSearchFilter={setSearchFilter}
                 />
-                <div className="flex items-center ml-4 mr-3">
-                    <HashLink
-                        to={`${integrationsPath}#token-integrations`}
-                        className="no-underline btn btn-base flex-shrink-0"
-                    >
-                        Manage Tokens
-                    </HashLink>
-                </div>
+                {hasReadAccessForDelegatedScanning && (
+                    <div className="flex items-center ml-4 mr-1">
+                        <Button
+                            variant={ButtonVariant.secondary}
+                            component={LinkShim}
+                            href={clustersDelegatedScanningPath}
+                        >
+                            Manage delegated scanning
+                        </Button>
+                    </div>
+                )}
+                {hasWriteAccessForIntegration && (
+                    <div className="flex items-center ml-1">
+                        <Button variant="tertiary">
+                            <ManageTokensButton />
+                        </Button>
+                    </div>
+                )}
             </div>
         </PageHeader>
     );
@@ -115,12 +119,4 @@ ClustersPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
 };
 
-const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getClustersSearchOptions,
-});
-
-const mapDispatchToProps = {
-    setSearchOptions: clustersActions.setClustersSearchOptions,
-};
-
-export default connect(mapStateToProps, mapDispatchToProps)(ClustersPage);
+export default ClustersPage;

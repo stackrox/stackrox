@@ -7,11 +7,12 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	types "github.com/gogo/protobuf/types"
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFlowDataStore is a mock of FlowDataStore interface.
@@ -38,11 +39,11 @@ func (m *MockFlowDataStore) EXPECT() *MockFlowDataStoreMockRecorder {
 }
 
 // GetAllFlows mocks base method.
-func (m *MockFlowDataStore) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (m *MockFlowDataStore) GetAllFlows(ctx context.Context, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFlows", ctx, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(types.Timestamp)
+	ret1, _ := ret[1].(*types.Timestamp)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -53,12 +54,27 @@ func (mr *MockFlowDataStoreMockRecorder) GetAllFlows(ctx, since interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowDataStore)(nil).GetAllFlows), ctx, since)
 }
 
+// GetFlowsForDeployment mocks base method.
+func (m *MockFlowDataStore) GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFlowsForDeployment", ctx, deploymentID, adjustForGraph)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFlowsForDeployment indicates an expected call of GetFlowsForDeployment.
+func (mr *MockFlowDataStoreMockRecorder) GetFlowsForDeployment(ctx, deploymentID, adjustForGraph interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFlowsForDeployment", reflect.TypeOf((*MockFlowDataStore)(nil).GetFlowsForDeployment), ctx, deploymentID, adjustForGraph)
+}
+
 // GetMatchingFlows mocks base method.
-func (m *MockFlowDataStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+func (m *MockFlowDataStore) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *types.Timestamp) ([]*storage.NetworkFlow, *types.Timestamp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchingFlows", ctx, pred, since)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
-	ret1, _ := ret[1].(types.Timestamp)
+	ret1, _ := ret[1].(*types.Timestamp)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -83,18 +99,32 @@ func (mr *MockFlowDataStoreMockRecorder) RemoveFlowsForDeployment(ctx, id interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowsForDeployment", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveFlowsForDeployment), ctx, id)
 }
 
-// RemoveMatchingFlows mocks base method.
-func (m *MockFlowDataStore) RemoveMatchingFlows(ctx context.Context, keyMatchFn func(*storage.NetworkFlowProperties) bool, valueMatchFn func(*storage.NetworkFlow) bool) error {
+// RemoveOrphanedFlows mocks base method.
+func (m *MockFlowDataStore) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveMatchingFlows", ctx, keyMatchFn, valueMatchFn)
+	ret := m.ctrl.Call(m, "RemoveOrphanedFlows", ctx, orphanWindow)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveMatchingFlows indicates an expected call of RemoveMatchingFlows.
-func (mr *MockFlowDataStoreMockRecorder) RemoveMatchingFlows(ctx, keyMatchFn, valueMatchFn interface{}) *gomock.Call {
+// RemoveOrphanedFlows indicates an expected call of RemoveOrphanedFlows.
+func (mr *MockFlowDataStoreMockRecorder) RemoveOrphanedFlows(ctx, orphanWindow interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMatchingFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveMatchingFlows), ctx, keyMatchFn, valueMatchFn)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveOrphanedFlows), ctx, orphanWindow)
+}
+
+// RemoveStaleFlows mocks base method.
+func (m *MockFlowDataStore) RemoveStaleFlows(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveStaleFlows", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveStaleFlows indicates an expected call of RemoveStaleFlows.
+func (mr *MockFlowDataStoreMockRecorder) RemoveStaleFlows(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveStaleFlows", reflect.TypeOf((*MockFlowDataStore)(nil).RemoveStaleFlows), ctx)
 }
 
 // UpsertFlows mocks base method.

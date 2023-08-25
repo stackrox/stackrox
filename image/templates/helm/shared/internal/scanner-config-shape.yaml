@@ -11,6 +11,7 @@ scanner:
     disable: null # bool
     minReplicas: null # int
     maxReplicas: null # int
+  affinity: null # dict
   resources: null # string | dict
   image:
     registry: null # string
@@ -34,3 +35,6 @@ scanner:
     cert: null # string
     key: null # string
     generate: null # bool
+  exposeMonitoring: null # bool
+system:
+  enablePodSecurityPolicies: null # bool

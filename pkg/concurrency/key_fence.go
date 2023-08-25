@@ -3,8 +3,7 @@ package concurrency
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -151,8 +150,8 @@ func (rks *rangeKeySetImpl) Equals(in KeySet) bool {
 
 func (rks *rangeKeySetImpl) Clone() KeySet {
 	return &rangeKeySetImpl{
-		lower: sliceutils.ByteClone(rks.lower),
-		upper: sliceutils.ByteClone(rks.upper),
+		lower: sliceutils.ShallowClone(rks.lower),
+		upper: sliceutils.ShallowClone(rks.upper),
 	}
 }
 
@@ -193,7 +192,7 @@ func (pkr *prefixKeySetImpl) Equals(in KeySet) bool {
 
 func (pkr *prefixKeySetImpl) Clone() KeySet {
 	return &prefixKeySetImpl{
-		prefix: sliceutils.ByteClone(pkr.prefix),
+		prefix: sliceutils.ShallowClone(pkr.prefix),
 	}
 }
 
@@ -240,7 +239,7 @@ func (dks *discreteKeySetImpl) Equals(in KeySet) bool {
 
 func (dks *discreteKeySetImpl) Clone() KeySet {
 	return &discreteKeySetImpl{
-		sorted: utils.CopyKeys(dks.sorted),
+		sorted: sliceutils.ShallowClone2DSlice(dks.sorted),
 	}
 }
 
@@ -278,7 +277,7 @@ func EmptyKeySet() KeySet {
 
 type emptyKeySetImpl struct{}
 
-func (ekr *emptyKeySetImpl) Collides(in KeySet) bool {
+func (ekr *emptyKeySetImpl) Collides(_ KeySet) bool {
 	return false
 }
 

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "storage/operation_status.proto";
+import "storage/user.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message BackupInfo {
+    google.protobuf.Timestamp backup_last_run_at = 1;
+    OperationStatus           status             = 2;
+    SlimUser                  requestor          = 3 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+}
+
+message SystemInfo {
+    BackupInfo backup_info = 1;
+}

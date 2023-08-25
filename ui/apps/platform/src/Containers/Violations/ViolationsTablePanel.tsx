@@ -5,24 +5,27 @@ import {
     Divider,
     PageSection,
     Title,
-    Badge,
     Pagination,
     Select,
     SelectOption,
+    pluralize,
 } from '@patternfly/react-core';
-import { TableComposable, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { ActionsColumn, TableComposable, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
-import useTableSelection from 'hooks/useTableSelection';
-import { TableColumn, SortDirection } from 'hooks/useTableSort';
-import { resolveAlert } from 'services/AlertsService';
-import { excludeDeployments } from 'services/PoliciesService';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import VIOLATION_STATES from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
+import useTableSelection from 'hooks/useTableSelection';
+import { GetSortParams } from 'hooks/useURLSort';
+import { resolveAlert } from 'services/AlertsService';
+import { excludeDeployments } from 'services/PoliciesService';
+import { TableColumn } from 'types/table';
+
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
-import TagConfirmation from './Modals/TagConfirmation';
 import { ListAlert } from './types/violationTypes';
 
 export type ActionItem = {
@@ -41,10 +44,7 @@ type ViolationsTablePanelProps = {
     excludableAlerts: ListAlert[];
     perPage: number;
     setPerPage: (perPage) => void;
-    activeSortIndex: number;
-    setActiveSortIndex: (idx) => void;
-    activeSortDirection: SortDirection;
-    setActiveSortDirection: (dir) => void;
+    getSortParams: GetSortParams;
     columns: TableColumn[];
 };
 
@@ -57,12 +57,17 @@ function ViolationsTablePanel({
     setPerPage,
     resolvableAlerts,
     excludableAlerts,
-    activeSortIndex,
-    setActiveSortIndex,
-    activeSortDirection,
-    setActiveSortDirection,
+    getSortParams,
     columns,
 }: ViolationsTablePanelProps): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForAlert = hasReadWriteAccess('Alert');
+    // Require READ_WRITE_ACCESS to exclude plus READ_ACCESS to other resources for Policies route.
+    const hasWriteAccessForExcludeDeploymentsFromPolicy =
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
+    const hasActions = hasWriteAccessForAlert || hasWriteAccessForExcludeDeploymentsFromPolicy;
+
     // Handle confirmation modal being open.
     const [modalType, setModalType] = useState<ModalType>();
 
@@ -88,9 +93,6 @@ function ViolationsTablePanel({
     }
     function showExcludeConfirmationDialog() {
         setModalType('excludeScopes');
-    }
-    function showTagConfirmationDialog() {
-        setModalType('tag');
     }
 
     // Handle closing confirmation modals for bulk actions;
@@ -123,14 +125,8 @@ function ViolationsTablePanel({
         return resolveAlert(id, addToBaseline).then(onClearAll, onClearAll);
     }
 
-    function onSort(e, index, direction) {
-        setActiveSortIndex(index);
-        setActiveSortDirection(direction);
-    }
-
     const excludableAlertIds: Set<string> = new Set(excludableAlerts.map((alert) => alert.id));
     const selectedIds = getSelectedIds();
-    const numSelected = selectedIds.length;
     let numResolveable = 0;
     let numScopesToExclude = 0;
 
@@ -146,46 +142,42 @@ function ViolationsTablePanel({
     return (
         <>
             <Flex
-                className="pf-u-p-md"
+                className="pf-u-pb-md"
                 alignSelf={{ default: 'alignSelfCenter' }}
                 fullWidth={{ default: 'fullWidth' }}
             >
                 <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-u-color-100 pf-u-ml-sm">
-                        Violations
+                    <Title headingLevel="h2" className="pf-u-color-100">
+                        {pluralize(violationsCount, 'result')} found
                     </Title>
                 </FlexItem>
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Badge isRead>{violationsCount}</Badge>
-                </FlexItem>
-                <FlexItem data-testid="violations-bulk-actions-dropdown">
-                    <Select
-                        onToggle={onToggleSelect}
-                        isOpen={isSelectOpen}
-                        placeholderText="Row Actions"
-                        onSelect={closeSelect}
-                        isDisabled={!hasSelections}
-                    >
-                        <SelectOption
-                            key="0"
-                            value={`Add tags for violations (${numSelected})`}
-                            onClick={showTagConfirmationDialog}
-                            data-testid="bulk-add-tags-btn"
-                        />
-                        <SelectOption
-                            key="1"
-                            value={`Mark as resolved (${numResolveable})`}
-                            isDisabled={numResolveable === 0}
-                            onClick={showResolveConfirmationDialog}
-                        />
-                        <SelectOption
-                            key="2"
-                            value={`Exclude deployments from policy (${numScopesToExclude})`}
-                            isDisabled={numScopesToExclude === 0}
-                            onClick={showExcludeConfirmationDialog}
-                        />
-                    </Select>
-                </FlexItem>
+                {hasActions && (
+                    <FlexItem>
+                        <Select
+                            onToggle={onToggleSelect}
+                            isOpen={isSelectOpen}
+                            placeholderText="Row actions"
+                            onSelect={closeSelect}
+                            isDisabled={!hasSelections}
+                        >
+                            <SelectOption
+                                key="1"
+                                value={`Mark as resolved (${numResolveable})`}
+                                isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
+                                onClick={showResolveConfirmationDialog}
+                            />
+                            <SelectOption
+                                key="2"
+                                value={`Exclude deployments from policy (${numScopesToExclude})`}
+                                isDisabled={
+                                    !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                    numScopesToExclude === 0
+                                }
+                                onClick={showExcludeConfirmationDialog}
+                            />
+                        </Select>
+                    </FlexItem>
+                )}
                 <FlexItem align={{ default: 'alignRight' }}>
                     <Pagination
                         itemCount={violationsCount}
@@ -207,18 +199,9 @@ function ViolationsTablePanel({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            {columns.map(({ Header, sortField }, idx) => {
+                            {columns.map(({ Header, sortField }) => {
                                 const sortParams = sortField
-                                    ? {
-                                          sort: {
-                                              sortBy: {
-                                                  index: activeSortIndex,
-                                                  direction: activeSortDirection,
-                                              },
-                                              onSort,
-                                              columnIndex: idx,
-                                          },
-                                      }
+                                    ? { sort: getSortParams(sortField) }
                                     : {};
                                 return (
                                     <Th key={Header} modifier="wrap" {...sortParams}>
@@ -226,7 +209,7 @@ function ViolationsTablePanel({
                                     </Th>
                                 );
                             })}
-                            <Th />
+                            {hasActions && <Td />}
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -240,8 +223,13 @@ function ViolationsTablePanel({
                                 enforcementAction ===
                                 ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
 
+                            // Instead of items prop of Td element, render ActionsColumn element
+                            // so every cell has vertical ellipsis (also known as kabob)
+                            // even if its items array is empty. For example:
+                            // hasWriteAccessForAlert but alert is not Runtime lifecycle.
+                            // !hasWriteAccessForWorkflowAdministration
                             const actionItems: ActionItem[] = [];
-                            if (!isResolved) {
+                            if (hasWriteAccessForAlert && !isResolved) {
                                 if (isRuntimeAlert) {
                                     actionItems.push({
                                         title: 'Resolve and add to process baseline',
@@ -255,7 +243,11 @@ function ViolationsTablePanel({
                                     });
                                 }
                             }
-                            if (!isDeployCreateAttemptedAlert && 'deployment' in violation) {
+                            if (
+                                hasWriteAccessForExcludeDeploymentsFromPolicy &&
+                                !isDeployCreateAttemptedAlert &&
+                                'deployment' in violation
+                            ) {
                                 actionItems.push({
                                     title: 'Exclude deployment from policy',
                                     onClick: () =>
@@ -282,11 +274,14 @@ function ViolationsTablePanel({
                                             />
                                         );
                                     })}
-                                    <Td
-                                        actions={{
-                                            items: actionItems,
-                                        }}
-                                    />
+                                    {hasActions && (
+                                        <Td>
+                                            <ActionsColumn
+                                                isDisabled={actionItems.length === 0}
+                                                items={actionItems}
+                                            />
+                                        </Td>
+                                    )}
                                 </Tr>
                             );
                         })}
@@ -304,12 +299,6 @@ function ViolationsTablePanel({
                 isOpen={modalType === 'resolve'}
                 selectedAlertIds={selectedIds}
                 resolvableAlerts={resolvableAlerts}
-                closeModal={closeModal}
-                cancelModal={cancelModal}
-            />
-            <TagConfirmation
-                isOpen={modalType === 'tag'}
-                selectedAlertIds={selectedIds}
                 closeModal={closeModal}
                 cancelModal={cancelModal}
             />

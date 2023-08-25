@@ -25,3 +25,8 @@ spec:
         requests:
           memory: 100Mi
           cpu: 100m
+    nodeInventory:
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 100m

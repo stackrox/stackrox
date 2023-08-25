@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
 import capitalize from 'lodash/capitalize';
 
-import StatusChip from 'Components/StatusChip';
+import NotApplicableIconText from 'Components/PatternFly/IconText/NotApplicableIconText';
+import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import searchContext from 'Containers/searchContext';
 import COMPLIANCE_STATES from 'constants/complianceStates';
@@ -40,10 +41,9 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName} capitalize`,
         Cell: ({ original, pdf }) => {
             if (original.status === COMPLIANCE_STATES['N/A']) {
-                return original.status;
+                return <NotApplicableIconText isTextOnly={pdf} />;
             }
-            const status = original.status.toLowerCase();
-            return <StatusChip status={status} asString={pdf} />;
+            return <PolicyStatusIconText isPass={original.status === 'Pass'} isTextOnly={pdf} />;
         },
         accessor: 'status',
         sortMethod: sortStatus,

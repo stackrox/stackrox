@@ -1,6 +1,8 @@
 package gatherers
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fsutils"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -8,21 +10,17 @@ import (
 )
 
 type databaseGatherer struct {
-	bolt  *boltGatherer
-	bleve *bleveGatherer
-	rocks *rocksdbGatherer
+	postgres *postgresGatherer
 }
 
-func newDatabaseGatherer(rocks *rocksdbGatherer, bolt *boltGatherer, bleve *bleveGatherer) *databaseGatherer {
+func newDatabaseGatherer(postgres *postgresGatherer) *databaseGatherer {
 	return &databaseGatherer{
-		bolt:  bolt,
-		bleve: bleve,
-		rocks: rocks,
+		postgres: postgres,
 	}
 }
 
 // Gather returns a list of stats about all the databases this Central is using
-func (d *databaseGatherer) Gather() *data.StorageInfo {
+func (d *databaseGatherer) Gather(ctx context.Context) *data.StorageInfo {
 	errList := errorhelpers.NewErrorList("")
 	capacity, used, err := fsutils.DiskStatsIn(migrations.DBMountPath())
 	errList.AddError(err)
@@ -31,15 +29,10 @@ func (d *databaseGatherer) Gather() *data.StorageInfo {
 		DiskCapacityBytes: int64(capacity),
 		DiskUsedBytes:     int64(used),
 		StorageType:       "unknown", // TODO: Figure out how to determine storage type (pvc etc.)
-		Databases: []*data.DatabaseStats{
-			d.bolt.Gather(),
-		},
-		Errors: errList.ErrorStrings(),
+		Databases:         []*data.DatabaseStats{},
+		Errors:            errList.ErrorStrings(),
 	}
 
-	storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
-	databaseStats := d.bleve.Gather()
-	storageInfo.Databases = append(storageInfo.Databases, databaseStats...)
-
+	storageInfo.Databases = append(storageInfo.Databases, d.postgres.Gather(ctx))
 	return storageInfo
 }

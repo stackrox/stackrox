@@ -46,14 +46,26 @@ image:
     tag: null # string
     fullRef: null # string
     pullPolicy: null # string
+  scanner:
+    registry: null # string
+    name: null # string
+    repository: null # string
+    tag: null # string
+    fullRef: null # string
+  scannerDb:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
 env:
-  openshift: null # bool
+  openshift: null # bool | int
   istio: null # bool
 ca:
   cert: null # string
 sensor:
   imagePullPolicy: null # string
   endpoint: null # string
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -61,6 +73,11 @@ sensor:
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
+  localImageScanning:
+    # Enables the local image scanning feature in Sensor. This disabled if local image scanning should not be used to prevent
+    # sensor reaching out to a scanner instance.
+    # This setting does not relate to the scanner deployment configuration which configures whether scanner should be deployed.
+    enabled: null # bool
 admissionControl:
   listenOnCreates: null # bool
   listenOnUpdates: null # bool
@@ -72,6 +89,8 @@ admissionControl:
     timeout: null # natural number
     enforceOnUpdates: null # bool
   imagePullPolicy: null # string
+  replicas: null # int
+  affinity: null # dict
   resources: null # string | dict
   serviceTLS:
     cert: null # string
@@ -84,9 +103,11 @@ collector:
   disableTaintTolerations: null # bool
   slimMode: null # bool
   imagePullPolicy: null # string
+  tolerations: null # [dict]
   resources: null # string | dict
   complianceImagePullPolicy: null # string
   complianceResources: null # string | dict
+  nodeScanningResources: null # string | dict
   serviceTLS:
     cert: null # string
     key: null # string
@@ -124,6 +145,9 @@ customize:
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
 enableOpenShiftMonitoring: null # bool
+monitoring:
+  openshift:
+    enabled: null # bool
 meta:
   namespaceOverride: null # bool
   useLookup: null # bool
@@ -135,3 +159,4 @@ meta:
     extraAPIResources: null # [string]
 system:
   createSCCs: null # bool
+  enablePodSecurityPolicies: null # bool

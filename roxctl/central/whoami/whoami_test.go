@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -29,15 +30,15 @@ type centralWhoAmITestSuite struct {
 }
 
 type mockAuthServiceServer struct {
-	v1.AuthServiceServer
-	v1.RoleServiceServer
+	v1.UnimplementedAuthServiceServer
+	v1.UnimplementedRoleServiceServer
 
 	userInfo         *storage.UserInfo
 	resourceToAccess map[string]storage.Access
 	roles            []*storage.Role
 }
 
-func (m *mockAuthServiceServer) GetAuthStatus(ctx context.Context, req *v1.Empty) (*v1.AuthStatus, error) {
+func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
 	return &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
 			UserId: m.userInfo.Username,
@@ -46,11 +47,11 @@ func (m *mockAuthServiceServer) GetAuthStatus(ctx context.Context, req *v1.Empty
 	}, nil
 }
 
-func (m *mockAuthServiceServer) GetMyPermissions(ctx context.Context, req *v1.Empty) (*v1.GetPermissionsResponse, error) {
+func (m *mockAuthServiceServer) GetMyPermissions(_ context.Context, _ *v1.Empty) (*v1.GetPermissionsResponse, error) {
 	return &v1.GetPermissionsResponse{ResourceToAccess: m.resourceToAccess}, nil
 }
 
-func (m *mockAuthServiceServer) GetRoles(ctx context.Context, req *v1.Empty) (*v1.GetRolesResponse, error) {
+func (m *mockAuthServiceServer) GetRoles(_ context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
 	return &v1.GetRolesResponse{Roles: m.roles}, nil
 }
 
@@ -69,7 +70,7 @@ func (c *centralWhoAmITestSuite) createGRPCMockServices(mockServer *mockAuthServ
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	c.Require().NoError(err)
 
 	closeFunction := func() {
@@ -102,12 +103,15 @@ func (c *centralWhoAmITestSuite) TestWhoAmIEmpty() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal(stdout.String(), "User:\n  \nRoles:\n \nAccess:\n")
+	c.Assert().Equal("UserID:\n\t\nUser name:\n\t\nRoles:\n \nAccess:\n", stdout.String())
 }
 
 func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 	mockServer := &mockAuthServiceServer{
-		userInfo: &storage.UserInfo{Username: "Harald"},
+		userInfo: &storage.UserInfo{
+			Username:     "Harald",
+			FriendlyName: "Harald the second",
+		},
 		resourceToAccess: map[string]storage.Access{
 			"Smartphone": storage.Access_READ_WRITE_ACCESS,
 			"Library":    storage.Access_READ_ACCESS,
@@ -121,6 +125,7 @@ func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal(stdout.String(),
-		"User:\n  Harald\nRoles:\n Warrior, Engineer\nAccess:\n  r- Library\n  rw Smartphone\n  -- Valhalla\n")
+	c.Assert().Equal(
+		"UserID:\n\tHarald\nUser name:\n\tHarald the second\nRoles:\n Warrior, Engineer\nAccess:\n  r- Library\n  rw Smartphone\n  -- Valhalla\n",
+		stdout.String())
 }

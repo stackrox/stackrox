@@ -6,35 +6,44 @@ import {
     AlertActionCloseButton,
     AlertVariant,
     Bullseye,
+    Button,
+    PageSection,
+    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
-import { getIsDefaultRoleName } from 'constants/accessControl';
 import {
     PermissionSet,
     Role,
     createPermissionSet,
     deletePermissionSet,
     fetchPermissionSets,
-    fetchResourcesAsArray,
+    fetchResources,
     fetchRolesAsArray,
     updatePermissionSet,
 } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
 import PermissionSetForm from './PermissionSetForm';
 import PermissionSetsList from './PermissionSetsList';
 import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.utils';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeading from '../AccessControlHeading';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import usePermissions from '../../../hooks/usePermissions';
+import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessForPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -79,7 +88,7 @@ function PermissionSets(): ReactElement {
 
         setCounterFetching((counterPrev) => counterPrev + 1);
         setAlertResources(null);
-        fetchResourcesAsArray()
+        fetchResources()
             .then((resourcesFetched) => {
                 setResources(resourcesFetched);
             })
@@ -123,6 +132,15 @@ function PermissionSets(): ReactElement {
                 setCounterFetching((counterPrev) => counterPrev - 1);
             });
     }, []);
+
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessForPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
+            </>
+        );
+    }
 
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
@@ -175,53 +193,71 @@ function PermissionSets(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add permission set' : permissionSet?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
-            <AccessControlDescription>
-                Add predefined sets of application level permissions that users have when
-                interacting with the platform
-            </AccessControlDescription>
+            {isList ? (
+                <>
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Create predefined sets of application level permissions that users
+                                have when interacting with the platform
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
+                                Create permission set
+                            </Button>
+                        }
+                    />
+                </>
+            ) : (
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={action === 'create' ? 'Create permission set' : permissionSet?.name}
+                />
+            )}
             {alertPermissionSets}
             {alertResources}
             {alertRoles}
-            {counterFetching !== 0 ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
-                <PermissionSetsList
-                    permissionSets={permissionSets}
-                    roles={roles}
-                    handleCreate={handleCreate}
-                    handleDelete={handleDelete}
-                />
-            ) : typeof entityId === 'string' && !permissionSet ? (
-                <NotFoundMessage
-                    title="Permission set does not exist"
-                    message={`Permission set id: ${entityId}`}
-                    actionText="Permission sets"
-                    url={getEntityPath(entityType)}
-                />
-            ) : (
-                <PermissionSetForm
-                    isActionable={!permissionSet || !getIsDefaultRoleName(permissionSet.name)}
-                    action={action}
-                    permissionSet={
-                        permissionSet
-                            ? getCompletePermissionSet(permissionSet, resources)
-                            : getNewPermissionSet(resources)
-                    }
-                    permissionSets={permissionSets}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
-                />
-            )}
+            <PageSection variant={isList ? PageSectionVariants.default : PageSectionVariants.light}>
+                {counterFetching !== 0 ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <PermissionSetsList
+                        permissionSets={permissionSets}
+                        roles={roles}
+                        handleCreate={handleCreate}
+                        handleDelete={handleDelete}
+                    />
+                ) : typeof entityId === 'string' && !permissionSet ? (
+                    <NotFoundMessage
+                        title="Permission set does not exist"
+                        message={`Permission set id: ${entityId}`}
+                        actionText="Permission sets"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <PermissionSetForm
+                        isActionable={!permissionSet || isUserResource(permissionSet.traits)}
+                        action={action}
+                        permissionSet={
+                            permissionSet
+                                ? getCompletePermissionSet(permissionSet, resources)
+                                : getNewPermissionSet(resources)
+                        }
+                        permissionSets={permissionSets}
+                        handleCancel={handleCancel}
+                        handleEdit={handleEdit}
+                        handleSubmit={handleSubmit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

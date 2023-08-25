@@ -6,13 +6,16 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	utils "github.com/stackrox/rox/pkg/net"
 	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -25,10 +28,14 @@ var (
 	dbPath                   = "/tmp/collector-test.db"
 	processBucket            = "Process"
 	networkBucket            = "Network"
+	endpointBucket           = "Endpoint"
 	processLineageInfoBucket = "LineageInfo"
 )
 
 type signalServer struct {
+	sensorAPI.UnimplementedSignalServiceServer
+	sensorAPI.UnimplementedNetworkConnectionInfoServiceServer
+
 	db *bolt.DB
 }
 
@@ -47,11 +54,13 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		var processSignal *storage.ProcessSignal
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal = signal.GetSignal().GetProcessSignal()
+		} else {
+			continue
 		}
 
-		processInfo := fmt.Sprintf("%s:%s:%d:%d", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid())
+		processInfo := fmt.Sprintf("%s:%s:%d:%d:%d:%s", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid(), processSignal.GetPid(), processSignal.GetArgs())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
-		if err := s.UpdateProcessSignals(processSignal.GetName(), processInfo); err != nil {
+		if err := s.UpdateBucket(processSignal.GetContainerId(), processInfo, processBucket); err != nil {
 			return err
 		}
 
@@ -76,15 +85,23 @@ func (s *signalServer) PushNetworkConnectionInfo(stream sensorAPI.NetworkConnect
 		}
 		networkConnInfo := signal.GetInfo()
 		networkConns := networkConnInfo.GetUpdatedConnections()
+		networkEndpoints := networkConnInfo.GetUpdatedEndpoints()
 
 		for _, networkConn := range networkConns {
-			networkInfo := fmt.Sprintf("%s|%s|%s|%s", getEndpoint(networkConn.GetLocalAddress()), getEndpoint(networkConn.GetRemoteAddress()), networkConn.GetRole().String(), networkConn.GetSocketFamily().String())
+			networkInfo := fmt.Sprintf("%s|%s|%s|%s|%s", getEndpoint(networkConn.GetLocalAddress()), getEndpoint(networkConn.GetRemoteAddress()), networkConn.GetRole().String(), networkConn.GetSocketFamily().String(), networkConn.GetCloseTimestamp().String())
 			fmt.Printf("NetworkInfo: %s %s\n", networkConn.GetContainerId(), networkInfo)
-			if err := s.UpdateNetworkConnInfo(networkConn.GetContainerId(), networkInfo); err != nil {
+			if err := s.UpdateBucket(networkConn.GetContainerId(), networkInfo, networkBucket); err != nil {
 				return err
 			}
 		}
 
+		for _, networkEndpoint := range networkEndpoints {
+			endpointInfo := fmt.Sprintf("EndpointInfo: %s|%s|%s|%s|%s\n", networkEndpoint.GetSocketFamily().String(), networkEndpoint.GetProtocol().String(), networkEndpoint.GetListenAddress().String(), networkEndpoint.GetCloseTimestamp().String(), networkEndpoint.GetOriginator().String())
+			fmt.Printf("EndpointInfo: %s %s\n", networkEndpoint.GetContainerId(), endpointInfo)
+			if err := s.UpdateBucket(networkEndpoint.GetContainerId(), endpointInfo, endpointBucket); err != nil {
+				return err
+			}
+		}
 	}
 }
 
@@ -101,13 +118,6 @@ func boltDB(path string) (db *bolt.DB, err error) {
 	return db, err
 }
 
-func (s *signalServer) UpdateProcessSignals(processName string, processInfo string) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(processBucket))
-		return b.Put([]byte(processName), []byte(processInfo))
-	})
-}
-
 func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID string, lineageInfo string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		bucket, _ := tx.CreateBucketIfNotExists([]byte(processLineageInfoBucket))
@@ -116,17 +126,24 @@ func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID str
 	})
 }
 
-func (s *signalServer) UpdateNetworkConnInfo(containerID string, networkInfo string) error {
+func (s *signalServer) UpdateBucket(containerID string, info string, bucket string) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
-		b, _ := tx.CreateBucketIfNotExists([]byte(networkBucket))
-
-		err := b.Put([]byte(containerID), []byte(networkInfo))
+		b, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
 
-		return nil
+		c, err := b.CreateBucketIfNotExists([]byte(containerID))
+		if err != nil {
+			return err
+		}
+
+		idx, err := c.NextSequence()
+		if err != nil {
+			return err
+		}
+
+		return c.Put([]byte(strconv.FormatUint(idx, 10)), []byte(info))
 	})
 }
 
@@ -141,7 +158,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	grpcServer := grpc.NewServer()
+	maxMsgSize := 12 * 1024 * 1024
+	grpcServer := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time: 40 * time.Second,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             5 * time.Second,
+			PermitWithoutStream: true,
+		}),
+	)
+
 	sensorAPI.RegisterSignalServiceServer(grpcServer, newServer(db))
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(grpcServer, newServer(db))
 
@@ -151,7 +179,7 @@ func main() {
 		}
 	}()
 
-	// listening OS shutdown singal
+	// listening OS shutdown signal
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChan

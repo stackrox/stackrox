@@ -18,13 +18,13 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -34,8 +34,10 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/notifiers"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -44,7 +46,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 var (
@@ -65,13 +66,13 @@ var (
 			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
 			"/v1.NetworkPolicyService/ApplyNetworkPolicyYamlForDeployment",
 		},
-		user.With(permissions.Modify(resources.Notifier)): {
+		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
 		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
 		},
-		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkBaseline)): {
+		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.DeploymentExtension)): {
 			"/v1.NetworkPolicyService/GetBaselineGeneratedNetworkPolicyForDeployment",
 		},
 	})
@@ -83,6 +84,8 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	v1.UnimplementedNetworkPolicyServiceServer
+
 	sensorConnMgr    connection.Manager
 	clusterStore     clusterDataStore.DataStore
 	deployments      deploymentDataStore.DataStore
@@ -93,6 +96,8 @@ type serviceImpl struct {
 	networkPolicies  npDS.DataStore
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
+
+	clusterSACHelper sachelper.ClusterSacHelper
 
 	policyGenerator generator.Generator
 }
@@ -113,16 +118,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func populateYAML(np *storage.NetworkPolicy) {
-	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
-	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
-
-	stringBuilder := &strings.Builder{}
-	err := encoder.Encode(k8sNetworkPolicy, stringBuilder)
+	yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
 	if err != nil {
 		np.Yaml = fmt.Sprintf("Could not render Network Policy YAML: %s", err)
 		return
 	}
-	np.Yaml = stringBuilder.String()
+	np.Yaml = yaml
 }
 
 func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {
@@ -131,7 +132,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "network policy with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "network policy with id '%s' does not exist", request.GetId())
 	}
 	populateYAML(networkPolicy)
 	return networkPolicy, nil
@@ -144,7 +145,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	}
 
 	// Get the policies in the cluster
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, request.GetClusterId(), "")
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(ctx, request.GetClusterId(), request.GetNamespace())
 	if err != nil {
 		return nil, err
 	}
@@ -215,8 +216,9 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 	if err != nil {
 		return nil, err
 	}
+	undoRecord.ClusterId = request.GetClusterId()
 
-	err = s.networkPolicies.UpsertUndoRecord(ctx, request.GetClusterId(), undoRecord)
+	err = s.networkPolicies.UpsertUndoRecord(ctx, undoRecord)
 	if err != nil {
 		return nil, errors.Errorf("network policy was applied, but undo record could not be stored: %v", err)
 	}
@@ -302,13 +304,13 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 	if len(request.GetNotifierIds()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Notifier IDs must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Notifier IDs must be specified")
 	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	clusterName, exists, err := s.clusterStore.GetClusterName(ctx, request.GetClusterId())
@@ -316,7 +318,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, errors.Errorf("failed to retrieve cluster: %s", err.Error())
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "Cluster '%s' not found", request.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
@@ -362,7 +364,7 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 	}
 
 	if req.GetClusterId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
@@ -391,7 +393,7 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 		return nil, errors.Errorf("could not query undo store: %v", err)
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for cluster %q", req.GetClusterId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
 	}
 	return &v1.GetUndoModificationResponse{
 		UndoRecord: undoRecord,
@@ -420,7 +422,7 @@ func (s *serviceImpl) GetBaselineGeneratedNetworkPolicyForDeployment(ctx context
 	// Currently we don't look at request.GetDeleteExisting. We try to delete the existing baseline generated
 	// policy no matter what
 	if request.GetDeploymentId() == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Cluster ID must be specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID must be specified")
 	}
 
 	generated, toDelete, err := s.policyGenerator.GenerateFromBaselineForDeployment(ctx, request)
@@ -478,7 +480,7 @@ func (s *serviceImpl) getRelevantClusterObjectsForDeployment(ctx context.Context
 	if err != nil {
 		return nil, nil, nil, err
 	} else if !found {
-		return nil, nil, nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "specified deployment not found")
+		return nil, nil, nil, errors.Wrap(errox.InvalidArgs, "specified deployment not found")
 	}
 
 	networkTree, err := s.getNetworkTree(deployment.GetClusterId())
@@ -620,7 +622,7 @@ func (s *serviceImpl) applyModificationAndGetUndoRecord(
 	modification *storage.NetworkPolicyModification,
 ) (*storage.NetworkPolicyApplicationUndoRecord, error) {
 	if strings.TrimSpace(modification.GetApplyYaml()) == "" && len(modification.GetToDelete()) == 0 {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "Modification must have contents")
+		return nil, errors.Wrap(errox.InvalidArgs, "Modification must have contents")
 	}
 
 	// Check that:
@@ -672,7 +674,7 @@ func (s *serviceImpl) ApplyNetworkPolicyYamlForDeployment(ctx context.Context, r
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "requested deployment %q not found", request.GetDeploymentId())
+		return nil, errors.Wrapf(errox.NotFound, "requested deployment %q not found", request.GetDeploymentId())
 	}
 
 	undoRecord, err := s.applyModificationAndGetUndoRecord(ctx, deployment.GetClusterId(), request.GetModification())
@@ -701,14 +703,14 @@ func (s *serviceImpl) GetUndoModificationForDeployment(ctx context.Context, requ
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "deployment with ID %q not found", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "deployment with ID %q not found", request.GetId())
 	}
 
 	undoRecord, found, err := s.networkPolicies.GetUndoDeploymentRecord(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	} else if !found {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "no undo record stored for deployment %q", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "no undo record stored for deployment %q", request.GetId())
 	}
 	return &v1.GetUndoModificationForDeploymentResponse{
 		UndoRecord: undoRecord.GetUndoRecord(),
@@ -950,7 +952,7 @@ func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, rawQ string
 func (s *serviceImpl) getNetworkTree(clusterID string) (tree.ReadOnlyNetworkTree, error) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
+			sac.ResourceScopeKeys(resources.Administration)))
 
 	cfg, err := s.graphConfig.GetNetworkGraphConfig(ctx)
 	if err != nil {
@@ -1074,7 +1076,7 @@ func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error
 	// Check that all resulting policies have namespaces.
 	for _, policy := range policies {
 		if policy.GetNamespace() == "" {
-			return nil, errors.New("yamls tested against must apply to a namespace")
+			return nil, errox.InvalidArgs.CausedBy("yamls tested against must apply to a namespace")
 		}
 	}
 
@@ -1125,14 +1127,15 @@ func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storag
 
 func (s *serviceImpl) clusterExists(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "cluster ID must be specified")
+		return errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
-	exists, err := s.clusterStore.Exists(ctx, clusterID)
+	requestedResourcesWithAccess := []permissions.ResourceWithAccess{permissions.View(resources.NetworkPolicy)}
+	exists, err := s.clusterSACHelper.IsClusterVisibleForPermissions(ctx, clusterID, requestedResourcesWithAccess)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return errors.Wrapf(errorhelpers.ErrNotFound, "cluster with ID %q doesn't exist", clusterID)
+		return errors.Wrapf(errox.NotFound, "cluster with ID %q doesn't exist", clusterID)
 	}
 	return nil
 }
@@ -1162,5 +1165,5 @@ func checkAllNamespacesWriteAllowed(ctx context.Context, clusterID string, names
 	}
 	return sac.VerifyAuthzOK(
 		networkPolicySAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ClusterID(clusterID).AllAllowed(
-			ctx, nsScopeKeys))
+			nsScopeKeys), nil)
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
-	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
+	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,9 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/tlscheck"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -86,7 +88,7 @@ type TLSConfigOptions struct {
 	UseClientCert      UseClientCertSetting
 	ServerName         string
 	InsecureSkipVerify bool
-	CustomCertVerifier TLSCertVerifier
+	CustomCertVerifier tlscheck.TLSCertVerifier
 	RootCAs            *x509.CertPool
 
 	GRPCOnly bool
@@ -148,7 +150,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 	}
 
 	if customVerifier != nil {
-		conf.VerifyPeerCertificate = verifyPeerCertFunc(conf, customVerifier)
+		conf.VerifyPeerCertificate = tlscheck.VerifyPeerCertFunc(conf, customVerifier)
 		conf.InsecureSkipVerify = true
 	}
 
@@ -164,6 +166,7 @@ func TLSConfig(server mtls.Subject, opts TLSConfigOptions) (*tls.Config, error) 
 
 type connectionOptions struct {
 	useServiceCertToken bool
+	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
 	rootCAs             *x509.CertPool
 }
@@ -197,10 +200,18 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 	})
 }
 
-// UseServiceCertToken specifies whether or not a `ServiceCert` token should be used.
+// UseServiceCertToken specifies whether a `ServiceCert` token should be used.
 func UseServiceCertToken(use bool) ConnectionOption {
 	return connectOptFunc(func(opts *connectionOptions) error {
 		opts.useServiceCertToken = use
+		return nil
+	})
+}
+
+// UseInsecureNoTLS specifies whether to use insecure, non-TLS connections.
+func UseInsecureNoTLS(use bool) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.useInsecureNoTLS = use
 		return nil
 	})
 }
@@ -228,6 +239,7 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 	}
 
 	clientConnOpts := Options{
+		InsecureNoTLS: connOpts.useInsecureNoTLS,
 		TLS: TLSConfigOptions{
 			UseClientCert: MustUseClientCert,
 			ServerName:    host,
@@ -354,7 +366,7 @@ func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransp
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+2)
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
 
 	clientConnOpts.TLS.GRPCOnly = true
 
@@ -366,7 +378,7 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 			return nil, errors.Wrap(err, "instantiating TLS config")
 		}
 	} else {
-		allDialOpts = append(allDialOpts, grpc.WithInsecure())
+		allDialOpts = append(allDialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	if perRPCCreds := clientConnOpts.PerRPCCreds; perRPCCreds != nil {
@@ -376,7 +388,26 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 		allDialOpts = append(allDialOpts, grpc.WithPerRPCCredentials(perRPCCreds))
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
+	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)
+}
+
+// NewHTTPClient creates an HTTP client for the given service using the client
+// certificate of the calling service.
+// When specifying the url.URL for the *http.Request for the returned *http.Client to complete,
+// there is no need to specify the Host nor Scheme; however,
+// if provided, they both must match the expected values.
+// See AuthenticatedHTTPTransport for more information.
+func NewHTTPClient(serviceIdentity mtls.Subject, serviceEndpoint string, timeout time.Duration) (*http.Client, error) {
+	transport, err := AuthenticatedHTTPTransport(
+		serviceEndpoint, serviceIdentity, nil, UseServiceCertToken(true))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating http transport")
+	}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transport,
+	}, nil
 }
 
 // Parameters for keep alive.

@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nginx-cluster-binding
+subjects:
+- kind: ServiceAccount
+  name: nginx-sa
+  namespace: sensor-integration
+roleRef:
+  kind: ClusterRole
+  name: nginx-cluster-role
+  apiGroup: ""

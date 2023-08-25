@@ -17,7 +17,9 @@ import (
 	"github.com/dexidp/dex/connector"
 	"github.com/dexidp/dex/storage/kubernetes/k8sapi"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
@@ -38,6 +40,8 @@ import (
 //     verification                                                           //
 //   * add validation for connectivity to OAuth2 endpoints                    //
 //   * extract fetching user info into identity() function                    //
+//   * deduce redirect URI's host and scheme via MakeRedirectURI() function   //
+//   * use our custom proxy configuration mechanism                           //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -202,9 +206,23 @@ func validateEndpoint(endpoint string, tlsConfig *tls.Config) error {
 
 // LoginURL returns the URL to redirect the user to login with.
 func (c *openshiftConnector) LoginURL(_ connector.Scopes, callbackURL string, state string) (string, error) {
-	clonedConfig := *c.oauth2Config
-	clonedConfig.RedirectURL = callbackURL
-	return clonedConfig.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
+	return c.oauth2Config.AuthCodeURL(state, oauth2.SetAuthURLParam("redirect_uri", callbackURL)), nil
+}
+
+// MakeRedirectURI constructs redirect URI from request info and the path.
+func MakeRedirectURI(ri *requestinfo.RequestInfo, path string) *url.URL {
+	scheme := "https"
+
+	// Allow HTTP only if the client did not use TLS and the host is localhost.
+	if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(ri.Hostname) {
+		scheme = "http"
+	}
+
+	return &url.URL{
+		Scheme: scheme,
+		Host:   ri.Hostname,
+		Path:   path,
+	}
 }
 
 // HandleCallback parses the request and returns the user's identity.
@@ -219,7 +237,19 @@ func (c *openshiftConnector) HandleCallback(s connector.Scopes, r *http.Request)
 		ctx = context.WithValue(r.Context(), oauth2.HTTPClient, c.httpClient)
 	}
 
-	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"))
+	ri := requestinfo.FromContext(ctx)
+	redirectURI := MakeRedirectURI(&ri, ri.HTTPRequest.URL.Path)
+
+	// Our service might be accessible via different routes and hence specify
+	// different redirect URIs in the login URL to authorization server. The
+	// latter must check that the redirect URI passed with the initial request
+	// equals the one passed during the code exchange. Hence we dynamically
+	// adjust the redirect URI in the oauth2 config here to the URL deduced
+	// from the request to us, which we expect to match the redirect URL we
+	// included in login URL earlier in the flow.
+	token, err := c.oauth2Config.Exchange(ctx, q.Get("code"),
+		oauth2.SetAuthURLParam("redirect_uri", redirectURI.String()))
+
 	if err != nil {
 		return identity, errors.Wrap(err, "failed to get token")
 	}
@@ -304,7 +334,7 @@ func newHTTPClient(certPool *x509.CertPool) (*http.Client, error) {
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{RootCAs: certPool},
-			Proxy:           http.ProxyFromEnvironment,
+			Proxy:           proxy.FromConfig(),
 			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,

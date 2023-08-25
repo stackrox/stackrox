@@ -8,15 +8,16 @@ import "storage/image.proto";
 package sensor;
 
 message GetImageRequest {
-    storage.ContainerImage image = 1;
-    bool scan_inline             = 2;
+    storage.ContainerImage image       = 1;
+    string                 namespace   = 3;
+    bool                   scan_inline = 2;
 }
 
 message GetImageResponse {
     storage.Image image = 1;
 }
 
-// A Sensor service that allows admission controller to retrieve images from Sensor
+// A Sensor service that allows Admission Controller to retrieve images from Sensor
 service ImageService {
     rpc GetImage (GetImageRequest) returns (GetImageResponse);
 }

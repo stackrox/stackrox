@@ -6,11 +6,14 @@ import queryString from 'qs';
 
 import { Role } from 'services/RolesService';
 
+import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
+import { Traits } from '../../types/traits.proto';
+import { isUserResource } from '../../Containers/AccessControl/traits';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
@@ -25,12 +28,16 @@ const requestedLocationKey = 'requested_location';
  */
 export class AuthHttpError extends Error {
     code: number;
-    cause: string; // eslint-disable-line @typescript-eslint/lines-between-class-members
+    cause: Error; // eslint-disable-line @typescript-eslint/lines-between-class-members
 
-    constructor(message: string, code: number, cause: string) {
+    constructor(message: string, code: number, cause: Error) {
         super(message);
         this.name = 'AuthHttpError';
         this.code = code;
+        /*
+         * Although ES2022 adds `{ cause }` as optional argument to Error constructor
+         * declare and assign cause property in subclass for backward compatibility.
+         */
         this.cause = cause;
     }
 
@@ -52,6 +59,8 @@ export type Group = {
         authProviderId: string;
         key?: string;
         value?: string;
+        id?: string;
+        traits?: Traits;
     };
 };
 
@@ -67,11 +76,18 @@ export type AuthProvider = {
     active?: boolean;
     groups?: Group[];
     defaultRole?: string;
+    requiredAttributes: AuthProviderRequiredAttributes[];
+    traits?: Traits;
 };
 
 export type AuthProviderInfo = {
     label: string;
     value: AuthProviderType;
+};
+
+export type AuthProviderRequiredAttributes = {
+    attributeKey: string;
+    attributeValue: string;
 };
 
 /**
@@ -136,7 +152,7 @@ export function updateAuthProvider(authProvider: AuthProvider): Promise<AuthProv
  * Saves auth provider either by creating a new one (in case ID is missed) or by updating existing one by ID.
  */
 export function saveAuthProvider(authProvider: AuthProvider): string | Promise<AuthProvider> {
-    if (authProvider.active) {
+    if (authProvider.active || getIsAuthProviderImmutable(authProvider)) {
         return authProvider.id;
     }
     return authProvider.id
@@ -149,7 +165,7 @@ export function saveAuthProvider(authProvider: AuthProvider): string | Promise<A
  *
  * @returns {Promise} promise which is fullfilled when the request is complete TODO verify return empty object
  */
-export function deleteAuthProvider(authProviderId: string): Promise<Record<string, never>> {
+export function deleteAuthProvider(authProviderId: string): Promise<Empty> {
     if (!authProviderId) {
         throw new Error('Auth provider ID must be defined');
     }
@@ -386,4 +402,22 @@ export function addAuthInterceptors(authHttpErrorHandler): void {
     });
 
     interceptorsAdded = true;
+}
+
+/**
+ * Verifies whether the auth provider is immutable based on the traits property is set.
+ * An auth provider is immutable if traits is undefined or is set to anything other than 'ALLOW_MUTATE'.
+ *
+ * @param {AuthProvider} authProvider auth provider to check.
+ * @return {boolean} indicating whether the auth provider is immutable.
+ */
+export function getIsAuthProviderImmutable(authProvider: AuthProvider): boolean {
+    return (
+        ('traits' in authProvider &&
+            authProvider.traits != null &&
+            authProvider.traits?.mutabilityMode !== 'ALLOW_MUTATE') ||
+        // Having both these conditions checked allows for seamless transition period
+        // between using mutabilityMode and origin in ACSCS auth provider.
+        !isUserResource(authProvider.traits)
+    );
 }

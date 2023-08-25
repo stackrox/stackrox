@@ -7,7 +7,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -89,7 +88,7 @@ func (s *RuntimeDetectorTestSuite) getKubeEvent(resource storage.KubernetesEvent
 }
 
 func (s *RuntimeDetectorTestSuite) getUpdateSecretPolicy() *storage.Policy {
-	return policyversion.MustEnsureConverted(&storage.Policy{
+	return &storage.Policy{
 		Id:            "9dc8b85e-7b35-4423-847b-165cd9b92fc7",
 		PolicyVersion: "1.1",
 		Name:          "Secrets Access",
@@ -118,11 +117,11 @@ func (s *RuntimeDetectorTestSuite) getUpdateSecretPolicy() *storage.Policy {
 		},
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
-	})
+	}
 }
 
 func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
-	return policyversion.MustEnsureConverted(&storage.Policy{
+	return &storage.Policy{
 		Id:            "9dc8b85e-7b35-4423-847b-165cd9b92fc7",
 		PolicyVersion: "1.1",
 		Name:          "Secrets Access",
@@ -151,5 +150,5 @@ func (s *RuntimeDetectorTestSuite) getCreateConfigmapPolicy() *storage.Policy {
 		},
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
-	})
+	}
 }

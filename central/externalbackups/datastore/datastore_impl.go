@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/externalbackups/internal/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
-	externalBkpSAC = sac.ForResource(resources.BackupPlugins)
+	integrationSAC = sac.ForResource(resources.Integration)
 )
 
 type datastoreImpl struct {
@@ -18,41 +18,39 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
-	if ok, err := externalBkpSAC.ReadAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	return ds.store.ListBackups()
+	return ds.store.GetAll(ctx)
 }
 
-func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, error) {
-	if ok, err := externalBkpSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
+func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {
+	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil || !ok {
+		return nil, false, err
 	}
 
-	return ds.store.GetBackup(id)
+	return ds.store.Get(ctx, id)
 }
 
 func (ds *datastoreImpl) UpsertBackup(ctx context.Context, backup *storage.ExternalBackup) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.store.UpsertBackup(backup)
+	return ds.store.Upsert(ctx, backup)
 }
 
 func (ds *datastoreImpl) RemoveBackup(ctx context.Context, id string) error {
-	if ok, err := externalBkpSAC.WriteAllowed(ctx); err != nil {
+	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.store.RemoveBackup(id)
+	return ds.store.Delete(ctx, id)
 }

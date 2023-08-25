@@ -5,13 +5,11 @@ import (
 
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	"github.com/stackrox/rox/central/risk/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
@@ -20,8 +18,7 @@ var (
 		Field:    search.RiskScore.String(),
 		Reversed: true,
 	}
-
-	riskSACSearchHelper = sac.ForResource(resources.Risk).MustCreateSearchHelper(mappings.OptionsMap)
+	deploymentExtensionSACPostgresSearchHelper = sac.ForResource(resources.DeploymentExtension).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for RiskStorage.
@@ -31,7 +28,7 @@ type searcherImpl struct {
 	searcher search.Searcher
 }
 
-// SearchRawRisk retrieves Risks from the indexer and storage
+// SearchRawRisks retrieves Risks from the indexer and storage
 func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error) {
 	results, err := s.Search(ctx, q)
 	if err != nil {
@@ -39,7 +36,7 @@ func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	risks, _, err := s.storage.GetMany(ids)
+	risks, _, err := s.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +53,8 @@ func (s *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := riskSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := deploymentExtensionSACPostgresSearchHelper.FilteredSearcher(searcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(filteredSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }

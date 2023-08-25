@@ -5,19 +5,19 @@ import (
 
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
-	"github.com/stackrox/rox/central/rbac/k8srolebinding/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	k8sRoleBindingsSACSearchHelper = sac.ForResource(resources.K8sRoleBinding).MustCreateSearchHelper(mappings.OptionsMap)
+	k8sRoleBindingsSACPostgresSearchHelper = sac.ForResource(resources.K8sRoleBinding).
+		MustCreatePgSearchHelper()
 )
 
-// searcherImpl provides an search implementation for k8s role bindings
+// searcherImpl provides a search implementation for k8s role bindings.
 type searcherImpl struct {
 	storage store.Store
 	index   index.Indexer
@@ -32,17 +32,17 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 	return convertMany(bindings, results), nil
 }
 
-// Search returns the raw search results from the query
+// Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return k8sRoleBindingsSACSearchHelper.Apply(ds.index.Search)(ctx, q)
+	return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Search(ctx, q)
 }
 
-// Count returns the number of search results from the query
+// Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return k8sRoleBindingsSACSearchHelper.ApplyCount(ds.index.Count)(ctx, q)
+	return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Count(ctx, q)
 }
 
-// SearchRawRoleBindings returns the rolebindings  that match the query.
+// SearchRawRoleBindings returns the rolebindings that match the query.
 func (ds *searcherImpl) SearchRawRoleBindings(ctx context.Context, q *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	bindings, _, err := ds.searchRoleBindings(ctx, q)
 	if err != nil {
@@ -56,7 +56,7 @@ func (ds *searcherImpl) searchRoleBindings(ctx context.Context, q *v1.Query) ([]
 	if err != nil {
 		return nil, nil, err
 	}
-	bindings, missingIndices, err := ds.storage.GetMany(search.ResultsToIDs(results))
+	bindings, missingIndices, err := ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}

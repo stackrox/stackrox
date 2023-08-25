@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -15,8 +15,10 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
@@ -31,7 +33,9 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	promhttp "github.com/travelaudience/go-promhttp"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
 	// All our gRPC servers should support gzip
@@ -39,7 +43,7 @@ import (
 )
 
 const (
-	maxMsgSize                = 12 * 1024 * 1024
+	defaultMaxMsgSize         = 12 * 1024 * 1024
 	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
 )
 
@@ -51,19 +55,13 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
-	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
+	maxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
+	maxResponseMsgSizeSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
 	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
 func maxResponseMsgSize() int {
-	if setting := maxResponseMsgSizeSetting.Setting(); setting != "" {
-		value, err := strconv.Atoi(setting)
-		if err == nil {
-			return value
-		}
-		log.Warnf("Invalid value %q for %s: %v", setting, maxResponseMsgSizeSetting.EnvVar(), err)
-	}
-	return defaultMaxResponseMsgSize
+	return maxResponseMsgSizeSetting.IntegerSetting()
 }
 
 type server interface {
@@ -74,6 +72,8 @@ type serverAndListener struct {
 	srv      server
 	listener net.Listener
 	endpoint *EndpointConfig
+
+	stopper func()
 }
 
 // APIService is the service interface
@@ -92,15 +92,26 @@ type APIServiceWithCustomRoutes interface {
 // API listens for new connections on port 443, and redirects them to the gRPC-Gateway
 type API interface {
 	// Start runs the API in a goroutine, and returns a signal that can be checked for when the API server is started.
-	Start() *concurrency.Signal
+	Start() *concurrency.ErrorSignal
 	// Register adds a new APIService to the list of API services
 	Register(services ...APIService)
+
+	// Stop will shutdown all listeners and stop the HTTP/gRPC multiplexed server. This gracefully stops the gRPC
+	// server and blocks until all the pending RPCs are finished. Stop returns true if the shutdown process was started.
+	// If the server has already stopped, or if another shutdown is in progress, Stop returns false.
+	// **Caution:** this should not be called in production unless the application is being shutdown (e.g. termination
+	// signal received).
+	Stop() bool
 }
 
 type apiImpl struct {
 	apiServices        []APIService
 	config             Config
 	requestInfoHandler *requestinfo.Handler
+	listeners          []serverAndListener
+
+	grpcServer         *grpc.Server
+	shutdownInProgress *atomic.Bool
 }
 
 // A Config configures the server.
@@ -126,20 +137,43 @@ type Config struct {
 
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
+	var shutdownRequested atomic.Bool
+	shutdownRequested.Store(false)
 	return &apiImpl{
 		config:             config,
 		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
+		shutdownInProgress: &shutdownRequested,
 	}
 }
 
-func (a *apiImpl) Start() *concurrency.Signal {
-	startedSig := concurrency.NewSignal()
-	go a.run(&startedSig)
+func (a *apiImpl) Start() *concurrency.ErrorSignal {
+	startedSig := concurrency.NewErrorSignal()
+	if a.shutdownInProgress.Load() {
+		startedSig.SignalWithError(errors.New("cannot start gRPC API after Stop was called"))
+	} else {
+		go a.run(&startedSig)
+	}
 	return &startedSig
 }
 
 func (a *apiImpl) Register(services ...APIService) {
 	a.apiServices = append(a.apiServices, services...)
+}
+
+func (a *apiImpl) Stop() bool {
+	if !a.shutdownInProgress.CompareAndSwap(false, true) {
+		return false
+	}
+
+	log.Info("Starting stop procedure")
+	a.grpcServer.GracefulStop()
+	log.Info("gRPC server fully stopped")
+	for _, listener := range a.listeners {
+		if listener.stopper != nil {
+			listener.stopper()
+		}
+	}
+	return true
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
@@ -210,22 +244,25 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 	lis, dialContext := pipeconn.NewPipeListener()
 
 	log.Info("Launching backend gRPC listener")
-	// Launch the GRPC listener
 	go func() {
 		if err := server.Serve(lis); err != nil {
 			log.Fatal(err)
 		}
-		log.Fatal("The local API server should never terminate")
+
+		if !a.shutdownInProgress.Load() {
+			log.Fatal("Unexpected local API server termination.")
+		}
 	}()
 	return dialContext
 }
 
 func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (*grpc.ClientConn, error) {
-	return grpc.Dial("", grpc.WithInsecure(),
+	return grpc.Dial("", grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
 			return dialCtxFunc(ctx)
 		}),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())))
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())),
+		grpc.WithUserAgent(clientconn.GetUserAgent()))
 }
 
 func allowPrettyQueryParameter(h http.Handler) http.Handler {
@@ -271,7 +308,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			a.config.HTTPInterceptors...)...,
 	)
 
-	mux := http.NewServeMux()
+	mux := &promhttp.ServeMux{ServeMux: &http.ServeMux{}}
 	allRoutes := a.config.CustomRoutes
 	for _, apiService := range a.apiServices {
 		srvWithRoutes, _ := apiService.(APIServiceWithCustomRoutes)
@@ -282,6 +319,14 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 	for _, route := range allRoutes {
 		handler := preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptors))
+
+		if a.config.Auditor != nil && route.EnableAudit {
+			postAuthHTTPInterceptorsWithAudit := httputil.ChainInterceptors(
+				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptors)...,
+			)
+			handler = preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptorsWithAudit))
+		}
+
 		if a.config.HTTPMetrics != nil {
 			handler = a.config.HTTPMetrics.WrapHandler(handler, route.Route)
 		}
@@ -312,15 +357,21 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	if env.VulnReportingEnhancements.BooleanSetting() {
+		mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	}
+	if err := prometheus.Register(mux); err != nil {
+		log.Warnf("failed to register Prometheus collector: %v", err)
+	}
 	return mux
 }
 
-func (a *apiImpl) run(startedSig *concurrency.Signal) {
+func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
 
-	grpcServer := grpc.NewServer(
+	a.grpcServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{}),
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
@@ -328,7 +379,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
-		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxRecvMsgSize(maxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time: 40 * time.Second,
 		}),
@@ -339,10 +390,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	)
 
 	for _, service := range a.apiServices {
-		service.RegisterServiceServer(grpcServer)
+		service.RegisterServiceServer(a.grpcServer)
 	}
 
-	dialCtxFunc := a.listenOnLocalEndpoint(grpcServer)
+	dialCtxFunc := a.listenOnLocalEndpoint(a.grpcServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
 	if err != nil {
 		log.Panicf("Could not connect to local endpoint: %v", err)
@@ -352,7 +403,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
-		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, grpcServer)
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer)
 		if err != nil {
 			if endpointCfg.Optional {
 				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
@@ -368,8 +419,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	errC := make(chan error, len(allSrvAndLiss))
 
 	for _, srvAndLis := range allSrvAndLiss {
-		go serveBlocking(srvAndLis, errC)
+		go a.serveBlocking(srvAndLis, errC)
 	}
+
+	a.listeners = allSrvAndLiss
 
 	if startedSig != nil {
 		startedSig.Signal()
@@ -380,12 +433,19 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	}
 }
 
-func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
+func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
-		if srvAndLis.endpoint.Optional {
-			log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+		// If gRPC shutdown was requested, then we should only log that the endpoint is stopping. Otherwise, this is happening
+		// for unknown reasons and an error will be reported.
+		if a.shutdownInProgress.Load() {
+			log.Infof("gRPC Stop requested: Endpoint shutting down: %s %s", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr())
 		} else {
-			errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			if srvAndLis.endpoint.Optional {
+				log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			} else {
+				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+			}
 		}
+
 	}
 }

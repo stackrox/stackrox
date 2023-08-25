@@ -10,9 +10,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/alert/mappings"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -20,12 +19,15 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
@@ -61,21 +63,27 @@ var (
 		},
 	})
 
-	// groupByFunctions provides a map of functions that group slices of ListAlet objects by category or by cluser.
-	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*storage.ListAlert) []string{
-		v1.GetAlertsCountsRequest_UNSET: func(*storage.ListAlert) []string { return []string{""} },
-		v1.GetAlertsCountsRequest_CATEGORY: func(a *storage.ListAlert) (output []string) {
-			output = append(output, a.GetPolicy().GetCategories()...)
+	// groupByFunctions provides a map of functions that group slices of result objects by category or by cluster.
+	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(result search.Result) []string{
+		v1.GetAlertsCountsRequest_UNSET: func(result search.Result) []string { return []string{""} },
+		v1.GetAlertsCountsRequest_CATEGORY: func(a search.Result) (output []string) {
+			field := mappings.OptionsMap.MustGet(search.Category.String())
+			output = append(output, a.Matches[field.GetFieldPath()]...)
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetCommonEntityInfo().GetClusterName()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a search.Result) []string {
+			field := mappings.OptionsMap.MustGet(search.Cluster.String())
+			return []string{a.Matches[field.GetFieldPath()][0]}
+		},
 	}
 )
 
 // serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
+	v1.UnimplementedAlertServiceServer
+
 	dataStore         datastore.DataStore
-	notifier          notifierProcessor.Processor
+	notifier          pkgNotifier.Processor
 	baselines         baselineDatastore.DataStore
 	connectionManager connection.Manager
 }
@@ -103,10 +111,30 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", request.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", request.GetId())
 	}
 
 	return alert, nil
+}
+
+// listAlertsRequestToQuery converts a v1.ListAlertsRequest to a search query
+func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Query, error) {
+	var q *v1.Query
+	if request.GetQuery() == "" {
+		q = search.EmptyQuery()
+	} else {
+		var err error
+		q, err = search.ParseQuery(request.GetQuery())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
+	if sort {
+		q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
+	}
+	return q, nil
 }
 
 // ListAlerts returns ListAlerts according to the request.
@@ -116,7 +144,11 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 			Limit: maxListAlertsReturned,
 		}
 	}
-	alerts, err := s.dataStore.ListAlerts(ctx, request)
+	q, err := listAlertsRequestToQuery(request, true)
+	if err != nil {
+		return nil, err
+	}
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +160,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	count, err := s.dataStore.Count(ctx, parsedQuery)
@@ -153,7 +185,11 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
 	request = ensureAllAlertsAreFetched(request)
-	alerts, err := s.dataStore.ListAlerts(ctx, request)
+	q, err := listAlertsRequestToQuery(request, false)
+	if err != nil {
+		return nil, err
+	}
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -169,8 +205,49 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 	if request == nil {
 		request = &v1.GetAlertsCountsRequest{}
 	}
+
 	request.Request = ensureAllAlertsAreFetched(request.GetRequest())
-	alerts, err := s.dataStore.ListAlerts(ctx, request.GetRequest())
+	requestQ, err := search.ParseQuery(request.GetRequest().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	var hasClusterQ, hasSeverityQ, hasCategoryQ bool
+	search.ApplyFnToAllBaseQueries(requestQ, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Cluster.String() {
+			hasClusterQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Category.String() {
+			hasCategoryQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == search.Severity.String() {
+			hasSeverityQ = true
+			matchFieldQuery.MatchFieldQuery.Highlight = true
+		}
+	})
+
+	var conjuncts []*v1.Query
+	if !hasClusterQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Cluster, search.WildcardString).ProtoQuery())
+	}
+	if !hasSeverityQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Severity, search.WildcardString).ProtoQuery())
+	}
+	if !hasCategoryQ {
+		conjuncts = append(conjuncts, search.NewQueryBuilder().AddStringsHighlighted(search.Category, search.WildcardString).ProtoQuery())
+	}
+	for _, conjunct := range conjuncts {
+		requestQ = search.ConjunctionQuery(requestQ, conjunct)
+	}
+
+	alerts, err := s.dataStore.Search(ctx, requestQ)
 	if err != nil {
 		return nil, err
 	}
@@ -179,17 +256,22 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		return response, nil
 	}
 
-	return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "unknown group by: %v", request.GetGroupBy())
+	return nil, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", request.GetGroupBy())
 }
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
 	ensureAllAlertsAreFetched(req)
-	alerts, err := s.dataStore.ListAlerts(ctx, req)
+
+	q, err := listAlertsRequestToQuery(req, false)
 	if err != nil {
 		return nil, err
 	}
 
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 	response := alertTimeseriesResponseFrom(alerts)
 	return response, nil
 }
@@ -202,7 +284,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 
 	if req.GetWhitelist() || req.GetAddToBaseline() {
@@ -254,9 +336,9 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 	query, err := search.ParseQuery(req.GetQuery())
 	if err != nil {
 		log.Error(err)
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	runtimeQuery := search.NewQueryBuilder().AddStrings(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
+	runtimeQuery := search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.ConjunctionQuery(query, runtimeQuery)
 	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
 	if err != nil {
@@ -337,10 +419,10 @@ func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert
 
 func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
 	if req.GetSnoozeTill() == nil {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "'snooze_till' cannot be nil")
+		return nil, errors.Wrap(errox.InvalidArgs, "'snooze_till' cannot be nil")
 	}
 	if protoconv.ConvertTimestampToTimeOrNow(req.GetSnoozeTill()).Before(time.Now()) {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, badSnoozeErrorMsg)
+		return nil, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg)
 	}
 	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
 	if err != nil {
@@ -348,7 +430,7 @@ func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertReques
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errorhelpers.ErrNotFound, "alert with id '%s' does not exist", req.GetId())
+		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 	alert.SnoozeTill = req.GetSnoozeTill()
 	err = s.changeAlertState(ctx, alert, storage.ViolationState_SNOOZED)
@@ -367,7 +449,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 
 	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "error parsing query: %v", err)
+		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
 	}
 	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
 
@@ -379,7 +461,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		}
 		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
 			if matchFieldQuery.MatchFieldQuery.Value != storage.ViolationState_RESOLVED.String() {
-				err = errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.Value)
+				err = errors.Wrapf(errox.InvalidArgs, "invalid value for violation state: %q. Only resolved alerts can be deleted", matchFieldQuery.MatchFieldQuery.Value)
 				return
 			}
 			specified = true
@@ -389,7 +471,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, err
 	}
 	if !specified {
-		return nil, errors.Wrapf(errorhelpers.ErrInvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
+		return nil, errors.Wrapf(errox.InvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
 	}
 
 	results, err := s.dataStore.Search(ctx, query)
@@ -442,9 +524,9 @@ func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsG
 	return
 }
 
-// alertsCountsResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsCountsResponse
+// alertsCountsResponseFrom returns a slice of search.Result objects translated into a v1.GetAlertsCountsResponse
 // object. True is returned if the translation was successful; otherwise false when the requested group is unknown.
-func alertsCountsResponseFrom(alerts []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
+func alertsCountsResponseFrom(alerts []search.Result, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
 	if groupByFunc, ok := groupByFunctions[groupBy]; ok {
 		response := countAlerts(alerts, groupByFunc)
 		return response, true
@@ -474,7 +556,7 @@ func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimese
 	return response
 }
 
-func countAlerts(alerts []*storage.ListAlert, groupByFunc func(*storage.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
+func countAlerts(alerts []search.Result, groupByFunc func(result search.Result) []string) (output *v1.GetAlertsCountsResponse) {
 	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
@@ -507,19 +589,24 @@ func countAlerts(alerts []*storage.ListAlert, groupByFunc func(*storage.ListAler
 	return
 }
 
-func getMapOfAlertCounts(alerts []*storage.ListAlert, groupByFunc func(alert *storage.ListAlert) []string) (groups map[string]map[storage.Severity]int) {
+func getMapOfAlertCounts(alerts []search.Result, groupByFunc func(alert search.Result) []string) (groups map[string]map[storage.Severity]int) {
 	groups = make(map[string]map[storage.Severity]int)
+	field := mappings.OptionsMap.MustGet(search.Severity.String())
 
 	for _, a := range alerts {
 		for _, g := range groupByFunc(a) {
 			if groups[g] == nil {
 				groups[g] = make(map[storage.Severity]int)
 			}
-
-			groups[g][a.GetPolicy().GetSeverity()]++
+			if len(a.Matches[field.GetFieldPath()]) == 0 {
+				continue
+			}
+			// There is a difference in how enum matches are stored in postgres vs rockdb. In postgres they are
+			// stored as string values, in rocksdb as int values. Courtesy: Mandar.
+			severity := storage.Severity_value[a.Matches[field.GetFieldPath()][0]]
+			groups[g][(storage.Severity(severity))]++
 		}
 	}
-
 	return
 }
 

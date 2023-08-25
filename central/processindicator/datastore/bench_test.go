@@ -4,15 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/search"
-	rocksdbStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
+	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -25,17 +23,13 @@ func BenchmarkAddIndicator(b *testing.B) {
 		indicators = append(indicators, pi)
 	}
 
-	db, err := rocksdb.NewTemp(testutils.DBFileNameForT(b))
-	require.NoError(b, err)
-
-	store := rocksdbStore.New(db)
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	require.NoError(b, err)
-
-	indexer := index.New(tmpIndex)
+	db := pgtest.ForT(b)
+	store := postgresStore.New(db)
+	plopStore := plopStore.New(db)
+	indexer := postgresStore.NewIndexer(db)
 	searcher := search.New(store, indexer)
 
-	datastore, err := New(store, nil, indexer, searcher, nil)
+	datastore, err := New(store, plopStore, searcher, nil)
 	require.NoError(b, err)
 
 	ctx := sac.WithAllAccess(context.Background())

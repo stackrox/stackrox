@@ -8,13 +8,13 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	common "github.com/stackrox/rox/central/sensor/service/common"
 	connection "github.com/stackrox/rox/central/sensor/service/connection"
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockManager is a mock of Manager interface.
@@ -50,6 +50,18 @@ func (m *MockManager) BroadcastMessage(msg *central.MsgToSensor) {
 func (mr *MockManagerMockRecorder) BroadcastMessage(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMessage", reflect.TypeOf((*MockManager)(nil).BroadcastMessage), msg)
+}
+
+// CloseConnection mocks base method.
+func (m *MockManager) CloseConnection(clusterID string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseConnection", clusterID)
+}
+
+// CloseConnection indicates an expected call of CloseConnection.
+func (mr *MockManagerMockRecorder) CloseConnection(clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseConnection", reflect.TypeOf((*MockManager)(nil).CloseConnection), clusterID)
 }
 
 // GetActiveConnections mocks base method.
@@ -178,17 +190,17 @@ func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomo
 }
 
 // Start mocks base method.
-func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr common.ClusterManager, netEntitiesMgr common.NetworkEntityManager, policyMgr common.PolicyManager, baselineMgr common.ProcessBaselineManager, networkBaselineMgr common.NetworkBaselineManager, delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager, imageIntegrationMgr common.ImageIntegrationManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start.
-func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, autoTriggerUpgrades)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, netEntitiesMgr, policyMgr, baselineMgr, networkBaselineMgr, delegatedRegistryConfigMgr, imageIntegrationMgr, autoTriggerUpgrades)
 }
 
 // TriggerCertRotation mocks base method.

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -32,23 +33,21 @@ func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) En
 	return &enforcer{
 		enforcementMap: enforcementMap,
 		actionsC:       make(chan *central.SensorEnforcement, 10),
-		stopC:          concurrency.NewSignal(),
-		stoppedC:       concurrency.NewSignal(),
+		stopper:        concurrency.NewStopper(),
 	}
 }
 
 type enforcer struct {
 	enforcementMap map[storage.EnforcementAction]EnforceFunc
 	actionsC       chan *central.SensorEnforcement
-	stopC          concurrency.Signal
-	stoppedC       concurrency.Signal
+	stopper        concurrency.Stopper
 }
 
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (e *enforcer) ResponsesC() <-chan *central.MsgFromSensor {
+func (e *enforcer) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
@@ -114,13 +113,13 @@ func (e *enforcer) ProcessMessage(msg *central.MsgToSensor) error {
 	select {
 	case e.actionsC <- enforcement:
 		return nil
-	case <-e.stoppedC.Done():
+	case <-e.stopper.Flow().StopRequested():
 		return errors.Errorf("unable to send enforcement: %s", proto.MarshalTextString(enforcement))
 	}
 }
 
 func (e *enforcer) start() {
-	defer e.stoppedC.Signal()
+	defer e.stopper.Flow().ReportStopped()
 
 	for {
 		select {
@@ -131,12 +130,12 @@ func (e *enforcer) start() {
 				continue
 			}
 
-			if err := f(concurrency.AsContext(&e.stopC), action); err != nil {
+			if err := f(concurrency.AsContext(e.stopper.LowLevel().GetStopRequestSignal()), action); err != nil {
 				log.Errorf("error during enforcement. action: %s err: %v", proto.MarshalTextString(action), err)
 			} else {
 				log.Infof("enforcement successful. action %s", proto.MarshalTextString(action))
 			}
-		case <-e.stopC.Done():
+		case <-e.stopper.Flow().StopRequested():
 			log.Info("Shutting down Enforcer")
 			return
 		}
@@ -149,6 +148,8 @@ func (e *enforcer) Start() error {
 }
 
 func (e *enforcer) Stop(_ error) {
-	e.stopC.Signal()
-	e.stoppedC.Wait()
+	e.stopper.Client().Stop()
+	_ = e.stopper.Client().Stopped().Wait()
 }
+
+func (e *enforcer) Notify(common.SensorComponentEvent) {}

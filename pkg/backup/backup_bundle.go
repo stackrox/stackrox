@@ -7,12 +7,16 @@ import (
 
 // Backup bundle structure in zip archive.
 const (
-	BoltFileName     = "bolt.db"
-	RocksFileName    = "rocks.db"
-	KeysBaseFolder   = "keys"
-	CaKeyPem         = mtls.CAKeyFileName
-	CaCertPem        = mtls.CACertFileName
-	JwtKeyInDer      = certgen.JWTKeyDERFileName
-	JwtKeyInPem      = certgen.JWTKeyPEMFileName
-	MigrationVersion = "migration_version.yaml"
+	BoltFileName         = "bolt.db"
+	RocksFileName        = "rocks.db"
+	PostgresFileName     = "postgres.dump"
+	PostgresSizeFileName = "postgres.size"
+	KeysBaseFolder       = "keys"
+	CaKeyPem             = mtls.CAKeyFileName
+	CaCertPem            = mtls.CACertFileName
+	JwtKeyInDer          = certgen.JWTKeyDERFileName
+	JwtKeyInPem          = certgen.JWTKeyPEMFileName
+	MigrationVersion     = "migration_version.yaml"
+	DatabaseBaseFolder   = "central-db"
+	DatabasePassword     = "password"
 )

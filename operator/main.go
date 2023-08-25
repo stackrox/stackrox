@@ -17,18 +17,26 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
+	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
 	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/version"
+	rawZap "go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -42,15 +50,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-var (
-	setupLog       = ctrl.Log.WithName("setup")
-	scheme         = runtime.NewScheme()
-	enableWebhooks = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+const (
+	keyCentralLabelSelector = "CENTRAL_LABEL_SELECTOR"
+)
 
+var (
+	setupLog                   = ctrl.Log.WithName("setup")
+	scheme                     = runtime.NewScheme()
+	enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
+	enableProfiling            = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
+	profilingThresholdFraction = env.RegisterSetting("PROFILING_THRESHOLD_FRACTION", env.WithDefault("0.8"))
+	memLimit                   = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
+	// Default place to put the heap dump is the /tmp directory because the container process has rights
+	// to write to this directory without creating and mounting a PVC
+	heapDumpDir = env.RegisterSetting("HEAP_DUMP_PARENT_DIR", env.WithDefault("/tmp"))
 	// Default place where controller-runtime looks for TLS artifacts.
 	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
 	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
 	defaultTLSPaths = []string{filepath.Join(defaultCertDir, "tls.crt"), filepath.Join(defaultCertDir, "tls.key")}
+	// centralLabelSelector is a kubernetes label selector that is used to filter out Central instances
+	// to be managed by this operator. If the selector is empty, all Central instances are managed.
+	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	centralLabelSelector = env.RegisterSetting(keyCentralLabelSelector, env.WithDefault(""))
 )
 
 func init() {
@@ -82,9 +103,15 @@ func run() error {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	zapLogger := zap.NewRaw(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+	restore, err := rawZap.RedirectStdLogAt(zapLogger, zapcore.DebugLevel)
+	if err != nil {
+		return errors.Wrap(err, "unable to redirect std log")
+	}
+	defer restore()
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
@@ -104,10 +131,28 @@ func run() error {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
 	}
+
+	if enableProfiling.BooleanSetting() {
+		thresholdS := profilingThresholdFraction.Setting()
+		thresholdF, err := strconv.ParseFloat(thresholdS, 32)
+		if err != nil {
+			return errors.Wrapf(err, "unable to parse PROFILING_THRESHOLD set to '%s' as a float", thresholdS)
+		}
+		heapProfiler := profiling.NewHeapProfiler(thresholdF, uint64(memLimit.IntegerSetting()), heapDumpDir.Setting(), profiling.DefaultHeapProfilerBackoff)
+		ctx, cancelProfiler := context.WithCancel(context.Background())
+		go heapProfiler.DumpHeapOnThreshhold(ctx, time.Second)
+		defer cancelProfiler()
+	}
+
+	centralLabelSelector := centralLabelSelector.Setting()
+	if len(centralLabelSelector) > 0 {
+		setupLog.Info("using Central label selector from environment variable "+keyCentralLabelSelector, "selector", centralLabelSelector)
+	}
+
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	if err = centralReconciler.RegisterNewReconciler(mgr); err != nil {
+	if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 		return errors.Wrap(err, "unable to set up Central reconciler")
 	}
 

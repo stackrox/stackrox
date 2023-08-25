@@ -15,7 +15,7 @@ type CSVPrinterOption func(*CSVPrinter)
 // WithCSVColumnHeaders is a functional option for setting the CSV column headers.
 func WithCSVColumnHeaders(headers []string) CSVPrinterOption {
 	return func(p *CSVPrinter) {
-		p.columnHeaders = sliceutils.StringClone(headers)
+		p.columnHeaders = sliceutils.ShallowClone(headers)
 	}
 }
 
@@ -68,24 +68,29 @@ type CSVPrinter struct {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and its gjson multi path expression
 // JSON structure:
-// type data struct {
-//		Infos 	[]info `json:"infos"`
-//		Name 	string `json:"name"`
-// }
-// type info struct {
-//		info 	string `json:"info"`
-//		topic 	string `json:"topic"`
-// }
+//
+//	type data struct {
+//			Infos 	[]info `json:"infos"`
+//			Name 	string `json:"name"`
+//	}
+//
+//	type info struct {
+//			info 	string `json:"info"`
+//			topic 	string `json:"topic"`
+//	}
+//
 // Data:
-// data := &data{Name: "example", Infos: []info{
-//										{info: "info1", topic: "topic1"},
-//										{info: "info2", topic: "topic2"},
-//										{info: "info3", topic: "topic3"},
-//										}
+//
+//	data := &data{Name: "example", Infos: []info{
+//											{info: "info1", topic: "topic1"},
+//											{info: "info2", topic: "topic2"},
+//											{info: "info3", topic: "topic3"},
+//											}
+//
 // gjson multi path expression: "{name,infos.#.info,infos.#.topic}"
-// 	- bundle multiple gjson expression surrounded by "{}" to form a multi path expression
-// 	- specify "#" to visit each element in the array
-// 	- each expression in the multi path expression is correlated with the given header(s)!
+//   - bundle multiple gjson expression surrounded by "{}" to form a multi path expression
+//   - specify "#" to visit each element in the array
+//   - each expression in the multi path expression is correlated with the given header(s)!
 //
 // headers := []string{"name", "info", "topic"}
 //

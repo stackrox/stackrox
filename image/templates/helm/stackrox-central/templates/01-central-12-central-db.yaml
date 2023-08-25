@@ -1,0 +1,196 @@
+{{- include "srox.init" . -}}
+
+{{ if not ._rox.central.db.external -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-db
+    {{- include "srox.labels" (list . "deployment" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-db") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central-db
+        {{- include "srox.podLabels" (list . "deployment" "central-db") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-db") | nindent 8 }}
+    spec:
+      {{- if ._rox.central.db._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.central.db._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.central.db.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.central.db.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          # Central-db is single-homed, so avoid preemptible nodes.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: NotIn
+                values:
+                - "true"
+          - weight: 50
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+          - weight: 25
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+          # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
+          # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: DoesNotExist
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+      serviceAccountName: central-db
+      terminationGracePeriodSeconds: 120
+      initContainers:
+      - name: init-db
+        image: {{ ._rox.central.db.image.fullRef | quote }}
+        env:
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        command:
+        - init-entrypoint.sh
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+        resources:
+          {{- ._rox.central.db._resources | nindent 10 }}
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+      containers:
+      - name: central-db
+        image: {{ ._rox.central.db.image.fullRef | quote }}
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: "password"
+        - name: PGDATA
+          value: "/var/lib/postgresql/data/pgdata"
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - -e
+            - |
+              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          {{- ._rox.central.db._resources | nindent 10 }}
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/stackrox.d/config/
+        - mountPath: /var/lib/postgresql/data
+          name: disk
+        - name: central-db-tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+        - mountPath: /dev/shm
+          name: shared-memory
+      securityContext:
+        fsGroup: 70
+      volumes:
+      - name: disk
+        {{- toYaml ._rox.central.db.persistence._volumeCfg | nindent 8 }}
+      - name: config-volume
+        configMap:
+          name: {{ default "central-db-config" ._rox.central.db.configOverride }}
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-db-tls-volume
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: shared-memory
+        emptyDir:
+          medium: Memory
+          {{- /* Keep this in sync with shared_buffers in config/centraldb/postgresql.conf */}}
+          sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-db
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "central-db") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "central-db") | nindent 4 }}
+spec:
+  ports:
+  - name: tcp-db
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app: central-db
+  type: ClusterIP
+{{- end }}
+{{- if ._rox.central.db._password }}
+{{- if not (kindIs "invalid" ._rox.central.db._password.value) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-db-password
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "central-db-password") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "central-db-password") | nindent 4 }}
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/resource-policy": keep
+type: Opaque
+stringData:
+  password: |
+    {{- ._rox.central.db._password.value | nindent 4 }}
+{{- end }}
+{{- end }}

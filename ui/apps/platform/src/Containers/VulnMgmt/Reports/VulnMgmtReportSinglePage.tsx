@@ -7,7 +7,8 @@ import useFetchReport from 'hooks/useFetchReport';
 import usePermissions from 'hooks/usePermissions';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getQueryObject } from 'utils/queryStringUtils';
-import { VulnMgmtReportQueryObject } from './VulnMgmtReport.utils';
+
+import { getWriteAccessForReport } from './VulnMgmtReport.utils';
 import VulnMgmtReportDetail from './Detail/VulnMgmtReportDetail';
 import VulnMgmtEditReportPage from './Detail/VulnMgmtEditReportPage';
 
@@ -19,16 +20,16 @@ function VulnMgmtReportPage(): ReactElement {
         setRefresh(new Date().getTime());
     }
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasVulnReportWriteAccess = hasReadWriteAccess('VulnerabilityReports');
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForReport = getWriteAccessForReport({ hasReadAccess, hasReadWriteAccess });
 
-    const queryObject = getQueryObject<VulnMgmtReportQueryObject>(search);
+    const queryObject = getQueryObject(search);
     const { action } = queryObject;
     const { reportId } = useParams();
 
     const result = useFetchReport(reportId, refresh);
 
-    const { report, isLoading, error } = result;
+    const { report, reportScope, isLoading, error } = result;
 
     return (
         <>
@@ -45,10 +46,14 @@ function VulnMgmtReportPage(): ReactElement {
                     {getAxiosErrorMessage(error)}
                 </Alert>
             )}
-            {action === 'edit' && hasVulnReportWriteAccess && !!report ? (
-                <VulnMgmtEditReportPage report={report} refreshQuery={refreshQuery} />
+            {action === 'edit' && hasWriteAccessForReport && !!report ? (
+                <VulnMgmtEditReportPage
+                    report={report}
+                    reportScope={reportScope}
+                    refreshQuery={refreshQuery}
+                />
             ) : (
-                !!report && <VulnMgmtReportDetail report={report} />
+                !!report && <VulnMgmtReportDetail report={report} reportScope={reportScope} />
             )}
         </>
     );

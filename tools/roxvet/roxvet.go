@@ -3,12 +3,14 @@ package main
 import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/dontprintferr"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
-	"github.com/stackrox/rox/tools/roxvet/analyzers/invalidoutputroxctl"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/protoptrs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/regexes"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckederrors"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
@@ -18,6 +20,7 @@ import (
 
 func main() {
 	unitchecker.Main(
+		godoccapitalizationmismatch.Analyzer,
 		dontprintferr.Analyzer,
 		storeinterface.Analyzer,
 		uncheckederrors.Analyzer,
@@ -25,10 +28,11 @@ func main() {
 		regexes.Analyzer,
 		uncheckedifassign.Analyzer,
 		protoclone.Analyzer,
+		protoptrs.Analyzer,
 		unusedroxctlargs.Analyzer,
-		invalidoutputroxctl.Analyzer,
 		filepathwalk.Analyzer,
 		validateimports.Analyzer,
 		importpackagenames.Analyzer,
+		structuredlogs.Analyzer,
 	)
 }

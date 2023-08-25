@@ -15,6 +15,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/probeupload"
@@ -24,9 +25,6 @@ import (
 )
 
 const (
-	grpcTimeout       = 30 * time.Second
-	uploadIdleTimeout = 30 * time.Second
-
 	kernelModulesDirPrefix = "kernel-modules/"
 )
 
@@ -65,7 +63,7 @@ func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPack
 		req.FilesToCheck = append(req.FilesToCheck, probeFileName)
 	}
 
-	ctx, cancel := context.WithTimeout(common.Context(), grpcTimeout)
+	ctx, cancel := context.WithTimeout(common.Context(), cmd.timeout)
 	defer cancel()
 
 	resp, err := probeUploadClient.GetExistingProbes(ctx, req)
@@ -118,7 +116,7 @@ func buildUploadManifest(probeFilesInPackage map[string]*zip.File, existingFiles
 func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManifest, data io.Reader) error {
 	totalSize, err := probeupload.AnalyzeManifest(manifest)
 	if err != nil {
-		return utils.Should(errors.Wrap(err, "generated invalid manifest"))
+		return utils.ShouldErr(errors.Wrap(err, "generated invalid manifest"))
 	}
 
 	manifestBytes, err := proto.Marshal(manifest)
@@ -147,7 +145,7 @@ func (cmd *collectorSPUploadCommand) doFileUpload(manifest *v1.ProbeUploadManife
 	req.URL.RawQuery = urlParams.Encode()
 
 	cmd.env.Logger().InfofLn("Uploading %d files from support package ...\n", len(manifest.GetFiles()))
-	resp, err := transfer.ViaHTTP(req, httpClient, time.Now(), uploadIdleTimeout)
+	resp, err := transfer.ViaHTTP(req, httpClient, time.Now(), cmd.timeout)
 	if err != nil {
 		return errors.Wrap(err, "HTTP transport error while uploading collector support files")
 	}
@@ -176,7 +174,7 @@ func (cmd *collectorSPUploadCommand) uploadFilesFromPackage() error {
 	}
 
 	if len(probeFiles) == 0 {
-		return errors.New("the given support package contains no relevant files")
+		return errox.NotFound.New("the given support package contains no relevant files")
 	}
 
 	existingFiles, err := cmd.retrieveExistingProbeFiles(probeFiles)

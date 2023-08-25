@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	refreshTokenCookieName = "RoxRefreshToken"
+	// RefreshTokenCookieName is the name of the cookie containing the refresh token.
+	RefreshTokenCookieName = "RoxRefreshToken"
 )
 
 var (
@@ -38,7 +39,7 @@ type refreshTokenCookieData struct {
 }
 
 func cookieDataFromRequest(req *http.Request) (*refreshTokenCookieData, error) {
-	cookie, err := req.Cookie(refreshTokenCookieName)
+	cookie, err := req.Cookie(RefreshTokenCookieName)
 	if err != nil {
 		if err == http.ErrNoCookie {
 			return nil, nil

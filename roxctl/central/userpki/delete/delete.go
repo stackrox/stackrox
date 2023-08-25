@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
+	"github.com/stackrox/rox/pkg/errox"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	errNoProviderArg    = errors.New("provider ID/name parameter required")
-	errProviderNotFound = errors.New("provider doesn't exist")
+	errNoProviderArg    = errox.InvalidArgs.New("provider ID/name parameter required")
+	errProviderNotFound = errox.NotFound.New("provider doesn't exist")
 )
 
 type centralUserPkiDeleteCommand struct {
@@ -36,7 +36,9 @@ type centralUserPkiDeleteCommand struct {
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
-		Use: "delete id|name",
+		Use:   "delete id|name",
+		Short: "Delete a user certificate authentication provider.",
+		Long:  "Delete a configured user certificate authentication provider and its associated group mappings.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errNoProviderArg
@@ -46,7 +48,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := flags.CheckConfirmation(cmd); err != nil {
+			if err := flags.CheckConfirmation(cmd, cliEnvironment.Logger(), cliEnvironment.InputOutput()); err != nil {
 				return err
 			}
 			return deleteProvider()
@@ -119,7 +121,7 @@ func (cmd *centralUserPkiDeleteCommand) prepareDeleteProvider() (func() error, e
 	return func() error {
 		cmd.env.Logger().PrintfLn("Deleting provider and rolemappings.")
 
-		_, err := authService.DeleteAuthProvider(ctx, &v1.ResourceByID{
+		_, err := authService.DeleteAuthProvider(ctx, &v1.DeleteByIDWithForce{
 			Id: prov.GetId(),
 		})
 

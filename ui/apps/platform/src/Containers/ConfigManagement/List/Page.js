@@ -1,6 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
+import upperFirst from 'lodash/upperFirst';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
@@ -8,6 +9,7 @@ import PageHeader from 'Components/PageHeader';
 import { PageBody } from 'Components/Panel';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
+import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import configMgmtPaginationContext, {
     MAIN_PAGINATION_PARAMS,
     SIDEPANEL_PAGINATION_PARAMS,
@@ -19,14 +21,14 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
-import { getUseCaseEntityMap } from 'utils/entityRelationships';
+import { getConfigurationManagementEntityTypes } from 'utils/entityRelationships';
 import { WorkflowState } from 'utils/WorkflowState';
 import EntityList from './EntityList';
 import SidePanel from '../SidePanel/SidePanel';
 
 const ListPage = ({ match, location, history }) => {
+    const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
-    const useCaseEntityMap = getUseCaseEntityMap();
 
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -48,13 +50,13 @@ const ListPage = ({ match, location, history }) => {
         history.push(urlBuilder.url());
     }
 
-    const header = pluralize(entityLabels[pageEntityListType]);
+    const header = upperFirst(pluralize(entityLabels[pageEntityListType]));
     const exportFilename = `${pluralize(startCase(header))} Report`;
     return (
         <workflowStateContext.Provider value={pageState}>
             <PageHeader
                 header={header}
-                subHeader="Entity List"
+                subHeader="Entity list"
                 classes="pr-0 ignore-react-onclickoutside"
             >
                 <div className="flex flex-1 justify-end h-full">
@@ -64,10 +66,15 @@ const ListPage = ({ match, location, history }) => {
                             type={pageEntityListType}
                             page="configManagement"
                             pdfId="capture-list"
+                            isExporting={isExporting}
+                            setIsExporting={setIsExporting}
                         />
                     </div>
                     <div className="flex items-center pl-2">
-                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                        <EntitiesMenu
+                            text="All Entities"
+                            options={getConfigurationManagementEntityTypes()}
+                        />
                     </div>
                 </div>
             </PageHeader>
@@ -95,6 +102,7 @@ const ListPage = ({ match, location, history }) => {
                     </configMgmtPaginationContext.Provider>
                 </searchContext.Provider>
             </PageBody>
+            {isExporting && <BackdropExporting />}
         </workflowStateContext.Provider>
     );
 };

@@ -6,15 +6,16 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 
 import "storage/labels.proto";
+import "gogoproto/gogo.proto";
 
 package storage;
 
 message NetworkPolicy {
-    string                    id            = 1;
+    string                    id            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                    name          = 2;
-    string                    cluster_id    = 3;
+    string                    cluster_id    = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"type(uuid)"'];
     string                    cluster_name  = 4;
-    string                    namespace     = 5;
+    string                    namespace     = 5 [(gogoproto.moretags) = 'search:"Namespace,hidden,store"'];
     map<string, string>       labels        = 6;
     map<string, string>       annotations   = 7;
 
@@ -87,6 +88,7 @@ message NetworkPolicyModification {
 }
 
 message NetworkPolicyApplicationUndoRecord {
+    string cluster_id                           = 5 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string user                                 = 1;
     google.protobuf.Timestamp apply_timestamp   = 2;
 
@@ -95,10 +97,10 @@ message NetworkPolicyApplicationUndoRecord {
 }
 
 message NetworkPolicyApplicationUndoDeploymentRecord {
-    string deployment_id                            = 1;
+    string deployment_id                            = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     // For SAC
     string cluster_id                               = 2;
     string namespace                                = 3;
 
-    NetworkPolicyApplicationUndoRecord undo_record  = 4;
+    NetworkPolicyApplicationUndoRecord undo_record  = 4  [(gogoproto.moretags) = 'sql:"-"'];
 }

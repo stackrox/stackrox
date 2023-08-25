@@ -29,16 +29,19 @@ import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMess
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import { ReportScope } from 'hooks/useFetchReport';
 import useMultiSelect from 'hooks/useMultiSelect';
+import usePermissions from 'hooks/usePermissions';
 import { saveReport } from 'services/ReportsService';
 import { ReportConfiguration } from 'types/report.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import CollectionSelection from './Form/CollectionSelection';
 import NotifierSelection from './Form/NotifierSelection';
-import ResourceScopeSelection from './Form/ResourceScopeSelection';
 import { getMappedFixability, getFixabilityConstantFromMap } from './VulnMgmtReport.utils';
 
 export type VulnMgmtReportFormProps = {
     initialValues: ReportConfiguration;
+    initialReportScope: ReportScope | null;
     isEditable?: boolean;
     refreshQuery?: () => void;
 };
@@ -70,18 +73,20 @@ export const validationSchema = yup.object().shape({
             .array()
             .of(yup.string())
             .test('valid-emails-test', '', (emails, { createError }) => {
-                let isValid = true;
-
-                emails?.forEach((email) => {
-                    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        isValid = false;
-                    }
+                if (!emails?.length) {
+                    return createError({
+                        message: 'At least one email address is required',
+                        path: 'emailConfig.mailingLists',
+                    });
+                }
+                const isValid = emails.every((email) => {
+                    return email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
                 });
 
                 return (
                     isValid ||
                     createError({
-                        message: 'List must be valid emails separated by a comma',
+                        message: 'List must be valid email addresses, separated by commas',
                         path: 'emailConfig.mailingLists',
                     })
                 );
@@ -94,11 +99,17 @@ export const validationSchema = yup.object().shape({
 
 function VulnMgmtReportForm({
     initialValues,
+    initialReportScope,
     isEditable = true,
     refreshQuery = () => {},
 }: VulnMgmtReportFormProps): ReactElement {
     const history = useHistory();
     const [message, setMessage] = useState<FormResponseMessage>(null);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
+    const canWriteCollections = hasReadWriteAccess('WorkflowAdministration');
+
     const formik = useFormik<ReportConfiguration>({
         initialValues,
         onSubmit: (formValues) => {
@@ -173,21 +184,36 @@ function VulnMgmtReportForm({
     }
 
     function onScheduledRepeatChange(_id, selection) {
-        // zero out the days selected list if changing interval type
-        if (selection !== values.schedule.intervalType) {
-            void setFieldValue('schedule.interval.days', []);
-        }
+        const intervalDayKey = selection === 'WEEKLY' ? 'daysOfWeek' : 'daysOfMonth';
+        const nextSchedule = {
+            hour: values.schedule.hour,
+            minute: values.schedule.minute,
+            intervalType: selection,
+            [intervalDayKey]: {},
+        };
 
-        void setFieldValue('schedule.intervalType', selection);
+        void setFieldValue('schedule', nextSchedule);
     }
 
     function onScheduledDaysChange(id, selection) {
         void setFieldValue(id, selection);
     }
 
+    // need a bespoke check that days are selected, because the way the PatternFly Select component is written,
+    // we cannot easily use the built-in Formik onBlur handler to update the Yup validation status
+    const areDaysSelected =
+        values.schedule.intervalType === 'WEEKLY'
+            ? Boolean(values.schedule?.daysOfWeek?.days?.length)
+            : Boolean(values.schedule?.daysOfMonth?.days?.length);
+
     return (
         <>
-            <PageSection variant={PageSectionVariants.light} isFilled hasOverflowScroll>
+            <PageSection
+                variant={PageSectionVariants.light}
+                isFilled
+                hasOverflowScroll
+                aria-label="Vulnerability Management Report Form"
+            >
                 <FormMessage message={message} />
                 <Form>
                     <Grid hasGutter>
@@ -213,31 +239,45 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <RepeatScheduleDropdown
-                                        label="Repeat report…"
+                                    <FormLabelGroup
                                         isRequired
+                                        label="Repeat report…"
                                         fieldId="schedule.intervalType"
-                                        value={values.schedule.intervalType}
-                                        handleSelect={onScheduledRepeatChange}
-                                    />
+                                        errors={{}}
+                                    >
+                                        <RepeatScheduleDropdown
+                                            fieldId="schedule.intervalType"
+                                            value={values.schedule.intervalType}
+                                            handleSelect={onScheduledRepeatChange}
+                                        />
+                                    </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={3}>
-                                    <DayPickerDropdown
-                                        label="On…"
+                                    <FormLabelGroup
                                         isRequired
+                                        label="On…"
                                         fieldId={
                                             values.schedule.intervalType === 'WEEKLY'
                                                 ? 'schedule.daysOfWeek.days'
                                                 : 'schedule.daysOfMonth.days'
                                         }
-                                        value={
-                                            values.schedule.intervalType === 'WEEKLY'
-                                                ? values?.schedule?.daysOfWeek?.days || []
-                                                : values?.schedule?.daysOfMonth?.days || []
-                                        }
-                                        handleSelect={onScheduledDaysChange}
-                                        intervalType={values.schedule.intervalType}
-                                    />
+                                        errors={{}}
+                                    >
+                                        <DayPickerDropdown
+                                            fieldId={
+                                                values.schedule.intervalType === 'WEEKLY'
+                                                    ? 'schedule.daysOfWeek.days'
+                                                    : 'schedule.daysOfMonth.days'
+                                            }
+                                            value={
+                                                values.schedule.intervalType === 'WEEKLY'
+                                                    ? values?.schedule?.daysOfWeek?.days || []
+                                                    : values?.schedule?.daysOfMonth?.days || []
+                                            }
+                                            handleSelect={onScheduledDaysChange}
+                                            intervalType={values.schedule.intervalType}
+                                        />
+                                    </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
                                     <FormLabelGroup
@@ -337,7 +377,7 @@ function VulnMgmtReportForm({
                                                 Important
                                             </SelectOption>
                                             <SelectOption value="MODERATE_VULNERABILITY_SEVERITY">
-                                                Medium
+                                                Moderate
                                             </SelectOption>
                                             <SelectOption value="LOW_VULNERABILITY_SEVERITY">
                                                 Low
@@ -346,9 +386,11 @@ function VulnMgmtReportForm({
                                     </FormLabelGroup>
                                 </GridItem>
                                 <GridItem span={12}>
-                                    <ResourceScopeSelection
+                                    <CollectionSelection
                                         scopeId={values.scopeId}
+                                        initialReportScope={initialReportScope}
                                         setFieldValue={setFieldValue}
+                                        allowCreate={canWriteCollections}
                                     />
                                 </GridItem>
                             </Grid>
@@ -369,6 +411,7 @@ function VulnMgmtReportForm({
                                     handleBlur={handleBlur}
                                     touched={touched}
                                     errors={errors}
+                                    allowCreate={hasNotifierWriteAccess}
                                 />
                             </div>
                         </GridItem>
@@ -383,7 +426,7 @@ function VulnMgmtReportForm({
                             variant={ButtonVariant.primary}
                             onClick={submitForm}
                             data-testid="create-btn"
-                            isDisabled={!dirty || !isValid || isSubmitting}
+                            isDisabled={!dirty || !isValid || isSubmitting || !areDaysSelected}
                             isLoading={isSubmitting}
                         >
                             {values.id ? 'Save' : 'Create'}

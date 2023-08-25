@@ -14,6 +14,16 @@ spec:
         cpu: 1
     adminPasswordSecret:
       name: admin-pass
+    db:
+      resources:
+        requests:
+          memory: 1Gi
+          cpu: 1
+        limits:
+          memory: 4Gi
+          cpu: 1
+    telemetry:
+      enabled: false
   scanner:
     analyzer:
       scaling:

@@ -28,7 +28,7 @@ func (p *vulnDefsInfoProviderImpl) GetVulnDefsInfo() (*v1.VulnDefinitionsInfo, e
 	}
 
 	for _, scanner := range p.scanners.GetAll() {
-		info, err := scanner.GetVulnDefinitionsInfo()
+		info, err := scanner.GetScanner().GetVulnDefinitionsInfo()
 		if err != nil {
 			return nil, err
 		}

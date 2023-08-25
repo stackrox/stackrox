@@ -1,0 +1,28 @@
+{
+    "resourceToAccess": {
+        "Access": "NO_ACCESS",
+        "Administration": "NO_ACCESS",
+        "Alert": "NO_ACCESS",
+        "CVE": "NO_ACCESS",
+        "Cluster": "NO_ACCESS",
+        "Compliance": "NO_ACCESS",
+        "Deployment": "NO_ACCESS",
+        "DeploymentExtension": "NO_ACCESS",
+        "Detection": "NO_ACCESS",
+        "Image": "NO_ACCESS",
+        "Integration": "NO_ACCESS",
+        "K8sRole": "NO_ACCESS",
+        "K8sRoleBinding": "NO_ACCESS",
+        "K8sSubject": "NO_ACCESS",
+        "Namespace": "NO_ACCESS",
+        "NetworkGraph": "NO_ACCESS",
+        "NetworkPolicy": "NO_ACCESS",
+        "Node": "NO_ACCESS",
+        "Secret": "NO_ACCESS",
+        "ServiceAccount": "NO_ACCESS",
+        "VulnerabilityManagementApprovals": "NO_ACCESS",
+        "VulnerabilityManagementRequests": "NO_ACCESS",
+        "WatchedImage": "NO_ACCESS",
+        "WorkflowAdministration" : "NO_ACCESS"
+    }
+}

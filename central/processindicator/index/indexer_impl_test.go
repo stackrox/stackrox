@@ -1,19 +1,26 @@
+//go:build sql_integration
+
 package index
 
 import (
+	"context"
 	"testing"
 
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/processindicator/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-var fakeID = fixtures.GetProcessIndicator().GetId()
+var (
+	fakeID = fixtures.GetProcessIndicator().GetId()
+	ctx    = sac.WithAllAccess(context.Background())
+)
 
 func TestIndicatorIndex(t *testing.T) {
 	suite.Run(t, new(IndicatorIndexTestSuite))
@@ -22,20 +29,18 @@ func TestIndicatorIndex(t *testing.T) {
 type IndicatorIndexTestSuite struct {
 	suite.Suite
 
-	bleveIndex bleve.Index
-
+	db      *pgtest.TestPostgres
 	indexer Indexer
 }
 
 func (suite *IndicatorIndexTestSuite) SetupSuite() {
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.Require().NoError(err)
+	suite.db = pgtest.ForT(suite.T())
+	suite.indexer = postgres.NewIndexer(suite.db)
 
-	suite.bleveIndex = tmpIndex
-	suite.indexer = New(tmpIndex)
+	store := postgres.New(suite.db)
 
 	process := fixtures.GetProcessIndicator()
-	suite.NoError(suite.indexer.AddProcessIndicator(process))
+	suite.NoError(store.Upsert(ctx, process))
 }
 
 func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
@@ -76,7 +81,7 @@ func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			results, err := suite.indexer.Search(c.q)
+			results, err := suite.indexer.Search(ctx, c.q)
 			require.NoError(t, err)
 			resultIDs := make([]string, 0, len(results))
 			for _, r := range results {
@@ -88,5 +93,5 @@ func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 }
 
 func (suite *IndicatorIndexTestSuite) TearDownSuite() {
-	suite.NoError(suite.bleveIndex.Close())
+	suite.db.Teardown(suite.T())
 }

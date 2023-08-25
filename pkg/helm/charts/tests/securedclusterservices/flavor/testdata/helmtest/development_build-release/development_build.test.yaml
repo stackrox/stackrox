@@ -1,0 +1,25 @@
+tests:
+- name: non slim mode
+  set:
+    collector.slimMode: false
+  expect: |
+    assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
+    assertCollectorIs("quay.io/rhacs-eng/collector:3.0.99.0")
+- name: slim mode
+  set:
+    collector.slimMode: true
+  expect: |
+    assertMainIs("quay.io/rhacs-eng/main:3.0.99.0")
+    assertCollectorIs("quay.io/rhacs-eng/collector-slim:3.0.99.0")
+
+- name: scanner image
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  set:
+    scanner.disable: false
+  expect: |
+    assertScannerIs("quay.io/rhacs-eng/scanner-slim:3.0.99.0")
+    assertScannerDBIs("quay.io/rhacs-eng/scanner-db-slim:3.0.99.0")

@@ -19,24 +19,24 @@ const useIntegrationPermissions = (): UseIntegrationPermissionsResponse => {
 
     return {
         authProviders: {
-            write: getHasReadWritePermission('APIToken', userRolePermissions),
-            read: getHasReadPermission('APIToken', userRolePermissions),
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
         },
         notifiers: {
-            write: getHasReadWritePermission('Notifier', userRolePermissions),
-            read: getHasReadPermission('Notifier', userRolePermissions),
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
         },
         imageIntegrations: {
-            write: getHasReadWritePermission('ImageIntegration', userRolePermissions),
-            read: getHasReadPermission('ImageIntegration', userRolePermissions),
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
         },
         backups: {
-            write: getHasReadWritePermission('BackupPlugins', userRolePermissions),
-            read: getHasReadPermission('BackupPlugins', userRolePermissions),
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
         },
-        authPlugins: {
-            write: getHasReadWritePermission('AuthPlugin', userRolePermissions),
-            read: getHasReadPermission('AuthPlugin', userRolePermissions),
+        signatureIntegrations: {
+            write: getHasReadWritePermission('Integration', userRolePermissions),
+            read: getHasReadPermission('Integration', userRolePermissions),
         },
     };
 };

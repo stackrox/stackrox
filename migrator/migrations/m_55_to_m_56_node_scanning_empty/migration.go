@@ -9,7 +9,7 @@ import (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 55,
-		VersionAfter:   storage.Version{SeqNum: 56},
+		VersionAfter:   &storage.Version{SeqNum: 56},
 		Run: func(databases *types.Databases) error {
 			return nil
 		},

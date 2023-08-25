@@ -2,22 +2,18 @@ package flags
 
 import (
 	"bufio"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
 )
 
 const (
 	forceFlag = "force"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // AddForce adds a parameter for bypassing interactive confirmation
@@ -26,24 +22,24 @@ func AddForce(c *cobra.Command) {
 }
 
 // CheckConfirmation requires that the force argument has been passed or that the user interactively confirms the action
-func CheckConfirmation(c *cobra.Command) error {
+func CheckConfirmation(c *cobra.Command, logger logger.Logger, io io.IO) error {
 	f, err := c.Flags().GetBool(forceFlag)
 	if err != nil {
-		log.Errorf("Error checking value of --force flag: %v", err)
+		logger.ErrfLn("Error checking value of --force flag: %w", err)
 		utils.Should(err)
 		f = false
 	}
 	if f {
 		return nil
 	}
-	fmt.Print("Are you sure? [y/N] ")
-	resp, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	logger.PrintfLn("Are you sure? [y/N] ")
+	resp, err := bufio.NewReader(io.In()).ReadString('\n')
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not read answer")
 	}
 	resp = strings.ToLower(strings.TrimSpace(resp))
 	if resp != "y" {
-		return errors.New("User rejected")
+		return errox.NotAuthorized.New("User rejected")
 	}
 	return nil
 }

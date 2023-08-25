@@ -58,6 +58,21 @@
   {{ end }}
 {{ end }}
 
+[< if and (eq .RenderMode "renderAll") (not .Operator) >]
+{{ if and $.Release.IsInstall (not ._rox.central.persistence.none)}}
+    {{ include "srox.fail" (printf "Starting from 4.1, we stop creating central PVC during installation. Databases and persistent data are stored in Central DB or external databases. You may use `--set central.persistence.none=true` during Helm install to override default persistence config. Got %v"  $._rox.central.persistence) }}
+{{ end }}
+[< end >]
+
+{{ if $._rox.central.db.external }}
+  {{ if not $._rox.central.db.source.connectionString }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its connection string. We are using the default source string. To ensure the connection to your Central DB, you may override it with `--set central.db.source.connectionString=<ConnectionString>`.") }}
+  {{ end }}
+  {{ if not $._rox.central.db.password.value }}
+    {{ include "srox.warn" (list $ "You have chosen to bring your own Central DB without providing its password. We are using a generated password for now. To ensure the connection to your Central DB, you may provide your DB password by `--set central.db.password.value=<DBPassword>`.") }}
+  {{ end }}
+{{ end }}
+
 {{/* Initialize global prefix */}}
 {{- include "srox.initGlobalPrefix" (list $) -}}
 
@@ -88,45 +103,25 @@
    */}}
 {{ $env := $._rox.env }}
 
-{{/* Infer OpenShift, if needed */}}
-{{ if kindIs "invalid" $env.openshift }}
-  {{ $_ := set $env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-{{ end }}
-
-{{/* Infer openshift version */}}
-{{ if and $env.openshift (kindIs "bool" $env.openshift) }}
-  {{/* Parse and add KubeVersion as semver from built-in resources. This is necessary to compare valid integer numbers. */}}
-  {{ $kubeVersion := semver .Capabilities.KubeVersion.Version }}
-
-  {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm template commands */}}
-  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
-    {{ $_ := set $._rox.env "openshift" 3 }}
-  {{ else if gt $kubeVersion.Minor 11 }}
-    {{ $_ := set $env "openshift" 4 }}
-  {{ else }}
-    {{ $_ := set $env "openshift" 3 }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "Based on API server properties, we have inferred that you are deploying into an OpenShift %d.x cluster. Set the `env.openshift` property explicitly to 3 or 4 to override the auto-sensed value." $env.openshift)) }}
-{{ end }}
-{{ if not (kindIs "bool" $env.openshift) }}
-  {{ $_ := set $env "openshift" (int $env.openshift) }}
-{{ else if not $env.openshift }}
-  {{ $_ := set $env "openshift" 0 }}
-{{ end }}
+{{/* Detect openshift version */}}
+{{ include "srox.autoSenseOpenshiftVersion" (list $) }}
 
 {{/* Openshift monitoring */}}
 {{ if $._rox.enableOpenShiftMonitoring }}
-  {{ if (ne $._rox.env.openshift 4) }}
-    {{ include "srox.fail" "'enableOpenShiftMonitoring' is set to true, but the chart is not being deployed in an OpenShift 4 cluster." }}
-  {{ end }}
-
-  {{/* Override monitoring exposure when openshift monitoring is desired */}}
-  {{ if not $._rox.central.exposeMonitoring }}
-    {{ include "srox.warn" (list . "The default or set value of 'central.exposeMonitoring' is false but 'enableOpenShiftMonitoring' is true.") }}
-    {{ include "srox.warn" (list . "'central.exposeMonitoring' will be overridden and set to true.") }}
-    {{ $_ := set $._rox.central "exposeMonitoring" true }}
-  {{ end }}
-  {{ include "srox.note" (list $ (printf "To have openshift-monitoring include metrics from the %s namespace a label metadata is required. Run: oc label namespace/%s openshift.io/cluster-monitoring=true." .Release.Namespace .Release.Namespace)) }}
+  {{ include "srox.warn" (list . "enableOpenShiftMonitoring option was replaced with monitoring.openshift.enabled") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" true)) }}
+{{ end }}
+{{/* Default `monitoring.openshift.enabled = true` unless `env.openshift != 4`. */}}
+{{ if kindIs "invalid" $._rox.monitoring.openshift.enabled }}
+{{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" (eq $._rox.env.openshift 4))) }}
+{{ end }}
+{{ if and $._rox.monitoring.openshift.enabled (ne $._rox.env.openshift 4) }}
+  {{ include "srox.warn" (list . "'monitoring.openshift.enabled' is set to true, but the chart is not being deployed in an OpenShift 4 cluster. Proceeding with 'monitoring.openshift.enabled=false'.") }}
+  {{ $_ := set $._rox "monitoring" (dict "openshift" (dict "enabled" false)) }}
+{{ end }}
+{{ if $._rox.monitoring.openshift.enabled }}
+    {{ $_ := set $._rox.central "monitoring" dict }}
+    {{ include "srox.mergeInto" (list $._rox.central.monitoring $._rox.monitoring) }}
 {{ end }}
 
 {{/* Infer GKE, if needed */}}
@@ -138,6 +133,19 @@
   {{ end }}
   {{ $_ := set $env "platform" $platform }}
 {{ end }}
+
+[<- if .AutoSensePodSecurityPolicies >]
+{{/* Detect enablePodSecurityPolicies */}}
+{{ include "srox.autoSensePodSecurityPolicies" (list $) }}
+[<- end >]
+
+[< if .Operator >]
+{{ $_ := set $env "installMethod" "operator" }}
+[< else if .KubectlOutput >]
+{{ $_ := set $env "installMethod" "manifest" }}
+[< else >]
+{{ $_ := set $env "installMethod" "helm" }}
+[< end >]
 
 {{/* Apply defaults */}}
 {{ $defaultsCfg := dict }}
@@ -238,6 +246,7 @@
 [<- end >]
 {{ end }}
 {{ $_ = set $env "_proxyConfig" $proxyCfg }}
+{{ $_ = set $._rox "_renderMode" "[< .RenderMode >]" }}
 
 {{/*
     Central setup.
@@ -258,6 +267,9 @@
   {{ $action := ternary "deploy StackRox Central Services without Scanner" "upgrade StackRox Central Services without Scanner (possibly removing an existing Scanner deployment)" $.Release.IsInstall }}
   {{ include "srox.warn" (list $ (printf "You have chosen to %s. Certain features dependent on image scanning might not work." $action)) }}
 {{ else if not $scannerCfg.disable }}
+  {{ if and (ne $scannerCfg.mode "full") (ne $scannerCfg.mode "") }}
+    {{ include "srox.fail" (print "Only scanner full mode is allowed in Central. To solve this, set to full mode: scanner.mode=full.") }}
+  {{ end }}
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
 

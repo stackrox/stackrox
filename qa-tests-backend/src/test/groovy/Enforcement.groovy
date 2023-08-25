@@ -1,8 +1,5 @@
 import static Services.waitForViolation
 
-import groups.BAT
-import groups.Integration
-import groups.PolicyEnforcement
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -10,16 +7,18 @@ import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
+
 import objects.DaemonSet
 import objects.Deployment
-import org.junit.experimental.categories.Category
 import services.AlertService
 import services.ClusterService
 import services.PolicyService
 import services.ProcessBaselineService
-import spock.lang.Shared
-import spock.lang.Unroll
 import util.Timer
+
+import spock.lang.Shared
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class Enforcement extends BaseSpecification {
 
@@ -73,12 +72,15 @@ class Enforcement extends BaseSpecification {
                                         .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
                                         .setKey("app").setValue(SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE))
                         )
-                        .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                                .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
-                                        .setTag("enforcement")
-                                        .build())
-                                .build())
-                        .build()
+                        .addPolicySections(
+                                PolicyOuterClass.PolicySection.newBuilder().addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("Image Tag")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("enforcement")
+                                                        .build()).build()
+                                ).build()
+                        ).build()
                 PolicyService.createNewPolicy(policy)
             },
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) : {
@@ -154,35 +156,35 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, Deployment> DEPLOYMENTS = [
             (KILL_ENFORCEMENT):
                     new Deployment()
-                            .setImage("quay.io/rhacs-eng/qa:nginx")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
                             .setCommand(["sh", "-c", "while true; do sleep 5; apt-get -y update; done"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE):
                     new Deployment()
-                            .setImage("quay.io/rhacs-eng/qa:enforcement")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:enforcement")
                             .addPort(22)
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY):
                     new Deployment()
-                            .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1")
                             .addPort(22)
                             .setSkipReplicaWait(true)
                             .setCommand(["sleep", "600"]),
             (NODE_CONSTRAINT_ENFORCEMENT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (SCALE_DOWN_AND_NODE_CONSTRAINT):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
@@ -194,13 +196,13 @@ class Enforcement extends BaseSpecification {
                             .setEnv(["CLUSTER_NAME": "main"]),
             (NO_ENFORCEMENT_ON_UPDATE):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true),
             (NO_ENFORCEMENT_WITH_BYPASS_ANNOTATION):
                     new Deployment()
-                            .setImage("busybox")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .addAnnotation("admission.stackrox.io/break-glass", "yay")
@@ -210,7 +212,8 @@ class Enforcement extends BaseSpecification {
     private final static Map<String, DaemonSet> DAEMON_SETS = [
             (SCALE_DOWN_AND_NODE_CONSTRAINT_FOR_DS):
                     new DaemonSet()
-                            .setImage("busybox")
+                            .setName("dset1")
+                            .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                             .addPort(22)
                             .setCommand(["sleep", "600"])
                             .setSkipReplicaWait(true) as DaemonSet,
@@ -236,15 +239,12 @@ class Enforcement extends BaseSpecification {
             assert CREATED_POLICIES[label], "${label} policy should have been created"
         }
 
-        println "Waiting for policies to propagate..."
+        log.info "Waiting for policies to propagate..."
         sleep 10000
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS.collect {
-            label, d -> d.setName(label).addLabel("app", label)
+            String label, Deployment d -> d.setName(label).addLabel("app", label)
         })
-        DEPLOYMENTS.each {
-            label, d -> assert Services.waitForDeployment(d)
-        }
         DAEMON_SETS.each {
             label, d -> d.setName(label).addLabel("app", label).create()
         }
@@ -262,7 +262,9 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Kill Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for Kill Pod enforcement
@@ -286,15 +288,17 @@ class Enforcement extends BaseSpecification {
         def startTime = System.currentTimeMillis()
         assert d.pods.size() > 0
         assert d.pods.collect {
-            it -> println "checking if ${it.name} was killed"
+            it -> log.info "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(KILL_ENFORCEMENT, KILL_ENFORCEMENT) > 0
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -322,14 +326,16 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 SCALE_DOWN_ENFORCEMENT,
                 SCALE_DOWN_ENFORCEMENT) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - image tag)"() {
         // This test verifies enforcement by triggering a policy violation on an image
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -358,14 +364,16 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_IMAGE) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement - Integration (build,deploy - SEVERITY)"() {
         // This test verifies enforcement by triggering a policy violation on a SEVERITY
         // based policy that is configured for scale-down enforcement with both BUILD and
@@ -394,14 +402,16 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
                 d.name,
                 SCALE_DOWN_ENFORCEMENT_BUILD_DEPLOY_SEVERITY) == 1
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Node Constraint Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for node constraint enforcement
@@ -429,7 +439,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert nodeSelectors != null
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) >=
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
@@ -439,7 +449,9 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Fail Build Enforcement - #policyName - Integration (build,deploy)"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for fail build enforcement
@@ -470,7 +482,8 @@ class Enforcement extends BaseSpecification {
         FAIL_BUILD_ENFORCEMENT_WITH_SCALE_TO_ZERO | _
     }
 
-    @Category([Integration, PolicyEnforcement])
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down and Node Constraint Enforcement - Deployment"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -498,10 +511,10 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert replicaCount == 0
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
         //Node Constraint should have been ignored
-        assert orchestrator.getDeploymentNodeSelectors(d) == null
+        assert !orchestrator.getDeploymentNodeSelectors(d)
         assert orchestrator.getDeploymentUnavailableReplicaCount(d) !=
                 orchestrator.getDeploymentReplicaCount(d)
         assert Services.getAlertEnforcementCount(
@@ -509,7 +522,8 @@ class Enforcement extends BaseSpecification {
                 SCALE_DOWN_AND_NODE_CONSTRAINT) == 1
     }
 
-    @Category([Integration, PolicyEnforcement])
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down and Node Constraint Enforcement - DaemonSet"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement
@@ -537,7 +551,7 @@ class Enforcement extends BaseSpecification {
             sleep 1000
         }
         assert nodeSelectors != null
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert orchestrator.getDaemonSetUnavailableReplicaCount(d) ==
                 orchestrator.getDaemonSetReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
@@ -548,7 +562,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([PolicyEnforcement])
+    @Tag("PolicyEnforcement")
     def "Verify Policy Lifecycle combinations: #lifecycles:#policy"() {
         when:
         "attempt to update lifecycle stage for policy"
@@ -606,7 +620,7 @@ class Enforcement extends BaseSpecification {
     }
 
     @Unroll
-    @Category([PolicyEnforcement])
+    @Tag("PolicyEnforcement")
     def "Verify Policy Enforcement/Lifecycle combinations: #lifecycles"() {
         when:
         "attempt to update lifecycle stage for policy"
@@ -619,7 +633,6 @@ class Enforcement extends BaseSpecification {
         enforcements.remove(EnforcementAction.UNSET_ENFORCEMENT)
         enforcements.remove(EnforcementAction.UNRECOGNIZED)
         List<EnforcementAction> result = Services.updatePolicyEnforcement(policy, enforcements, false)
-        assert !result.contains("EXCEPTION")
 
         then:
         "verify if update was allowed"
@@ -629,9 +642,7 @@ class Enforcement extends BaseSpecification {
         cleanup:
         "revert policy lifecycle"
         Services.updatePolicyLifecycleStage(policy, originalStages)
-        if (!result.contains("EXCEPTION")) {
-            Services.updatePolicyEnforcement(policy, result, false)
-        }
+        Services.updatePolicyEnforcement(policy, result, false)
 
         where:
         "Data inputs:"
@@ -667,7 +678,8 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
-    @Category([BAT, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("PolicyEnforcement")
     def "Test Alert and Kill Pod Enforcement - Baseline Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
@@ -680,7 +692,7 @@ class Enforcement extends BaseSpecification {
         ProcessBaselineOuterClass.ProcessBaseline baseline = ProcessBaselineService.
                 getProcessBaseline(clusterId, d)
         assert (baseline != null)
-        println baseline
+        log.info baseline.toString()
         List<ProcessBaselineOuterClass.ProcessBaseline> lockProcessBaselines = ProcessBaselineService.
                 lockProcessBaselines(clusterId, d, "", true)
         assert lockProcessBaselines.size() ==  1
@@ -703,11 +715,11 @@ class Enforcement extends BaseSpecification {
         def startTime = System.currentTimeMillis()
         assert d.pods.collect {
             it ->
-            println "checking if ${it.name} was killed"
+            log.info "checking if ${it.name} was killed"
             orchestrator.wasContainerKilled(it.name)
         }.find { it == true }
         assert alert.enforcement.action == EnforcementAction.KILL_POD_ENFORCEMENT
-        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        log.info "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
         assert Services.getAlertEnforcementCount(d.name, ALERT_AND_KILL_ENFORCEMENT_BASELINE_PROCESS) > 0
 
         cleanup:
@@ -716,7 +728,9 @@ class Enforcement extends BaseSpecification {
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Enforcement not done on updated - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for scale-down enforcement, but not applying enforcements because
@@ -757,13 +771,15 @@ class Enforcement extends BaseSpecification {
         // Wait for 10s to ensure that the deployment was not scaled down
 
         Timer t = new Timer(10, 1)
-        println "Verifying that enforcement action was not taken"
+        log.info "Verifying that enforcement action was not taken"
         while (t.IsValid()) {
             assert orchestrator.getDeploymentReplicaCount(d) != 0
         }
     }
 
-    @Category([BAT, Integration, PolicyEnforcement])
+    @Tag("BAT")
+    @Tag("Integration")
+    @Tag("PolicyEnforcement")
     def "Test Scale-down Enforcement Ignored due to Bypass Annotation - Integration"() {
         // This test verifies enforcement is skipped by triggering a policy violation on a policy
         // that is configured for scale-down enforcement with a deployment that carries a bypass

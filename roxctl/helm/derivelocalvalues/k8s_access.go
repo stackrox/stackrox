@@ -55,7 +55,7 @@ func (k *k8sObjectDescription) evaluateToObject(ctx context.Context, kind string
 		objStrings = obj
 
 	default:
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
 	}
 
@@ -66,7 +66,7 @@ func (k *k8sObjectDescription) evaluateToSlice(ctx context.Context, kind string,
 	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
 	slice, ok := x.([]interface{})
 	if !ok {
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
 	}
 	return slice
@@ -92,7 +92,7 @@ func (k *k8sObjectDescription) evaluateToSubObject(ctx context.Context, kind str
 	case map[string]interface{}:
 		objStrings = obj
 	default:
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
 	}
 
@@ -111,7 +111,18 @@ func (k *k8sObjectDescription) evaluateToString(ctx context.Context, kind string
 	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
 	s, ok := x.(string)
 	if !ok {
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
+		return def
+	}
+	return s
+}
+
+func (k *k8sObjectDescription) evaluateToStringSlice(ctx context.Context, kind string, name string,
+	jsonpath string, def []string) []string {
+	x := k.evaluateOrDefault(ctx, kind, name, jsonpath, def)
+	s, ok := x.([]string)
+	if !ok {
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
 	}
 	return s
@@ -133,14 +144,16 @@ func (k *k8sObjectDescription) lookupSecretStringP(ctx context.Context, name str
 	if obj := k.evaluateToObject(ctx, "secret", name, "{.stringData}", nil); obj != nil && obj[field] != nil {
 		fieldVal, ok := obj[field].(string)
 		if !ok {
-			k.warn("Unexpected type %T for stringData.%q within the secret %q", obj[field], field, name)
+			k.warn("Unexpected type %T for stringData.%q within the secret %q: %v",
+				obj[field], field, name, obj[field])
 			return nil
 		}
 		secret = &fieldVal
 	} else if obj := k.evaluateToObject(ctx, "secret", name, "{.data}", nil); obj != nil && obj[field] != nil {
 		fieldVal, ok := obj[field].(string)
 		if !ok {
-			k.warn("Unexpected type %T for data.%q within the secret %q", obj[field], field, name)
+			k.warn("Unexpected type %T for data.%q within the secret %q: %v",
+				obj[field], field, name, obj[field])
 			return nil
 		}
 
@@ -168,7 +181,7 @@ func (k *k8sObjectDescription) evaluateToInt64(ctx context.Context, kind string,
 	case int64:
 		return i
 	default:
-		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s", x, jsonpath, kind, name)
+		k.warn("Unexpected data type (%T) at JsonPath %q for resource %s/%s: %v", x, jsonpath, kind, name, x)
 		return def
 	}
 }

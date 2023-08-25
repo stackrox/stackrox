@@ -3,12 +3,13 @@ package graph
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // RGraph is a read-only view of a Graph.
+//
 //go:generate mockgen-wrapper
 type RGraph interface {
 	HasRefsFrom(from []byte) bool
@@ -31,6 +32,7 @@ type RGraph interface {
 }
 
 // RWGraph is a read-write view of a Graph.
+//
 //go:generate mockgen-wrapper
 type RWGraph interface {
 	RGraph
@@ -52,6 +54,7 @@ type applyableGraph interface {
 
 // DiscardableRGraph is an RGraph (read only view of the ID->[]ID map layer) that needs to be discarded when finished.
 // NOTE: THIS HAS TO BE HERE FOR MOCK GENERATION TO WORK. IF YOU PUT IT IN A DIFFERENT FILE, 'go generate' WILL FAIL.
+//
 //go:generate mockgen-wrapper
 type DiscardableRGraph interface {
 	RGraph
@@ -98,7 +101,7 @@ func (s *Graph) CountRefsTo(to []byte) int {
 // GetRefsFrom returns the children referenced by the input parent key.
 func (s *Graph) GetRefsFrom(from []byte) [][]byte {
 	if keys, exist := s.forward[string(from)]; exist {
-		return sliceutils.ByteSliceClone(keys)
+		return sliceutils.ShallowClone(keys)
 	}
 	return nil
 }
@@ -106,7 +109,7 @@ func (s *Graph) GetRefsFrom(from []byte) [][]byte {
 // GetRefsTo returns the parents that reference the input child key.
 func (s *Graph) GetRefsTo(to []byte) [][]byte {
 	if keys, exist := s.backward[string(to)]; exist {
-		return sliceutils.ByteSliceClone(keys)
+		return sliceutils.ShallowClone(keys)
 	}
 	return nil
 }
@@ -114,7 +117,7 @@ func (s *Graph) GetRefsTo(to []byte) [][]byte {
 // GetRefsFromPrefix returns the children referenced by the input parent key that have the passed prefix.
 func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
 	if keys, exist := s.forward[string(to)]; exist {
-		return sliceutils.ByteSliceClone(filterByPrefix(prefix, keys))
+		return sliceutils.ShallowClone(filterByPrefix(prefix, keys))
 	}
 	return nil
 }
@@ -122,7 +125,7 @@ func (s *Graph) GetRefsFromPrefix(to, prefix []byte) [][]byte {
 // GetRefsToPrefix returns the keys that have the passed prefix that reference the passed key
 func (s *Graph) GetRefsToPrefix(to, prefix []byte) [][]byte {
 	if keys, exist := s.backward[string(to)]; exist {
-		return sliceutils.ByteSliceClone(filterByPrefix(prefix, keys))
+		return sliceutils.ShallowClone(filterByPrefix(prefix, keys))
 	}
 	return nil
 }

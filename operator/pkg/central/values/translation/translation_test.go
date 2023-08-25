@@ -1,19 +1,28 @@
 package translation
 
 import (
+	"context"
 	"testing"
 
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/central/common"
+	"github.com/stackrox/rox/operator/pkg/central/extensions"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestReadBaseValues(t *testing.T) {
@@ -25,20 +34,38 @@ func TestTranslate(t *testing.T) {
 	type args struct {
 		clientSet kubernetes.Interface
 		c         platform.Central
+		pvcs      []*corev1.PersistentVolumeClaim
+		version   string
 	}
 
 	connectivityPolicy := platform.ConnectivityOffline
 	claimName := "central-claim-name"
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
+	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
+	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
+	telemetryEndpoint := "endpoint"
+	telemetryKey := "key"
+	telemetryDisabledKey := map[string]interface{}{
+		"enabled": false,
+		"storage": map[string]interface{}{"key": phonehome.DisabledKey}}
+	dirtyVersion := "1.2.3-dirty"
+	releaseVersion := "1.2.3"
 
 	truth := true
+	falsity := false
 	lbPort := int32(12345)
 	lbIP := "1.1.1.1"
 	nodePortPort := int32(23456)
 	scannerReplicas := int32(7)
 	scannerMinReplicas := int32(6)
 	scannerMaxReplicas := int32(8)
+	defaultPvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "stackrox",
+			Name:      extensions.DefaultCentralPVCName,
+		},
+	}
 
 	tests := map[string]struct {
 		args args
@@ -48,14 +75,94 @@ func TestTranslate(t *testing.T) {
 			args: args{
 				c: platform.Central{
 					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
 							"createClaim": false,
 						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"empty spec no pvc": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+
+		"pvc namespace not match": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: extensions.DefaultCentralPVCName}}},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
 					},
 				},
 			},
@@ -77,6 +184,11 @@ func TestTranslate(t *testing.T) {
 							AdditionalCAs: []platform.AdditionalCA{
 								{Name: "ca1-name", Content: "ca1-content"},
 								{Name: "ca2-name", Content: "ca2-content"},
+							},
+						},
+						Monitoring: &platform.GlobalMonitoring{
+							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+								Enabled: true,
 							},
 						},
 						Central: &platform.CentralComponentSpec{
@@ -103,9 +215,12 @@ func TestTranslate(t *testing.T) {
 							DefaultTLSSecret: &platform.LocalSecretReference{
 								Name: "my-default-tls-secret",
 							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointEnabled,
+							},
 							Persistence: &platform.Persistence{
 								HostPath: &platform.HostPathSpec{
-									Path: pointer.StringPtr("/central/host/path"),
+									Path: pointer.String("/central/host/path"),
 								},
 								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
 									ClaimName: &claimName,
@@ -123,6 +238,31 @@ func TestTranslate(t *testing.T) {
 								},
 								Route: &platform.ExposureRoute{
 									Enabled: &truth,
+								},
+							},
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+								Storage: &platform.TelemetryStorage{
+									Endpoint: &telemetryEndpoint,
+									Key:      &telemetryKey,
+								},
+							},
+							DeclarativeConfiguration: &platform.DeclarativeConfiguration{
+								ConfigMaps: []platform.LocalConfigMapReference{
+									{
+										Name: "config-map-1",
+									},
+									{
+										Name: "config-map-2",
+									},
+								},
+								Secrets: []platform.LocalSecretReference{
+									{
+										Name: "secret-1",
+									},
+									{
+										Name: "secret-2",
+									},
 								},
 							},
 						},
@@ -176,6 +316,9 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointEnabled,
+							},
 						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
@@ -198,7 +341,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						Misc: &platform.MiscSpec{
-							CreateSCCs: pointer.BoolPtr(true),
+							CreateSCCs: pointer.Bool(true),
 						},
 					},
 				},
@@ -221,6 +364,11 @@ func TestTranslate(t *testing.T) {
 				),
 			},
 			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
 				"additionalCAs": map[string]interface{}{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
@@ -257,8 +405,16 @@ func TestTranslate(t *testing.T) {
 							"operator": "Exists",
 						},
 					},
+					"exposeMonitoring": true,
 					"persistence": map[string]interface{}{
 						"hostPath": "/central/host/path",
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
 					},
 					"resources": map[string]interface{}{
 						"limits": map[string]interface{}{
@@ -268,6 +424,25 @@ func TestTranslate(t *testing.T) {
 						"requests": map[string]interface{}{
 							"cpu":    "30",
 							"memory": "40",
+						},
+					},
+					"telemetry": map[string]interface{}{
+						"enabled": true,
+						"storage": map[string]interface{}{
+							"endpoint": "endpoint",
+							"key":      "key",
+						},
+					},
+					"declarativeConfiguration": map[string]interface{}{
+						"mounts": map[string]interface{}{
+							"configMaps": []string{
+								"config-map-1",
+								"config-map-2",
+							},
+							"secrets": []string{
+								"secret-1",
+								"secret-2",
+							},
 						},
 					},
 				},
@@ -354,6 +529,7 @@ func TestTranslate(t *testing.T) {
 							"memory": "120",
 						},
 					},
+					"exposeMonitoring": true,
 				},
 				"system": map[string]interface{}{
 					"createSCCs": true,
@@ -364,26 +540,425 @@ func TestTranslate(t *testing.T) {
 		"with configured PVC": {
 			args: args{
 				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
 					Spec: platform.CentralSpec{
 						Central: &platform.CentralComponentSpec{
 							Persistence: &platform.Persistence{
 								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
-									ClaimName:        pointer.StringPtr("stackrox-db-test"),
-									StorageClassName: pointer.StringPtr("storage-class"),
-									Size:             pointer.StringPtr("50Gi"),
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
 								},
 							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "stackrox-db-test",
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"claimName":   "stackrox-db-test",
+							"createClaim": false,
+						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"with configured pvc disabled by annotation": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{common.CentralPVCObsoleteAnnotation: "true"},
+						Namespace:   "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Persistence: &platform.Persistence{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace: "stackrox",
+							Name:      "stackrox-db-test",
 						},
 					},
 				},
 			},
 			want: chartutil.Values{
 				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+
+		"configured PVC does not exist": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Persistence: &platform.Persistence{
+								PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+									ClaimName:        pointer.String("stackrox-db-test"),
+									StorageClassName: pointer.String("storage-class"),
+									Size:             pointer.String("50Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"none": true,
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+
+		"disabled monitoring endpoint": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointDisabled,
+							},
+						},
+						Scanner: &platform.ScannerComponentSpec{
+							Monitoring: &platform.Monitoring{
+								ExposeEndpoint: &monitoringExposeEndpointDisabled,
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
 					"persistence": map[string]interface{}{
 						"persistentVolumeClaim": map[string]interface{}{
-							"claimName":   "stackrox-db-test",
 							"createClaim": false,
 						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"scanner": map[string]interface{}{
+					"exposeMonitoring": false,
+				},
+			},
+		},
+
+		"route with custom hostname": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Exposure: &platform.Exposure{
+								Route: &platform.ExposureRoute{
+									Enabled: &truth,
+									Host:    pointer.String("custom-route.stackrox.io"),
+								},
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposure": map[string]interface{}{
+						"route": map[string]interface{}{
+							"enabled": true,
+							"host":    "custom-route.stackrox.io",
+						},
+					},
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"add managed service setting": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace:   "stackrox",
+						Annotations: map[string]string{managedServicesAnnotation: "true"},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence": map[string]interface{}{
+						"persistentVolumeClaim": map[string]interface{}{
+							"createClaim": false,
+						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"env": map[string]interface{}{
+					"managedServices": true,
+				},
+			},
+		},
+
+		"disabled telemetry": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &falsity,
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"default dev telemetry": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs:    []*corev1.PersistentVolumeClaim{defaultPvc},
+				version: dirtyVersion,
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+		"enabled telemetry in dev": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+								Storage: &platform.TelemetryStorage{
+									Key:      &telemetryKey,
+									Endpoint: &telemetryEndpoint,
+								},
+							},
+						},
+					},
+				},
+				pvcs:    []*corev1.PersistentVolumeClaim{defaultPvc},
+				version: dirtyVersion,
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"telemetry": map[string]interface{}{
+						"enabled": true,
+						"storage": map[string]interface{}{
+							"endpoint": "endpoint",
+							"key":      "key",
+						},
+					},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+		"enabled telemetry no key": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							Telemetry: &platform.Telemetry{
+								Enabled: &truth,
+							},
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"persistence":      map[string]interface{}{"persistentVolumeClaim": map[string]interface{}{"createClaim": false}},
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
 					},
 				},
 			},
@@ -392,10 +967,28 @@ func TestTranslate(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			if !buildinfo.ReleaseBuild || buildinfo.TestBuild {
+				wantCentral := tt.want["central"].(map[string]any)
+				if _, ok := wantCentral["telemetry"]; !ok {
+					wantCentral["telemetry"] = telemetryDisabledKey
+				}
+			}
+			if tt.args.version == "" {
+				testutils.SetMainVersion(t, releaseVersion)
+			} else {
+				testutils.SetMainVersion(t, tt.args.version)
+			}
+
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
+			var allExisting []ctrlClient.Object
+			for _, existingPVC := range tt.args.pvcs {
+				allExisting = append(allExisting, existingPVC)
+			}
+			client := fkClient.NewClientBuilder().WithObjects(allExisting...).Build()
+			translator := New(client)
 
-			got, err := translate(tt.args.c)
+			got, err := translator.translate(context.Background(), tt.args.c)
 			assert.NoError(t, err)
 
 			assert.Equal(t, wantAsValues, got)

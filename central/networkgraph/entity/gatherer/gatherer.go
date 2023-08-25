@@ -1,6 +1,7 @@
 package gatherer
 
 import (
+	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 )
 
@@ -14,6 +15,6 @@ type NetworkGraphDefaultExtSrcsGatherer interface {
 }
 
 // NewNetworkGraphDefaultExtSrcsGatherer returns an instance of NetworkGraphDefaultExtSrcsGatherer as per the offline mode setting.
-func NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDS entityDataStore.EntityDataStore) NetworkGraphDefaultExtSrcsGatherer {
-	return newDefaultExtNetworksGatherer(networkEntityDS)
+func NewNetworkGraphDefaultExtSrcsGatherer(networkEntityDS entityDataStore.EntityDataStore, blobStore blobstore.Datastore) NetworkGraphDefaultExtSrcsGatherer {
+	return newDefaultExtNetworksGatherer(networkEntityDS, blobStore)
 }

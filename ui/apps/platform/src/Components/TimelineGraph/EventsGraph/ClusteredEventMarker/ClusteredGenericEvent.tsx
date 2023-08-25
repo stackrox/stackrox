@@ -34,7 +34,7 @@ const ClusteredGenericEvent = forwardRef<SVGSVGElement, ClusteredGenericEventPro
                             rx="2"
                         />
                         <text
-                            fontFamily="OpenSans-Bold, Open Sans"
+                            fontFamily="var(--pf-global--FontFamily--sans-serif)"
                             fontSize="9"
                             fontWeight="bold"
                             letterSpacing="-.18"

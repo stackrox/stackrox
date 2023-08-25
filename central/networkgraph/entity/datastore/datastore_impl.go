@@ -2,20 +2,25 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/pkg/errors"
 	graphConfigDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -29,10 +34,10 @@ var (
 	// are modifications to network graph.
 	// Since system-generated external sources are immutable (per current implementation) and are the same across all
 	// clusters, we allow them to be accessed if users have network graph permissions to any cluster.
-	networkGraphSAC    = sac.ForResource(resources.NetworkGraph)
-	graphConfigReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
+	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.NetworkGraphConfig)))
+			sac.ResourceScopeKeys(resources.Administration)))
 )
 
 type dataStoreImpl struct {
@@ -53,18 +58,46 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 		sensorConnMgr: sensorConnMgr,
 	}
 
-	go ds.initNetworkTrees()
+	go ds.initNetworkTrees(sac.WithAllAccess(context.Background()))
 	return ds
 }
 
-func (ds *dataStoreImpl) initNetworkTrees() {
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, error) {
+	dbstore := pgStore.New(pool)
+	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+}
+
+// GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetBenchPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
+	dbstore := pgStore.New(pool)
+	graphConfigStore, err := graphConfigDS.GetBenchPostgresDataStore(t, pool)
+	if err != nil {
+		return nil, err
+	}
+	treeMgr := networktree.Singleton()
+	sensorCnxMgr := connection.ManagerSingleton()
+	return NewEntityDataStore(dbstore, graphConfigStore, treeMgr, sensorCnxMgr), nil
+}
+
+func (ds *dataStoreImpl) initNetworkTrees(ctx context.Context) {
 	// Create tree for default ones.
 	entitiesByCluster := make(map[string][]*storage.NetworkEntityInfo)
 	// If network tree for a cluster is not found, it means it must orphan which shall be cleaned at next garbage collection.
-	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
-		entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
-		return nil
-	}); err != nil {
+	walkFn := func() error {
+		entitiesByCluster = make(map[string][]*storage.NetworkEntityInfo)
+		return ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
+			entitiesByCluster[obj.GetScope().GetClusterId()] = append(entitiesByCluster[obj.GetScope().GetClusterId()], obj.GetInfo())
+			return nil
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		log.Errorf("Failed to initialize network tree: %v", err)
 	}
 
@@ -84,11 +117,11 @@ func (ds *dataStoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return false, err
 	}
-	return ds.storage.Exists(id)
+	return ds.storage.Exists(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetIDs(ctx context.Context) ([]string, error) {
-	ids, err := ds.storage.GetIDs()
+	ids, err := ds.storage.GetIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,15 +155,15 @@ func (ds *dataStoreImpl) GetEntity(ctx context.Context, id string) (*storage.Net
 	if ok, err := ds.readAllowed(ctx, id); err != nil || !ok {
 		return nil, false, err
 	}
-	return ds.storage.Get(id)
+	return ds.storage.Get(ctx, id)
 }
 
 func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error) {
 	if clusterID == "" {
-		return nil, errors.Wrap(errorhelpers.ErrInvalidArgs, "cannot get network entities. Cluster ID not specified")
+		return nil, errors.Wrap(errox.InvalidArgs, "cannot get network entities. Cluster ID not specified")
 	}
 
-	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
+	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(administrationReadCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}
@@ -147,7 +180,7 @@ func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID
 }
 
 func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.NetworkEntity, error) {
-	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(graphConfigReadCtx)
+	graphConfig, err := ds.graphConfig.GetNetworkGraphConfig(administrationReadCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to obtain network graph configuration")
 	}
@@ -160,29 +193,34 @@ func (ds *dataStoreImpl) GetAllEntities(ctx context.Context) ([]*storage.Network
 func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(entity *storage.NetworkEntity) bool) ([]*storage.NetworkEntity, error) {
 	var entities []*storage.NetworkEntity
 	allowed := make(map[string]bool)
-	if err := ds.storage.Walk(func(entity *storage.NetworkEntity) error {
-		if !pred(entity) {
-			return nil
-		}
-
-		clusterID := entity.GetScope().GetClusterId()
-		ok, found := allowed[clusterID]
-		if !found {
-			var err error
-			ok, err = ds.readAllowed(ctx, entity.GetInfo().GetId())
-			if err != nil {
-				return err
+	walkFn := func() error {
+		entities = entities[:0]
+		allowed = make(map[string]bool)
+		return ds.storage.Walk(ctx, func(entity *storage.NetworkEntity) error {
+			if !pred(entity) {
+				return nil
 			}
-			allowed[clusterID] = ok
-		}
 
-		if !ok {
+			clusterID := entity.GetScope().GetClusterId()
+			ok, found := allowed[clusterID]
+			if !found {
+				var err error
+				ok, err = ds.readAllowed(ctx, entity.GetInfo().GetId())
+				if err != nil {
+					return err
+				}
+				allowed[clusterID] = ok
+			}
+
+			if !ok {
+				return nil
+			}
+
+			entities = append(entities, entity)
 			return nil
-		}
-
-		entities = append(entities, entity)
-		return nil
-	}); err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "fetching network entities from storage")
 	}
 	return entities, nil
@@ -273,18 +311,18 @@ func (ds *dataStoreImpl) create(ctx context.Context, entity *storage.NetworkEnti
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	if stored, found, err := ds.storage.Get(entity.GetInfo().GetId()); err != nil {
+	if stored, found, err := ds.storage.Get(ctx, entity.GetInfo().GetId()); err != nil {
 		return errors.Wrapf(err, "could not determine if network entity %s already exists in DB. SKIPPING",
 			entity.GetInfo().GetExternalSource().GetName())
 	} else if found {
-		return errors.Wrapf(errorhelpers.ErrAlreadyExists,
+		return errors.Wrapf(errox.AlreadyExists,
 			"network %s of entity %s (CIDR=%s) conflicts with network of stored entity %s (CIDR=%s)",
 			network,
 			entity.GetInfo().GetExternalSource().GetName(), entity.GetInfo().GetExternalSource().GetCidr(),
 			stored.GetInfo().GetExternalSource().GetName(), stored.GetInfo().GetExternalSource().GetCidr())
 	}
 
-	if err := ds.storage.Upsert(entity); err != nil {
+	if err := ds.storage.Upsert(ctx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -305,12 +343,12 @@ func (ds *dataStoreImpl) UpdateExternalNetworkEntity(ctx context.Context, entity
 	ds.netEntityLock.Lock()
 	defer ds.netEntityLock.Unlock()
 
-	_, err := ds.validateNoCIDRUpdate(entity)
+	_, err := ds.validateNoCIDRUpdate(ctx, entity)
 	if err != nil {
 		return err
 	}
 
-	if err := ds.storage.Upsert(entity); err != nil {
+	if err := ds.storage.Upsert(ctx, entity); err != nil {
 		return errors.Wrapf(err, "upserting network entity %s into storage", entity.GetInfo().GetId())
 	}
 
@@ -334,7 +372,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 	defer ds.netEntityLock.Unlock()
 
 	// Check if the entity actually exists to avoid unnecessary push to Sensor.
-	found, err := ds.storage.Exists(id)
+	found, err := ds.storage.Exists(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -342,7 +380,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 		return nil
 	}
 
-	if err := ds.storage.Delete(id); err != nil {
+	if err := ds.storage.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "deleting network entity %s from storage", id)
 	}
 
@@ -362,7 +400,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntity(ctx context.Context, id str
 
 func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Context, clusterID string) error {
 	if clusterID == "" {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "external network entities cannot be deleted. Cluster ID not specified")
+		return errors.Wrap(errox.InvalidArgs, "external network entities cannot be deleted. Cluster ID not specified")
 	}
 
 	if ok, err := networkGraphSAC.WriteAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
@@ -375,7 +413,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	defer ds.netEntityLock.Unlock()
 
 	var ids []string
-	if err := ds.storage.Walk(func(obj *storage.NetworkEntity) error {
+	if err := ds.storage.Walk(ctx, func(obj *storage.NetworkEntity) error {
 		// Skip default ones.
 		if obj.GetInfo().GetExternalSource().GetDefault() {
 			return nil
@@ -388,7 +426,7 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 		return err
 	}
 
-	if err := ds.storage.DeleteMany(ids); err != nil {
+	if err := ds.storage.DeleteMany(ctx, ids); err != nil {
 		return errors.Wrapf(err, "deleting network entities for cluster %s from storage", clusterID)
 	}
 
@@ -399,8 +437,8 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	return nil
 }
 
-func (ds *dataStoreImpl) validateNoCIDRUpdate(newEntity *storage.NetworkEntity) (bool, error) {
-	old, found, err := ds.storage.Get(newEntity.GetInfo().GetId())
+func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {
+	old, found, err := ds.storage.Get(ctx, newEntity.GetInfo().GetId())
 	if err != nil {
 		return false, err
 	}
@@ -455,7 +493,7 @@ func allowed(ctx context.Context, access storage.Access, id string) (bool, error
 	if err != nil {
 		return false, err
 	}
-	return networkGraphSAC.ScopeChecker(ctx, access).Allowed(ctx, scopeKey...)
+	return networkGraphSAC.ScopeChecker(ctx, access).IsAllowed(scopeKey...), nil
 }
 
 func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
@@ -464,15 +502,15 @@ func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
 	}
 
 	if entity.GetInfo().GetType() != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "only external network graph sources can be created")
+		return errors.Wrap(errox.InvalidArgs, "only external network graph sources can be created")
 	}
 
 	if entity.GetInfo().GetExternalSource() == nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity must be specified")
+		return errors.Wrap(errox.InvalidArgs, "network entity must be specified")
 	}
 
 	if _, err := networkgraph.ValidateCIDR(entity.GetInfo().GetExternalSource().GetCidr()); err != nil {
-		return errors.Wrap(errorhelpers.ErrInvalidArgs, err.Error())
+		return errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	if entity.GetInfo().GetExternalSource().GetName() == "" {
@@ -484,16 +522,16 @@ func validateExternalNetworkEntity(entity *storage.NetworkEntity) error {
 
 func parseAndValidateID(id string) (sac.ResourceID, error) {
 	if id == "" {
-		return sac.ResourceID{}, errors.Wrap(errorhelpers.ErrInvalidArgs, "network entity ID must be specified")
+		return sac.ResourceID{}, errors.Wrap(errox.InvalidArgs, "network entity ID must be specified")
 	}
 
 	decodedID, err := sac.ParseResourceID(id)
 	if err != nil {
-		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "failed to parse network entity id %s", id)
+		return sac.ResourceID{}, errors.Wrapf(errox.InvalidArgs, "failed to parse network entity id %s", id)
 	}
 
 	if !decodedID.IsValid() || decodedID.NamespaceScoped() {
-		return sac.ResourceID{}, errors.Wrapf(errorhelpers.ErrInvalidArgs, "invalid network entity id %s. Must be cluster-scoped or global-scoped", id)
+		return sac.ResourceID{}, errors.Wrapf(errox.InvalidArgs, "invalid network entity id %s. Must be cluster-scoped or global-scoped", id)
 	}
 	return decodedID, nil
 }

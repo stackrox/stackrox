@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"sync/atomic"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -9,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
@@ -17,21 +21,21 @@ var (
 
 type commandHandlerImpl struct {
 	commands chan *central.ScrapeCommand
-	updates  chan *central.MsgFromSensor
+	updates  chan *message.ExpiringMessage
 
 	service Service
 
 	scrapeIDToState map[string]*scrapeState
 
-	stopC    concurrency.ErrorSignal
-	stoppedC concurrency.ErrorSignal
+	stopper          concurrency.Stopper
+	centralReachable atomic.Bool
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
 }
 
-func (c *commandHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.updates
 }
 
@@ -40,12 +44,21 @@ func (c *commandHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *commandHandlerImpl) Stop(err error) {
-	c.stopC.SignalWithError(err)
+func (c *commandHandlerImpl) Stop(_ error) {
+	c.stopper.Client().Stop()
+}
+
+func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
+	switch e {
+	case common.SensorComponentEventCentralReachable:
+		c.centralReachable.Store(true)
+	case common.SensorComponentEventOfflineMode:
+		c.centralReachable.Store(false)
+	}
 }
 
 func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.stoppedC
+	return c.stopper.Client().Stopped()
 }
 
 func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
@@ -56,22 +69,22 @@ func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	select {
 	case c.commands <- command:
 		return nil
-	case <-c.stoppedC.Done():
-		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(command))
+	case <-c.stopper.Flow().StopRequested():
+		return errors.Errorf("component is shutting down, unable to send command: %s", proto.MarshalTextString(command))
 	}
 }
 
 func (c *commandHandlerImpl) run() {
-	defer c.stoppedC.Signal()
+	defer c.stopper.Flow().ReportStopped()
 
 	for {
 		select {
-		case <-c.stopC.Done():
-			c.stoppedC.SignalWithError(c.stopC.Err())
+		case <-c.stopper.Flow().StopRequested():
+			return
 
 		case command, ok := <-c.commands:
 			if !ok {
-				c.stoppedC.SignalWithError(errors.New("scrape command input closed"))
+				c.stopper.Flow().StopWithError(errors.New("scrape command input closed"))
 				return
 			}
 			if command.GetScrapeId() == "" {
@@ -84,7 +97,7 @@ func (c *commandHandlerImpl) run() {
 
 		case result, ok := <-c.service.Output():
 			if !ok {
-				c.stoppedC.SignalWithError(errors.New("compliance return input closed"))
+				c.stopper.Flow().StopWithError(errors.New("compliance return input closed"))
 				return
 			}
 			if updates := c.commitResult(result); len(updates) > 0 {
@@ -181,22 +194,26 @@ func (c *commandHandlerImpl) checkScrapeCompleted(scrapeID string, state *scrape
 
 func (c *commandHandlerImpl) sendUpdates(updates []*central.ScrapeUpdate) {
 	if len(updates) > 0 {
-		for _, update := range updates {
-			c.sendUpdate(update)
+		if c.centralReachable.Load() {
+			for _, update := range updates {
+				c.sendUpdate(update)
+			}
+		} else {
+			log.Debug("sendUpdate() called while in offline mode, ScrapeUpdate discarded.")
 		}
 	}
 }
 
 func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	select {
-	case <-c.stoppedC.Done():
-		log.Errorf("failed to send update: %s", proto.MarshalTextString(update))
+	case <-c.stopper.Flow().StopRequested():
+		log.Errorf("component is shutting down, failed to send update: %s", proto.MarshalTextString(update))
 		return
-	case c.updates <- &central.MsgFromSensor{
+	case c.updates <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ScrapeUpdate{
 			ScrapeUpdate: update,
 		},
-	}:
+	}):
 		return
 	}
 }

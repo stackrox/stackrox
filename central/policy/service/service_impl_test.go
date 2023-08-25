@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
-	mitreMocks "github.com/stackrox/rox/central/mitre/datastore/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,10 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
+	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/status"
 )
 
@@ -50,19 +48,16 @@ type PolicyServiceTestSuite struct {
 	suite.Suite
 	policies              *mocks.MockDataStore
 	clusters              *clusterMocks.MockDataStore
-	mitreVectorStore      *mitreMocks.MockMitreAttackReadOnlyDataStore
+	mitreVectorStore      *mitreMocks.MockAttackReadOnlyDataStore
 	mockBuildTimePolicies *detectionMocks.MockPolicySet
 	mockLifecycleManager  *lifecycleMocks.MockManager
 	mockConnectionManager *connectionMocks.MockManager
 	tested                Service
 
-	envIsolator *envisolator.EnvIsolator
-
 	mockCtrl *gomock.Controller
 }
 
 func (s *PolicyServiceTestSuite) SetupTest() {
-	s.envIsolator = envisolator.NewEnvIsolator(s.T())
 
 	s.mockCtrl = gomock.NewController(s.T())
 
@@ -73,11 +68,12 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
-	s.mitreVectorStore = mitreMocks.NewMockMitreAttackReadOnlyDataStore(s.mockCtrl)
+	s.mitreVectorStore = mitreMocks.NewMockAttackReadOnlyDataStore(s.mockCtrl)
 
 	s.tested = New(
 		s.policies,
 		s.clusters,
+		nil,
 		nil,
 		nil,
 		s.mitreVectorStore,
@@ -91,7 +87,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 }
 
 func (s *PolicyServiceTestSuite) TearDownTest() {
-	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 }
 
@@ -123,7 +118,7 @@ func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
 	mockErrors := []*v1.ExportPolicyError{
 		makeError(mockRequestOneID.PolicyIds[0], "not found"),
 	}
-	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return(make([]*storage.Policy, 0), []int{0}, []error{errors.New("not found")}, nil)
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return(make([]*storage.Policy, 0), []int{0}, nil)
 	resp, err := s.tested.ExportPolicies(ctx, mockRequestOneID)
 	s.Nil(resp)
 	s.Error(err)
@@ -135,7 +130,7 @@ func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 	mockPolicy := &storage.Policy{
 		Id: mockRequestOneID.PolicyIds[0],
 	}
-	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil, nil)
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil)
 	resp, err := s.tested.ExportPolicies(ctx, mockRequestOneID)
 	s.NoError(err)
 	s.NotNil(resp)
@@ -151,7 +146,7 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 	mockErrors := []*v1.ExportPolicyError{
 		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
 	}
-	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return([]*storage.Policy{mockPolicy}, []int{1}, []error{errors.New("not found")}, nil)
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return([]*storage.Policy{mockPolicy}, []int{1}, nil)
 	resp, err := s.tested.ExportPolicies(ctx, mockRequestTwoIDs)
 	s.Nil(resp)
 	s.Error(err)
@@ -160,13 +155,11 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 
 func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 	ctx := context.Background()
-	errString := "test"
-	storeErrors := []error{errors.New(errString), errors.New("not found")}
 	mockErrors := []*v1.ExportPolicyError{
-		makeError(mockRequestTwoIDs.PolicyIds[0], errString),
+		makeError(mockRequestTwoIDs.PolicyIds[0], "not found"),
 		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
 	}
-	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return(make([]*storage.Policy, 0), []int{0, 1}, storeErrors, nil)
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return(make([]*storage.Policy, 0), []int{0, 1}, nil)
 	resp, err := s.tested.ExportPolicies(ctx, mockRequestTwoIDs)
 	s.Nil(resp)
 	s.Error(err)
@@ -183,7 +176,7 @@ func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 	expectedPolicy := &storage.Policy{
 		Id: mockRequestOneID.PolicyIds[0],
 	}
-	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil, nil)
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil)
 	resp, err := s.tested.ExportPolicies(ctx, mockRequestOneID)
 	s.NoError(err)
 	s.NotNil(resp)
@@ -212,15 +205,31 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 		Severity:        storage.Severity_LOW_SEVERITY,
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
 		Categories:      []string{"test"},
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "apt-get",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.PrivilegedContainer,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "true",
+							},
+						},
+					},
+				},
 			},
 		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
+		PolicyVersion: policyversion.CurrentVersion().String(),
 	}
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
@@ -229,7 +238,7 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 
 func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	mockID := "1"
-	mockName := "legacy policy"
+	mockName := "current version policy"
 	mockSeverity := storage.Severity_LOW_SEVERITY
 	mockLCStages := []storage.LifecycleStage{storage.LifecycleStage_RUNTIME}
 	mockCategories := []string{"test"}
@@ -239,15 +248,31 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 		Severity:        mockSeverity,
 		LifecycleStages: mockLCStages,
 		Categories:      mockCategories,
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "section-1",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ProcessName,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "apt-get",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.PrivilegedContainer,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "true",
+							},
+						},
+					},
+				},
 			},
 		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
+		PolicyVersion: policyversion.CurrentVersion().String(),
+		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
 	}
 
 	ctx := context.Background()
@@ -272,88 +297,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	s.Require().Len(resp.GetResponses(), 1)
 	policyResp := resp.GetResponses()[0]
 	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importedPolicy.GetFields(), resultPolicy.GetFields())
 	s.Equal(importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
-}
-
-func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
-	mockID := "1"
-	mockName := "legacy policy"
-	mockSeverity := storage.Severity_LOW_SEVERITY
-	mockLCStages := []storage.LifecycleStage{storage.LifecycleStage_RUNTIME}
-	mockCategories := []string{"test"}
-
-	importedPolicy := &storage.Policy{
-		Id:              mockID,
-		Name:            mockName,
-		Severity:        mockSeverity,
-		LifecycleStages: mockLCStages,
-		Categories:      mockCategories,
-		Fields: &storage.PolicyFields{
-			ProcessPolicy: &storage.ProcessPolicy{
-				Name: "apt-get",
-			},
-			SetPrivileged: &storage.PolicyFields_Privileged{
-				Privileged: true,
-			},
-		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
-	}
-	importRespPolicy := &storage.Policy{
-		Id:              mockID,
-		Name:            mockName,
-		Severity:        mockSeverity,
-		LifecycleStages: mockLCStages,
-		Categories:      mockCategories,
-		PolicyVersion:   policyversion.CurrentVersion().String(),
-		PolicySections: []*storage.PolicySection{
-			{
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: "Privileged Container",
-						Values: []*storage.PolicyValue{
-							{
-								Value: "true",
-							},
-						},
-					},
-					{
-						FieldName: "Process Name",
-						Values: []*storage.PolicyValue{
-							{
-								Value: "apt-get",
-							},
-						},
-					},
-				},
-			},
-		},
-		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
-	}
-	ctx := context.Background()
-	mockImportResp := []*v1.ImportPolicyResponse{
-		{
-			Succeeded: true,
-			Policy:    importRespPolicy,
-			Errors:    nil,
-		},
-	}
-
-	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importRespPolicy}, false).Return(mockImportResp, true, nil)
-	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importRespPolicy.GetId())
-	s.mockLifecycleManager.EXPECT().UpsertPolicy(importRespPolicy).Return(nil)
-	s.policies.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil)
-	s.mockConnectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any())
-	resp, err := s.tested.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
-		Policies: []*storage.Policy{importedPolicy},
-	})
-	s.NoError(err)
-	s.True(resp.AllSucceeded)
-	s.Require().Len(resp.GetResponses(), 1)
-	policyResp := resp.GetResponses()[0]
-	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importRespPolicy.GetFields(), resultPolicy.GetFields())
-	s.Equal(importRespPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
 }
 
 func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storage.Cluster, expectedScopes ...*storage.Scope) {
@@ -411,7 +355,7 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 }
 
 func (s *PolicyServiceTestSuite) TestMalformedScopes() {
-	queryString := "Label:"
+	queryString := "Deployment Label:"
 	s.testMalformedScope(queryString)
 
 	queryString = "Cluster:"
@@ -425,7 +369,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
 	expectedScope := &storage.Scope{
 		Namespace: "blah",
 	}
-	queryString := "Label:+Namespace:blah"
+	queryString := "Deployment Label:+Namespace:blah"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -436,7 +380,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedNamespace() {
 			Value: "blah",
 		},
 	}
-	queryString := "Label:blah=blah+Namespace:"
+	queryString := "Deployment Label:blah=blah+Namespace:"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -447,7 +391,7 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
 			Value: "blah",
 		},
 	}
-	queryString := "Label:blah=blah+Cluster:"
+	queryString := "Deployment Label:blah=blah+Cluster:"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -466,7 +410,7 @@ func (s *PolicyServiceTestSuite) TestScope() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Label:app=collector+Cluster:remote,+Namespace:stackrox"
+	queryString := "Deployment Label:app=collector+Cluster:remote,+Namespace:stackrox"
 	s.testScopes(queryString, mockClusters, expectedScope)
 }
 
@@ -547,7 +491,7 @@ func (s *PolicyServiceTestSuite) TestManyScopes() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Label:app=collector,dunk=buckets+Cluster:remote,mars,+Namespace:stackrox,hoops"
+	queryString := "Deployment Label:app=collector,dunk=buckets+Cluster:remote,mars,+Namespace:stackrox,hoops"
 	s.testScopes(queryString, mockClusters, expectedScopes...)
 }
 
@@ -580,7 +524,7 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyLabel() {
 			Value: "Rules",
 		},
 	}
-	queryString := "Label:Joseph=Rules"
+	queryString := "Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -598,7 +542,7 @@ func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
 			},
 		},
 	}
-	queryString := "Label:Joseph,a=b=c"
+	queryString := "Deployment Label:Joseph,a=b=c"
 	s.testScopes(queryString, nil, expectedScopes...)
 }
 
@@ -631,7 +575,7 @@ func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
 			Id:   "remoteID",
 		},
 	}
-	queryString := "Cluster:remote,+Label:Joseph=Rules"
+	queryString := "Cluster:remote,+Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, mockClusters, expectedScope)
 }
 
@@ -643,7 +587,7 @@ func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
 			Value: "Rules",
 		},
 	}
-	queryString := "Namespace:stackrox+Label:Joseph=Rules"
+	queryString := "Namespace:stackrox+Deployment Label:Joseph=Rules"
 	s.testScopes(queryString, nil, expectedScope)
 }
 
@@ -755,7 +699,7 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
 	ctx := context.Background()
 	request := &v1.PolicyFromSearchRequest{
-		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Label:+NotASearchTerm:jkjksdr",
+		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Deployment Label:+NotASearchTerm:jkjksdr",
 	}
 	_, err := s.tested.PolicyFromSearch(ctx, request)
 	s.Error(err)

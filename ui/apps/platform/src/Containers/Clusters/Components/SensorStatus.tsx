@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
-
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
+import { Tooltip } from '@patternfly/react-core';
 
 import { getDateTime, getDistanceStrict } from 'utils/dateUtils';
 import HealthStatus from './HealthStatus';
@@ -49,11 +48,7 @@ function SensorStatus({ healthStatus, isList = false }: SensorStatusProps): Reac
     if (lastContact) {
         // Tooltip has absolute time (in ISO 8601 format) to find info from logs.
         return (
-            <Tooltip
-                content={
-                    <TooltipOverlay>{`Last contact: ${getDateTime(lastContact)}`}</TooltipOverlay>
-                }
-            >
+            <Tooltip content={`Last contact: ${getDateTime(lastContact)}`}>
                 <div className={`${isList ? 'inline' : ''}`}>{sensorStatus}</div>
             </Tooltip>
         );

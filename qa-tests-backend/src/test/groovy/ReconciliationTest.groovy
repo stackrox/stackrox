@@ -1,23 +1,30 @@
 import static Services.getViolationsWithTimeout
 
+import static util.Helpers.withRetry
+
+import orchestratormanager.OrchestratorTypes
+
+import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.apps.Deployment as OrchestratorDeployment
+
 import io.stackrox.proto.storage.AlertOuterClass
-import services.AlertService
+
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import services.AlertService
 import services.ClusterService
 import services.DevelopmentService
 import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
 import services.SecretService
-
-import spock.lang.Retry
-import org.junit.experimental.categories.Category
-import groups.SensorBounce
 import util.Timer
+import util.Env
 
-@Retry(count = 0)
+import spock.lang.IgnoreIf
+import spock.lang.Tag
+
 class ReconciliationTest extends BaseSpecification {
 
     private static final Map<String, Integer> EXPECTED_MIN_DELETIONS_BY_KEY = [
@@ -37,18 +44,24 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_ComplianceOperatorScan": 0,
     ]
 
-    // DEFAULT_MAX_ALLOWED_DELETIONS is the default max number of deletions allowed for a resource.
-    // It aims to detect overly aggressive reconciliation.
-    private static final Integer DEFAULT_MAX_ALLOWED_DELETIONS = 3
+    private Set<String> getPodsInCluster() {
+        Set<String> result = [] as Set
+        for (namespace in orchestrator.getNamespaces()) {
+            List<Pod> allPods = orchestrator.getPodsByLabel(namespace, new HashMap<String, String>())
+            for (pod in allPods) {
+                result.add(namespace + ":" + pod.metadata.getName())
+            }
+        }
+        return result
+    }
 
-    // MAX_ALLOWED_DELETIONS_BY_KEY is the max number of deletions allowed per resource.
-    // It aims to detect overly aggressive reconciliation.
-    private static final Map<String, Integer> MAX_ALLOWED_DELETIONS_BY_KEY = [
-        // We create and delete an entire namespace, so we may see a lot of secrets being deleted, esp in OpenShift.
-        "*central.SensorEvent_Secret": 5,
-    ]
+    private Set<String> getDifference(Set<String> list1, Set<String> list2) {
+        Set<String> result = list1.clone() as Set<String>
+        result.removeAll(list2)
+        return result
+    }
 
-    private static void verifyReconciliationStats(boolean verifyMin) {
+    private void verifyReconciliationStats() {
         // Cannot verify this on a release build, since the API is not exposed.
         if (MetadataService.isReleaseBuild()) {
             return
@@ -61,32 +74,32 @@ class ReconciliationTest extends BaseSpecification {
             assert reconciliationStatsForCluster
             assert reconciliationStatsForCluster.getReconciliationDone()
         }
-        println "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
+        log.info "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
         for (def entry: reconciliationStatsForCluster.getDeletedObjectsByTypeMap().entrySet()) {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
             assert expectedMinDeletions != null : "Please add object type " +
                 "${entry.getKey()} to the map of known reconciled resources in ReconciliationTest.groovy"
-            if (verifyMin) {
-                assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
+            assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
                     "object type ${entry.getKey()} (got ${entry.getValue()})"
-            }
-            def maxAllowedDeletions = MAX_ALLOWED_DELETIONS_BY_KEY.getOrDefault(
-                entry.getKey(), DEFAULT_MAX_ALLOWED_DELETIONS)
-            assert entry.getValue() <= maxAllowedDeletions: "Overly aggressive reconciliation for " +
-                "object type ${entry.getKey()} (got ${entry.getValue()})"
         }
     }
 
-    @Category(SensorBounce)
+    @Tag("SensorBounce")
+    @Tag("COMPATIBILITY")
+    // RS-361 - Fails on OSD
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify the Sensor reconciles after being restarted"() {
         when:
         "Get Sensor and counts"
 
-        // Verify initial reconciliation stats (from the reconciliation that must have happened
-        // whenever the sensor first connected).
-        verifyReconciliationStats(false)
+        OrchestratorDeployment sensorOrchestratorDeployment =
+                orchestrator.getOrchestratorDeployment("stackrox", "sensor")
+        Deployment sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
 
-        def sensor = orchestrator.getOrchestratorDeployment("stackrox", "sensor")
+        List<AlertOuterClass.ListAlert> violations = []
+        Deployment busyboxDeployment
+        String secretID
+        String networkPolicyID
 
         def ns = "reconciliation"
         // Deploy a new resource of each type
@@ -97,58 +110,79 @@ class ReconciliationTest extends BaseSpecification {
         def namespaceID = orchestrator.createNamespace(ns)
         NamespaceService.waitForNamespace(namespaceID, 10)
 
-        // Wait is builtin
-        def secretID = orchestrator.createSecret("testing123", ns)
-        SecretService.waitForSecret(secretID, 10)
+        Set<String> podsBeforeDeleting = [] as Set
 
-        Deployment dep = new Deployment()
-                .setNamespace(ns)
-                .setName ("testing123")
-                .setImage ("quay.io/rhacs-eng/qa:busybox")
-                .addPort (22)
-                .addLabel ("app", "testing123")
-                .setCommand(["sleep", "600"])
+        try {
+            addStackroxImagePullSecret(ns)
 
-        // Wait is builtin
-        orchestrator.createDeployment(dep)
-        assert Services.waitForDeployment(dep)
-        assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
+            // Wait is builtin
+            secretID = orchestrator.createSecret("testing123", ns)
+            SecretService.waitForSecret(secretID, 10)
 
-        def violations = getViolationsWithTimeout("testing123",
-                "Secure Shell (ssh) Port Exposed", 30)
-        assert violations.size() == 1
+            busyboxDeployment = new Deployment()
+                    .setNamespace(ns)
+                    .setName("testing123")
+                    .setImage("quay.io/rhacs-eng/qa:busybox")
+                    .addPort(22)
+                    .addLabel("app", "testing123")
+                    .setCommand(["sleep", "600"])
 
-        NetworkPolicy policy = new NetworkPolicy("do-nothing")
-                .setNamespace(ns)
-                .addPodSelector()
-                .addPolicyType(NetworkPolicyTypes.INGRESS)
-        def networkPolicyID = orchestrator.applyNetworkPolicy(policy)
-        assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
+            // Wait is builtin
+            orchestrator.createDeployment(busyboxDeployment)
+            assert Services.waitForDeployment(busyboxDeployment)
+            assert Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size() == 1
 
-        def sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
-        orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+            violations = getViolationsWithTimeout("testing123",
+                    "Secure Shell (ssh) Port Exposed", 30)
+            assert violations.size() == 1
 
-        def labels = ["app":"sensor"]
-        orchestrator.waitForAllPodsToBeRemoved("stackrox", labels)
+            NetworkPolicy policy = new NetworkPolicy("do-nothing")
+                    .setNamespace(ns)
+                    .addPodSelector()
+                    .addPolicyType(NetworkPolicyTypes.INGRESS)
+            networkPolicyID = orchestrator.applyNetworkPolicy(policy)
+            assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
-        orchestrator.identity {
-            // Delete objects from k8s
-            deleteDeployment(dep)
-            deleteSecret("testing123", ns)
-            deleteNetworkPolicy(policy)
-            deleteNamespace(ns)
-            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
-            waitForNamespaceDeletion(ns)
-
-            // Recreate sensor
-            try {
-                createOrchestratorDeployment(sensor)
-            } catch (Exception e) {
-                println "Error re-creating the sensor: " + e
-                throw e
+            podsBeforeDeleting = podsInCluster
+            log.info "Pods in cluster before deleting:"
+            for (pod in podsBeforeDeleting) {
+                log.info pod
             }
+
+            orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
+
+            orchestrator.waitForAllPodsToBeRemoved("stackrox", ["app": "sensor"], 30, 5)
+
+            orchestrator.identity {
+                // Delete objects from k8s
+                deleteDeployment(busyboxDeployment)
+                deleteSecret("testing123", ns)
+                deleteNetworkPolicy(policy)
+            }
+        } finally {
+            orchestrator.deleteNamespace(ns)
+            // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
+            orchestrator.waitForNamespaceDeletion(ns)
         }
 
+        Set<String> podsBeforeRestarting = podsInCluster
+        log.info "Pods in cluster before restarting:"
+        for (pod in podsBeforeRestarting) {
+            log.info pod
+        }
+        log.info "Pods that were likely deleted while sensor was down:"
+        def deletedPods = getDifference(podsBeforeDeleting, podsBeforeRestarting)
+        for (pod in deletedPods) {
+            log.info pod
+        }
+
+        // Recreate sensor
+        try {
+            orchestrator.createOrchestratorDeployment(sensorOrchestratorDeployment)
+        } catch (Exception e) {
+            log.error("Error re-creating the sensor: ", e)
+            throw e
+        }
         Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 100
@@ -157,12 +191,16 @@ class ReconciliationTest extends BaseSpecification {
         then:
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
-        int retries = maxWaitForSync / interval
+        int retries = (int) (maxWaitForSync / interval)
         Timer t = new Timer(retries, interval)
-        int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
+        int numDeployments = -1
+        int numPods = -1
+        int numNamespaces = -1
+        int numNetworkPolicies = -1
+        int numSecrets = -1
         while (t.IsValid()) {
-            numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
-            numPods = Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size()
+            numDeployments = Services.getDeployments().findAll { it.name == busyboxDeployment.getName() }.size()
+            numPods = Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
@@ -170,7 +208,7 @@ class ReconciliationTest extends BaseSpecification {
             if (numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0) {
                 break
             }
-            println "Waiting for all resources to be reconciled"
+            log.info "Waiting for all resources to be reconciled"
         }
         assert numDeployments == 0
         assert numPods == 0
@@ -178,7 +216,16 @@ class ReconciliationTest extends BaseSpecification {
         assert numNetworkPolicies == 0
         assert numSecrets == 0
 
-        verifyReconciliationStats(true)
+        // It is possible that more pods will be deleted in the observation period (e.g., Scanner being scaled down).
+        // We want to make sure that the pods from the list are gone, so we do not assert on the total number of
+        // deletions as this may cause flakes.
+        log.info "All pods after reconciliation: ", Services.getPods()
+        for (def name: deletedPods) {
+            assert Services.getPods().findAll { it.name == name }.size() == 0,
+                "Should not find the pod ${name} after reconciliation"
+        }
+
+        verifyReconciliationStats()
 
         // Verify Latest Tag alert is marked as stale
         def violation = AlertService.getViolation(violations[0].getId())

@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	store "github.com/stackrox/rox/central/networkgraph/flow/datastore/internal/store"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockClusterStore is a mock of ClusterStore interface.
@@ -35,18 +36,18 @@ func (m *MockClusterStore) EXPECT() *MockClusterStoreMockRecorder {
 }
 
 // CreateFlowStore mocks base method.
-func (m *MockClusterStore) CreateFlowStore(clusterID string) (store.FlowStore, error) {
+func (m *MockClusterStore) CreateFlowStore(ctx context.Context, clusterID string) (store.FlowStore, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateFlowStore", clusterID)
+	ret := m.ctrl.Call(m, "CreateFlowStore", ctx, clusterID)
 	ret0, _ := ret[0].(store.FlowStore)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateFlowStore indicates an expected call of CreateFlowStore.
-func (mr *MockClusterStoreMockRecorder) CreateFlowStore(clusterID interface{}) *gomock.Call {
+func (mr *MockClusterStoreMockRecorder) CreateFlowStore(ctx, clusterID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFlowStore", reflect.TypeOf((*MockClusterStore)(nil).CreateFlowStore), clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFlowStore", reflect.TypeOf((*MockClusterStore)(nil).CreateFlowStore), ctx, clusterID)
 }
 
 // GetFlowStore mocks base method.

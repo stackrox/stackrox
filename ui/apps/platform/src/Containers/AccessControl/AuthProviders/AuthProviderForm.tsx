@@ -1,3 +1,4 @@
+/* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
 import { useHistory, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,6 +8,7 @@ import * as yup from 'yup';
 import {
     Alert,
     Button,
+    Flex,
     Form,
     FormGroup,
     FormSection,
@@ -25,8 +27,8 @@ import {
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider } from 'services/AuthService';
 
+import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -35,8 +37,10 @@ import {
     transformValuesBeforeSaving,
     getGroupsByAuthProviderId,
     getDefaultRoleByAuthProviderId,
+    isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -56,7 +60,7 @@ const authProviderState = createStructuredSelector({
 function getNewAuthProviderTitle(type, availableProviderTypes) {
     const selectedType = availableProviderTypes.find(({ value }) => value === type);
 
-    return `Add new ${selectedType?.label as string} auth provider`;
+    return `Create ${selectedType?.label as string} provider`;
 }
 
 function getRuleAttributes(type, availableProviderTypes) {
@@ -67,7 +71,12 @@ function getRuleAttributes(type, availableProviderTypes) {
 }
 
 function testModeSupported(provider) {
-    return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+    return (
+        provider.type === 'auth0' ||
+        provider.type === 'oidc' ||
+        provider.type === 'saml' ||
+        provider.type === 'openshift'
+    );
 }
 
 function AuthProviderForm({
@@ -87,6 +96,7 @@ function AuthProviderForm({
         : { ...selectedAuthProvider };
     const filteredGroups = getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
     const defaultRole = getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
+    const canChangeDefaultRole = isDefaultGroupModifiable(groups, selectedAuthProvider.id);
 
     const modifiedInitialValues = {
         ...transformInitialValues(initialValues),
@@ -250,11 +260,16 @@ function AuthProviderForm({
 
     return (
         <Form>
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">{formTitle}</Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={selectedAuthProvider.traits} />
+                        </ToolbarItem>
+                    )}
                     {isActionable && (
                         <ToolbarGroup
                             alignment={{ default: 'alignRight' }}
@@ -312,7 +327,8 @@ function AuthProviderForm({
                                             isDisabled={action === 'edit'}
                                             isSmall
                                         >
-                                            {selectedAuthProvider.active
+                                            {selectedAuthProvider.active ||
+                                            getIsAuthProviderImmutable(selectedAuthProvider)
                                                 ? 'Edit minimum role and rules'
                                                 : 'Edit auth provider'}
                                         </Button>
@@ -355,6 +371,18 @@ function AuthProviderForm({
                     }
                 />
             )}
+            {getIsAuthProviderImmutable(selectedAuthProvider) && (
+                <Alert
+                    isInline
+                    variant="warning"
+                    title={
+                        <span>
+                            This auth provider is immutable. You can only edit the minimum role and
+                            rules.
+                        </span>
+                    }
+                />
+            )}
             <FormikProvider value={formik}>
                 <FormSection title="Configuration" titleElement="h3" className="pf-u-mt-0">
                     <Grid hasGutter>
@@ -373,7 +401,11 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={isViewing || values.active}
+                                    isDisabled={
+                                        isViewing ||
+                                        values.active ||
+                                        getIsAuthProviderImmutable(values)
+                                    }
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -409,7 +441,7 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active}
+                            disabled={values.active || getIsAuthProviderImmutable(values)}
                         />
                     </Grid>
                 </FormSection>
@@ -427,7 +459,7 @@ function AuthProviderForm({
                             id="defaultRole"
                             value={values.defaultRole} // TODO see getDefaultRoleByAuthProviderId in classic code
                             handleSelect={setFieldValue}
-                            isDisabled={isViewing}
+                            isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
                                 <SelectOption key={name} value={name} />
@@ -450,6 +482,53 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
+                    {selectedAuthProvider.requiredAttributes &&
+                        selectedAuthProvider.requiredAttributes.length > 0 && (
+                            <FormSection
+                                title="Required attributes for the authentication provider"
+                                titleElement="h3"
+                            >
+                                {selectedAuthProvider.requiredAttributes.map(
+                                    (attribute, index: number) => (
+                                        <Flex
+                                            key={`${attribute.attributeKey}_required_attribute_${index}`}
+                                        >
+                                            <FormGroup label="Key" fieldId={attribute.attributeKey}>
+                                                <TextInput
+                                                    type="text"
+                                                    id={attribute.attributeKey}
+                                                    value={attribute.attributeKey}
+                                                    isDisabled
+                                                />
+                                            </FormGroup>
+                                            <FormGroup
+                                                label="Value"
+                                                fieldId={attribute.attributeValue}
+                                            >
+                                                <TextInput
+                                                    type="text"
+                                                    id={attribute.attributeValue}
+                                                    value={attribute.attributeValue}
+                                                    isDisabled
+                                                />
+                                            </FormGroup>
+                                        </Flex>
+                                    )
+                                )}
+                                <div id="required-attributes-description">
+                                    <Alert isInline variant="info" title="">
+                                        <p>
+                                            The required attributes are used to require attributes
+                                            being returned from the authentication provider.
+                                        </p>
+                                        <p>
+                                            In case a required attribute is not set, the login will
+                                            fail and no role will be set to the user.
+                                        </p>
+                                    </Alert>
+                                </div>
+                            </FormSection>
+                        )}
                     <FormSection title="Rules" titleElement="h3" className="pf-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}

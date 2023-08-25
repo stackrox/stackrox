@@ -1,22 +1,28 @@
 package services
 
+import static util.Helpers.evaluateWithRetry
+
+import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkGraphServiceOuterClass.NetworkGraphScope
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.ApplyNetworkPolicyYamlRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GenerateNetworkPoliciesRequest.DeleteExistingPoliciesMode
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkGraphRequest
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetUndoModificationRequest
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
-import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy
+
 import util.Timer
 
+@Slf4j
 class NetworkPolicyService extends BaseService {
 
     static getNetworkPolicyClient() {
@@ -36,14 +42,14 @@ class NetworkPolicyService extends BaseService {
             }
             return getNetworkPolicyClient().getNetworkGraph(request.build())
         } catch (Exception e) {
-            println "Exception fetching network policy graph: ${e}"
+            log.error("Exception fetching network policy graph", e)
         }
     }
 
     static List<NetworkPolicy> getNetworkPolicies() {
         return getNetworkPolicyClient().getNetworkPolicies(
                 GetNetworkPoliciesRequest.newBuilder()
-                    .setClusterId(ClusterService.getClusterId()).build()
+                        .setClusterId(ClusterService.getClusterId()).build()
         ).networkPoliciesList
     }
 
@@ -52,8 +58,7 @@ class NetworkPolicyService extends BaseService {
             String query = null,
             String scopeQuery = null,
             List<NetworkPolicyReference> toDelete = null) {
-        println "Generating simulation using YAML:"
-        println yaml
+        log.debug("Generating simulation using YAML: %s", yaml)
         try {
             NetworkPolicyModification.Builder mod = NetworkPolicyModification.newBuilder()
                     .setApplyYaml(yaml)
@@ -73,7 +78,7 @@ class NetworkPolicyService extends BaseService {
             }
             return getNetworkPolicyClient().simulateNetworkGraph(request.build())
         } catch (Exception e) {
-            println e.toString()
+            log.error("Error generating simulation using YAML", e)
         }
     }
 
@@ -93,7 +98,7 @@ class NetworkPolicyService extends BaseService {
             yaml == null ?: request.setModification(NetworkPolicyModification.newBuilder().setApplyYaml(yaml))
             return getNetworkPolicyClient().sendNetworkPolicyYAML(request.build())
         } catch (Exception e) {
-            println e.toString()
+            log.error(e.toString(), e)
             assert e instanceof StatusRuntimeException
         }
     }
@@ -106,8 +111,8 @@ class NetworkPolicyService extends BaseService {
                 getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
             }
             return true
-        } catch (Exception ignored) {
-            println "SR did not detect the network policy"
+        } catch (Exception e) {
+            log.error("SR did not detect the network policy", e)
         }
         return false
     }
@@ -118,43 +123,33 @@ class NetworkPolicyService extends BaseService {
             try {
                 getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
             } catch (Exception e) {
-                println "SR did not detect the network policy"
+                log.error("SR did not detect the network policy", e)
                 return true
             }
         }
 
-        println "SR still detects the network policy"
+        log.warn("SR still detects the network policy")
         return false
     }
 
     static generateNetworkPolicies(
             DeleteExistingPoliciesMode deleteMode = DeleteExistingPoliciesMode.NONE,
             String query = "", String clusterId = ClusterService.getClusterId()) {
-        try {
-            return getNetworkPolicyClient().generateNetworkPolicies(
-                    GenerateNetworkPoliciesRequest.newBuilder()
-                            .setClusterId(clusterId)
-                            .setDeleteExisting(deleteMode)
-                            .setQuery(query ?: "")
-                            .build()).modification
-        } catch (Exception e) {
-            println "Network Policy generator failed!: ${e}"
-            return e
-        }
+        return getNetworkPolicyClient().generateNetworkPolicies(
+                GenerateNetworkPoliciesRequest.newBuilder()
+                        .setClusterId(clusterId)
+                        .setDeleteExisting(deleteMode)
+                        .setQuery(query ?: "")
+                        .build()).modification
     }
 
     static applyGeneratedNetworkPolicy(
             NetworkPolicyModification mod,
             String clusterId = ClusterService.getClusterId()) {
-        try {
-            getNetworkPolicyClient().applyNetworkPolicy(ApplyNetworkPolicyYamlRequest.newBuilder()
-                    .setClusterId(clusterId)
-                    .setModification(mod)
-                    .build())
-        } catch (Exception e) {
-            println "Network Policy apply failed!: ${e}"
-            return  e
-        }
+        getNetworkPolicyClient().applyNetworkPolicy(ApplyNetworkPolicyYamlRequest.newBuilder()
+                .setClusterId(clusterId)
+                .setModification(mod)
+                .build())
     }
 
     static undoGeneratedNetworkPolicy(String clusterId = ClusterService.getClusterId()) {
@@ -163,7 +158,7 @@ class NetworkPolicyService extends BaseService {
                     .setClusterId(clusterId)
                     .build()).undoRecord
         } catch (Exception e) {
-            println "Network Policy undo failed!: ${e}"
+            log.error("Network Policy undo failed!", e)
         }
     }
 }

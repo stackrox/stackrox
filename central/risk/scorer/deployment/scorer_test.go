@@ -5,18 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	evaluatorMocks "github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
-	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
-	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
 	deploymentMultiplier "github.com/stackrox/rox/central/risk/multipliers/deployment"
 	imageMultiplier "github.com/stackrox/rox/central/risk/multipliers/image"
 	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
 	"github.com/stackrox/rox/central/risk/scorer/image"
-	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 // GetMockImagesRisk returns a slice of mock image risk
@@ -36,13 +33,10 @@ func TestScore(t *testing.T) {
 	ctx := context.Background()
 
 	mockCtrl := gomock.NewController(t)
-	mockRoles := roleMocks.NewMockDataStore(mockCtrl)
-	mockBindings := bindingMocks.NewMockDataStore(mockCtrl)
-	mockServiceAccounts := saMocks.NewMockDataStore(mockCtrl)
 	mockEvaluator := evaluatorMocks.NewMockEvaluator(mockCtrl)
 
 	deployment := pkgScorer.GetMockDeployment()
-	scorer := NewDeploymentScorer(&getters.MockAlertsGetter{
+	scorer := NewDeploymentScorer(&getters.MockAlertsSearcher{
 		Alerts: []*storage.ListAlert{
 			{
 				Entity: &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{}},
@@ -52,7 +46,7 @@ func TestScore(t *testing.T) {
 				},
 			},
 		},
-	}, mockRoles, mockBindings, mockServiceAccounts, mockEvaluator)
+	}, mockEvaluator)
 
 	mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).MaxTimes(2).Return(nil, nil)
 
@@ -100,16 +94,11 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-
 	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
 	expectedRiskScore = 12.1794405
-
-	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
-
 	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)

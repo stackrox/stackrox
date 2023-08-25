@@ -3,7 +3,12 @@ package netutil
 import (
 	"net"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // MustParseCIDR parses the given CIDR string and returns the corresponding IPNet. If the string is invalid, this
@@ -12,6 +17,14 @@ func MustParseCIDR(cidr string) *net.IPNet {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	utils.CrashOnError(err)
 	return ipNet
+}
+
+// IsIPNetOverlapingPrivateRange checks if network overlaps with private subnets
+func IsIPNetOverlapingPrivateRange(ipNet *net.IPNet) bool {
+	var privateSubnets []*net.IPNet
+	privateSubnets = append(privateSubnets, IPv4PrivateNetworks...)
+	privateSubnets = append(privateSubnets, IPv6PrivateNetworks...)
+	return AnyOverlap(ipNet, privateSubnets)
 }
 
 // IsIPNetSubset checks if maybeSubset is fully contained within ipNet.

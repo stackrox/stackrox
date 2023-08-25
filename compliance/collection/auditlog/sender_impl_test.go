@@ -30,7 +30,7 @@ type failingClient struct {
 	grpc.ClientStream
 }
 
-func (c *failingClient) Send(msg *sensor.MsgFromCompliance) error {
+func (c *failingClient) Send(_ *sensor.MsgFromCompliance) error {
 	return errors.New("test fail")
 }
 

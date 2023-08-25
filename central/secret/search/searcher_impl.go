@@ -3,15 +3,13 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/secret/convert"
 )
@@ -21,7 +19,7 @@ var (
 		Field: search.CreatedTime.String(),
 	}
 
-	secretSACSearchHelper = sac.ForResource(resources.Secret).MustCreateSearchHelper(mappings.OptionsMap)
+	secretSACPostgresSearchHelper = sac.ForResource(resources.Secret).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for secrets
@@ -37,7 +35,7 @@ func (ds *searcherImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.S
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 // Search returns the raw search results from the query
@@ -50,13 +48,13 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.searcher.Count(ctx, q)
 }
 
-// SearchSecrets returns the secrets and relationships that match the query.
+// SearchListSecrets returns the secrets and relationships that match the query.
 func (ds *searcherImpl) SearchListSecrets(ctx context.Context, q *v1.Query) ([]*storage.ListSecret, error) {
 	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	secrets, _, err := ds.resultsToListSecrets(results)
+	secrets, _, err := ds.resultsToListSecrets(ctx, results)
 	return secrets, err
 }
 
@@ -70,10 +68,10 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
-func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, []int, error) {
+func (ds *searcherImpl) resultsToListSecrets(ctx context.Context, results []search.Result) ([]*storage.ListSecret, []int, error) {
 	ids := search.ResultsToIDs(results)
 
-	secrets, missingIndices, err := ds.storage.GetMany(ids)
+	secrets, missingIndices, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -85,8 +83,8 @@ func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storag
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	secrets, missingIndices, err := ds.resultsToListSecrets(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	secrets, missingIndices, err := ds.resultsToListSecrets(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -113,10 +111,9 @@ func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchRes
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	filteredSearcher := secretSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
-	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+func formatSearcher(searcher search.Searcher) search.Searcher {
+	filteredSearcher := secretSACPostgresSearchHelper.FilteredSearcher(searcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(filteredSearcher, defaultSortOption)
 	return defaultSortedSearcher
 }
 
@@ -127,7 +124,7 @@ func (ds *searcherImpl) searchSecrets(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	secrets, _, err := ds.storage.GetMany(ids)
+	secrets, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

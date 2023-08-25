@@ -27,11 +27,6 @@ spec:
   startingCSV: rhacs-operator.v${OPERATOR_VERSION}
   config:
     env:
-    # TODO(ROX-7740): Remove these once we have a single dev+CI repo.
-    - name: ROX_OPERATOR_MAIN_REGISTRY
-      value: "${IMAGE_REGISTRY}"
-    - name: ROX_OPERATOR_COLLECTOR_REGISTRY
-      value: "${IMAGE_REGISTRY}"
     # use a test value for NO_PROXY. This will not have any impact
     # on the services at runtime, but we can test if it gets piped
     # through correctly.

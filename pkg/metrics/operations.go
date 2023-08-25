@@ -1,6 +1,7 @@
 package metrics
 
 // Op represents a bolt operation that we want to time.
+//
 //go:generate stringer -type=Op
 type Op int
 
@@ -18,9 +19,14 @@ const (
 	Get
 	GetAll
 	GetMany
+	GetFlowsForDeployment
+	GetByQuery
 
 	// Special operation currently used only for processes.
 	GetGrouped
+
+	// Special operation used for ProcessListeningOnPort
+	GetProcessListeningOnPort
 
 	List
 
@@ -30,8 +36,10 @@ const (
 	Rename
 	Remove
 	RemoveMany
+	RemoveFlowsByDeployment
 
 	Search
+	Sync
 
 	Update
 	UpdateMany

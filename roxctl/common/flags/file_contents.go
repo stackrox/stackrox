@@ -3,6 +3,8 @@ package flags
 import (
 	"fmt"
 	"os"
+
+	"github.com/pkg/errors"
 )
 
 // FileContentsVar can be used for a flag that takes a file name, and reads the raw contents
@@ -38,7 +40,7 @@ func (v *FileContentsVar) Set(val string) error {
 	var err error
 	*v.Data, err = os.ReadFile(val)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "could not read file: %q", val)
 	}
 
 	v.Filename = val

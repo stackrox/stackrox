@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clairv4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clairv4
+  template:
+    metadata:
+      labels:
+        app: clairv4
+    spec:
+      containers:
+      - name: clairv4
+        # This image is based on registry.redhat.io/quay/clair-rhel8:v3.8.0-10
+        image: quay.io/rhacs-eng/qa:clair-v4.5.1
+        env:
+        - name: CLAIR_CONF
+          value: /clair/config.yaml
+        - name: CLAIR_MODE
+          value: combo
+        ports:
+        - name: clair-http
+          protocol: TCP
+          containerPort: 8080
+        - name: clair-intro
+          protocol: TCP
+          containerPort: 8089
+        volumeMounts:
+        - name: config
+          mountPath: /clair/
+      volumes:
+      - name: config
+        secret:
+          secretName: clairv4-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clairv4
+  labels:
+    app: clairv4
+spec:
+  type: NodePort
+  ports:
+  - name: clair-http
+    protocol: TCP
+    port: 8080
+    nodePort: 30060
+  - name: clair-introspection
+    protocol: TCP
+    port: 8089
+    nodePort: 30061
+  selector:
+    app: clairv4
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clairv4-postgres
+  labels:
+    app: clairv4-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clairv4-postgres
+  template:
+    metadata:
+      labels:
+        app: clairv4-postgres
+    spec:
+      containers:
+      - name: postgres
+        # Generic PostgreSQL 12 image used for online-mode.
+        # image: us.gcr.io/stackrox-ci/postgres:12.13
+        image: quay.io/rhacs-eng/qa:clairv4-postgres-12.13
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "clair"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: PGDATA
+          value: "/etc/postgres/data"
+        ports:
+        - name: postgres-port
+          containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clairv4-postgres
+  labels:
+    app: clairv4-postgres
+spec:
+  ports:
+  - name: postgres
+    protocol: TCP
+    port: 5432
+  selector:
+    app: clairv4-postgres

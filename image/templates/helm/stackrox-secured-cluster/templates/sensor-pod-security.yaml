@@ -1,5 +1,6 @@
 {{- include "srox.init" . -}}
 
+{{- if ._rox.system.enablePodSecurityPolicies }}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -78,3 +79,4 @@ spec:
     ranges:
       - min: 4000
         max: 4000
+{{- end }}

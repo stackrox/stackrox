@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+move_dbs() {
+  local SRC=$1
+  local TGT=$2
+  move_if_needed "$SRC/rocksdb" "$TGT/rocksdb"
+  move_if_needed "$SRC/stackrox.db" "$TGT/stackrox.db"
+  move_if_needed "$SRC/migration_version.yaml" "$TGT/migration_version.yaml"
+}
+
+# Move a file/dir from $SRC to $TGT if $SRC exists and $TGT does not exist.
+# It won't move $SRC inside $TGT if $TGT is a directory.
+move_if_needed()
+{
+  local SRC=$1
+  local TGT=$2
+  if [ -e "$SRC" ] && [ ! -e "$TGT" ]; then
+    echo "Moving $SRC to $TGT"
+    mv "$SRC" "$TGT"
+  fi
+}

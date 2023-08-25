@@ -1,11 +1,15 @@
-import services.ProcessService
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
-import groups.BAT
-import groups.RUNTIME
-import spock.lang.Unroll
 import objects.Deployment
-import org.junit.experimental.categories.Category
+import services.DeploymentService
+import services.ProcessService
 import util.Timer
+import util.Env
+
+import org.junit.Assume
+import spock.lang.IgnoreIf
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
@@ -81,7 +85,35 @@ class ProcessVisualizationTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    // TODO(ROX-16461): Fails under AKS
+    @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
+    def "Verify process visualization on kube-proxy"() {
+        when:
+        "Check if kube-proxy is running"
+        def kubeProxyPods = orchestrator.getPodsByLabel("kube-system", ["component": "kube-proxy"])
+        // We only want to run this test if kube-proxy is running
+        Assume.assumeFalse(kubeProxyPods == null || kubeProxyPods.size() == 0)
+
+        then:
+        "Ensure it has processes"
+        def kubeProxyDeploymentsInRox = DeploymentService.listDeploymentsSearch(
+                SearchServiceOuterClass.RawQuery.newBuilder().
+                        setQuery("Namespace:kube-system+Deployment:static-kube-proxy-pods").
+                        build()
+        )
+        assert kubeProxyDeploymentsInRox.getDeploymentsList().size() == 1
+        def kubeProxyDeploymentID = kubeProxyDeploymentsInRox.getDeployments(0).getId()
+        def receivedProcessPaths = ProcessService.getUniqueProcessPaths(kubeProxyDeploymentID)
+        log.info "Received processes: ${receivedProcessPaths}"
+        // Avoid asserting on the specific process names since that might change across versions/distributions.
+        // The goal is to make sure we pick up processes from static pods.
+        assert receivedProcessPaths.size() > 0
+    }
+
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process visualization on default: #depName"()  {
         when:
@@ -98,9 +130,9 @@ class ProcessVisualizationTest extends BaseSpecification {
             if (receivedProcessPaths.containsAll(expectedFilePaths)) {
                 break
             }
-            println "Didn't find all the expected processes, retrying..."
+            log.info "Didn't find all the expected processes, retrying..."
         }
-        println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
+        log.info "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
         then:
         "Verify process in added : : #depName"
@@ -140,7 +172,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         ["/qa/exec.sh", "/bin/sleep"] as Set | ROX4979DEPLOYMENT
     }
 
-    @Category([BAT, RUNTIME])
+    @Tag("BAT")
+    @Tag("RUNTIME")
     @Unroll
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
         when:
@@ -157,10 +190,10 @@ class ProcessVisualizationTest extends BaseSpecification {
             if (containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)) {
                 break
             }
-            println "Didn't find all the expected processes in " + depName +
+            log.info "Didn't find all the expected processes in " + depName +
                     ", retrying... " + processToUserAndGroupIds
         }
-        println "ProcessVisualizationTest: Dep: " + depName +
+        log.info "ProcessVisualizationTest: Dep: " + depName +
                 " Processes and UIDs: " + processToUserAndGroupIds
 
         then:
@@ -234,6 +267,71 @@ class ProcessVisualizationTest extends BaseSpecification {
           "/usr/bin/numactl":[[999,999]],
         ] | MONGODEPLOYMENT
         */
+    }
+
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Unroll
+    def "Verify process arguments on #depName"() {
+        when:
+        "Get Process args running on deployment: #depName"
+        String depId = DEPLOYMENTS.find { it.name == depName }.deploymentUid
+        assert depId != null
+
+        List<Tuple2<String, String>> processToArgs
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
+            processToArgs = ProcessService.getProcessesWithArgs(depId)
+            if (processToArgs.containsAll(expectedProcessArgs)) {
+                break
+            }
+            log.info "Didn't find all the expected processes, retrying..."
+        }
+        log.info "ProcessVisualizationTest: Dep: " + depName + " Processes: " + processToArgs
+
+        then:
+        "Verify process args for #depName"
+        assert processToArgs.containsAll(expectedProcessArgs)
+
+        where:
+        "Data inputs are:"
+
+        expectedProcessArgs | depName
+
+        [["/usr/sbin/nginx", "-g daemon off;"]] | NGINXDEPLOYMENT
+
+        [
+            ["/bin/sh", "-c /bin/sleep 600"],
+            ["/bin/sleep", "600"],
+        ] | CENTOSDEPLOYMENT
+
+        [
+            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
+            ["/bin/sh", "-c /bin/sleep 600"],
+        ] | FEDORADEPLOYMENT
+
+        // this is not a full selection of processes expected in the ELASTICDEPLOYMENT
+        // but constitutes a decent range, with a variety of args, including no args,
+        // or unusual characters.
+        [
+            ["/usr/bin/dirname", "/usr/share/elasticsearch/bin/elasticsearch"],
+            ["/usr/bin/tr", "\\n  "],
+            ["/bin/grep", "project.name"],
+            ["/usr/bin/cut", "-d. -f1"],
+            ["/usr/local/bin/gosu", "elasticsearch elasticsearch"],
+            ["/bin/egrep", "/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/bin/hostname", ""],
+            ["/docker-entrypoint.sh", "/docker-entrypoint.sh elasticsearch"],
+            ["/bin/grep", "-E -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/bin/grep", "^- /etc/elasticsearch/jvm.options"],
+            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/data"],
+            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/logs"],
+            ["/sbin/ldconfig", "-p"],
+            ["/usr/bin/id", "-u"],
+        ] | ELASTICDEPLOYMENT
     }
 
     // Returns true if received contains all the (path,UIDGIDSet) pairs found in expected

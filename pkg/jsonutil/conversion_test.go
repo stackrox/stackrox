@@ -1,6 +1,7 @@
 package jsonutil
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -100,4 +101,23 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, shouldPreserve bool
 	convertedJSON, err := ProtoToJSON(&proto, options...)
 	assert.NoError(t, err)
 	assert.Equalf(t, shouldPreserve, inputJSON == convertedJSON, "original JSON:\n%s\nconvertedJSON:\n%s", inputJSON, convertedJSON)
+}
+
+func TestNoErrorOnUnknownAttribute(t *testing.T) {
+	const json = `{ "id": "6500", "unknownField": "junk" }`
+	var proto v1.ResourceByID
+
+	err := JSONToProto(json, &proto)
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
+
+	jsonBytes := []byte(json)
+
+	err = JSONBytesToProto(jsonBytes, &proto)
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
+
+	err = JSONReaderToProto(bytes.NewReader(jsonBytes), &proto)
+	assert.NoError(t, err)
+	assert.Equal(t, "6500", proto.GetId())
 }

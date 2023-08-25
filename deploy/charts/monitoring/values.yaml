@@ -1,5 +1,6 @@
-image: null
-password: null
+grafanaImage: grafana/grafana:7.5.15
+prometheusImage: prom/prometheus:v2.34.0
+password: stackrox
 
 resources:
   requests:
@@ -19,3 +20,22 @@ persistence:
   storageClass: null
 
 nodeSelector: {}
+
+kube-state-metrics:
+  releaseNamespace: true
+
+alertmanager:
+  persistence:
+    enabled: false
+  config:
+    receivers:
+      - name: pagerduty-notifications
+        pagerduty_configs:
+          - service_key: ${PAGERDUTY_INTEGRATION_KEY}
+    route:
+      receiver: pagerduty-notifications
+      group_by: [alertname]
+  configmapReload:
+    enabled: true
+
+enableMonitoringPSPs: ${MONITORING_ENABLE_PSP}

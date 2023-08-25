@@ -1,5 +1,6 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.ServiceAccountServiceGrpc
@@ -7,6 +8,7 @@ import io.stackrox.proto.storage.ServiceAccountOuterClass
 import objects.K8sServiceAccount
 import util.Timer
 
+@Slf4j
 class ServiceAccountService extends BaseService {
     static getServiceAccountService() {
         return ServiceAccountServiceGrpc.newBlockingStub(getChannel())
@@ -22,33 +24,33 @@ class ServiceAccountService extends BaseService {
                     Common.ResourceByID.newBuilder().setId(id).build()
             ).getSaAndRole()
         } catch (Exception e) {
-            println "Error fetching service account: ${e}"
+            log.warn("Error fetching service account", e)
         }
+    }
+
+    static RawQuery getServiceAccountQuery(K8sServiceAccount serviceAccount) {
+        def query = "Namespace:\"${serviceAccount.namespace}\"+Service Account:\"${serviceAccount.name}\""
+        return RawQuery.newBuilder().setQuery(query).build()
     }
 
     static boolean waitForServiceAccount(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Service Account"
-            def serviceAccounts = getServiceAccounts()
-            def sa = serviceAccounts.find {
-                it.getServiceAccount().name == serviceAccount.name &&
-                    it.getServiceAccount().namespace == serviceAccount.namespace
-            }
-
-            if (sa) {
+            log.debug "Waiting for Service Account"
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
+            if (serviceAccounts.size() > 0) {
                 return true
             }
         }
-        println "Time out for Waiting for Service Account"
+        log.warn "Time out for Waiting for Service Account"
         return false
     }
 
     static boolean waitForServiceAccountRemoved(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
-            println "Waiting for Service Account removed"
-            def serviceAccounts = getServiceAccounts()
+            log.debug "Waiting for Service Account removed"
+            def serviceAccounts = getServiceAccounts(getServiceAccountQuery(serviceAccount))
             def sa = serviceAccounts.find {
                 it.getServiceAccount().name == serviceAccount.name &&
                         it.getServiceAccount().namespace == serviceAccount.namespace
@@ -57,7 +59,7 @@ class ServiceAccountService extends BaseService {
                 return true
             }
         }
-        println "Time out for Waiting for Service Account removed"
+        log.warn "Time out for Waiting for Service Account removed"
         return false
     }
 

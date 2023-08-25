@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+import "storage/user.proto";
+import "storage/policy.proto";
+
+package storage;
+
+message ResourceCollection {
+  message EmbeddedResourceCollection {
+    // 'id' is searchable to force a separate table
+    string id = 1 [(gogoproto.moretags) = 'search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"'];
+  }
+
+  string id                                                = 1 [(gogoproto.moretags) = 'search:"Collection ID" sql:"pk"']; // primary key
+  string name                                              = 2 [(gogoproto.moretags) = 'search:"Collection Name" sql:"unique"'];
+  string description                                       = 3;
+  google.protobuf.Timestamp created_at                     = 4;
+  google.protobuf.Timestamp last_updated                   = 5;
+  SlimUser created_by                                      = 6 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+  SlimUser updated_by                                      = 7 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+  // `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
+  repeated ResourceSelector resource_selectors             = 8;
+  repeated EmbeddedResourceCollection embedded_collections = 9;
+}
+
+message ResourceSelector {
+  // `rules` resolve as a conjunction (AND).
+  repeated SelectorRule rules = 1;
+}
+
+message SelectorRule {
+  // `field_name` can be one of the following:
+  // - Cluster
+  // - Cluster Label
+  // - Namespace
+  // - Namespace Label
+  // - Namespace Annotation
+  // - Deployment
+  // - Deployment Label
+  // - Deployment Annotation
+  string field_name         = 1;
+  // 'operator' only supports disjunction (OR) currently
+  BooleanOperator operator  = 2;
+  // `values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint.
+  repeated RuleValue values = 3;
+}
+
+enum MatchType {
+  EXACT = 0;
+  REGEX = 1;
+}
+
+message RuleValue {
+  string value = 1;
+  MatchType match_type = 2;
+}

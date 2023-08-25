@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,7 +44,7 @@ var (
 )
 
 func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRunResults) {
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
 
 	resp, err := managementService.TriggerRuns(context.Background(), &v1.TriggerComplianceRunsRequest{
@@ -143,7 +143,11 @@ func TestComplianceOperatorResults(t *testing.T) {
 }
 
 func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
-	config, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube/config"))
+	kubeconfig := os.Getenv("KUBECONFIG")
+	if len(kubeconfig) == 0 {
+		kubeconfig = filepath.Join(os.Getenv("HOME"), ".kube/config")
+	}
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	require.NoError(t, err)
 
 	dynamicClientGenerator, err := dynamic.NewForConfig(config)
@@ -156,7 +160,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 	// Remove a rule from the profile and verify it's gone from the results
-	ruleClient := dynamicClientGenerator.Resource(complianceoperator.RuleGVR).Namespace(namespace)
+	ruleClient := dynamicClientGenerator.Resource(complianceoperator.Rule.GroupVersionResource()).Namespace(namespace)
 	rule, err := ruleClient.Get(context.Background(), envVarRule, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -197,7 +201,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Delete a scansettingbinding
-	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBindingGVR).Namespace(namespace)
+	ssbClient := dynamicClientGenerator.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(namespace)
 	ssb, err := ssbClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -229,7 +233,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
 	profile, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
@@ -261,7 +265,7 @@ func TestUpdateProfile(t *testing.T) {
 	dynamicClientGenerator := getDynamicClientGenerator(t)
 
 	// Remove a profile and verify that the profile is gone
-	profileClient := dynamicClientGenerator.Resource(complianceoperator.ProfileGVR).Namespace(namespace)
+	profileClient := dynamicClientGenerator.Resource(complianceoperator.Profile.GroupVersionResource()).Namespace(namespace)
 	profileObj, err := profileClient.Get(context.Background(), rhcosProfileName, metav1.GetOptions{})
 	assert.NoError(t, err)
 

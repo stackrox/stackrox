@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -34,31 +35,32 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetSensorUpgradeConfig mocks base method.
-func (m *MockStore) GetSensorUpgradeConfig() (*storage.SensorUpgradeConfig, error) {
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSensorUpgradeConfig")
+	ret := m.ctrl.Call(m, "Get", ctx)
 	ret0, _ := ret[0].(*storage.SensorUpgradeConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetSensorUpgradeConfig indicates an expected call of GetSensorUpgradeConfig.
-func (mr *MockStoreMockRecorder) GetSensorUpgradeConfig() *gomock.Call {
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSensorUpgradeConfig", reflect.TypeOf((*MockStore)(nil).GetSensorUpgradeConfig))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx)
 }
 
-// UpsertSensorUpgradeConfig mocks base method.
-func (m *MockStore) UpsertSensorUpgradeConfig(sensorupgradeconfig *storage.SensorUpgradeConfig) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, sensorupgradeconfig *storage.SensorUpgradeConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertSensorUpgradeConfig", sensorupgradeconfig)
+	ret := m.ctrl.Call(m, "Upsert", ctx, sensorupgradeconfig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertSensorUpgradeConfig indicates an expected call of UpsertSensorUpgradeConfig.
-func (mr *MockStoreMockRecorder) UpsertSensorUpgradeConfig(sensorupgradeconfig interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, sensorupgradeconfig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertSensorUpgradeConfig", reflect.TypeOf((*MockStore)(nil).UpsertSensorUpgradeConfig), sensorupgradeconfig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, sensorupgradeconfig)
 }

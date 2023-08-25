@@ -1,6 +1,8 @@
 package translation
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +71,7 @@ func GetMisc(miscSpec *platform.MiscSpec) *ValuesBuilder {
 	if miscSpec == nil {
 		return nil
 	}
-	if !pointer.BoolPtrDerefOr(miscSpec.CreateSCCs, false) {
+	if !pointer.BoolDeref(miscSpec.CreateSCCs, false) {
 		return nil
 	}
 
@@ -124,4 +126,52 @@ func GetTolerations(key string, tolerations []*corev1.Toleration) *ValuesBuilder
 	v.SetSlice(key, convertedList)
 
 	return &v
+}
+
+// GetGlobalMonitoring converts *platform.GlobalMonitoring into *ValuesBuilder
+func GetGlobalMonitoring(m *platform.GlobalMonitoring) *ValuesBuilder {
+	openshiftMonitoring := NewValuesBuilder()
+	// Default to true if undefined. Only set to false if explicitly disabled.
+	openshiftMonitoring.SetBoolValue("enabled", !m.IsOpenShiftMonitoringDisabled())
+	globalMonitoring := NewValuesBuilder()
+	globalMonitoring.AddChild("openshift", &openshiftMonitoring)
+	return &globalMonitoring
+}
+
+// SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
+	if analyzer.GetScaling() != nil {
+		scaling := analyzer.GetScaling()
+		sv.SetInt32("replicas", scaling.Replicas)
+
+		autoscaling := NewValuesBuilder()
+		if scaling.AutoScaling != nil {
+			switch *scaling.AutoScaling {
+			case platform.ScannerAutoScalingDisabled:
+				autoscaling.SetBoolValue("disable", true)
+			case platform.ScannerAutoScalingEnabled:
+				autoscaling.SetBoolValue("disable", false)
+			default:
+				autoscaling.SetError(fmt.Errorf("invalid spec.scanner.replicas.autoScaling %q", *scaling.AutoScaling))
+			}
+		}
+		autoscaling.SetInt32("minReplicas", scaling.MinReplicas)
+		autoscaling.SetInt32("maxReplicas", scaling.MaxReplicas)
+		sv.AddChild("autoscaling", &autoscaling)
+	}
+
+	if analyzer != nil {
+		sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+		sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
+		sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+	}
+}
+
+// SetScannerDBValues sets values in "sb" based on "db".
+func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
+	if db != nil {
+		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
+		sv.AddChild("dbResources", GetResources(db.Resources))
+		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
+	}
 }

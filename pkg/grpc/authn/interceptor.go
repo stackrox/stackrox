@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/contextutil"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -20,20 +21,21 @@ type contextUpdater struct {
 }
 
 func (u contextUpdater) updateContext(ctx context.Context) (context.Context, error) {
-	id, err := u.extractor.IdentityForRequest(ctx, requestinfo.FromContext(ctx))
+	ri := requestinfo.FromContext(ctx)
+	id, err := u.extractor.IdentityForRequest(ctx, ri)
 	if err != nil {
 		if errors.Is(err, jwt.ErrExpired) {
-			log.Debugf("Cannot extract identity: token expired")
+			log.Debug("Cannot extract identity: token expired")
 		} else {
-			log.Warnf("Cannot extract identity: %v", err)
+			logging.GetRateLimitedLogger().WarnL(ri.Hostname, "Cannot extract identity: %v", err)
 		}
 		// Ignore id value if error is not nil.
-		return context.WithValue(ctx, identityErrorContextKey{}, errorhelpers.NewErrNoCredentials(err.Error())), nil
+		return context.WithValue(ctx, identityErrorContextKey{}, errox.NoCredentials.CausedBy(err)), nil
 	}
 	if id != nil {
 		// Only service identities can have no roles assigned.
 		if len(id.Roles()) == 0 && id.Service() == nil {
-			return context.WithValue(ctx, identityErrorContextKey{}, errorhelpers.GenericNoValidRole()), nil
+			return context.WithValue(ctx, identityErrorContextKey{}, auth.ErrNoValidRole), nil
 		}
 		return context.WithValue(ctx, identityContextKey{}, id), nil
 	}

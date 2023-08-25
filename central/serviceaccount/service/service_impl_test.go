@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -14,8 +14,10 @@ import (
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -98,6 +100,8 @@ type ServiceAccountServiceTestSuite struct {
 	service                 Service
 
 	mockCtrl *gomock.Controller
+
+	ctx context.Context
 }
 
 func (suite *ServiceAccountServiceTestSuite) SetupTest() {
@@ -110,6 +114,8 @@ func (suite *ServiceAccountServiceTestSuite) SetupTest() {
 
 	suite.service = New(suite.mockServiceAccountStore, suite.mockBindingStore, suite.mockRoleStore,
 		suite.mockDeploymentStore, suite.mockNamespaceStore)
+
+	suite.ctx = sac.WithAllAccess(context.Background())
 }
 
 // Test happy path for getting service accounts
@@ -119,7 +125,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return(expectedSA, true, nil)
 
-	sa, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
+	sa, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
 	suite.NoError(err)
 	suite.Equal(expectedSA, sa.SaAndRole.ServiceAccount)
 	suite.Equal(1, len(sa.SaAndRole.DeploymentRelationships))
@@ -135,7 +141,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSANotExists() {
 
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), false, nil)
 
-	_, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
+	_, err := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
 	suite.Error(err)
 }
 
@@ -146,7 +152,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 	expectedErr := errors.New("failure")
 	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
 
-	_, actualErr := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
+	_, actualErr := suite.service.GetServiceAccount(suite.ctx, &v1.ResourceByID{Id: saID})
 	suite.Error(actualErr)
 }
 
@@ -162,7 +168,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 
 	suite.mockDeploymentStore.EXPECT().SearchListDeployments(gomock.Any(), q).AnyTimes().Return([]*storage.ListDeployment{listDeployment}, nil)
 
-	_, err := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
+	_, err := suite.service.ListServiceAccounts(suite.ctx, &v1.RawQuery{})
 	suite.NoError(err)
 }
 
@@ -172,7 +178,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 
 	suite.mockServiceAccountStore.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, expectedError)
 
-	_, actualErr := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
+	_, actualErr := suite.service.ListServiceAccounts(suite.ctx, &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
 }
 
@@ -192,20 +198,47 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		Return([]*storage.NamespaceMetadata{namespaceMetadata}, nil)
 
 	clusterScopeQuery := search.NewQueryBuilder().
+		AddBoolsHighlighted(search.ClusterRole, true).
+		AddStringsHighlighted(search.RoleID, search.WildcardString).
 		AddExactMatches(search.ClusterID, "cluster").
+		AddExactMatches(search.Namespace, "").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, true).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
-		Return([]*storage.K8SRoleBinding{clusterRoleBinding}, nil)
+		ProtoQuery()
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), clusterScopeQuery).AnyTimes().
+		Return([]search.Result{
+			{
+				ID: clusterRoleBinding.GetId(),
+				Matches: map[string][]string{
+					"k8srolebinding.role_id":      {clusterRoleBinding.GetRoleId()},
+					"k8srolebinding.cluster_role": {strconv.FormatBool(clusterRoleBinding.GetClusterRole())},
+				},
+			},
+		}, nil)
 
 	namespaceScopeQuery := search.NewQueryBuilder().
+		AddStringsHighlighted(search.RoleID, search.WildcardString).
+		AddBoolsHighlighted(search.ClusterRole, true).
+		AddBoolsHighlighted(search.ClusterRole, false).
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddExactMatches(search.SubjectName, expectedSA.Name).
 		AddExactMatches(search.SubjectKind, storage.SubjectKind_SERVICE_ACCOUNT.String()).
-		AddBools(search.ClusterRole, false).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
-		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
+		ProtoQuery()
+	suite.mockBindingStore.EXPECT().Search(gomock.Any(), namespaceScopeQuery).AnyTimes().
+		Return([]search.Result{
+			{
+				ID: rolebinding.GetId(),
+				Matches: map[string][]string{
+					"k8srolebinding.role_id":      {rolebinding.GetRoleId()},
+					"k8srolebinding.cluster_role": {strconv.FormatBool(rolebinding.GetClusterRole())},
+				},
+			},
+		}, nil)
+
+	suite.mockBindingStore.EXPECT().GetManyRoleBindings(gomock.Any(), []string{"binding1"}).AnyTimes().Return(
+		[]*storage.K8SRoleBinding{rolebinding}, nil, nil)
+	suite.mockBindingStore.EXPECT().GetManyRoleBindings(gomock.Any(), []string{"binding2"}).AnyTimes().Return(
+		[]*storage.K8SRoleBinding{clusterRoleBinding}, nil, nil)
 
 }

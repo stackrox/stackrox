@@ -5,7 +5,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
+	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/central/localscanner"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
@@ -13,14 +17,18 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/telemetry"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -47,17 +55,20 @@ type sensorConnection struct {
 
 	eventPipeline pipeline.ClusterPipeline
 
-	clusterMgr         common.ClusterManager
-	networkEntityMgr   common.NetworkEntityManager
-	policyMgr          common.PolicyManager
-	baselineMgr        common.ProcessBaselineManager
-	networkBaselineMgr common.NetworkBaselineManager
+	clusterMgr                 common.ClusterManager
+	networkEntityMgr           common.NetworkEntityManager
+	policyMgr                  common.PolicyManager
+	baselineMgr                common.ProcessBaselineManager
+	networkBaselineMgr         common.NetworkBaselineManager
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
+	imageIntegrationMgr        common.ImageIntegrationManager
 
 	sensorHello  *central.SensorHello
-	capabilities centralsensor.SensorCapabilitySet
+	capabilities set.Set[centralsensor.SensorCapability]
 }
 
-func newConnection(sensorHello *central.SensorHello,
+func newConnection(ctx context.Context,
+	sensorHello *central.SensorHello,
 	cluster *storage.Cluster,
 	eventPipeline pipeline.ClusterPipeline,
 	clusterMgr common.ClusterManager,
@@ -65,6 +76,9 @@ func newConnection(sensorHello *central.SensorHello,
 	policyMgr common.PolicyManager,
 	baselineMgr common.ProcessBaselineManager,
 	networkBaselineMgr common.NetworkBaselineManager,
+	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
+	imageIntegrationMgr common.ImageIntegrationManager,
+	hashMgr hashManager.Manager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -74,19 +88,24 @@ func newConnection(sensorHello *central.SensorHello,
 		eventPipeline: eventPipeline,
 		queues:        make(map[string]*dedupingQueue),
 
-		clusterID:          cluster.GetId(),
-		clusterMgr:         clusterMgr,
-		policyMgr:          policyMgr,
-		networkEntityMgr:   networkEntityMgr,
-		baselineMgr:        baselineMgr,
-		networkBaselineMgr: networkBaselineMgr,
+		clusterID:                  cluster.GetId(),
+		clusterMgr:                 clusterMgr,
+		policyMgr:                  policyMgr,
+		networkEntityMgr:           networkEntityMgr,
+		baselineMgr:                baselineMgr,
+		networkBaselineMgr:         networkBaselineMgr,
+		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
+		imageIntegrationMgr:        imageIntegrationMgr,
 
 		sensorHello:  sensorHello,
 		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
 	}
 
 	// Need a reference to conn for injector
-	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
+	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
+	deduper.StartSync()
+
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -146,15 +165,20 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }
 
 func (c *sensorConnection) handleMessages(ctx context.Context, queue *dedupingQueue) {
 	for msg := queue.pullBlocking(&c.stopSig); msg != nil; msg = queue.pullBlocking(&c.stopSig) {
-		if err := c.handleMessage(ctx, msg); err != nil {
-			log.Errorf("Error handling sensor message: %v", err)
+		err := safe.Run(func() {
+			if err := c.handleMessage(ctx, msg); err != nil {
+				log.Errorf("Error handling sensor message: %v", err)
+			}
+		})
+		if err != nil {
+			metrics.IncrementPipelinePanics(msg)
+			log.Errorf("panic in handle message: %v", err)
 		}
 	}
 	c.eventPipeline.OnFinish(c.clusterID)
@@ -290,24 +314,29 @@ func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgTo
 }
 
 // getPolicySyncMsgFromPolicies prepares given policies for delivery to sensor. If:
-//   - sensor's policy version is unknown -> guess Version1,
-//   - sensor's policy version is older than central's -> attempt to downgrade
-//     all policies to sensor's version,
-//   - otherwise -> forward policies unmodified.
-//
-// If there is any error during the downgrade, pass the affected policies as-is.
+//   - sensor's policy version is unknown -> send version 1.1
+//   - sensor's policy version is less than the minimum supported by central (see policyversion.MinimumSupportedVersion()), send version 1.1
+//   - sensor's policy version is < current version -> downgrade to sensor's version
+//   - sensor's policy version is >= current version -> send policies untouched
 func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Policy) (*central.MsgToSensor, error) {
 	// Older sensors do not broadcast the policy version they support, so if we
-	// observe an empty string, we guess the version at Version1 and persist it.
-	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(), policyversion.Version1().String())
+	// observe an empty string, we guess the version at version 1.1 and persist it.
+	sensorPolicyVersionStr := stringutils.FirstNonEmpty(c.sensorHello.GetPolicyVersion(),
+		policyversion.CurrentVersion().String())
 
 	// Forward policies as is if we don't understand sensor's version.
 	if sensorPolicyVersion, err := policyversion.FromString(sensorPolicyVersionStr); err != nil {
-		log.Errorf("Cannot understand sensor's policy version %q: %v", sensorPolicyVersionStr, err)
+		log.Errorf("Cannot understand sensor's policy version %q, will assume version %q: %v", sensorPolicyVersionStr,
+			policyversion.CurrentVersion().String(), err)
 	} else {
-		// Downgrade all policies if necessary. If we can't downgrade one,
-		// we likely can't convert any of them, so no need to spam the log.
-		if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
+		if policyversion.Compare(sensorPolicyVersion, policyversion.MinimumSupportedVersion()) < 0 {
+			// If sensor doesn't support a minimum version (which will change as we deprecate older versions),
+			// Then just log error and move on.
+			log.Errorf("Sensor is running an older version of policy (%q) which has been deprecated and is no longer supported. Upgrade sensor to a version which supports %q",
+				sensorPolicyVersionStr, policyversion.CurrentVersion().String())
+		} else if policyversion.Compare(policyversion.CurrentVersion(), sensorPolicyVersion) > 0 {
+			// Downgrade all policies if necessary. If we can't downgrade one,
+			// we likely can't convert any of them, so no need to spam the log.
 			log.Infof("Downgrading %d policies from central's version %q to sensor's version %q",
 				len(policies), policyversion.CurrentVersion().String(), sensorPolicyVersion.String())
 
@@ -328,6 +357,7 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 
 			policies = downgradedPolicies
 		}
+		// Otherwise, sensor supports the same version or newer as central
 	}
 
 	return &central.MsgToSensor{
@@ -341,19 +371,22 @@ func (c *sensorConnection) getPolicySyncMsgFromPolicies(policies []*storage.Poli
 
 func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	var networkBaselines []*storage.NetworkBaseline
-	err := c.networkBaselineMgr.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
-		if !baseline.GetLocked() {
-			// Baseline not locked yet. No need to sync to sensor
+	walkFn := func() error {
+		networkBaselines = networkBaselines[:0]
+		return c.networkBaselineMgr.Walk(ctx, func(baseline *storage.NetworkBaseline) error {
+			if !baseline.GetLocked() {
+				// Baseline not locked yet. No need to sync to sensor
+				return nil
+			}
+			if baseline.GetClusterId() != c.clusterID {
+				// Not a baseline of the cluster we are talking to
+				return nil
+			}
+			networkBaselines = append(networkBaselines, baseline)
 			return nil
-		}
-		if baseline.GetClusterId() != c.clusterID {
-			// Not a baseline of the cluster we are talking to
-			return nil
-		}
-		networkBaselines = append(networkBaselines, baseline)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list network baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
@@ -367,17 +400,20 @@ func (c *sensorConnection) getNetworkBaselineSyncMsg(ctx context.Context) (*cent
 
 func (c *sensorConnection) getBaselineSyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
 	var baselines []*storage.ProcessBaseline
-	err := c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
-		if pw.GetUserLockedTimestamp() == nil {
+	walkFn := func() error {
+		baselines = baselines[:0]
+		return c.baselineMgr.WalkAll(ctx, func(pw *storage.ProcessBaseline) error {
+			if pw.GetUserLockedTimestamp() == nil {
+				return nil
+			}
+			if pw.GetKey().GetClusterId() != c.clusterID {
+				return nil
+			}
+			baselines = append(baselines, pw)
 			return nil
-		}
-		if pw.GetKey().GetClusterId() != c.clusterID {
-			return nil
-		}
-		baselines = append(baselines, pw)
-		return nil
-	})
-	if err != nil {
+		})
+	}
+	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
 		return nil, errors.Wrap(err, "could not list process baselines for Sensor connection")
 	}
 	return &central.MsgToSensor{
@@ -424,7 +460,57 @@ func (c *sensorConnection) getAuditLogSyncMsg(ctx context.Context) (*central.Msg
 	}, nil
 }
 
-func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities centralsensor.SensorCapabilitySet) error {
+func (c *sensorConnection) getDelegatedRegistryConfigMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	config, exists, err := c.delegatedRegistryConfigMgr.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		// Sensor's ProcessMessage handler will ignore a nil config, so send nothing
+		log.Debugf("Not sending nil delegated registry config to cluster %q", c.clusterID)
+		return nil, nil
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_DelegatedRegistryConfig{
+			DelegatedRegistryConfig: delegatedRegistryConfigConvert.StorageToInternalAPI(config),
+		},
+	}, nil
+}
+
+// getImageIntegrationMsg builds a MsgToSensor containing registry integrations that should
+// be sent to sensor. Returns nil if are no eligible integrations.
+func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central.MsgToSensor, error) {
+	iis, err := c.imageIntegrationMgr.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	var imageIntegrations []*storage.ImageIntegration
+	for _, ii := range iis {
+		if !imageintegration.ValidForSync(ii) {
+			continue
+		}
+
+		imageIntegrations = append(imageIntegrations, ii)
+		log.Debugf("Sending registry integration %q (%v) to cluster %q", ii.GetName(), ii.GetId(), c.clusterID)
+	}
+
+	if len(imageIntegrations) == 0 {
+		return nil, nil
+	}
+
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ImageIntegrations{
+			ImageIntegrations: &central.ImageIntegrations{
+				UpdatedIntegrations: imageIntegrations,
+			},
+		},
+	}, nil
+}
+
+func (c *sensorConnection) Run(ctx context.Context, server central.SensorService_CommunicateServer, connectionCapabilities set.Set[centralsensor.SensorCapability]) error {
 	// Synchronously send the config to ensure syncing before Sensor marks the connection as Central reachable
 	msg, err := c.getClusterConfigMsg(ctx)
 	if err != nil {
@@ -462,6 +548,34 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	}
 
+	if connectionCapabilities.Contains(centralsensor.DelegatedRegistryCap) {
+		// Sync delegated registry config.
+		msg, err := c.getDelegatedRegistryConfigMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get delegated registry config msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial delegated registry config to cluster %q", c.clusterID)
+			}
+
+			log.Infof("Sent delegated registry config %q to cluster %q", msg.GetDelegatedRegistryConfig(), c.clusterID)
+		}
+
+		// Sync integrations.
+		msg, err = c.getImageIntegrationMsg(ctx)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get image integrations msg for %q", c.clusterID)
+		}
+		if msg != nil {
+			if err := server.Send(msg); err != nil {
+				return errors.Wrapf(err, "unable to sync initial image integrations to cluster %q", c.clusterID)
+			}
+
+			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
+		}
+	}
+
 	go c.runSend(server)
 
 	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the the feature is enabled.
@@ -477,11 +591,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			return errors.Wrapf(err, "unable to get audit log file state sync msg for %q", c.clusterID)
 		}
 
-		// Send the audit log state to sensor even if the the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
+		// Send the audit log state to sensor even if the user has it disabled (that's set in dynamic config). When enabled, sensor will use it correctly
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync audit log file state to cluster %q", c.clusterID)
 		}
 	}
+
+	metrics.IncrementSensorConnect(c.clusterID, c.sensorHello.GetSensorState().String())
 
 	c.runRecv(ctx, server)
 	return c.stopSig.Err()

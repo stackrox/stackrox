@@ -5,13 +5,13 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -24,11 +24,11 @@ type backendImpl struct {
 }
 
 func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error) {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
 
-	allBundleMetas, err := b.store.GetAll()
+	allBundleMetas, err := b.store.GetAll(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving all init bundles")
 	}
@@ -74,7 +74,7 @@ func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error)
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
-	if err := checkAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
 
@@ -106,7 +106,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		ExpiresAt: expiryDate,
 	}
 
-	if err := b.store.Add(meta); err != nil {
+	if err := b.store.Add(ctx, meta); err != nil {
 		return nil, errors.Wrap(err, "adding new init bundle to data store")
 	}
 
@@ -120,7 +120,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 }
 
 func (b *backendImpl) GetCAConfig(ctx context.Context) (*CAConfig, error) {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return nil, err
 	}
 
@@ -135,11 +135,11 @@ func (b *backendImpl) GetCAConfig(ctx context.Context) (*CAConfig, error) {
 }
 
 func (b *backendImpl) Revoke(ctx context.Context, id string) error {
-	if err := checkAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return err
 	}
 
-	if err := b.store.Revoke(id); err != nil {
+	if err := b.store.Revoke(ctx, id); err != nil {
 		return errors.Wrap(err, "revoking init bundle")
 	}
 
@@ -147,11 +147,11 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 }
 
 func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
-	if err := checkAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
 		return err
 	}
 
-	bundleMeta, err := b.store.Get(id)
+	bundleMeta, err := b.store.Get(ctx, id)
 	if err != nil {
 		return errors.Wrap(err, "retrieving init bundle")
 	}
@@ -163,7 +163,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 }
 
 // ValidateClientCertificate validates cert chains in identity extractors defined in authn.ValidateCertChain
-func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []requestinfo.CertInfo) error {
+func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtls.CertInfo) error {
 	if len(chain) == 0 {
 		return errors.New("empty cert chain passed")
 	}

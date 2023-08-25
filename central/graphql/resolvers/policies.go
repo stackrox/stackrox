@@ -7,12 +7,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
-	policyUtils "github.com/stackrox/rox/central/policy/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	mitreUtils "github.com/stackrox/rox/pkg/mitre/utils"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -35,12 +36,6 @@ func init() {
 		schema.AddExtraResolver("Policy", "latestViolation(query: String): Time"),
 		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
 
-		schema.AddExtraResolver("PolicyFields", "imageAgeDays: Int"),
-		schema.AddExtraResolver("PolicyFields", "scanAgeDays: Int"),
-		schema.AddExtraResolver("PolicyFields", "noScanExists: Boolean"),
-		schema.AddExtraResolver("PolicyFields", "privileged: Boolean"),
-		schema.AddExtraResolver("PolicyFields", "readOnlyRootFs: Boolean"),
-		schema.AddExtraResolver("PolicyFields", "whitelistEnabled: Boolean!"),
 		schema.AddExtraResolver("Policy", `unusedVarSink(query: String): Int`),
 	)
 }
@@ -48,7 +43,7 @@ func init() {
 // Policies returns GraphQL resolvers for all policies
 func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policies")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1QueryOrEmpty()
@@ -62,7 +57,7 @@ func (resolver *Resolver) Policies(ctx context.Context, args PaginatedQuery) ([]
 // Policy returns a GraphQL resolver for a given policy
 func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }) (*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policy")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(ctx, string(*args.ID)))
@@ -71,18 +66,18 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 // PolicyCount returns count of all policies across infrastructure
 func (resolver *Resolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PolicyCount")
-	if err := readPolicies(ctx); err != nil {
+	if err := readWorkflowAdministration(ctx); err != nil {
 		return 0, err
 	}
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.PolicyDataStore.Search(ctx, q)
+	count, err := resolver.PolicyDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
@@ -188,6 +183,8 @@ func (resolver *policyResolver) FailingDeployments(ctx context.Context, args Pag
 func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Query) ([]*deploymentResolver, error) {
 	alertsQuery := search.ConjunctionQuery(resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+
+	alertsQuery = paginated.FillDefaultSortOption(alertsQuery, paginated.GetViolationTimeSortOption())
 	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
 	if err != nil {
 		return nil, err
@@ -248,12 +245,12 @@ func (resolver *policyResolver) FailingDeploymentCount(ctx context.Context, args
 
 	q = search.ConjunctionQuery(q, resolver.getPolicyQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
-	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	count, err := resolver.root.ViolationsDataStore.Count(ctx, q)
 	if err != nil {
 		return 0, err
 	}
 	// This is because alert <-> policy <-> deployment is generally 1:1.
-	return int32(len(results)), nil
+	return int32(count), nil
 }
 
 // PolicyStatus returns the policy statusof this policy
@@ -331,84 +328,39 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 	return getLatestViolationTime(ctx, resolver.root, q)
 }
 
-func (resolver *policyResolver) FullMitreAttackVectors(ctx context.Context) ([]*mitreAttackVectorResolver, error) {
+func (resolver *policyResolver) FullMitreAttackVectors(_ context.Context) ([]*mitreAttackVectorResolver, error) {
 	return resolver.root.wrapMitreAttackVectors(
-		policyUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
+		mitreUtils.GetFullMitreAttackVectors(resolver.root.mitreStore, resolver.data),
 	)
 }
 
 func (resolver *policyResolver) getPolicyQuery() *v1.Query {
-	return search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
+	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).ProtoQuery()
 }
 
 func (resolver *policyResolver) getRawPolicyQuery() string {
-	return search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).Query()
+	return search.NewQueryBuilder().AddExactMatches(search.PolicyID, resolver.data.GetId()).Query()
 }
 
-func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+func (resolver *policyResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
 	return nil
 }
 
-// Following handle the basic type oneOf fields in policy fields that the codegen does not handle.
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-func (pf *policyFieldsResolver) WhitelistEnabled(ctx context.Context) bool {
-	return pf.data.GetWhitelistEnabled()
-}
-
-func (pf *policyFieldsResolver) ImageAgeDays(ctx context.Context) *int32 {
-	if pf.data.GetSetImageAgeDays() == nil {
-		return nil
-	}
-	ret := int32(pf.data.GetImageAgeDays())
-	return &ret
-}
-
-func (pf *policyFieldsResolver) ScanAgeDays(ctx context.Context) *int32 {
-	if pf.data.GetSetScanAgeDays() == nil {
-		return nil
-	}
-	ret := int32(pf.data.GetScanAgeDays())
-	return &ret
-}
-
-func (pf *policyFieldsResolver) NoScanExists(ctx context.Context) *bool {
-	if pf.data.GetSetNoScanExists() == nil {
-		return nil
-	}
-	ret := pf.data.GetNoScanExists()
-	return &ret
-}
-
-func (pf *policyFieldsResolver) Privileged(ctx context.Context) *bool {
-	if pf.data.GetSetPrivileged() == nil {
-		return nil
-	}
-	ret := pf.data.GetPrivileged()
-	return &ret
-}
-
-func (pf *policyFieldsResolver) ReadOnlyRootFs(ctx context.Context) *bool {
-	if pf.data.GetSetReadOnlyRootFs() == nil {
-		return nil
-	}
-	ret := pf.data.GetReadOnlyRootFs()
-	return &ret
-}
-
 func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
-	failingDeploymentsQuery := false
+	isFailingDeploymentsQuery := false
 	local := q.Clone()
 	filtered, _ := search.FilterQuery(local, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {
 			if matchFieldQuery.MatchFieldQuery.GetField() == search.PolicyViolated.String() {
-				failingDeploymentsQuery = true
+				isFailingDeploymentsQuery = true
 				return false
 			}
 		}
 		return true
 	})
-
-	return filtered, failingDeploymentsQuery
+	if filtered != nil {
+		filtered.Pagination = q.Pagination
+	}
+	return filtered, isFailingDeploymentsQuery
 }

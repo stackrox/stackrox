@@ -1,0 +1,17 @@
+{{- include "srox.init" . -}}
+{{- if not ._rox.central.db.external }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-db-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "central-db-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "central-db-config") | nindent 4 }}
+data:
+  postgresql.conf: |
+    {{- ._rox.central.db._postgresConfig | nindent 4 }}
+  pg_hba.conf: |
+    {{- ._rox.central.db._hbaConfig | nindent 4 }}
+{{- end }}

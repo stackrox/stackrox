@@ -5,10 +5,11 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockStore is a mock of Store interface.
@@ -34,59 +35,76 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AddAuthProvider mocks base method.
-func (m *MockStore) AddAuthProvider(authProvider *storage.AuthProvider) error {
+// Delete mocks base method.
+func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddAuthProvider", authProvider)
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddAuthProvider indicates an expected call of AddAuthProvider.
-func (mr *MockStoreMockRecorder) AddAuthProvider(authProvider interface{}) *gomock.Call {
+// Delete indicates an expected call of Delete.
+func (mr *MockStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAuthProvider", reflect.TypeOf((*MockStore)(nil).AddAuthProvider), authProvider)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ctx, id)
 }
 
-// GetAllAuthProviders mocks base method.
-func (m *MockStore) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
+// Exists mocks base method.
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllAuthProviders")
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockStoreMockRecorder) Exists(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
+}
+
+// Get mocks base method.
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, id)
+	ret0, _ := ret[0].(*storage.AuthProvider)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
+// GetAll mocks base method.
+func (m *MockStore) GetAll(ctx context.Context) ([]*storage.AuthProvider, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]*storage.AuthProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAllAuthProviders indicates an expected call of GetAllAuthProviders.
-func (mr *MockStoreMockRecorder) GetAllAuthProviders() *gomock.Call {
+// GetAll indicates an expected call of GetAll.
+func (mr *MockStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAuthProviders", reflect.TypeOf((*MockStore)(nil).GetAllAuthProviders))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
 }
 
-// RemoveAuthProvider mocks base method.
-func (m *MockStore) RemoveAuthProvider(d string) error {
+// Upsert mocks base method.
+func (m *MockStore) Upsert(ctx context.Context, obj *storage.AuthProvider) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveAuthProvider", d)
+	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveAuthProvider indicates an expected call of RemoveAuthProvider.
-func (mr *MockStoreMockRecorder) RemoveAuthProvider(d interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockStoreMockRecorder) Upsert(ctx, obj interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAuthProvider", reflect.TypeOf((*MockStore)(nil).RemoveAuthProvider), d)
-}
-
-// UpdateAuthProvider mocks base method.
-func (m *MockStore) UpdateAuthProvider(authProvider *storage.AuthProvider) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAuthProvider", authProvider)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAuthProvider indicates an expected call of UpdateAuthProvider.
-func (mr *MockStoreMockRecorder) UpdateAuthProvider(authProvider interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAuthProvider", reflect.TypeOf((*MockStore)(nil).UpdateAuthProvider), authProvider)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
 }

@@ -1,0 +1,160 @@
+values:
+  central:
+    persistence:
+      none: true
+tests:
+- name: "Empty declarative configuration mounts shouldn't lead to additional volume mounts"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath | startswith("/run/stackrox.io/declarative-configuration/"))] | assertThat(length == 0)
+
+- name: "Multiple config maps set for declarative configuration mounts should lead to additional volume mounts"
+  values:
+    central:
+      declarativeConfiguration:
+        mounts:
+          configMaps:
+            - "some-declarative-config-1"
+            - "some-declarative-config-2"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath | startswith("/run/stackrox.io/declarative-configuration/"))] | assertThat(length == 2)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-1")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-2")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.configMap.name == "some-declarative-config-1")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.configMap.optional == true)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.configMap.name == "some-declarative-config-2")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.configMap.optional == true)
+
+- name: "Multiple secrets set for declarative configuration mount should lead to additional volume mounts"
+  values:
+    central:
+      declarativeConfiguration:
+        mounts:
+          secrets:
+            - "some-declarative-config-1"
+            - "some-declarative-config-2"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath | startswith("/run/stackrox.io/declarative-configuration/"))] | assertThat(length == 2)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-1")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-2")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret.secretName == "some-declarative-config-1")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret.optional == true)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret.secretName == "some-declarative-config-2")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret.optional == true)
+
+- name: "Mix of secrets and config maps set for declarative configuration mount should lead to additional volume mounts"
+  values:
+    central:
+      declarativeConfiguration:
+        mounts:
+          secrets:
+            - "some-declarative-config-1"
+            - "some-declarative-config-2"
+          configMaps:
+            - "some-declarative-config-3"
+            - "some-declarative-config-4"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath | startswith("/run/stackrox.io/declarative-configuration/"))] | assertThat(length == 4)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-1") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-1")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-2") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-2")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-3") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-3") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-3") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-3")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-4") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-4") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+          | select(.name == "some-declarative-config-4") | assertThat(.mountPath == "/run/stackrox.io/declarative-configuration/some-declarative-config-4")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret.secretName == "some-declarative-config-1")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-1")
+     | assertThat(.secret.optional == true)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret.secretName == "some-declarative-config-2")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-2")
+     | assertThat(.secret.optional == true)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-3")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-3")
+     | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-3")
+     | assertThat(.configMap.name == "some-declarative-config-3")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-3")
+     | assertThat(.configMap.optional == true)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-4")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-4")
+     | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-4")
+     | assertThat(.configMap.name == "some-declarative-config-4")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "some-declarative-config-4")
+     | assertThat(.configMap.optional == true)

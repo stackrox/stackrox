@@ -4,11 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	imageComponentMultiplier "github.com/stackrox/rox/central/risk/multipliers/component/image"
 	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestScore(t *testing.T) {
@@ -34,7 +35,7 @@ func TestScore(t *testing.T) {
 		},
 	}
 
-	actualRisk := scorer.Score(ctx, imageComponent)
+	actualRisk := scorer.Score(ctx, scancomponent.NewFromImageComponent(imageComponent), "")
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

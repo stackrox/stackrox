@@ -1,0 +1,26 @@
+tests:
+- name: should use custom tag (full)
+  set:
+    collector.slimMode: false
+  expect: |
+    assertMainIs("test.registry/main:custom-main")
+    assertCollectorIs("test.registry/collector:custom-collector-full")
+- name: should use custom tag (slim)
+  set:
+    collector.slimMode: true
+  expect: |
+    assertMainIs("test.registry/main:custom-main")
+    assertCollectorIs("test.registry/collector:custom-collector-slim")
+
+- name: scanner image
+  server:
+    visibleSchemas:
+    - openshift-4.1.0
+    availableSchemas:
+    - openshift-4.1.0
+  set:
+    scanner.disable: false
+  expect: |
+    .deployments["scanner-db"] | toyaml | print
+    assertScannerIs("test.registry/scanner-slim:custom-scanner")
+    assertScannerDBIs("test.registry/scanner-db-slim:custom-scanner")

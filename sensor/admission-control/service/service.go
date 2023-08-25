@@ -67,7 +67,7 @@ func (s *service) CustomRoutes() []routes.CustomRoute {
 	}
 }
 
-func (s *service) handleReady(w http.ResponseWriter, req *http.Request) {
+func (s *service) handleReady(w http.ResponseWriter, _ *http.Request) {
 	if !s.mgr.IsReady() {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		_, _ = fmt.Fprintln(w, "not ready")

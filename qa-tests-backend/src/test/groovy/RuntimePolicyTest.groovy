@@ -1,14 +1,16 @@
 import static Services.getPolicies
-import static Services.waitForViolation
 import static Services.waitForResolvedViolation
-import io.stackrox.proto.storage.PolicyOuterClass
-import services.PolicyService
-import groups.BAT
-import groups.SMOKE
-import objects.Deployment
-import org.junit.experimental.categories.Category
-import spock.lang.Unroll
+import static Services.waitForViolation
+
 import java.util.stream.Collectors
+
+import io.stackrox.proto.storage.PolicyOuterClass
+
+import objects.Deployment
+import services.PolicyService
+
+import spock.lang.Tag
+import spock.lang.Unroll
 
 class RuntimePolicyTest extends BaseSpecification  {
     static final private String DEPLOYMENTAPTGET = "runtimenginx"
@@ -17,22 +19,24 @@ class RuntimePolicyTest extends BaseSpecification  {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName (DEPLOYMENTAPTGET)
-                    .setImage ("nginx@sha256:204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
+                    .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-"+
+                               "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"]),
+                    .setCommand(["sh" , "-c" , "apt-get -y update || true && sleep 600"]),
             new Deployment()
                     .setName (DEPLOYMENTAPT)
-                    .setImage ("quay.io/rhacs-eng/qa:redis-"+
+                    .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-"+
                                "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
+                    .setCommand(["sh" , "-c" , "apt -y update || true && sleep 600"]),
     ]
 
     static final private DEPLOYMENTREMOVAL =  new Deployment()
             .setName ("runtimeremoval")
-            .setImage ("quay.io/rhacs-eng/qa:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-" +
+                    "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
             .addLabel ( "app", "test" )
-            .setCommand(["sh" , "-c" , "apt -y update && sleep 600"])
+            .setCommand(["sh" , "-c" , "apt -y update || true && sleep 600"])
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -48,7 +52,8 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category([BAT, SMOKE])
+    @Tag("BAT")
+    @Tag("SMOKE")
     def "Verify runtime policy : #policyName can be triggered - #depName"() {
         when:
         "Validate if policy is present"
@@ -71,7 +76,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category([BAT])
+    @Tag("BAT")
     def "Verify runtime alert violations are resolved once policy is removed"() {
         given:
         "Create runtime alert"

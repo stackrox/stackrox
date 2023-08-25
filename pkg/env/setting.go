@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // A Setting is a runtime configuration set using an environment variable.
@@ -14,8 +15,9 @@ type Setting interface {
 }
 
 type settingOptions struct {
-	defaultValue string
-	allowEmpty   bool
+	defaultValue  string
+	allowEmpty    bool
+	stripPrefixes []string
 }
 
 type setting struct {
@@ -54,6 +56,14 @@ func AllowEmpty() SettingOption {
 	})
 }
 
+// StripAnyPrefix will remove prefix (any that matches) from the setting value.
+// If prefix is not found, the value is unchanged.
+func StripAnyPrefix(pref ...string) SettingOption {
+	return settingOptionFn(func(so *settingOptions) {
+		so.stripPrefixes = pref
+	})
+}
+
 // RegisterSetting registers a new setting for the given environment variable with the given options
 func RegisterSetting(envVar string, opts ...SettingOption) Setting {
 	s := &setting{
@@ -66,12 +76,24 @@ func RegisterSetting(envVar string, opts ...SettingOption) Setting {
 	return s
 }
 
+func unregisterSetting(envVar string) {
+	delete(Settings, envVar)
+}
+
 func (s *setting) EnvVar() string {
 	return s.envVar
 }
 
 func (s *setting) Setting() string {
 	val, ok := os.LookupEnv(s.envVar)
+	for _, prefix := range s.stripPrefixes {
+		prev := val
+		val = strings.TrimPrefix(val, prefix)
+		if prev != val {
+			// only one change allowed to avoid depending on the order of prefixes provided
+			break
+		}
+	}
 	if val != "" || (ok && s.allowEmpty) {
 		return val
 	}

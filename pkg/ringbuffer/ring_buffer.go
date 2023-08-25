@@ -19,14 +19,14 @@ type RingBuffer struct {
 }
 
 // NewRingBuffer creates and returns a new ring buffer with the given capacity.
-func NewRingBuffer(cap int) *RingBuffer {
-	if cap < 0 {
-		panic(errors.Errorf("invalid ring buffer capacity %d", cap))
-	} else if cap == 0 {
-		cap = defaultRingBufferCapacity
+func NewRingBuffer(capacity int) *RingBuffer {
+	if capacity < 0 {
+		panic(errors.Errorf("invalid ring buffer capacity %d", capacity))
+	} else if capacity == 0 {
+		capacity = defaultRingBufferCapacity
 	}
 	return &RingBuffer{
-		buf: make([]byte, cap),
+		buf: make([]byte, capacity),
 	}
 }
 

@@ -1,11 +1,10 @@
 package printer
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -76,24 +75,29 @@ func (t *TabularPrinterFactory) SupportedFormats() []string {
 // GJSON's syntax expression to read more about modifiers.
 // The following example illustrates a JSON compatible structure and its gjson multi path expression
 // JSON structure:
-// type data struct {
-//		Infos 	[]info `json:"infos"`
-//		Name 	string `json:"name"`
-// }
-// type info struct {
-//		info 	string `json:"info"`
-//		topic 	string `json:"topic"`
-// }
+//
+//	type data struct {
+//			Infos 	[]info `json:"infos"`
+//			Name 	string `json:"name"`
+//	}
+//
+//	type info struct {
+//			info 	string `json:"info"`
+//			topic 	string `json:"topic"`
+//	}
+//
 // Data:
-// data := &data{Name: "example", Infos: []info{
-//										{info: "info1", topic: "topic1"},
-//										{info: "info2", topic: "topic2"},
-//										{info: "info3", topic: "topic3"},
-//										}
+//
+//	data := &data{Name: "example", Infos: []info{
+//											{info: "info1", topic: "topic1"},
+//											{info: "info2", topic: "topic2"},
+//											{info: "info3", topic: "topic3"},
+//											}
+//
 // gjson multi path expression: "{name,infos.#.info,infos.#.topic}"
-// 	- bundle multiple gjson expression surrounded by "{}" to form a multi path expression
-// 	- specify "#" to visit each element in the array
-// 	- each expression in the multi path expression is correlated with the given header(s)!
+//   - bundle multiple gjson expression surrounded by "{}" to form a multi path expression
+//   - specify "#" to visit each element in the array
+//   - each expression in the multi path expression is correlated with the given header(s)!
 //
 // headers := []string{"name", "info", "topic"}
 //
@@ -119,23 +123,22 @@ func (t *TabularPrinterFactory) CreatePrinter(format string) (ObjectPrinter, err
 		return printers.NewCSVPrinter(t.RowJSONPathExpression,
 			printers.WithCSVColumnHeaders(t.Headers), printers.WithCSVHeaderOptions(t.NoHeader, t.HeaderAsComment)), nil
 	default:
-		return nil, errorhelpers.NewErrInvalidArgs(fmt.Sprintf("invalid output format used for "+
-			"Tabular Printer: %q", format))
+		return nil, errox.InvalidArgs.Newf("invalid output format used for Tabular Printer: %q", format)
 	}
 }
 
-// Validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
+// validate verifies whether the current configuration can be used to create an ObjectPrinter. It will return an error
 // if it is not possible
 func (t *TabularPrinterFactory) validate() error {
 	if t.NoHeader && t.HeaderAsComment {
-		return errorhelpers.NewErrInvalidArgs("cannot specify both --no-header as well as " +
+		return errox.InvalidArgs.New("cannot specify both --no-header as well as " +
 			"--headers-as-comment flags. Choose only one of them")
 	}
 	headers := set.NewStringSet(t.Headers...)
 	columnsToMerge := set.NewStringSet(t.columnsToMerge...)
 	intersect := headers.Intersect(columnsToMerge)
 	if !intersect.Equal(columnsToMerge) {
-		return errorhelpers.NewErrInvalidArgs("undefined columns to merge: " + columnsToMerge.Difference(intersect).ElementsString(", "))
+		return errox.InvalidArgs.Newf("undefined columns to merge: %s", columnsToMerge.Difference(intersect).ElementsString(", "))
 	}
 	return nil
 }

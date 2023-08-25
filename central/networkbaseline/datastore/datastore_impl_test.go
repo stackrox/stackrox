@@ -1,17 +1,21 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/networkbaseline/store"
-	"github.com/stackrox/rox/central/networkbaseline/store/rocksdb"
-	"github.com/stackrox/rox/central/role/resources"
+	pgStore "github.com/stackrox/rox/central/networkbaseline/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	pkgRocksDB "github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testconsts"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,23 +31,32 @@ func TestNetworkBaselineDatastoreSuite(t *testing.T) {
 type NetworkBaselineDataStoreTestSuite struct {
 	suite.Suite
 
-	datastore *dataStoreImpl
+	datastore DataStore
 	storage   store.Store
-
-	mockCtrl *gomock.Controller
+	pool      postgres.DB
 }
 
-func (suite *NetworkBaselineDataStoreTestSuite) SetupTest() {
-	mockCtrl := gomock.NewController(suite.T())
-	suite.mockCtrl = mockCtrl
-	db, err := pkgRocksDB.NewTemp(suite.T().Name())
-	suite.Require().NoError(err)
-	suite.storage = rocksdb.New(db)
-	suite.datastore = newNetworkBaselineDataStore(suite.storage).(*dataStoreImpl)
+var _ interface {
+	suite.SetupAllSuite
+	suite.TearDownAllSuite
+} = (*NetworkBaselineDataStoreTestSuite)(nil)
+
+func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
+	ctx := context.Background()
+	source := pgtest.GetConnectionString(suite.T())
+	config, err := postgres.ParseConfig(source)
+	suite.NoError(err)
+	suite.pool, err = postgres.New(ctx, config)
+	suite.NoError(err)
+	pgStore.Destroy(ctx, suite.pool)
+	gormDB := pgtest.OpenGormDB(suite.T(), source)
+	defer pgtest.CloseGormDB(suite.T(), gormDB)
+	suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
+	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
 
-func (suite *NetworkBaselineDataStoreTestSuite) TearDownTest() {
-	suite.mockCtrl.Finish()
+func (suite *NetworkBaselineDataStoreTestSuite) TearDownSuite() {
+	suite.pool.Close()
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) mustGetBaseline(ctx context.Context, deploymentID string) (*storage.NetworkBaseline, bool) {
@@ -66,7 +79,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestNoAccessAllowed() {
 
 	suite.Error(suite.datastore.DeleteNetworkBaseline(ctx, expectedBaseline.GetDeploymentId()), "permission denied")
 	// BTW if we try to delete non-existent/already deleted baseline, it should just return nil
-	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, "non-existent deployment ID"))
+	suite.Nil(suite.datastore.DeleteNetworkBaseline(ctx, uuid.Nil.String()))
 }
 
 func (suite *NetworkBaselineDataStoreTestSuite) TestNetworkBaselines() {
@@ -104,15 +117,15 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithReadAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
 
@@ -121,17 +134,23 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
-				sac.ClusterScopeKeys("a-wrong-cluster")))
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(testconsts.Cluster3)))
 
 	ctxWithWriteAccess :=
 		sac.WithGlobalAccessScopeChecker(
 			context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-				sac.ResourceScopeKeys(resources.NetworkBaseline),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
 				sac.ClusterScopeKeys(expectedBaseline.GetClusterId()),
 				sac.NamespaceScopeKeys(expectedBaseline.GetNamespace())))
+
+	ctxWithUnrestrictedWriteAccess :=
+		sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	// Test Update
 	{
@@ -164,5 +183,26 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 		suite.Error(suite.datastore.DeleteNetworkBaseline(ctxWithReadAccess, expectedBaseline.GetDeploymentId()), "permission denied")
 		suite.Error(suite.datastore.DeleteNetworkBaseline(ctxWithWrongClusterWriteAccess, expectedBaseline.GetDeploymentId()), "permission denied")
 		suite.Nil(suite.datastore.DeleteNetworkBaseline(ctxWithWriteAccess, expectedBaseline.GetDeploymentId()))
+		_, ok := suite.mustGetBaseline(ctxWithReadAccess, expectedBaseline.GetDeploymentId())
+		suite.False(ok)
+	}
+
+	// Test Delete Multiple
+	{
+		nbs := fixtures.GetSACTestNetworkBaseline()
+		var ids []string
+		for _, nb := range nbs {
+			ids = append(ids, nb.GetDeploymentId())
+		}
+
+		suite.Nil(suite.datastore.UpsertNetworkBaselines(ctxWithUnrestrictedWriteAccess, nbs))
+		suite.Error(suite.datastore.DeleteNetworkBaselines(ctxWithWrongClusterReadAccess, ids), "permission denied")
+		suite.Error(suite.datastore.DeleteNetworkBaselines(ctxWithReadAccess, ids), "permission denied")
+		suite.Error(suite.datastore.DeleteNetworkBaselines(ctxWithWrongClusterWriteAccess, ids), "permission denied")
+		suite.Nil(suite.datastore.DeleteNetworkBaselines(ctxWithUnrestrictedWriteAccess, ids))
+		for _, id := range ids {
+			_, ok := suite.mustGetBaseline(ctxWithReadAccess, id)
+			suite.False(ok)
+		}
 	}
 }

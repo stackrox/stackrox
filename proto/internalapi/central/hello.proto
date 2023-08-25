@@ -7,26 +7,37 @@ import "storage/cluster.proto";
 package central;
 
 message HelmManagedConfigInit {
-  storage.CompleteClusterConfig cluster_config = 1;
-  string cluster_name                          = 2;
-  string cluster_id                            = 3;
-  bool not_helm_managed                        = 4 [deprecated = true]; // Only taken into account if managed_by is UNKNOWN.
-  storage.ManagerType managed_by               = 5;
+    storage.CompleteClusterConfig cluster_config    = 1;
+    string cluster_name                             = 2;
+    string cluster_id                               = 3;
+    bool not_helm_managed                           = 4 [deprecated = true]; // Only taken into account if managed_by is UNKNOWN.
+    storage.ManagerType managed_by                  = 5;
 }
 
 message SensorHello {
-  string sensor_version        = 1;
-  repeated string capabilities = 2;
+    enum SensorState {
+        UNKNOWN     = 0;
+        STARTUP     = 1;
+        RECONNECT   = 2;
+    }
 
-  storage.SensorDeploymentIdentification deployment_identification = 5;
+    string sensor_version           = 1;
+    repeated string capabilities    = 2;
 
-  HelmManagedConfigInit helm_managed_config_init = 3;
+    storage.SensorDeploymentIdentification deployment_identification = 5;
 
-  // Policy version sensor understands. If unset, central will try to guess it.
-  string policy_version = 4;
+    HelmManagedConfigInit helm_managed_config_init = 3;
+
+    // Policy version sensor understands. If unset, central will try to guess it.
+    string policy_version = 4;
+
+    // sensor_state defines in what state sensor is (e.g. it's starting up or it's reconnecting)
+    SensorState sensor_state = 6;
 }
 
 message CentralHello {
-  string              cluster_id  = 1;
-  map<string, string> cert_bundle = 2;
+    string              cluster_id      = 1;
+    map<string, string> cert_bundle     = 2;
+    bool                managed_central = 3;
+    string              central_id      = 4;
 }

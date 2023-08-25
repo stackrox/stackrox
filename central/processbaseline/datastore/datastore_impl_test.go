@@ -1,27 +1,31 @@
+//go:build sql_integration
+
 package datastore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processbaseline/index"
 	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
-	rocksdbStore "github.com/stackrox/rox/central/processbaseline/store/rocksdb"
+	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
-	"github.com/stackrox/rox/central/role/resources"
+	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestProcessBaselineDatastore(t *testing.T) {
@@ -30,13 +34,14 @@ func TestProcessBaselineDatastore(t *testing.T) {
 
 type ProcessBaselineDataStoreTestSuite struct {
 	suite.Suite
-	requestContext context.Context
-	datastore      DataStore
-	storage        store.Store
-	indexer        index.Indexer
-	searcher       baselineSearch.Searcher
+	requestContext     context.Context
+	datastore          DataStore
+	storage            store.Store
+	indexer            index.Indexer
+	searcher           baselineSearch.Searcher
+	indicatorMockStore *indicatorMocks.MockDataStore
 
-	db *rocksdb.RocksDB
+	pool postgres.DB
 
 	baselineResultsStore *mocks.MockDataStore
 
@@ -47,21 +52,18 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	suite.requestContext = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ProcessWhitelist),
+			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		),
 	)
+	var err error
 
-	db, err := rocksdb.NewTemp(suite.T().Name() + ".db")
-	suite.Require().NoError(err)
-
-	suite.db = db
-
-	suite.storage, err = rocksdbStore.New(db)
-	suite.NoError(err)
-
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	suite.NoError(err)
-	suite.indexer = index.New(tmpIndex)
+	pgtestbase := pgtest.ForT(suite.T())
+	suite.Require().NotNil(pgtestbase)
+	suite.pool = pgtestbase.DB
+	dbStore := postgresStore.New(suite.pool)
+	suite.storage, err = postgresStore.NewWithCache(dbStore)
+	require.NoError(suite.T(), err)
+	suite.indexer = postgresStore.NewIndexer(suite.pool)
 
 	suite.searcher, err = baselineSearch.New(suite.storage, suite.indexer)
 	suite.NoError(err)
@@ -69,12 +71,13 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.baselineResultsStore)
+	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
+	suite.datastore = New(suite.storage, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
-	rocksdbtest.TearDownRocksDB(suite.db)
+	suite.pool.Close()
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {
@@ -148,12 +151,12 @@ func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessB
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestGetById() {
-	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: "FAKE", ContainerName: "whatever", ClusterId: "whatever", Namespace: "whatever"}, false, nil)
+	suite.doGet(&storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment1, ContainerName: "whatever", ClusterId: fixtureconsts.Cluster1, Namespace: "whatever"}, false, nil)
 
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 	baseline := suite.createAndStoreBaseline(key)
@@ -221,7 +224,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	key := fixtures.GetBaselineKey()
 	firstProcess := "Joseph Rules"
 	newItem := []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: firstProcess}}}
-	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true)
+	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
 	suite.NoError(err)
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
@@ -230,7 +233,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
-	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true)
+	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
 	suite.NoError(err)
 	suite.Equal(2, len(baseline.GetElements()))
 	processNames := make([]string, 0, 2)
@@ -281,14 +284,14 @@ func (suite *ProcessBaselineDataStoreTestSuite) doQuery(q *v1.Query, len int) {
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
-	dep1 := "1"
-	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: "1", Namespace: "1"}
-	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: "1", Namespace: "2"}
-	key3 := &storage.ProcessBaselineKey{DeploymentId: "2", ContainerName: "1", ClusterId: "1", Namespace: "3"}
+	dep1 := fixtureconsts.Deployment1
+	key1 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "1"}
+	key2 := &storage.ProcessBaselineKey{DeploymentId: dep1, ContainerName: "2", ClusterId: fixtureconsts.Cluster1, Namespace: "2"}
+	key3 := &storage.ProcessBaselineKey{DeploymentId: fixtureconsts.Deployment2, ContainerName: "1", ClusterId: fixtureconsts.Cluster1, Namespace: "3"}
 	suite.createAndStoreBaselines(key1, key2, key3)
 
 	queryDep1 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1).ProtoQuery()
-	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, "2").ProtoQuery()
+	queryDep2 := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
 	suite.doQuery(queryDep1, 2)
 	suite.doQuery(queryDep2, 1)
 	suite.doGet(key1, true, nil)
@@ -308,9 +311,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestRemoveByDeployment() {
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	key := &storage.ProcessBaselineKey{
-		DeploymentId:  "blah",
+		DeploymentId:  fixtureconsts.Deployment1,
 		ContainerName: "container",
-		ClusterId:     "cluster1",
+		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     "namespace",
 	}
 
@@ -320,4 +323,126 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 	suite.NoError(err)
 	suite.NotNil(resKey)
 	suite.Equal(*key, *resKey)
+}
+
+func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline() {
+	key := fixtures.GetBaselineKey()
+	indicators :=
+		[]*storage.ProcessIndicator{
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/not-apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/curl",
+					Args:         "badssl.com",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+		}
+
+	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any()).Return(indicators, nil)
+
+	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
+	suite.NoError(err)
+
+	suite.Equal(key, baseline.GetKey())
+	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.Elements != nil)
+
+}
+
+func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaselineDupesRemoved() {
+	key := fixtures.GetBaselineKey()
+	indicators :=
+		[]*storage.ProcessIndicator{
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/not-apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/curl",
+					Args:         "badssl.com",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/apt-get",
+					Args:         "install nmap",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+			{
+				Signal: &storage.ProcessSignal{
+					ExecFilePath: "/bin/curl",
+					Args:         "badssl.com",
+				},
+				ContainerName: key.GetContainerName(),
+			},
+		}
+
+	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any()).Return(indicators, nil)
+
+	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
+	suite.NoError(err)
+
+	suite.Equal(key, baseline.GetKey())
+	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.Elements != nil)
+	suite.True(len(baseline.Elements) == len(indicators)-2)
+
+}
+
+func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaselineNoProcesses() {
+	key := fixtures.GetBaselineKey()
+
+	suite.indicatorMockStore.EXPECT().SearchRawProcessIndicators(suite.requestContext, gomock.Any())
+
+	baseline, err := suite.datastore.CreateUnlockedProcessBaseline(suite.requestContext, key)
+	suite.NoError(err)
+
+	suite.Equal(key, baseline.GetKey())
+	suite.True(baseline.GetLastUpdate().Compare(baseline.GetCreated()) == 0)
+	suite.True(baseline.UserLockedTimestamp == nil)
+	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
+
+}
+
+func (suite *ProcessBaselineDataStoreTestSuite) TestClearProcessBaselines() {
+	key := fixtures.GetBaselineKey()
+	baseline := suite.createAndStoreBaseline(key)
+	suite.True(baseline.Elements != nil)
+
+	ids := []string{baseline.Id}
+	err := suite.datastore.ClearProcessBaselines(suite.requestContext, ids)
+	suite.True(err == nil)
+	baseline, exists, err := suite.datastore.GetProcessBaseline(suite.requestContext, key)
+	suite.True(exists)
+	suite.True(baseline.Elements == nil)
+	suite.True(err == nil)
 }

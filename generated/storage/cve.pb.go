@@ -88,34 +88,6 @@ func (VulnerabilitySeverity) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{1}
 }
 
-type CVE_ScoreVersion int32
-
-const (
-	CVE_V2      CVE_ScoreVersion = 0
-	CVE_V3      CVE_ScoreVersion = 1
-	CVE_UNKNOWN CVE_ScoreVersion = 2
-)
-
-var CVE_ScoreVersion_name = map[int32]string{
-	0: "V2",
-	1: "V3",
-	2: "UNKNOWN",
-}
-
-var CVE_ScoreVersion_value = map[string]int32{
-	"V2":      0,
-	"V3":      1,
-	"UNKNOWN": 2,
-}
-
-func (x CVE_ScoreVersion) String() string {
-	return proto.EnumName(CVE_ScoreVersion_name, int32(x))
-}
-
-func (CVE_ScoreVersion) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{0, 0}
-}
-
 type CVE_CVEType int32
 
 const (
@@ -150,7 +122,63 @@ func (x CVE_CVEType) String() string {
 }
 
 func (CVE_CVEType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{0, 0}
+}
+
+type CVE_ScoreVersion int32
+
+const (
+	CVE_V2      CVE_ScoreVersion = 0
+	CVE_V3      CVE_ScoreVersion = 1
+	CVE_UNKNOWN CVE_ScoreVersion = 2
+)
+
+var CVE_ScoreVersion_name = map[int32]string{
+	0: "V2",
+	1: "V3",
+	2: "UNKNOWN",
+}
+
+var CVE_ScoreVersion_value = map[string]int32{
+	"V2":      0,
+	"V3":      1,
+	"UNKNOWN": 2,
+}
+
+func (x CVE_ScoreVersion) String() string {
+	return proto.EnumName(CVE_ScoreVersion_name, int32(x))
+}
+
+func (CVE_ScoreVersion) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_d7bf0cfd04430357, []int{0, 1}
+}
+
+type CVEInfo_ScoreVersion int32
+
+const (
+	CVEInfo_V2      CVEInfo_ScoreVersion = 0
+	CVEInfo_V3      CVEInfo_ScoreVersion = 1
+	CVEInfo_UNKNOWN CVEInfo_ScoreVersion = 2
+)
+
+var CVEInfo_ScoreVersion_name = map[int32]string{
+	0: "V2",
+	1: "V3",
+	2: "UNKNOWN",
+}
+
+var CVEInfo_ScoreVersion_value = map[string]int32{
+	"V2":      0,
+	"V3":      1,
+	"UNKNOWN": 2,
+}
+
+func (x CVEInfo_ScoreVersion) String() string {
+	return proto.EnumName(CVEInfo_ScoreVersion_name, int32(x))
+}
+
+func (CVEInfo_ScoreVersion) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{1, 0}
 }
 
 type CVSSV2_Impact int32
@@ -178,7 +206,7 @@ func (x CVSSV2_Impact) String() string {
 }
 
 func (CVSSV2_Impact) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1, 0}
+	return fileDescriptor_d7bf0cfd04430357, []int{5, 0}
 }
 
 type CVSSV2_AttackVector int32
@@ -206,7 +234,7 @@ func (x CVSSV2_AttackVector) String() string {
 }
 
 func (CVSSV2_AttackVector) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1, 1}
+	return fileDescriptor_d7bf0cfd04430357, []int{5, 1}
 }
 
 type CVSSV2_AccessComplexity int32
@@ -234,7 +262,7 @@ func (x CVSSV2_AccessComplexity) String() string {
 }
 
 func (CVSSV2_AccessComplexity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1, 2}
+	return fileDescriptor_d7bf0cfd04430357, []int{5, 2}
 }
 
 type CVSSV2_Authentication int32
@@ -262,7 +290,7 @@ func (x CVSSV2_Authentication) String() string {
 }
 
 func (CVSSV2_Authentication) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1, 3}
+	return fileDescriptor_d7bf0cfd04430357, []int{5, 3}
 }
 
 type CVSSV2_Severity int32
@@ -293,7 +321,7 @@ func (x CVSSV2_Severity) String() string {
 }
 
 func (CVSSV2_Severity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1, 4}
+	return fileDescriptor_d7bf0cfd04430357, []int{5, 4}
 }
 
 type CVSSV3_Impact int32
@@ -321,7 +349,7 @@ func (x CVSSV3_Impact) String() string {
 }
 
 func (CVSSV3_Impact) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 0}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 0}
 }
 
 type CVSSV3_AttackVector int32
@@ -352,7 +380,7 @@ func (x CVSSV3_AttackVector) String() string {
 }
 
 func (CVSSV3_AttackVector) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 1}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 1}
 }
 
 type CVSSV3_Complexity int32
@@ -377,7 +405,7 @@ func (x CVSSV3_Complexity) String() string {
 }
 
 func (CVSSV3_Complexity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 2}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 2}
 }
 
 type CVSSV3_Privileges int32
@@ -405,7 +433,7 @@ func (x CVSSV3_Privileges) String() string {
 }
 
 func (CVSSV3_Privileges) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 3}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 3}
 }
 
 type CVSSV3_UserInteraction int32
@@ -430,7 +458,7 @@ func (x CVSSV3_UserInteraction) String() string {
 }
 
 func (CVSSV3_UserInteraction) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 4}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 4}
 }
 
 type CVSSV3_Scope int32
@@ -455,7 +483,7 @@ func (x CVSSV3_Scope) String() string {
 }
 
 func (CVSSV3_Scope) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 5}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 5}
 }
 
 type CVSSV3_Severity int32
@@ -492,19 +520,22 @@ func (x CVSSV3_Severity) String() string {
 }
 
 func (CVSSV3_Severity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2, 6}
+	return fileDescriptor_d7bf0cfd04430357, []int{6, 6}
 }
 
-// Next Tag: 19
+// ******************************
+// This proto is deprecated.
+// ******************************
+// Next Tag: 23
 type CVE struct {
-	Id          string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE,store"`
-	Cvss        float32 `protobuf:"fixed32,2,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`
-	ImpactScore float32 `protobuf:"fixed32,14,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`
-	// For internal purposes only. This will only be populated prior to upsert into datastore.
-	Type        CVE_CVEType      `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty"`
-	Types       []CVE_CVEType    `protobuf:"varint,18,rep,packed,name=types,proto3,enum=storage.CVE_CVEType" json:"types,omitempty" search:"CVE Type,store"`
-	Summary     string           `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
-	Link        string           `protobuf:"bytes,5,opt,name=link,proto3" json:"link,omitempty"`
+	Id          string        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE,store"`
+	Cvss        float32       `protobuf:"fixed32,2,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`
+	ImpactScore float32       `protobuf:"fixed32,14,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`
+	Type        CVE_CVEType   `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty" sql:"-"`
+	Types       []CVE_CVEType `protobuf:"varint,18,rep,packed,name=types,proto3,enum=storage.CVE_CVEType" json:"types,omitempty" search:"CVE Type"`
+	Summary     string        `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
+	Link        string        `protobuf:"bytes,5,opt,name=link,proto3" json:"link,omitempty"`
+	// This indicates the timestamp when the cve was first published in the cve feeds.
 	PublishedOn *types.Timestamp `protobuf:"bytes,6,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"`
 	// Time when the CVE was first seen in the system.
 	CreatedAt            *types.Timestamp               `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"`
@@ -725,78 +756,6 @@ func (m *CVE) Clone() *CVE {
 	return cloned
 }
 
-type CVE_Reference struct {
-	URI                  string   `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
-	Tags                 []string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CVE_Reference) Reset()         { *m = CVE_Reference{} }
-func (m *CVE_Reference) String() string { return proto.CompactTextString(m) }
-func (*CVE_Reference) ProtoMessage()    {}
-func (*CVE_Reference) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{0, 0}
-}
-func (m *CVE_Reference) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *CVE_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_CVE_Reference.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *CVE_Reference) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CVE_Reference.Merge(m, src)
-}
-func (m *CVE_Reference) XXX_Size() int {
-	return m.Size()
-}
-func (m *CVE_Reference) XXX_DiscardUnknown() {
-	xxx_messageInfo_CVE_Reference.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CVE_Reference proto.InternalMessageInfo
-
-func (m *CVE_Reference) GetURI() string {
-	if m != nil {
-		return m.URI
-	}
-	return ""
-}
-
-func (m *CVE_Reference) GetTags() []string {
-	if m != nil {
-		return m.Tags
-	}
-	return nil
-}
-
-func (m *CVE_Reference) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *CVE_Reference) Clone() *CVE_Reference {
-	if m == nil {
-		return nil
-	}
-	cloned := new(CVE_Reference)
-	*cloned = *m
-
-	if m.Tags != nil {
-		cloned.Tags = make([]string, len(m.Tags))
-		copy(cloned.Tags, m.Tags)
-	}
-	return cloned
-}
-
 type CVE_DistroSpecific struct {
 	Severity             VulnerabilitySeverity `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
 	Cvss                 float32               `protobuf:"fixed32,2,opt,name=cvss,proto3" json:"cvss,omitempty"`
@@ -812,7 +771,7 @@ func (m *CVE_DistroSpecific) Reset()         { *m = CVE_DistroSpecific{} }
 func (m *CVE_DistroSpecific) String() string { return proto.CompactTextString(m) }
 func (*CVE_DistroSpecific) ProtoMessage()    {}
 func (*CVE_DistroSpecific) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{0, 1}
+	return fileDescriptor_d7bf0cfd04430357, []int{0, 0}
 }
 func (m *CVE_DistroSpecific) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -891,6 +850,676 @@ func (m *CVE_DistroSpecific) Clone() *CVE_DistroSpecific {
 	return cloned
 }
 
+type CVE_Reference struct {
+	URI                  string   `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
+	Tags                 []string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CVE_Reference) Reset()         { *m = CVE_Reference{} }
+func (m *CVE_Reference) String() string { return proto.CompactTextString(m) }
+func (*CVE_Reference) ProtoMessage()    {}
+func (*CVE_Reference) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{0, 1}
+}
+func (m *CVE_Reference) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CVE_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CVE_Reference.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CVE_Reference) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CVE_Reference.Merge(m, src)
+}
+func (m *CVE_Reference) XXX_Size() int {
+	return m.Size()
+}
+func (m *CVE_Reference) XXX_DiscardUnknown() {
+	xxx_messageInfo_CVE_Reference.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CVE_Reference proto.InternalMessageInfo
+
+func (m *CVE_Reference) GetURI() string {
+	if m != nil {
+		return m.URI
+	}
+	return ""
+}
+
+func (m *CVE_Reference) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
+func (m *CVE_Reference) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CVE_Reference) Clone() *CVE_Reference {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CVE_Reference)
+	*cloned = *m
+
+	if m.Tags != nil {
+		cloned.Tags = make([]string, len(m.Tags))
+		copy(cloned.Tags, m.Tags)
+	}
+	return cloned
+}
+
+type CVEInfo struct {
+	Cve     string `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE,store" sql:"index=hash"`
+	Summary string `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`
+	Link    string `protobuf:"bytes,3,opt,name=link,proto3" json:"link,omitempty"`
+	// This indicates the timestamp when the cve was first published in the cve feeds.
+	PublishedOn *types.Timestamp `protobuf:"bytes,4,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"`
+	// Time when the CVE was first seen in the system.
+	CreatedAt            *types.Timestamp     `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"`
+	LastModified         *types.Timestamp     `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	ScoreVersion         CVEInfo_ScoreVersion `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.CVEInfo_ScoreVersion" json:"score_version,omitempty"`
+	CvssV2               *CVSSV2              `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
+	CvssV3               *CVSSV3              `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
+	References           []*CVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *CVEInfo) Reset()         { *m = CVEInfo{} }
+func (m *CVEInfo) String() string { return proto.CompactTextString(m) }
+func (*CVEInfo) ProtoMessage()    {}
+func (*CVEInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{1}
+}
+func (m *CVEInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CVEInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CVEInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CVEInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CVEInfo.Merge(m, src)
+}
+func (m *CVEInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *CVEInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_CVEInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CVEInfo proto.InternalMessageInfo
+
+func (m *CVEInfo) GetCve() string {
+	if m != nil {
+		return m.Cve
+	}
+	return ""
+}
+
+func (m *CVEInfo) GetSummary() string {
+	if m != nil {
+		return m.Summary
+	}
+	return ""
+}
+
+func (m *CVEInfo) GetLink() string {
+	if m != nil {
+		return m.Link
+	}
+	return ""
+}
+
+func (m *CVEInfo) GetPublishedOn() *types.Timestamp {
+	if m != nil {
+		return m.PublishedOn
+	}
+	return nil
+}
+
+func (m *CVEInfo) GetCreatedAt() *types.Timestamp {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return nil
+}
+
+func (m *CVEInfo) GetLastModified() *types.Timestamp {
+	if m != nil {
+		return m.LastModified
+	}
+	return nil
+}
+
+func (m *CVEInfo) GetScoreVersion() CVEInfo_ScoreVersion {
+	if m != nil {
+		return m.ScoreVersion
+	}
+	return CVEInfo_V2
+}
+
+func (m *CVEInfo) GetCvssV2() *CVSSV2 {
+	if m != nil {
+		return m.CvssV2
+	}
+	return nil
+}
+
+func (m *CVEInfo) GetCvssV3() *CVSSV3 {
+	if m != nil {
+		return m.CvssV3
+	}
+	return nil
+}
+
+func (m *CVEInfo) GetReferences() []*CVEInfo_Reference {
+	if m != nil {
+		return m.References
+	}
+	return nil
+}
+
+func (m *CVEInfo) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CVEInfo) Clone() *CVEInfo {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CVEInfo)
+	*cloned = *m
+
+	cloned.PublishedOn = m.PublishedOn.Clone()
+	cloned.CreatedAt = m.CreatedAt.Clone()
+	cloned.LastModified = m.LastModified.Clone()
+	cloned.CvssV2 = m.CvssV2.Clone()
+	cloned.CvssV3 = m.CvssV3.Clone()
+	if m.References != nil {
+		cloned.References = make([]*CVEInfo_Reference, len(m.References))
+		for idx, v := range m.References {
+			cloned.References[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
+type CVEInfo_Reference struct {
+	URI                  string   `protobuf:"bytes,1,opt,name=URI,proto3" json:"URI,omitempty"`
+	Tags                 []string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CVEInfo_Reference) Reset()         { *m = CVEInfo_Reference{} }
+func (m *CVEInfo_Reference) String() string { return proto.CompactTextString(m) }
+func (*CVEInfo_Reference) ProtoMessage()    {}
+func (*CVEInfo_Reference) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{1, 0}
+}
+func (m *CVEInfo_Reference) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CVEInfo_Reference) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CVEInfo_Reference.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CVEInfo_Reference) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CVEInfo_Reference.Merge(m, src)
+}
+func (m *CVEInfo_Reference) XXX_Size() int {
+	return m.Size()
+}
+func (m *CVEInfo_Reference) XXX_DiscardUnknown() {
+	xxx_messageInfo_CVEInfo_Reference.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CVEInfo_Reference proto.InternalMessageInfo
+
+func (m *CVEInfo_Reference) GetURI() string {
+	if m != nil {
+		return m.URI
+	}
+	return ""
+}
+
+func (m *CVEInfo_Reference) GetTags() []string {
+	if m != nil {
+		return m.Tags
+	}
+	return nil
+}
+
+func (m *CVEInfo_Reference) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CVEInfo_Reference) Clone() *CVEInfo_Reference {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CVEInfo_Reference)
+	*cloned = *m
+
+	if m.Tags != nil {
+		cloned.Tags = make([]string, len(m.Tags))
+		copy(cloned.Tags, m.Tags)
+	}
+	return cloned
+}
+
+type ImageCVE struct {
+	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"`
+	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	OperatingSystem      string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"`
+	Cvss                 float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`
+	Severity             VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`
+	ImpactScore          float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`
+	Snoozed              bool                  `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`
+	SnoozeStart          *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
+	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *ImageCVE) Reset()         { *m = ImageCVE{} }
+func (m *ImageCVE) String() string { return proto.CompactTextString(m) }
+func (*ImageCVE) ProtoMessage()    {}
+func (*ImageCVE) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{2}
+}
+func (m *ImageCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ImageCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ImageCVE.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ImageCVE) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImageCVE.Merge(m, src)
+}
+func (m *ImageCVE) XXX_Size() int {
+	return m.Size()
+}
+func (m *ImageCVE) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImageCVE.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImageCVE proto.InternalMessageInfo
+
+func (m *ImageCVE) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ImageCVE) GetCveBaseInfo() *CVEInfo {
+	if m != nil {
+		return m.CveBaseInfo
+	}
+	return nil
+}
+
+func (m *ImageCVE) GetOperatingSystem() string {
+	if m != nil {
+		return m.OperatingSystem
+	}
+	return ""
+}
+
+func (m *ImageCVE) GetCvss() float32 {
+	if m != nil {
+		return m.Cvss
+	}
+	return 0
+}
+
+func (m *ImageCVE) GetSeverity() VulnerabilitySeverity {
+	if m != nil {
+		return m.Severity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (m *ImageCVE) GetImpactScore() float32 {
+	if m != nil {
+		return m.ImpactScore
+	}
+	return 0
+}
+
+func (m *ImageCVE) GetSnoozed() bool {
+	if m != nil {
+		return m.Snoozed
+	}
+	return false
+}
+
+func (m *ImageCVE) GetSnoozeStart() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeStart
+	}
+	return nil
+}
+
+func (m *ImageCVE) GetSnoozeExpiry() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeExpiry
+	}
+	return nil
+}
+
+func (m *ImageCVE) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ImageCVE) Clone() *ImageCVE {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ImageCVE)
+	*cloned = *m
+
+	cloned.CveBaseInfo = m.CveBaseInfo.Clone()
+	cloned.SnoozeStart = m.SnoozeStart.Clone()
+	cloned.SnoozeExpiry = m.SnoozeExpiry.Clone()
+	return cloned
+}
+
+type NodeCVE struct {
+	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"`
+	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	OperatingSystem      string                `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"`
+	Cvss                 float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`
+	Severity             VulnerabilitySeverity `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`
+	ImpactScore          float32               `protobuf:"fixed32,6,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`
+	Snoozed              bool                  `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`
+	SnoozeStart          *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
+	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *NodeCVE) Reset()         { *m = NodeCVE{} }
+func (m *NodeCVE) String() string { return proto.CompactTextString(m) }
+func (*NodeCVE) ProtoMessage()    {}
+func (*NodeCVE) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{3}
+}
+func (m *NodeCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NodeCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NodeCVE.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NodeCVE) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NodeCVE.Merge(m, src)
+}
+func (m *NodeCVE) XXX_Size() int {
+	return m.Size()
+}
+func (m *NodeCVE) XXX_DiscardUnknown() {
+	xxx_messageInfo_NodeCVE.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NodeCVE proto.InternalMessageInfo
+
+func (m *NodeCVE) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *NodeCVE) GetCveBaseInfo() *CVEInfo {
+	if m != nil {
+		return m.CveBaseInfo
+	}
+	return nil
+}
+
+func (m *NodeCVE) GetOperatingSystem() string {
+	if m != nil {
+		return m.OperatingSystem
+	}
+	return ""
+}
+
+func (m *NodeCVE) GetCvss() float32 {
+	if m != nil {
+		return m.Cvss
+	}
+	return 0
+}
+
+func (m *NodeCVE) GetSeverity() VulnerabilitySeverity {
+	if m != nil {
+		return m.Severity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (m *NodeCVE) GetImpactScore() float32 {
+	if m != nil {
+		return m.ImpactScore
+	}
+	return 0
+}
+
+func (m *NodeCVE) GetSnoozed() bool {
+	if m != nil {
+		return m.Snoozed
+	}
+	return false
+}
+
+func (m *NodeCVE) GetSnoozeStart() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeStart
+	}
+	return nil
+}
+
+func (m *NodeCVE) GetSnoozeExpiry() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeExpiry
+	}
+	return nil
+}
+
+func (m *NodeCVE) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NodeCVE) Clone() *NodeCVE {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NodeCVE)
+	*cloned = *m
+
+	cloned.CveBaseInfo = m.CveBaseInfo.Clone()
+	cloned.SnoozeStart = m.SnoozeStart.Clone()
+	cloned.SnoozeExpiry = m.SnoozeExpiry.Clone()
+	return cloned
+}
+
+type ClusterCVE struct {
+	Id                   string                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"`
+	CveBaseInfo          *CVEInfo              `protobuf:"bytes,2,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
+	Cvss                 float32               `protobuf:"fixed32,3,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`
+	Severity             VulnerabilitySeverity `protobuf:"varint,4,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity"`
+	ImpactScore          float32               `protobuf:"fixed32,5,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`
+	Snoozed              bool                  `protobuf:"varint,6,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`
+	SnoozeStart          *types.Timestamp      `protobuf:"bytes,7,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
+	SnoozeExpiry         *types.Timestamp      `protobuf:"bytes,8,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`
+	Type                 CVE_CVEType           `protobuf:"varint,9,opt,name=type,proto3,enum=storage.CVE_CVEType" json:"type,omitempty" search:"CVE Type"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *ClusterCVE) Reset()         { *m = ClusterCVE{} }
+func (m *ClusterCVE) String() string { return proto.CompactTextString(m) }
+func (*ClusterCVE) ProtoMessage()    {}
+func (*ClusterCVE) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d7bf0cfd04430357, []int{4}
+}
+func (m *ClusterCVE) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClusterCVE) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClusterCVE.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClusterCVE) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterCVE.Merge(m, src)
+}
+func (m *ClusterCVE) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClusterCVE) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterCVE.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClusterCVE proto.InternalMessageInfo
+
+func (m *ClusterCVE) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *ClusterCVE) GetCveBaseInfo() *CVEInfo {
+	if m != nil {
+		return m.CveBaseInfo
+	}
+	return nil
+}
+
+func (m *ClusterCVE) GetCvss() float32 {
+	if m != nil {
+		return m.Cvss
+	}
+	return 0
+}
+
+func (m *ClusterCVE) GetSeverity() VulnerabilitySeverity {
+	if m != nil {
+		return m.Severity
+	}
+	return VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+}
+
+func (m *ClusterCVE) GetImpactScore() float32 {
+	if m != nil {
+		return m.ImpactScore
+	}
+	return 0
+}
+
+func (m *ClusterCVE) GetSnoozed() bool {
+	if m != nil {
+		return m.Snoozed
+	}
+	return false
+}
+
+func (m *ClusterCVE) GetSnoozeStart() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeStart
+	}
+	return nil
+}
+
+func (m *ClusterCVE) GetSnoozeExpiry() *types.Timestamp {
+	if m != nil {
+		return m.SnoozeExpiry
+	}
+	return nil
+}
+
+func (m *ClusterCVE) GetType() CVE_CVEType {
+	if m != nil {
+		return m.Type
+	}
+	return CVE_UNKNOWN_CVE
+}
+
+func (m *ClusterCVE) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ClusterCVE) Clone() *ClusterCVE {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ClusterCVE)
+	*cloned = *m
+
+	cloned.CveBaseInfo = m.CveBaseInfo.Clone()
+	cloned.SnoozeStart = m.SnoozeStart.Clone()
+	cloned.SnoozeExpiry = m.SnoozeExpiry.Clone()
+	return cloned
+}
+
 type CVSSV2 struct {
 	Vector               string                  `protobuf:"bytes,1,opt,name=vector,proto3" json:"vector,omitempty"`
 	AttackVector         CVSSV2_AttackVector     `protobuf:"varint,2,opt,name=attack_vector,json=attackVector,proto3,enum=storage.CVSSV2_AttackVector" json:"attack_vector,omitempty"`
@@ -912,7 +1541,7 @@ func (m *CVSSV2) Reset()         { *m = CVSSV2{} }
 func (m *CVSSV2) String() string { return proto.CompactTextString(m) }
 func (*CVSSV2) ProtoMessage()    {}
 func (*CVSSV2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{1}
+	return fileDescriptor_d7bf0cfd04430357, []int{5}
 }
 func (m *CVSSV2) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1054,7 +1683,7 @@ func (m *CVSSV3) Reset()         { *m = CVSSV3{} }
 func (m *CVSSV3) String() string { return proto.CompactTextString(m) }
 func (*CVSSV3) ProtoMessage()    {}
 func (*CVSSV3) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d7bf0cfd04430357, []int{2}
+	return fileDescriptor_d7bf0cfd04430357, []int{6}
 }
 func (m *CVSSV3) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -1190,8 +1819,9 @@ func (m *CVSSV3) Clone() *CVSSV3 {
 func init() {
 	proto.RegisterEnum("storage.VulnerabilityState", VulnerabilityState_name, VulnerabilityState_value)
 	proto.RegisterEnum("storage.VulnerabilitySeverity", VulnerabilitySeverity_name, VulnerabilitySeverity_value)
-	proto.RegisterEnum("storage.CVE_ScoreVersion", CVE_ScoreVersion_name, CVE_ScoreVersion_value)
 	proto.RegisterEnum("storage.CVE_CVEType", CVE_CVEType_name, CVE_CVEType_value)
+	proto.RegisterEnum("storage.CVE_ScoreVersion", CVE_ScoreVersion_name, CVE_ScoreVersion_value)
+	proto.RegisterEnum("storage.CVEInfo_ScoreVersion", CVEInfo_ScoreVersion_name, CVEInfo_ScoreVersion_value)
 	proto.RegisterEnum("storage.CVSSV2_Impact", CVSSV2_Impact_name, CVSSV2_Impact_value)
 	proto.RegisterEnum("storage.CVSSV2_AttackVector", CVSSV2_AttackVector_name, CVSSV2_AttackVector_value)
 	proto.RegisterEnum("storage.CVSSV2_AccessComplexity", CVSSV2_AccessComplexity_name, CVSSV2_AccessComplexity_value)
@@ -1206,8 +1836,13 @@ func init() {
 	proto.RegisterEnum("storage.CVSSV3_Severity", CVSSV3_Severity_name, CVSSV3_Severity_value)
 	proto.RegisterType((*CVE)(nil), "storage.CVE")
 	proto.RegisterMapType((map[string]*CVE_DistroSpecific)(nil), "storage.CVE.DistroSpecificsEntry")
-	proto.RegisterType((*CVE_Reference)(nil), "storage.CVE.Reference")
 	proto.RegisterType((*CVE_DistroSpecific)(nil), "storage.CVE.DistroSpecific")
+	proto.RegisterType((*CVE_Reference)(nil), "storage.CVE.Reference")
+	proto.RegisterType((*CVEInfo)(nil), "storage.CVEInfo")
+	proto.RegisterType((*CVEInfo_Reference)(nil), "storage.CVEInfo.Reference")
+	proto.RegisterType((*ImageCVE)(nil), "storage.ImageCVE")
+	proto.RegisterType((*NodeCVE)(nil), "storage.NodeCVE")
+	proto.RegisterType((*ClusterCVE)(nil), "storage.ClusterCVE")
 	proto.RegisterType((*CVSSV2)(nil), "storage.CVSSV2")
 	proto.RegisterType((*CVSSV3)(nil), "storage.CVSSV3")
 }
@@ -1215,115 +1850,137 @@ func init() {
 func init() { proto.RegisterFile("storage/cve.proto", fileDescriptor_d7bf0cfd04430357) }
 
 var fileDescriptor_d7bf0cfd04430357 = []byte{
-	// 1718 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x58, 0x7f, 0x6e, 0xdb, 0xc8,
-	0x15, 0x36, 0x29, 0x59, 0x96, 0x9e, 0x7e, 0xd1, 0x63, 0x27, 0xcb, 0x78, 0x5b, 0x4b, 0xe1, 0xb6,
-	0x85, 0xb1, 0x59, 0xd8, 0x88, 0x94, 0x2e, 0x02, 0xa3, 0x68, 0x4b, 0x49, 0xb4, 0xcd, 0xb5, 0x7e,
-	0xed, 0x90, 0x52, 0x36, 0x45, 0x51, 0x82, 0xa1, 0xc6, 0x0e, 0x1b, 0x59, 0x54, 0x49, 0x4a, 0x88,
-	0x7a, 0x84, 0x9e, 0xa0, 0x07, 0xe8, 0x09, 0x7a, 0x8a, 0x02, 0xfd, 0xa7, 0x27, 0x30, 0x8a, 0xf4,
-	0x06, 0x46, 0x0f, 0x50, 0xcc, 0x90, 0x94, 0x28, 0x59, 0x72, 0xdc, 0xa2, 0x7f, 0x04, 0xe2, 0x7c,
-	0xf3, 0xbd, 0xc7, 0x37, 0xef, 0xbd, 0xef, 0x71, 0x62, 0xd8, 0xf5, 0x7c, 0xc7, 0x35, 0xaf, 0xc9,
-	0x89, 0x35, 0x25, 0xc7, 0x63, 0xd7, 0xf1, 0x1d, 0xb4, 0x13, 0x42, 0x07, 0xa5, 0x6b, 0xc7, 0xb9,
-	0x1e, 0x92, 0x13, 0x06, 0xbf, 0x9b, 0x5c, 0x9d, 0xf8, 0xf6, 0x0d, 0xf1, 0x7c, 0xf3, 0x66, 0x1c,
-	0x30, 0x0f, 0xf6, 0xaf, 0x9d, 0x6b, 0x87, 0x3d, 0x9e, 0xd0, 0xa7, 0x00, 0x95, 0xfe, 0x9a, 0x87,
-	0x44, 0xbd, 0xaf, 0xa0, 0x9f, 0x01, 0x6f, 0x0f, 0x44, 0xae, 0xcc, 0x1d, 0x65, 0x6a, 0x4f, 0xef,
-	0x6e, 0x4b, 0xc8, 0x23, 0xa6, 0x6b, 0xbd, 0x3f, 0x95, 0xea, 0x7d, 0xe5, 0x1b, 0xfa, 0x0e, 0x22,
-	0x61, 0xde, 0x1e, 0xa0, 0x17, 0x90, 0xb4, 0xa6, 0x9e, 0x27, 0xf2, 0x65, 0xee, 0x88, 0xaf, 0x7d,
-	0x71, 0x77, 0x5b, 0xda, 0x5b, 0x30, 0x35, 0x2d, 0xa2, 0x32, 0x12, 0xfa, 0x05, 0xe4, 0xec, 0x9b,
-	0xb1, 0x69, 0xf9, 0x86, 0x67, 0x39, 0x2e, 0x11, 0x0b, 0xcc, 0xe8, 0xd9, 0xdd, 0x6d, 0xe9, 0x49,
-	0x64, 0xa4, 0xb2, 0xfd, 0xb2, 0x66, 0x31, 0xb3, 0x6c, 0x40, 0x67, 0x2b, 0x74, 0x04, 0x49, 0x7f,
-	0x36, 0x26, 0x62, 0xa2, 0xcc, 0x1d, 0x15, 0x2a, 0xfb, 0xc7, 0xe1, 0x49, 0x8f, 0xeb, 0x7d, 0x85,
-	0xfe, 0xd3, 0x67, 0x63, 0x82, 0x19, 0x03, 0x9d, 0xc3, 0x36, 0xfd, 0xf5, 0x44, 0x54, 0x4e, 0x6c,
-	0xa2, 0xd6, 0xbe, 0xbc, 0xbb, 0x2d, 0x7d, 0x11, 0x3b, 0x55, 0x99, 0xa2, 0x51, 0xbc, 0x81, 0x3d,
-	0x12, 0x61, 0xc7, 0x9b, 0xdc, 0xdc, 0x98, 0xee, 0x4c, 0x4c, 0xd2, 0x54, 0xe0, 0x68, 0x89, 0x10,
-	0x24, 0x87, 0xf6, 0xe8, 0x83, 0xb8, 0xcd, 0x60, 0xf6, 0x8c, 0x7e, 0x0b, 0xb9, 0xf1, 0xe4, 0xdd,
-	0xd0, 0xf6, 0xde, 0x93, 0x81, 0xe1, 0x8c, 0xc4, 0x54, 0x99, 0x3b, 0xca, 0x56, 0x0e, 0x8e, 0x83,
-	0x4a, 0x1c, 0x47, 0x95, 0x38, 0xd6, 0xa3, 0x4a, 0xd4, 0x7e, 0x7c, 0x77, 0x5b, 0x7a, 0x16, 0x8f,
-	0xa1, 0x1b, 0xd9, 0x97, 0x3b, 0x23, 0x09, 0x67, 0xe7, 0xee, 0x3a, 0x23, 0xf4, 0x03, 0x80, 0xe5,
-	0x12, 0xd3, 0x27, 0x03, 0xc3, 0xf4, 0xc5, 0xe2, 0x7f, 0xef, 0xbb, 0x1e, 0x58, 0x97, 0x29, 0x45,
-	0xc2, 0x99, 0xd0, 0x99, 0xec, 0xa3, 0x5f, 0x41, 0x7e, 0x68, 0x7a, 0xbe, 0x71, 0xe3, 0x0c, 0xec,
-	0x2b, 0x9b, 0x0c, 0xc4, 0x9d, 0xcf, 0x39, 0xc7, 0x39, 0x6a, 0xd0, 0x0a, 0xf9, 0xe8, 0x5b, 0x00,
-	0x97, 0x5c, 0x11, 0x97, 0x8c, 0x2c, 0xe2, 0x89, 0xe9, 0x72, 0xe2, 0x28, 0x5b, 0x79, 0xba, 0x94,
-	0x74, 0x1c, 0x6d, 0xe3, 0x18, 0x13, 0xfd, 0x12, 0xf2, 0xac, 0x11, 0x8c, 0x29, 0x71, 0x3d, 0xdb,
-	0x19, 0x89, 0x19, 0x56, 0xda, 0x67, 0x4b, 0xa6, 0xac, 0xf8, 0xfd, 0x80, 0x80, 0x73, 0x5e, 0x6c,
-	0x85, 0x8e, 0x60, 0x87, 0xf6, 0x95, 0x31, 0xad, 0x88, 0xc0, 0x42, 0x2e, 0xc6, 0x2c, 0x35, 0xad,
-	0x5f, 0xc1, 0x29, 0xba, 0xdf, 0xaf, 0x2c, 0x98, 0x55, 0x31, 0xbb, 0x8e, 0x59, 0x0d, 0x99, 0x55,
-	0xf4, 0x1a, 0xc0, 0x9b, 0x8c, 0xc7, 0x2e, 0xf1, 0x3c, 0x32, 0x10, 0x73, 0x65, 0xee, 0x28, 0x5d,
-	0x13, 0xef, 0x6e, 0x4b, 0xfb, 0xf1, 0x54, 0x6a, 0x23, 0xc7, 0xf9, 0x23, 0x19, 0x48, 0x38, 0xc6,
-	0x45, 0x97, 0xb0, 0x17, 0xad, 0x0c, 0xd3, 0xf2, 0xed, 0xa9, 0xe9, 0xd3, 0x33, 0x09, 0x9f, 0x4d,
-	0x26, 0x8a, 0xcc, 0xe4, 0xb9, 0x15, 0xfa, 0x3d, 0x14, 0xe7, 0xce, 0xc8, 0xc7, 0xb1, 0xed, 0xce,
-	0xc4, 0xdd, 0xcf, 0x96, 0xfc, 0xa7, 0x77, 0xb7, 0xa5, 0xe7, 0xf7, 0xe3, 0x2c, 0x2b, 0xcc, 0xc1,
-	0x37, 0xef, 0xed, 0xc1, 0x80, 0x8c, 0x24, 0x5c, 0x88, 0x3c, 0x07, 0x38, 0x6a, 0x82, 0x30, 0xb0,
-	0x3d, 0xdf, 0x75, 0x0c, 0x6f, 0x4c, 0x2c, 0xfb, 0xca, 0xb6, 0x3c, 0x71, 0x8f, 0x15, 0xf1, 0xf9,
-	0x52, 0x25, 0x1a, 0x8c, 0xa4, 0x45, 0x1c, 0x65, 0xe4, 0xbb, 0x33, 0x5c, 0x1c, 0x2c, 0xa3, 0xe8,
-	0x7b, 0x48, 0x7b, 0x64, 0x4a, 0x5c, 0xdb, 0x9f, 0x89, 0xfb, 0xac, 0x9e, 0x87, 0x73, 0x2f, 0xfd,
-	0xc9, 0x70, 0x44, 0x5c, 0xf3, 0x9d, 0x3d, 0xb4, 0xfd, 0x99, 0x16, 0xb2, 0x6a, 0x4f, 0xee, 0x6e,
-	0x4b, 0xbb, 0x51, 0xd8, 0x11, 0x2a, 0xe1, 0xb9, 0x9b, 0x83, 0x97, 0x90, 0x99, 0x37, 0x10, 0x12,
-	0x20, 0xd1, 0xc3, 0x6a, 0x30, 0x9a, 0x30, 0x7d, 0xa4, 0x5a, 0xf4, 0xcd, 0x6b, 0x3a, 0x83, 0x12,
-	0x54, 0x8b, 0xf4, 0xf9, 0xe0, 0xdf, 0x1c, 0x14, 0x96, 0xe3, 0x45, 0xa7, 0xb1, 0xc0, 0xb8, 0xc7,
-	0x04, 0xb6, 0x88, 0x80, 0xbe, 0x62, 0x31, 0xe6, 0xc2, 0x69, 0x76, 0xaf, 0x7b, 0x13, 0xff, 0x73,
-	0xf7, 0x26, 0x1f, 0xdd, 0xbd, 0xdb, 0x0f, 0x76, 0xef, 0x81, 0x01, 0xfb, 0xeb, 0xaa, 0x44, 0x93,
-	0xf6, 0x81, 0xcc, 0xa2, 0xa4, 0x7d, 0x20, 0x33, 0xf4, 0x12, 0xb6, 0xa7, 0xe6, 0x70, 0x42, 0xd8,
-	0x91, 0xb2, 0x95, 0x2f, 0x1f, 0xa8, 0x34, 0x0e, 0x98, 0xa7, 0xfc, 0x6b, 0x4e, 0x7a, 0x01, 0xb9,
-	0xf8, 0x91, 0x50, 0x0a, 0xf8, 0x7e, 0x45, 0xd8, 0x62, 0xbf, 0x55, 0x81, 0x43, 0x59, 0xd8, 0xe9,
-	0xb5, 0x2f, 0xdb, 0x9d, 0x37, 0x6d, 0x81, 0x97, 0xae, 0x60, 0x27, 0x9c, 0xb6, 0xa8, 0x08, 0xd9,
-	0x10, 0x37, 0xea, 0x7d, 0x45, 0xd8, 0x42, 0x79, 0xc8, 0xa8, 0x2d, 0xf9, 0x5c, 0x61, 0x4b, 0x66,
-	0x77, 0xf9, 0x5a, 0x63, 0x0b, 0x9e, 0xed, 0x69, 0xba, 0xda, 0x61, 0xcb, 0x04, 0xca, 0x41, 0xba,
-	0xdd, 0x69, 0x04, 0xcc, 0x24, 0xda, 0x85, 0x7c, 0xa7, 0xab, 0xb4, 0xb5, 0x0b, 0xf5, 0x4c, 0x67,
-	0xd0, 0xb6, 0xf4, 0x97, 0x1d, 0x48, 0x05, 0x29, 0x43, 0x4f, 0x21, 0x35, 0x25, 0x96, 0xef, 0xb8,
-	0xe1, 0x59, 0xc3, 0x15, 0x92, 0x21, 0x6f, 0xfa, 0xbe, 0x69, 0x7d, 0x30, 0xc2, 0x6d, 0x9e, 0x15,
-	0xeb, 0x47, 0x2b, 0x29, 0x3f, 0x96, 0x19, 0xa9, 0xcf, 0x38, 0x38, 0x67, 0xc6, 0x56, 0xa8, 0x05,
-	0xbb, 0xa6, 0x65, 0x51, 0x41, 0x5a, 0xce, 0xcd, 0x78, 0x48, 0x3e, 0xd2, 0x46, 0x0a, 0x6a, 0x5e,
-	0xbe, 0xe7, 0x86, 0x11, 0xeb, 0x73, 0x1e, 0x16, 0xcc, 0x15, 0x04, 0x9d, 0x41, 0xc1, 0x9c, 0xf8,
-	0xef, 0xc9, 0xc8, 0xb7, 0xad, 0x60, 0x52, 0x24, 0x57, 0x9a, 0x32, 0xf2, 0xb5, 0xc4, 0xc2, 0x2b,
-	0x56, 0xe8, 0xd7, 0x50, 0xb4, 0x9c, 0xd1, 0x95, 0x3d, 0xa0, 0x98, 0x49, 0xfb, 0x97, 0x35, 0x49,
-	0x61, 0x69, 0x02, 0x33, 0x47, 0xc1, 0xb7, 0x15, 0xaf, 0xd2, 0xd1, 0x2b, 0xc8, 0xd8, 0x23, 0x9f,
-	0x5c, 0x33, 0x65, 0xa4, 0x1e, 0xb4, 0x5d, 0x10, 0xd1, 0x29, 0xe4, 0xcc, 0xa9, 0x69, 0x0f, 0x43,
-	0xd1, 0xb0, 0x8f, 0xc6, 0x66, 0xc3, 0x25, 0x2e, 0x7a, 0x09, 0xfb, 0xe4, 0xe3, 0x78, 0xe8, 0xd8,
-	0x7e, 0x88, 0x84, 0x17, 0x82, 0x34, 0x93, 0xd7, 0xde, 0xf2, 0x5e, 0xf0, 0xf5, 0x7f, 0xbe, 0x72,
-	0x77, 0xc8, 0x30, 0xea, 0xd2, 0x05, 0x61, 0x1f, 0xb6, 0x83, 0x3d, 0x60, 0x7b, 0xc1, 0x02, 0xbd,
-	0x8a, 0xc9, 0x3e, 0xcb, 0x62, 0x14, 0x57, 0x63, 0xbc, 0x2f, 0x78, 0xa9, 0x06, 0xa9, 0x20, 0x72,
-	0xda, 0xb9, 0x6a, 0xab, 0x2b, 0xd7, 0x75, 0xa3, 0xdd, 0x69, 0xd3, 0xce, 0x45, 0x50, 0x08, 0x81,
-	0xae, 0x8c, 0x75, 0x55, 0x6e, 0x0a, 0x1c, 0xda, 0x83, 0x62, 0x88, 0xd5, 0x3b, 0xad, 0x6e, 0x53,
-	0xd1, 0x15, 0x81, 0x97, 0x54, 0xc8, 0xc5, 0xdb, 0x09, 0x09, 0x90, 0x93, 0x75, 0x5d, 0xae, 0x5f,
-	0x1a, 0xcd, 0x4e, 0x5d, 0x6e, 0x0a, 0x5b, 0xd4, 0x2c, 0x44, 0xe4, 0xc6, 0x77, 0x72, 0x5d, 0x69,
-	0xeb, 0x02, 0x47, 0xfd, 0x87, 0x60, 0x5b, 0xd1, 0xdf, 0x74, 0xf0, 0xa5, 0xc0, 0x4b, 0x67, 0x20,
-	0xac, 0xb6, 0x14, 0x0d, 0x4c, 0xae, 0xd7, 0x15, 0x4d, 0x33, 0x2e, 0xd4, 0xf3, 0x0b, 0x61, 0x8b,
-	0x2a, 0x23, 0x04, 0x5a, 0x4a, 0x43, 0xed, 0xb5, 0x04, 0x0e, 0x15, 0x00, 0x42, 0xa8, 0xd9, 0x79,
-	0x23, 0xf0, 0x52, 0x1d, 0x0a, 0xcb, 0xed, 0xc4, 0x8c, 0x7a, 0xfa, 0x85, 0xd1, 0xea, 0x35, 0x75,
-	0xb5, 0xdb, 0xa4, 0x07, 0xa4, 0x8e, 0x29, 0xa4, 0xa9, 0xed, 0xf3, 0x26, 0x15, 0x67, 0x1e, 0x32,
-	0x0c, 0x60, 0x09, 0xe0, 0xa5, 0x6f, 0x21, 0x1d, 0x65, 0x2c, 0xae, 0xf7, 0x2d, 0xb4, 0x03, 0x09,
-	0xfa, 0x1a, 0x0e, 0x01, 0xa4, 0xc2, 0x10, 0x78, 0x94, 0x86, 0x24, 0x8b, 0x2f, 0x21, 0xfd, 0x29,
-	0x13, 0xca, 0xb4, 0xba, 0x51, 0xa6, 0x9b, 0x1a, 0x83, 0x7f, 0x7c, 0x63, 0x24, 0xee, 0x37, 0xc6,
-	0x3d, 0xf1, 0x27, 0xd7, 0x89, 0xbf, 0xfa, 0x90, 0xf8, 0xcf, 0x61, 0x37, 0x74, 0x11, 0x13, 0x7f,
-	0xa0, 0xb3, 0x83, 0x55, 0x37, 0x4b, 0xb2, 0x67, 0x46, 0xb1, 0xaa, 0x5d, 0xc2, 0xde, 0xd8, 0xb5,
-	0xa7, 0xf6, 0x90, 0x5c, 0x13, 0xcf, 0x70, 0xc9, 0x1f, 0x26, 0xb6, 0x4b, 0x06, 0xa1, 0xec, 0xee,
-	0xb9, 0xea, 0xce, 0xa9, 0x18, 0x2d, 0xcc, 0x70, 0x68, 0x85, 0xbe, 0x03, 0x61, 0xe2, 0x11, 0xd7,
-	0xa0, 0xaa, 0x74, 0xe9, 0x9d, 0xc3, 0x19, 0x85, 0x3a, 0x2c, 0xad, 0x7a, 0xea, 0x79, 0xc4, 0x55,
-	0x17, 0x34, 0x5c, 0x9c, 0x2c, 0x03, 0xe8, 0x05, 0x53, 0xcf, 0x38, 0x10, 0x61, 0xa1, 0xf2, 0x64,
-	0xd5, 0x81, 0x46, 0x37, 0x71, 0xc0, 0x59, 0x37, 0x74, 0x32, 0xeb, 0xf4, 0x5f, 0x7d, 0xdc, 0xd0,
-	0x81, 0x07, 0x6d, 0x1f, 0x18, 0x3a, 0xd9, 0x07, 0x0d, 0x97, 0x87, 0xce, 0x7c, 0x3c, 0xe4, 0x36,
-	0x8d, 0x87, 0xfc, 0xba, 0xf1, 0x50, 0x5d, 0x37, 0x1e, 0x4e, 0x37, 0x8f, 0x87, 0x02, 0x40, 0x08,
-	0x04, 0x5a, 0x58, 0x10, 0x98, 0x0c, 0x78, 0xe9, 0x77, 0xff, 0xb7, 0xb1, 0x10, 0x23, 0x76, 0x2f,
-	0xde, 0x6a, 0x2a, 0xb5, 0x4e, 0x48, 0x3f, 0x07, 0x88, 0xf5, 0x1b, 0x82, 0x42, 0x30, 0x92, 0x7e,
-	0x50, 0xf5, 0xb7, 0x2c, 0x24, 0xe6, 0x3f, 0x86, 0xb1, 0xb0, 0x38, 0xe9, 0x1c, 0x60, 0xd1, 0x6d,
-	0xd4, 0xac, 0x8b, 0xd5, 0xbe, 0xda, 0x54, 0xce, 0x95, 0xe8, 0x64, 0xbb, 0x90, 0x5f, 0x60, 0xc1,
-	0xe1, 0x96, 0x68, 0xe1, 0xf9, 0x4e, 0xa0, 0xb8, 0xd2, 0x6c, 0x6c, 0x4a, 0xa8, 0x91, 0x1b, 0x7a,
-	0x15, 0x50, 0x0d, 0xac, 0x7c, 0xdf, 0x53, 0xb1, 0xd2, 0x10, 0x38, 0xe9, 0x2b, 0xd8, 0x66, 0xcd,
-	0x45, 0xe7, 0x4c, 0xaf, 0x5d, 0xbf, 0x90, 0xdb, 0xe7, 0x4a, 0x43, 0xd8, 0xa2, 0x56, 0xd1, 0x82,
-	0x93, 0xda, 0x9b, 0x86, 0x4e, 0x1a, 0x92, 0xcc, 0x31, 0x17, 0x8d, 0x1f, 0x3e, 0x36, 0x7e, 0x12,
-	0xf3, 0xf1, 0x93, 0xa4, 0xd7, 0x88, 0x3a, 0x56, 0x75, 0x96, 0xa5, 0xed, 0xaf, 0x1b, 0x80, 0x96,
-	0x2f, 0x7d, 0xbe, 0xe9, 0x13, 0xca, 0xe9, 0xd4, 0x34, 0x05, 0xf7, 0x59, 0x00, 0x39, 0x48, 0x37,
-	0x94, 0x33, 0x05, 0xb3, 0x30, 0xe9, 0x59, 0xcf, 0xe4, 0xa6, 0xa6, 0x18, 0xdd, 0x8e, 0xa6, 0xea,
-	0x2a, 0xbd, 0xa9, 0x7c, 0xfd, 0x77, 0x0e, 0x9e, 0xac, 0xbd, 0x3b, 0x22, 0x09, 0x0e, 0xa3, 0x0b,
-	0x4f, 0xbf, 0xd7, 0x6c, 0x2b, 0x58, 0xae, 0xa9, 0x4d, 0x9a, 0x6e, 0x4d, 0xe9, 0x2b, 0x58, 0xd5,
-	0xdf, 0x0a, 0x5b, 0xe8, 0x10, 0x0e, 0x9a, 0x9d, 0x37, 0x9b, 0xf6, 0x39, 0xf4, 0x15, 0x94, 0x5a,
-	0x9d, 0x86, 0x82, 0x65, 0x5d, 0xd9, 0x44, 0xe2, 0xd1, 0x4f, 0xa0, 0xac, 0xb6, 0xba, 0x1d, 0xac,
-	0xcb, 0x6d, 0x7d, 0x13, 0x2b, 0x41, 0x5d, 0x45, 0x87, 0xdf, 0x44, 0x4a, 0xd6, 0x5e, 0xfd, 0xed,
-	0xd3, 0x21, 0xf7, 0x8f, 0x4f, 0x87, 0xdc, 0x3f, 0x3f, 0x1d, 0x72, 0x7f, 0xfe, 0xd7, 0xe1, 0x16,
-	0x3c, 0xb3, 0x9d, 0x63, 0x8f, 0xf6, 0xaa, 0xeb, 0x7c, 0x0c, 0xfe, 0xc7, 0x11, 0x89, 0xe3, 0x37,
-	0xd1, 0x5f, 0x1a, 0xde, 0xa5, 0x18, 0x5e, 0xfd, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x7b, 0x51,
-	0x36, 0xb2, 0x8e, 0x10, 0x00, 0x00,
+	// 2072 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x59, 0xdd, 0x6e, 0xdb, 0xc8,
+	0x15, 0x36, 0xf5, 0xaf, 0xa3, 0x3f, 0x7a, 0xec, 0x78, 0x19, 0xb7, 0x6b, 0x69, 0x99, 0x76, 0x6b,
+	0x6c, 0x52, 0x07, 0xb1, 0xb3, 0x41, 0x6a, 0x74, 0xbb, 0xa5, 0x64, 0xc6, 0x66, 0x2c, 0x4b, 0xda,
+	0x21, 0xad, 0x6c, 0x8a, 0xa2, 0x04, 0x43, 0x8d, 0x6d, 0x36, 0xb2, 0xa8, 0x25, 0x29, 0x21, 0xee,
+	0x23, 0xf4, 0x09, 0x7a, 0xd7, 0x9b, 0xbe, 0x4a, 0x81, 0x02, 0xbd, 0xe9, 0x45, 0xaf, 0x5a, 0xc0,
+	0x28, 0xd2, 0x37, 0x30, 0xfa, 0x00, 0xc5, 0x0c, 0x49, 0x89, 0x92, 0x25, 0xc5, 0x4e, 0x93, 0x5e,
+	0xed, 0x45, 0x20, 0xce, 0x99, 0xef, 0x9c, 0x39, 0x33, 0xf3, 0x9d, 0x6f, 0x66, 0x62, 0x58, 0x76,
+	0x3d, 0xdb, 0x31, 0x4e, 0xc9, 0x43, 0x73, 0x48, 0xb6, 0xfa, 0x8e, 0xed, 0xd9, 0x28, 0x1d, 0x98,
+	0xd6, 0xcb, 0xa7, 0xb6, 0x7d, 0xda, 0x25, 0x0f, 0x99, 0xf9, 0xd5, 0xe0, 0xe4, 0xa1, 0x67, 0x9d,
+	0x13, 0xd7, 0x33, 0xce, 0xfb, 0x3e, 0x72, 0x7d, 0xf5, 0xd4, 0x3e, 0xb5, 0xd9, 0xe7, 0x43, 0xfa,
+	0xe5, 0x5b, 0xc5, 0x3f, 0x17, 0x20, 0x5e, 0x6b, 0xcb, 0xe8, 0x73, 0x88, 0x59, 0x1d, 0x81, 0xab,
+	0x70, 0x9b, 0xd9, 0xea, 0xda, 0xd5, 0x65, 0x19, 0xb9, 0xc4, 0x70, 0xcc, 0xb3, 0x5d, 0xb1, 0xd6,
+	0x96, 0x1f, 0xd0, 0x31, 0x88, 0x88, 0x63, 0x56, 0x07, 0xdd, 0x87, 0x84, 0x39, 0x74, 0x5d, 0x21,
+	0x56, 0xe1, 0x36, 0x63, 0xd5, 0x4f, 0xae, 0x2e, 0xcb, 0x2b, 0x63, 0xa4, 0xaa, 0x86, 0x50, 0x06,
+	0x42, 0x3f, 0x87, 0xbc, 0x75, 0xde, 0x37, 0x4c, 0x4f, 0x77, 0x4d, 0xdb, 0x21, 0x42, 0x91, 0x39,
+	0xdd, 0xbd, 0xba, 0x2c, 0xdf, 0x09, 0x9d, 0x14, 0xd6, 0x5f, 0x51, 0x4d, 0xe6, 0x96, 0xf3, 0xe1,
+	0xac, 0x85, 0xbe, 0x84, 0x84, 0x77, 0xd1, 0x27, 0x42, 0xbc, 0xc2, 0x6d, 0x16, 0xb7, 0x57, 0xb7,
+	0x82, 0x99, 0x6e, 0xd5, 0xda, 0x32, 0xfd, 0xa7, 0x5d, 0xf4, 0x49, 0x35, 0x77, 0x75, 0x59, 0x4e,
+	0xbb, 0xdf, 0x75, 0x77, 0xc5, 0x9f, 0x8a, 0x98, 0xc1, 0x91, 0x04, 0x49, 0xfa, 0xeb, 0x0a, 0xa8,
+	0x12, 0x9f, 0xeb, 0x77, 0xe7, 0xea, 0xb2, 0xbc, 0x1c, 0x99, 0x62, 0x85, 0x5a, 0x45, 0xec, 0x7b,
+	0x22, 0x01, 0xd2, 0xee, 0xe0, 0xfc, 0xdc, 0x70, 0x2e, 0x84, 0x04, 0x5d, 0x11, 0x1c, 0x36, 0x11,
+	0x82, 0x44, 0xd7, 0xea, 0xbd, 0x16, 0x92, 0xcc, 0xcc, 0xbe, 0xd1, 0xaf, 0x21, 0xdf, 0x1f, 0xbc,
+	0xea, 0x5a, 0xee, 0x19, 0xe9, 0xe8, 0x76, 0x4f, 0x48, 0x55, 0xb8, 0xcd, 0xdc, 0xf6, 0xfa, 0x96,
+	0xbf, 0x21, 0x5b, 0xe1, 0x86, 0x6c, 0x69, 0xe1, 0x86, 0x54, 0x3f, 0xbd, 0xba, 0x2c, 0xdf, 0x8d,
+	0x8e, 0xde, 0x0a, 0xfd, 0x2b, 0xcd, 0x9e, 0x88, 0x73, 0xa3, 0x70, 0xcd, 0x1e, 0xfa, 0x16, 0xc0,
+	0x74, 0x88, 0xe1, 0x91, 0x8e, 0x6e, 0x78, 0x42, 0xe9, 0xf6, 0xb1, 0x6b, 0xbe, 0x77, 0x85, 0x42,
+	0x44, 0x9c, 0x0d, 0x82, 0x49, 0x1e, 0xfa, 0x1a, 0x0a, 0x5d, 0xc3, 0xf5, 0xf4, 0x73, 0xbb, 0x63,
+	0x9d, 0x58, 0xa4, 0x23, 0xa4, 0xdf, 0x15, 0x1c, 0xe7, 0xa9, 0xc3, 0x51, 0x80, 0x47, 0x4f, 0x00,
+	0x1c, 0x72, 0x42, 0x1c, 0xd2, 0x33, 0x89, 0x2b, 0x64, 0x2a, 0xf1, 0xcd, 0xdc, 0xf6, 0xda, 0xc4,
+	0x72, 0xe3, 0xb0, 0x1b, 0x47, 0x90, 0xe8, 0x17, 0x50, 0x60, 0x7c, 0xd0, 0x87, 0xc4, 0x71, 0x2d,
+	0xbb, 0x27, 0x64, 0xd9, 0x0e, 0xdf, 0x9d, 0x70, 0x65, 0x1c, 0x68, 0xfb, 0x00, 0x9c, 0x77, 0x23,
+	0x2d, 0xb4, 0x09, 0x69, 0x4a, 0x2f, 0x7d, 0xb8, 0x2d, 0x00, 0x4b, 0xb9, 0x14, 0xf1, 0x54, 0xd5,
+	0xf6, 0x36, 0x4e, 0xd1, 0xfe, 0xf6, 0xf6, 0x18, 0xb9, 0x23, 0xe4, 0x66, 0x21, 0x77, 0x02, 0xe4,
+	0x0e, 0x7a, 0x0a, 0xe0, 0x0e, 0xfa, 0x7d, 0x87, 0xb8, 0x2e, 0xe9, 0x08, 0xf9, 0x0a, 0xb7, 0x99,
+	0xa9, 0x0a, 0x57, 0x97, 0xe5, 0xd5, 0xe8, 0x52, 0xaa, 0x3d, 0xdb, 0xfe, 0x1d, 0xe9, 0x88, 0x38,
+	0x82, 0x45, 0x87, 0xb0, 0x12, 0xb6, 0x74, 0xc3, 0xf4, 0xac, 0xa1, 0xe1, 0xd1, 0x39, 0xf1, 0xef,
+	0x5c, 0x4c, 0x14, 0xba, 0x49, 0x23, 0x2f, 0xf4, 0x5b, 0x28, 0x8d, 0x82, 0x91, 0x37, 0x7d, 0xcb,
+	0xb9, 0x10, 0x96, 0xdf, 0xb9, 0xe5, 0x3f, 0xbe, 0xba, 0x2c, 0x7f, 0x76, 0x3d, 0xcf, 0x8a, 0xcc,
+	0x02, 0x3c, 0x38, 0xb3, 0x3a, 0x1d, 0xd2, 0x13, 0x71, 0x31, 0x8c, 0xec, 0xdb, 0x51, 0x1d, 0xf8,
+	0x8e, 0xe5, 0x7a, 0x8e, 0xad, 0xbb, 0x7d, 0x62, 0x5a, 0x27, 0x96, 0xe9, 0x0a, 0x2b, 0x6c, 0x13,
+	0x3f, 0x9b, 0xd8, 0x89, 0x3d, 0x06, 0x52, 0x43, 0x8c, 0xdc, 0xf3, 0x9c, 0x0b, 0x5c, 0xea, 0x4c,
+	0x5a, 0xd1, 0x37, 0x90, 0x71, 0xc9, 0x90, 0x38, 0x96, 0x77, 0x21, 0xac, 0xb2, 0xfd, 0xdc, 0x18,
+	0x45, 0x69, 0x0f, 0xba, 0x3d, 0xe2, 0x18, 0xaf, 0xac, 0xae, 0xe5, 0x5d, 0xa8, 0x01, 0x6a, 0xb2,
+	0x06, 0x43, 0xab, 0x88, 0x47, 0x61, 0xd6, 0xff, 0xc3, 0x41, 0x71, 0x72, 0x70, 0xb4, 0x1b, 0x19,
+	0x85, 0xbb, 0xc9, 0x28, 0xe3, 0x70, 0xb4, 0x76, 0xc7, 0xd2, 0x15, 0x28, 0xd4, 0x35, 0x2a, 0xc6,
+	0xdf, 0x9b, 0x8a, 0x89, 0x1b, 0x53, 0x31, 0xb9, 0x90, 0x8a, 0xeb, 0x8f, 0x20, 0x3b, 0xaa, 0x1b,
+	0xc4, 0x43, 0xfc, 0x18, 0x2b, 0xbe, 0x30, 0x63, 0xfa, 0x49, 0xa7, 0xe1, 0x19, 0xa7, 0x74, 0x1a,
+	0x71, 0x2a, 0x41, 0xf4, 0x7b, 0x5d, 0x87, 0xd5, 0x59, 0xbb, 0x44, 0xbd, 0x5f, 0x93, 0x8b, 0xd0,
+	0xfb, 0x35, 0xb9, 0x40, 0x8f, 0x20, 0x39, 0x34, 0xba, 0x03, 0xc2, 0x56, 0x21, 0xb7, 0xfd, 0x83,
+	0x05, 0x3b, 0x8d, 0x7d, 0xe4, 0x6e, 0xec, 0x29, 0x27, 0x9e, 0x40, 0x3a, 0x90, 0x4e, 0x54, 0x82,
+	0xdc, 0x71, 0xe3, 0xb0, 0xd1, 0x7c, 0xd1, 0xd0, 0x6b, 0x6d, 0x99, 0x5f, 0x42, 0x05, 0xc8, 0x2a,
+	0x47, 0xd2, 0xbe, 0xcc, 0x9a, 0x1c, 0xca, 0x41, 0xfa, 0xf0, 0xa9, 0xca, 0x1a, 0x31, 0xd6, 0xa7,
+	0x6a, 0x4a, 0x93, 0x35, 0xe3, 0x28, 0x0f, 0x99, 0x46, 0x73, 0xcf, 0x47, 0x26, 0xd0, 0x32, 0x14,
+	0x9a, 0x2d, 0xb9, 0xa1, 0x1e, 0x28, 0xcf, 0x34, 0x66, 0x4a, 0x8a, 0xf7, 0x21, 0x1f, 0x5d, 0x6d,
+	0x94, 0x82, 0x58, 0x7b, 0x9b, 0x5f, 0x62, 0xbf, 0x3b, 0x7e, 0xf0, 0x60, 0x70, 0x3e, 0xf6, 0x3c,
+	0x91, 0x59, 0xe3, 0x3f, 0x79, 0x9e, 0xc8, 0xdc, 0xe1, 0xd7, 0xc4, 0x3f, 0x26, 0x59, 0x86, 0x4a,
+	0xef, 0xc4, 0x46, 0x3f, 0x83, 0xb8, 0x39, 0x24, 0xc1, 0x61, 0xf6, 0x93, 0xab, 0xcb, 0xf2, 0xbd,
+	0xeb, 0x87, 0x59, 0x85, 0x1d, 0x1a, 0x56, 0xaf, 0x43, 0xde, 0x7c, 0x75, 0x66, 0xb8, 0x67, 0x22,
+	0xa6, 0x3e, 0x51, 0xe5, 0x8f, 0xcd, 0x56, 0xfe, 0xf8, 0x02, 0xe5, 0x4f, 0x7c, 0x44, 0xe5, 0x4f,
+	0x7e, 0x4c, 0xe5, 0x4f, 0xdd, 0x52, 0xf9, 0xab, 0xd3, 0x65, 0x93, 0x66, 0x65, 0xf3, 0x69, 0x94,
+	0x4d, 0x74, 0x2b, 0x6e, 0x58, 0x3a, 0x99, 0x1b, 0x97, 0x4e, 0x76, 0xb1, 0x8a, 0xef, 0x4e, 0x9c,
+	0x48, 0xc0, 0xc4, 0x6c, 0xfd, 0x5a, 0x52, 0x33, 0x4f, 0xa5, 0xf7, 0x28, 0xbb, 0x5b, 0xb1, 0x55,
+	0xfc, 0x67, 0x02, 0x32, 0xca, 0xb9, 0x71, 0x4a, 0xe8, 0x75, 0xeb, 0x49, 0xe4, 0xba, 0xf5, 0xf9,
+	0xd5, 0x65, 0x59, 0x8c, 0xee, 0x9b, 0xb2, 0x17, 0x6a, 0xb6, 0xcf, 0xd2, 0xfe, 0xeb, 0x07, 0x56,
+	0xc7, 0xbf, 0x7e, 0x3d, 0x86, 0x82, 0x39, 0x24, 0xfa, 0x2b, 0xc3, 0x25, 0xba, 0xd5, 0x3b, 0xb1,
+	0x83, 0x32, 0xe6, 0xa7, 0xe7, 0x88, 0x73, 0xe6, 0x90, 0x54, 0x0d, 0x97, 0xb0, 0x82, 0x38, 0x00,
+	0xde, 0xee, 0x13, 0xc7, 0xf0, 0xac, 0xde, 0xa9, 0xee, 0x5e, 0xb8, 0x1e, 0x39, 0xf7, 0x79, 0x3c,
+	0xc9, 0x99, 0x66, 0x88, 0xa9, 0xa8, 0x0c, 0x23, 0xe2, 0xd2, 0xc8, 0xcd, 0xb7, 0x8c, 0xae, 0x7f,
+	0x89, 0x9b, 0x5c, 0xff, 0xa2, 0x47, 0x42, 0xf2, 0x83, 0x1c, 0x09, 0xd7, 0x6e, 0x94, 0xa9, 0x5b,
+	0xdd, 0x28, 0xb7, 0x21, 0xed, 0xfa, 0x47, 0x38, 0x23, 0xec, 0xa2, 0x13, 0x3e, 0x04, 0xa2, 0xaf,
+	0x20, 0xef, 0x7f, 0xea, 0xae, 0x67, 0x38, 0x5e, 0xc0, 0xd5, 0x45, 0xa5, 0x92, 0xf3, 0xf1, 0x2a,
+	0x85, 0xa3, 0x13, 0x28, 0x04, 0xee, 0xc1, 0x71, 0x9e, 0xfd, 0x50, 0xc7, 0x79, 0x90, 0x96, 0x6f,
+	0x15, 0xff, 0x91, 0x80, 0x74, 0xc3, 0xee, 0x7c, 0x4f, 0xae, 0xef, 0xc9, 0xf5, 0xe1, 0xc9, 0xf5,
+	0xf7, 0x04, 0x40, 0xad, 0x3b, 0x70, 0x3d, 0xe2, 0xfc, 0xff, 0xf9, 0x15, 0xb2, 0x22, 0x7e, 0x5b,
+	0x56, 0x24, 0x3e, 0x0e, 0x2b, 0x92, 0xef, 0xcb, 0x8a, 0xd4, 0xfb, 0xb2, 0x22, 0xfd, 0x3f, 0xb2,
+	0x22, 0xf3, 0x51, 0x58, 0x81, 0xbe, 0x0e, 0xde, 0xe7, 0xd9, 0x05, 0xef, 0xf3, 0x39, 0xef, 0x6c,
+	0xe6, 0x28, 0xfe, 0x29, 0x0d, 0x29, 0xff, 0xa8, 0x47, 0x6b, 0x90, 0x1a, 0x12, 0xd3, 0xb3, 0x9d,
+	0xe0, 0xc8, 0x0d, 0x5a, 0x48, 0x82, 0x82, 0xe1, 0x79, 0x86, 0xf9, 0x5a, 0x0f, 0xba, 0x63, 0x6c,
+	0xb0, 0x1f, 0x4e, 0x5d, 0x15, 0xb6, 0x24, 0x06, 0x6a, 0x33, 0x0c, 0xce, 0x1b, 0x91, 0x16, 0x3a,
+	0x82, 0x65, 0xc3, 0x34, 0xe9, 0x83, 0xca, 0xb4, 0xcf, 0xfb, 0x5d, 0xf2, 0x86, 0x72, 0xc3, 0xbf,
+	0xe6, 0x57, 0xae, 0x85, 0x61, 0xc0, 0xda, 0x08, 0x87, 0x79, 0x63, 0xca, 0x82, 0x9e, 0x41, 0xd1,
+	0x18, 0x78, 0x67, 0xa4, 0xe7, 0x59, 0xa6, 0xff, 0xd2, 0x9b, 0xe6, 0x59, 0x18, 0x6b, 0x02, 0x85,
+	0xa7, 0xbc, 0xd0, 0x2f, 0xa1, 0x64, 0xda, 0xbd, 0x13, 0xab, 0x43, 0x6d, 0x46, 0x77, 0x2c, 0x63,
+	0x6b, 0xd3, 0x81, 0x7c, 0x76, 0xe1, 0x69, 0x38, 0x7a, 0x0c, 0x59, 0xab, 0xe7, 0x91, 0x53, 0x46,
+	0xf6, 0xd4, 0x42, 0xdf, 0x31, 0x10, 0xed, 0x42, 0xde, 0x18, 0x1a, 0x56, 0x37, 0xa8, 0x83, 0xe0,
+	0xe6, 0x36, 0xcf, 0x71, 0x02, 0x8b, 0x1e, 0xc1, 0x2a, 0x79, 0xd3, 0xef, 0xda, 0x96, 0x17, 0x58,
+	0x82, 0x92, 0xc8, 0xb0, 0x17, 0xd5, 0xca, 0x64, 0x9f, 0xcf, 0xff, 0xcf, 0xa6, 0xaa, 0x27, 0xcb,
+	0xa0, 0x13, 0x25, 0xb2, 0x0a, 0x49, 0xbf, 0x0f, 0x58, 0x9f, 0xdf, 0x40, 0x8f, 0x23, 0x95, 0x9c,
+	0x63, 0x39, 0x0a, 0xd3, 0x39, 0x5e, 0x7f, 0xe3, 0x89, 0x55, 0x48, 0xf9, 0x99, 0xd3, 0x67, 0x8a,
+	0x72, 0xd4, 0x92, 0x6a, 0x9a, 0xde, 0x68, 0x36, 0xe8, 0x33, 0x05, 0x41, 0x31, 0x30, 0xb4, 0x24,
+	0xac, 0x29, 0x52, 0x9d, 0xe7, 0xd0, 0x0a, 0x94, 0x02, 0x5b, 0xad, 0x79, 0xd4, 0xaa, 0xcb, 0x9a,
+	0xcc, 0xc7, 0x44, 0x05, 0xf2, 0x51, 0x3a, 0x21, 0x1e, 0xf2, 0x92, 0xa6, 0x49, 0xb5, 0x43, 0xbd,
+	0xde, 0xac, 0x49, 0x75, 0x7e, 0x89, 0xba, 0x05, 0x16, 0x69, 0xef, 0xb9, 0x54, 0x93, 0x1b, 0x1a,
+	0xcf, 0xd1, 0xf8, 0x81, 0xb1, 0x21, 0x6b, 0x2f, 0x9a, 0xf8, 0x90, 0x8f, 0x89, 0xcf, 0x80, 0x9f,
+	0xa6, 0x14, 0x4d, 0x4c, 0xaa, 0xd5, 0x64, 0x55, 0xd5, 0x0f, 0x94, 0xfd, 0x03, 0x7e, 0x89, 0x3e,
+	0x83, 0x02, 0xc3, 0x91, 0xbc, 0xa7, 0x1c, 0x1f, 0xf1, 0x1c, 0x2a, 0x02, 0x04, 0xa6, 0x7a, 0xf3,
+	0x05, 0x1f, 0x13, 0x6b, 0x50, 0x9c, 0xa4, 0x13, 0x73, 0x3a, 0xd6, 0x0e, 0xf4, 0xa3, 0xe3, 0xba,
+	0xa6, 0xb4, 0xea, 0x74, 0x82, 0x34, 0x30, 0x35, 0xa9, 0x4a, 0x63, 0xbf, 0x4e, 0x5f, 0x62, 0x05,
+	0xc8, 0x32, 0x03, 0x5b, 0x80, 0x98, 0xf8, 0x04, 0x32, 0xe1, 0x8a, 0x45, 0x6f, 0xa6, 0x4b, 0x28,
+	0x0d, 0x71, 0x3a, 0x0c, 0x87, 0x00, 0x52, 0x41, 0x0a, 0x31, 0x94, 0x81, 0x04, 0xcb, 0x2f, 0x2e,
+	0xfe, 0x3e, 0x1b, 0x94, 0xe9, 0xce, 0xdc, 0x32, 0x9d, 0x47, 0x8c, 0xd8, 0xcd, 0x89, 0x11, 0xbf,
+	0x4e, 0x8c, 0x6b, 0xc5, 0x9f, 0x98, 0x55, 0xfc, 0x3b, 0x8b, 0x8a, 0x7f, 0x1f, 0x96, 0x83, 0x10,
+	0x91, 0xe2, 0xf7, 0xeb, 0x6c, 0x7d, 0x3a, 0xcc, 0x44, 0xd9, 0x33, 0xa7, 0xc8, 0xae, 0x1d, 0xc2,
+	0x4a, 0xdf, 0xb1, 0x86, 0x56, 0x97, 0x9c, 0x12, 0x57, 0x77, 0xc8, 0x77, 0x03, 0xcb, 0x09, 0x34,
+	0x7d, 0x46, 0xa8, 0xd6, 0x08, 0x8a, 0xd1, 0xd8, 0x0d, 0x07, 0x5e, 0xe8, 0x39, 0xf0, 0x03, 0x97,
+	0x38, 0x3a, 0xad, 0x4a, 0xc7, 0x30, 0xbd, 0xf1, 0x0b, 0xaa, 0x3c, 0x1d, 0xe9, 0xd8, 0x25, 0x8e,
+	0x32, 0x86, 0xe1, 0xd2, 0x60, 0xd2, 0x80, 0xee, 0xb3, 0xea, 0xe9, 0xfb, 0x45, 0x58, 0xdc, 0xbe,
+	0x33, 0x1d, 0x40, 0xa5, 0x9d, 0xd8, 0xc7, 0xcc, 0x12, 0x9d, 0xec, 0xac, 0xfa, 0xdf, 0xb9, 0x99,
+	0xe8, 0xc0, 0x42, 0xdf, 0x05, 0xa2, 0x93, 0x5b, 0xe8, 0x38, 0x29, 0x3a, 0x23, 0x79, 0xc8, 0xcf,
+	0x93, 0x87, 0xc2, 0x2c, 0x79, 0xd8, 0x99, 0x25, 0x0f, 0xbb, 0xf3, 0xe5, 0xa1, 0x08, 0x10, 0x18,
+	0xfc, 0x5a, 0x18, 0x03, 0x58, 0x19, 0xc4, 0xc4, 0xdf, 0x7c, 0x30, 0x59, 0x88, 0x00, 0x5b, 0x07,
+	0x2f, 0x55, 0x85, 0x7a, 0xc7, 0xc5, 0x2f, 0x01, 0x22, 0x7c, 0x43, 0x50, 0xf4, 0x25, 0xe9, 0x5b,
+	0x45, 0x7b, 0xc9, 0x52, 0x62, 0xf1, 0x23, 0x36, 0x96, 0x16, 0x27, 0xee, 0x03, 0x8c, 0xd9, 0x46,
+	0xdd, 0x5a, 0x58, 0x69, 0x2b, 0x75, 0x79, 0x5f, 0x0e, 0x67, 0xb6, 0x0c, 0x85, 0xb1, 0xcd, 0x9f,
+	0xdc, 0x04, 0x2c, 0x98, 0xdf, 0x43, 0x28, 0x4d, 0x91, 0x8d, 0xa9, 0x84, 0x12, 0x86, 0x29, 0x41,
+	0xee, 0x58, 0xd1, 0xb1, 0xfc, 0xcd, 0xb1, 0x82, 0xe5, 0x3d, 0x9e, 0x13, 0xef, 0x41, 0x92, 0x91,
+	0x8b, 0xea, 0xcc, 0x71, 0xa3, 0x76, 0x20, 0x35, 0xf6, 0xe5, 0x3d, 0x7e, 0x89, 0x7a, 0x85, 0x0d,
+	0x4e, 0x6c, 0xcc, 0x13, 0x9d, 0x0c, 0x24, 0x58, 0x60, 0x2e, 0x94, 0x9f, 0x58, 0x44, 0x7e, 0xe2,
+	0x23, 0xf9, 0x49, 0xa0, 0x3c, 0x64, 0x6a, 0x58, 0xd1, 0xd8, 0x2a, 0x25, 0xbf, 0xd8, 0x03, 0x34,
+	0x79, 0x8f, 0xf3, 0x0c, 0x8f, 0x50, 0x4c, 0xb3, 0xaa, 0xca, 0xb8, 0xcd, 0x12, 0xc8, 0x43, 0x66,
+	0x4f, 0x7e, 0x26, 0x63, 0x96, 0x26, 0x9d, 0xeb, 0x33, 0xa9, 0xae, 0xca, 0x7a, 0xab, 0xa9, 0x2a,
+	0x9a, 0xd2, 0x96, 0xf9, 0xd8, 0x17, 0x7f, 0xe5, 0xe0, 0xce, 0xcc, 0xeb, 0x20, 0x12, 0x61, 0x23,
+	0xfc, 0xdf, 0xad, 0xf6, 0x71, 0xbd, 0x21, 0x63, 0xa9, 0xaa, 0xd4, 0xe9, 0x72, 0xab, 0x72, 0x5b,
+	0xc6, 0x8a, 0xf6, 0x92, 0x5f, 0x42, 0x1b, 0xb0, 0x5e, 0x6f, 0xbe, 0x98, 0xd7, 0xcf, 0xa1, 0x7b,
+	0x50, 0x3e, 0x6a, 0xee, 0xc9, 0x58, 0xd2, 0xe4, 0x79, 0xa0, 0x18, 0xfa, 0x11, 0x54, 0x94, 0xa3,
+	0x56, 0x13, 0x6b, 0x52, 0x43, 0x9b, 0x87, 0x8a, 0xd3, 0x50, 0xe1, 0xe4, 0xe7, 0x81, 0x12, 0xd5,
+	0xc7, 0x7f, 0x79, 0xbb, 0xc1, 0xfd, 0xed, 0xed, 0x06, 0xf7, 0xaf, 0xb7, 0x1b, 0xdc, 0x1f, 0xfe,
+	0xbd, 0xb1, 0x04, 0x77, 0x2d, 0x7b, 0xcb, 0xa5, 0x5c, 0x75, 0xec, 0x37, 0xfe, 0x7d, 0x2f, 0x2c,
+	0x8e, 0x5f, 0x85, 0x7f, 0x30, 0x7a, 0x95, 0x62, 0xf6, 0x9d, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff,
+	0xe4, 0x8f, 0x88, 0x5b, 0x55, 0x1a, 0x00, 0x00,
 }
 
 func (m *CVE) Marshal() (dAtA []byte, err error) {
@@ -1563,49 +2220,6 @@ func (m *CVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CVE_Reference) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *CVE_Reference) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *CVE_Reference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Tags) > 0 {
-		for iNdEx := len(m.Tags) - 1; iNdEx >= 0; iNdEx-- {
-			i -= len(m.Tags[iNdEx])
-			copy(dAtA[i:], m.Tags[iNdEx])
-			i = encodeVarintCve(dAtA, i, uint64(len(m.Tags[iNdEx])))
-			i--
-			dAtA[i] = 0x12
-		}
-	}
-	if len(m.URI) > 0 {
-		i -= len(m.URI)
-		copy(dAtA[i:], m.URI)
-		i = encodeVarintCve(dAtA, i, uint64(len(m.URI)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *CVE_DistroSpecific) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1669,6 +2283,529 @@ func (m *CVE_DistroSpecific) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintCve(dAtA, i, uint64(m.Severity))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CVE_Reference) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CVE_Reference) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CVE_Reference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Tags) > 0 {
+		for iNdEx := len(m.Tags) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Tags[iNdEx])
+			copy(dAtA[i:], m.Tags[iNdEx])
+			i = encodeVarintCve(dAtA, i, uint64(len(m.Tags[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.URI) > 0 {
+		i -= len(m.URI)
+		copy(dAtA[i:], m.URI)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.URI)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CVEInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CVEInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CVEInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.References) > 0 {
+		for iNdEx := len(m.References) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.References[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintCve(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x52
+		}
+	}
+	if m.CvssV3 != nil {
+		{
+			size, err := m.CvssV3.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if m.CvssV2 != nil {
+		{
+			size, err := m.CvssV2.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.ScoreVersion != 0 {
+		i = encodeVarintCve(dAtA, i, uint64(m.ScoreVersion))
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.LastModified != nil {
+		{
+			size, err := m.LastModified.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.CreatedAt != nil {
+		{
+			size, err := m.CreatedAt.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if m.PublishedOn != nil {
+		{
+			size, err := m.PublishedOn.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Link) > 0 {
+		i -= len(m.Link)
+		copy(dAtA[i:], m.Link)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Link)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Summary) > 0 {
+		i -= len(m.Summary)
+		copy(dAtA[i:], m.Summary)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Summary)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Cve) > 0 {
+		i -= len(m.Cve)
+		copy(dAtA[i:], m.Cve)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Cve)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CVEInfo_Reference) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CVEInfo_Reference) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CVEInfo_Reference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Tags) > 0 {
+		for iNdEx := len(m.Tags) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Tags[iNdEx])
+			copy(dAtA[i:], m.Tags[iNdEx])
+			i = encodeVarintCve(dAtA, i, uint64(len(m.Tags[iNdEx])))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	if len(m.URI) > 0 {
+		i -= len(m.URI)
+		copy(dAtA[i:], m.URI)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.URI)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ImageCVE) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ImageCVE) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ImageCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SnoozeExpiry != nil {
+		{
+			size, err := m.SnoozeExpiry.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if m.SnoozeStart != nil {
+		{
+			size, err := m.SnoozeStart.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.Snoozed {
+		i--
+		if m.Snoozed {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.ImpactScore != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ImpactScore))))
+		i--
+		dAtA[i] = 0x35
+	}
+	if m.Severity != 0 {
+		i = encodeVarintCve(dAtA, i, uint64(m.Severity))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Cvss != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
+		i--
+		dAtA[i] = 0x25
+	}
+	if len(m.OperatingSystem) > 0 {
+		i -= len(m.OperatingSystem)
+		copy(dAtA[i:], m.OperatingSystem)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.OperatingSystem)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.CveBaseInfo != nil {
+		{
+			size, err := m.CveBaseInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeCVE) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeCVE) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NodeCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.SnoozeExpiry != nil {
+		{
+			size, err := m.SnoozeExpiry.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x4a
+	}
+	if m.SnoozeStart != nil {
+		{
+			size, err := m.SnoozeStart.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.Snoozed {
+		i--
+		if m.Snoozed {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x38
+	}
+	if m.ImpactScore != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ImpactScore))))
+		i--
+		dAtA[i] = 0x35
+	}
+	if m.Severity != 0 {
+		i = encodeVarintCve(dAtA, i, uint64(m.Severity))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Cvss != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
+		i--
+		dAtA[i] = 0x25
+	}
+	if len(m.OperatingSystem) > 0 {
+		i -= len(m.OperatingSystem)
+		copy(dAtA[i:], m.OperatingSystem)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.OperatingSystem)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.CveBaseInfo != nil {
+		{
+			size, err := m.CveBaseInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ClusterCVE) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClusterCVE) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClusterCVE) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Type != 0 {
+		i = encodeVarintCve(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x48
+	}
+	if m.SnoozeExpiry != nil {
+		{
+			size, err := m.SnoozeExpiry.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x42
+	}
+	if m.SnoozeStart != nil {
+		{
+			size, err := m.SnoozeStart.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.Snoozed {
+		i--
+		if m.Snoozed {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.ImpactScore != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.ImpactScore))))
+		i--
+		dAtA[i] = 0x2d
+	}
+	if m.Severity != 0 {
+		i = encodeVarintCve(dAtA, i, uint64(m.Severity))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.Cvss != 0 {
+		i -= 4
+		encoding_binary.LittleEndian.PutUint32(dAtA[i:], uint32(math.Float32bits(float32(m.Cvss))))
+		i--
+		dAtA[i] = 0x1d
+	}
+	if m.CveBaseInfo != nil {
+		{
+			size, err := m.CveBaseInfo.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCve(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintCve(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -1964,28 +3101,6 @@ func (m *CVE) Size() (n int) {
 	return n
 }
 
-func (m *CVE_Reference) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.URI)
-	if l > 0 {
-		n += 1 + l + sovCve(uint64(l))
-	}
-	if len(m.Tags) > 0 {
-		for _, s := range m.Tags {
-			l = len(s)
-			n += 1 + l + sovCve(uint64(l))
-		}
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *CVE_DistroSpecific) Size() (n int) {
 	if m == nil {
 		return 0
@@ -2008,6 +3123,234 @@ func (m *CVE_DistroSpecific) Size() (n int) {
 	if m.CvssV3 != nil {
 		l = m.CvssV3.Size()
 		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CVE_Reference) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.URI)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if len(m.Tags) > 0 {
+		for _, s := range m.Tags {
+			l = len(s)
+			n += 1 + l + sovCve(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CVEInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Cve)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	l = len(m.Summary)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	l = len(m.Link)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.PublishedOn != nil {
+		l = m.PublishedOn.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.CreatedAt != nil {
+		l = m.CreatedAt.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.LastModified != nil {
+		l = m.LastModified.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.ScoreVersion != 0 {
+		n += 1 + sovCve(uint64(m.ScoreVersion))
+	}
+	if m.CvssV2 != nil {
+		l = m.CvssV2.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.CvssV3 != nil {
+		l = m.CvssV3.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if len(m.References) > 0 {
+		for _, e := range m.References {
+			l = e.Size()
+			n += 1 + l + sovCve(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CVEInfo_Reference) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.URI)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if len(m.Tags) > 0 {
+		for _, s := range m.Tags {
+			l = len(s)
+			n += 1 + l + sovCve(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ImageCVE) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.CveBaseInfo != nil {
+		l = m.CveBaseInfo.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	l = len(m.OperatingSystem)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.Cvss != 0 {
+		n += 5
+	}
+	if m.Severity != 0 {
+		n += 1 + sovCve(uint64(m.Severity))
+	}
+	if m.ImpactScore != 0 {
+		n += 5
+	}
+	if m.Snoozed {
+		n += 2
+	}
+	if m.SnoozeStart != nil {
+		l = m.SnoozeStart.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.SnoozeExpiry != nil {
+		l = m.SnoozeExpiry.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *NodeCVE) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.CveBaseInfo != nil {
+		l = m.CveBaseInfo.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	l = len(m.OperatingSystem)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.Cvss != 0 {
+		n += 5
+	}
+	if m.Severity != 0 {
+		n += 1 + sovCve(uint64(m.Severity))
+	}
+	if m.ImpactScore != 0 {
+		n += 5
+	}
+	if m.Snoozed {
+		n += 2
+	}
+	if m.SnoozeStart != nil {
+		l = m.SnoozeStart.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.SnoozeExpiry != nil {
+		l = m.SnoozeExpiry.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ClusterCVE) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.CveBaseInfo != nil {
+		l = m.CveBaseInfo.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.Cvss != 0 {
+		n += 5
+	}
+	if m.Severity != 0 {
+		n += 1 + sovCve(uint64(m.Severity))
+	}
+	if m.ImpactScore != 0 {
+		n += 5
+	}
+	if m.Snoozed {
+		n += 2
+	}
+	if m.SnoozeStart != nil {
+		l = m.SnoozeStart.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.SnoozeExpiry != nil {
+		l = m.SnoozeExpiry.Size()
+		n += 1 + l + sovCve(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 1 + sovCve(uint64(m.Type))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -2849,121 +4192,6 @@ func (m *CVE) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CVE_Reference) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowCve
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: Reference: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Reference: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field URI", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCve
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCve
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCve
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.URI = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowCve
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthCve
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthCve
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Tags = append(m.Tags, string(dAtA[iNdEx:postIndex]))
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipCve(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthCve
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *CVE_DistroSpecific) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3114,6 +4342,1455 @@ func (m *CVE_DistroSpecific) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CVE_Reference) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Reference: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Reference: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field URI", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.URI = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Tags = append(m.Tags, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CVEInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CVEInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CVEInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cve", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Cve = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Summary", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Summary = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Link", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Link = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PublishedOn", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PublishedOn == nil {
+				m.PublishedOn = &types.Timestamp{}
+			}
+			if err := m.PublishedOn.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CreatedAt == nil {
+				m.CreatedAt = &types.Timestamp{}
+			}
+			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastModified", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastModified == nil {
+				m.LastModified = &types.Timestamp{}
+			}
+			if err := m.LastModified.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScoreVersion", wireType)
+			}
+			m.ScoreVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ScoreVersion |= CVEInfo_ScoreVersion(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CvssV2", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CvssV2 == nil {
+				m.CvssV2 = &CVSSV2{}
+			}
+			if err := m.CvssV2.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CvssV3", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CvssV3 == nil {
+				m.CvssV3 = &CVSSV3{}
+			}
+			if err := m.CvssV3.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field References", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.References = append(m.References, &CVEInfo_Reference{})
+			if err := m.References[len(m.References)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CVEInfo_Reference) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Reference: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Reference: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field URI", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.URI = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Tags", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Tags = append(m.Tags, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ImageCVE) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ImageCVE: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ImageCVE: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CveBaseInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CveBaseInfo == nil {
+				m.CveBaseInfo = &CVEInfo{}
+			}
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatingSystem = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImpactScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ImpactScore = float32(math.Float32frombits(v))
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Snoozed", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Snoozed = bool(v != 0)
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeStart", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeStart == nil {
+				m.SnoozeStart = &types.Timestamp{}
+			}
+			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeExpiry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeExpiry == nil {
+				m.SnoozeExpiry = &types.Timestamp{}
+			}
+			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeCVE) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeCVE: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeCVE: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CveBaseInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CveBaseInfo == nil {
+				m.CveBaseInfo = &CVEInfo{}
+			}
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatingSystem", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.OperatingSystem = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImpactScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ImpactScore = float32(math.Float32frombits(v))
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Snoozed", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Snoozed = bool(v != 0)
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeStart", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeStart == nil {
+				m.SnoozeStart = &types.Timestamp{}
+			}
+			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeExpiry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeExpiry == nil {
+				m.SnoozeExpiry = &types.Timestamp{}
+			}
+			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCve(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCve
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClusterCVE) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCve
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClusterCVE: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClusterCVE: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CveBaseInfo", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CveBaseInfo == nil {
+				m.CveBaseInfo = &CVEInfo{}
+			}
+			if err := m.CveBaseInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Cvss", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.Cvss = float32(math.Float32frombits(v))
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Severity", wireType)
+			}
+			m.Severity = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Severity |= VulnerabilitySeverity(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 5 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImpactScore", wireType)
+			}
+			var v uint32
+			if (iNdEx + 4) > l {
+				return io.ErrUnexpectedEOF
+			}
+			v = uint32(encoding_binary.LittleEndian.Uint32(dAtA[iNdEx:]))
+			iNdEx += 4
+			m.ImpactScore = float32(math.Float32frombits(v))
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Snoozed", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Snoozed = bool(v != 0)
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeStart", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeStart == nil {
+				m.SnoozeStart = &types.Timestamp{}
+			}
+			if err := m.SnoozeStart.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeExpiry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCve
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCve
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.SnoozeExpiry == nil {
+				m.SnoozeExpiry = &types.Timestamp{}
+			}
+			if err := m.SnoozeExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 9:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCve
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= CVE_CVEType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipCve(dAtA[iNdEx:])

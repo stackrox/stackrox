@@ -1,3 +1,4 @@
+import { ViolationState } from 'types/alert.proto';
 import { EnforcementAction, LifecycleStage, ListPolicy, Policy } from 'types/policy.proto';
 
 export type { EnforcementAction, LifecycleStage, Policy };
@@ -15,8 +16,7 @@ interface ListBaseAlert {
     enforcementCount: number;
     lifecycleStage: LifecycleStage;
     policy: ListPolicy;
-    state: 'ACTIVE' | 'INACTIVE';
-    tags: string[];
+    state: ViolationState;
     time: string;
 }
 
@@ -79,36 +79,6 @@ export type ProcessViolation = {
     }[];
 };
 
-export type Deployment = {
-    annotations: {
-        email: string;
-        owner: string;
-    };
-    clusterId: string;
-    clusterName: string;
-    containers: {
-        image: {
-            id: string;
-            name: {
-                fullName: string;
-                registry: string;
-                remote: string;
-                tag: string;
-            };
-            notPullable: boolean;
-        };
-    }[];
-    id: string;
-    inactive: boolean;
-    labels: {
-        app: string;
-    };
-    name: string;
-    namespace: string;
-    namespaceId: string;
-    type: string;
-};
-
 export type Alert = {
     id: string;
     deployment?: {
@@ -138,8 +108,7 @@ export type Alert = {
     firstOccurred: string;
     lifecycleStage: LifecycleStage;
     policy: Policy;
-    state: 'ACTIVE' | 'INACTIVE';
-    tags: string[];
+    state: ViolationState;
     time: string;
     violations: Violation[];
     processViolation?: ProcessViolation;

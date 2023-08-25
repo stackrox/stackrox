@@ -31,8 +31,8 @@ message KubernetesEvent {
             CONFIGMAPS       = 4;
         }
 
-        string   name       = 1 [(gogoproto.moretags) = "policy:\"Kubernetes Resource Name\""];
-        Resource resource   = 2 [(gogoproto.moretags) = "policy:\"Kubernetes Resource\""];
+        string   name       = 1 [(gogoproto.moretags) = 'policy:"Kubernetes Resource Name"'];
+        Resource resource   = 2 [(gogoproto.moretags) = 'policy:"Kubernetes Resource"'];
         string   cluster_id = 3;
         string   namespace  = 4;
     }
@@ -40,7 +40,7 @@ message KubernetesEvent {
     string                    id                    = 1;
     Object                    object                = 2;
     google.protobuf.Timestamp timestamp             = 3;
-    APIVerb                   api_verb              = 4 [(gogoproto.moretags) = "policy:\"Kubernetes API Verb\""];
+    APIVerb                   api_verb              = 4 [(gogoproto.moretags) = 'policy:"Kubernetes API Verb"'];
 
     // tags 5-14 reserved for ObjectArgs
     // Next available tag: 7
@@ -52,9 +52,9 @@ message KubernetesEvent {
     // Extended arguments. May not be available for pod exec and port forward events.
     // These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
     User                      user                 = 15;
-    User                      impersonated_user    = 16 [(gogoproto.moretags) = "policy:\",ignore\""]; // this field is optional if the request wasn't an impersonated request
-    repeated string           source_ips           = 17 [(gogoproto.moretags) = "policy:\"Source IP Address\""];
-    string                    user_agent           = 18 [(gogoproto.moretags) = "policy:\"User Agent\""];
+    User                      impersonated_user    = 16 [(gogoproto.moretags) = 'policy:",ignore"']; // this field is optional if the request wasn't an impersonated request
+    repeated string           source_ips           = 17 [(gogoproto.moretags) = 'policy:"Source IP Address"'];
+    string                    user_agent           = 18 [(gogoproto.moretags) = 'policy:"User Agent"'];
     ResponseStatus            response_status      = 19;
     string                    request_uri          = 20; // Field will not be used for policy detection
 
@@ -73,7 +73,7 @@ message KubernetesEvent {
     }
 
     message User {
-        string          username = 1 [(gogoproto.moretags) = "policy:\"Kubernetes User Name\""];
-        repeated string groups   = 2 [(gogoproto.moretags) = "policy:\"Kubernetes User Groups\""];
+        string          username = 1 [(gogoproto.moretags) = 'policy:"Kubernetes User Name"'];
+        repeated string groups   = 2 [(gogoproto.moretags) = 'policy:"Kubernetes User Groups"'];
     }
 }

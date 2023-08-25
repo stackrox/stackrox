@@ -1,11 +1,9 @@
 package datastore
 
 import (
-	globaldb "github.com/stackrox/rox/central/globaldb/dackbox"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/nodecomponentedge/index"
+	globaldb "github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/nodecomponentedge/search"
-	"github.com/stackrox/rox/central/nodecomponentedge/store/dackbox"
+	pgStore "github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -16,10 +14,9 @@ var (
 )
 
 func initialize() {
-	storage := dackbox.New(globaldb.GetGlobalDackBox())
-	searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()))
-
-	ad = New(globaldb.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	storage := pgStore.New(globaldb.GetPostgres())
+	searcher := search.New(storage, pgStore.NewIndexer(globaldb.GetPostgres()))
+	ad = New(storage, searcher)
 }
 
 // Singleton provides the interface for non-service external interaction.

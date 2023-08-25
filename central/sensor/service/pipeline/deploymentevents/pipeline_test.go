@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	aggregatorMocks "github.com/stackrox/rox/central/activecomponent/updater/aggregator/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -15,8 +14,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/testutils/envisolator"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPipeline(t *testing.T) {
@@ -25,7 +24,6 @@ func TestPipeline(t *testing.T) {
 
 type PipelineTestSuite struct {
 	suite.Suite
-	envIsolator *envisolator.EnvIsolator
 
 	clusters          *clusterMocks.MockDataStore
 	deployments       *deploymentMocks.MockDataStore
@@ -58,11 +56,9 @@ func (suite *PipelineTestSuite) SetupTest() {
 			suite.reprocessor,
 			suite.networkBaselines,
 			suite.processAggregator).(*pipelineImpl)
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
-	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 

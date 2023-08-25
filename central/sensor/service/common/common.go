@@ -4,10 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -32,10 +30,16 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "NetworkPoliciesResponse"
 	case *central.MsgFromSensor_ClusterHealthInfo:
 		return "ClusterHealthInfo"
+	case *central.MsgFromSensor_ClusterMetrics:
+		return "ClusterMetrics"
 	case *central.MsgFromSensor_AuditLogStatusInfo:
 		return "AuditLogStatusInfo"
+	case *central.MsgFromSensor_ProcessListeningOnPortUpdate:
+		return "ProcessListeningOnPortUpdate"
+	case *central.MsgFromSensor_ComplianceOperatorInfo:
+		return "ComplianceOperatorInfo"
 	default:
-		utils.Should(errors.Errorf("Unknown message type: %T", t))
+		log.Errorf("UNEXPECTED:  Unknown message type: %T", t)
 		return "Unknown"
 	}
 }

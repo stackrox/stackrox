@@ -1,6 +1,7 @@
 package connection
 
 import (
+	hashManager "github.com/stackrox/rox/central/hash/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +13,7 @@ var (
 // ManagerSingleton returns the singleton instance for the sensor connection manager.
 func ManagerSingleton() Manager {
 	managerInstanceInit.Do(func() {
-		managerInstance = newManager()
+		managerInstance = NewManager(hashManager.Singleton())
 	})
 
 	return managerInstance

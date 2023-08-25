@@ -6,8 +6,9 @@ import (
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +19,7 @@ func TestFeatureFlagSettings(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	conn := testutils.GRPCConnectionToCentral(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	metadataService := v1.NewMetadataServiceClient(conn)
 	metadata, err := metadataService.GetMetadata(ctx, &v1.Empty{})
@@ -43,6 +44,11 @@ func TestFeatureFlagSettings(t *testing.T) {
 	for _, flag := range featureFlags.GetFeatureFlags() {
 		actualFlagVals[flag.GetEnvVar()] = flag.GetEnabled()
 	}
+
+	// TODO(ROX-14939): Refactor feature flag logic to include environment variables
+	delete(actualFlagVals, "ROX_POSTGRES_DATASTORE")
+	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
+	delete(actualFlagVals, env.VulnReportingEnhancements.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }

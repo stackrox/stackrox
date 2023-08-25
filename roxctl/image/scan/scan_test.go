@@ -15,13 +15,15 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
+	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -180,11 +182,12 @@ var (
 
 // mock implementation for v1.ImageServiceServer
 type mockImageServiceServer struct {
-	v1.ImageServiceServer
+	v1.UnimplementedImageServiceServer
+
 	components []*storage.EmbeddedImageScanComponent
 }
 
-func (m *mockImageServiceServer) ScanImage(ctx context.Context, in *v1.ScanImageRequest) (*storage.Image, error) {
+func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageRequest) (*storage.Image, error) {
 	img := &storage.Image{
 		Scan: &storage.ImageScan{
 			Components: m.components,
@@ -240,7 +243,7 @@ func (s *imageScanTestSuite) createGRPCMockImageService(components []*storage.Em
 
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
-	}), grpc.WithInsecure())
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	s.Require().NoError(err)
 
 	closeF := func() {
@@ -305,7 +308,7 @@ func (s *imageScanTestSuite) TestConstruct() {
 		"invalid printer factory should return an error": {
 			printerFactory: invalidObjPrinterFactory,
 			shouldFail:     true,
-			error:          errorhelpers.ErrInvalidArgs,
+			error:          errox.InvalidArgs,
 		},
 	}
 
@@ -359,8 +362,8 @@ func (s *imageScanTestSuite) TestDeprecationNote() {
 	for name, c := range cases {
 		s.Run(name, func() {
 			imgScanCmd := s.defaultImageScanCommand
-			io, _, _, errOut := environment.TestIO()
-			imgScanCmd.env = environment.NewCLIEnvironment(io, printer.DefaultColorPrinter())
+			io, _, _, errOut := io.TestIO()
+			imgScanCmd.env = environment.NewTestCLIEnvironment(s.T(), io, printer.DefaultColorPrinter())
 			cmd := Command(imgScanCmd.env)
 			cmd.Flags().Duration("timeout", 1*time.Minute, "")
 			cmd.Flag("format").Changed = c.formatChanged
@@ -398,13 +401,13 @@ func (s *imageScanTestSuite) TestValidate() {
 		},
 		"invalid image name should result in an error": {
 			image: "c:",
-			error: errorhelpers.ErrInvalidArgs,
+			error: errox.InvalidArgs,
 		},
 		"wrong legacy output format should result in an error when new output format IS NOT used": {
 			image:        s.defaultImageScanCommand.image,
 			legacyFormat: "table",
 			shouldFail:   true,
-			error:        errorhelpers.ErrInvalidArgs,
+			error:        errox.InvalidArgs,
 		},
 		"wrong legacy output format should NOT result in an error when new output format IS used": {
 			image:        s.defaultImageScanCommand.image,
@@ -443,8 +446,8 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 		"should render default output with merged cells and additional verbose output": {
 			components:                   testComponents,
 			expectedOutput:               "testComponents.txt",
-			expectedErrorOutput:          "WARN:\tA total of 17 vulnerabilities were found in 5 components\n",
-			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 17 vulnerabilities were found in 5 components\n\x1b[0m",
+			expectedErrorOutput:          "WARN:\tA total of 11 unique vulnerabilities were found in 5 components\n",
+			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 11 unique vulnerabilities were found in 5 components\n\x1b[0m",
 		},
 		"should print only headers with empty components in image scan": {
 			expectedOutput: "empty.txt",
@@ -586,4 +589,12 @@ func (s *imageScanTestSuite) runLegacyOutputTests(cases map[string]outputFormatT
 			s.Assert().Equal(string(expectedOutput), out.String())
 		})
 	}
+}
+
+func (s *imageScanTestSuite) TestScan_IncludeSnoozed() {
+	s.Run("disabled by default", func() {
+		envMock, _, _ := s.newTestMockEnvironmentWithConn(nil)
+		cobraCommand := Command(envMock)
+		s.Equal("false", cobraCommand.Flag("include-snoozed").Value.String())
+	})
 }

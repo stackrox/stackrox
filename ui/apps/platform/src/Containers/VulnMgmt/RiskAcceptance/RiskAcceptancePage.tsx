@@ -14,16 +14,14 @@ import {
 } from '@patternfly/react-core';
 import { Switch, Route, useHistory, useLocation, Redirect } from 'react-router-dom';
 
+import { dashboardPath } from 'routePaths';
+import PageTitle from 'Components/PageTitle';
+
 import {
-    dashboardPath,
     vulnManagementApprovedDeferralsPath,
     vulnManagementApprovedFalsePositivesPath,
-    vulnManagementPath,
     vulnManagementPendingApprovalsPath,
-} from 'routePaths';
-import usePermissions from 'hooks/usePermissions';
-import NotFoundMessage from 'Components/NotFoundMessage';
-import PageTitle from 'Components/PageTitle';
+} from './pathsForRiskAcceptance';
 import PendingApprovals from './PendingApprovals';
 import ApprovedDeferrals from './ApprovedDeferrals';
 import ApprovedFalsePositives from './ApprovedFalsePositives';
@@ -82,23 +80,8 @@ function TabContentList({ activeKeyTab }): ReactElement {
 }
 
 function RiskAcceptancePage(): ReactElement {
-    const { hasReadAccess } = usePermissions();
     const history = useHistory();
     const location = useLocation();
-
-    if (
-        !hasReadAccess('VulnerabilityManagementRequests') ||
-        !hasReadAccess('VulnerabilityManagementApprovals')
-    ) {
-        return (
-            <NotFoundMessage
-                title="404: Not found"
-                message="This page doesn't exist, return to Vulnerability Management"
-                actionText="Go to Vulnerability Management"
-                url={vulnManagementPath}
-            />
-        );
-    }
 
     const activeKeyTab = getActiveKeyTab(location.pathname);
 

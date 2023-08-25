@@ -56,7 +56,6 @@ function ProcessCard({ processes, message }) {
                             <ProcessCardContent
                                 key={process.id}
                                 process={process}
-                                areAnalystNotesVisible={selectedId === process.id}
                                 selectProcessId={onSelectIdHandler}
                             />
                         </>

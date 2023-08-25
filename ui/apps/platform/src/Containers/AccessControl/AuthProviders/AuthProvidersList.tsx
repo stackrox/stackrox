@@ -7,9 +7,10 @@ import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-tab
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider, AuthProviderInfo } from 'services/AuthService';
+import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
+import { getOriginLabel } from '../traits';
 
 // TODO import from where?
 const unselectedRowStyle = {};
@@ -59,16 +60,19 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
             <TableComposable variant="compact">
                 <Thead>
                     <Tr>
-                        <Th width={20}>Name</Th>
+                        <Th width={15}>Name</Th>
+                        <Th width={15}>Origin</Th>
                         <Th width={15}>Type</Th>
                         <Th width={20}>Minimum access role</Th>
-                        <Th width={35}>Assigned rules</Th>
+                        <Th width={25}>Assigned rules</Th>
                         <Th width={10} aria-label="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>
-                    {authProviders.map(({ id, name, type, defaultRole, groups = [] }) => {
+                    {authProviders.map((authProvider) => {
+                        const { id, name, type, defaultRole, traits, groups = [] } = authProvider;
                         const typeLabel = getAuthProviderTypeLabel(type, availableProviderTypes);
+                        const isImmutable = getIsAuthProviderImmutable(authProvider);
 
                         return (
                             <Tr
@@ -82,6 +86,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                         entityName={name}
                                     />
                                 </Td>
+                                <Td dataLabel="Origin">{getOriginLabel(traits)}</Td>
                                 <Td dataLabel="Type">{typeLabel}</Td>
                                 <Td dataLabel="Minimum access role">
                                     <AccessControlEntityLink
@@ -99,10 +104,15 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                             {
                                                 title: 'Delete auth provider',
                                                 onClick: () => onClickDelete(name, id),
-                                                isDisabled: id === currentUser?.authProvider?.id,
+                                                isDisabled:
+                                                    id === currentUser?.authProvider?.id ||
+                                                    isImmutable,
                                                 description:
+                                                    // eslint-disable-next-line no-nested-ternary
                                                     id === currentUser?.authProvider?.id
                                                         ? 'Cannot delete current auth provider'
+                                                        : isImmutable
+                                                        ? 'Cannot delete unmodifiable auth provider'
                                                         : '',
                                             },
                                         ],

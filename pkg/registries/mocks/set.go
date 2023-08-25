@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/registries/types"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockSet is a mock of Set interface.
@@ -59,6 +59,20 @@ func (m *MockSet) GetAll() []types.ImageRegistry {
 func (mr *MockSetMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSet)(nil).GetAll))
+}
+
+// GetRegistryByImage mocks base method.
+func (m *MockSet) GetRegistryByImage(image *storage.Image) types.Registry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegistryByImage", image)
+	ret0, _ := ret[0].(types.Registry)
+	return ret0
+}
+
+// GetRegistryByImage indicates an expected call of GetRegistryByImage.
+func (mr *MockSetMockRecorder) GetRegistryByImage(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryByImage", reflect.TypeOf((*MockSet)(nil).GetRegistryByImage), image)
 }
 
 // GetRegistryMetadataByImage mocks base method.

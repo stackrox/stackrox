@@ -20,8 +20,9 @@ target_dir="${2:-}"
 
 mkdir "${target_dir}/bin"
 
+# x86_64; directory names without architecture for compatibility
 for platform in Linux Darwin Windows; do
-  platform_lower="$(echo "$platform" | tr A-Z a-z)"
+  platform_lower="$(echo "$platform" | tr '[:upper:]' '[:lower:]')"
 
   mkdir "${target_dir}/bin/${platform}"
   mkdir "${target_dir}/bin/${platform_lower}"
@@ -30,13 +31,13 @@ for platform in Linux Darwin Windows; do
   if [[ "${platform}" == "Windows" ]]; then
     roxctl_bin="roxctl.exe"
   fi
-  cp "${source_dir}/bin/${platform_lower}/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}"
-  cp "${source_dir}/bin/${platform_lower}/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}"
+  cp "${source_dir}/bin/${platform_lower}_amd64/${roxctl_bin}" "${target_dir}/bin/${platform}/${roxctl_bin}"
+  cp "${source_dir}/bin/${platform_lower}_amd64/${roxctl_bin}" "${target_dir}/bin/${platform_lower}/${roxctl_bin}"
 done
 
 # Create sha256sum.txt checksum files
 
 find "${target_dir}" -name "sha256sum.txt" -exec rm {} \;
 while IFS='' read -r dir || [[ -n "$dir" ]]; do
-  ( cd "$dir" ; sha256sum * >sha256sum.txt )
+  ( cd "$dir" ; sha256sum ./* >sha256sum.txt )
 done < <(find "${target_dir}" -type f -print0 | xargs -0 -n 1 dirname | sort -u)

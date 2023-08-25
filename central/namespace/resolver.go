@@ -24,26 +24,6 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
 
-// ResolveByQuery resolves all namespaces based on a query, populating volatile runtime data (like deployment and secret counts) by querying related stores.
-func ResolveByQuery(ctx context.Context, q *v1.Query, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
-	metadataSlice, err := dataStore.SearchNamespaces(ctx, q)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving namespaces")
-	}
-	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
-}
-
-// ResolveByClusterID resolves all namespaces for the given cluster.
-func ResolveByClusterID(ctx context.Context, clusterID string, datastore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore, q *v1.Query) ([]*v1.Namespace, error) {
-	metadataSlice, err := datastore.SearchNamespaces(ctx, q)
-	if err != nil {
-		return nil, errors.Wrapf(err, "searching namespace for cluster id %q", clusterID)
-	}
-	return populateFromMetadataSlice(ctx, metadataSlice, deploymentDataStore, secretDataStore, npStore)
-}
-
 func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	if len(metadataSlice) == 0 {
@@ -63,7 +43,7 @@ func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.Nam
 // ResolveByClusterIDAndName resolves a namespace given its cluster ID and its name.
 func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name string, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
 	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, bool, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	namespaces, err := dataStore.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, false, err
@@ -76,6 +56,21 @@ func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name strin
 	}
 	populated, err := populate(ctx, namespaces[0], deploymentDataStore, secretDataStore, npStore)
 	return populated, true, err
+}
+
+// ResolveMetadataOnlyByID resolves namespace metadata only by id.
+func ResolveMetadataOnlyByID(ctx context.Context, id string, dataStore datastore.DataStore) (*v1.Namespace, bool, error) {
+	ns, exists, err := dataStore.GetNamespace(ctx, id)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "retrieving namespace from store")
+	}
+	if !exists {
+		return nil, false, nil
+	}
+
+	return &v1.Namespace{
+		Metadata: ns,
+	}, true, nil
 }
 
 // ResolveByID resolves a namespace by id given all the stores.
@@ -99,12 +94,12 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
 		AddExactMatches(search.Namespace, storageNamespace.GetName()).
 		ProtoQuery()
-	deploymentResults, err := deploymentDataStore.Search(ctx, q.Clone())
+	deploymentCount, err := deploymentDataStore.Count(ctx, q.Clone())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching deployments")
 	}
 
-	secretResults, err := secretDataStore.Search(ctx, q)
+	secretCount, err := secretDataStore.Count(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "searching secrets")
 	}
@@ -120,8 +115,8 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 
 	return &v1.Namespace{
 		Metadata:           storageNamespace,
-		NumDeployments:     int32(len(deploymentResults)),
-		NumSecrets:         int32(len(secretResults)),
+		NumDeployments:     int32(deploymentCount),
+		NumSecrets:         int32(secretCount),
 		NumNetworkPolicies: int32(networkPolicyCount),
 	}, nil
 }

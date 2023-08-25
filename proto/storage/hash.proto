@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message Hash {
+    string              cluster_id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    map<string, uint64> hashes     = 2;
+}

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/joelanford/helm-operator/pkg/extensions"
+	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -113,7 +113,7 @@ func updateProxyEnvSecret(ctx context.Context, obj k8sutil.Object, client ctrlCl
 		strData[k] = string(v)
 	}
 
-	if maputil.StringStringMapsEqual(strData, proxyEnvVars) {
+	if maputil.Equal(strData, proxyEnvVars) {
 		return nil
 	}
 

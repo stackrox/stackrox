@@ -31,7 +31,7 @@ func (c *vulnerabilitiesMultiplier) Score(_ context.Context, node *storage.Node)
 	nodeComponents := node.GetScan().GetComponents()
 	components := make([]scancomponent.ScanComponent, 0, len(nodeComponents))
 	for _, nodeComponent := range nodeComponents {
-		components = append(components, nodeComponent)
+		components = append(components, scancomponent.NewFromNodeComponent(nodeComponent))
 	}
 	min, max, sum, num := vulns.ProcessComponents(components)
 	if num == 0 {

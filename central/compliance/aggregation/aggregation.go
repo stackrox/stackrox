@@ -5,19 +5,17 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
 	complianceDSTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/central/compliance/standards"
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
-	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
-	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
-	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
+	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
@@ -89,7 +87,7 @@ func New(compliance complianceDS.DataStore,
 	standards standards.Repository,
 	clusters clusterDatastore.DataStore,
 	namespaces namespaceStore.DataStore,
-	nodes nodeDatastore.GlobalDataStore,
+	nodes nodeDatastore.DataStore,
 	deployments deploymentStore.DataStore) Aggregator {
 	return &aggregatorImpl{
 		compliance:  compliance,
@@ -106,7 +104,7 @@ type aggregatorImpl struct {
 	standards   standards.Repository
 	clusters    clusterDatastore.DataStore
 	namespaces  namespaceStore.DataStore
-	nodes       nodeDatastore.GlobalDataStore
+	nodes       nodeDatastore.DataStore
 	deployments deploymentStore.DataStore
 }
 
@@ -387,13 +385,8 @@ func getAggregationKeys(groupByKey groupByKey) []*storage.ComplianceAggregation_
 func (a *aggregatorImpl) getCategoryID(controlID string) string {
 	// Controls can now be removed with the addition of the compliance operator
 	// All controls should have categories if they exist
-	if control := a.standards.Control(controlID); control == nil {
-		return ""
-	}
-
 	category := a.standards.GetCategoryByControl(controlID)
 	if category == nil {
-		utils.Should(errors.Errorf("no category found for control %q", controlID))
 		return ""
 	}
 	return category.QualifiedID()
@@ -618,17 +611,17 @@ func (a *aggregatorImpl) getSearchFuncs() map[storage.ComplianceAggregation_Scop
 		storage.ComplianceAggregation_CLUSTER: {
 			searchFunc: a.clusters.Search,
 			countFunc:  a.clusters.Count,
-			optionsMap: clusterMappings.OptionsMap,
+			optionsMap: schema.ClustersSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_NODE: {
 			searchFunc: a.nodes.Search,
 			countFunc:  a.nodes.Count,
-			optionsMap: nodeMappings.OptionsMap,
+			optionsMap: schema.NodesSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_NAMESPACE: {
 			searchFunc: a.namespaces.Search,
 			countFunc:  a.namespaces.Count,
-			optionsMap: namespaceMappings.OptionsMap,
+			optionsMap: schema.NamespacesSchema.OptionsMap,
 		},
 		storage.ComplianceAggregation_CONTROL: {
 			searchFunc: wrapContextLessSearchFunc(a.standards.SearchControls),

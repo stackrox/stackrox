@@ -1,0 +1,30 @@
+# This file is *not used* as the build_root in CI. Instead a mirrored image is
+# used for performance reasons. See the build_root: in:
+# https://github.com/openshift/release/blob/master/ci-operator/config/stackrox/stackrox/stackrox-stackrox-master.yaml
+
+# However this file can be used to validate proposed changes to
+# stackrox/rox-ci-image. And this is why the automation in that repo will update
+# this file when it creates dependent PRs and
+# `stackrox-update-ci-image-from-<rox-ci-image PR>` branches e.g.
+# https://github.com/stackrox/stackrox/pull/2762
+
+# In order to validate a new version of the test environment:
+# - open a PR in openshift/release (this is just for test. mark the PR with `/hold` and
+#   `/uncc` autoassigned reviewers to reduce noise)
+# - rename the main branch CI workflow to a workflow that tests the stackrox/stackrox
+#   PR branch, specifically
+#   - git mv `stackrox-stackrox-master.yaml` to `stackrox-stackrox-stackrox-update-ci-image-from-<rox-ci-image PR number>.yaml`
+#     in `ci-operator/config/stackrox/stackrox/` folder
+#   - change the zz_generated_metadata.branch to stackrox-update-ci-image-from-<rox-ci-image PR number>
+#   - change the build_root to:
+#     project_image:
+#       dockerfile_path: .openshift-ci/Dockerfile.build_root
+# - run openshift/release automation to generate the prow config, specifically
+#   - run `make update` locally, commit the results, and push them to the test PR in
+#     openshift/release you created earlier
+#   - say `/test pj-rehearse-max` on the openshift/release PR to validate the change
+
+# For an example, see https://github.com/stackrox/stackrox/pull/2762 and its counterpart
+# https://github.com/openshift/release/pull/31561
+
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59

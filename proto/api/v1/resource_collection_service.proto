@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "storage/resource_collection.proto";
+import "storage/deployment.proto";
+import "api/v1/search_service.proto";
+
+package v1;
+
+message ListCollectionSelectorsResponse {
+    repeated string selectors = 1;
+}
+
+message GetCollectionRequest {
+    string id = 1;
+    CollectionDeploymentMatchOptions options = 2;
+}
+
+message CollectionDeploymentMatchOptions {
+    bool with_matches = 1;
+    RawQuery filter_query = 2;
+}
+
+message GetCollectionResponse {
+    storage.ResourceCollection collection = 1;
+    repeated storage.ListDeployment deployments = 2;
+}
+
+message GetCollectionCountRequest {
+    RawQuery query = 1;
+}
+
+message GetCollectionCountResponse {
+    int32 count = 1;
+}
+
+message CreateCollectionRequest {
+    string name = 1;
+    string description = 2;
+    repeated storage.ResourceSelector resource_selectors = 3;
+    repeated string embedded_collection_ids = 4;
+}
+
+message CreateCollectionResponse {
+    storage.ResourceCollection collection = 1;
+}
+
+message UpdateCollectionRequest {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    repeated storage.ResourceSelector resource_selectors = 4;
+    repeated string embedded_collection_ids = 5;
+}
+
+message UpdateCollectionResponse {
+    storage.ResourceCollection collection = 1;
+}
+
+message DryRunCollectionRequest {
+    string name = 1;
+    string id = 2; // set if dryrun on existing collections
+    string description = 3;
+    repeated storage.ResourceSelector resource_selectors = 4;
+    repeated string embedded_collection_ids = 5;
+    CollectionDeploymentMatchOptions options = 6;
+}
+
+message DryRunCollectionResponse {
+    repeated storage.ListDeployment deployments = 1;
+}
+
+message ListCollectionsRequest {
+    RawQuery query = 1;
+}
+
+message ListCollectionsResponse {
+    repeated storage.ResourceCollection collections = 1;
+}
+
+service CollectionService {
+
+    rpc ListCollectionSelectors (Empty) returns (ListCollectionSelectorsResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections/selectors"
+        };
+    }
+
+    rpc GetCollection (GetCollectionRequest) returns (GetCollectionResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections/{id}"
+        };
+    }
+
+    rpc GetCollectionCount (GetCollectionCountRequest) returns (GetCollectionCountResponse) {
+        option (google.api.http) = {
+            get: "/v1/collectionscount"
+        };
+    }
+
+    rpc CreateCollection (CreateCollectionRequest) returns (CreateCollectionResponse) {
+        option (google.api.http) = {
+            post: "/v1/collections"
+            body: "*"
+        };
+    }
+
+    rpc UpdateCollection (UpdateCollectionRequest) returns (UpdateCollectionResponse) {
+        option (google.api.http) = {
+            patch: "/v1/collections/{id}"
+            body: "*"
+        };
+    }
+
+    rpc ListCollections (ListCollectionsRequest) returns (ListCollectionsResponse) {
+        option (google.api.http) = {
+            get: "/v1/collections"
+        };
+    }
+
+    rpc DeleteCollection (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/collections/{id}"
+        };
+    }
+
+    rpc DryRunCollection (DryRunCollectionRequest) returns (DryRunCollectionResponse) {
+        option (google.api.http) = {
+            post: "/v1/collections/dryrun"
+            body: "*"
+        };
+    }
+}

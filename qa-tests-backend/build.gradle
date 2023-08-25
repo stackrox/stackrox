@@ -1,10 +1,10 @@
 plugins {
-    id "com.google.protobuf" version "0.8.18"
+    id "com.google.protobuf" version "0.8.19"
     id "groovy"
     id "codenarc"
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.11
 version = '1.0'
 
 codenarc.configFile = file("./codenarc-rules.groovy")
@@ -16,10 +16,12 @@ repositories {
 }
 
 def grpcVersion = '1.21.0'
-def protocVersion = '3.17.3'
-def protobufVersion = '3.18.1'
+// If the proto versions are changed, be sure it is also changed in make/protogen.mk.
+def protocVersion = '3.23.2'
+def protobufVersion = '3.23.4'
 def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '5.10.1'
+def fabric8Version = '6.8.0'
+def jacksonVersion = '2.14.2'
 
 protobuf {
     // There is no protoc-grpc-gen for Apple Silicon (M1), so if you are running on it, force the osx-x86_64 version
@@ -57,8 +59,8 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    implementation 'com.google.code.gson:gson:2.8.7'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.3.2"
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation "com.google.api.grpc:proto-google-common-protos:2.23.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -67,18 +69,17 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    // Use the latest Groovy version for building this library
-    implementation 'org.codehaus.groovy:groovy-all:2.4.18'
-    testImplementation group: 'junit', name: 'junit', version: '4.11'
-    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '1.29'
-    implementation group: 'com.jayway.restassured', name: 'rest-assured', version: '2.9.0'
-    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.6'
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'
-    testImplementation( 'com.athaydes:spock-reports:1.4.0' ) {
-        transitive = false
-    }
+    implementation platform('org.apache.groovy:groovy-bom:4.0.13')
+    implementation 'org.apache.groovy:groovy'
+    implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
+    implementation "org.spockframework:spock-core"
+    implementation "org.spockframework:spock-junit4"
+    implementation 'io.rest-assured:rest-assured:5.3.1'
+    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.8'
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     implementation group: 'com.google.protobuf', name: 'protobuf-java', version: "${protobufVersion}"
     implementation group: 'com.google.protobuf', name: 'protobuf-java-util', version: "${protobufVersion}"
 
@@ -86,67 +87,162 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:2.0.0-beta1'
+    implementation 'io.kubernetes:client-java:18.0.1'
 
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
-
-    implementation group: 'org.spockframework', name: 'spock-core', version: '1.2-groovy-2.4'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.2'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
-    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.7'
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.5.1'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.1'
 
-    testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.7'
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
+
+    implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
 
     //JavaMail for mail verifications
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.9.0'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.30.0'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.3"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.10")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
     }
 
-    implementation 'org.javers:javers-core:6.5.2'
+    implementation 'org.javers:javers-core:7.3.1'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
+
+    implementation 'commons-codec:commons-codec:1.16.0'
 }
 
-
-
+// Apply some base attributes to all the test tasks.
 tasks.withType(Test) {
-    def testGroups = new TestGroups(System.getProperty("groups"))
-
-    useJUnit {
-        includeCategories testGroups.getIncludedGroups()
-        excludeCategories testGroups.getExcludedGroups()
-    }
-
     testLogging {
         showStandardStreams true
         exceptionFormat "full"
+        events "passed", "skipped", "failed"
     }
-}
-
-test {
-    testLogging.showStandardStreams = true
+    timeout = Duration.ofMinutes(210)
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,
     // which is not the behaviour we expect of E2Es.
     // https://stackoverflow.com/questions/42175235/force-gradle-to-run-task-even-if-it-is-up-to-date/42185919
     outputs.upToDateWhen { false }
+
+    reports {
+        junitXml {
+            outputPerTestCase = true
+            mergeReruns = true
+        }
+    }
+}
+
+task testBegin(type: Test) {
+    useJUnitPlatform {
+        includeTags "Begin"
+    }
+}
+
+task testParallel(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel"
+  }
+}
+
+task testRest(type: Test) {
+    useJUnitPlatform {
+        excludeTags "Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext"
+    }
+}
+
+task testParallelBAT(type: Test) {
+  systemProperty 'spock.configuration', rootProject.file('src/test/resources/ParallelSpockConfig.groovy')
+  useJUnitPlatform {
+      includeTags "Parallel & BAT"
+  }
+}
+
+task testBAT(type: Test) {
+    useJUnitPlatform {
+        includeTags "BAT"
+        excludeTags "Parallel"
+    }
+}
+
+task testSMOKE(type: Test) {
+    useJUnitPlatform {
+        includeTags "SMOKE"
+    }
+}
+
+task testCOMPATIBILITY(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY"
+        excludeTags "SensorBounce"
+    }
+}
+
+task testCOMPATIBILITYSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "COMPATIBILITY & SensorBounce"
+    }
+}
+
+task testRUNTIME(type: Test) {
+    useJUnitPlatform {
+        includeTags "RUNTIME"
+    }
+}
+
+task testPolicyEnforcement(type: Test) {
+    useJUnitPlatform {
+        includeTags "PolicyEnforcement"
+    }
+}
+
+task testIntegration(type: Test) {
+    useJUnitPlatform {
+        includeTags "Integration"
+    }
+}
+
+task testNetworkPolicySimulation(type: Test) {
+    useJUnitPlatform {
+        includeTags "NetworkPolicySimulation"
+    }
+}
+
+task testUpgrade(type: Test) {
+    useJUnitPlatform {
+        includeTags "Upgrade"
+    }
+}
+task testGraphQL(type: Test) {
+    useJUnitPlatform {
+        includeTags "GraphQL"
+    }
+}
+task testSensorBounce(type: Test) {
+    useJUnitPlatform {
+        includeTags "SensorBounce"
+    }
+}
+task testSensorBounceNext(type: Test) {
+    useJUnitPlatform {
+        includeTags "SensorBounceNext"
+    }
 }
 
 task runSampleScript(dependsOn: 'classes', type: JavaExec) {
@@ -154,4 +250,8 @@ task runSampleScript(dependsOn: 'classes', type: JavaExec) {
         main = "sampleScripts." + project.getProperty("runScript")
         classpath = sourceSets.main.runtimeClasspath
     }
+}
+
+test {
+    useJUnitPlatform()
 }

@@ -7,9 +7,9 @@ package mocks
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockNodeEnricher is a mock of NodeEnricher interface.
@@ -64,6 +64,20 @@ func (mr *MockNodeEnricherMockRecorder) EnrichNode(node interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
 }
 
+// EnrichNodeWithInventory mocks base method.
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory)
+}
+
 // RemoveNodeIntegration mocks base method.
 func (m *MockNodeEnricher) RemoveNodeIntegration(id string) {
 	m.ctrl.T.Helper()
@@ -90,37 +104,37 @@ func (mr *MockNodeEnricherMockRecorder) UpsertNodeIntegration(integration interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertNodeIntegration", reflect.TypeOf((*MockNodeEnricher)(nil).UpsertNodeIntegration), integration)
 }
 
-// MockcveSuppressor is a mock of cveSuppressor interface.
-type MockcveSuppressor struct {
+// MockCVESuppressor is a mock of CVESuppressor interface.
+type MockCVESuppressor struct {
 	ctrl     *gomock.Controller
-	recorder *MockcveSuppressorMockRecorder
+	recorder *MockCVESuppressorMockRecorder
 }
 
-// MockcveSuppressorMockRecorder is the mock recorder for MockcveSuppressor.
-type MockcveSuppressorMockRecorder struct {
-	mock *MockcveSuppressor
+// MockCVESuppressorMockRecorder is the mock recorder for MockCVESuppressor.
+type MockCVESuppressorMockRecorder struct {
+	mock *MockCVESuppressor
 }
 
-// NewMockcveSuppressor creates a new mock instance.
-func NewMockcveSuppressor(ctrl *gomock.Controller) *MockcveSuppressor {
-	mock := &MockcveSuppressor{ctrl: ctrl}
-	mock.recorder = &MockcveSuppressorMockRecorder{mock}
+// NewMockCVESuppressor creates a new mock instance.
+func NewMockCVESuppressor(ctrl *gomock.Controller) *MockCVESuppressor {
+	mock := &MockCVESuppressor{ctrl: ctrl}
+	mock.recorder = &MockCVESuppressorMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockcveSuppressor) EXPECT() *MockcveSuppressorMockRecorder {
+func (m *MockCVESuppressor) EXPECT() *MockCVESuppressorMockRecorder {
 	return m.recorder
 }
 
 // EnrichNodeWithSuppressedCVEs mocks base method.
-func (m *MockcveSuppressor) EnrichNodeWithSuppressedCVEs(node *storage.Node) {
+func (m *MockCVESuppressor) EnrichNodeWithSuppressedCVEs(image *storage.Node) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "EnrichNodeWithSuppressedCVEs", node)
+	m.ctrl.Call(m, "EnrichNodeWithSuppressedCVEs", image)
 }
 
 // EnrichNodeWithSuppressedCVEs indicates an expected call of EnrichNodeWithSuppressedCVEs.
-func (mr *MockcveSuppressorMockRecorder) EnrichNodeWithSuppressedCVEs(node interface{}) *gomock.Call {
+func (mr *MockCVESuppressorMockRecorder) EnrichNodeWithSuppressedCVEs(image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithSuppressedCVEs", reflect.TypeOf((*MockcveSuppressor)(nil).EnrichNodeWithSuppressedCVEs), node)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithSuppressedCVEs", reflect.TypeOf((*MockCVESuppressor)(nil).EnrichNodeWithSuppressedCVEs), image)
 }

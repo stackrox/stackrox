@@ -12,6 +12,8 @@ type MetaValues struct {
 	Versions                         version.Versions
 	MainRegistry                     string
 	ImageRemote                      string
+	CentralDBImageTag                string
+	CentralDBImageRemote             string
 	CollectorRegistry                string
 	CollectorFullImageRemote         string
 	CollectorSlimImageRemote         string
@@ -22,7 +24,6 @@ type MetaValues struct {
 	ScannerImageTag                  string
 	ScannerDBImageRemote             string
 	ScannerDBSlimImageRemote         string
-	ScannerDBImageTag                string
 	RenderMode                       string
 	ChartRepo                        defaults.ChartRepo
 	ImagePullSecrets                 defaults.ImagePullSecrets
@@ -51,6 +52,13 @@ type MetaValues struct {
 	ScanInline                       bool
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
+	ReleaseBuild                     bool
+	TelemetryEnabled                 bool
+	TelemetryKey                     string
+	TelemetryEndpoint                string
+
+	AutoSensePodSecurityPolicies bool
+	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.
 }
 
 // GetMetaValuesForFlavor are the default meta values for rendering the StackRox charts in production.
@@ -60,6 +68,8 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		MainRegistry:             imageFlavor.MainRegistry,
 		ImageRemote:              imageFlavor.MainImageName,
 		ImageTag:                 imageFlavor.MainImageTag,
+		CentralDBImageTag:        imageFlavor.CentralDBImageTag,
+		CentralDBImageRemote:     imageFlavor.CentralDBImageName,
 		CollectorRegistry:        imageFlavor.CollectorRegistry,
 		CollectorFullImageRemote: imageFlavor.CollectorImageName,
 		CollectorSlimImageRemote: imageFlavor.CollectorSlimImageName,
@@ -70,16 +80,16 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ScannerImageTag:          imageFlavor.ScannerImageTag,
 		ScannerDBImageRemote:     imageFlavor.ScannerDBImageName,
 		ScannerDBSlimImageRemote: imageFlavor.ScannerDBSlimImageName,
-		ScannerDBImageTag:        imageFlavor.ScannerDBImageTag,
-		RenderMode:               "",
+		RenderMode:               "renderAll",
 		ChartRepo:                imageFlavor.ChartRepo,
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,
+		ReleaseBuild:             buildinfo.ReleaseBuild,
+		FeatureFlags:             getFeatureFlags(),
+
+		AutoSensePodSecurityPolicies: true,
 	}
 
-	if !buildinfo.ReleaseBuild {
-		metaValues.FeatureFlags = getFeatureFlags()
-	}
 	return &metaValues
 }
 

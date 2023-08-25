@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/rules/store"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -30,7 +30,13 @@ func NewDatastore(store store.Store) (DataStore, error) {
 		store:       store,
 		rulesByName: make(map[string]map[string]*storage.ComplianceOperatorRule),
 	}
-	err := store.Walk(func(rule *storage.ComplianceOperatorRule) error {
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ComplianceOperator),
+		))
+
+	err := store.Walk(ctx, func(rule *storage.ComplianceOperatorRule) error {
 		ds.addToRulesByNameNoLock(rule)
 		return nil
 	})
@@ -53,7 +59,8 @@ func (d *datastoreImpl) Walk(ctx context.Context, fn func(rule *storage.Complian
 	} else if !ok {
 		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator rules read")
 	}
-	return d.store.Walk(fn)
+	// Postgres retry in caller.
+	return d.store.Walk(ctx, fn)
 }
 
 func (d *datastoreImpl) addToRulesByNameNoLock(rule *storage.ComplianceOperatorRule) {
@@ -74,7 +81,7 @@ func (d *datastoreImpl) Upsert(ctx context.Context, rule *storage.ComplianceOper
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
-	if err := d.store.Upsert(rule); err != nil {
+	if err := d.store.Upsert(ctx, rule); err != nil {
 		return err
 	}
 	d.addToRulesByNameNoLock(rule)
@@ -91,12 +98,12 @@ func (d *datastoreImpl) Delete(ctx context.Context, id string) error {
 	d.ruleLock.Lock()
 	defer d.ruleLock.Unlock()
 
-	rule, exists, err := d.store.Get(id)
+	rule, exists, err := d.store.Get(ctx, id)
 	if err != nil || !exists {
 		return err
 	}
 
-	if err := d.store.Delete(rule.GetId()); err != nil {
+	if err := d.store.Delete(ctx, rule.GetId()); err != nil {
 		return err
 	}
 	delete(d.rulesByName[rule.GetName()], rule.GetId())

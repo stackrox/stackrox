@@ -13,11 +13,11 @@ type policyStatusResolver struct {
 	failingPolicyIds []string
 }
 
-func (resolver *policyStatusResolver) Status(ctx context.Context) (string, error) {
+func (resolver *policyStatusResolver) Status(_ context.Context) (string, error) {
 	return resolver.status, nil
 }
 
-func (resolver *policyStatusResolver) FailingPolicies(ctx context.Context) ([]*policyResolver, error) {
+func (resolver *policyStatusResolver) FailingPolicies(_ context.Context) ([]*policyResolver, error) {
 	if len(resolver.failingPolicyIds) == 0 {
 		return nil, nil
 	}

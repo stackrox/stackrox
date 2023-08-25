@@ -176,8 +176,7 @@ ruleset {
     // ClosureStatementOnOpeningLineOfMultipleLineClosure
     ConsecutiveBlankLines 
     FileEndsWithoutNewline
-    //TODO(ROX-7771): Re-enable indentation checks and fix indentation
-    //Indentation
+    Indentation
 
     LineLength 
     MissingBlankLineAfterImports 
@@ -297,14 +296,14 @@ ruleset {
     UseAssertTrueInsteadOfNegation 
     
     // rulesets/logging.xml
-    LoggerForDifferentClass 
-    LoggerWithWrongModifiers 
-    LoggingSwallowsStacktrace 
-    MultipleLoggers 
-    // PrintStackTrace
-    // Println
-    // SystemErrPrint
-    // SystemOutPrint
+    // LoggerForDifferentClass
+    // LoggerWithWrongModifiers
+    LoggingSwallowsStacktrace
+    // MultipleLoggers
+    PrintStackTrace
+    Println
+    SystemErrPrint
+    SystemOutPrint
     
     // rulesets/naming.xml
     AbstractClassName 
@@ -397,8 +396,7 @@ ruleset {
     UnnecessarySemicolon 
     // UnnecessarySetter
     UnnecessaryStringInstantiation 
-    UnnecessarySubstring 
-    UnnecessaryTernaryExpression 
+    UnnecessaryTernaryExpression
     UnnecessaryToString 
     UnnecessaryTransientModifier 
     

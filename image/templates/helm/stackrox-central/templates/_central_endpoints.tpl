@@ -48,6 +48,10 @@
   {{ $containerPorts = append $containerPorts (dict "name" "monitoring" "containerPort" 9090) }}
   {{ $servicePorts = append $servicePorts (dict "name" "monitoring" "targetPort" "monitoring" "port" 9090) }}
 {{ end }}
+{{ if and $central.monitoring $central.monitoring.openshift $central.monitoring.openshift.enabled }}
+  {{ $containerPorts = append $containerPorts (dict "name" "monitoring-tls" "containerPort" 9091) }}
+  {{ $servicePorts = append $servicePorts (dict "name" "monitoring-tls" "targetPort" "monitoring-tls" "port" 9091) }}
+{{ end }}
 {{ $_ := set $central "_containerPorts" $containerPorts }}
 {{ $_ = set $central "_servicePorts" $servicePorts }}
 {{ $_ = set $central "_netPolIngressRules" $netPolIngressRules }}

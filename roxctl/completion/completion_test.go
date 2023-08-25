@@ -1,10 +1,12 @@
 package completion
 
 import (
-	"errors"
-	"io"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +17,7 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 	}{
 		"no args given": {
 			args: []string{},
-			err:  errors.New("Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
+			err:  errox.InvalidArgs,
 		},
 		"invalid args given": {
 			args: []string{"oh-my-zsh"},
@@ -23,16 +25,18 @@ func TestCompletionCommand_InvalidArgs(t *testing.T) {
 		},
 		"more than 1 arg given": {
 			args: []string{"zhs", "oh-my-zsh"},
-			err:  errors.New("Missing argument. Use one of the following: [bash|zsh|fish|powershell]"),
+			err:  errox.InvalidArgs,
 		},
 	}
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cmd := Command()
+			io, _, _, _ := io.TestIO()
+			cmd := Command(environment.NewTestCLIEnvironment(t, io, nil))
 			cmd.SetArgs(c.args)
 			err := cmd.Execute()
-			assert.Equal(t, c.err, err, "expected %v to match %v", err, errInvalidArgs)
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, c.err)
 		})
 	}
 }
@@ -57,9 +61,8 @@ func TestCompletionCommand_Success(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cmd := Command()
-			cmd.SetOut(io.Discard)
-			cmd.SetErr(io.Discard)
+			io, _, _, _ := io.TestIO()
+			cmd := Command(environment.NewTestCLIEnvironment(t, io, printer.DefaultColorPrinter()))
 			cmd.SetArgs(c.args)
 			assert.NoErrorf(t, cmd.Execute(), "completion for %q failed", c.args[0])
 		})

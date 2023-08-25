@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
 )
 
@@ -33,8 +34,10 @@ type Service interface {
 }
 
 type serviceImpl struct {
+	sensorAPI.UnimplementedSignalServiceServer
+
 	queue      chan *v1.Signal
-	indicators chan *central.MsgFromSensor
+	indicators chan *message.ExpiringMessage
 
 	processPipeline Pipeline
 }
@@ -43,17 +46,24 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(err error) {}
+func (s *serviceImpl) Stop(_ error) {
+	s.processPipeline.Shutdown()
+}
+
+func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
+	s.processPipeline.Notify(e)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
-func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return s.indicators
 }
 
@@ -62,8 +72,8 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	sensorAPI.RegisterSignalServiceServer(grpcServer, s)
 }
 
-// RegisterServiceHandlerFromEndpoint registers this service with the given gRPC Gateway endpoint.
-func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+// RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
+func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.ServeMux, _ *grpc.ClientConn) error {
 	// There is no grpc gateway handler for signal service
 	return nil
 }
@@ -98,7 +108,6 @@ func isProcessSignalValid(signal *storage.ProcessSignal) bool {
 }
 
 func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignalsServer) error {
-	log.Info("starting receiveMessages")
 	for {
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
@@ -123,10 +132,10 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 
 			processSignal.ExecFilePath = stringutils.OrDefault(processSignal.GetExecFilePath(), processSignal.GetName())
 			if !isProcessSignalValid(processSignal) {
+				log.Debugf("Invalid process signal: %+v", processSignal)
 				continue
 			}
 
-			log.Debugf("Process Signal: %+v", processSignal)
 			s.processPipeline.Process(processSignal)
 		default:
 			// Currently eat unhandled signals

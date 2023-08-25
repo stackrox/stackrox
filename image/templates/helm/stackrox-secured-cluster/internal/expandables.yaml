@@ -27,4 +27,18 @@ collector:
     key: true
   resources: true
   complianceResources: true
+  nodeScanningResources: true
   nodeSelector: true
+scanner:
+  resources: true
+  dbResources: true
+  nodeSelector: true
+  dbNodeSelector: true
+  dbPassword:
+    value: true
+  serviceTLS:
+    cert: true
+    key: true
+  dbServiceTLS:
+    cert: true
+    key: true

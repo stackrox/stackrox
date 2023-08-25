@@ -1,6 +1,7 @@
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
 templates/openshift-monitoring.yaml
+templates/00-injected-ca-bundle.yaml
 internal/cluster-config.yaml.tpl
 sensor-chart-upgrade.md
 scripts/
@@ -16,13 +17,16 @@ scripts/
 templates/*
 [<- end >]
 [<- end >]
-[< if not .FeatureFlags >]
+[< if .ReleaseBuild >]
 feature-flag-values.yaml
 [< end >]
 *.swp
-[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-templates/keep.yaml
+[< if .KubectlOutput >]
 templates/*scanner*
 internal/scanner-config-shape.yaml
 config-templates/scanner/
+values-scanner.yaml.example
+internal/defaults/70-scanner.yaml
 [< end >]
+[</* Ignore tls secret unconditionally in secured cluster because only slim mode is supported */>]
+templates/02-scanner-03-tls-secret.yaml

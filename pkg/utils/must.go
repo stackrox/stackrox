@@ -39,10 +39,10 @@ func CrashOnError(errs ...error) {
 	}
 }
 
-// Should panics on development builds and logs on release builds
+// ShouldErr panics on development builds and logs on release builds
 // The expectation is that this function will be called with an error wrapped by errors.Wrap
 // so that tracing is easier
-func Should(errs ...error) error {
+func ShouldErr(errs ...error) error {
 	for _, err := range errs {
 		if err != nil {
 			if buildinfo.ReleaseBuild {
@@ -54,4 +54,9 @@ func Should(errs ...error) error {
 		}
 	}
 	return nil
+}
+
+// Should wraps ShouldErr without returning the error. This removes gosec G104.
+func Should(errs ...error) {
+	_ = ShouldErr(errs...)
 }

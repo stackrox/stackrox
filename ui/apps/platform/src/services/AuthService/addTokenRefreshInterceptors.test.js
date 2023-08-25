@@ -52,7 +52,7 @@ describe('addTokenRefreshInterceptors', () => {
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
                 // should not initiate refresh token operation as another one is in progress
-                expect(m.refreshToken).not.toBeCalled();
+                expect(m.refreshToken).not.toHaveBeenCalled();
             });
     });
 
@@ -73,8 +73,8 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
-                expect(m.refreshToken).not.toBeCalled();
-                expect(extractAccessToken).toBeCalledTimes(1);
+                expect(m.refreshToken).not.toHaveBeenCalled();
+                expect(extractAccessToken).toHaveBeenCalledTimes(1);
             });
     });
 
@@ -92,7 +92,7 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
             .then(() => {
-                expect(m.refreshToken).toBeCalledTimes(1);
+                expect(m.refreshToken).toHaveBeenCalledTimes(1);
             });
     });
 
@@ -117,7 +117,7 @@ describe('addTokenRefreshInterceptors', () => {
         return expect(handler.rejected(retriedResponseError))
             .rejects.toEqual(retriedResponseError)
             .then(() => {
-                expect(handleAuthError).toBeCalledTimes(1);
+                expect(handleAuthError).toHaveBeenCalledTimes(1);
             });
     });
 

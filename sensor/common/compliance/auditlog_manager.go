@@ -1,12 +1,12 @@
 package compliance
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/message"
 )
 
 //go:generate mockgen-wrapper AuditLogCollectionManager
@@ -49,9 +49,10 @@ func NewAuditLogCollectionManager() AuditLogCollectionManager {
 		eligibleComplianceNodes: make(map[string]sensor.ComplianceService_CommunicateServer),
 		fileStates:              make(map[string]*storage.AuditLogFileState),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance),
-		fileStateUpdates:        make(chan *central.MsgFromSensor),
+		fileStateUpdates:        make(chan *message.ExpiringMessage),
 		stopSig:                 concurrency.NewSignal(),
 		forceUpdateSig:          concurrency.NewSignal(),
+		centralReady:            concurrency.NewSignal(),
 		updateInterval:          defaultInterval,
 	}
 }

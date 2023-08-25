@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/globaldb"
+	systemInfoStorage "github.com/stackrox/rox/central/systeminfo/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,5 +24,8 @@ type Service interface {
 
 // New returns a new instance of service.
 func New() Service {
-	return &serviceImpl{}
+	return &serviceImpl{
+		db:              globaldb.GetPostgres(),
+		systemInfoStore: systemInfoStorage.Singleton(),
+	}
 }

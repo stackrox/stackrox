@@ -95,5 +95,5 @@ func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 }
 
 func policyHasSSH(policy *storage.Policy) bool {
-	return sliceutils.StringFind(policyfields.GetProcessNames(policy), "sshd") >= 0
+	return sliceutils.Find(policyfields.GetProcessNames(policy), "sshd") >= 0
 }

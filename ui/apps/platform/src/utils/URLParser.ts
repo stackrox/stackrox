@@ -14,9 +14,8 @@ import {
     riskPath,
     violationsPath,
     policiesPath,
-    networkPath,
     userRolePath,
-    accessControlPathV2,
+    accessControlPath,
 } from '../routePaths';
 
 type ParamsWithContext = {
@@ -29,9 +28,8 @@ const nonWorkflowUseCasePathEntries = Object.entries({
     RISK: riskPath,
     VIOLATIONS: violationsPath,
     POLICIES: policiesPath,
-    NETWORK: networkPath,
     USER: userRolePath, // however, it matches workflow list path
-    ACCESS_CONTROL: accessControlPathV2,
+    ACCESS_CONTROL: accessControlPath,
 });
 
 function getNonWorkflowParams(pathname): ParamsWithContext {
@@ -161,7 +159,15 @@ function parseURL(location: Location<LocationState>): WorkflowState {
     }
 
     const { pathname, search } = location;
-    const params = getParams(pathname);
+
+    const rawParams = getParams(pathname);
+    const params = {
+        ...rawParams,
+        pageEntityId: rawParams.pageEntityId
+            ? decodeURIComponent(rawParams.pageEntityId)
+            : undefined,
+    };
+
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // Manager manages basic auth user identities.
@@ -23,13 +24,14 @@ func (m *Manager) hashFile() *htpasswd.HashFile {
 
 // SetHashFile sets the hash file to be used for basic auth.
 func (m *Manager) SetHashFile(hashFile *htpasswd.HashFile) {
+	//#nosec G103
 	atomic.StorePointer(&m.hashFilePtr, unsafe.Pointer(hashFile))
 }
 
 // IdentityForCreds returns an identity for the given credentials.
 func (m *Manager) IdentityForCreds(ctx context.Context, username, password string, authProvider authproviders.Provider) (Identity, error) {
 	if !m.hashFile().Check(username, password) {
-		return nil, errors.New("invalid username and/or password")
+		return nil, errox.NotAuthorized.CausedBy("invalid username and/or password")
 	}
 
 	resolvedRoles, err := m.mapper.FromUserDescriptor(ctx, &permissions.UserDescriptor{
@@ -49,6 +51,7 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 // NewManager creates a new manager for basic authentication.
 func NewManager(hashFile *htpasswd.HashFile, roleMapper permissions.RoleMapper) *Manager {
 	return &Manager{
+		//#nosec G103
 		hashFilePtr: unsafe.Pointer(hashFile),
 		mapper:      roleMapper,
 	}

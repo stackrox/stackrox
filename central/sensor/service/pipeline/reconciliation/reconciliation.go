@@ -54,7 +54,7 @@ func (s *storeImpl) Close(numObjectsDeleted int) {
 	s.idSet = nil
 }
 
-// GetNumbObjectsDeleted returns the number of objects deleted by the store,
+// GetNumObjectsDeleted returns the number of objects deleted by the store,
 // and a bool indicating whether the store is closed.
 func (s *storeImpl) GetNumObjectsDeleted() (int, bool) {
 	s.lock.Lock()

@@ -766,6 +766,7 @@ func (m *AuthorizationTraceResponse_User_Role) Clone() *AuthorizationTraceRespon
 type AuthorizationTraceResponse_Trace struct {
 	ScopeCheckerType string `protobuf:"bytes,1,opt,name=scope_checker_type,json=scopeCheckerType,proto3" json:"scope_checker_type,omitempty"`
 	// Types that are valid to be assigned to Authorizer:
+	//
 	//	*AuthorizationTraceResponse_Trace_BuiltIn
 	Authorizer           isAuthorizationTraceResponse_Trace_Authorizer `protobuf_oneof:"authorizer"`
 	XXX_NoUnkeyedLiteral struct{}                                      `json:"-"`

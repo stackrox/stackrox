@@ -1,7 +1,14 @@
-import { AuthProvider, AuthProviderConfig, Group } from 'services/AuthService';
+import {
+    AuthProvider,
+    AuthProviderConfig,
+    AuthProviderRequiredAttributes,
+    Group,
+} from 'services/AuthService';
+import { isUserResource } from '../traits';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
+    disable_offline_access_scope?: boolean;
     defaultRole?: string;
     groups?: Group[];
 };
@@ -57,13 +64,18 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     if (authProvider.type === 'oidc') {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        newInitialValues.config = { mode: 'auto', do_not_use_client_secret: false };
+        newInitialValues.config = {
+            mode: 'auto',
+            do_not_use_client_secret: false,
+            disable_offline_access_scope: false,
+        };
     }
     newInitialValues.groups = Array.isArray(authProvider.groups) ? [...authProvider.groups] : [];
     newInitialValues.groups.push({
         roleName: '',
-        props: { authProviderId: '', key: '', value: '' },
+        props: { authProviderId: '', key: '', value: '', id: '' },
     });
+    newInitialValues.traits = { mutabilityMode: 'ALLOW_MUTATE' };
 
     return newInitialValues;
 }
@@ -82,8 +94,26 @@ export function getInitialAuthProviderValues(authProvider: AuthProvider): Displa
 }
 
 export function transformValuesBeforeSaving(
-    values: Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined>
-): Record<string, string | string[] | boolean | AuthProviderConfig | Group[] | undefined> {
+    values: Record<
+        string,
+        | string
+        | string[]
+        | boolean
+        | AuthProviderConfig
+        | AuthProviderRequiredAttributes[]
+        | Group[]
+        | undefined
+    >
+): Record<
+    string,
+    | string
+    | string[]
+    | boolean
+    | AuthProviderConfig
+    | AuthProviderRequiredAttributes[]
+    | Group[]
+    | undefined
+> {
     if (values.type === 'oidc') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
@@ -101,6 +131,9 @@ export function transformValuesBeforeSaving(
 
         // backend expects only string values for the config
         alteredConfig.do_not_use_client_secret = alteredConfig.do_not_use_client_secret
+            ? 'true'
+            : 'false';
+        alteredConfig.disable_offline_access_scope = alteredConfig.disable_offline_access_scope
             ? 'true'
             : 'false';
 
@@ -173,7 +206,20 @@ export function mergeGroupsWithAuthProviders(
 }
 
 export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): string {
-    let defaultRoleGroups = groups.filter(
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    if (defaultGroup) {
+        return defaultGroup.roleName;
+    }
+    return id ? 'None' : 'Admin';
+}
+
+export function isDefaultGroupModifiable(groups: Group[], id: string): boolean {
+    const defaultGroup = getDefaultGroupByAuthProviderId(groups, id);
+    return isUserResource(defaultGroup?.props?.traits);
+}
+
+export function getDefaultGroupByAuthProviderId(groups: Group[], id: string): Group | undefined {
+    const defaultRoleGroups = groups.filter(
         (group) =>
             group.props &&
             group.props.authProviderId &&
@@ -182,12 +228,7 @@ export function getDefaultRoleByAuthProviderId(groups: Group[], id: string): str
             group.props.value === ''
     );
     if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
+        return defaultRoleGroups[0];
     }
-    // if there is no default role specified for this auth provider then use the global default role
-    defaultRoleGroups = groups.filter((group) => !group.props);
-    if (defaultRoleGroups.length) {
-        return defaultRoleGroups[0].roleName;
-    }
-    return 'Admin';
+    return undefined;
 }

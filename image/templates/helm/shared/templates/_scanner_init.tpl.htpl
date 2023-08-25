@@ -19,13 +19,7 @@
 {{ $ := index . 0 }}
 {{ $scannerCfg := index . 1 }}
 
-[< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-{{ $_ := set $scannerCfg "mode" "" }}
-[< end >]
-
 {{ if or (eq $scannerCfg.mode "") (eq $scannerCfg.mode "full") }}
-    {{ $_ := set $scannerCfg "name" "scanner" }}
-
     {{ include "srox.configureImage" (list $ $scannerCfg.image) }}
     {{ include "srox.configureImage" (list $ $scannerCfg.dbImage) }}
 
@@ -35,11 +29,6 @@
     {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }}
     {{ include "srox.configureCrypto" (list $ "scanner.dbServiceTLS" $scannerDBCertSpec) }}
 {{ else if eq $scannerCfg.mode "slim" }}
-    [< if not .FeatureFlags.ROX_LOCAL_IMAGE_SCANNING >]
-    {{ include "srox.fail" "Scanner's slim mode currently not supported" }}
-    [< end >]
-    {{ $_ := set $scannerCfg "name" "scanner-slim" }}
-
     {{ include "srox.configureImage" (list $ $scannerCfg.slimImage) }}
     {{ include "srox.configureImage" (list $ $scannerCfg.slimDBImage) }}
 {{ else }}

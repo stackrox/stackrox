@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type testcase struct {
@@ -88,7 +88,7 @@ func TestMapQueries(t *testing.T) {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
 			resQ := MapShouldMatchAnyOf(c.queries...)
-			assert.Equal(t, resQ, c.expected)
+			assert.Equal(t, c.expected, resQ)
 		})
 
 	}

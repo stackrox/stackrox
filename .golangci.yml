@@ -1,15 +1,37 @@
 run:
-  timeout: 5m
+  timeout: 240m
   skip-dirs:
   - pkg/complianceoperator/api
+  build-tags:
+  - sql_integration
+  modules-download-mode: readonly
+
+output:
+  format: "junit-xml:report.xml,colored-line-number"
 
 issues:
   exclude-use-default: false
 
   exclude-rules:
+    - path: "(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+      linters:
+        - wrapcheck
+    - path: "(central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale)/"
+      linters:
+        - forbidigo
+    - path: "roxctl/central/generate/interactive.go"
+      linters:
+      - forbidigo
+    - path: _test\.go
+      linters:
+        - wrapcheck
+        - forbidigo
+    - path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
+      linters:
+        - forbidigo
     - linters:
         - revive
-      text: "should have a package comment, unless it's in another file for this package"
+      text: "should have a package comment"
     - linters:
         - revive
       text: "should not use dot imports"
@@ -25,11 +47,36 @@ issues:
     - linters:
         - revive
       text: "don't use leading k in Go names"
+    - linters:
+        - revive
+      text: "if-return"
+    - path: .*/bleve@.*/index\.go
+      linters:
+        - staticcheck
+      text: "SA4023" # github.com/blevesearch/bleve.OpenUsing never returns a nil interface value
 
 
 linters-settings:
   gosec:
     includes:
+    - G101
+    - G102
+    - G103
+    - G104
+    - G106
+    - G108
+    - G109
+    - G111
+    - G113
+    - G201
+    - G202
+    - G203
+    - G303
+    - G307
+    - G403
+    - G502
+    - G503
+    - G504
     - G601
   revive:
     min-confidence: 0
@@ -53,7 +100,7 @@ linters-settings:
           - Error
           - Errorf
           - github.com/stackrox/rox/migrator/log.WritetoStderr
-          - github.com/stackrox/rox/migrator/log.WritetoStderrf     -
+          - github.com/stackrox/rox/migrator/log.WritetoStderrf
   gocritic:
     enabled-checks:
       - commentFormatting
@@ -62,6 +109,23 @@ linters-settings:
     allow-unused: false # report any unused nolint directives
     require-explanation: false # don't require an explanation for nolint directives
     require-specific: true # require nolint directives to be specific about which linter is being skipped
+  forbidigo:
+    # Forbid the following identifiers (list of regexp).
+    forbid:
+    - ^print\(.*\)$
+    - 'fmt\.Print.*(# Disallowed function used\. Use environments functions for printing or to a specific writer from environment\.InputOutput\(\)\.)?'
+    - 'os\.Stdout(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+    - 'os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+    - 'os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+  staticcheck:
+    go: "1.20"
+    checks: [all,-ST1000,-ST1001,-ST1003,-ST1005,-SA1019,-SA4001,-ST1016]
+  wrapcheck:
+    ignoreSigRegexps:
+      - utils\.Should
+      - errox\..+\.CausedBy(f)?
+      - retry\.MakeRetryable
+      - policy\.NewErr.*
 
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
@@ -76,6 +140,7 @@ linters:
     # - dupl
     # - errcheck
     # - funlen
+    - forbidigo
     # - gochecknoglobals
     # - gochecknoinits
     # - gocognit
@@ -105,7 +170,7 @@ linters:
     # - prealloc
     - rowserrcheck
     # - scopelint
-    # - staticcheck
+    - staticcheck
     # - structcheck
     # - stylecheck
     # - testpackage
@@ -115,4 +180,5 @@ linters:
     # - unused
     # - varcheck
     # - whitespace
+    - wrapcheck
     # - wsl

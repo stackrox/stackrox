@@ -14,21 +14,21 @@ package storage;
 
 message Alert {
     message Deployment {
-        string                  id                  = 1;
-        string                  name                = 2;
+        string                  id                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"'];
+        string                  name                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
         string                  type                = 4;
-        string                  namespace           = 5;
-        string                  namespace_id        = 16;
+        string                  namespace           = 5;  // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace_id        = 16; // This field has to be duplicated in Alert for scope management and search.
         map<string, string>     labels              = 7;
-        string                  cluster_id          = 9;
-        string                  cluster_name        = 10;
+        string                  cluster_id          = 9;  // This field has to be duplicated in Alert for scope management and search.
+        string                  cluster_name        = 10; // This field has to be duplicated in Alert for scope management and search.
         message Container {
-            ContainerImage      image               = 3;
+            ContainerImage      image               = 3 [(gogoproto.moretags) = 'search:"-" sql:"ignore-fks,ignore-index"'];
             string              name                = 10;
         }
         repeated Container      containers          = 11;
         map<string, string>     annotations         = 14;
-        bool                    inactive            = 15;
+        bool                    inactive            = 15 [(gogoproto.moretags) = 'search:"Inactive Deployment"'];
     }
 
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
@@ -39,12 +39,12 @@ message Alert {
             CONFIGMAPS  = 2;
         }
 
-        ResourceType            resource_type       = 1;
-        string                  name                = 2;
-        string                  cluster_id          = 3;
-        string                  cluster_name        = 4;
-        string                  namespace           = 5;
-        string                  namespace_id        = 6;
+        ResourceType            resource_type       = 1 [(gogoproto.moretags) = 'search:"Resource Type,store"'];
+        string                  name                = 2 [(gogoproto.moretags) = 'search:"Resource"'];
+        string                  cluster_id          = 3; // This field has to be duplicated in Alert for scope management and search.
+        string                  cluster_name        = 4; // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace           = 5; // This field has to be duplicated in Alert for scope management and search.
+        string                  namespace_id        = 6; // This field has to be duplicated in Alert for scope management and search.
     }
 
     message Violation {
@@ -52,6 +52,7 @@ message Alert {
             GENERIC   = 0;
             K8S_EVENT = 1;
             NETWORK_FLOW = 2;
+            NETWORK_POLICY = 3;
         }
         message KeyValueAttrs {
             message KeyValueAttr {
@@ -78,7 +79,7 @@ message Alert {
         reserved 3; // formerly processes
         oneof MessageAttributes {
             KeyValueAttrs key_value_attrs         = 4;
-            NetworkFlowInfo network_flow_info     = 7;
+            NetworkFlowInfo network_flow_info     = 7 [(gogoproto.moretags) = 'search:"-" sql:"-"'];
         }
         // 'type' is for internal use only.
         Type                      type            = 5;
@@ -90,56 +91,62 @@ message Alert {
 
     message ProcessViolation {
         string                    message   = 1;
-        repeated ProcessIndicator processes = 2;
+        repeated ProcessIndicator processes = 2 [(gogoproto.moretags) = 'sql:"ignore-fks"'];
     }
 
     message Enforcement {
-        storage.EnforcementAction action  = 1;
+        storage.EnforcementAction action  = 1 [(gogoproto.moretags) = 'search:"Enforcement"'];
         string                    message = 2;
     }
 
-    string                    id                = 1 [(gogoproto.moretags) = "sensorhash:\"ignore\""]; // Internal use only
-    Policy                    policy            = 2;
-    LifecycleStage            lifecycle_stage   = 3;
+    string                    id                = 1 [(gogoproto.moretags) = 'search:"Alert ID,hidden" sensorhash:"ignore" sql:"pk,type(uuid)"']; // Internal use only
+    Policy                    policy            = 2 [(gogoproto.moretags) = 'sql:"ignore_pk,ignore_unique,ignore_labels(Lifecycle Stage)"'];
+    LifecycleStage            lifecycle_stage   = 3 [(gogoproto.moretags) = 'search:"Lifecycle Stage" sql:"index=btree"'];
+
+    // Scoping information
+
+    string                    cluster_id        = 18 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"type(uuid)"'];
+    string                    cluster_name      = 19 [(gogoproto.moretags) = 'search:"Cluster,store"'];
+    string                    namespace         = 20 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+    string                    namespace_id      = 21 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"type(uuid)"'];
 
     oneof Entity {
         // Represents an alert on a deployment
         // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-        Deployment            deployment        = 4  [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+        Deployment            deployment        = 4  [(gogoproto.moretags) = 'sensorhash:"ignore"'];
         // Represents an alert on a container image.
         // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-        ContainerImage        image             = 15;
+        ContainerImage        image             = 15 [(gogoproto.moretags) = 'sql:"ignore-fks,ignore-index"'];
         // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
         // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
         Resource              resource          = 16;
     }
 
     // For run-time phase alert, a maximum of 40 violations are retained.
-    repeated Violation        violations        = 5;
-    ProcessViolation          process_violation = 13;
+    repeated Violation        violations        = 5  [(gogoproto.moretags) = 'sensorhash:"ignore" search:"-"'];
+    ProcessViolation          process_violation = 13 [(gogoproto.moretags) = 'search:"-"'];
 
     Enforcement               enforcement       = 6;
 
-    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
-    google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    google.protobuf.Timestamp time              = 7 [(gogoproto.moretags) = 'sensorhash:"ignore" search:"Violation Time"'];
+    google.protobuf.Timestamp first_occurred    = 10 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
     // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
-    google.protobuf.Timestamp resolved_at       = 17 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
+    google.protobuf.Timestamp resolved_at       = 17 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 
-    ViolationState            state             = 11;
+    ViolationState            state             = 11 [(gogoproto.moretags) = 'search:"Violation State,store" sql:"index=btree"'];
     google.protobuf.Timestamp snooze_till       = 12;
-    repeated string           tags              = 14;
-
+    reserved 14; // was tags
 }
 
 message ListAlert {
     // Fields common to all entities that an alert might belong to.
     message CommonEntityInfo {
-        string       cluster_name   = 1 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-        string       namespace      = 2 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-        string       cluster_id     = 3 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
-        string       namespace_id   = 4 [(gogoproto.moretags) = "search:\"Namespace ID\""];
-        ResourceType resource_type  = 5 [(gogoproto.moretags) = "search:\"Resource Type,store\""];
+        string       cluster_name   = 1 [(gogoproto.moretags) = 'search:"Cluster,store"'];
+        string       namespace      = 2 [(gogoproto.moretags) = 'search:"Namespace,store"'];
+        string       cluster_id     = 3 [(gogoproto.moretags) = 'search:"Cluster ID,store" sql:"type(uuid)"'];
+        string       namespace_id   = 4 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"type(uuid)"'];
+        ResourceType resource_type  = 5 [(gogoproto.moretags) = 'search:"Resource Type,store"'];
     }
 
     // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
@@ -151,17 +158,17 @@ message ListAlert {
     }
 
     message ResourceEntity {
-        string name = 1 [(gogoproto.moretags) = "search:\"Resource\""];
+        string name = 1 [(gogoproto.moretags) = 'search:"Resource"'];
     }
 
     string                    id                 = 1;
-    LifecycleStage            lifecycle_stage    = 2 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
-    google.protobuf.Timestamp time               = 3 [(gogoproto.moretags) = "search:\"Violation Time\""];
+    LifecycleStage            lifecycle_stage    = 2 [(gogoproto.moretags) = 'search:"Lifecycle Stage,store"'];
+    google.protobuf.Timestamp time               = 3 [(gogoproto.moretags) = 'search:"Violation Time"'];
     ListAlertPolicy           policy             = 4;
-    ViolationState            state              = 6 [(gogoproto.moretags) = "search:\"Violation State,store\""];
+    ViolationState            state              = 6 [(gogoproto.moretags) = 'search:"Violation State,store"'];
     int32                     enforcement_count  = 7;
-    repeated string           tags               = 8 [(gogoproto.moretags) = "search:\"Tag,store\""];
-    storage.EnforcementAction enforcement_action = 9 [(gogoproto.moretags) = "search:\"Enforcement\""];
+    reserved 8; // was tags
+    storage.EnforcementAction enforcement_action = 9 [(gogoproto.moretags) = 'search:"Enforcement"'];
     CommonEntityInfo          common_entity_info = 10;
 
     // Tags 5, 11-15 reserved for this oneof. Next available tag: 12
@@ -178,14 +185,14 @@ message ListAlert {
 }
 
 message ListAlertPolicy {
-    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
-    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
-    Severity severity                           = 3 [(gogoproto.moretags) = "search:\"Severity,store\""];
+    string id                                   = 1 [(gogoproto.moretags) = 'search:"Policy ID,store,hidden"'];
+    string name                                 = 2 [(gogoproto.moretags) = 'search:"Policy,store"'];
+    Severity severity                           = 3 [(gogoproto.moretags) = 'search:"Severity,store"'];
     string description                          = 4;
-    repeated string categories                  = 5 [(gogoproto.moretags) = "search:\"Category,store\""];
+    repeated string categories                  = 5 [(gogoproto.moretags) = 'search:"Category,store"'];
 
     message DevFields {
-        string                      SORT_name   = 6 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
+        string                      SORT_name   = 6 [(gogoproto.moretags) = 'search:"SORT_Policy,hidden,analyzer=keyword"'];
     }
 
     // For internal use only.
@@ -193,8 +200,8 @@ message ListAlertPolicy {
 }
 
 message ListAlertDeployment {
-    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
-    string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
+    string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden"'];
+    string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
     reserved 3; // was: google.protobuf.Timestamp updated_at
     // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
     string cluster_name                        = 4 [deprecated = true]; // This field has moved to CommonEntityInfo
@@ -202,7 +209,7 @@ message ListAlertDeployment {
     string namespace                           = 5 [deprecated = true]; // This field has moved to CommonEntityInfo
     // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
     string cluster_id                          = 6 [deprecated = true]; // This field has moved to CommonEntityInfo
-    bool inactive                              = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment\""];
+    bool inactive                              = 7 [(gogoproto.moretags) = 'search:"Inactive Deployment"'];
     // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
     string namespace_id                        = 8 [deprecated = true]; // This field has moved to CommonEntityInfo
 }

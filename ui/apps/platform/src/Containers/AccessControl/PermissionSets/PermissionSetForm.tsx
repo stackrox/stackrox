@@ -23,6 +23,8 @@ import { PermissionSet } from 'services/RolesService';
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
+import usePermissions from '../../../hooks/usePermissions';
+import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -45,6 +47,8 @@ function PermissionSetForm({
 }: PermissionSetFormProps): ReactElement {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alertSubmit, setAlertSubmit] = useState<ReactElement | null>(null);
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     const { dirty, errors, handleChange, isValid, resetForm, setFieldValue, values } = useFormik({
         initialValues: permissionSet,
@@ -114,13 +118,18 @@ function PermissionSetForm({
 
     return (
         <Form id="permission-set-form">
-            <Toolbar inset={{ default: 'insetNone' }}>
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h2">
-                            {action === 'create' ? 'Add permission set' : permissionSet.name}
+                            {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
+                    {action !== 'create' && (
+                        <ToolbarItem>
+                            <TraitsOriginLabel traits={permissionSet.traits} />
+                        </ToolbarItem>
+                    )}
                     {action !== 'create' && (
                         <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
                             <ToolbarItem>
@@ -128,7 +137,7 @@ function PermissionSetForm({
                                     <Button
                                         variant="primary"
                                         onClick={handleEdit}
-                                        isDisabled={action === 'edit'}
+                                        isDisabled={!hasWriteAccessForPage || action === 'edit'}
                                         isSmall
                                     >
                                         Edit permission set

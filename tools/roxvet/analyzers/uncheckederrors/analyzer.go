@@ -43,6 +43,7 @@ var (
 		"strings": set.NewFrozenStringSet(
 			"(*Builder).WriteString",
 			"(*Builder).WriteRune",
+			"(*Builder).WriteByte",
 		),
 		"github.com/stackrox/rox/pkg/utils": set.NewFrozenStringSet(
 			"Should",

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func getProcessIndicator(name string, path string, args string, uid uint32) *storage.ProcessIndicator {
@@ -88,7 +88,7 @@ func TestUpdateRuntimeAlertViolationMessage(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			processViolation := getAlertProcessViolation("", tc.processes...)
 			UpdateProcessAlertViolationMessage(processViolation)
-			assert.DeepEqual(t, processViolation, getAlertProcessViolation(tc.expectedMessage, tc.processes...))
+			assert.Equal(t, getAlertProcessViolation(tc.expectedMessage, tc.processes...), processViolation)
 		})
 	}
 }

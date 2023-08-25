@@ -1,0 +1,41 @@
+{
+  "id": "28f833df-eb14-4265-a4fe-4e5e8ce9d959",
+  "name": "crontab Execution",
+  "description": "Detects the usage of the crontab scheduled jobs editor",
+  "rationale": "Crontab running in a container with access to a shell makes it easier to 'clandestinely' schedule processes to run in order to better evade detection",
+  "remediation": "In Kubernetes, consider replacing your crontab with an orchestrator-native CronJob as part of Kube workload",
+  "categories": [
+    "System Modification"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "anacron|cron|crond|crontab"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0003",
+      "techniques": [
+        "T1053.003"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

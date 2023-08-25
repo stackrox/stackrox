@@ -1,0 +1,23 @@
+div.or-divider-container {
+    width: 100%;
+}
+
+div.or-divider {
+    background-color: var(--pf-global--BorderColor--100);
+    height: 1px;
+    width: 100%;
+}
+
+/* for large size screens, change the divider to be horizontal */
+@media (min-width: 992px) {
+    div.or-divider-container {
+        height: 100%;
+        width: auto;
+    }
+
+    div.or-divider {
+        width: 1px;
+        height: 100%;
+        align-self: center;
+    }
+}

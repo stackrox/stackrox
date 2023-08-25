@@ -45,6 +45,7 @@ const groupsByAuthProviderId = (state = {}, action) => {
                     authProviderRuleGroups[group.props.authProviderId].rules.push(group);
                 } else {
                     authProviderRuleGroups[group.props.authProviderId].defaultRole = group.roleName;
+                    authProviderRuleGroups[group.props.authProviderId].defaultId = group.props.id;
                 }
             }
         });

@@ -102,7 +102,7 @@ func (m *manager) GetDeploymentEnvironmentsByClusterID(block bool) map[string][]
 	result := make(map[string][]string, len(m.deploymentEnvsByClusterID))
 
 	for clusterID, envs := range m.deploymentEnvsByClusterID {
-		result[clusterID] = sliceutils.StringClone(envs)
+		result[clusterID] = sliceutils.ShallowClone(envs)
 	}
 
 	return result

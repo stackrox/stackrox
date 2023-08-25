@@ -1,0 +1,60 @@
+{
+  "id": "ddb7af9c-5ec1-45e1-a0cf-c36e3ef2b2ce",
+  "name": "Red Hat Package Manager Execution",
+  "description": "Alert when Red Hat/Fedora/CentOS package manager programs are executed at runtime.",
+  "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Run `rpm -e --nodeps $(rpm -qa '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*')` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox scanner",
+      "deployment": {
+        "name": "scanner",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-compliance namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-compliance"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Process Name",
+          "values": [
+            {
+              "value": "rpm|microdnf|dnf|yum"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0011",
+      "techniques": [
+        "T1105"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

@@ -8,10 +8,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockDataStore is a mock of DataStore interface.
@@ -50,25 +50,6 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockDataStoreMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
-}
-
-// Delete mocks base method.
-func (m *MockDataStore) Delete(ctx context.Context, ids ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Delete", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete.
-func (mr *MockDataStoreMockRecorder) Delete(ctx interface{}, ids ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDataStore)(nil).Delete), varargs...)
 }
 
 // Exists mocks base method.
@@ -160,23 +141,4 @@ func (m *MockDataStore) SearchRawImageComponents(ctx context.Context, q *v1.Quer
 func (mr *MockDataStoreMockRecorder) SearchRawImageComponents(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageComponents", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageComponents), ctx, q)
-}
-
-// Upsert mocks base method.
-func (m *MockDataStore) Upsert(ctx context.Context, imagecomponents ...*storage.ImageComponent) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range imagecomponents {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Upsert", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Upsert indicates an expected call of Upsert.
-func (mr *MockDataStoreMockRecorder) Upsert(ctx interface{}, imagecomponents ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, imagecomponents...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), varargs...)
 }

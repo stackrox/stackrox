@@ -3,7 +3,6 @@ syntax = "proto3";
 option go_package = "central";
 
 import "google/protobuf/empty.proto";
-import "storage/cluster.proto";
 
 package central;
 

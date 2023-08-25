@@ -1,14 +1,19 @@
+//go:build sql_integration
+
 package manager
 
 import (
 	"bytes"
 	"context"
 	"hash/crc32"
-	"os"
-	"path/filepath"
+	"io"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/binenc"
+	blobstore "github.com/stackrox/rox/central/blob/datastore"
+	blobSearch "github.com/stackrox/rox/central/blob/datastore/search"
+	"github.com/stackrox/rox/central/blob/datastore/store"
+	blobPg "github.com/stackrox/rox/central/blob/datastore/store/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,8 +26,10 @@ const (
 type managerTestSuite struct {
 	suite.Suite
 
-	dataDir string
-	mgr     *manager
+	mgr       *manager
+	testDB    *pgtest.TestPostgres
+	store     store.Store
+	datastore blobstore.Datastore
 }
 
 func TestManager(t *testing.T) {
@@ -30,47 +37,25 @@ func TestManager(t *testing.T) {
 }
 
 func (s *managerTestSuite) SetupTest() {
-	dataDir, err := os.MkdirTemp("", "probeupload-mgr-test-")
-	s.Require().NoError(err)
-
-	s.dataDir = dataDir
-	s.mgr = newManager(s.dataDir)
-	s.mgr.freeDiskThreshold = 0 // not interested in testing this
+	s.testDB = pgtest.ForT(s.T())
+	s.store = store.New(s.testDB.DB)
+	searcher := blobSearch.New(s.store, blobPg.NewIndexer(s.testDB.DB))
+	s.datastore = blobstore.NewDatastore(s.store, searcher)
+	s.mgr = newManager(s.datastore)
+	s.mgr.freeStorageThreshold = 0 // not interested in testing this
 }
 
 func (s *managerTestSuite) TearDownTest() {
-	_ = os.RemoveAll(s.dataDir)
+	s.testDB.Teardown(s.T())
 }
 
-func (s *managerTestSuite) TestInitializeOnEmptyDir() {
-	s.NoError(s.mgr.Initialize(), "initializing on empty directory should succeed")
-}
-
-func (s *managerTestSuite) TestGetExistingProbeFilesOnEmptyDir() {
+func (s *managerTestSuite) TestGetExistingProbeFilesWithNoProbes() {
 	s.Require().NoError(s.mgr.Initialize())
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	fileInfos, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{validFilePath})
 	s.NoError(err)
 	s.Empty(fileInfos)
-}
-
-func (s *managerTestSuite) TestGetExistingProbeFilesOnNonEmptyDir() {
-	s.Require().NoError(s.mgr.Initialize())
-
-	fileDataDir := filepath.Join(s.mgr.rootDir, filepath.FromSlash(validFilePath))
-	s.Require().NoError(os.MkdirAll(fileDataDir, 0700))
-	s.Require().NoError(os.WriteFile(filepath.Join(fileDataDir, dataFileName), []byte("foobarbaz"), 0600))
-	s.Require().NoError(os.WriteFile(filepath.Join(fileDataDir, crc32FileName), binenc.BigEndian.EncodeUint32(1337), 0600))
-
-	allAccessCtx := sac.WithAllAccess(context.Background())
-	fileInfos, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{validFilePath})
-	s.NoError(err)
-	s.Require().Len(fileInfos, 1)
-
-	s.Equal(validFilePath, fileInfos[0].GetName())
-	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize_())
-	s.EqualValues(1337, fileInfos[0].GetCrc32())
 }
 
 func (s *managerTestSuite) TestGetExistingProbeFilesWithInvalidPath() {
@@ -81,7 +66,27 @@ func (s *managerTestSuite) TestGetExistingProbeFilesWithInvalidPath() {
 	s.Error(err)
 }
 
-func (s *managerTestSuite) TestStoreFile() {
+func (s *managerTestSuite) TestStoreAndGetExistingProbeFile() {
+	s.Require().NoError(s.mgr.Initialize())
+
+	data := []byte("foobarbaz")
+	crc32Sum := crc32.ChecksumIEEE(data)
+
+	allAccessCtx := sac.WithAllAccess(context.Background())
+	s.False(s.mgr.IsAvailable(allAccessCtx))
+	s.Require().NoError(s.mgr.StoreFile(allAccessCtx, validFilePath, bytes.NewReader(data), int64(len(data)), crc32Sum))
+	s.True(s.mgr.IsAvailable(allAccessCtx))
+
+	fileInfos, err := s.mgr.GetExistingProbeFiles(allAccessCtx, []string{validFilePath})
+	s.NoError(err)
+	s.Require().Len(fileInfos, 1)
+
+	s.Equal(validFilePath, fileInfos[0].GetName())
+	s.EqualValues(len("foobarbaz"), fileInfos[0].GetSize_())
+	s.Equal(crc32Sum, fileInfos[0].GetCrc32())
+}
+
+func (s *managerTestSuite) TestLoadProbeFile() {
 	s.Require().NoError(s.mgr.Initialize())
 
 	data := []byte("foobarbaz")
@@ -90,15 +95,17 @@ func (s *managerTestSuite) TestStoreFile() {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 	s.Require().NoError(s.mgr.StoreFile(allAccessCtx, validFilePath, bytes.NewReader(data), int64(len(data)), crc32Sum))
 
-	fileDataDir := s.mgr.getDataDir(validFilePath)
-	_, err := os.Stat(fileDataDir)
+	reader, length, err := s.mgr.LoadProbe(allAccessCtx, validFilePath)
+	s.NoError(err)
+	s.EqualValues(len(data), length)
+
+	buf := bytes.NewBuffer(nil)
+	n, err := io.Copy(buf, reader)
 	s.Require().NoError(err)
+	s.EqualValues(n, len(data))
+	s.Equal(data, buf.Bytes())
+	s.NoError(reader.Close())
 
-	dataContents, err := os.ReadFile(filepath.Join(fileDataDir, dataFileName))
-	s.NoError(err)
-	s.Equal(data, dataContents)
-
-	checksumContents, err := os.ReadFile(filepath.Join(fileDataDir, crc32FileName))
-	s.NoError(err)
-	s.Equal(binenc.BigEndian.EncodeUint32(crc32Sum), checksumContents)
+	// Reboot
+	s.Require().NoError(s.mgr.Initialize())
 }

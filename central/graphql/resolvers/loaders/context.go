@@ -27,6 +27,13 @@ func GetLoader(ctx context.Context, loaderType reflect.Type) (interface{}, error
 	return lc.getLoader(loaderType)
 }
 
+// HasLoaderContext checks if given context has loaders registered
+func HasLoaderContext(ctx context.Context) bool {
+	key := dataLoaderContextKey{}
+	reg := ctx.Value(key)
+	return reg != nil
+}
+
 // WithLoaderContext returns a new context that is able to track loaders for registered types.
 func WithLoaderContext(ctx context.Context) context.Context {
 	key := dataLoaderContextKey{}

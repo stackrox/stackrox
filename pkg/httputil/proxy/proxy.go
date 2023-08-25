@@ -93,7 +93,7 @@ func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 
 	fakeHTTPReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
 	if err != nil {
-		return nil, utils.Should(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
+		return nil, utils.ShouldErr(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
 	}
 	proxyURL, err := configurator(fakeHTTPReq)
 	if err != nil {

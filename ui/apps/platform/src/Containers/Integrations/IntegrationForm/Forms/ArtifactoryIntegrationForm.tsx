@@ -6,13 +6,13 @@ import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import FormTestButton from 'Components/PatternFly/FormTestButton';
+import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
-import FormCancelButton from '../FormCancelButton';
-import FormTestButton from '../FormTestButton';
-import FormSaveButton from '../FormSaveButton';
 import FormLabelGroup from '../FormLabelGroup';
 
 export type ArtifactoryIntegration = {
@@ -42,25 +42,7 @@ export const validationSchema = yup.object().shape({
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
-            password: yup
-                .string()
-                .test(
-                    'password-test',
-                    'A password is required',
-                    (value, context: yup.TestContext) => {
-                        const requirePasswordField =
-                            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                            // @ts-ignore
-                            context?.from[2]?.value?.updatePassword || false;
-
-                        if (!requirePasswordField) {
-                            return true;
-                        }
-
-                        const trimmedValue = value?.trim();
-                        return !!trimmedValue;
-                    }
-                ),
+            password: yup.string(),
             insecure: yup.bool(),
         }),
         skipTestIntegration: yup.bool(),
@@ -99,6 +81,9 @@ function ArtifactoryIntegrationForm({
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.docker.password = '';
+
+        // Don't assume user wants to change password; that has caused confusing UX.
+        formInitialValues.updatePassword = false;
     }
     const {
         values,
@@ -171,13 +156,11 @@ function ArtifactoryIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
-                        isRequired
                         fieldId="config.docker.username"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
-                            isRequired
                             type="text"
                             id="config.docker.username"
                             value={values.config.docker.username}
@@ -205,7 +188,6 @@ function ArtifactoryIntegrationForm({
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
-                        isRequired={values.updatePassword}
                         label="Password"
                         fieldId="config.docker.password"
                         touched={touched}
@@ -222,7 +204,7 @@ function ArtifactoryIntegrationForm({
                             placeholder={
                                 values.updatePassword
                                     ? ''
-                                    : 'Currently-stored password will be used.'
+                                    : 'Any currently-stored password will be used.'
                             }
                         />
                     </FormLabelGroup>

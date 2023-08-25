@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+package v2;
+
+message AggregateBy {
+    Aggregation aggrFunc = 1;
+    bool        distinct = 2;
+}
+
+enum Aggregation {
+    UNSET = 0;
+    COUNT = 1;
+    MIN   = 2;
+    MAX   = 3;
+}
+
+message SortOption {
+    string      field        = 1;
+    bool        reversed     = 2;
+    // This field is under development. It is not supported on any REST APIs.
+    AggregateBy aggregate_by = 3;
+}
+
+message Pagination {
+    int32       limit        = 1;
+    int32       offset       = 2;
+    SortOption  sort_option  = 3;
+    // This field is under development. It is not supported on any REST APIs.
+    repeated SortOption sort_options = 4;
+}

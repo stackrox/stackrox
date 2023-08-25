@@ -17,6 +17,7 @@ import (
 //
 // Through a context, evidence (pass or fail) can be recorded; additionally, in the case of abnormal termination,
 // errors may be recorded. This is accomplished by calling `Abort` within a check function.
+//
 //go:generate mockgen-wrapper
 type ComplianceContext interface {
 	// StandardName returns the current standard name

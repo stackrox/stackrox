@@ -4,7 +4,7 @@ import (
 	"context"
 	"runtime/debug"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -26,14 +26,14 @@ type grpcMetricsImpl struct {
 type perPathGRPCMetrics struct {
 	normalInvocationStats map[codes.Code]int64
 
-	panics *lru.Cache
+	panics *lru.Cache[string, int64]
 }
 
 func (g *grpcMetricsImpl) getOrCreateAllMetrics(path string) *perPathGRPCMetrics {
 	perPathMetric := g.allMetrics[path]
 	if perPathMetric == nil {
-		panicLRU, err := lru.New(cacheSize)
-		err = utils.Should(errors.Wrap(err, "error creating an lru"))
+		panicLRU, err := lru.New[string, int64](cacheSize)
+		err = utils.ShouldErr(errors.Wrap(err, "error creating an lru"))
 		if err != nil {
 			return nil
 		}
@@ -97,7 +97,7 @@ func (g *grpcMetricsImpl) UnaryMonitoringInterceptor(ctx context.Context, req in
 		if !ok {
 			apiPanic = int64(0)
 		}
-		perPathMetric.panics.Add(panicLocation, apiPanic.(int64)+1)
+		perPathMetric.panics.Add(panicLocation, apiPanic+1)
 		panic(r)
 	}()
 	resp, err = handler(ctx, req)
@@ -129,7 +129,7 @@ func (g *grpcMetricsImpl) GetMetrics() (map[string]map[codes.Code]int64, map[str
 		panicList := make(map[string]int64, len(panicLocations))
 		for _, panicLocation := range panicLocations {
 			if panicCount, ok := perPathMetric.panics.Get(panicLocation); ok {
-				panicList[panicLocation.(string)] = panicCount.(int64)
+				panicList[panicLocation] = panicCount
 			}
 		}
 		if len(panicList) > 0 {

@@ -7,9 +7,8 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	mitreDataStore "github.com/stackrox/rox/central/mitre/datastore"
+	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -17,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/backgroundtasks"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
+	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
+	"github.com/stackrox/rox/pkg/notifier"
 )
 
 // Service provides the interface to the microservice that serves policy data.
@@ -32,12 +33,13 @@ type Service interface {
 func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
+	networkPolicies networkPolicyDS.DataStore,
 	notifiers notifierDataStore.DataStore,
-	mitreStore mitreDataStore.MitreAttackReadOnlyDataStore,
+	mitreStore mitreDS.AttackReadOnlyDataStore,
 	reprocessor reprocessor.Loop,
 	buildTimePolicies detection.PolicySet,
 	manager lifecycle.Manager,
-	processor notifierProcessor.Processor,
+	processor notifier.Processor,
 	metadataCache expiringcache.Cache,
 	connectionManager connection.Manager) Service {
 	backgroundTaskManager := backgroundtasks.NewManager()
@@ -52,6 +54,7 @@ func New(policies datastore.DataStore,
 		buildTimePolicies: buildTimePolicies,
 		lifecycleManager:  manager,
 		connectionManager: connectionManager,
+		networkPolicies:   networkPolicies,
 
 		processor: processor,
 

@@ -6,7 +6,7 @@ import isEqual from 'lodash/isEqual';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
-import Dashboard from './Dashboard/Page';
+import Dashboard from './Dashboard/ComplianceDashboardPage';
 import Entity from './Entity/Page';
 import List from './List/Page';
 

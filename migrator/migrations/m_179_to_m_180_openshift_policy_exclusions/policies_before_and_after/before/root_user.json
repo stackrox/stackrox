@@ -1,0 +1,118 @@
+{
+  "id": "dce17697-1b72-49d2-b18a-05d893cd9368",
+  "name": "Docker CIS 4.1: Ensure That a User for the Container Has Been Created",
+  "description": "Containers should run as a non-root user",
+  "rationale": "It is good practice to run the container as a non-root user, where possible. This can be done via the USER directive in the Dockerfile.",
+  "remediation": "Ensure that the Dockerfile for each container switches from the root user",
+  "categories": [
+    "Docker CIS"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Don't alert on StackRox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-kube-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-kube-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-etcd namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-etcd"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-apiserver namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-apiserver"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-dns namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-dns"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-node-tuning-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-node-tuning-operator"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-cluster-csi-drivers namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-cluster-csi-drivers"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-machine-config-operator namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-machine-config-operator"
+        }
+      }
+    }
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image User",
+          "values": [
+            {
+              "value": "0"
+            },
+            {
+              "value": "root"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

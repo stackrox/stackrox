@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/migrations"
 )
 
 const (
@@ -28,8 +27,8 @@ const (
 var (
 	// RemoteLatestPrefixFileURL points to the file which contains the name of the latest networks directory.
 	RemoteLatestPrefixFileURL = strings.Join([]string{RemoteBaseBucketURL, path.Clean(common.MasterBucketPrefix), path.Clean(LatestPrefixFileName)}, "/")
-	// LocalChecksumFile store the network graph default external sources checksum locally.
-	LocalChecksumFile = path.Join(migrations.DBMountPath(), ChecksumFileName)
+	// LocalChecksumBlobPath store the network graph default external sources checksum locally.
+	LocalChecksumBlobPath = path.Join("/localcache/external-networks", ChecksumFileName)
 	// BundledZip points to zip containing the external sources data and checksum files.
 	BundledZip = path.Join("/stackrox/static-data", common.MasterBucketPrefix, ZipFileName)
 )

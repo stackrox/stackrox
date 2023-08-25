@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"golang.org/x/net/http2"
@@ -28,7 +30,8 @@ type EndpointConfig struct {
 
 	ServeGRPC, ServeHTTP bool
 
-	NoHTTP2 bool
+	NoHTTP2                 bool
+	DenyMisdirectedRequests bool
 }
 
 // Kind returns a human-readable description of this endpoint.
@@ -78,6 +81,46 @@ func tlsHandshakeErrorHandler(conn net.Conn, e error) {
 	_ = recordHdrErr.Conn.Close()
 }
 
+func checkMisdirectedRequest(req *http.Request) error {
+	if req.TLS == nil {
+		return nil // we can only detect misdirected requests with TLS
+	}
+	if !req.ProtoAtLeast(2, 0) {
+		return nil // connection caolescing requires HTTP/2.0 or higher
+	}
+	tlsServerName := req.TLS.ServerName
+	if tlsServerName == "" {
+		return nil // need an SNI ServerName
+	}
+	httpHostName, _, _, err := netutil.ParseEndpoint(req.Host)
+	if httpHostName == "" || err != nil {
+		return nil // need a valid HTTP Host or :authority header
+	}
+	// Host may be an IP address (or IP:port, see https://datatracker.ietf.org/doc/html/rfc7230#section-5.4), but that
+	// can never be a valid ServerName, so we have nothing to compare.
+	if net.ParseIP(httpHostName) != nil {
+		return nil
+	}
+	if tlsServerName == httpHostName {
+		return nil
+	}
+	// Whenever we have both a ServerName from SNI as well as a hostname from the :authority pseudo-header, enforce
+	// that they must match. While it is possible that the server is exposed under different DNS names that are both
+	// valid for the same served certificate (which would be a legitimate use case for connection coalescing), this
+	// case is rare enough that no harm is done if we require separate TCP connections where one would suffice.
+	return errors.Errorf("request was intended for host %s, but sent over a connection established for host %s", httpHostName, tlsServerName)
+}
+
+func denyMisdirectedRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if err := checkMisdirectedRequest(req); err != nil {
+			http.Error(w, err.Error(), http.StatusMisdirectedRequest)
+			return
+		}
+		next.ServeHTTP(w, req)
+	})
+}
+
 func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
@@ -96,9 +139,9 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 	}
 
-	if c.NoHTTP2 {
+	if c.NoHTTP2 && tlsConf != nil {
 		tlsConf = tlsConf.Clone()
-		tlsConf.NextProtos = sliceutils.StringDifference(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+		tlsConf.NextProtos = sliceutils.Without(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
 	}
 
 	if tlsConf != nil {
@@ -142,11 +185,23 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			} else {
 				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
+			if c.DenyMisdirectedRequests && tlsConf != nil {
+				// When using HTTP/2 over TLS, connection coalescing in conjunction with wildcard or multi-SAN
+				// certificates may cause this server to receive requests not intended for it. If
+				// DenyMisdirectedRequests is set to true, deny such requests outright with a 421 (Misdirected Request)
+				// status code.
+				httpSrv.Handler = denyMisdirectedRequest(httpSrv.Handler)
+			}
 		}
 		result = append(result, serverAndListener{
 			srv:      httpSrv,
 			listener: httpLis,
 			endpoint: c,
+			stopper: func() {
+				if err := httpSrv.Shutdown(context.Background()); err != nil {
+					log.Warnf("Stopping HTTP listener: %s", err)
+				}
+			},
 		})
 	}
 	if grpcLis != nil {

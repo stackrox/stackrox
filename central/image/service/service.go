@@ -3,17 +3,18 @@ package service
 import (
 	"context"
 
-	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/waiter"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -31,17 +32,16 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, cveDatastore cveDataStore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
-	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache) Service {
+func New(datastore datastore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
+	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache, scanWaiterManager waiter.Manager[*storage.Image]) Service {
 	return &serviceImpl{
-		datastore:     datastore,
-		cveDatastore:  cveDatastore,
-		watchedImages: watchedImages,
-		riskManager:   riskManager,
-		enricher:      enricher,
-		metadataCache: metadataCache,
-		connManager:   connManager,
-
+		datastore:             datastore,
+		watchedImages:         watchedImages,
+		riskManager:           riskManager,
+		enricher:              enricher,
+		metadataCache:         metadataCache,
+		connManager:           connManager,
+		scanWaiterManager:     scanWaiterManager,
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 	}
 }

@@ -18,7 +18,7 @@ var (
 var (
 	migration = types.Migration{
 		StartingSeqNum: 70,
-		VersionAfter:   storage.Version{SeqNum: 71},
+		VersionAfter:   &storage.Version{SeqNum: 71},
 		Run: func(databases *types.Databases) error {
 			return disableAuditLogCollection(databases.RocksDB)
 		},

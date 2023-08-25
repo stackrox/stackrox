@@ -8,8 +8,8 @@ import (
 func renderCountFunctionSignature(statement *Statement) *Statement {
 	functionName := "Count"
 	return statement.Id(functionName).Params(
+		Id("ctx").Qual("context", "Context"),
 		Id("q").Op("*").Qual(packagenames.V1, "Query"),
-		Id("opts").Op("...").Qual(packagenames.RoxBleve, "SearchOption"),
 	).Parens(List(Int(), Error()))
 }
 

@@ -1,11 +1,15 @@
 package services
 
+import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.ScopeOuterClass
 
+@Slf4j
 class PolicyService extends BaseService {
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
@@ -30,10 +34,19 @@ class PolicyService extends BaseService {
                             build()
             ).getId()
         } catch (Exception e) {
-            println e.toString()
+            log.error("error creating new policy", e)
         }
 
         return policyID
+    }
+
+    static PolicyOuterClass.Policy createAndFetchPolicy(PolicyOuterClass.Policy policy) {
+        return getPolicyClient().postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder().
+                        setPolicy(policy).
+                        setEnableStrictValidation(true).
+                        build()
+        )
     }
 
     static deletePolicy(String policyID) {
@@ -44,8 +57,12 @@ class PolicyService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
-            println e.toString()
+            log.error("error deleting policy", e)
         }
+    }
+
+    static PolicyServiceOuterClass.DryRunResponse dryRunPolicy(PolicyOuterClass.Policy policy) {
+        return getPolicyClient().dryRunPolicy(policy)
     }
 
     static patchPolicy(PolicyServiceOuterClass.PatchPolicyRequest pr) {
@@ -53,7 +70,31 @@ class PolicyService extends BaseService {
             getPolicyClient().patchPolicy(pr).newBuilder().build()
         }
         catch (Exception e) {
-            println e.toString()
+            log.error("error patching policy", e)
         }
+    }
+
+    static Policy clonePolicy(String name, String newPolicyName) {
+        Policy policy = getPolicyClient().getPolicy(getResourceByID(
+                getPolicies().find { it.name == name }.id
+        ))
+        Policy cloned = policy.toBuilder()
+            .clearId()
+            .setName(newPolicyName)
+            .build()
+        return createAndFetchPolicy(cloned)
+    }
+
+    static Policy clonePolicyAndScopeByNamespace(String name, String namespace) {
+        Policy policy = getPolicyClient().getPolicy(getResourceByID(
+                getPolicies().find { it.name == name }.id
+        ))
+        Policy scopedPolicyForTest = policy.toBuilder()
+            .clearId()
+            .setName("${name} - ${namespace}")
+            .clearScope()
+            .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(namespace))
+            .build()
+        return createAndFetchPolicy(scopedPolicyForTest)
     }
 }

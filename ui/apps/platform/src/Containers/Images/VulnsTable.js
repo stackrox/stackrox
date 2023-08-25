@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from '@patternfly/react-core';
+
 import Table from 'Components/Table';
-import { Tooltip, TooltipOverlay } from '@stackrox/ui-components';
 
 const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
     const columns = [
@@ -14,15 +15,15 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                         href={ci.original.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary-600 font-600 pointer-events-auto"
+                        className="text-primary-600 font-700 pointer-events-auto"
                     >
                         {ci.value}
                     </a>
                     <div className="mt-2">{ci.original.summary}</div>
                 </div>
             ),
-            headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',
-            className: 'pointer-events-none flex items-center justify-left italic',
+            headerClassName: 'font-700 border-b border-base-300 flex items-end bg-primary-300',
+            className: 'pointer-events-none flex items-center justify-left',
         },
         {
             Header: 'CVSS',
@@ -33,12 +34,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 if (!cvss) {
                     return (
                         <Tooltip
-                            content={
-                                <TooltipOverlay>
-                                    A CVSS value can be pending when the vulnerability has not been
-                                    scored or has been disputed
-                                </TooltipOverlay>
-                            }
+                            content="A CVSS value can be pending when the vulnerability has not been
+                                    scored or has been disputed"
                         >
                             <div>Pending</div>
                         </Tooltip>
@@ -47,8 +44,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 return `${cvss} (${ci.original.scoreVersion === 'V2' ? 'v2' : 'v3'})`;
             },
             headerClassName:
-                'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
-            className: 'flex items-center justify-end italic',
+                'font-700 border-b border-base-300 flex items-end justify-end bg-primary-300',
+            className: 'flex items-center justify-end',
         },
     ];
     if (containsFixableCVEs) {
@@ -56,8 +53,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             Header: 'Fixed',
             accessor: 'fixedBy',
             width: 130,
-            headerClassName: 'font-600 border-b border-base-300 flex items-end',
-            className: 'pointer-events-none flex items-center justify-end italic',
+            headerClassName: 'font-700 border-b border-base-300 flex items-end',
+            className: 'pointer-events-none flex items-center justify-end',
             Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value),
         });
     }

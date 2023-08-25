@@ -11,7 +11,7 @@ function CreateIntegrationPage(): ReactElement {
     } = usePageState();
 
     return (
-        <IntegrationPage title="Create Integration">
+        <IntegrationPage title="Create Integration" name="Create Integration">
             <IntegrationForm source={source} type={type} isEditable />
         </IntegrationPage>
     );

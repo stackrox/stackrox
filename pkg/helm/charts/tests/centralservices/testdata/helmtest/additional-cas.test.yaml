@@ -1,3 +1,7 @@
+values:
+  central:
+    persistence:
+      none: true
 tests:
 - name: "Additional CA secret is not created"
   expect: |

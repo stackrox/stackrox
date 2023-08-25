@@ -1,0 +1,17 @@
+name: Cache QA Tests Dependencies
+description: Cache QA Tests Dependencies
+runs:
+  using: composite
+  steps:
+    - name: Cache Gradle Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.m2/repository
+        key: gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ github.job }}
+        restore-keys: |
+          gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-${{ github.job }}
+          gradle-v2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}-
+          gradle-v2-

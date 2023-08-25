@@ -3,6 +3,7 @@ import { Select, SelectVariant } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
+    toggleAriaLabel?: string;
     id: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
@@ -12,10 +13,13 @@ export type SelectSingleProps = {
     isCreatable?: boolean;
     variant?: 'typeahead' | null;
     placeholderText?: string;
+    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    menuAppendTo?: () => HTMLElement;
 };
 
 function SelectSingle({
     toggleIcon,
+    toggleAriaLabel,
     id,
     value,
     handleSelect,
@@ -25,6 +29,8 @@ function SelectSingle({
     isCreatable = false,
     variant = null,
     placeholderText = '',
+    onBlur,
+    menuAppendTo,
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -40,6 +46,7 @@ function SelectSingle({
         <Select
             variant={isTypeahead}
             toggleIcon={toggleIcon}
+            toggleAriaLabel={toggleAriaLabel}
             id={id}
             isDisabled={isDisabled}
             isOpen={isOpen}
@@ -50,6 +57,8 @@ function SelectSingle({
             isCreatable={isCreatable}
             placeholderText={placeholderText}
             toggleId={id}
+            onBlur={onBlur}
+            menuAppendTo={menuAppendTo}
         >
             {children}
         </Select>

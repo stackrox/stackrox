@@ -3,6 +3,7 @@ package resources
 import (
 	v1 "github.com/openshift/api/config/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
 
@@ -18,8 +19,8 @@ func newClusterOperatorDispatcher(namespaces *orchestratornamespaces.Orchestrato
 	}
 }
 
-// Process processes a cluster operator resource event, and returns the sensor events to emit in response.
-func (c *clusterOperatorDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
+// ProcessEvent processes a cluster operator resource event, and returns the sensor events to emit in response.
+func (c *clusterOperatorDispatcher) ProcessEvent(obj, _ interface{}, _ central.ResourceAction) *component.ResourceEvent {
 	clusterOperator, ok := obj.(*v1.ClusterOperator)
 
 	if !ok {

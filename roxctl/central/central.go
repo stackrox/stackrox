@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/generate"
 	"github.com/stackrox/rox/roxctl/central/initbundles"
-	"github.com/stackrox/rox/roxctl/central/license"
+	"github.com/stackrox/rox/roxctl/central/login"
 	"github.com/stackrox/rox/roxctl/central/userpki"
 	"github.com/stackrox/rox/roxctl/central/whoami"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -18,7 +18,8 @@ import (
 // Command defines the central command tree
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
-		Use: "central",
+		Use:   "central",
+		Short: "Commands related to the Central service.",
 	}
 	c.AddCommand(
 		cert.Command(cliEnvironment),
@@ -26,10 +27,10 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		db.Command(cliEnvironment),
 		backup.Command(cliEnvironment, pointers.Bool(true)),
 		debug.Command(cliEnvironment),
-		license.Command(cliEnvironment),
 		userpki.Command(cliEnvironment),
 		whoami.Command(cliEnvironment),
 		initbundles.Command(cliEnvironment),
+		login.Command(cliEnvironment),
 	)
 	return c
 }

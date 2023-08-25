@@ -6,46 +6,43 @@ import {
     AlertActionCloseButton,
     AlertVariant,
     Bullseye,
+    Button,
+    PageSection,
     Spinner,
 } from '@patternfly/react-core';
 
 import NotFoundMessage from 'Components/NotFoundMessage';
 import {
     AccessScope,
+    accessScopeNew,
     createAccessScope,
     deleteAccessScope,
-    getIsDefaultAccessScopeId,
     fetchAccessScopes,
     updateAccessScope,
 } from 'services/AccessScopesService';
 import { Role, fetchRolesAsArray } from 'services/RolesService';
 
 import AccessControlDescription from '../AccessControlDescription';
-import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNav from '../AccessControlNav';
 import AccessControlPageTitle from '../AccessControlPageTitle';
 import { getEntityPath, getQueryObject } from '../accessControlPaths';
 
-import AccessScopeForm from './AccessScopeForm';
+import AccessScopeFormWrapper from './AccessScopeFormWrapper';
 import AccessScopesList from './AccessScopesList';
 
 import './AccessScopes.css';
-
-const accessScopeNew: AccessScope = {
-    id: '',
-    name: '',
-    description: '',
-    rules: {
-        includedClusters: [],
-        includedNamespaces: [],
-        clusterLabelSelectors: [],
-        namespaceLabelSelectors: [],
-    },
-};
+import AccessControlHeading from '../AccessControlHeading';
+import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
+import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
+import AccessControlNoPermission from '../AccessControlNoPermission';
+import usePermissions from '../../../hooks/usePermissions';
+import { isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
 function AccessScopes(): ReactElement {
+    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const hasReadAccessToPage = hasReadAccess('Access');
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
@@ -109,6 +106,15 @@ function AccessScopes(): ReactElement {
             });
     }, []);
 
+    // Return "no access" page immediately if user doesn't have enough permissions.
+    if (!hasReadAccessToPage) {
+        return (
+            <>
+                <AccessControlNoPermission subPage="access scopes" entityType={entityType} />
+            </>
+        );
+    }
+
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
     }
@@ -160,48 +166,65 @@ function AccessScopes(): ReactElement {
     return (
         <>
             <AccessControlPageTitle entityType={entityType} isList={isList} />
-            <AccessControlHeading
-                entityType={entityType}
-                entityName={action === 'create' ? 'Add access scope' : accessScope?.name}
-                isDisabled={hasAction}
-                isList={isList}
-            />
-            <AccessControlNav entityType={entityType} isDisabled={hasAction} />
-            <AccessControlDescription>
-                Add predefined sets of authorized Kubernetes resources that users should be able to
-                access
-            </AccessControlDescription>
-            {alertAccessScopes}
-            {alertRoles}
-            {counterFetching !== 0 ? (
-                <Bullseye>
-                    <Spinner isSVG />
-                </Bullseye>
-            ) : isList ? (
-                <AccessScopesList
-                    accessScopes={accessScopes}
-                    roles={roles}
-                    handleCreate={handleCreate}
-                    handleDelete={handleDelete}
-                />
-            ) : typeof entityId === 'string' && !accessScope ? (
-                <NotFoundMessage
-                    title="Access scope does not exist"
-                    message={`Access scope id: ${entityId}`}
-                    actionText="Access scopes"
-                    url={getEntityPath(entityType)}
-                />
+            {isList ? (
+                <>
+                    <AccessControlHeading entityType={entityType} />
+                    <AccessControlHeaderActionBar
+                        displayComponent={
+                            <AccessControlDescription>
+                                Create predefined sets of authorized Kubernetes resources that users
+                                should be able to access
+                            </AccessControlDescription>
+                        }
+                        actionComponent={
+                            <Button
+                                isDisabled={!hasWriteAccessForPage}
+                                variant="primary"
+                                onClick={handleCreate}
+                            >
+                                Create access scope
+                            </Button>
+                        }
+                    />
+                </>
             ) : (
-                <AccessScopeForm
-                    isActionable={!accessScope || !getIsDefaultAccessScopeId(entityId)}
-                    action={action}
-                    accessScope={accessScope ?? accessScopeNew}
-                    accessScopes={accessScopes}
-                    handleCancel={handleCancel}
-                    handleEdit={handleEdit}
-                    handleSubmit={handleSubmit}
+                <AccessControlBreadcrumbs
+                    entityType={entityType}
+                    entityName={action === 'create' ? 'Create access scope' : accessScope?.name}
                 />
             )}
+            {alertAccessScopes}
+            {alertRoles}
+            <PageSection variant={isList ? 'default' : 'light'}>
+                {counterFetching !== 0 ? (
+                    <Bullseye>
+                        <Spinner isSVG />
+                    </Bullseye>
+                ) : isList ? (
+                    <AccessScopesList
+                        accessScopes={accessScopes}
+                        roles={roles}
+                        handleDelete={handleDelete}
+                    />
+                ) : typeof entityId === 'string' && !accessScope ? (
+                    <NotFoundMessage
+                        title="Access scope does not exist"
+                        message={`Access scope id: ${entityId}`}
+                        actionText="Access scopes"
+                        url={getEntityPath(entityType)}
+                    />
+                ) : (
+                    <AccessScopeFormWrapper
+                        isActionable={!accessScope || isUserResource(accessScope.traits)}
+                        action={action}
+                        accessScope={accessScope ?? accessScopeNew}
+                        accessScopes={accessScopes}
+                        handleCancel={handleCancel}
+                        handleEdit={handleEdit}
+                        handleSubmit={handleSubmit}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }

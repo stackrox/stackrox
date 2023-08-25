@@ -10,7 +10,7 @@ import (
 type K8sObjectPredicateFunc func(object k8sutil.Object) bool
 
 // Filter modifies the given slice to remove any elements which do not pass the predicate.
-func Filter(objects *[]k8sutil.Object, predicate K8sObjectPredicateFunc) {
+func Filter[T k8sutil.Object](objects *[]T, predicate K8sObjectPredicateFunc) {
 	if objects == nil {
 		return
 	}
@@ -41,4 +41,10 @@ func CertObjectPredicate(obj k8sutil.Object) bool {
 // if the object corresponds to an additional ca secret.
 func AdditionalCASecretPredicate(obj k8sutil.Object) bool {
 	return k8sobjects.RefOf(obj) == image.AdditionalCASensorSecretRef
+}
+
+// PSPObjectPredicate takes the given obj, and returns `true` if the object corresponds to a psp.
+func PSPObjectPredicate(obj k8sutil.Object) bool {
+	_, exists := image.SensorPSPObjectRefs[k8sobjects.RefOf(obj)]
+	return exists
 }

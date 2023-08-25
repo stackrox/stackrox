@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message Traits {
+  // EXPERIMENTAL.
+  // NOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).
+  // MutabilityMode specifies whether and how an object can be modified. Default
+  // is ALLOW_MUTATE and means there are no modification restrictions; this is equivalent
+  // to the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all
+  // modifying operations except object removal with force bit on.
+  //
+  // Be careful when changing the state of this field. For example, modifying an
+  // object from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further
+  // changes to it, including modifying it back to ALLOW_MUTATE.
+  enum MutabilityMode {
+    ALLOW_MUTATE        = 0;
+    ALLOW_MUTATE_FORCED = 1;
+  }
+
+  MutabilityMode mutability_mode = 1;
+
+  // EXPERIMENTAL.
+  // visibility allows to specify whether the object should be visible for certain APIs.
+  enum Visibility {
+    VISIBLE = 0;
+    HIDDEN  = 1;
+  }
+  Visibility visibility = 2;
+
+  // Origin specifies the origin of an object.
+  // Objects can have four different origins:
+  // - IMPERATIVE: the object was created via the API. This is assumed by default.
+  // - DEFAULT: the object is a default object, such as default roles, access scopes etc.
+  // - DECLARATIVE: the object is created via declarative configuration.
+  // - DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)
+  // Based on the origin, different rules apply to the objects.
+  // Objects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.
+  // Additionally, they may not reference objects with the IMPERATIVE origin.
+  // Objects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.
+  // They may be referenced by all other objects.
+  // Objects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.
+  // They may reference all other objects.
+  // Objects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.
+  // DECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.
+  // Objects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.
+  // They may be referenced by all other objects.
+  enum Origin {
+     IMPERATIVE           = 0;
+     DEFAULT              = 1;
+     DECLARATIVE          = 2;
+     DECLARATIVE_ORPHANED = 3;
+  }
+  Origin origin = 3;
+}

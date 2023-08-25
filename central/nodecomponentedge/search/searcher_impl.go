@@ -4,13 +4,10 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/nodecomponentedge/index"
-	pkgNodeComponentEdgeSAC "github.com/stackrox/rox/central/nodecomponentedge/sac"
 	"github.com/stackrox/rox/central/nodecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 type searcherImpl struct {
@@ -25,7 +22,7 @@ func (ds *searcherImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.Sea
 	if err != nil {
 		return nil, err
 	}
-	return ds.resultsToSearchResults(results)
+	return ds.resultsToSearchResults(ctx, results)
 }
 
 // Search returns the raw search results from the query
@@ -48,13 +45,13 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 }
 
 // resultsToNodeComponentEdges returns the cves from the db for the given search results.
-func (ds *searcherImpl) resultsToNodeComponentEdges(results []search.Result) ([]*storage.NodeComponentEdge, []int, error) {
-	return ds.storage.GetBatch(search.ResultsToIDs(results))
+func (ds *searcherImpl) resultsToNodeComponentEdges(ctx context.Context, results []search.Result) ([]*storage.NodeComponentEdge, []int, error) {
+	return ds.storage.GetMany(ctx, search.ResultsToIDs(results))
 }
 
 // resultsToSearchResults returns the searchResults from the db for the given search results.
-func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.SearchResult, error) {
-	cves, missingIndices, err := ds.resultsToNodeComponentEdges(results)
+func (ds *searcherImpl) resultsToSearchResults(ctx context.Context, results []search.Result) ([]*v1.SearchResult, error) {
+	cves, missingIndices, err := ds.resultsToNodeComponentEdges(ctx, results)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +77,6 @@ func convertOne(cve *storage.NodeComponentEdge, result *search.Result) *v1.Searc
 	}
 }
 
-// Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
-	return filtered.UnsafeSearcher(unsafeSearcher, pkgNodeComponentEdgeSAC.GetSACFilter())
-}
-
 func (ds *searcherImpl) searchNodeComponentEdges(ctx context.Context, q *v1.Query) ([]*storage.NodeComponentEdge, error) {
 	results, err := ds.Search(ctx, q)
 	if err != nil {
@@ -92,7 +84,7 @@ func (ds *searcherImpl) searchNodeComponentEdges(ctx context.Context, q *v1.Quer
 	}
 
 	ids := search.ResultsToIDs(results)
-	edges, _, err := ds.storage.GetBatch(ids)
+	edges, _, err := ds.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

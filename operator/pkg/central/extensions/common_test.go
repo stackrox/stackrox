@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/pkg/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -16,18 +18,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const (
-	testNamespace = `testns`
-)
-
-type secretVerifyFunc func(t *testing.T, data secretDataMap)
+type secretVerifyFunc func(t *testing.T, data types.SecretDataMap)
 type statusVerifyFunc func(t *testing.T, status *platform.CentralStatus)
 
 type secretReconciliationTestCase struct {
-	Spec     platform.CentralSpec
-	Deleted  bool
-	Existing []*v1.Secret
-	Other    []ctrlClient.Object
+	Spec                   platform.CentralSpec
+	Deleted                bool
+	Existing               []*v1.Secret
+	ExistingManaged        []*v1.Secret
+	Other                  []ctrlClient.Object
+	InterceptedK8sAPICalls testutils.InterceptorFns
 
 	ExpectedCreatedSecrets     map[string]secretVerifyFunc
 	ExpectedError              string
@@ -49,6 +49,7 @@ func basicSpecWithScanner(scannerEnabled bool) platform.CentralSpec {
 	return spec
 }
 
+// TODO(ROX-9453): Refactor this to be used also by Secured Cluster reconciler extensions.
 func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
 	central := &platform.Central{
 		TypeMeta: metav1.TypeMeta{
@@ -57,7 +58,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-central",
-			Namespace: testNamespace,
+			Namespace: testutils.TestNamespace,
 		},
 		Spec: *c.Spec.DeepCopy(),
 	}
@@ -75,6 +76,11 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	for _, existingSecret := range c.Existing {
 		existingSecrets = append(existingSecrets, existingSecret.DeepCopy())
 	}
+	for _, existingManagedSecret := range c.ExistingManaged {
+		managedSecret := existingManagedSecret.DeepCopy()
+		managedSecret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(central, central.GroupVersionKind())})
+		existingSecrets = append(existingSecrets, managedSecret)
+	}
 	var otherExisting []runtime.Object
 	for _, existingObj := range c.Other {
 		otherExisting = append(otherExisting, existingObj.DeepCopyObject())
@@ -88,6 +94,8 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 		WithObjects(existingSecrets...).
 		WithRuntimeObjects(otherExisting...).
 		Build()
+
+	client = testutils.Interceptor(client, c.InterceptedK8sAPICalls)
 
 	// Verify that an initial invocation does not touch any of the existing secrets, and creates
 	// the expected ones.
@@ -105,7 +113,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	}
 
 	secretsList := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	secretsByName := make(map[string]v1.Secret)
@@ -115,10 +123,10 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	for _, existingSecret := range c.Existing {
 		found, ok := secretsByName[existingSecret.Name]
-		if !assert.Truef(t, ok, "pre-existing secret %s is gone", existingSecret.Name) {
+		if !assert.Truef(t, ok, "pre-existing unmanaged secret %s is gone", existingSecret.Name) {
 			continue
 		}
-		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing secret %s has changed", existingSecret.Name)
+		assert.Equalf(t, existingSecret.Data, found.Data, "data of pre-existing unmanaged secret %s has changed", existingSecret.Name)
 		delete(secretsByName, existingSecret.Name)
 	}
 
@@ -154,7 +162,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	}
 
 	secretsList2 := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList2, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList2, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	assert.ElementsMatch(t, secretsList.Items, secretsList2.Items, "second invocation changed the cluster state")
@@ -167,7 +175,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.NoError(t, err, "deletion of CR resulted in error")
 
 	secretsList3 := &v1.SecretList{}
-	err = client.List(context.Background(), secretsList3, ctrlClient.InNamespace(testNamespace))
+	err = client.List(context.Background(), secretsList3, ctrlClient.InNamespace(testutils.TestNamespace))
 	require.NoError(t, err)
 
 	postDeletionSecretsByName := make(map[string]v1.Secret)
