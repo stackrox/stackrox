@@ -295,7 +295,7 @@ deploy_sensor_via_operator() {
         #Get correct URL based on the cluster architecture
         SUPPORT_URL=$(< operator/midstream/iib.json jq -r --arg arch "$REMOTE_CLUSTER_ARCH" '.[$arch].support_url')
         #Downloading the support package
-        wget -O support-pkg.zip "$SUPPORT_URL"
+        wget -O support-pkg.zip "$SUPPORT_URL" &> /dev/null
         #Uploading the package to central
         roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg.zip
     fi
