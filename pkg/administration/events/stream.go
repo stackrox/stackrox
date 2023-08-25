@@ -12,7 +12,8 @@ type Stream interface {
 	Produce(event *storage.AdministrationEvent) error
 }
 
-func newStream() Stream {
+// NewStream creates a new event stream.
+func NewStream() Stream {
 	return &streamImpl{
 		eventChan: make(chan *storage.AdministrationEvent, 100),
 	}
@@ -24,6 +25,9 @@ type streamImpl struct {
 
 // Consume returns the channel to retrieve administration events.
 func (s *streamImpl) Consume() <-chan *storage.AdministrationEvent {
+	if s == nil {
+		return nil
+	}
 	return s.eventChan
 }
 
@@ -31,6 +35,9 @@ func (s *streamImpl) Consume() <-chan *storage.AdministrationEvent {
 //
 // Should be retried with `retry.WithRetry(s.Produce(event))`.
 func (s *streamImpl) Produce(event *storage.AdministrationEvent) error {
+	if s == nil {
+		return nil
+	}
 	select {
 	case s.eventChan <- event:
 		return nil
