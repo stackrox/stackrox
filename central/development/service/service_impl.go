@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/random"
@@ -33,7 +33,7 @@ var (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		allow.Anonymous(): {
+		user.Authenticated(): {
 			"/central.DevelopmentService/ReplicateImage",
 			"/central.DevelopmentService/URLHasValidCert",
 			"/central.DevelopmentService/RandomData",
