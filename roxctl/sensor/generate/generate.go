@@ -244,6 +244,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "dynamic enable for enforcing on object creates in the admission controller")
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "dynamic enable for enforcing on object updates in the admission controller")
 
+	flags.AddTimeoutWithDefault(c, 5*time.Minute)
+
 	c.AddCommand(k8s(generateCmd))
 	c.AddCommand(openshift(generateCmd))
 
