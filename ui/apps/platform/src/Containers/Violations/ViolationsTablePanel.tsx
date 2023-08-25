@@ -22,11 +22,11 @@ import useTableSelection from 'hooks/useTableSelection';
 import { GetSortParams } from 'hooks/useURLSort';
 import { resolveAlert } from 'services/AlertsService';
 import { excludeDeployments } from 'services/PoliciesService';
+import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
-import { ListAlert } from './types/violationTypes';
 
 export type ActionItem = {
     title: string | ReactElement;

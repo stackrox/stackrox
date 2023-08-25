@@ -11,7 +11,7 @@ import {
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { NetworkFlowInfo } from '../types/violationTypes';
+import { NetworkFlowInfo } from 'types/alert.proto';
 
 export type NetworkFlowCardProps = {
     networkFlowInfo: NetworkFlowInfo;

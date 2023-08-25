@@ -3,9 +3,9 @@ import { Alert, Card, CardBody, CardTitle, Flex, FlexItem, Title } from '@patter
 
 import useFetchDeployment from 'hooks/useFetchDeployment';
 import usePermissions from 'hooks/usePermissions';
+import { DeploymentAlert } from 'types/alert.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { Alert as AlertViolation } from '../../types/violationTypes'; // TODO
 import ContainerConfiguration from './ContainerConfiguration';
 import DeploymentOverview from './DeploymentOverview';
 import NetworkPoliciesCard from './NetworkPoliciesCard';
@@ -14,7 +14,7 @@ import SecurityContext from './SecurityContext';
 
 export type DeploymentDetailsProps = {
     alertDeployment: Pick<
-        NonNullable<AlertViolation['deployment']>,
+        NonNullable<DeploymentAlert['deployment']>,
         'id' | 'clusterId' | 'namespace'
     >;
 };
