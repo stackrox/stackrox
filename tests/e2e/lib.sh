@@ -610,7 +610,7 @@ collect_and_check_stackrox_logs() {
 remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
-    (   
+    (
         # midstream ocp specific
         kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app=rhacs-operator" --wait
         kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
