@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
@@ -17,7 +18,7 @@ import (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		authzUser.Authenticated(): {
+		or.ServiceOr(authzUser.Authenticated()): {
 			"/v1.AuthService/GetAuthStatus",
 		},
 	})
