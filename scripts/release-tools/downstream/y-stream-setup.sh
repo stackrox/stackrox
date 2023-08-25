@@ -26,36 +26,35 @@ release_major=$(cut -d '.' -f 1 <<< "$release")
 release_minor=$(cut -d '.' -f 2 <<< "$release")
 
 # Compare versions
-if [ "$previous_major" -gt "$release_major" ] || ([ "$previous_major" -eq "$release_major" ] && [ "$previous_minor" -gt "$release_minor" ]); then
+if [ "$previous_major" -gt "$release_major" ] || { [ "$previous_major" -eq "$release_major" ] && [ "$previous_minor" -gt "$release_minor" ] ; }; then
     echo "Previous release must be less than the current release."
     exit 1
 fi
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$DIR/perform_sed_or_gsed.sh"
-
 get_supported_versions() {
-    local versions=()
+    #supported_versions=($(curl -fsSL "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" | jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'))
 
-    supported_versions=($(curl -fsSL "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" | jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'))
+    mapfile -t supported_versions < <(
+      curl -fsSL "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" |
+      jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'
+    )
+
 
     nversions=${#supported_versions[@]}
     for ((i = nversions - 1; i >= 0; i = i - 1)); do
-        versions+=(${supported_versions[$i]})
+        echo "${supported_versions[$i]}"
     done
 
-    versions+=("$release")
-
-    printf "%s\n" "${versions[@]}"
+    echo "$release"
 }
 
 update_content_stream_tags() {
-    versions=($(get_supported_versions))
+    mapfile -t versions < <(get_supported_versions)
 
     nversions=${#versions[@]}
-    find versions/release-* -name 'product.yml' -exec bash -c "yq w -i '{}' delivery-repo-content.content_stream_tags ''" \;
-    for ((i = 0; i < nversions; i = i + 1)); do
-        find versions/release-* -name 'product.yml' -exec bash -c "yq w -i '{}' delivery-repo-content.content_stream_tags[$i] '${versions[$i]}' --style=double" \;
+
+    for ((i=0; i<nversions; i++)); do
+        find versions/release-* -name 'product.yml' -exec bash -c 'yq w -i "$1" delivery-repo-content.content_stream_tags[$2] "$3" --style=double' _ {} "$i" "${versions[$i]}" \;
     done
 }
 
@@ -108,7 +107,8 @@ popd
 update_content_stream_tags
 
 # yq makes some unwanted changes that need to be undone
-find versions/release-* -name 'product.yml' -exec bash -c "perform_sed_or_gsed '!!merge ' '' '{}'" \;
+find versions/release-* -name 'product.yml' -exec bash -c 'perform_sed_or_gsed "!!merge " "" "$1"' _ {} \;
+#find versions/release-* -name 'product.yml' -exec bash -c "perform_sed_or_gsed '!!merge ' '' '{}'" \;
 
 echo
 echo
