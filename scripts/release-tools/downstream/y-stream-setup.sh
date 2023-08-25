@@ -53,13 +53,9 @@ update_content_stream_tags() {
     versions=($(get_supported_versions))
 
     nversions=${#versions[@]}
-    #find versions/release-* -name 'product.yml' -exec bash -c "perform_sed_or_gsed '!!merge ' '' '{}'" \;
     find versions/release-* -name 'product.yml' -exec bash -c "yq w -i '{}' delivery-repo-content.content_stream_tags ''" \;
-    for file in versions/release-*/product.yml; do
-        #yq w -i "$file" delivery-repo-content.content_stream_tags '' 
-        for ((i = 0; i < nversions; i = i + 1)); do
-                yq w -i "$file" delivery-repo-content.content_stream_tags[$i] "${versions[$[i]]}" --style=double
-        done
+    for ((i = 0; i < nversions; i = i + 1)); do
+        find versions/release-* -name 'product.yml' -exec bash -c "yq w -i '{}' delivery-repo-content.content_stream_tags[$i] '${versions[$i]}' --style=double" \;
     done
 }
 
