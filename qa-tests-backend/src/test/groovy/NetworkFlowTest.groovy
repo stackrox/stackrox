@@ -33,6 +33,7 @@ import util.Timer
 
 import org.junit.Assume
 import org.junit.Rule
+import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
@@ -314,7 +315,7 @@ class NetworkFlowTest extends BaseSpecification {
         def nodes = graph.nodesList
 
         nodes.each { node ->
-            node.outEdges.each { key, value ->
+            node.getOutEdgesMap().each { key, value ->
                 value.propertiesList.each { property ->
                     assert property.port > 0
                 }
@@ -482,7 +483,7 @@ class NetworkFlowTest extends BaseSpecification {
     // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
     @Rule
     @SuppressWarnings(["JUnitPublicProperty"])
-    org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
+    Timeout globalTimeout = new Timeout(1600, TimeUnit.SECONDS)
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
         given:
@@ -524,7 +525,6 @@ class NetworkFlowTest extends BaseSpecification {
 
             // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
             // router-default deployment in openshift-ingress namespace.
-            List<Edge> routerDefaultEdges = null
             if (ClusterService.isOpenShift4()) {
                 log.info("Searching for edge coming from OpenShift ingress router to ${deploymentUid}")
                 SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
@@ -532,7 +532,7 @@ class NetworkFlowTest extends BaseSpecification {
                         .build()
                 def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
                 def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
-                routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                List<Edge> routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
                 if (routerDefaultEdges != null) {
                     log.info("Found edge coming from OpenShift ingress router")
                     return
