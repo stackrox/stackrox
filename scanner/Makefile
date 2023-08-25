@@ -93,13 +93,13 @@ endif
 scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scannerv4:$(TAG) -f image/scanner/Dockerfile image/scanner
+	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-sigs
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner-db:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scannerv4-db:$(TAG) -f image/db/Dockerfile image/db
+	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##
