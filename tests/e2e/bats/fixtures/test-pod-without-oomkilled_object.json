@@ -175,10 +175,6 @@
                         "value": "false"
                     },
                     {
-                        "name": "ROX_RHCOS_NODE_SCANNING",
-                        "value": "false"
-                    },
-                    {
                         "name": "ROX_ROXCTL_NETPOL_GENERATE",
                         "value": "true"
                     }

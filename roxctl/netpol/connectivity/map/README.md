@@ -16,14 +16,14 @@ Generate a file that allows users to visualize the connectivity posture induced 
 ## Usage
 
 ### Analyzing allowed connectivity from YAML manifests (network policies and workload resources)
-To analyze network policies, `roxctl connectivity-map` requires a folder containing Kubernetes manifests, including network policies.
+To analyze network policies, `roxctl netpol connectivity map` requires a folder containing Kubernetes manifests, including network policies.
 The manifests must not be templated (e.g., Helm charts) to be considered.
-All YAML files that could be accepted by `kubectl apply -f` will be accepted as a valid input and searched by `roxctl connectivity-map`.
+All YAML files that could be accepted by `kubectl apply -f` will be accepted as a valid input and searched by `roxctl netpol connectivity map`.
 
 Example run with output to `stdout`:
 
 ```shell
-$ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/
+$ roxctl netpol connectivity map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/
 0.0.0.0-255.255.255.255 => default/frontend[Deployment] : TCP 8080
 default/backend[Deployment] => default/backend[Deployment] : All Connections
 default/frontend[Deployment] => 0.0.0.0-255.255.255.255 : UDP 53
@@ -33,7 +33,7 @@ default/frontend[Deployment] => default/frontend[Deployment] : All Connections
 
 Example output with `md` output format:
 ```shell
-$ roxctl connectivity-map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o md
+$ roxctl netpol connectivity map  tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o md
 ```
 
 | src | dst | conn |
@@ -60,7 +60,7 @@ It does not mean that a connection from `frontend`  to `backend` is allowed over
 
 Generate output in [dot](https://graphviz.org/doc/info/lang.html) format:
 ```shell
-$ roxctl connectivity-map tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o dot
+$ roxctl netpol connectivity map tests/roxctl/bats-tests/test-data/np-guard/netpols-analysis-example-minimal/ -o dot
 digraph {
         "0.0.0.0-255.255.255.255" [label="0.0.0.0-255.255.255.255" color="red2" fontcolor="red2"]
         "default/backend[Deployment]" [label="default/backend[Deployment]" color="blue" fontcolor="blue"]
@@ -101,8 +101,8 @@ The [`Graphviz` tool](https://graphviz.org/) (locally installed or online viewer
 
 The `--focus-workload` parameter allows specifying a workload name, such that the output only contains allowed connections of this workload, whereas the other workloads are omitted.
 The supported formats for the input workload name are: `name` or `namespace/name`. For example, if the workload of interest from the report is `default/backend[Deployment]`, the input workload specified can be `--focus-workload=default/backend` or `--focus-workload=backend`. In addition, to focus connections inferred from Route/Ingress resources, the specified workload can be `--focus-workload=ingress-controller`.
-If the input `focus-workload` value speifies a workload name that does not exist in the input resources YAML manifests, the connectivity-map output will be empty.
+If the input `focus-workload` value speifies a workload name that does not exist in the input resources YAML manifests, the netpol connectivity map output will be empty.
 
-When running in a CI pipeline, `roxctl connectivity-map` may benefit from the `--fail` option that stops the processing on the first encountered error.
+When running in a CI pipeline, `roxctl netpol connectivity map` may benefit from the `--fail` option that stops the processing on the first encountered error.
 
 Using the `--strict` parameter produces an error "_there were errors during execution_" if any warnings appeared during the processing. Note that the combination of `--strict` and `--fail` will not stop on the first warning, as the interpretation of warnings as errors happens at the end of execution.

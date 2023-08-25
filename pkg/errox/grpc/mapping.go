@@ -33,6 +33,8 @@ func RoxErrorToGRPCCode(err error) codes.Code {
 		return codes.Canceled
 	case errors.Is(err, context.DeadlineExceeded):
 		return codes.DeadlineExceeded
+	case errors.Is(err, errox.ServerError):
+		return codes.Internal
 	default:
 		return codes.Internal
 	}

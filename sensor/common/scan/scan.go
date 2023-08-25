@@ -12,11 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
@@ -61,6 +64,8 @@ type LocalScan struct {
 	maxSemaphoreWaitTime time.Duration
 
 	regFactory registries.Factory
+
+	mirrorStore registrymirror.Store
 }
 
 type registryStore interface {
@@ -75,7 +80,7 @@ type LocalScanCentralClient interface {
 }
 
 // NewLocalScan initializes a LocalScan struct
-func NewLocalScan(registryStore registryStore) *LocalScan {
+func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store) *LocalScan {
 	regFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: []registries.CreatorWrapper{
 			docker.CreatorWithoutRepoList,
@@ -92,62 +97,22 @@ func NewLocalScan(registryStore registryStore) *LocalScan {
 		createNoAuthImageRegistry:         createNoAuthImageRegistry,
 		getMatchingCentralRegIntegrations: registryStore.GetMatchingCentralRegistryIntegrations,
 		regFactory:                        regFactory,
+		mirrorStore:                       mirrorStore,
 	}
 }
 
-// EnrichLocalImageInNamespace invokes enrichLocalImageFromRegistry with a slice of credentials from the registryStore based on namespace as well as
-// the OCP global pull secret.
-//
-// If no registry credentials are found an empty registry slice is passed to enrichLocalImageFromRegistry for enriching with 'no auth'.
-func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, ci *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
-	imgName := ci.GetName()
-
-	regs := s.getRegistries(namespace, imgName)
-
-	log.Debugf("Attempting image enrich for %q in namespace %q with %v regs", ci.GetName().GetFullName(), namespace, len(regs))
-
-	return s.enrichLocalImageFromRegistry(ctx, centralClient, ci, regs, requestID, force)
-}
-
-func (s *LocalScan) getRegistries(namespace string, imgName *storage.ImageName) []registryTypes.ImageRegistry {
-	var regs []registryTypes.ImageRegistry
-
-	// Add registries from Central's image integrations.
-	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
-	if len(centralIntegrations) > 0 {
-		regs = append(regs, centralIntegrations...)
-	}
-
-	// Add registries from k8s pull secrets.
-	if namespace != "" {
-		// If namespace provided pull appropriate registry.
-		// An err indicates no registry was found, only append if was no err
-		if reg, err := s.getRegistryForImageInNamespace(imgName, namespace); err == nil {
-			regs = append(regs, reg)
-		}
-	}
-
-	// Add global pull secret registry
-	// An err indicates no registry was found, only append if was no err
-	if reg, err := s.getGlobalRegistryForImage(imgName); err == nil {
-		regs = append(regs, reg)
-	}
-
-	return regs
-}
-
-// enrichLocalImageFromRegistry will enrich an image with scan results from local scanner as well as signatures
+// EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
 // from the local registry. Afterwards, missing enriched data such as signature verification results and image
 // vulnerabilities will be fetched from central, returning the fully enriched image. A request is always sent
 // to central even if errors occur pulling metadata, scanning, or fetching signatures so that the error may be
 // recorded.
 //
-// Will use the first registry from registries that succeeds in pulling metadata, or if registries is empty will
-// assume no auth is required.
+// Will use the first registry that succeeds in pulling metadata from sync'd image integrations, pull secrets,
+// the OCP global pull secret, or no auth if no registry found.
 //
-// Will return any errors that may occur during scanning, fetching signatures or during reaching out to Central.
-func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralClient LocalScanCentralClient, ci *storage.ContainerImage, registries []registryTypes.ImageRegistry, requestID string, force bool) (*storage.Image, error) {
-	if ci == nil {
+// Will return any errors that may occur during scanning or when reaching out to Central.
+func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, srcImage *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
+	if srcImage == nil {
 		return nil, pkgErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
 	}
 
@@ -163,59 +128,171 @@ func (s *LocalScan) enrichLocalImageFromRegistry(ctx context.Context, centralCli
 	}
 	defer s.scanSemaphore.Release(1)
 
-	log.Debugf("Enriching image locally %q numRegs %v", ci.GetName().GetFullName(), len(registries))
-
-	if len(registries) == 0 {
-		// no registries provided, try with no auth.
-		reg, err := s.createNoAuthImageRegistry(ctx, ci.GetName(), s.regFactory)
-		if err != nil {
-			return nil, errors.Join(pkgErrors.Wrapf(err, "unable to create no auth registry for %q", ci.GetName()), ErrEnrichNotStarted)
-		}
-		registries = append(registries, reg)
-	}
+	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), namespace, requestID, force)
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
-	image := types.ToImage(ci)
-	image.Notes = make([]storage.Image_Note, 0)
-
 	// Enrich image with metadata from one of registries.
-	reg := s.enrichImageWithMetadata(errorList, registries, image)
+	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
 
 	// Perform partial scan (image analysis / identify components) via local scanner.
-	scannerResp := s.fetchImageAnalysis(ctx, errorList, reg, image)
+	scannerResp := s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
 
 	// Fetch signatures associated with image from registry.
-	sigs := s.fetchSignatures(ctx, errorList, reg, image)
+	sigs := s.fetchSignatures(ctx, errorList, reg, pullSourceImage)
 
 	// Send local enriched data to central to receive a fully enrich image. This includes image vulnerabilities and
 	// signature verification results.
 	centralResp, err := centralClient.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
-		ImageId:        image.GetId(),
-		ImageName:      image.GetName(),
-		Metadata:       image.GetMetadata(),
+		ImageId:        srcImage.GetId(),
+		ImageName:      srcImage.GetName(),
+		Metadata:       pullSourceImage.GetMetadata(),
 		Components:     scannerResp.GetComponents(),
 		Notes:          scannerResp.GetNotes(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
-		ImageNotes:     image.GetNotes(),
+		ImageNotes:     pullSourceImage.GetNotes(),
 		Error:          errorList.String(),
 		RequestId:      requestID,
 		Force:          force,
 	})
 	if err != nil {
-		log.Debugf("Unable to enrich image %q: %v", image.GetName().GetFullName(), err)
-		return nil, pkgErrors.Wrapf(err, "enriching image %q via central", image.GetName())
+		log.Debugf("Unable to enrich image %q: %v", srcImage.GetName().GetFullName(), err)
+		return nil, pkgErrors.Wrapf(err, "enriching image %q via central", srcImage.GetName())
 	}
 
 	if errorList.Empty() {
-		log.Debugf("Retrieved image enrichment results for %q with id %q", image.GetName().GetFullName(), image.GetId())
+		log.Debugf("Retrieved image enrichment results from Central for %q with id %q (%d) components", srcImage.GetName().GetFullName(), srcImage.GetId(), centralResp.GetImage().GetComponents())
 	}
 
 	return centralResp.GetImage(), errorList.ToError()
 }
 
+// getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
+// The image returned may represent the source image or an image from a registry mirror.
+func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, namespace string, sourceImage *storage.ContainerImage) (registryTypes.ImageRegistry, *storage.Image) {
+	// Obtain the pull sources, which will include mirrors.
+	pullSources := s.getPullSources(sourceImage)
+
+	// errs are only added to errorList when attempts from all pull sources + all registries fail.
+	errs := errorhelpers.NewErrorList("")
+
+	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
+	for _, pullSource := range pullSources {
+		registries, err := s.getRegistries(ctx, namespace, pullSource.GetName())
+		if err != nil {
+			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
+			errs.AddError(err)
+			continue
+		}
+
+		log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
+
+		// Create an image and attempt to enrich it with metadata.
+		pullSourceImage := types.ToImage(pullSource)
+		reg := s.enrichImageWithMetadata(errs, registries, pullSourceImage)
+		if reg != nil {
+			// Successful enrichment.
+			enrichImageDataSource(sourceImage, reg, pullSourceImage)
+
+			srcName := sourceImage.GetName().GetFullName()
+			srcID := sourceImage.GetId()
+			pullName := pullSourceImage.GetName().GetFullName()
+			pullID := pullSourceImage.GetId()
+			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and registry %q", srcName, srcID, pullName, pullID, reg.Name())
+			log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
+			return reg, pullSourceImage
+		}
+	}
+
+	// Attempts for every pull source and registry have failed.
+	errorList.AddErrors(errs.Errors()...)
+
+	image := types.ToImage(sourceImage)
+	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
+	return nil, image
+}
+
+func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryTypes.ImageRegistry, targetImg *storage.Image) {
+	ds := reg.DataSource().Clone()
+
+	// If target is a mirror, then add mirror details to the data source.
+	if sourceImage.GetName().GetFullName() != targetImg.GetName().GetFullName() {
+		ds.Mirror = targetImg.GetName().GetFullName()
+	}
+
+	targetImg.GetMetadata().DataSource = ds
+}
+
+// getRegistries will return registries that match the provided image, starting with image integrations sync'd from Central,
+// then namespace pull secrets, and lastly any global pull secrets (such as the OCP global pull secret). If no registries
+// are found will return a new registry that has no credentials.
+func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName *storage.ImageName) ([]registryTypes.ImageRegistry, error) {
+	var regs []registryTypes.ImageRegistry
+
+	// Add registries from Central's image integrations.
+	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
+	if len(centralIntegrations) > 0 {
+		regs = append(regs, centralIntegrations...)
+	}
+
+	// Add registries from k8s pull secrets.
+	if namespace != "" {
+		// If namespace provided pull appropriate registry.
+		// An err indicates no registry was found, only append if was no err.
+		if reg, err := s.getRegistryForImageInNamespace(imgName, namespace); err == nil {
+			regs = append(regs, reg)
+		}
+	}
+
+	// Add global pull secret registry.
+	// An err indicates no registry was found, only append if was no err.
+	if reg, err := s.getGlobalRegistryForImage(imgName); err == nil {
+		regs = append(regs, reg)
+	}
+
+	// Create a no auth registry if no other registries have been found.
+	if len(regs) == 0 {
+		// No registries found thus far, create a no auth registry.
+		reg, err := s.createNoAuthImageRegistry(ctx, imgName, s.regFactory)
+		if err != nil {
+			return nil, pkgErrors.Errorf("unable to create no auth registry for %q", imgName.GetFullName())
+		}
+		regs = append(regs, reg)
+	}
+
+	return regs, nil
+}
+
+func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.ContainerImage {
+	pullSources, err := s.mirrorStore.PullSources(srcImage.GetName().GetFullName())
+	if err != nil {
+		log.Warnf("Error obtaining pull sources: %v", err)
+	}
+
+	if len(pullSources) == 0 {
+		// If no pull source was found due to an error or some other reason, we
+		// default to the source image.
+		log.Debugf("Using source image only for enriching %q", srcImage.GetName().GetFullName())
+		return []*storage.ContainerImage{srcImage}
+	}
+
+	// Convert and filter the pull sources.
+	cImages := make([]*storage.ContainerImage, 0, len(pullSources))
+	for _, pullSource := range pullSources {
+		img, err := utils.GenerateImageFromString(pullSource)
+		if err != nil {
+			log.Warnf("Skipping pull source %q due to error generating image from string: %v", pullSource, err)
+			continue
+		}
+
+		cImages = append(cImages, img)
+	}
+
+	log.Debugf("Using %d pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), pullSources)
+	return cImages
+}
+
 // enrichImageWithMetadata will loop through registries returning the first that succeeds in enriching image with metadata.
-// If none succeed adds a note to the image and errors to errorList.
 func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, registries []registryTypes.ImageRegistry, image *storage.Image) registryTypes.ImageRegistry {
 	var errs []error
 	for _, reg := range registries {
@@ -225,19 +302,15 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 			errs = append(errs, err)
 			continue
 		}
-		metadata.DataSource = &storage.DataSource{}
 
 		// Ensure the metadata is set on the image we pass to i.e. fetching signatures. If no V2 digest is available for the
 		// image, the signature will not be attempted to be fetched.
 		// We don't need to do anything on central side, as there the image will correctly have the metadata assigned.
 		image.Metadata = metadata
-		log.Infof("Received metadata for image %q with id %q using reg %q", image.GetName().GetFullName(), image.GetId(), reg.Name())
-		log.Debugf("Metadata for image %q with id %q: %v", image.GetName().GetFullName(), image.GetId(), metadata)
 		return reg
 	}
 
 	errorList.AddErrors(errs...)
-	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
 	return nil
 }
 
@@ -270,10 +343,17 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 	// Fetch signatures from cluster-local registry.
 	sigs, err := s.fetchSignaturesWithRetry(ctx, signatures.NewSignatureFetcher(), image, image.GetName().GetFullName(), registry)
 	if err != nil {
-		log.Debugf("Failed fetching signatures for image %q: %v", image.GetName().GetFullName(), err)
+		// Like Central, only log errors related to fetching signatures.
+		if !errors.Is(err, errox.NotAuthorized) {
+			log.Errorf("Fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
+		} else {
+			// Log not authorized errors in debug mode, since we expect them to occur.
+			log.Debugf("Unauthorized error fetching image signatures for image %q: %v", image.GetName().GetFullName(), err)
+		}
+	}
+
+	if len(sigs) == 0 {
 		image.Notes = append(image.Notes, storage.Image_MISSING_SIGNATURE)
-		errorList.AddError(pkgErrors.Wrapf(err, "fetching signature for image %q from registry %q", image.GetName(), registry.Name()))
-		return nil
 	}
 
 	return sigs

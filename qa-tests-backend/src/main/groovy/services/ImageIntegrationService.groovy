@@ -161,6 +161,7 @@ class ImageIntegrationService extends BaseService {
         ImageIntegrationOuterClass.ImageIntegration existing =
             getImageIntegrationByName(Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION)
         if (existing) {
+            log.debug("${Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION} already exists")
             return existing.id
         }
         return StackroxScannerIntegration.createDefaultIntegration()

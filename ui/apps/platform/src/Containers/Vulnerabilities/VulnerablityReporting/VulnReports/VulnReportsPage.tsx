@@ -67,19 +67,13 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
-    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        hasReadAccess('Image') && // for vulnerabilities
+        hasReadAccess('Integration'); // for notifiers
 
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Access');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
-    const canCreateReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
-        hasNotifierIntegrationReadAccess;
-
+    const isRouteEnabled = useIsRouteEnabled();
     const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -175,7 +169,7 @@ function VulnReportsPage() {
                     </FlexItem>
                     {reportConfigurations &&
                         reportConfigurations.length > 0 &&
-                        canCreateReports && (
+                        hasWriteAccessForReport && (
                             <FlexItem>
                                 <CreateReportsButton />
                             </FlexItem>
@@ -298,7 +292,7 @@ function VulnReportsPage() {
                                             >
                                                 My active job status
                                             </HelpIconTh>
-                                            <Td />
+                                            {hasWriteAccessForReport && <Td />}
                                         </Tr>
                                     </Thead>
                                     {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
@@ -311,7 +305,7 @@ function VulnReportsPage() {
                                                             headingLevel="h2"
                                                             icon={FileIcon}
                                                         >
-                                                            {canCreateReports && (
+                                                            {hasWriteAccessForReport && (
                                                                 <Flex
                                                                     direction={{
                                                                         default: 'column',
@@ -345,7 +339,7 @@ function VulnReportsPage() {
                                                                 headingLevel="h2"
                                                                 icon={SearchIcon}
                                                             >
-                                                                {canCreateReports && (
+                                                                {hasWriteAccessForReport && (
                                                                     <Flex
                                                                         direction={{
                                                                             default: 'column',
@@ -497,12 +491,14 @@ function VulnReportsPage() {
                                                             }
                                                         />
                                                     </Td>
-                                                    <Td isActionCell>
-                                                        <ActionsColumn
-                                                            items={rowActions}
-                                                            isDisabled={isRunning}
-                                                        />
-                                                    </Td>
+                                                    {hasWriteAccessForReport && (
+                                                        <Td isActionCell>
+                                                            <ActionsColumn
+                                                                items={rowActions}
+                                                                isDisabled={isRunning}
+                                                            />
+                                                        </Td>
+                                                    )}
                                                 </Tr>
                                             </Tbody>
                                         );

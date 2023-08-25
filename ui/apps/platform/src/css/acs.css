@@ -1,21 +1,3 @@
-:root {
-    /*
-    * Global color variables for resource icons based on openshift console styles.
-    * An incomplete list, but should track colors defined in
-    * https://github.com/openshift/console/blob/b3cf77721f1c588fbbb6c795423958c9bd92325b/frontend/public/style/_vars.scss and
-    * https://github.com/openshift/console/blob/7f866284272db0d5898384ff116cea18351c9957/frontend/public/components/_resource.scss
-    * until we are able to share code across projects.
-    */
-    --color-resource-default: var(--pf-global--palette--blue-300);
-    --color-resource-cluster: var(--pf-global--palette--purple-600);
-    --color-resource-namespace: var(--pf-global--palette--green-600);
-    --color-resource-deployment: var(--pf-global--palette--blue-500);
-    --color-resource-secret: var(--pf-global--palette--orange-400);
-    --color-resource-configmap: var(--pf-global--palette--purple-600);
-    /* unknown has no openshift equivalent */
-    --color-resource-unknown: var(--pf-global--palette--black-500);
-}
-
 /*
  * A button with small font size like `isSmall` and reduced padding:
  * 4px instead of 6px vertical

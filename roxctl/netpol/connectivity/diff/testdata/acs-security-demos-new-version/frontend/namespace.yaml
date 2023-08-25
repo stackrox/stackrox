@@ -1,0 +1,8 @@
+# Namespace for payments
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+    exposed: 'true'

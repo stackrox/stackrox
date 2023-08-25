@@ -70,4 +70,5 @@ data:
 {{ .Files.Get "dashboards/cluster-health.json" | indent 4 }}
   dataplane.json: |-
 {{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
-
+  node-inventory.json: |-
+{{ .Files.Get "dashboards/node-inventory.json" | indent 4 }}

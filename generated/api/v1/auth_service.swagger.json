@@ -189,9 +189,14 @@
             "type": "string"
           },
           "description": "Specifies claims from IdP token that will be copied to Rox token attributes.\n\nEach key in this map contains a path in IdP token we want to map. Path is separated by \".\" symbol.\nFor example, if IdP token payload looks like:\n\n\n{\n\n     \"a\": {\n\n         \"b\" : \"c\",\n\n         \"d\": true,\n\n         \"e\": [ \"val1\", \"val2\", \"val3\" ],\n\n         \"f\": [ true, false, false ],\n\n         \"g\": 123.0,\n\n         \"h\": [ 1, 2, 3]\n\n     }\n\n}\n\n\nthen \"a.b\" would be a valid key and \"a.z\" is not.\n\nWe support the following types of claims:\n* string(path \"a.b\")\n* bool(path \"a.d\")\n* string array(path \"a.e\")\n* bool array (path \"a.f.\")\n\nWe do NOT support the following types of claims:\n* complex claims(path \"a\")\n* float/integer claims(path \"a.g\")\n* float/integer array claims(path \"a.h\")\n\nEach value in this map contains a Rox token attribute name we want to add claim to.\nIf, for example, value is \"groups\", claim would be found in \"external_user.Attributes.groups\" in token.\n\nNote: we only support this feature for OIDC auth provider."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated indicates the last time the auth provider has been updated.\n\nIn case there have been tokens issued by an auth provider _before_ this timestamp, they will be considered\ninvalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional\nlogin attempt)."
         }
       },
-      "title": "Next Tag: 13"
+      "description": "Next Tag: 15."
     },
     "storageServiceIdentity": {
       "type": "object",

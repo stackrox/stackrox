@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zeroday
+  namespace: zeroday
+  labels:
+    app: zeroday
+    exposed: "true"
+    app.kubernetes.io/part-of: zeroday
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zeroday
+  template:
+    metadata:
+      labels:
+        app: zeroday
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - image: quay.io/vuln/rce-webapp:alpine
+          command: ["/bin/entrypoint"]
+          args:
+            [
+              "-listen",
+              ":8080",
+            ]
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - all
+          imagePullPolicy: Always
+          name: zeroday
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: exploit
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: zeroday
+  name: zeroday-service
+  namespace: zeroday
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+      name: http
+  selector:
+    app: zeroday
+  type: ClusterIP

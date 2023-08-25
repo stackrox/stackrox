@@ -37,7 +37,7 @@ class StackroxScannerIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: Constants.AUTO_REGISTERED_STACKROX_SCANNER_INTEGRATION,
-                endpoint: "https://scanner.stackrox:8080",
+                endpoint: "https://scanner.stackrox.svc:8080",
         ]
         Map args = defaultArgs + customArgs
 
