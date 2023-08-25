@@ -22,6 +22,9 @@ type Writer interface {
 }
 
 // New returns a new writer instance.
-func New(_ store.Store) Writer {
-	return nil
+func New(store store.Store) Writer {
+	return &writerImpl{
+		buffer: make(map[string]*storage.Notification),
+		store:  store,
+	}
 }
