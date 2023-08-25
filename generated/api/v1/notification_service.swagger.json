@@ -13,13 +13,13 @@
   "paths": {
     "/v1/notifications": {
       "get": {
-        "summary": "GetNotifications returns the list of notifications. The events may be filtered by\ndedicated fields.",
-        "operationId": "NotificationService_GetNotifications",
+        "summary": "ListNotifications returns the list of notifications after filtered by requested fields.",
+        "operationId": "NotificationService_ListNotifications",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1NotificationsResponse"
+              "$ref": "#/definitions/v1ListNotificationsResponse"
             }
           },
           "default": {
@@ -31,7 +31,52 @@
         },
         "parameters": [
           {
-            "name": "from",
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "filter.from",
             "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary.",
             "in": "query",
             "required": false,
@@ -39,7 +84,7 @@
             "format": "date-time"
           },
           {
-            "name": "until",
+            "name": "filter.until",
             "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary.",
             "in": "query",
             "required": false,
@@ -47,33 +92,34 @@
             "format": "date-time"
           },
           {
-            "name": "domain",
+            "name": "filter.domain",
             "description": "For filtering notifications from a specific domain.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "resourceType",
+            "name": "filter.resourceType",
             "description": "For filtering notifications associated with a specific resource type.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "notificationType",
+            "name": "filter.notificationType",
             "description": "For filtering notifications based on their type.",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
+              "NOTIFICATION_TYPE_UNKNOWN",
               "NOTIFICATION_TYPE_GENERIC",
               "NOTIFICATION_TYPE_LOG_MESSAGE"
             ],
-            "default": "NOTIFICATION_TYPE_GENERIC"
+            "default": "NOTIFICATION_TYPE_UNKNOWN"
           },
           {
-            "name": "level",
+            "name": "filter.level",
             "description": "For filtering notifications based on their level.",
             "in": "query",
             "required": false,
@@ -101,7 +147,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1Notification"
+              "$ref": "#/definitions/v1GetNotificationResponse"
             }
           },
           "default": {
@@ -117,6 +163,89 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "NotificationService"
+        ]
+      }
+    },
+    "/v1/notificationscount": {
+      "get": {
+        "summary": "CountNotifications returns the number of notifications after filtered by requested fields.",
+        "operationId": "NotificationService_CountNotifications",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountNotificationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filter.from",
+            "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.until",
+            "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.domain",
+            "description": "For filtering notifications from a specific domain.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.resourceType",
+            "description": "For filtering notifications associated with a specific resource type.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.notificationType",
+            "description": "For filtering notifications based on their type.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_TYPE_UNKNOWN",
+              "NOTIFICATION_TYPE_GENERIC",
+              "NOTIFICATION_TYPE_LOG_MESSAGE"
+            ],
+            "default": "NOTIFICATION_TYPE_UNKNOWN"
+          },
+          {
+            "name": "filter.level",
+            "description": "For filtering notifications based on their level.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "NOTIFICATION_LEVEL_UNKNOWN",
+              "NOTIFICATION_LEVEL_INFO",
+              "NOTIFICATION_LEVEL_SUCCESS",
+              "NOTIFICATION_LEVEL_WARN",
+              "NOTIFICATION_LEVEL_DANGER"
+            ],
+            "default": "NOTIFICATION_LEVEL_UNKNOWN"
           }
         ],
         "tags": [
@@ -182,6 +311,35 @@
         "MAX"
       ],
       "default": "UNSET"
+    },
+    "v1CountNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of notifications after filtering and deduplication."
+        }
+      }
+    },
+    "v1GetNotificationResponse": {
+      "type": "object",
+      "properties": {
+        "notification": {
+          "$ref": "#/definitions/v1Notification"
+        }
+      }
+    },
+    "v1ListNotificationsResponse": {
+      "type": "object",
+      "properties": {
+        "notifications": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1Notification"
+          }
+        }
+      }
     },
     "v1Notification": {
       "type": "object",
@@ -251,23 +409,41 @@
     "v1NotificationType": {
       "type": "string",
       "enum": [
+        "NOTIFICATION_TYPE_UNKNOWN",
         "NOTIFICATION_TYPE_GENERIC",
         "NOTIFICATION_TYPE_LOG_MESSAGE"
       ],
-      "default": "NOTIFICATION_TYPE_GENERIC",
+      "default": "NOTIFICATION_TYPE_UNKNOWN",
       "description": "Notification type exposes the different types of notifications.\nCurrently, the notification type is either generic or contains a log message."
     },
-    "v1NotificationsResponse": {
+    "v1NotificationsFilter": {
       "type": "object",
       "properties": {
-        "notifications": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1Notification"
-          }
+        "from": {
+          "type": "string",
+          "format": "date-time",
+          "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary."
         },
-        "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+        "until": {
+          "type": "string",
+          "format": "date-time",
+          "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary."
+        },
+        "domain": {
+          "type": "string",
+          "description": "For filtering notifications from a specific domain."
+        },
+        "resourceType": {
+          "type": "string",
+          "description": "For filtering notifications associated with a specific resource type."
+        },
+        "notificationType": {
+          "$ref": "#/definitions/v1NotificationType",
+          "description": "For filtering notifications based on their type."
+        },
+        "level": {
+          "$ref": "#/definitions/v1NotificationLevel",
+          "description": "For filtering notifications based on their level."
         }
       }
     },

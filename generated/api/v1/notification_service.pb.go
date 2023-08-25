@@ -32,18 +32,21 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type NotificationType int32
 
 const (
-	NotificationType_NOTIFICATION_TYPE_GENERIC     NotificationType = 0
-	NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE NotificationType = 1
+	NotificationType_NOTIFICATION_TYPE_UNKNOWN     NotificationType = 0
+	NotificationType_NOTIFICATION_TYPE_GENERIC     NotificationType = 1
+	NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE NotificationType = 2
 )
 
 var NotificationType_name = map[int32]string{
-	0: "NOTIFICATION_TYPE_GENERIC",
-	1: "NOTIFICATION_TYPE_LOG_MESSAGE",
+	0: "NOTIFICATION_TYPE_UNKNOWN",
+	1: "NOTIFICATION_TYPE_GENERIC",
+	2: "NOTIFICATION_TYPE_LOG_MESSAGE",
 }
 
 var NotificationType_value = map[string]int32{
-	"NOTIFICATION_TYPE_GENERIC":     0,
-	"NOTIFICATION_TYPE_LOG_MESSAGE": 1,
+	"NOTIFICATION_TYPE_UNKNOWN":     0,
+	"NOTIFICATION_TYPE_GENERIC":     1,
+	"NOTIFICATION_TYPE_LOG_MESSAGE": 2,
 }
 
 func (x NotificationType) String() string {
@@ -87,189 +90,6 @@ func (x NotificationLevel) String() string {
 
 func (NotificationLevel) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_4a870580de356350, []int{1}
-}
-
-type NotificationsResponse struct {
-	Notifications        []*Notification `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
-	Pagination           *Pagination     `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
-}
-
-func (m *NotificationsResponse) Reset()         { *m = NotificationsResponse{} }
-func (m *NotificationsResponse) String() string { return proto.CompactTextString(m) }
-func (*NotificationsResponse) ProtoMessage()    {}
-func (*NotificationsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a870580de356350, []int{0}
-}
-func (m *NotificationsResponse) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *NotificationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_NotificationsResponse.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *NotificationsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NotificationsResponse.Merge(m, src)
-}
-func (m *NotificationsResponse) XXX_Size() int {
-	return m.Size()
-}
-func (m *NotificationsResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_NotificationsResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_NotificationsResponse proto.InternalMessageInfo
-
-func (m *NotificationsResponse) GetNotifications() []*Notification {
-	if m != nil {
-		return m.Notifications
-	}
-	return nil
-}
-
-func (m *NotificationsResponse) GetPagination() *Pagination {
-	if m != nil {
-		return m.Pagination
-	}
-	return nil
-}
-
-func (m *NotificationsResponse) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *NotificationsResponse) Clone() *NotificationsResponse {
-	if m == nil {
-		return nil
-	}
-	cloned := new(NotificationsResponse)
-	*cloned = *m
-
-	if m.Notifications != nil {
-		cloned.Notifications = make([]*Notification, len(m.Notifications))
-		for idx, v := range m.Notifications {
-			cloned.Notifications[idx] = v.Clone()
-		}
-	}
-	cloned.Pagination = m.Pagination.Clone()
-	return cloned
-}
-
-type GetNotificationsRequest struct {
-	// For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
-	From *types.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
-	// For filtering notifications up until a specific timestamp, i.e. the upper boundary.
-	Until *types.Timestamp `protobuf:"bytes,2,opt,name=until,proto3" json:"until,omitempty"`
-	// For filtering notifications from a specific domain.
-	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
-	// For filtering notifications associated with a specific resource type.
-	ResourceType string `protobuf:"bytes,4,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
-	// For filtering notifications based on their type.
-	NotificationType NotificationType `protobuf:"varint,5,opt,name=notification_type,json=notificationType,proto3,enum=v1.NotificationType" json:"notification_type,omitempty"`
-	// For filtering notifications based on their level.
-	Level                NotificationLevel `protobuf:"varint,6,opt,name=level,proto3,enum=v1.NotificationLevel" json:"level,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
-}
-
-func (m *GetNotificationsRequest) Reset()         { *m = GetNotificationsRequest{} }
-func (m *GetNotificationsRequest) String() string { return proto.CompactTextString(m) }
-func (*GetNotificationsRequest) ProtoMessage()    {}
-func (*GetNotificationsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a870580de356350, []int{1}
-}
-func (m *GetNotificationsRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *GetNotificationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_GetNotificationsRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *GetNotificationsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetNotificationsRequest.Merge(m, src)
-}
-func (m *GetNotificationsRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *GetNotificationsRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetNotificationsRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetNotificationsRequest proto.InternalMessageInfo
-
-func (m *GetNotificationsRequest) GetFrom() *types.Timestamp {
-	if m != nil {
-		return m.From
-	}
-	return nil
-}
-
-func (m *GetNotificationsRequest) GetUntil() *types.Timestamp {
-	if m != nil {
-		return m.Until
-	}
-	return nil
-}
-
-func (m *GetNotificationsRequest) GetDomain() string {
-	if m != nil {
-		return m.Domain
-	}
-	return ""
-}
-
-func (m *GetNotificationsRequest) GetResourceType() string {
-	if m != nil {
-		return m.ResourceType
-	}
-	return ""
-}
-
-func (m *GetNotificationsRequest) GetNotificationType() NotificationType {
-	if m != nil {
-		return m.NotificationType
-	}
-	return NotificationType_NOTIFICATION_TYPE_GENERIC
-}
-
-func (m *GetNotificationsRequest) GetLevel() NotificationLevel {
-	if m != nil {
-		return m.Level
-	}
-	return NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
-}
-
-func (m *GetNotificationsRequest) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *GetNotificationsRequest) Clone() *GetNotificationsRequest {
-	if m == nil {
-		return nil
-	}
-	cloned := new(GetNotificationsRequest)
-	*cloned = *m
-
-	cloned.From = m.From.Clone()
-	cloned.Until = m.Until.Clone()
-	return cloned
 }
 
 // Notifications are emitted by Central. They are used to create transparency for users
@@ -316,7 +136,7 @@ func (m *Notification) Reset()         { *m = Notification{} }
 func (m *Notification) String() string { return proto.CompactTextString(m) }
 func (*Notification) ProtoMessage()    {}
 func (*Notification) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a870580de356350, []int{2}
+	return fileDescriptor_4a870580de356350, []int{0}
 }
 func (m *Notification) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -356,7 +176,7 @@ func (m *Notification) GetType() NotificationType {
 	if m != nil {
 		return m.Type
 	}
-	return NotificationType_NOTIFICATION_TYPE_GENERIC
+	return NotificationType_NOTIFICATION_TYPE_UNKNOWN
 }
 
 func (m *Notification) GetLevel() NotificationLevel {
@@ -437,63 +257,504 @@ func (m *Notification) Clone() *Notification {
 	return cloned
 }
 
+type NotificationsFilter struct {
+	// For filtering notifications starting from a specific timestamp, i.e. the lower boundary.
+	From *types.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	// For filtering notifications up until a specific timestamp, i.e. the upper boundary.
+	Until *types.Timestamp `protobuf:"bytes,2,opt,name=until,proto3" json:"until,omitempty"`
+	// For filtering notifications from a specific domain.
+	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+	// For filtering notifications associated with a specific resource type.
+	ResourceType string `protobuf:"bytes,4,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
+	// For filtering notifications based on their type.
+	NotificationType NotificationType `protobuf:"varint,5,opt,name=notification_type,json=notificationType,proto3,enum=v1.NotificationType" json:"notification_type,omitempty"`
+	// For filtering notifications based on their level.
+	Level                NotificationLevel `protobuf:"varint,6,opt,name=level,proto3,enum=v1.NotificationLevel" json:"level,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
+}
+
+func (m *NotificationsFilter) Reset()         { *m = NotificationsFilter{} }
+func (m *NotificationsFilter) String() string { return proto.CompactTextString(m) }
+func (*NotificationsFilter) ProtoMessage()    {}
+func (*NotificationsFilter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{1}
+}
+func (m *NotificationsFilter) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *NotificationsFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_NotificationsFilter.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *NotificationsFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NotificationsFilter.Merge(m, src)
+}
+func (m *NotificationsFilter) XXX_Size() int {
+	return m.Size()
+}
+func (m *NotificationsFilter) XXX_DiscardUnknown() {
+	xxx_messageInfo_NotificationsFilter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NotificationsFilter proto.InternalMessageInfo
+
+func (m *NotificationsFilter) GetFrom() *types.Timestamp {
+	if m != nil {
+		return m.From
+	}
+	return nil
+}
+
+func (m *NotificationsFilter) GetUntil() *types.Timestamp {
+	if m != nil {
+		return m.Until
+	}
+	return nil
+}
+
+func (m *NotificationsFilter) GetDomain() string {
+	if m != nil {
+		return m.Domain
+	}
+	return ""
+}
+
+func (m *NotificationsFilter) GetResourceType() string {
+	if m != nil {
+		return m.ResourceType
+	}
+	return ""
+}
+
+func (m *NotificationsFilter) GetNotificationType() NotificationType {
+	if m != nil {
+		return m.NotificationType
+	}
+	return NotificationType_NOTIFICATION_TYPE_UNKNOWN
+}
+
+func (m *NotificationsFilter) GetLevel() NotificationLevel {
+	if m != nil {
+		return m.Level
+	}
+	return NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
+}
+
+func (m *NotificationsFilter) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *NotificationsFilter) Clone() *NotificationsFilter {
+	if m == nil {
+		return nil
+	}
+	cloned := new(NotificationsFilter)
+	*cloned = *m
+
+	cloned.From = m.From.Clone()
+	cloned.Until = m.Until.Clone()
+	return cloned
+}
+
+type CountNotificationsRequest struct {
+	// For filtering the notifications based on the requested fields.
+	Filter               *NotificationsFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *CountNotificationsRequest) Reset()         { *m = CountNotificationsRequest{} }
+func (m *CountNotificationsRequest) String() string { return proto.CompactTextString(m) }
+func (*CountNotificationsRequest) ProtoMessage()    {}
+func (*CountNotificationsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{2}
+}
+func (m *CountNotificationsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CountNotificationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CountNotificationsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CountNotificationsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountNotificationsRequest.Merge(m, src)
+}
+func (m *CountNotificationsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *CountNotificationsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountNotificationsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountNotificationsRequest proto.InternalMessageInfo
+
+func (m *CountNotificationsRequest) GetFilter() *NotificationsFilter {
+	if m != nil {
+		return m.Filter
+	}
+	return nil
+}
+
+func (m *CountNotificationsRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CountNotificationsRequest) Clone() *CountNotificationsRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CountNotificationsRequest)
+	*cloned = *m
+
+	cloned.Filter = m.Filter.Clone()
+	return cloned
+}
+
+type CountNotificationsResponse struct {
+	// The total number of notifications after filtering and deduplication.
+	Count                int64    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CountNotificationsResponse) Reset()         { *m = CountNotificationsResponse{} }
+func (m *CountNotificationsResponse) String() string { return proto.CompactTextString(m) }
+func (*CountNotificationsResponse) ProtoMessage()    {}
+func (*CountNotificationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{3}
+}
+func (m *CountNotificationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CountNotificationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CountNotificationsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CountNotificationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CountNotificationsResponse.Merge(m, src)
+}
+func (m *CountNotificationsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *CountNotificationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CountNotificationsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CountNotificationsResponse proto.InternalMessageInfo
+
+func (m *CountNotificationsResponse) GetCount() int64 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+func (m *CountNotificationsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *CountNotificationsResponse) Clone() *CountNotificationsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(CountNotificationsResponse)
+	*cloned = *m
+
+	return cloned
+}
+
+type GetNotificationResponse struct {
+	Notification         *Notification `protobuf:"bytes,1,opt,name=notification,proto3" json:"notification,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
+}
+
+func (m *GetNotificationResponse) Reset()         { *m = GetNotificationResponse{} }
+func (m *GetNotificationResponse) String() string { return proto.CompactTextString(m) }
+func (*GetNotificationResponse) ProtoMessage()    {}
+func (*GetNotificationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{4}
+}
+func (m *GetNotificationResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetNotificationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetNotificationResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetNotificationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNotificationResponse.Merge(m, src)
+}
+func (m *GetNotificationResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetNotificationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNotificationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNotificationResponse proto.InternalMessageInfo
+
+func (m *GetNotificationResponse) GetNotification() *Notification {
+	if m != nil {
+		return m.Notification
+	}
+	return nil
+}
+
+func (m *GetNotificationResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetNotificationResponse) Clone() *GetNotificationResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetNotificationResponse)
+	*cloned = *m
+
+	cloned.Notification = m.Notification.Clone()
+	return cloned
+}
+
+type ListNotificationsRequest struct {
+	// For dividing the notifications response into chunks.
+	Pagination *Pagination `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// For filtering the notifications based on the requested fields.
+	Filter               *NotificationsFilter `protobuf:"bytes,2,opt,name=filter,proto3" json:"filter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *ListNotificationsRequest) Reset()         { *m = ListNotificationsRequest{} }
+func (m *ListNotificationsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListNotificationsRequest) ProtoMessage()    {}
+func (*ListNotificationsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{5}
+}
+func (m *ListNotificationsRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListNotificationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListNotificationsRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListNotificationsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNotificationsRequest.Merge(m, src)
+}
+func (m *ListNotificationsRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListNotificationsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNotificationsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNotificationsRequest proto.InternalMessageInfo
+
+func (m *ListNotificationsRequest) GetPagination() *Pagination {
+	if m != nil {
+		return m.Pagination
+	}
+	return nil
+}
+
+func (m *ListNotificationsRequest) GetFilter() *NotificationsFilter {
+	if m != nil {
+		return m.Filter
+	}
+	return nil
+}
+
+func (m *ListNotificationsRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListNotificationsRequest) Clone() *ListNotificationsRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListNotificationsRequest)
+	*cloned = *m
+
+	cloned.Pagination = m.Pagination.Clone()
+	cloned.Filter = m.Filter.Clone()
+	return cloned
+}
+
+type ListNotificationsResponse struct {
+	Notifications        []*Notification `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *ListNotificationsResponse) Reset()         { *m = ListNotificationsResponse{} }
+func (m *ListNotificationsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListNotificationsResponse) ProtoMessage()    {}
+func (*ListNotificationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_4a870580de356350, []int{6}
+}
+func (m *ListNotificationsResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ListNotificationsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ListNotificationsResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ListNotificationsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNotificationsResponse.Merge(m, src)
+}
+func (m *ListNotificationsResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *ListNotificationsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNotificationsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNotificationsResponse proto.InternalMessageInfo
+
+func (m *ListNotificationsResponse) GetNotifications() []*Notification {
+	if m != nil {
+		return m.Notifications
+	}
+	return nil
+}
+
+func (m *ListNotificationsResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *ListNotificationsResponse) Clone() *ListNotificationsResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(ListNotificationsResponse)
+	*cloned = *m
+
+	if m.Notifications != nil {
+		cloned.Notifications = make([]*Notification, len(m.Notifications))
+		for idx, v := range m.Notifications {
+			cloned.Notifications[idx] = v.Clone()
+		}
+	}
+	return cloned
+}
+
 func init() {
 	proto.RegisterEnum("v1.NotificationType", NotificationType_name, NotificationType_value)
 	proto.RegisterEnum("v1.NotificationLevel", NotificationLevel_name, NotificationLevel_value)
-	proto.RegisterType((*NotificationsResponse)(nil), "v1.NotificationsResponse")
-	proto.RegisterType((*GetNotificationsRequest)(nil), "v1.GetNotificationsRequest")
 	proto.RegisterType((*Notification)(nil), "v1.Notification")
+	proto.RegisterType((*NotificationsFilter)(nil), "v1.NotificationsFilter")
+	proto.RegisterType((*CountNotificationsRequest)(nil), "v1.CountNotificationsRequest")
+	proto.RegisterType((*CountNotificationsResponse)(nil), "v1.CountNotificationsResponse")
+	proto.RegisterType((*GetNotificationResponse)(nil), "v1.GetNotificationResponse")
+	proto.RegisterType((*ListNotificationsRequest)(nil), "v1.ListNotificationsRequest")
+	proto.RegisterType((*ListNotificationsResponse)(nil), "v1.ListNotificationsResponse")
 }
 
 func init() { proto.RegisterFile("api/v1/notification_service.proto", fileDescriptor_4a870580de356350) }
 
 var fileDescriptor_4a870580de356350 = []byte{
-	// 717 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x94, 0xcd, 0x6e, 0xd3, 0x40,
-	0x10, 0xc7, 0x63, 0x27, 0x4d, 0xc9, 0xa4, 0x2d, 0xee, 0x96, 0xb6, 0x6e, 0x4a, 0xd3, 0x34, 0x5c,
-	0xa2, 0x22, 0x39, 0x24, 0x48, 0x48, 0x9c, 0x50, 0x9a, 0xba, 0x51, 0x44, 0x70, 0x2a, 0x27, 0xa5,
-	0xc0, 0xc5, 0x72, 0xed, 0x6d, 0x58, 0x91, 0x78, 0x8d, 0xbd, 0x89, 0xa8, 0x10, 0x42, 0xe2, 0x15,
-	0xb8, 0x70, 0xe3, 0xca, 0x81, 0x07, 0xe1, 0x88, 0xd4, 0x17, 0x40, 0x85, 0x07, 0x41, 0x59, 0x3b,
-	0xad, 0xeb, 0xf4, 0xe3, 0xe6, 0x9d, 0xf9, 0xfd, 0x67, 0x67, 0xc6, 0xb3, 0x03, 0x5b, 0xa6, 0x4b,
-	0xca, 0xa3, 0x4a, 0xd9, 0xa1, 0x8c, 0x1c, 0x13, 0xcb, 0x64, 0x84, 0x3a, 0x86, 0x8f, 0xbd, 0x11,
-	0xb1, 0xb0, 0xe2, 0x7a, 0x94, 0x51, 0x24, 0x8e, 0x2a, 0xb9, 0xfb, 0x3d, 0x4a, 0x7b, 0x7d, 0x5c,
-	0x1e, 0xd3, 0xa6, 0xe3, 0x50, 0xc6, 0x41, 0x3f, 0x20, 0x72, 0x4b, 0x61, 0x10, 0x8b, 0x0e, 0x06,
-	0xd4, 0x09, 0x8d, 0xab, 0xa1, 0xd1, 0x35, 0x7b, 0xc4, 0xe1, 0x78, 0xe8, 0xd8, 0x0c, 0x63, 0xf1,
-	0xd3, 0xd1, 0xf0, 0xb8, 0xcc, 0xc8, 0x00, 0xfb, 0xcc, 0x1c, 0xb8, 0x01, 0x50, 0xfc, 0x0c, 0xcb,
-	0x5a, 0x24, 0x1d, 0x5f, 0xc7, 0xbe, 0x4b, 0x1d, 0x1f, 0xa3, 0x27, 0x30, 0x1f, 0xcd, 0xd3, 0x97,
-	0x85, 0x42, 0xb2, 0x94, 0xad, 0x4a, 0xca, 0xa8, 0xa2, 0x44, 0x15, 0xfa, 0x65, 0x0c, 0x29, 0x00,
-	0x17, 0x59, 0xc8, 0x62, 0x41, 0x28, 0x65, 0xab, 0x0b, 0x63, 0xd1, 0xfe, 0xb9, 0x55, 0x8f, 0x10,
-	0xc5, 0x1f, 0x22, 0xac, 0x36, 0x30, 0x8b, 0x25, 0xf1, 0x7e, 0x88, 0x7d, 0x86, 0x14, 0x48, 0x1d,
-	0x7b, 0x74, 0x20, 0x0b, 0x3c, 0x4a, 0x4e, 0x09, 0x8a, 0x51, 0x26, 0xc5, 0x28, 0xdd, 0x49, 0x31,
-	0x3a, 0xe7, 0xd0, 0x23, 0x98, 0x19, 0x3a, 0x8c, 0xf4, 0xc3, 0x6b, 0x6f, 0x12, 0x04, 0x20, 0x5a,
-	0x81, 0xb4, 0x4d, 0x07, 0x26, 0x71, 0xe4, 0x64, 0x41, 0x28, 0x65, 0xf4, 0xf0, 0x84, 0x1e, 0xc0,
-	0xbc, 0x87, 0x7d, 0x3a, 0xf4, 0x2c, 0x6c, 0xb0, 0x13, 0x17, 0xcb, 0x29, 0xee, 0x9e, 0x9b, 0x18,
-	0xbb, 0x27, 0x2e, 0x46, 0x35, 0x58, 0xbc, 0xf4, 0x2b, 0x39, 0x38, 0x53, 0x10, 0x4a, 0x0b, 0xd5,
-	0x7b, 0xf1, 0x36, 0x8d, 0x05, 0xba, 0xe4, 0xc4, 0x2c, 0xe8, 0x21, 0xcc, 0xf4, 0xf1, 0x08, 0xf7,
-	0xe5, 0x34, 0x97, 0x2d, 0xc7, 0x65, 0xad, 0xb1, 0x53, 0x0f, 0x98, 0xe2, 0xf7, 0x24, 0xcc, 0x45,
-	0x9d, 0x68, 0x01, 0x44, 0x62, 0xf3, 0xee, 0x64, 0x74, 0x91, 0xd8, 0xa8, 0x04, 0x29, 0x9e, 0x83,
-	0x78, 0x43, 0x0e, 0x9c, 0xb8, 0xb8, 0x37, 0x79, 0xfb, 0xbd, 0x48, 0x86, 0xd9, 0x01, 0xf6, 0x7d,
-	0xb3, 0x37, 0x69, 0xc3, 0xe4, 0x88, 0x10, 0xa4, 0xde, 0x12, 0x87, 0xf1, 0xa2, 0x33, 0x3a, 0xff,
-	0x8e, 0xb4, 0x34, 0x7d, 0x73, 0x4b, 0x67, 0xaf, 0x68, 0xe9, 0x26, 0x64, 0xcf, 0x21, 0x62, 0xcb,
-	0x77, 0x38, 0x02, 0x13, 0x53, 0xd3, 0x46, 0x05, 0xc8, 0x52, 0xcb, 0x1a, 0x7a, 0x1e, 0x76, 0x2c,
-	0xec, 0xcb, 0x99, 0x82, 0x50, 0x4a, 0xea, 0x51, 0x13, 0x7a, 0x06, 0xf3, 0x7d, 0xd3, 0x67, 0x46,
-	0x68, 0xb3, 0x65, 0xb8, 0x75, 0x18, 0xe6, 0xc6, 0x82, 0x76, 0xc8, 0xa3, 0xa7, 0x00, 0x96, 0x87,
-	0x4d, 0x86, 0x6d, 0xc3, 0x64, 0x72, 0xf6, 0x56, 0x75, 0x26, 0xa4, 0x6b, 0x6c, 0xbb, 0x0b, 0x52,
-	0xbc, 0xe1, 0x68, 0x03, 0xd6, 0xb4, 0x76, 0xb7, 0xb9, 0xd7, 0xac, 0xd7, 0xba, 0xcd, 0xb6, 0x66,
-	0x74, 0x5f, 0xef, 0xab, 0x46, 0x43, 0xd5, 0x54, 0xbd, 0x59, 0x97, 0x12, 0x68, 0x0b, 0x36, 0xa6,
-	0xdd, 0xad, 0x76, 0xc3, 0x78, 0xa1, 0x76, 0x3a, 0xb5, 0x86, 0x2a, 0x09, 0xdb, 0x3f, 0x05, 0x58,
-	0x9c, 0xfa, 0x39, 0x28, 0x0f, 0xb9, 0x4b, 0xc2, 0x96, 0xfa, 0x52, 0x6d, 0x19, 0x07, 0xda, 0x73,
-	0xad, 0x7d, 0xa8, 0x49, 0x09, 0xb4, 0x0e, 0xab, 0x57, 0xf8, 0x9b, 0xda, 0x5e, 0x5b, 0x12, 0xae,
-	0x11, 0x77, 0x0e, 0xea, 0x75, 0xb5, 0xd3, 0x91, 0xc4, 0x6b, 0xc4, 0x87, 0x35, 0x5d, 0x93, 0x92,
-	0x53, 0x15, 0x05, 0xce, 0xdd, 0x9a, 0xd6, 0x50, 0x75, 0x29, 0x55, 0x3d, 0x15, 0x60, 0x29, 0x9a,
-	0x6e, 0x27, 0xd8, 0x70, 0x08, 0x83, 0x14, 0x7f, 0xe8, 0x68, 0x7d, 0x3c, 0x78, 0xd7, 0x3c, 0xff,
-	0xdc, 0x5a, 0x7c, 0x2a, 0xcf, 0xb7, 0x53, 0x71, 0xed, 0xcb, 0xe9, 0xbf, 0xaf, 0xe2, 0x12, 0x5a,
-	0x8c, 0xef, 0x53, 0x1f, 0x1d, 0xc0, 0xdd, 0x58, 0x40, 0xc4, 0x97, 0x96, 0x1e, 0x0e, 0xd1, 0xce,
-	0x49, 0x73, 0x37, 0x37, 0xb5, 0xc6, 0x8a, 0x79, 0x1e, 0x51, 0x46, 0x2b, 0x53, 0x11, 0xcb, 0x1f,
-	0x89, 0xfd, 0x69, 0x47, 0xf9, 0x75, 0x96, 0x17, 0x7e, 0x9f, 0xe5, 0x85, 0x3f, 0x67, 0x79, 0xe1,
-	0xdb, 0xdf, 0x7c, 0x02, 0x64, 0x42, 0x15, 0x9f, 0x99, 0xd6, 0x3b, 0x8f, 0x7e, 0x08, 0xe6, 0x42,
-	0x31, 0x5d, 0xa2, 0x8c, 0x2a, 0x6f, 0xc4, 0x51, 0xe5, 0x55, 0xe2, 0x28, 0xcd, 0x6d, 0x8f, 0xff,
-	0x07, 0x00, 0x00, 0xff, 0xff, 0x31, 0xc8, 0x55, 0x24, 0xf7, 0x05, 0x00, 0x00,
+	// 819 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0x4d, 0x8f, 0xdb, 0x44,
+	0x18, 0x5e, 0x3b, 0x1f, 0x65, 0xdf, 0xfd, 0xc0, 0x3b, 0x5b, 0xba, 0x8e, 0xdb, 0xa4, 0x69, 0xb8,
+	0x44, 0x45, 0x72, 0x48, 0x40, 0x48, 0x9c, 0x50, 0x9a, 0x7a, 0xa3, 0x88, 0xe0, 0x54, 0x4e, 0x4a,
+	0x81, 0x4b, 0x70, 0xed, 0x49, 0x18, 0x35, 0xf1, 0x18, 0xcf, 0x24, 0x62, 0x55, 0x71, 0xe1, 0x2f,
+	0x70, 0xe1, 0xc6, 0x85, 0x23, 0x3f, 0x84, 0x23, 0x12, 0x27, 0x6e, 0x68, 0xe1, 0x87, 0x20, 0x8f,
+	0x27, 0x5b, 0xc7, 0xf9, 0xd8, 0xde, 0x32, 0xcf, 0xfb, 0xbc, 0x1f, 0xf3, 0xbc, 0xcf, 0xc4, 0xf0,
+	0xc8, 0x0d, 0x49, 0x63, 0xd9, 0x6c, 0x04, 0x94, 0x93, 0x09, 0xf1, 0x5c, 0x4e, 0x68, 0x30, 0x66,
+	0x38, 0x5a, 0x12, 0x0f, 0x9b, 0x61, 0x44, 0x39, 0x45, 0xea, 0xb2, 0x69, 0x3c, 0x98, 0x52, 0x3a,
+	0x9d, 0xe1, 0x46, 0xcc, 0x76, 0x83, 0x80, 0x72, 0x41, 0x64, 0x09, 0xc3, 0x38, 0x97, 0x45, 0x3c,
+	0x3a, 0x9f, 0xd3, 0x40, 0x82, 0x17, 0x12, 0x0c, 0xdd, 0x29, 0x09, 0x04, 0x5d, 0x06, 0x1e, 0xca,
+	0x5a, 0xe2, 0xf4, 0x72, 0x31, 0x69, 0x70, 0x32, 0xc7, 0x8c, 0xbb, 0xf3, 0x30, 0x21, 0xd4, 0x7e,
+	0xcd, 0xc1, 0xb1, 0x9d, 0x9a, 0x07, 0x9d, 0x82, 0x4a, 0x7c, 0x5d, 0xa9, 0x2a, 0xf5, 0x43, 0x47,
+	0x25, 0x3e, 0xaa, 0x43, 0x9e, 0x5f, 0x85, 0x58, 0x57, 0xab, 0x4a, 0xfd, 0xb4, 0x75, 0xd7, 0x5c,
+	0x36, 0xcd, 0x34, 0x7f, 0x74, 0x15, 0x62, 0x47, 0x30, 0xd0, 0x07, 0x50, 0x98, 0xe1, 0x25, 0x9e,
+	0xe9, 0x39, 0x41, 0x7d, 0x2f, 0x4b, 0xed, 0xc7, 0x41, 0x27, 0xe1, 0x20, 0x1d, 0xee, 0xcc, 0x31,
+	0x63, 0xee, 0x14, 0xeb, 0x79, 0xd1, 0x6b, 0x75, 0x44, 0x08, 0xf2, 0xdf, 0x91, 0x80, 0xeb, 0x05,
+	0x01, 0x8b, 0xdf, 0xe8, 0x1e, 0x14, 0x7d, 0x3a, 0x77, 0x49, 0xa0, 0x17, 0x05, 0x2a, 0x4f, 0xe8,
+	0x7d, 0x38, 0x89, 0x30, 0xa3, 0x8b, 0xc8, 0xc3, 0x63, 0x31, 0xe5, 0x1d, 0x11, 0x3e, 0x5e, 0x81,
+	0xf1, 0x74, 0xe8, 0x21, 0x1c, 0xdd, 0x90, 0x88, 0xaf, 0xbf, 0x23, 0x28, 0xb0, 0x82, 0x7a, 0x3e,
+	0xaa, 0xc2, 0x11, 0xf5, 0xbc, 0x45, 0x14, 0xe1, 0xc0, 0xc3, 0x4c, 0x3f, 0xac, 0x2a, 0xf5, 0x9c,
+	0x93, 0x86, 0xd0, 0x67, 0x70, 0x32, 0x73, 0x19, 0x1f, 0x4b, 0xcc, 0xd7, 0xa1, 0xaa, 0xd4, 0x8f,
+	0x5a, 0x86, 0x99, 0xc8, 0x6b, 0xae, 0xe4, 0x35, 0x47, 0x2b, 0x79, 0x9d, 0xe3, 0x38, 0x61, 0x20,
+	0xf9, 0xe8, 0x53, 0x00, 0x2f, 0xc2, 0x2e, 0xc7, 0xfe, 0xd8, 0xe5, 0xfa, 0xd1, 0xad, 0xd9, 0x87,
+	0x92, 0xdd, 0xe6, 0xb5, 0xdf, 0x54, 0x38, 0x4f, 0xcb, 0xc8, 0x2e, 0xc9, 0x8c, 0xe3, 0x08, 0x99,
+	0x90, 0x9f, 0x44, 0x74, 0x2e, 0x56, 0xb5, 0xbf, 0x98, 0xe0, 0xa1, 0x0f, 0xa1, 0xb0, 0x08, 0x38,
+	0x99, 0x89, 0x4d, 0xee, 0x4f, 0x48, 0x88, 0x29, 0xd5, 0x73, 0xfb, 0x55, 0xcf, 0x6f, 0x51, 0xbd,
+	0x0d, 0x67, 0x6b, 0x3e, 0x17, 0xc4, 0xc2, 0x1e, 0x13, 0x69, 0x41, 0x06, 0x79, 0x63, 0xa8, 0xe2,
+	0xed, 0x86, 0xaa, 0xf5, 0xa1, 0xd4, 0xa1, 0x8b, 0x80, 0xaf, 0x49, 0xe5, 0xe0, 0xef, 0x17, 0x98,
+	0x71, 0xd4, 0x80, 0xe2, 0x44, 0xa8, 0x26, 0xd5, 0xba, 0xc8, 0x96, 0x92, 0xa2, 0x3a, 0x92, 0x56,
+	0x6b, 0x81, 0xb1, 0xad, 0x1a, 0x0b, 0x69, 0xc0, 0x30, 0xba, 0x0b, 0x05, 0x2f, 0x8e, 0x8a, 0x6a,
+	0x39, 0x27, 0x39, 0xd4, 0x06, 0x70, 0xd1, 0xc5, 0x6b, 0x19, 0x37, 0x09, 0x1f, 0xc3, 0x71, 0xfa,
+	0x76, 0x72, 0x0a, 0x2d, 0x3b, 0x85, 0xb3, 0xc6, 0xaa, 0xbd, 0x06, 0xbd, 0x4f, 0xd8, 0xf6, 0x1b,
+	0x99, 0x00, 0x6f, 0x1e, 0xbb, 0xac, 0x77, 0x1a, 0xd7, 0x7b, 0x76, 0x83, 0x3a, 0x29, 0x46, 0x4a,
+	0x01, 0xf5, 0xed, 0x14, 0x18, 0x42, 0x69, 0x4b, 0x73, 0x79, 0x9f, 0x4f, 0xe0, 0x24, 0x3d, 0x29,
+	0xd3, 0x95, 0x6a, 0x6e, 0xeb, 0x85, 0xd6, 0x69, 0x8f, 0x19, 0x68, 0xd9, 0xbd, 0xa3, 0x32, 0x94,
+	0xec, 0xc1, 0xa8, 0x77, 0xd9, 0xeb, 0xb4, 0x47, 0xbd, 0x81, 0x3d, 0x1e, 0x7d, 0xfd, 0xcc, 0x1a,
+	0x3f, 0xb7, 0x3f, 0xb7, 0x07, 0x2f, 0x6c, 0xed, 0x60, 0x7b, 0xb8, 0x6b, 0xd9, 0x96, 0xd3, 0xeb,
+	0x68, 0x0a, 0x7a, 0x04, 0xe5, 0xcd, 0x70, 0x7f, 0xd0, 0x1d, 0x7f, 0x61, 0x0d, 0x87, 0xed, 0xae,
+	0xa5, 0xa9, 0x8f, 0x7f, 0x57, 0xe0, 0x6c, 0xc3, 0x36, 0xa8, 0x02, 0xc6, 0x5a, 0x62, 0xdf, 0xfa,
+	0xd2, 0xea, 0xa7, 0xfa, 0xde, 0x87, 0x8b, 0x2d, 0xf1, 0x9e, 0x7d, 0x39, 0xd0, 0x94, 0x1d, 0xc9,
+	0xc3, 0xe7, 0x9d, 0x8e, 0x35, 0x1c, 0x6a, 0xea, 0x8e, 0xe4, 0x17, 0x6d, 0xc7, 0xd6, 0x72, 0x1b,
+	0x37, 0x4a, 0x82, 0x4f, 0xdb, 0x76, 0xd7, 0x72, 0xb4, 0x7c, 0xeb, 0xef, 0xcc, 0x7b, 0x1f, 0x26,
+	0x1f, 0x08, 0xc4, 0x00, 0x6d, 0x5a, 0x12, 0x95, 0x63, 0xc9, 0x77, 0x1a, 0xdf, 0xa8, 0xec, 0x0a,
+	0x27, 0x8b, 0xac, 0x55, 0x7e, 0xfa, 0xeb, 0xbf, 0x9f, 0x55, 0x1d, 0xdd, 0xcb, 0x7e, 0x97, 0x98,
+	0xf0, 0x34, 0xfa, 0x16, 0xde, 0xcd, 0x78, 0x1a, 0x89, 0x25, 0x3b, 0xf2, 0xa9, 0x3f, 0xb9, 0xea,
+	0x3d, 0x35, 0xee, 0xc7, 0xc8, 0x0e, 0xeb, 0xef, 0xe9, 0xd0, 0x78, 0x4d, 0xfc, 0x1f, 0xd1, 0x2b,
+	0x38, 0xdb, 0xf0, 0x19, 0x7a, 0x10, 0x57, 0xdc, 0xe5, 0x7d, 0xa3, 0xbc, 0x23, 0x2a, 0x3b, 0x96,
+	0x44, 0xc7, 0x73, 0x74, 0xb6, 0xd1, 0xf1, 0x89, 0xf9, 0xc7, 0x75, 0x45, 0xf9, 0xf3, 0xba, 0xa2,
+	0xfc, 0x73, 0x5d, 0x51, 0x7e, 0xf9, 0xb7, 0x72, 0x00, 0x3a, 0xa1, 0x26, 0xe3, 0xae, 0xf7, 0x2a,
+	0xa2, 0x3f, 0x24, 0x7f, 0x85, 0xa6, 0x1b, 0x12, 0x73, 0xd9, 0xfc, 0x46, 0x5d, 0x36, 0xbf, 0x3a,
+	0x78, 0x59, 0x14, 0xd8, 0x47, 0xff, 0x07, 0x00, 0x00, 0xff, 0xff, 0xae, 0xc9, 0x83, 0xdd, 0xbc,
+	0x07, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -508,11 +769,12 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type NotificationServiceClient interface {
-	// GetNotifications returns the list of notifications. The events may be filtered by
-	// dedicated fields.
-	GetNotifications(ctx context.Context, in *GetNotificationsRequest, opts ...grpc.CallOption) (*NotificationsResponse, error)
+	// CountNotifications returns the number of notifications after filtered by requested fields.
+	CountNotifications(ctx context.Context, in *CountNotificationsRequest, opts ...grpc.CallOption) (*CountNotificationsResponse, error)
 	// GetNotification retrieves a notification by ID.
-	GetNotification(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Notification, error)
+	GetNotification(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetNotificationResponse, error)
+	// ListNotifications returns the list of notifications after filtered by requested fields.
+	ListNotifications(ctx context.Context, in *ListNotificationsRequest, opts ...grpc.CallOption) (*ListNotificationsResponse, error)
 }
 
 type notificationServiceClient struct {
@@ -523,18 +785,27 @@ func NewNotificationServiceClient(cc grpc.ClientConnInterface) NotificationServi
 	return &notificationServiceClient{cc}
 }
 
-func (c *notificationServiceClient) GetNotifications(ctx context.Context, in *GetNotificationsRequest, opts ...grpc.CallOption) (*NotificationsResponse, error) {
-	out := new(NotificationsResponse)
-	err := c.cc.Invoke(ctx, "/v1.NotificationService/GetNotifications", in, out, opts...)
+func (c *notificationServiceClient) CountNotifications(ctx context.Context, in *CountNotificationsRequest, opts ...grpc.CallOption) (*CountNotificationsResponse, error) {
+	out := new(CountNotificationsResponse)
+	err := c.cc.Invoke(ctx, "/v1.NotificationService/CountNotifications", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *notificationServiceClient) GetNotification(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Notification, error) {
-	out := new(Notification)
+func (c *notificationServiceClient) GetNotification(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetNotificationResponse, error) {
+	out := new(GetNotificationResponse)
 	err := c.cc.Invoke(ctx, "/v1.NotificationService/GetNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationServiceClient) ListNotifications(ctx context.Context, in *ListNotificationsRequest, opts ...grpc.CallOption) (*ListNotificationsResponse, error) {
+	out := new(ListNotificationsResponse)
+	err := c.cc.Invoke(ctx, "/v1.NotificationService/ListNotifications", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -543,42 +814,46 @@ func (c *notificationServiceClient) GetNotification(ctx context.Context, in *Res
 
 // NotificationServiceServer is the server API for NotificationService service.
 type NotificationServiceServer interface {
-	// GetNotifications returns the list of notifications. The events may be filtered by
-	// dedicated fields.
-	GetNotifications(context.Context, *GetNotificationsRequest) (*NotificationsResponse, error)
+	// CountNotifications returns the number of notifications after filtered by requested fields.
+	CountNotifications(context.Context, *CountNotificationsRequest) (*CountNotificationsResponse, error)
 	// GetNotification retrieves a notification by ID.
-	GetNotification(context.Context, *ResourceByID) (*Notification, error)
+	GetNotification(context.Context, *ResourceByID) (*GetNotificationResponse, error)
+	// ListNotifications returns the list of notifications after filtered by requested fields.
+	ListNotifications(context.Context, *ListNotificationsRequest) (*ListNotificationsResponse, error)
 }
 
 // UnimplementedNotificationServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedNotificationServiceServer struct {
 }
 
-func (*UnimplementedNotificationServiceServer) GetNotifications(ctx context.Context, req *GetNotificationsRequest) (*NotificationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetNotifications not implemented")
+func (*UnimplementedNotificationServiceServer) CountNotifications(ctx context.Context, req *CountNotificationsRequest) (*CountNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountNotifications not implemented")
 }
-func (*UnimplementedNotificationServiceServer) GetNotification(ctx context.Context, req *ResourceByID) (*Notification, error) {
+func (*UnimplementedNotificationServiceServer) GetNotification(ctx context.Context, req *ResourceByID) (*GetNotificationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNotification not implemented")
+}
+func (*UnimplementedNotificationServiceServer) ListNotifications(ctx context.Context, req *ListNotificationsRequest) (*ListNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListNotifications not implemented")
 }
 
 func RegisterNotificationServiceServer(s *grpc.Server, srv NotificationServiceServer) {
 	s.RegisterService(&_NotificationService_serviceDesc, srv)
 }
 
-func _NotificationService_GetNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetNotificationsRequest)
+func _NotificationService_CountNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountNotificationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NotificationServiceServer).GetNotifications(ctx, in)
+		return srv.(NotificationServiceServer).CountNotifications(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.NotificationService/GetNotifications",
+		FullMethod: "/v1.NotificationService/CountNotifications",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NotificationServiceServer).GetNotifications(ctx, req.(*GetNotificationsRequest))
+		return srv.(NotificationServiceServer).CountNotifications(ctx, req.(*CountNotificationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -601,149 +876,43 @@ func _NotificationService_GetNotification_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_ListNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNotificationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).ListNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.NotificationService/ListNotifications",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).ListNotifications(ctx, req.(*ListNotificationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _NotificationService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "v1.NotificationService",
 	HandlerType: (*NotificationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetNotifications",
-			Handler:    _NotificationService_GetNotifications_Handler,
+			MethodName: "CountNotifications",
+			Handler:    _NotificationService_CountNotifications_Handler,
 		},
 		{
 			MethodName: "GetNotification",
 			Handler:    _NotificationService_GetNotification_Handler,
 		},
+		{
+			MethodName: "ListNotifications",
+			Handler:    _NotificationService_ListNotifications_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/notification_service.proto",
-}
-
-func (m *NotificationsResponse) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *NotificationsResponse) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *NotificationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Pagination != nil {
-		{
-			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNotificationService(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Notifications) > 0 {
-		for iNdEx := len(m.Notifications) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Notifications[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintNotificationService(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *GetNotificationsRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GetNotificationsRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GetNotificationsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if m.Level != 0 {
-		i = encodeVarintNotificationService(dAtA, i, uint64(m.Level))
-		i--
-		dAtA[i] = 0x30
-	}
-	if m.NotificationType != 0 {
-		i = encodeVarintNotificationService(dAtA, i, uint64(m.NotificationType))
-		i--
-		dAtA[i] = 0x28
-	}
-	if len(m.ResourceType) > 0 {
-		i -= len(m.ResourceType)
-		copy(dAtA[i:], m.ResourceType)
-		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.ResourceType)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.Domain) > 0 {
-		i -= len(m.Domain)
-		copy(dAtA[i:], m.Domain)
-		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Domain)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if m.Until != nil {
-		{
-			size, err := m.Until.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNotificationService(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.From != nil {
-		{
-			size, err := m.From.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintNotificationService(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
 }
 
 func (m *Notification) Marshal() (dAtA []byte, err error) {
@@ -854,6 +1023,283 @@ func (m *Notification) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *NotificationsFilter) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NotificationsFilter) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *NotificationsFilter) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Level != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.Level))
+		i--
+		dAtA[i] = 0x30
+	}
+	if m.NotificationType != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.NotificationType))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.ResourceType) > 0 {
+		i -= len(m.ResourceType)
+		copy(dAtA[i:], m.ResourceType)
+		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.ResourceType)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.Domain) > 0 {
+		i -= len(m.Domain)
+		copy(dAtA[i:], m.Domain)
+		i = encodeVarintNotificationService(dAtA, i, uint64(len(m.Domain)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Until != nil {
+		{
+			size, err := m.Until.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.From != nil {
+		{
+			size, err := m.From.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CountNotificationsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CountNotificationsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CountNotificationsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Filter != nil {
+		{
+			size, err := m.Filter.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CountNotificationsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CountNotificationsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CountNotificationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Count != 0 {
+		i = encodeVarintNotificationService(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetNotificationResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetNotificationResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetNotificationResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Notification != nil {
+		{
+			size, err := m.Notification.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListNotificationsRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListNotificationsRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListNotificationsRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Filter != nil {
+		{
+			size, err := m.Filter.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Pagination != nil {
+		{
+			size, err := m.Pagination.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintNotificationService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ListNotificationsResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ListNotificationsResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ListNotificationsResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Notifications) > 0 {
+		for iNdEx := len(m.Notifications) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Notifications[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintNotificationService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintNotificationService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovNotificationService(v)
 	base := offset
@@ -865,62 +1311,6 @@ func encodeVarintNotificationService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *NotificationsResponse) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.Notifications) > 0 {
-		for _, e := range m.Notifications {
-			l = e.Size()
-			n += 1 + l + sovNotificationService(uint64(l))
-		}
-	}
-	if m.Pagination != nil {
-		l = m.Pagination.Size()
-		n += 1 + l + sovNotificationService(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *GetNotificationsRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.From != nil {
-		l = m.From.Size()
-		n += 1 + l + sovNotificationService(uint64(l))
-	}
-	if m.Until != nil {
-		l = m.Until.Size()
-		n += 1 + l + sovNotificationService(uint64(l))
-	}
-	l = len(m.Domain)
-	if l > 0 {
-		n += 1 + l + sovNotificationService(uint64(l))
-	}
-	l = len(m.ResourceType)
-	if l > 0 {
-		n += 1 + l + sovNotificationService(uint64(l))
-	}
-	if m.NotificationType != 0 {
-		n += 1 + sovNotificationService(uint64(m.NotificationType))
-	}
-	if m.Level != 0 {
-		n += 1 + sovNotificationService(uint64(m.Level))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
 func (m *Notification) Size() (n int) {
 	if m == nil {
 		return 0
@@ -974,357 +1364,130 @@ func (m *Notification) Size() (n int) {
 	return n
 }
 
+func (m *NotificationsFilter) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.From != nil {
+		l = m.From.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.Until != nil {
+		l = m.Until.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	l = len(m.Domain)
+	if l > 0 {
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	l = len(m.ResourceType)
+	if l > 0 {
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.NotificationType != 0 {
+		n += 1 + sovNotificationService(uint64(m.NotificationType))
+	}
+	if m.Level != 0 {
+		n += 1 + sovNotificationService(uint64(m.Level))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CountNotificationsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Filter != nil {
+		l = m.Filter.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *CountNotificationsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Count != 0 {
+		n += 1 + sovNotificationService(uint64(m.Count))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetNotificationResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Notification != nil {
+		l = m.Notification.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListNotificationsRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Pagination != nil {
+		l = m.Pagination.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.Filter != nil {
+		l = m.Filter.Size()
+		n += 1 + l + sovNotificationService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *ListNotificationsResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.Notifications) > 0 {
+		for _, e := range m.Notifications {
+			l = e.Size()
+			n += 1 + l + sovNotificationService(uint64(l))
+		}
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
 func sovNotificationService(x uint64) (n int) {
 	return (math_bits.Len64(x|1) + 6) / 7
 }
 func sozNotificationService(x uint64) (n int) {
 	return sovNotificationService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
-}
-func (m *NotificationsResponse) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNotificationService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: NotificationsResponse: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NotificationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Notifications", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Notifications = append(m.Notifications, &Notification{})
-			if err := m.Notifications[len(m.Notifications)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Pagination == nil {
-				m.Pagination = &Pagination{}
-			}
-			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNotificationService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GetNotificationsRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowNotificationService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GetNotificationsRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetNotificationsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field From", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.From == nil {
-				m.From = &types.Timestamp{}
-			}
-			if err := m.From.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Until", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.Until == nil {
-				m.Until = &types.Timestamp{}
-			}
-			if err := m.Until.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Domain = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ResourceType", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ResourceType = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NotificationType", wireType)
-			}
-			m.NotificationType = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.NotificationType |= NotificationType(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
-			}
-			m.Level = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowNotificationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Level |= NotificationLevel(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipNotificationService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthNotificationService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
 }
 func (m *Notification) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1673,6 +1836,683 @@ func (m *Notification) Unmarshal(dAtA []byte) error {
 				m.CreatedAt = &types.Timestamp{}
 			}
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NotificationsFilter) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NotificationsFilter: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NotificationsFilter: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field From", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.From == nil {
+				m.From = &types.Timestamp{}
+			}
+			if err := m.From.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Until", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Until == nil {
+				m.Until = &types.Timestamp{}
+			}
+			if err := m.Until.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Domain", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Domain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ResourceType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ResourceType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NotificationType", wireType)
+			}
+			m.NotificationType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NotificationType |= NotificationType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
+			}
+			m.Level = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Level |= NotificationLevel(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CountNotificationsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CountNotificationsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CountNotificationsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Filter == nil {
+				m.Filter = &NotificationsFilter{}
+			}
+			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CountNotificationsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CountNotificationsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CountNotificationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetNotificationResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetNotificationResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetNotificationResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notification", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Notification == nil {
+				m.Notification = &Notification{}
+			}
+			if err := m.Notification.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListNotificationsRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListNotificationsRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListNotificationsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Pagination", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Pagination == nil {
+				m.Pagination = &Pagination{}
+			}
+			if err := m.Pagination.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Filter", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Filter == nil {
+				m.Filter = &NotificationsFilter{}
+			}
+			if err := m.Filter.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipNotificationService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ListNotificationsResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowNotificationService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ListNotificationsResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ListNotificationsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notifications", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowNotificationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthNotificationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Notifications = append(m.Notifications, &Notification{})
+			if err := m.Notifications[len(m.Notifications)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

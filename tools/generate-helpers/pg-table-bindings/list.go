@@ -68,6 +68,7 @@ func init() {
 		&storage.NodeComponentEdge{}:                            resources.Node,
 		&storage.NodeCVE{}:                                      resources.Node,
 		&storage.NotificationSchedule{}:                         resources.Notifications,
+		&storage.Notification{}:                                 resources.Administration,
 		&storage.Notifier{}:                                     resources.Integration,
 		&storage.PermissionSet{}:                                resources.Access,
 		&storage.Pod{}:                                          resources.Deployment,
