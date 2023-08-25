@@ -109,6 +109,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			"Generate deployment files supporting the given Istio version. Valid versions: %s",
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
+	flags.AddTimeoutWithDefault(c, 5*time.Minute)
+
 	autobool.NewFlag(c.PersistentFlags(), &slimCollector, "slim-collector", "Use slim collector in deployment bundle")
 
 	return c
