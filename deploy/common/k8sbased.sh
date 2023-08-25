@@ -431,7 +431,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    rollout_wait_timeout="4m"
+    rollout_wait_timeout="10s"
     if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
       rollout_wait_timeout="9m"
     fi
