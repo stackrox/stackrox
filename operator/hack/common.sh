@@ -39,19 +39,21 @@ function apply_operator_manifests() {
   local -r image_tag_base="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
-  OPERATOR_YAML_PATH="operator/hack/operator.envsubst.yaml"
-  # Get Operator channel from json for midstream
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+    # Get Operator channel from json for midstream
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
-    OPERATOR_YAML_PATH="operator/hack/operator-midstream.envsubst.yaml"
-  fi
-
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     IMAGE_TAG_BASE="${image_tag_base}" \
-    envsubst < "${ROOT_DIR}/${OPERATOR_YAML_PATH}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
+  fi
 
+  env -i PATH="${PATH}" \
+    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
+    IMAGE_TAG_BASE="${image_tag_base}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
+    | kubectl -n "${operator_ns}" apply -f -
 }
 
 function retry() {
