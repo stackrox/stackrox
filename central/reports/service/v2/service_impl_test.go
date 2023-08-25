@@ -146,6 +146,17 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 		Name: "name",
 	}
 
+	status := &storage.ReportStatus{
+		RunState: 0,
+	}
+
+	reportSnapshots := []*storage.ReportSnapshot{{
+		ReportId:     "test_report",
+		Name:         "test_report",
+		ReportStatus: status,
+	},
+	}
+
 	accessScopeRules := []*storage.SimpleAccessScope_Rules{
 		{
 			IncludedClusters: []string{"cluster-1"},
@@ -164,6 +175,7 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
 					Return(protoReportConfig, true, nil).Times(1)
 				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
 			}
 			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
 			if tc.isValidationError {
@@ -174,6 +186,24 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 			}
 		})
 	}
+	reportSnapshots = []*storage.ReportSnapshot{{
+		ReportId:     "test_report",
+		Name:         "test_report",
+		ReportStatus: status,
+		Requester:    creator,
+	},
+	}
+
+	tc := s.upsertReportConfigTestCases(true)[0]
+	protoReportConfig := tc.reportConfigGen()
+	protoReportConfig.Creator = creator
+	protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
+		Return(protoReportConfig, true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
+	requestConfig := tc.setMocksAndGenReportConfig()
+	_, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
+	s.Error(err)
 }
 
 func (s *ReportServiceTestSuite) TestListReportConfigurations() {
@@ -349,11 +379,13 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 			isError: false,
 		},
 	}
+	reportSnapshots := []*storage.ReportSnapshot{}
 
 	for _, tc := range testCases {
 		if !tc.isError {
 			s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
 				Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
+			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
 		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
