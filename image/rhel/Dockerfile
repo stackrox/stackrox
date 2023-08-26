@@ -64,11 +64,7 @@ COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 
 RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/snappy.rpm; fi
-RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
-    ln -s entrypoint-wrapper.sh /stackrox/compliance && \
-    ln -s entrypoint-wrapper.sh /stackrox/kubernetes-sensor && \
-    ln -s entrypoint-wrapper.sh /stackrox/sensor-upgrader && \
-    ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf upgrade && \
