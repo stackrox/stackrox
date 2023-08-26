@@ -9,6 +9,7 @@ fi
 
 previous_release="$1"
 release="$2"
+ship_date="$3"
 
 # Define the version pattern
 version_pattern="^[0-9]+\.[0-9]+$"
@@ -31,8 +32,14 @@ if [ "$previous_major" -gt "$release_major" ] || { [ "$previous_major" -eq "$rel
     exit 1
 fi
 
+# Define the ship_date pattern
+ship_date_pattern="^[0-9]{4}\-[0-9]{2}\-[0-9]{2}$"
+
+if ! [[ $ship_date =~ $ship_date_pattern ]]; then
+    echo "Ship date is not valid"
+fi
+
 get_supported_versions() {
-    #supported_versions=($(curl -fsSL "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" | jq -r '.data[0].versions[] | select(.type == "Full Support") | .name'))
 
     mapfile -t supported_versions < <(
       curl -fsSL "https://access.redhat.com/product-life-cycles/api/v1/products?name=Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes" |
@@ -101,6 +108,9 @@ yq w -i product.yml product.release.version "${release}.0" --style=single
 yq w -i product.yml honeybadger.version "${release}" --style=single
 yq w -i product.yml product.honeybadger.version "${release}" --style=single
 
+# Update the ship_date
+perform_sed_or_gsed 'ship_date: *' 'ship_date: "$ship_date"' product.yml
+
 popd
 
 # Add the versions to content_stream_tags in all product.yml files
@@ -108,7 +118,9 @@ update_content_stream_tags
 
 # yq makes some unwanted changes that need to be undone
 find versions/release-* -name 'product.yml' -exec bash -c 'perform_sed_or_gsed "!!merge " "" "$1"' _ {} \;
-#find versions/release-* -name 'product.yml' -exec bash -c "perform_sed_or_gsed '!!merge ' '' '{}'" \;
+
+# Add --- to the beginning of all product.yml files which is removed by yq
+find versions/release-* -name 'product.yml' -exec bash -c 'echo "---" > temp.txt; cat "$1" >> temp.txt; mv temp.txt "$1"' _ {} \;
 
 echo
 echo
