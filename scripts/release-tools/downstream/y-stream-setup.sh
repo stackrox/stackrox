@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eoux pipefail
+set -eou pipefail
 
 # Check the number of input parameters
 if [ "$#" -ne 3 ]; then
@@ -77,15 +77,15 @@ replace_string() {
     local replace="$2"
     local file="$3"
 
-    #if command -v gsed > /dev/null; then
-    #    gsed -i "s|$search|$replace|" "$file"
-    #elif command -v sed > /dev/null; then
-    #    sed -i "s|$search|$replace|" "$file"
-    #else
+    if command -v gsed > /dev/null; then
+        gsed -i "s|$search|$replace|" "$file"
+    elif command -v sed > /dev/null; then
+        sed -i "s|$search|$replace|" "$file"
+    else
 	file_content="$(cat "$file")"
 	new_content="${file_content//$search/$replace}"
 	echo "$new_content" > "$file"
-    #fi
+    fi
 }
 
 export -f replace_string
