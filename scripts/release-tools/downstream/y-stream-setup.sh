@@ -20,10 +20,10 @@ if ! [[ $previous_release =~ $version_pattern ]] || ! [[ $release =~ $version_pa
 fi
 
 # Extract major and minor version numbers
-previous_major=$(cut -d '.' -f 1 <<< "$previous_release")
-previous_minor=$(cut -d '.' -f 2 <<< "$previous_release")
-release_major=$(cut -d '.' -f 1 <<< "$release")
-release_minor=$(cut -d '.' -f 2 <<< "$release")
+previous_major="$(cut -d '.' -f 1 <<< "$previous_release")"
+previous_minor="$(cut -d '.' -f 2 <<< "$previous_release")"
+release_major="$(cut -d '.' -f 1 <<< "$release")"
+release_minor="$(cut -d '.' -f 2 <<< "$release")"
 
 # Compare versions
 if [ "$previous_major" -gt "$release_major" ] || { [ "$previous_major" -eq "$release_major" ] && [ "$previous_minor" -gt "$release_minor" ] ; }; then
@@ -87,7 +87,7 @@ pushd "versions/release-${release}"
 rm -f advisory_map.yml
 
 # Update release.yml with the correct version. Sinple sed should be safe, but check changes
-sed -i "s|$previous_release|$release|" release.yml
+perform_sed_or_gsed "$previous_release" "$release" release.yml
 
 # Update product.yml with the correct version.
 # This is a little more complicated since not all occurances of the old release should be changed
