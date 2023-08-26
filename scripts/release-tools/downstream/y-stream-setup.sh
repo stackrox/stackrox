@@ -2,8 +2,14 @@
 set -eoux pipefail
 
 # Check the number of input parameters
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 3 ]; then
     echo "Usage: $0 <previous_release> <release>"
+    exit 1
+fi
+
+# Check if yq is available
+if ! command -v yq > /dev/null; then
+    echo "yq must be installed"
     exit 1
 fi
 
@@ -60,27 +66,29 @@ update_content_stream_tags() {
 
     nversions=${#versions[@]}
 
+    find versions/release-* -name 'product.yml' -exec bash -c 'yq w -i "$1" delivery-repo-content.content_stream_tags ""' _ {} \;
     for ((i=0; i<nversions; i++)); do
         find versions/release-* -name 'product.yml' -exec bash -c 'yq w -i "$1" delivery-repo-content.content_stream_tags[$2] "$3" --style=double' _ {} "$i" "${versions[$i]}" \;
     done
 }
 
-perform_sed_or_gsed() {
+replace_string() {
     local search="$1"
     local replace="$2"
     local file="$3"
 
-    if command -v sed > /dev/null; then
-        sed -i "s|$search|$replace|" "$file"
-    elif command -v gsed > /dev/null; then
-        gsed -i "s|$search|$replace|" "$file"
-    else
-        echo "Error: Neither sed nor gsed found. Cannot perform replacement."
-        exit 1
-    fi
+    #if command -v gsed > /dev/null; then
+    #    gsed -i "s|$search|$replace|" "$file"
+    #elif command -v sed > /dev/null; then
+    #    sed -i "s|$search|$replace|" "$file"
+    #else
+	file_content="$(cat "$file")"
+	new_content="${file_content//$search/$replace}"
+	echo "$new_content" > "$file"
+    #fi
 }
 
-export -f perform_sed_or_gsed
+export -f replace_string
 
 git clone git@gitlab.cee.redhat.com:cpaas-products/rhacs.git gitlab-rhacs
 pushd gitlab-rhacs
@@ -94,22 +102,21 @@ pushd "versions/release-${release}"
 rm -f advisory_map.yml
 
 # Update release.yml with the correct version. Sinple sed should be safe, but check changes
-perform_sed_or_gsed "$previous_release" "$release" release.yml
+replace_string "$previous_release" "$release" release.yml
 
 # Update product.yml with the correct version.
 # This is a little more complicated since not all occurances of the old release should be changed
 # Check changes
-perform_sed_or_gsed "rhacs-$previous_release" "rhacs-$release" product.yml
-perform_sed_or_gsed "RHACS-$previous_release" "RHACS-$release" product.yml
-perform_sed_or_gsed "RHACS $previous_release" "RHACS $release" product.yml
-perform_sed_or_gsed "Kubernetes $previous_release" "Kubernetes $release" product.yml
+replace_string "rhacs-$previous_release" "rhacs-$release" product.yml
+replace_string "RHACS-$previous_release" "RHACS-$release" product.yml
+replace_string "RHACS $previous_release" "RHACS $release" product.yml
+replace_string "Kubernetes $previous_release" "Kubernetes $release" product.yml
 
 yq w -i product.yml product.release.version "${release}.0" --style=single
-yq w -i product.yml honeybadger.version "${release}" --style=single
 yq w -i product.yml product.honeybadger.version "${release}" --style=single
 
 # Update the ship_date
-perform_sed_or_gsed 'ship_date: *' 'ship_date: "$ship_date"' product.yml
+replace_string "ship_date: .*" "ship_date: \"""$ship_date""\"" product.yml
 
 popd
 
@@ -117,15 +124,10 @@ popd
 update_content_stream_tags
 
 # yq makes some unwanted changes that need to be undone
-find versions/release-* -name 'product.yml' -exec bash -c 'perform_sed_or_gsed "!!merge " "" "$1"' _ {} \;
+find versions/release-* -name 'product.yml' -exec bash -c 'replace_string "!!merge " "" "$1"' _ {} \;
 
 # Add --- to the beginning of all product.yml files which is removed by yq
 find versions/release-* -name 'product.yml' -exec bash -c 'echo "---" > temp.txt; cat "$1" >> temp.txt; mv temp.txt "$1"' _ {} \;
-
-echo
-echo
-echo
-echo
 
 # TODO Automate this once there is confidance that this script is working.
 echo "ATTENTION: Manually check, commit, and push the changes. Create an MR."
