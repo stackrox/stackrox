@@ -139,6 +139,6 @@ echo "diff versions/${previous_release}/release.yml versions/${release}/release.
 echo "grep ${release} versions/${release}/product.yml"
 echo "grep ${release} versions/${release}/release.yml"
 echo "grep ${previous_release} versions/${release}/product.yml"
-echo "Note that delivery-repo-content.content_stream_tags will still list the previous version. The new release should be listed as well." 
+echo "Note that delivery-repo-content.content_stream_tags will still list the previous version. The new release should be listed as well."
 echo "grep ${previous_release} versions/${release}/release.yml"
 echo "grep ship_date versions/${release}/release.yml"
