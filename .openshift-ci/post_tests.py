@@ -99,7 +99,17 @@ class StoreArtifacts(RunWithBestEffortMixin):
                 timeout=PostTestsConstants.STORE_TIMEOUT,
             )
 
+        self._store_osci_artifacts()
+
+    def _store_osci_artifacts(self):
         for source in self.dirs_to_store_to_osci_artifacts:
+            if not os.path.exists(source):
+                print(f"Skipping missing artifact: {source}")
+                continue
+            self._store_osci_artifact(source)
+
+    def _store_osci_artifact(self, source):
+        try:
             copied = False
             unique_counter = 1
             while not copied and unique_counter < 50:
@@ -116,6 +126,13 @@ class StoreArtifacts(RunWithBestEffortMixin):
 
             if not copied:
                 raise RuntimeError(f"Could not copy {source} to artifacts")
+
+        # similar to run_with_best_effort(), save any failure until all post
+        # steps are complete.
+        except Exception as err:
+            print(f"Exception with artifact copy of {source}, {err}")
+            self.failed_commands.append(["artifact copy", source])
+            self.exitstatus = 1
 
 
 # pylint: disable=too-many-instance-attributes
