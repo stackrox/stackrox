@@ -131,3 +131,14 @@ find versions/release-* -name 'product.yml' -exec bash -c 'echo "---" > temp.txt
 
 # TODO Automate this once there is confidance that this script is working.
 echo "ATTENTION: Manually check, commit, and push the changes. Create an MR."
+echo "Suggested manual checks:"
+echo "git diff"
+echo "Note that minor changes such as removing blank lines and spaces should be Okay"
+echo "diff versions/${previous_release}/product.yml versions/${release}/product.yml"
+echo "diff versions/${previous_release}/release.yml versions/${release}/release.yml"
+echo "grep ${release} versions/${release}/product.yml"
+echo "grep ${release} versions/${release}/release.yml"
+echo "grep ${previous_release} versions/${release}/product.yml"
+echo "Note that delivery-repo-content.content_stream_tags will still list the previous version. The new release should be listed as well." 
+echo "grep ${previous_release} versions/${release}/release.yml"
+echo "grep ship_date versions/${release}/release.yml"
