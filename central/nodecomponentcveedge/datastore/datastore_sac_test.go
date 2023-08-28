@@ -12,6 +12,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -23,6 +25,8 @@ import (
 
 var (
 	nodeScanOperatingSystem = "Linux"
+
+	log = logging.LoggerForModule()
 )
 
 func TestNodeComponentCVEEdgeDatastoreSAC(t *testing.T) {
@@ -180,7 +184,7 @@ var (
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponent() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-1234-0001 edge
 	targetEdgeID := cmp1cve1edge
-	s.run(func(c edgeTestCase) {
+	s.run("TestExistsEdgeFromSingleComponent", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -191,7 +195,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComponentToSharedCVE() {
 	// Inject the fixture graph, and test exists for Component1 to CVE-4567-0002 edge
 	targetEdgeID := cmp1cve2edge
-	s.run(func(c edgeTestCase) {
+	s.run("TestExistsEdgeFromSingleComponentToSharedCVE", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -202,7 +206,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleComp
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedComponent() {
 	// Inject the fixture graph, and test exists for Component3 to CVE-3456-0004 edge
 	targetEdgeID := cmp3cve4edge
-	s.run(func(c edgeTestCase) {
+	s.run("TestExistsEdgeFromSharedComponent", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -215,7 +219,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompone
 	targetEdgeID := cmp1cve1edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE1234x0001(), nodeScanOperatingSystem)
-	s.run(func(c edgeTestCase) {
+	s.run("TestGetEdgeFromSingleComponent", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -236,7 +240,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompone
 	targetEdgeID := cmp1cve2edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1x1(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE4567x0002(), nodeScanOperatingSystem)
-	s.run(func(c edgeTestCase) {
+	s.run("TestGetEdgeFromSingleComponentToSharedCVE", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -257,7 +261,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompone
 	targetEdgeID := cmp3cve4edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedNodeComponent1s2x3(), nodeScanOperatingSystem)
 	expectedTargetID := getVulnerabilityID(fixtures.GetEmbeddedNodeCVE3456x0004(), nodeScanOperatingSystem)
-	s.run(func(c edgeTestCase) {
+	s.run("TestGetEdgeFromSharedComponent", func(c edgeTestCase) {
 		testCtx := s.testContexts[c.contextKey]
 		edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 		s.NoError(err)
@@ -275,7 +279,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompone
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 	// Inject the fixture graph, and test data filtering on count operations
-	s.run(func(c edgeTestCase) {
+	s.run("TestCount", func(c edgeTestCase) {
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
 			if visible {
@@ -291,7 +295,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	// Inject the fixture graph, and test data filtering on count operations
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearch", func(c edgeTestCase) {
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
 			if visible {
@@ -310,7 +314,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearchEdges", func(c edgeTestCase) {
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
 			if visible {
@@ -329,7 +333,7 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 
 func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	// Inject the fixture graph, and test data filtering on count operations
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearchRawEdges", func(c edgeTestCase) {
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
 			if visible {
@@ -346,13 +350,26 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	})
 }
 
-func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) run(f func(c edgeTestCase)) {
+func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) run(testName string, f func(c edgeTestCase)) {
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for i := range testCases {
 		c := testCases[i]
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			s.T().Parallel()
 			f(c)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
 	}
 }
 

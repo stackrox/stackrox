@@ -11,11 +11,17 @@ import (
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestImageComponentDataStoreSAC(t *testing.T) {
@@ -368,13 +374,26 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSingleScopeOnly() 
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1x1)
 			s.NoError(err)
 			s.Equal(c.expectedComponentFound[imageComponentID1x1], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentExistsSingleScopeOnly failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -383,13 +402,26 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentExistsSharedComponent() 
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageComponentStore.Exists(testCtx, imageComponentID1s2x3)
 			s.NoError(err)
 			s.Equal(c.expectedComponentFound[imageComponentID1s2x3], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentExistsSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -398,11 +430,17 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSingleScopeOnly() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetComponent := imageComponent1x1
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1x1)
 			s.NoError(err)
@@ -415,6 +453,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSingleScopeOnly() {
 				s.Nil(imageComponent)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentGetSingleScopeOnly failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -423,11 +468,17 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSharedComponent() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetComponent := imageComponent1s2x3
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageComponent, found, err := s.imageComponentStore.Get(testCtx, imageComponentID1s2x3)
 			s.NoError(err)
@@ -440,6 +491,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetSharedComponent() {
 				s.Nil(imageComponent)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentGetSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -447,6 +505,12 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetBatch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	componentIDs := []string{
 		imageComponentID1x1,
 		imageComponentID1x2,
@@ -454,7 +518,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetBatch() {
 		imageComponentID2x5,
 	}
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageComponents, err := s.imageComponentStore.GetBatch(testCtx, componentIDs)
 			s.NoError(err)
@@ -470,19 +534,62 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentGetBatch() {
 			}
 			s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentGetBatch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentCount() {
-	s.T().Skip("Not implemented yet.")
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilitiesGraph()
+	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
+	for _, c := range imageComponentTestCases {
+		caseSucceeded := s.Run(c.contextKey, func() {
+
+			testCtx := s.imageTestContexts[c.contextKey]
+			count, err := s.imageComponentStore.Count(testCtx, nil)
+			s.NoError(err)
+			expectedCount := 0
+			for _, visible := range c.expectedComponentFound {
+				if visible {
+					expectedCount++
+				}
+			}
+			s.Equal(expectedCount, count)
+		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentCount failed, dumping DB content.")
+		imageGraphBefore.Log()
+	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageComponentStore.Search(testCtx, nil)
@@ -503,6 +610,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearch() {
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentSearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -510,8 +624,14 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchImageComponents() 
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
@@ -532,6 +652,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchImageComponents() 
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentSearchImageComponents failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -539,8 +666,14 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchRawImageComponents
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageComponentStore.SearchRawImageComponents(testCtx, nil)
@@ -561,6 +694,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageComponentSearchRawImageComponents
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageComponentSearchRawImageComponents failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -569,13 +709,26 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSingleScopeOnly() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1x1)
 			s.NoError(err)
 			s.Equal(c.expectedComponentFound[nodeComponentID1x1], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentExistsSingleScopeOnly failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -584,13 +737,26 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentExistsSharedComponent() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeComponentStore.Exists(testCtx, nodeComponentID1s2x3)
 			s.NoError(err)
 			s.Equal(c.expectedComponentFound[nodeComponentID1s2x3], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentExistsSharedComponent failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -599,11 +765,17 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSingleScopeOnly() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetComponent := nodeComponent1x1
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1x1)
 			s.NoError(err)
@@ -616,6 +788,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSingleScopeOnly() {
 				s.Nil(nodeComponent)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentGetSingleScopeOnly failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -624,11 +803,17 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSharedComponent() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetComponent := nodeComponent1s2x3
 	componentName := targetComponent.GetName()
 	cvss := targetComponent.GetTopCvss()
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeComponent, found, err := s.nodeComponentStore.Get(testCtx, nodeComponentID1s2x3)
 			s.NoError(err)
@@ -641,6 +826,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetSharedComponent() {
 				s.Nil(nodeComponent)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentGetSharedComponent failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -648,6 +840,12 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	componentIDs := []string{
 		nodeComponentID1x1,
 		nodeComponentID1x2,
@@ -655,7 +853,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
 		nodeComponentID2x5,
 	}
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeComponents, err := s.nodeComponentStore.GetBatch(testCtx, componentIDs)
 			s.NoError(err)
@@ -671,16 +869,28 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentGetBatch() {
 			}
 			s.ElementsMatch(expectedComponentIDs, fetchedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentGetBatch failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
 func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
-	s.T().Skip("Skipping Component count tests for now.")
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			count, err := s.nodeComponentStore.Count(testCtx, nil)
@@ -693,6 +903,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentCount() {
 			}
 			s.Equal(expectedCount, count)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentCount failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -700,8 +917,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearch() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeComponentStore.Search(testCtx, nil)
@@ -722,6 +945,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearch() {
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentSearch failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -729,8 +959,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeComponentStore.SearchNodeComponents(testCtx, nil)
@@ -751,6 +987,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchNodeComponents() {
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentSearchNodeComponents failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -758,8 +1001,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchRawNodeComponents()
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeComponentTestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeComponentStore.SearchRawNodeComponents(testCtx, nil)
@@ -780,5 +1029,12 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeComponentSearchRawNodeComponents()
 			}
 			s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeComponentSearchRawNodeComponents failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }

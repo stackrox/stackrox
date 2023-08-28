@@ -10,6 +10,8 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -22,6 +24,10 @@ const (
 
 	waitForIndexing     = true
 	dontWaitForIndexing = false
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestImageCVEEdgeDataStoreSAC(t *testing.T) {
@@ -199,11 +205,17 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestGet() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := img1cve1edge
 	expectedSrcID := fixtures.GetImageSherlockHolmes1().GetId()
 	expectedTargetID := getCveID(fixtures.GetEmbeddedImageCVE1234x0001(), imageOS)
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 			s.NoError(err)
@@ -217,6 +229,13 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestGet() {
 				s.Nil(edge)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGet failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -225,8 +244,14 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -241,6 +266,13 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearch() {
 				s.True(c.expectedEdgeFound[r.ID])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -249,8 +281,14 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -265,6 +303,13 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 				s.True(c.expectedEdgeFound[r.GetId()])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -273,8 +318,14 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -289,5 +340,12 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 				s.True(c.expectedEdgeFound[r.GetId()])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchRawEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }

@@ -7,12 +7,14 @@ import (
 	"testing"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/central/image/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -23,6 +25,10 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestImageDataStoreSAC(t *testing.T) {
@@ -295,11 +301,17 @@ func (s *imageDatastoreSACSuite) TestExists() {
 	s.Require().NoError(setupErr)
 	s.Require().NotZero(len(images))
 	image := images[0]
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, testCase := range cases {
-		s.Run(name, func() {
+		caseSucceeded := s.Run(name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			exists, err := s.datastore.Exists(ctx, image.GetId())
 			s.NoError(err)
@@ -309,6 +321,13 @@ func (s *imageDatastoreSACSuite) TestExists() {
 				s.False(exists)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExists failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -318,11 +337,17 @@ func (s *imageDatastoreSACSuite) TestListImage() {
 	s.Require().NoError(setupErr)
 	s.Require().NotZero(len(images))
 	image := images[0]
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, testCase := range cases {
-		s.Run(name, func() {
+		caseSucceeded := s.Run(name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			readImage, found, err := s.datastore.ListImage(ctx, image.GetId())
 			s.Require().NoError(err)
@@ -334,6 +359,13 @@ func (s *imageDatastoreSACSuite) TestListImage() {
 				s.Nil(readImage)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestListImage failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -343,11 +375,17 @@ func (s *imageDatastoreSACSuite) TestGetImage() {
 	s.Require().NoError(setupErr)
 	s.Require().NotZero(len(images))
 	image := images[0]
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, testCase := range cases {
-		s.Run(name, func() {
+		caseSucceeded := s.Run(name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			readImage, found, err := s.datastore.GetImage(ctx, image.GetId())
 			s.Require().NoError(err)
@@ -359,6 +397,13 @@ func (s *imageDatastoreSACSuite) TestGetImage() {
 				s.Nil(readImage)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetImage failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -368,11 +413,17 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 	s.Require().NoError(setupErr)
 	s.Require().NotZero(len(images))
 	image := images[0]
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, testCase := range cases {
-		s.Run(name, func() {
+		caseSucceeded := s.Run(name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			readImageMeta, found, err := s.datastore.GetImageMetadata(ctx, image.GetId())
 			s.Require().NoError(err)
@@ -386,13 +437,16 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 				s.Nil(readImageMeta)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
 	}
 
 	s.Require().True(len(images) > 1)
 	image2 := images[1]
 	// Test GetManyImageMetadata in postgres mode (only supported mode).
 	for name, testCase := range cases {
-		s.Run("Many_"+name, func() {
+		caseSucceeded := s.Run("Many_"+name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
 			s.Require().NoError(err)
@@ -419,6 +473,13 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 				s.Equal(0, len(readMeta))
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetImageMetadata failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -429,11 +490,17 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 	s.Require().True(len(images) > 1)
 	image1 := images[0]
 	image2 := images[1]
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
 
 	for name, testCase := range cases {
-		s.Run(name, func() {
+		caseSucceeded := s.Run(name, func() {
 			ctx := s.testContexts[testCase.ScopeKey]
 			readMeta, err := s.datastore.GetImagesBatch(ctx, []string{image1.GetId(), image2.GetId()})
 			s.Require().NoError(err)
@@ -460,6 +527,13 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 				s.Equal(0, len(readMeta))
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetImagesBatch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -631,10 +705,16 @@ func (s *imageDatastoreSACSuite) TestCountImages() {
 	cleanup, setupErr := s.setupSearchTest()
 	defer cleanup()
 	s.Require().NoError(setupErr)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedCount := 0
 			for _, visible := range testCase {
@@ -646,6 +726,13 @@ func (s *imageDatastoreSACSuite) TestCountImages() {
 			s.NoError(err)
 			s.Equal(expectedCount, count)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestCountImages failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -653,10 +740,16 @@ func (s *imageDatastoreSACSuite) TestCount() {
 	cleanup, setupErr := s.setupSearchTest()
 	defer cleanup()
 	s.Require().NoError(setupErr)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedCount := 0
 			for _, visible := range testCase {
@@ -668,6 +761,13 @@ func (s *imageDatastoreSACSuite) TestCount() {
 			s.NoError(err)
 			s.Equal(expectedCount, count)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestCount failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -675,10 +775,16 @@ func (s *imageDatastoreSACSuite) TestSearch() {
 	cleanup, setupErr := s.setupSearchTest()
 	defer cleanup()
 	s.Require().NoError(setupErr)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedIDs := make([]string, 0, len(testCase))
 			for imageID, visible := range testCase {
@@ -698,6 +804,13 @@ func (s *imageDatastoreSACSuite) TestSearch() {
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -705,10 +818,16 @@ func (s *imageDatastoreSACSuite) TestSearchImages() {
 	cleanup, setupErr := s.setupSearchTest()
 	defer cleanup()
 	s.Require().NoError(setupErr)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedIDs := make([]string, 0, len(testCase))
 			for imageID, visible := range testCase {
@@ -728,6 +847,13 @@ func (s *imageDatastoreSACSuite) TestSearchImages() {
 			}
 			s.ElementsMatch(expectedIDs, resultIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchImages failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -740,10 +866,16 @@ func (s *imageDatastoreSACSuite) TestSearchRawImages() {
 		fixtures.GetImageSherlockHolmes1().GetId(): fixtures.GetImageSherlockHolmes1(),
 		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
 	}
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedIDs := make([]string, 0, len(testCase))
 			for imageID, visible := range testCase {
@@ -766,6 +898,13 @@ func (s *imageDatastoreSACSuite) TestSearchRawImages() {
 				s.verifyRawImagesEqual(refImages[imageID], resultImages[imageID])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchRawImages failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -778,10 +917,16 @@ func (s *imageDatastoreSACSuite) TestSearchListImages() {
 		fixtures.GetImageSherlockHolmes1().GetId(): fixtures.GetImageSherlockHolmes1(),
 		fixtures.GetImageDoctorJekyll2().GetId():   fixtures.GetImageDoctorJekyll2(),
 	}
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.pgtestbase.DB,
+	)
+	failed := false
 
 	cases := s.getSearchTestCases()
 	for key, testCase := range cases {
-		s.Run(key, func() {
+		caseSucceeded := s.Run(key, func() {
 			ctx := s.testContexts[key]
 			expectedIDs := make([]string, 0, len(testCase))
 			for imageID, visible := range testCase {
@@ -804,5 +949,12 @@ func (s *imageDatastoreSACSuite) TestSearchListImages() {
 				s.verifyListImagesEqual(types.ConvertImageToListImage(refImages[imageID]), resultListImages[imageID])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchListImages failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }

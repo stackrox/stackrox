@@ -10,6 +10,8 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -20,6 +22,8 @@ import (
 
 var (
 	imageScanOperatingSystem = "crime-stories"
+
+	log = logging.LoggerForModule()
 )
 
 func TestImageComponentCVEEdgeDatastoreSAC(t *testing.T) {
@@ -193,14 +197,27 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleCom
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp1cve1edge
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
 			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExistsEdgeFromSingleComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -209,14 +226,27 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSingleCom
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp1cve2edge
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
 			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExistsEdgeFromSingleComponentToSharedCVE failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -225,14 +255,27 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestExistsEdgeFromSharedCom
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp3cve4edge
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			exists, err := s.datastore.Exists(testCtx, targetEdgeID)
 			s.NoError(err)
 			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExistsEdgeFromSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -241,11 +284,17 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp1cve1edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
 	expectedTargetID := getCveID(fixtures.GetEmbeddedImageCVE1234x0001(), imageScanOperatingSystem)
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 			s.NoError(err)
@@ -259,6 +308,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 				s.Nil(edge)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetEdgeFromSingleComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -267,11 +323,17 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp1cve2edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
 	expectedTargetID := getCveID(fixtures.GetEmbeddedImageCVE4567x0002(), imageScanOperatingSystem)
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 			s.NoError(err)
@@ -285,6 +347,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 				s.Nil(edge)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetEdgeFromSingleComponentToSharedCVE failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -293,11 +362,17 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompon
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetEdgeID := cmp3cve4edge
 	expectedSrcID := getComponentID(fixtures.GetEmbeddedImageComponent1s2x3(), imageScanOperatingSystem)
 	expectedTargetID := getCveID(fixtures.GetEmbeddedImageCVE3456x0004(), imageScanOperatingSystem)
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.testContexts[c.contextKey]
 			edge, exists, err := s.datastore.Get(testCtx, targetEdgeID)
 			s.NoError(err)
@@ -311,6 +386,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompon
 				s.Nil(edge)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetEdgeFromSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -319,8 +401,14 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -332,6 +420,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestCount() {
 			s.NoError(err)
 			s.Equal(expectedCount, count)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestCount failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -340,8 +435,14 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -356,6 +457,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 				s.True(c.expectedEdgeFound[r.ID])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -364,8 +472,14 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -380,6 +494,13 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 				s.True(c.expectedEdgeFound[r.GetId()])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -388,8 +509,14 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range testCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			expectedCount := 0
 			for _, visible := range c.expectedEdgeFound {
 				if visible {
@@ -404,5 +531,12 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 				s.True(c.expectedEdgeFound[r.GetId()])
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSearchRawEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }

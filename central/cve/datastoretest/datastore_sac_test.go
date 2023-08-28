@@ -12,10 +12,16 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestCVEDataStoreSAC(t *testing.T) {
@@ -420,16 +426,29 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSingleScopeOnly() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEExistsSingleScopeOnly failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -438,16 +457,29 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsSharedAcrossComponents()
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEExistsSharedAcrossComponents failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -456,16 +488,29 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEExistsFromSharedComponent() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			exists, err := s.imageCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEExistsFromSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -474,12 +519,18 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE1234x0001()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -492,6 +543,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 				s.Nil(imageCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEGetSingleScopeOnly failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -500,12 +558,18 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE4567x0002()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -518,6 +582,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetSharedAcrossComponents() {
 				s.Nil(imageCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEGetSharedAcrossComponents failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -526,12 +597,18 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedImageCVE3456x0004()
 	cveName := targetCVE.GetCve()
 	cveID := getImageCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -544,6 +621,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetFromSharedComponent() {
 				s.Nil(imageCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEGetFromSharedComponent failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -551,6 +635,12 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE1 := fixtures.GetEmbeddedImageCVE1234x0001()
 	targetCVE2 := fixtures.GetEmbeddedImageCVE4567x0002()
 	targetCVE3 := fixtures.GetEmbeddedImageCVE1234x0003()
@@ -568,7 +658,7 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 		cveIDs = append(cveIDs, getImageCVEID(cve.GetCve()))
 	}
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.imageTestContexts[c.contextKey]
 			imageCVEs, err := s.imageCVEStore.GetBatch(testCtx, cveIDs)
 			s.NoError(err)
@@ -584,6 +674,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVEGetBatch() {
 			}
 			s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVEGetBatch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -591,8 +688,14 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageCVEStore.Search(testCtx, nil)
@@ -613,6 +716,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearch() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVESearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -620,8 +730,14 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageCVEStore.SearchImageCVEs(testCtx, nil)
@@ -642,6 +758,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchCVEs() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVESearchCVEs failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -649,8 +772,14 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range imageCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.imageTestContexts[c.contextKey]
 			results, err := s.imageCVEStore.SearchRawImageCVEs(testCtx, nil)
@@ -672,6 +801,13 @@ func (s *cveDataStoreSACTestSuite) TestSACImageCVESearchRawCVEs() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACImageCVESearchRawCVEs failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -692,16 +828,29 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSingleScopeOnly() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEExistsSingleScopeOnly failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -710,16 +859,29 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsSharedAcrossComponents() 
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEExistsSharedAcrossComponents failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -728,16 +890,29 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEExistsFromSharedComponent() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			exists, err := s.nodeCVEStore.Exists(testCtx, cveID)
 			s.NoError(err)
 			s.Equal(c.expectedCVEFound[cveName], exists)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEExistsFromSharedComponent failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -746,12 +921,18 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE1234x0001()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -764,6 +945,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 				s.Nil(nodeCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEGetSingleScopeOnly failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -772,12 +960,18 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE4567x0002()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -790,6 +984,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 				s.Nil(nodeCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEGetSharedAcrossComponents failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -798,12 +999,18 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE := fixtures.GetEmbeddedNodeCVE3456x0004()
 	cveName := targetCVE.GetCve()
 	cveID := getNodeCVEID(cveName)
 	cvss := targetCVE.GetCvss()
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVE, found, err := s.nodeCVEStore.Get(testCtx, cveID)
 			s.NoError(err)
@@ -816,6 +1023,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetFromSharedComponent() {
 				s.Nil(nodeCVE)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEGetFromSharedComponent failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -823,6 +1037,12 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	targetCVE1 := fixtures.GetEmbeddedNodeCVE1234x0001()
 	targetCVE2 := fixtures.GetEmbeddedNodeCVE4567x0002()
 	targetCVE3 := fixtures.GetEmbeddedNodeCVE1234x0003()
@@ -840,7 +1060,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 		cveIDs = append(cveIDs, getNodeCVEID(cve.GetCve()))
 	}
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			nodeCVEs, err := s.nodeCVEStore.GetBatch(testCtx, cveIDs)
 			s.NoError(err)
@@ -856,6 +1076,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 			}
 			s.ElementsMatch(expectedCVEIDs, fetchedCVEIDs)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVEGetBatch failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -863,8 +1090,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVECount() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			testCtx := s.nodeTestContexts[c.contextKey]
 			count, err := s.nodeCVEStore.Count(testCtx, nil)
 			s.NoError(err)
@@ -876,6 +1109,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVECount() {
 			}
 			s.Equal(expectedCount, count)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVECount failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -883,8 +1123,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeCVEStore.Search(testCtx, nil)
@@ -905,6 +1151,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVESearch failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -912,8 +1165,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeCVEStore.SearchNodeCVEs(testCtx, nil)
@@ -934,6 +1193,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVESearchCVEs failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 
@@ -941,8 +1207,14 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
 	err := s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	defer s.cleanNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
+	nodeGraphBefore := graphDBTestUtils.GetNodeGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	for _, c := range nodeCVETestCases {
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 
 			testCtx := s.nodeTestContexts[c.contextKey]
 			results, err := s.nodeCVEStore.SearchRawCVEs(testCtx, nil)
@@ -964,6 +1236,13 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
 			}
 			s.ElementsMatch(fetchedCVENames, expectedCVENames)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestSACNodeCVESearchRawCVEs failed, dumping DB content.")
+		nodeGraphBefore.Log()
 	}
 }
 

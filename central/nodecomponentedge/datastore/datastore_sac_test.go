@@ -9,6 +9,8 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -19,6 +21,10 @@ import (
 
 const (
 	nodeScanOperatingSystem = "Linux"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestNodeComponentEdgeDatastoreSAC(t *testing.T) {
@@ -172,6 +178,12 @@ func getTestCases(nodeIDs []string) []edgeTestCase {
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	// Inject the fixture graph and test for node1 to component1 edge
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
@@ -179,18 +191,31 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestExists() {
 	testCases := getTestCases(nodeIDs)
 	for i := range testCases {
 		c := testCases[i]
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			found, err := s.datastore.Exists(ctx, targetEdgeID)
 			s.NoError(err)
 			s.Equal(c.expectedEdgeFound[targetEdgeID], found)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExists failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	// Inject the fixture graph and test for node1 to component1 edge
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	node1 := nodeIDs[0]
@@ -200,7 +225,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 	testCases := getTestCases(nodeIDs)
 	for i := range testCases {
 		c := testCases[i]
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			obj, found, err := s.datastore.Get(ctx, targetEdgeID)
@@ -216,11 +241,24 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 				s.Nil(obj)
 			}
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGet failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixture graph and test for node1 to component1 edge and node2 to component 4 edges
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
@@ -236,7 +274,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	targetIDs := []string{targetEdge1ID, targetEdge2ID}
 	for i := range testCases {
 		c := testCases[i]
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			s.T().Parallel()
 			ctx := s.testContexts[c.contextKey]
 			edges, err := s.datastore.GetBatch(ctx, targetIDs)
@@ -272,11 +310,18 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 			s.Equal(expectedEdge1, foundEdge1)
 			s.Equal(expectedEdge2, foundEdge2)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestGetBatch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
-	s.run(func(c edgeTestCase) {
+	s.run("TestCount", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
@@ -291,7 +336,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestCount() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearch", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
 		for edgeID, visible := range c.expectedEdgeFound {
@@ -311,7 +356,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearch() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearchEdges", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
 		for edgeID, visible := range c.expectedEdgeFound {
@@ -331,7 +376,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 }
 
 func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	s.run(func(c edgeTestCase) {
+	s.run("TestSearchRawEdges", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedIDs := make([]string, 0, len(c.expectedEdgeFound))
 		for edgeID, visible := range c.expectedEdgeFound {
@@ -350,14 +395,27 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	})
 }
 
-func (s *nodeComponentEdgeDatastoreSACTestSuite) run(f func(c edgeTestCase)) {
+func (s *nodeComponentEdgeDatastoreSACTestSuite) run(testName string, f func(c edgeTestCase)) {
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 	nodeIDs := s.testGraphDatastore.GetStoredNodeIDs()
 	testCases := getTestCases(nodeIDs)
 	for i := range testCases {
 		c := testCases[i]
-		s.Run(c.contextKey, func() {
+		caseSucceeded := s.Run(c.contextKey, func() {
 			s.T().Parallel()
 			f(c)
 		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
 	}
 }

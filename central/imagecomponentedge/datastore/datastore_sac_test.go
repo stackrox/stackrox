@@ -9,6 +9,8 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -19,6 +21,8 @@ import (
 
 var (
 	imageScanOperatingSystem = "crime-stories"
+
+	log = logging.LoggerForModule()
 
 	dontWaitForIndexing = false
 	waitForIndexing     = true
@@ -177,13 +181,28 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	targetEdgeID := img1cmp1edge
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		exists, err := s.datastore.Exists(ctx, targetEdgeID)
-		s.NoError(err)
-		s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			exists, err := s.datastore.Exists(ctx, targetEdgeID)
+			s.NoError(err)
+			s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
+		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Info("TestExistsEdge failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -192,23 +211,38 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	targetEdgeID := img1cmp1edge
 	expectedSrcID := fixtures.GetImageSherlockHolmes1().GetId()
 	expectedDstID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		fetched, found, err := s.datastore.Get(ctx, targetEdgeID)
-		s.NoError(err)
-		if c.expectedEdgeFound[targetEdgeID] {
-			s.True(found)
-			s.Require().NotNil(fetched)
-			s.Equal(expectedSrcID, fetched.GetImageId())
-			s.Equal(expectedDstID, fetched.GetImageComponentId())
-		} else {
-			s.False(found)
-			s.Nil(fetched)
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			fetched, found, err := s.datastore.Get(ctx, targetEdgeID)
+			s.NoError(err)
+			if c.expectedEdgeFound[targetEdgeID] {
+				s.True(found)
+				s.Require().NotNil(fetched)
+				s.Equal(expectedSrcID, fetched.GetImageId())
+				s.Equal(expectedDstID, fetched.GetImageComponentId())
+			} else {
+				s.False(found)
+				s.Nil(fetched)
+			}
+		})
+		if !caseSucceeded {
+			failed = true
 		}
+	}
+	if failed {
+		log.Info("TestGetEdge failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -217,6 +251,12 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	targetEdge1ID := img1cmp1edge
 	expectedSrc1ID := fixtures.GetImageSherlockHolmes1().GetId()
@@ -226,31 +266,40 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	expectedDst2ID := getComponentID(fixtures.GetEmbeddedImageComponent2x4(), imageScanOperatingSystem)
 	toFetch := []string{targetEdge1ID, targetEdge2ID}
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		fetched, err := s.datastore.GetBatch(ctx, toFetch)
-		s.NoError(err)
-		expectedFetchedSize := 0
-		if c.expectedEdgeFound[targetEdge1ID] {
-			expectedFetchedSize++
-		}
-		if c.expectedEdgeFound[targetEdge2ID] {
-			expectedFetchedSize++
-		}
-		fetchedMatches := 0
-		s.Equal(expectedFetchedSize, len(fetched))
-		for _, edge := range fetched {
-			if edge.GetId() == targetEdge1ID {
-				fetchedMatches++
-				s.Equal(expectedSrc1ID, edge.GetImageId())
-				s.Equal(expectedDst1ID, edge.GetImageComponentId())
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			fetched, err := s.datastore.GetBatch(ctx, toFetch)
+			s.NoError(err)
+			expectedFetchedSize := 0
+			if c.expectedEdgeFound[targetEdge1ID] {
+				expectedFetchedSize++
 			}
-			if edge.GetId() == targetEdge2ID {
-				fetchedMatches++
-				s.Equal(expectedSrc2ID, edge.GetImageId())
-				s.Equal(expectedDst2ID, edge.GetImageComponentId())
+			if c.expectedEdgeFound[targetEdge2ID] {
+				expectedFetchedSize++
 			}
+			fetchedMatches := 0
+			s.Equal(expectedFetchedSize, len(fetched))
+			for _, edge := range fetched {
+				if edge.GetId() == targetEdge1ID {
+					fetchedMatches++
+					s.Equal(expectedSrc1ID, edge.GetImageId())
+					s.Equal(expectedDst1ID, edge.GetImageComponentId())
+				}
+				if edge.GetId() == targetEdge2ID {
+					fetchedMatches++
+					s.Equal(expectedSrc2ID, edge.GetImageId())
+					s.Equal(expectedDst2ID, edge.GetImageComponentId())
+				}
+			}
+			s.Equal(expectedFetchedSize, fetchedMatches)
+		})
+		if !caseSucceeded {
+			failed = true
 		}
-		s.Equal(expectedFetchedSize, fetchedMatches)
+	}
+	if failed {
+		log.Info("TestGetBatch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -258,18 +307,33 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		expectedCount := 0
-		for _, visible := range c.expectedEdgeFound {
-			if visible {
-				expectedCount++
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			expectedCount := 0
+			for _, visible := range c.expectedEdgeFound {
+				if visible {
+					expectedCount++
+				}
 			}
+			count, err := s.datastore.Count(ctx)
+			s.NoError(err)
+			s.Equal(expectedCount, count)
+		})
+		if !caseSucceeded {
+			failed = true
 		}
-		count, err := s.datastore.Count(ctx)
-		s.NoError(err)
-		s.Equal(expectedCount, count)
+	}
+	if failed {
+		log.Info("TestCount failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -277,21 +341,36 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		expectedCount := 0
-		for _, visible := range c.expectedEdgeFound {
-			if visible {
-				expectedCount++
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			expectedCount := 0
+			for _, visible := range c.expectedEdgeFound {
+				if visible {
+					expectedCount++
+				}
 			}
+			results, err := s.datastore.Search(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(expectedCount, len(results))
+			for _, r := range results {
+				s.True(c.expectedEdgeFound[r.ID])
+			}
+		})
+		if !caseSucceeded {
+			failed = true
 		}
-		results, err := s.datastore.Search(ctx, search.EmptyQuery())
-		s.NoError(err)
-		s.Equal(expectedCount, len(results))
-		for _, r := range results {
-			s.True(c.expectedEdgeFound[r.ID])
-		}
+	}
+	if failed {
+		log.Info("TestSearch failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 }
 
@@ -299,21 +378,36 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		expectedCount := 0
-		for _, visible := range c.expectedEdgeFound {
-			if visible {
-				expectedCount++
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			expectedCount := 0
+			for _, visible := range c.expectedEdgeFound {
+				if visible {
+					expectedCount++
+				}
 			}
+			results, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(expectedCount, len(results))
+			for _, r := range results {
+				s.True(c.expectedEdgeFound[r.GetId()])
+			}
+		})
+		if !caseSucceeded {
+			failed = true
 		}
-		results, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
-		s.NoError(err)
-		s.Equal(expectedCount, len(results))
-		for _, r := range results {
-			s.True(c.expectedEdgeFound[r.GetId()])
-		}
+	}
+	if failed {
+		log.Info("TestSearchEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 
 }
@@ -322,21 +416,36 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
 	defer s.cleanImageToVulnerabilityGraph()
 	s.Require().NoError(err)
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+	failed := false
 
 	for _, c := range testCases {
-		ctx := s.testContexts[c.contextKey]
-		expectedCount := 0
-		for _, visible := range c.expectedEdgeFound {
-			if visible {
-				expectedCount++
+		caseSucceeded := s.Run(c.contextKey, func() {
+			ctx := s.testContexts[c.contextKey]
+			expectedCount := 0
+			for _, visible := range c.expectedEdgeFound {
+				if visible {
+					expectedCount++
+				}
 			}
+			results, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
+			s.NoError(err)
+			s.Equal(expectedCount, len(results))
+			for _, r := range results {
+				s.True(c.expectedEdgeFound[r.GetId()])
+			}
+		})
+		if !caseSucceeded {
+			failed = true
 		}
-		results, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
-		s.NoError(err)
-		s.Equal(expectedCount, len(results))
-		for _, r := range results {
-			s.True(c.expectedEdgeFound[r.GetId()])
-		}
+	}
+	if failed {
+		log.Info("TestSearchRawEdges failed, dumping DB content.")
+		imageGraphBefore.Log()
 	}
 
 }
