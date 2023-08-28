@@ -554,7 +554,7 @@ class NetworkFlowTest extends BaseSpecification {
                 "(${Constants.INTERNET_EXTERNAL_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
                     NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-            if (edges == null && edges.size() == 0) {
+            if (edges == null || edges.size() == 0) {
                 // Debug dump of all INTERNET_EXTERNAL_SOURCE_ID edges
                 currentGraph = NetworkGraphService.getNetworkGraph()
                 def index = currentGraph.nodesList.findIndexOf {
