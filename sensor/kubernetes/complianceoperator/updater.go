@@ -124,7 +124,7 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
 	var err error
-	var ns string
+	ns := u.complianceOperatorNS
 	if u.complianceOperatorNS == "" {
 		ns, err = u.getComplianceOperatorNamespace()
 		if err != nil {
@@ -152,7 +152,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 
 	var version string
 	for key, val := range complianceOperator.Labels {
-		if strings.Contains(key, "owner") {
+		if strings.HasSuffix(key, "owner") {
 			version = strings.TrimPrefix(val, complianceoperator.Name+".")
 		}
 	}
@@ -197,7 +197,6 @@ func (u *updaterImpl) getComplianceOperatorNamespace() (string, error) {
 		if kubeAPIErr.IsNotFound(err) {
 			continue
 		}
-		return "", err
 	}
 
 	return "", errors.Errorf("deployment %s not found in any namespace", complianceoperator.Name)
