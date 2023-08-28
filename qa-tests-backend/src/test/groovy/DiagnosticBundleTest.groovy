@@ -4,8 +4,14 @@ import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-import io.restassured.config.RestAssuredConfig
+import io.restassured.RestAssured
+import io.restassured.config.HttpClientConfig
+import io.restassured.config.HttpClientConfig.HttpClientFactory
 import io.restassured.config.SSLConfig
+
+import org.apache.http.client.HttpClient
+import org.apache.http.impl.client.StandardHttpRequestRetryHandler
+import org.apache.http.impl.client.SystemDefaultHttpClient
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
@@ -101,11 +107,31 @@ class DiagnosticBundleTest extends BaseSpecification {
         }
 
         def response = given()
-                .config(RestAssuredConfig.newConfig()
-                    .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
-                .headers(headers)
-                .when()
-                .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/extensions/diagnostics")
+            .config(RestAssured.config()
+                .httpClient(HttpClientConfig.httpClientConfig()
+                    .httpClientFactory(new HttpClientFactory() {
+            @Override
+            HttpClient createHttpClient() {
+                HttpClient httpClient = new SystemDefaultHttpClient()
+                // Retry 10 times on [InterruptedIOException, UnknownHostException, ConnectException,
+                // SSLException].
+                httpClient.setHttpRequestRetryHandler(new StandardHttpRequestRetryHandler(10, true))
+                return httpClient
+            }
+                    })
+                    // Times out after 1 minute of trying to establish a connection.
+                    .setParam("http.connection.timeout", 60000)
+                    // Times out after 5 minutes of connection inactivity.
+                    .setParam("http.socket.timeout", 300000)
+                )
+                .sslConfig(SSLConfig.sslConfig()
+                    .relaxedHTTPSValidation()
+                    .allowAllHostnames()
+                )
+            )
+            .headers(headers)
+            .when()
+            .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/extensions/diagnostics")
 
         then:
         "Check that response is as expected"
