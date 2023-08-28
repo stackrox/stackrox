@@ -134,24 +134,33 @@ func (m *endpointManagerImpl) endpointDataForDeployment(w *deploymentWrap) *clus
 	return result
 }
 
-func getAllServiceIPs(svc *v1.Service) (serviceIPs []net.IPAddress) {
+// WIP
+type typedServiceIP struct {
+	IP     net.IPAddress
+	IPType clusterentities.EndpointIPType
+}
+
+func getAllServiceIPs(svc *v1.Service) (serviceIPs []typedServiceIP) {
 	if clusterIP := net.ParseIP(svc.Spec.ClusterIP); clusterIP.IsValid() {
-		serviceIPs = append(serviceIPs, clusterIP)
+		serviceIPs = append(serviceIPs, typedServiceIP{IP: clusterIP, IPType: clusterentities.ClusterIP})
 	}
 	for _, extIPStr := range svc.Spec.ExternalIPs {
 		if extIP := net.ParseIP(extIPStr); extIP.IsValid() {
-			serviceIPs = append(serviceIPs, extIP)
+			serviceIPs = append(serviceIPs, typedServiceIP{IP: extIP, IPType: clusterentities.ExternalIP})
+
 		}
 	}
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer {
 		for _, ingressLB := range svc.Status.LoadBalancer.Ingress {
 			if lbIP := net.ParseIP(ingressLB.IP); lbIP.IsValid() {
-				serviceIPs = append(serviceIPs, lbIP)
+				serviceIPs = append(serviceIPs, typedServiceIP{IP: lbIP, IPType: clusterentities.LoadBalancerIP})
 			}
 		}
 	}
 	return
 }
+
+// WIP
 
 func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.IPAddress, nodeIPs []net.IPAddress, port v1.ServicePort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
@@ -188,7 +197,7 @@ func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWr
 
 	serviceIPs := getAllServiceIPs(svc.Service)
 	for _, port := range svc.Spec.Ports {
-		addEndpointDataForServicePort(deployment, serviceIPs, allNodeIPs, port, data)
+		addEndpointDataForServicePort(deployment, serviceIPs, allNodeIPs, port, data) // FIXME: What are the nodeIPs for? Do they need tracking as well?
 	}
 }
 

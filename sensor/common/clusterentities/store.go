@@ -75,6 +75,31 @@ func (e *Store) initMaps() {
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 }
 
+// WIP
+// EndpointIPType is an Enum representing the type of IP the endpoint has
+type EndpointIPType int64
+
+const (
+	ClusterIP EndpointIPType = iota
+	LoadBalancerIP
+	ExternalIP
+)
+
+func (e EndpointIPType) String() string {
+	switch e {
+	case ClusterIP:
+		return "ClusterIP"
+	case LoadBalancerIP:
+		return "LoadBalancer"
+	case ExternalIP:
+		return "ExternalIP"
+	}
+	return "Unknown"
+
+}
+
+// WIP
+
 // EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
 type EndpointTargetInfo struct {
 	ContainerPort uint16
