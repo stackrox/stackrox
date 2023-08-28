@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
@@ -128,6 +129,8 @@ type Schema struct {
 	// some categories in cases of overlapping search fields.
 	// This is optional.
 	SearchScope map[v1.SearchCategory]struct{}
+
+	ScopingResource permissions.ResourceMetadata
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,
