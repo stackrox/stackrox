@@ -154,7 +154,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	}
 	for _, reportSnapshot := range reportSnapshots {
 		if currentConfig.Creator.GetId() == reportSnapshot.GetRequester().GetId() {
-			return nil, errors.Wrap(errox.InvalidArgs, "Owner of report config has a job in waiting or preparing state")
+			return nil, errors.Wrap(errox.InvalidArgs, "User has a report job running for this configuration.")
 		}
 	}
 
@@ -251,7 +251,7 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
-	reportSnapshots, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
+	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
 	if len(reportSnapshots) > 0 {
 		return &apiV2.Empty{}, errors.Wrapf(errox.InvalidArgs, "Report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}

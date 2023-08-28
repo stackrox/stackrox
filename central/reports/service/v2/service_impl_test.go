@@ -147,7 +147,7 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 	}
 
 	status := &storage.ReportStatus{
-		RunState: 0,
+		RunState: storage.ReportStatus_WAITING,
 	}
 
 	reportSnapshots := []*storage.ReportSnapshot{{
