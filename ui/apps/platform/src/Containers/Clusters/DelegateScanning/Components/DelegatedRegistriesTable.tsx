@@ -261,6 +261,8 @@ function DelegatedRegistriesTable({
                                 <TextInput
                                     isRequired
                                     type="text"
+                                    id={`${registry.uuid as string}-path-input`}
+                                    name={`${registry.uuid as string}-path-input`}
                                     value={registry.path}
                                     onChange={(value) => handlePathChange(rowIndex, value)}
                                 />
