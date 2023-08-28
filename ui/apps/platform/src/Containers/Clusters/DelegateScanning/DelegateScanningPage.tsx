@@ -38,10 +38,18 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
+function getUuid() {
+    const MAX_RANDOM = 1000000;
+
+    // eslint-disable-next-line no-restricted-globals
+    const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
+
+    return uuid;
+}
+
 function addUuidstoRegistries(config: DelegatedRegistryConfig) {
     const newRegistries = config.registries.map((registry) => {
-        // eslint-disable-next-line no-restricted-globals
-        const uuid = self.crypto.randomUUID();
+        const uuid = getUuid();
 
         return {
             path: registry.path,
@@ -140,12 +148,11 @@ function DelegateScanningPage() {
     function addRegistryRow() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
-        // eslint-disable-next-line no-restricted-globals
-        const uuid = self.crypto.randomUUID();
+        const uuid = getUuid();
 
         newState.registries.push({
             path: '',
-            clusterId: delegatedRegistryConfig.defaultClusterId,
+            clusterId: '',
             uuid,
         });
 
@@ -170,6 +177,7 @@ function DelegateScanningPage() {
                 return {
                     path: value,
                     clusterId: registry.clusterId,
+                    uuid: registry.uuid,
                 };
             }
 
@@ -189,6 +197,7 @@ function DelegateScanningPage() {
                 return {
                     path: registry.path,
                     clusterId: value,
+                    uuid: registry.uuid,
                 };
             }
 
