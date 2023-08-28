@@ -6,10 +6,11 @@ help developers avoid common mistakes and build more robust APIs. When in doubt,
 in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archives/C05MMG2PP8A).
 
 ## Table of Contents
-- [Naming Guidelines](#Naming Guidelines)
-  - [Service Name](Service Name)
-  - [Method Name](Method Name)
-  - [Message Name](Message Name)
+
+- [Naming Guidelines](#naming-guidelines)
+  - [Service Name](#service-name)
+  - [Method Name](#method-name)
+  - [Message Name](#message-name)
 
 ##Naming Guidelines
 ### Service Name
