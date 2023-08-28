@@ -1437,6 +1437,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Global",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+		"enabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
@@ -15426,6 +15427,11 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx 
 		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_GlobalResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
+	return value
 }
 
 type vulnerabilityRequest_Scope_ImageResolver struct {
