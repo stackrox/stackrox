@@ -12,7 +12,8 @@ in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archi
   - [Method Name](#method-name)
   - [Message Name](#message-name)
 
-##Naming Guidelines
+## Naming Guidelines
+
 ### Service Name
 Service name **must** be unique and should use a noun that generally refers to a resource or product component 
 e.g. `DeploymentService`, `ReportService`, `ComplianceService`. Intuitive and well-known short forms or 
