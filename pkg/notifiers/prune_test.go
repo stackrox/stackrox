@@ -56,6 +56,7 @@ func TestFilterMap(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
+		c := c
 		t.Run(c.name, func(t *testing.T) {
 			filterMap(c.inputMap, c.maxSize, &c.currSize)
 			assert.Equal(t, c.expectedMap, c.inputMap)
