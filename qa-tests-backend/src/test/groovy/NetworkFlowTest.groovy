@@ -1,6 +1,8 @@
 import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
+import java.util.concurrent.TimeUnit
+
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
@@ -207,6 +209,11 @@ class NetworkFlowTest extends BaseSpecification {
         DEPLOYMENTS.add(icmp)
         */
     }
+
+    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
+    @Rule
+    @SuppressWarnings(["JUnitPublicProperty"])
+    Timeout globalTimeout = new Timeout(1600, TimeUnit.SECONDS)
 
     def setupSpec() {
         orchestrator.createNamespace(OTHER_NAMESPACE)
@@ -480,10 +487,6 @@ class NetworkFlowTest extends BaseSpecification {
         assert edges
     }
 
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1600, TimeUnit.SECONDS)
     @Tag("NetworkFlowVisualization")
     def "Verify connections from external sources"() {
         given:
