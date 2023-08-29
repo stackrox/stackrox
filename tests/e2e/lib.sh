@@ -276,7 +276,15 @@ deploy_sensor_via_operator() {
         --output-secrets - \
     | kubectl -n stackrox apply -f -
 
-    kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
+    template_cr_file=tests/e2e/yaml/secured-cluster-cr-template.yaml
+    gen_cr_file=tests/e2e/yaml/secured-cluster-cr-gen.yaml
+
+    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+       upper_case_collection_method="$(echo core_bpf | tr '[:lower:]' '[:upper:]')"
+       sed "s|__COLLECTION_METHOD__|$upper_case_collection_method|" "$template_cr_file" > "$gen_cr_file"
+    fi
+    kubectl apply -n stackrox -f "$gen_cr_file"
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300
@@ -290,10 +298,10 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
-       kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
-    fi
+    #if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+    #   echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+    #   kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
+    #fi
 
     # Every E2E test should have ROX_RESYNC_DISABLED="true"
     kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
