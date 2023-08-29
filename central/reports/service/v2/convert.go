@@ -29,8 +29,8 @@ var (
 	storageRunStateToV2 = map[storage.ReportStatus_RunState]apiV2.ReportStatus_RunState{
 		storage.ReportStatus_WAITING:   apiV2.ReportStatus_WAITING,
 		storage.ReportStatus_PREPARING: apiV2.ReportStatus_PREPARING,
-		storage.ReportStatus_GENERATED: apiV2.ReportStatus_SUCCESS,
-		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_SUCCESS,
+		storage.ReportStatus_GENERATED: apiV2.ReportStatus_GENERATED,
+		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_DELIVERED,
 		storage.ReportStatus_FAILURE:   apiV2.ReportStatus_FAILURE,
 	}
 
