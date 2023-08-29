@@ -27,7 +27,7 @@ export type Cluster = {
 /**
  * Fetches list of registered clusters.
  */
-export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Cluster[]> {
+export function fetchClusters(options?: RestSearchOption[]): Promise<Cluster[]> {
     let queryString = '';
     if (options && options.length !== 0) {
         const query = searchOptionsToQuery(options);

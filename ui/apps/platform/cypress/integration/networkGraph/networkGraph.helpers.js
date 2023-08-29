@@ -20,8 +20,7 @@ const clusterSelect = `${navSelector} .cluster-select > button`;
 const namespaceSelect = `${navSelector} .namespace-select > button`;
 const deploymentSelect = `${navSelector} .deployment-select > button`;
 
-const clusterNamespacesTarget =
-    '/v1/sac/clusters/*/namespaces?permissions=NetworkGraph&permissions=Deployment';
+const clusterNamespacesTarget = '/v1/sac/clusters/*/namespaces?permissions=*';
 
 export function selectCluster() {
     cy.intercept('GET', clusterNamespacesTarget);
@@ -81,7 +80,7 @@ export const searchMetadataOptionsAlias = 'search/metadata/options';
 const routeMatcherMapToVisitNetworkGraph = {
     [clustersAlias]: {
         method: 'GET',
-        url: '/v1/sac/clusters?permissions=NetworkGraph&permissions=Deployment',
+        url: '/v1/sac/clusters?permissions=*',
     },
 };
 

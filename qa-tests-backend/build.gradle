@@ -18,7 +18,7 @@ repositories {
 def grpcVersion = '1.21.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.23.2'
-def protobufVersion = '3.23.4'
+def protobufVersion = '3.24.2'
 def nettyTcNativeVersion = '2.0.45.Final'
 def fabric8Version = '6.8.0'
 def jacksonVersion = '2.14.2'
@@ -96,7 +96,7 @@ dependencies {
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.1'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
 

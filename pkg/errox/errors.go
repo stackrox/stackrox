@@ -39,5 +39,8 @@ var (
 	// service. This is a programming error.
 	NoAuthzConfigured = makeSentinel("service authorization is misconfigured")
 
+	// ServerError is a generic server error.
+	ServerError = makeSentinel("server error")
+
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/dexidp/dex/connector"
@@ -16,7 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/satoken"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (
@@ -54,9 +55,10 @@ type callbackAndRefreshConnector interface {
 }
 
 type backend struct {
-	id                  string
-	baseRedirectURLPath string
-	openshiftConnector  callbackAndRefreshConnector
+	id                      string
+	baseRedirectURLPath     string
+	openshiftConnector      callbackAndRefreshConnector
+	openshiftConnectorMutex sync.Mutex
 }
 
 type openShiftSettings struct {
@@ -68,6 +70,26 @@ type openShiftSettings struct {
 var _ authproviders.RefreshTokenEnabledBackend = (*backend)(nil)
 
 func newBackend(id string, callbackURLPath string, _ map[string]string) (authproviders.Backend, error) {
+	openshiftConnector, err := createOpenshiftConnector()
+	if err != nil {
+		return nil, err
+	}
+
+	b := &backend{
+		id:                  id,
+		baseRedirectURLPath: callbackURLPath,
+		openshiftConnector:  openshiftConnector,
+	}
+
+	// Start watching the underlying cert pool injected into the openshift connector.
+	// In case the cert pool changes, we re-create the openshift connector so that newly added trusted CAs
+	// are being added included.
+	watchCertPool(b.recreateOpenshiftConnector)
+
+	return b, nil
+}
+
+func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 	settings, err := getOpenShiftSettings()
 	if err != nil {
 		return nil, err
@@ -85,13 +107,7 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
 
-	b := &backend{
-		id:                  id,
-		baseRedirectURLPath: callbackURLPath,
-		openshiftConnector:  openshiftConnector,
-	}
-
-	return b, nil
+	return openshiftConnector, nil
 }
 
 // There is no config but static settings instead.
@@ -177,6 +193,19 @@ func (b *backend) Validate(_ context.Context, _ *tokens.Claims) error {
 	return nil
 }
 
+func (b *backend) recreateOpenshiftConnector() {
+	openshiftConnector, err := createOpenshiftConnector()
+	if err != nil {
+		log.Errorw("failed to create updated dex openshiftConnector for OpenShift's OAuth Server with new CAs, "+
+			"new certs will not be applied. This may lead to unwanted TLS connection issues.", logging.Err(err))
+		return
+	}
+
+	b.openshiftConnectorMutex.Lock()
+	defer b.openshiftConnectorMutex.Unlock()
+	b.openshiftConnector = openshiftConnector
+}
+
 func getOpenShiftSettings() (openShiftSettings, error) {
 	clientID := "system:serviceaccount:" + env.Namespace.Setting() + ":central"
 
@@ -214,8 +243,8 @@ func getSystemCertPoolWithAdditionalCA(additionalCAPaths ...string) (*x509.CertP
 
 func addAdditionalCAsToCertPool(additionalCAPaths []string, certPool *x509.CertPool) (*x509.CertPool, error) {
 	for _, caPath := range additionalCAPaths {
-		rootCABytes, err := os.ReadFile(caPath)
-		if errors.Is(err, os.ErrNotExist) {
+		rootCABytes, exists, err := readCA(caPath)
+		if !exists {
 			continue
 		}
 		if err != nil {

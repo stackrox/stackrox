@@ -15,6 +15,7 @@ import (
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -43,11 +44,11 @@ type ServiceComponent interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(imageCache expiringcache.Cache, registryStore registryStore) ServiceComponent {
+func NewService(imageCache expiringcache.Cache, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
 	return &serviceImpl{
 		imageCache:    imageCache,
 		registryStore: registryStore,
-		localScan:     scan.NewLocalScan(registryStore),
+		localScan:     scan.NewLocalScan(registryStore, mirrorStore),
 		centralReady:  concurrency.NewSignal(),
 	}
 }

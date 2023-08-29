@@ -290,10 +290,10 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
 		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
-		lowCVESeverity, cveSummary["LOW"],
-		moderateCVESeverity, cveSummary["MEDIUM"],
-		importantCVESeverity, cveSummary["IMPORTANT"],
-		criticalCVESeverity, cveSummary["CRITICAL"])
+		lowCVESeverity, cveSummary[lowCVESeverity.String()],
+		moderateCVESeverity, cveSummary[moderateCVESeverity.String()],
+		importantCVESeverity, cveSummary[importantCVESeverity.String()],
+		criticalCVESeverity, cveSummary[criticalCVESeverity.String()])
 }
 
 // print warning with amount of CVEs found in components

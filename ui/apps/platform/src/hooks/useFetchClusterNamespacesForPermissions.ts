@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NamespaceScopeObject, getNamespacesForClusterAndPermissions } from 'services/RolesService';
+import { ResourceName } from 'types/roleResources';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type NamespaceResponse = {
@@ -15,7 +16,7 @@ const emptyResponse: NamespaceResponse = {
 };
 
 export function useFetchClusterNamespacesForPermissions(
-    permissions: string[],
+    permissions: ResourceName[],
     selectedClusterId?: string | null
 ) {
     const [requestedPermissions] = useState<string[]>(permissions);

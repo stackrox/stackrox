@@ -3,8 +3,6 @@ import { Empty } from './types';
 
 export type DelegatedRegistryConfigEnabledFor = 'NONE' | 'ALL' | 'SPECIFIC';
 
-export type EnabledSelections = Exclude<DelegatedRegistryConfigEnabledFor, 'NONE'>;
-
 // Note:
 // In order to make each row of registry/cluster exceptions work
 // with PatternFly's drag-and-drag Table variant

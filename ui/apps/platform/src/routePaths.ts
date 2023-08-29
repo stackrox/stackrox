@@ -61,17 +61,9 @@ export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
-// Configuration Management paths for links from Search:
-
-export const configManagementRolesPath = `${configManagementPath}/roles`;
-export const configManagementSecretsPath = `${configManagementPath}/secrets`;
-export const configManagementServiceAccountsPath = `${configManagementPath}/serviceaccounts`;
-
-// Vulnerability Management 1.0 paths for links from Dashboard or Search:
+// Vulnerability Management 1.0 path for links from Dashboard:
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
-export const vulnManagementNamespacesPath = `${vulnManagementPath}/namespaces`;
-export const vulnManagementNodesPath = `${vulnManagementPath}/nodes`;
 
 // Compose resourceAccessRequirements from resource names and predicates.
 
@@ -101,6 +93,15 @@ export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
 }
 
 // Source of truth for conditional rendering of Body route paths and NavigationSidebar links.
+
+// Factor out for useFetchClustersForPermissions and useFetchClusterNamespacesForPermissions.
+// If the route ever requires global resources, spread them in resourceAccessRequirements property.
+export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
+    'Deployment',
+    'DeploymentExtension',
+    'NetworkGraph',
+    'NetworkPolicy',
+];
 
 type RouteRequirements = {
     featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
@@ -206,12 +207,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
     },
     'network-graph': {
-        resourceAccessRequirements: everyResource([
-            'Deployment',
-            'DeploymentExtension',
-            'NetworkGraph',
-            'NetworkPolicy',
-        ]),
+        resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'policy-management': {
         resourceAccessRequirements: everyResource([
