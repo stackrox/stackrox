@@ -240,16 +240,12 @@ function launch_central {
     rm -rf "${unzip_dir}"
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
-        set -x
         roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
-        set +x
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
-        set -x
         docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$ROXCTL_IMAGE" \
           central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" "${STORAGE_ARGS[@]}" > "${k8s_dir}/central.zip"
-        set +x
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 
@@ -282,9 +278,7 @@ function launch_central {
 
         helm dependency update "${COMMON_DIR}/../charts/monitoring"
         envsubst < "${COMMON_DIR}/../charts/monitoring/values.yaml" > "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
-        set -x
         helm upgrade -n stackrox --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
-        set +x
         rm "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
         echo "Deployed Monitoring..."
     fi
@@ -374,10 +368,8 @@ function launch_central {
         helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
       fi
 
-      set -x
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
-      set +x
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
@@ -631,24 +623,18 @@ function launch_sensor {
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      set -x
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
-      set +x
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        set -x
         roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
-        set +x
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
       else
-        set -x
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "${MAIN_IMAGE_REPO}" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$COLLECTION_METHOD" "$extra_json_config"
-        set +x
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
       fi
