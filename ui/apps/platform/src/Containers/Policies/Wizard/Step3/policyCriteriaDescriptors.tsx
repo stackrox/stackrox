@@ -1388,6 +1388,26 @@ export const auditLogDescriptor: Descriptor[] = [
                 label: 'Secrets',
                 value: 'SECRETS',
             },
+            {
+                label: 'ClusterRoles',
+                value: 'CLUSTERROLES',
+            },
+            {
+                label: 'ClusterRoleBindings',
+                value: 'CLUSTERROLEBINDINGS',
+            },
+            {
+                label: 'NetworkPolicies',
+                value: 'NETWORKPOLICIES',
+            },
+            {
+                label: 'SecurityContextConstraints',
+                value: 'SECURITYCONTEXTCONSTRAINTS',
+            },
+            {
+                label: 'EgressFirewalls',
+                value: 'EGRESSFIREWALLS',
+            },
         ],
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
