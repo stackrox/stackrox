@@ -52,13 +52,13 @@ func (s *datastoreTestSuite) TearDownTest() {
 
 func (s *datastoreTestSuite) TestAddNotification_Success() {
 	notification := &storage.Notification{
-		Id:          "0925514f-3a33-5931-b431-756406e1a008",
-		Level:       storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
-		Message:     "message",
-		Type:        storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
-		Hint:        "hint",
-		Domain:      "domain",
-		Occurrences: 1,
+		Id:             "0925514f-3a33-5931-b431-756406e1a008",
+		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Message:        "message",
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Hint:           "hint",
+		Domain:         "domain",
+		NumOccurrences: 1,
 	}
 
 	s.writer.EXPECT().Upsert(s.ctx, notification).Return(nil)
@@ -69,13 +69,13 @@ func (s *datastoreTestSuite) TestAddNotification_Success() {
 
 func (s *datastoreTestSuite) TestAddNotification_Error() {
 	notification := &storage.Notification{
-		Id:          "0925514f-3a33-5931-b431-756406e1a008",
-		Level:       storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
-		Message:     "message",
-		Type:        storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
-		Hint:        "hint",
-		Domain:      "domain",
-		Occurrences: 1,
+		Id:             "0925514f-3a33-5931-b431-756406e1a008",
+		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Message:        "message",
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Hint:           "hint",
+		Domain:         "domain",
+		NumOccurrences: 1,
 	}
 
 	s.writer.EXPECT().Upsert(s.ctx, notification).Return(errFake)
@@ -105,13 +105,13 @@ func (s *datastoreTestSuite) TestCountNotifications_Error() {
 func (s *datastoreTestSuite) TestGetNotification_Success() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
 	notification := &storage.Notification{
-		Id:          id,
-		Level:       storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
-		Message:     "message",
-		Type:        storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
-		Hint:        "hint",
-		Domain:      "domain",
-		Occurrences: 1,
+		Id:             id,
+		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Message:        "message",
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Hint:           "hint",
+		Domain:         "domain",
+		NumOccurrences: 1,
 	}
 
 	s.store.EXPECT().Get(s.ctx, id).Return(notification, true, nil)
@@ -142,13 +142,13 @@ func (s *datastoreTestSuite) TestGetNotification_NotFound() {
 func (s *datastoreTestSuite) TestListNotifications_Success() {
 	notifications := []*storage.Notification{
 		{
-			Id:          "0925514f-3a33-5931-b431-756406e1a008",
-			Level:       storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
-			Message:     "message",
-			Type:        storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
-			Hint:        "hint",
-			Domain:      "domain",
-			Occurrences: 1,
+			Id:             "0925514f-3a33-5931-b431-756406e1a008",
+			Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+			Message:        "message",
+			Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+			Hint:           "hint",
+			Domain:         "domain",
+			NumOccurrences: 1,
 		},
 	}
 

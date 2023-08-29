@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -29,6 +30,7 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Notification)(nil)), "notifications")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_NOTIFICATIONS, "notification", (*storage.Notification)(nil)))
+		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableNotificationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NOTIFICATIONS, schema)
 		return schema
@@ -42,12 +44,12 @@ const (
 
 // Notifications holds the Gorm model for Postgres table `notifications`.
 type Notifications struct {
-	ID           string                    `gorm:"column:id;type:uuid;primaryKey"`
-	Type         storage.NotificationType  `gorm:"column:type;type:integer"`
-	Level        storage.NotificationLevel `gorm:"column:level;type:integer"`
-	Domain       string                    `gorm:"column:domain;type:varchar"`
-	ResourceType string                    `gorm:"column:resourcetype;type:varchar"`
-	LastOccurred *time.Time                `gorm:"column:lastoccurred;type:timestamp"`
-	CreatedAt    *time.Time                `gorm:"column:createdat;type:timestamp"`
-	Serialized   []byte                    `gorm:"column:serialized;type:bytea"`
+	ID             string                    `gorm:"column:id;type:uuid;primaryKey"`
+	Type           storage.NotificationType  `gorm:"column:type;type:integer"`
+	Level          storage.NotificationLevel `gorm:"column:level;type:integer"`
+	Domain         string                    `gorm:"column:domain;type:varchar"`
+	ResourceType   string                    `gorm:"column:resourcetype;type:varchar"`
+	LastOccurredAt *time.Time                `gorm:"column:lastoccurredat;type:timestamp"`
+	CreatedAt      *time.Time                `gorm:"column:createdat;type:timestamp"`
+	Serialized     []byte                    `gorm:"column:serialized;type:bytea"`
 }

@@ -100,12 +100,12 @@ func insertIntoNotifications(batch *pgx.Batch, obj *storage.Notification) error 
 		obj.GetLevel(),
 		obj.GetDomain(),
 		obj.GetResourceType(),
-		pgutils.NilOrTime(obj.GetLastOccurred()),
+		pgutils.NilOrTime(obj.GetLastOccurredAt()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO notifications (Id, Type, Level, Domain, ResourceType, LastOccurred, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, ResourceType = EXCLUDED.ResourceType, LastOccurred = EXCLUDED.LastOccurred, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO notifications (Id, Type, Level, Domain, ResourceType, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, ResourceType = EXCLUDED.ResourceType, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -124,7 +124,7 @@ func copyFromNotifications(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		"level",
 		"domain",
 		"resourcetype",
-		"lastoccurred",
+		"lastoccurredat",
 		"createdat",
 		"serialized",
 	}
@@ -146,7 +146,7 @@ func copyFromNotifications(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			obj.GetLevel(),
 			obj.GetDomain(),
 			obj.GetResourceType(),
-			pgutils.NilOrTime(obj.GetLastOccurred()),
+			pgutils.NilOrTime(obj.GetLastOccurredAt()),
 			pgutils.NilOrTime(obj.GetCreatedAt()),
 			serialized,
 		})
