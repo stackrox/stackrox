@@ -274,6 +274,69 @@ push_main_image_set() {
     done
 }
 
+push_scanner_image_manifest_lists() {
+    info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_scanner_image_manifest_lists <architectures (CSV)>"
+    fi
+
+    local architectures="$1"
+    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make --quiet --no-print-directory -C scanner tag)"
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+        for image in "${scanner_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+        done
+    done
+}
+
+push_scanner_image_set() {
+    info "Pushing scanner-v4 and scanner-v4-db images"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_scanner_image_set <arch>"
+    fi
+
+    local arch="$1"
+
+    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+
+    _push_scanner_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker push "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_scanner_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make --quiet --no-print-directory -C scanner tag)"
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+
+        _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
+        _push_scanner_image_set "$registry" "$tag-$arch"
+    done
+}
+
 registry_rw_login() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: registry_rw_login <registry>"
