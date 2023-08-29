@@ -152,8 +152,9 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if err != nil {
 		return nil, err
 	}
+	slimUser := authn.UserFromContext(ctx)
 	for _, reportSnapshot := range reportSnapshots {
-		if currentConfig.Creator.GetId() == reportSnapshot.GetRequester().GetId() {
+		if slimUser.GetId() == reportSnapshot.GetRequester().GetId() {
 			return nil, errors.Wrap(errox.InvalidArgs, "User has a report job running for this configuration.")
 		}
 	}

@@ -66,7 +66,9 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 		s.T().Skip("Skip test when reporting enhancements are disabled")
 		s.T().SkipNow()
 	}
+}
 
+func (s *ReportServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.reportConfigDataStore = reportConfigDSMocks.NewMockDataStore(s.mockCtrl)
@@ -80,6 +82,10 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 }
 
 func (s *ReportServiceTestSuite) TearDownSuite() {
+	s.mockCtrl.Finish()
+}
+
+func (s *ReportServiceTestSuite) TeardownTest() {
 	s.mockCtrl.Finish()
 }
 
@@ -137,11 +143,9 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	s.Error(err)
 }
 
-func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
-	allAccessContext := sac.WithAllAccess(context.Background())
-	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
+func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
 
-	creator := &storage.SlimUser{
+	requester := &storage.SlimUser{
 		Id:   "uid",
 		Name: "name",
 	}
@@ -154,8 +158,53 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 		ReportId:     "test_report",
 		Name:         "test_report",
 		ReportStatus: status,
+		Requester:    requester,
 	},
 	}
+	user := reportSnapshots[0].GetRequester()
+	userContext := s.getContextForUser(user)
+
+	protoReportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
+		Return(protoReportConfig, true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
+	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+	requestConfig := &apiV2.ReportConfiguration{
+		Id:   "test_rep",
+		Name: "test_rep",
+		ResourceScope: &apiV2.ResourceScope{
+			ScopeReference: &apiV2.ResourceScope_CollectionScope{
+				CollectionScope: &apiV2.CollectionReference{
+					CollectionId:   "collection-test",
+					CollectionName: "collection-test",
+				},
+			},
+		},
+		Filter: &apiV2.ReportConfiguration_VulnReportFilters{
+			VulnReportFilters: &apiV2.VulnerabilityReportFilters{
+				Fixability: apiV2.VulnerabilityReportFilters_FIXABLE,
+				Severities: []apiV2.VulnerabilityReportFilters_VulnerabilitySeverity{apiV2.VulnerabilityReportFilters_CRITICAL_VULNERABILITY_SEVERITY},
+				ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{
+					apiV2.VulnerabilityReportFilters_DEPLOYED,
+					apiV2.VulnerabilityReportFilters_WATCHED,
+				},
+				CvesSince: &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{SinceLastSentScheduledReport: true},
+			},
+		},
+	}
+	_, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
+	s.Error(err)
+
+}
+
+func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
+	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
+
+	creator := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+	userContext := s.getContextForUser(creator)
 
 	accessScopeRules := []*storage.SimpleAccessScope_Rules{
 		{
@@ -172,12 +221,13 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				protoReportConfig := tc.reportConfigGen()
 				protoReportConfig.Creator = creator
 				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(userContext, protoReportConfig.GetId()).
 					Return(protoReportConfig, true, nil).Times(1)
-				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
-				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
+				snapshots := []*storage.ReportSnapshot{}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(userContext, gomock.Any()).Return(snapshots, nil).Times(1)
+				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(userContext, protoReportConfig).Return(nil).Times(1)
 			}
-			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
+			result, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
 			if tc.isValidationError {
 				s.Error(err)
 			} else {
@@ -186,24 +236,6 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 			}
 		})
 	}
-	reportSnapshots = []*storage.ReportSnapshot{{
-		ReportId:     "test_report",
-		Name:         "test_report",
-		ReportStatus: status,
-		Requester:    creator,
-	},
-	}
-
-	tc := s.upsertReportConfigTestCases(true)[0]
-	protoReportConfig := tc.reportConfigGen()
-	protoReportConfig.Creator = creator
-	protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
-	s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
-		Return(protoReportConfig, true, nil).Times(1)
-	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
-	requestConfig := tc.setMocksAndGenReportConfig()
-	_, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
-	s.Error(err)
 }
 
 func (s *ReportServiceTestSuite) TestListReportConfigurations() {
