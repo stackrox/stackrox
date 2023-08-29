@@ -375,7 +375,10 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) run(testName string, testFu
 	failed := false
 	for _, c := range testCases {
 		caseSucceeded := s.Run(c.contextKey, func() {
-			s.T().Parallel()
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			testFunc(c)
 		})
 		if !caseSucceeded {

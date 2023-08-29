@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -41,16 +42,16 @@ func (d *DebugDeployment) log(offset int) {
 // graph DB linking issues.
 type DebugContainer struct {
 	DeploymentID string
-	ID           string
+	Idx          int
 	ImageID      string
 }
 
 func (c *DebugContainer) log(offset int) {
 	log.Infof(
-		"%s* container {Deployment ID %q, Index %q, Image ID %q}",
+		"%s* container {Deployment ID %q, Index %d, Image ID %q}",
 		getIndent(offset),
 		c.DeploymentID,
-		c.ID,
+		c.Idx,
 		c.ImageID,
 	)
 }
@@ -339,22 +340,26 @@ func listDeployments(ctx context.Context, t *testing.T, db postgres.DB) []DebugD
 	const selectStmt = "select id, name, namespace, clusterid, clustername from deployments"
 	const fieldCount = 5
 	populate := func(deployment *DebugDeployment, r [][]byte) {
-		deployment.ID = string(r[0])
+		deployment.ID = uuid.FromBytesOrNil(r[0]).String()
 		deployment.Name = string(r[1])
 		deployment.Namespace = string(r[2])
-		deployment.ClusterID = string(r[3])
+		deployment.ClusterID = uuid.FromBytesOrNil(r[3]).String()
 		deployment.ClusterName = string(r[4])
 	}
 	return populateListFromDB[DebugDeployment](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
 func listContainers(ctx context.Context, t *testing.T, db postgres.DB) []DebugContainer {
-	const selectStmt = "select deployment_id, idx, image_id from deployments_containers"
+	const selectStmt = "select deployments_id, idx, image_id from deployments_containers"
 	const fieldCount = 3
 	populate := func(container *DebugContainer, r [][]byte) {
-		container.DeploymentID = string(r[0])
-		container.ID = string(r[1])
+		container.DeploymentID = uuid.FromBytesOrNil(r[0]).String()
 		container.ImageID = string(r[2])
+		identifier, err := strconv.ParseInt(string(r[1]), 10, 64)
+		if err != nil {
+			return
+		}
+		container.Idx = int(identifier)
 	}
 	return populateListFromDB[DebugContainer](ctx, t, db, selectStmt, fieldCount, populate)
 }
@@ -437,10 +442,13 @@ func GetNodeGraph(ctx context.Context, t *testing.T, db postgres.DB) DebugNodeGr
 }
 
 func listNodes(ctx context.Context, t *testing.T, db postgres.DB) []DebugNode {
-	const selectStmt = "select id from nodes"
+	const selectStmt = "select id, name, cluster_id, cluster_name from nodes"
 	const fieldCount = 1
 	populate := func(node *DebugNode, r [][]byte) {
-		node.ID = string(r[0])
+		node.ID = uuid.FromBytesOrNil(r[0]).String()
+		node.Name = string(r[1])
+		node.ClusterID = uuid.FromBytesOrNil(r[2]).String()
+		node.ClusterName = string(r[3])
 	}
 	return populateListFromDB[DebugNode](ctx, t, db, selectStmt, fieldCount, populate)
 }
@@ -450,7 +458,7 @@ func listNodeToComponentEdges(ctx context.Context, t *testing.T, db postgres.DB)
 	const fieldCount = 3
 	populate := func(edge *DebugNodeComponentEdge, r [][]byte) {
 		edge.ID = string(r[0])
-		edge.NodeID = string(r[1])
+		edge.NodeID = uuid.FromBytesOrNil(r[1]).String()
 		edge.NodeComponentID = string(r[2])
 	}
 	return populateListFromDB[DebugNodeComponentEdge](ctx, t, db, selectStmt, fieldCount, populate)
@@ -489,6 +497,7 @@ func populateListFromDB[T any](ctx context.Context, _ *testing.T, db postgres.DB
 	results := make([]T, 0)
 	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
 	if err != nil {
+		log.Info("Query \"", selectStmt, "\" failed with error ", err)
 		return results
 	}
 	defer rows.Close()

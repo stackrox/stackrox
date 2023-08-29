@@ -809,7 +809,10 @@ func (s *imageDatastoreSACSuite) runSearchTest(testName string, testFunc func(ke
 	failed := false
 	for key, testCase := range cases {
 		caseSucceeded := s.Run(key, func() {
-			s.T().Parallel()
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			testFunc(key, testCase)
 		})
 		if !caseSucceeded {

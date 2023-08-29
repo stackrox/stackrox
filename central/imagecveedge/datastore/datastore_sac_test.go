@@ -4,7 +4,9 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
@@ -53,7 +55,17 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TearDownSuite() {
 	s.testGraphDatastore.Cleanup(s.T())
 }
 
+func (s *imageCVEEdgeDatastoreSACTestSuite) SetupTest() {
+	s.Require().NoError(s.testGraphDatastore.PushImageToVulnerabilitiesGraph())
+}
+
+func (s *imageCVEEdgeDatastoreSACTestSuite) TearDownTest() {
+	s.cleanImageToVulnerabilitiesGraph()
+}
+
 func (s *imageCVEEdgeDatastoreSACTestSuite) cleanImageToVulnerabilitiesGraph() {
+	now := time.Now()
+	fmt.Println(now.UnixMicro(), " - Cleaning up")
 	s.Require().NoError(s.testGraphDatastore.CleanImageToVulnerabilitiesGraph())
 }
 
@@ -274,12 +286,7 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 		}
 	})
 }
-
 func (s *imageCVEEdgeDatastoreSACTestSuite) run(testName string, testFunc func(c edgeTestCase)) {
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilitiesGraph()
-	s.Require().NoError(err)
-
 	imageGraphBefore := graphDBTestUtils.GetImageGraph(
 		sac.WithAllAccess(context.Background()),
 		s.T(),
@@ -289,7 +296,10 @@ func (s *imageCVEEdgeDatastoreSACTestSuite) run(testName string, testFunc func(c
 	failed := false
 	for _, c := range testCases {
 		caseSucceeded := s.Run(c.contextKey, func() {
-			s.T().Parallel()
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			testFunc(c)
 		})
 		if !caseSucceeded {
