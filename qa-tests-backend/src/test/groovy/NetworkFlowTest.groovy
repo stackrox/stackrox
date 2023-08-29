@@ -539,7 +539,6 @@ class NetworkFlowTest extends BaseSpecification {
                     node.outEdgesMap.containsKey(index)
                 }
                 log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
-
             }
             log.info("Searching for edge coming from INTERNET_EXTERNAL_SOURCE_ID " +
                 "(${Constants.INTERNET_EXTERNAL_SOURCE_ID}) to ${deploymentUid}")
