@@ -703,7 +703,12 @@
       "enum": [
         "UNKNOWN",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTERROLES",
+        "CLUSTERROLEBINDINGS",
+        "NETWORKPOLICIES",
+        "SECURITYCONTEXTCONSTRAINTS",
+        "EGRESSFIREWALLS"
       ],
       "default": "UNKNOWN"
     },
@@ -1292,7 +1297,12 @@
       "enum": [
         "DEPLOYMENT",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTERROLES",
+        "CLUSTERROLEBINDINGS",
+        "NETWORKPOLICIES",
+        "SECURITYCONTEXTCONSTRAINTS",
+        "EGRESSFIREWALLS"
       ],
       "default": "DEPLOYMENT",
       "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"

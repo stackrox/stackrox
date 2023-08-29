@@ -177,7 +177,12 @@
       "enum": [
         "UNKNOWN",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTERROLES",
+        "CLUSTERROLEBINDINGS",
+        "NETWORKPOLICIES",
+        "SECURITYCONTEXTCONSTRAINTS",
+        "EGRESSFIREWALLS"
       ],
       "default": "UNKNOWN"
     },
