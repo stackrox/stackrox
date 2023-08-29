@@ -3,6 +3,7 @@ package idcheck
 import (
 	"context"
 
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
@@ -28,4 +29,24 @@ func (w identityBasedAuthorizerWrapper) Authorized(ctx context.Context, _ string
 		return err
 	}
 	return w.idAuthorizer.AuthorizeByIdentity(id)
+}
+
+type anyServiceAuthorizer struct{}
+
+// AnyService returns an authorizer that allows any service identity.
+func AnyService() authz.Authorizer {
+	return anyServiceAuthorizer{}
+}
+
+// Authorized implements the Authorizer interface.
+func (a anyServiceAuthorizer) Authorized(ctx context.Context, _ string) error {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	svc := id.Service()
+	if svc == nil {
+		return errox.NoCredentials
+	}
+	return nil
 }

@@ -35,10 +35,7 @@ func Or(authorizers ...authz.Authorizer) authz.Authorizer {
 // SensorOr returns an Authorizer that authorizes any sensor,
 // or anything that the passed authorizer authorizes.
 func SensorOr(authorizer authz.Authorizer) authz.Authorizer {
-	return Or(
-		idcheck.SensorsOnly(),
-		authorizer,
-	)
+	return Or(idcheck.SensorsOnly(), authorizer)
 }
 
 // ScannerOr returns an Authorizer that authorizes the scanner,
@@ -50,11 +47,5 @@ func ScannerOr(authorizer authz.Authorizer) authz.Authorizer {
 // ServiceOr returns an Authorizer that authorizes any known service,
 // or anything that the passed authorizer authorizes.
 func ServiceOr(authorizer authz.Authorizer) authz.Authorizer {
-	return Or(
-		authorizer,
-		idcheck.AdmissionControlOnly(),
-		idcheck.CollectorOnly(),
-		idcheck.ScannerOnly(),
-		idcheck.SensorsOnly(),
-	)
+	return Or(idcheck.AnyService(), authorizer)
 }
