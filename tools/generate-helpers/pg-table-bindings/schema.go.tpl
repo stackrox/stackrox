@@ -76,8 +76,7 @@ var (
 
         {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
             schema.ScopingResource = resources.{{.Type | storageToResource}}
-        {{- end }}
-        {{- if .PermissionChecker }}
+        {{- else if .PermissionChecker }}
             schema.PermissionChecker = {{ .PermissionChecker }}
         {{- end }}
         {{- if .RegisterSchema }}
