@@ -55,8 +55,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/golang-lru/v2 v2.0.4
-	github.com/heimdalr/dag v1.2.1
+	github.com/hashicorp/golang-lru/v2 v2.0.6
+	github.com/heimdalr/dag v1.3.1
 	github.com/helm/helm-mapkubeapis v0.4.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgconn v1.14.1
@@ -148,6 +148,8 @@ require (
 	sigs.k8s.io/e2e-framework v0.2.0
 	sigs.k8s.io/yaml v1.3.0
 )
+
+require github.com/klauspost/compress v1.16.7
 
 require (
 	cloud.google.com/go v0.110.6 // indirect
@@ -273,7 +275,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/pgzip v1.2.6-0.20220930104621-17e8dac29df8 // indirect
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f // indirect
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d // indirect

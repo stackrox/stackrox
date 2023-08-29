@@ -933,6 +933,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "mirror": {
+          "type": "string"
         }
       }
     },
@@ -1064,12 +1067,12 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the system."
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the image."
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"

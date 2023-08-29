@@ -9,13 +9,13 @@ export type ResourceIconProps = {
     kind: K8sResourceKind;
 };
 
-const IconAttributes: Record<K8sResourceKind, { text: string; classNameSuffix: string }> = {
-    Cluster: { text: 'CL', classNameSuffix: 'cluster' },
-    ConfigMap: { text: 'CM', classNameSuffix: 'configmap' },
-    Deployment: { text: 'D', classNameSuffix: 'deployment' },
-    Namespace: { text: 'NS', classNameSuffix: 'namespace' },
-    Secret: { text: 'S', classNameSuffix: 'secret' },
-    Unknown: { text: '?', classNameSuffix: 'unknown' },
+const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: string }> = {
+    Cluster: { text: 'CL', backgroundColor: 'var(--pf-global--palette--purple-500)' },
+    ConfigMap: { text: 'CM', backgroundColor: 'var(--pf-global--palette--purple-600)' },
+    Deployment: { text: 'D', backgroundColor: 'var(--pf-global--palette--blue-500)' },
+    Namespace: { text: 'NS', backgroundColor: 'var(--pf-global--palette--green-500)' },
+    Secret: { text: 'S', backgroundColor: 'var(--pf-global--palette--orange-600)' },
+    Unknown: { text: '?', backgroundColor: 'var(--pf-global--palette--black-700)' },
 } as const;
 
 /**
@@ -27,11 +27,12 @@ const IconAttributes: Record<K8sResourceKind, { text: string; classNameSuffix: s
  *
  */
 function ResourceIcon(props: ResourceIconProps) {
-    const { text, classNameSuffix } = IconAttributes[props.kind];
+    const { text, backgroundColor } = IconAttributes[props.kind];
     return (
         <span
             title={props.kind}
-            className={`resource-icon resource-icon-${classNameSuffix} ${props.className ?? ''}`}
+            className={`resource-icon ${props.className ?? ''}`}
+            style={{ backgroundColor }}
         >
             {text}
         </span>
