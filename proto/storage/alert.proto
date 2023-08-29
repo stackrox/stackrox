@@ -157,9 +157,14 @@ message ListAlert {
     // A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type
     // This must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)
     enum ResourceType {
-        DEPLOYMENT  = 0;
-        SECRETS     = 1;
-        CONFIGMAPS  = 2;
+        DEPLOYMENT                 = 0;
+        SECRETS                    = 1;
+        CONFIGMAPS                 = 2;
+        CLUSTERROLES               = 3;
+        CLUSTERROLEBINDINGS        = 4;
+        NETWORKPOLICIES            = 5;
+        SECURITYCONTEXTCONSTRAINTS = 6;
+        EGRESSFIREWALLS            = 7;
     }
 
     message ResourceEntity {
