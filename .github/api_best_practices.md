@@ -9,8 +9,8 @@ in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archi
 
 - [Naming Guidelines](#naming-guidelines)
   - [Service Name](#service-name)
-  - [Method Name](#method-name)
-  - [Message Name](#message-name)
+  - [RPC Method Name](#rpc-method-name)
+  - [RPC Message Name](#rpc-message-name)
 
 ## Naming Guidelines
 
@@ -21,13 +21,14 @@ abbreviations may be used in some cases (and could even be preferable) for succi
 e.g. `ReportConfigService`, `RbacService`. 
 All RPC methods grouped into a single service must generally pertain to the primary resource of the service.
 
-All service defined in versioned package `/proto/api/v2` **must not** import from 
-`/proto/storage` and `/proto/internalapi` packages.
-All new RPC methods defined in versioned package `/proto/api/v1` **must not** import from
+All service defined in versioned package [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/v2)
+**must not** import from [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage) and
+[/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi) packages.
+All new RPC methods defined in versioned package [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/v1) **must not** import from
 `/proto/storage` and `/proto/internalapi` packages.
 
-### Method Name
-Methods (and URLs) should be named such that they provide insights into the functionality. Typically, the method 
+### RPC Method Name
+Methods should be named such that they provide insights into the functionality. Typically, the method 
 name should follow the _VerbNoun_ convention. For example, `StartComplianceScan`, `RunComplianceScan`, 
 and `GetComplianceScan` are not the same. `StartComplianceScan` must return without waiting for the compliance 
 scan to complete. `RunComplianceScan` may or may not wait for a compliance scan; the method name is ambiguous 
@@ -67,7 +68,6 @@ adding a field to the request message, or restructuring _VerbNoun_.
 `GetBaselineGeneratedNetworkPolicyForDeployment`
 
 </td>
-
 <td>
 
 ```
@@ -81,7 +81,6 @@ GenerateDeploymentNetworkPolicyRequest {
 
 </td>
 </tr>
-
 <tr>
 <td>
 
@@ -94,9 +93,7 @@ GenerateDeploymentNetworkPolicyRequest {
 
 </td>
 </tr>
-
 <tr>
-
 <td>
 
 `DeleteDeploymentsByQuery`
@@ -114,9 +111,38 @@ DeleteDeploymentsRequest {
 
 </td>
 </tr>
+<tr>
+<td>
+
+```
+GetBaselineGeneratedNetworkPolicyForDeployment
+```
+
+</td>
+<td>
+
+`GetDeploymentBaselineNetworkPolicy` or merely `GetBaselineNetworkPolicy` if the concept of baselines applies
+to deployments only.
+
+The following example demonstrates design if that concept of baselines may apply to resource types other than deployments.
+
+```
+GetBaselineNetworkPolicy
+
+GetBaselineNetworkPolicyRequest {
+  oneof resource {
+    string deployment_id;
+    string cluster_id;
+  }
+}
+
+```
+
+</td>
+</tr>
 </table>
 
-### Message Name
+### RPC Message Name
 The request and response messages **must** be named after method names with suffix `Request` and `Response` unless 
 the request/response type is an empty message. Generally, resource type as response message should be avoided 
 e.g. use `GetDeploymentResponse` response instead of `Deployment`. This allows augmenting the response with 
@@ -163,9 +189,14 @@ GetDeploymentRequest {
 <td>
 
 ```
-GetDeploymentWithImageScanResponse
 GetDeploymentResponse {
   Deployment deployment;
+  Image image;
+}
+
+Or,
+
+GetDeploymentImageScanResponse {
   Image image;
 }
 ```
