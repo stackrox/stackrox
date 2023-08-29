@@ -106,16 +106,15 @@ func enrichNotificationWithDefaults(notification *storage.Notification) *storage
 	}
 
 	enrichedNotification := notification.Clone()
-	id := getNotificationID(notification)
-	enrichedNotification.Id = id
-	if notification.Occurrences == 0 {
-		enrichedNotification.Occurrences = 1
+	enrichedNotification.Id = getNotificationID(notification)
+	if notification.GetNumOccurrences() == 0 {
+		enrichedNotification.NumOccurrences = 1
 	}
-	if notification.CreatedAt == nil {
+	if notification.GetCreatedAt() == nil {
 		enrichedNotification.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
 	}
-	if notification.CreatedAt == nil {
-		enrichedNotification.LastOccurred = protoconv.ConvertTimeToTimestamp(time.Now())
+	if notification.GetLastOccurredAt() == nil {
+		enrichedNotification.LastOccurredAt = protoconv.ConvertTimeToTimestamp(time.Now())
 	}
 	return enrichedNotification
 }
@@ -131,13 +130,13 @@ func mergeNotifications(base *storage.Notification, new *storage.Notification) *
 	mergedNotification := base.Clone()
 
 	// Set CreatedAt timestamp to the earliest timestamp.
-	if new.CreatedAt.GetSeconds() < base.CreatedAt.GetSeconds() {
-		mergedNotification.CreatedAt = new.CreatedAt
+	if new.GetCreatedAt().GetSeconds() < base.GetCreatedAt().GetSeconds() {
+		mergedNotification.CreatedAt = new.GetCreatedAt()
 	}
 	// Set LastOccured timestamp to the latest timestamp.
-	if new.LastOccurred.GetSeconds() > base.LastOccurred.GetSeconds() {
-		mergedNotification.LastOccurred = new.LastOccurred
+	if new.GetLastOccurredAt().GetSeconds() > base.GetLastOccurredAt().GetSeconds() {
+		mergedNotification.LastOccurredAt = new.GetLastOccurredAt()
 	}
-	mergedNotification.Occurrences++
+	mergedNotification.NumOccurrences++
 	return mergedNotification
 }
