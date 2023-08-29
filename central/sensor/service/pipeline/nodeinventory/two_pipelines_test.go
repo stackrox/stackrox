@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/activecomponent/updater"
 	updaterMocks "github.com/stackrox/rox/central/activecomponent/updater/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	nodeCVEDataStoreMocks "github.com/stackrox/rox/central/cve/node/datastore/mocks"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -15,113 +16,151 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	riskStoreMock "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/metrics"
+	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
+	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/semaphore"
+)
+
+const (
+	nodeID    = "node-id-1"
+	nodeName  = "node-name"
+	clusterID = "cluster1"
 )
 
 func Test_TwoPipelines_Run(t *testing.T) {
-	const nodeID = "node-id-1"
+	nodeWithScore := &storage.Node{
+		Id:            nodeID,
+		Name:          nodeName,
+		ClusterId:     clusterID,
+		ClusterName:   clusterID,
+		KernelVersion: "v1",
+		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
+		RiskScore:     1,
+	}
+
+	nodeWithScan := &storage.Node{
+		Id:            nodeID,
+		Name:          nodeName,
+		ClusterId:     clusterID,
+		ClusterName:   clusterID,
+		KernelVersion: "v1",
+		Notes:         []storage.Node_Note{},
+		RiskScore:     1,
+		Scan:          nodeScanFixture,
+		SetComponents: &storage.Node_Components{Components: 1},
+		SetCves:       &storage.Node_Cves{Cves: 3},
+		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 0},
+	}
+
+	nodeWithKernelV2 := nodeWithScan.Clone()
+	nodeWithKernelV2.KernelVersion = "v2"
 
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
 		nodeDatastore     *nodeDatastoreMocks.MockDataStore
-		enricher          *nodesEnricherMocks.MockNodeEnricher
+		cveDatastore      *nodeCVEDataStoreMocks.MockDataStore
 		deploymentStorage datastore.DataStore
 		imageStorage      imageDS.DataStore
 		riskStorage       *riskStoreMock.MockDataStore
 		updater           updater.Updater
 	}
-	type args struct {
-		ctx       context.Context
-		clusterID string
-		injector  common.MessageInjector
-	}
 	tests := []struct {
-		name                string
-		mocks               usedMocks
-		riskManager         manager.Manager
-		args                args
-		operations          []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error
-		wantErr             string
-		wantInjectorContain []*central.NodeInventoryACK
-		wantKernel          string
-		setUpMocks          func(t *testing.T, a *args, m *usedMocks)
+		name              string
+		mocks             usedMocks
+		riskManager       manager.Manager
+		enricher          nodeEnricher.NodeEnricher
+		operations        []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error
+		wantErr           string
+		setUpMocks        func(t *testing.T, m *usedMocks)
+		wantNodeExists    bool
+		wantKernelVersion string
 	}{
 		{
-			name: "node inventory arriving after node should result in data from the node being overwritten",
-			args: args{
-				ctx:       context.Background(),
-				clusterID: "cluster1",
-				injector:  nil,
-			},
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error{
-				// Old node-scan for node1 arrives over the node pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error {
-					return np.Run(args.ctx, args.clusterID, createNodeMsg(nodeID, "v1"), args.injector)
-				},
-				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error {
-					return ninvp.Run(args.ctx, args.clusterID, createNodeInventoryMsg(nodeID, "v2"), args.injector)
+			name: "lone node inventory should not find the node in DB",
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
+				// Node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
 				},
 			},
-			setUpMocks: func(t *testing.T, a *args, m *usedMocks) {
-				node1 := &storage.Node{
-					Id:            nodeID,
-					ClusterId:     a.clusterID,
-					ClusterName:   a.clusterID,
-					KernelVersion: "v1",
-				}
-				nInv := createNodeInventory(nodeID, "v2")
+			setUpMocks: func(t *testing.T, m *usedMocks) {
 				gomock.InOrder(
-					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(a.clusterID)).Times(1).Return(a.clusterID, true, nil),
-					m.enricher.EXPECT().EnrichNode(gomock.Any()).Times(1).Return(nil),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(node1, true, nil),
-					m.enricher.EXPECT().EnrichNodeWithInventory(node1, nInv).Times(1).Return(nil),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil),
 				)
 			},
-			wantKernel: "v2",
+			wantNodeExists:    false,
+			wantKernelVersion: "",
+		},
+		{
+			name: "node inventory arriving after node should result in data from the node being overwritten",
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
+				// Old node-scan for node1 arrives over the node pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
+					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
+				},
+				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
+				},
+			},
+			setUpMocks: func(t *testing.T, m *usedMocks) {
+				gomock.InOrder(
+					// node arrives
+					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
+
+					// node inventory arrives
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScan).AnyTimes().Return(nil),
+
+					// check what got stored in the DB
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithKernelV2, true, nil),
+				)
+			},
+			wantNodeExists:    true,
+			wantKernelVersion: "v2",
 		},
 		{
 			name: "node inventory arriving first should result in data from it being lost",
-			args: args{
-				ctx:       context.Background(),
-				clusterID: "cluster1",
-				injector:  nil,
-			},
-			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error{
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
 				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error {
-					return ninvp.Run(args.ctx, args.clusterID, createNodeInventoryMsg(nodeID, "v2"), args.injector)
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
 				},
 				// Old node-scan for node1 arrives over the node pipeline
-				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, args args) error {
-					return np.Run(args.ctx, args.clusterID, createNodeMsg(nodeID, "v1"), args.injector)
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
+					return np.Run(context.Background(), clusterID, createNodeMsg(nodeID, "v1"), nil)
 				},
 			},
-			setUpMocks: func(t *testing.T, a *args, m *usedMocks) {
+			setUpMocks: func(t *testing.T, m *usedMocks) {
 				gomock.InOrder(
-					// node inventory will be ignored - false means node nod found
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nil, false, nil),
+					// node inventory arrives
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nil, false, nil),
 
-					// node will be hadled normally
-					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(a.clusterID)).Times(1).Return(a.clusterID, true, nil),
-					m.enricher.EXPECT().EnrichNode(gomock.Any()).Times(1).Return(nil),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(1).Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					// node arrives
+					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Return(clusterID, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).Times(2).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
+
+					// check what got stored in the DB
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScan, true, nil),
 				)
 			},
-			wantKernel: "v1",
+			wantNodeExists:    true,
+			wantKernelVersion: "v1",
 		},
 	}
 	for _, tt := range tests {
@@ -130,7 +169,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			tt.mocks = usedMocks{
 				clusterStore:      clusterDatastoreMocks.NewMockDataStore(ctrl),
 				nodeDatastore:     nodeDatastoreMocks.NewMockDataStore(ctrl),
-				enricher:          nodesEnricherMocks.NewMockNodeEnricher(ctrl),
+				cveDatastore:      nodeCVEDataStoreMocks.NewMockDataStore(ctrl),
 				deploymentStorage: mocks.NewMockDataStore(ctrl),
 				imageStorage:      imageStoreMock.NewMockDataStore(ctrl),
 				riskStorage:       riskStoreMock.NewMockDataStore(ctrl),
@@ -154,34 +193,51 @@ func Test_TwoPipelines_Run(t *testing.T) {
 
 				tt.mocks.updater,
 			)
-			if tt.setUpMocks != nil {
-				tt.setUpMocks(t, &tt.args, &tt.mocks)
+			creator := func() (string, scanners.NodeScannerCreator) {
+				return "fake", func(integration *storage.NodeIntegration) (types.NodeScanner, error) {
+					return &fakeNodeScanner{}, nil
+				}
 			}
-			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.mocks.enricher, tt.riskManager)
-			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.mocks.enricher, tt.riskManager)
+			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator)
+			err := tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
+				Id:   "1",
+				Name: "dummy-scanner",
+				Type: "fake",
+				IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: &storage.ClairifyConfig{
+					Endpoint:           "abc",
+					GrpcEndpoint:       "",
+					NumConcurrentScans: 0,
+				}},
+			})
+			assert.NoError(t, err)
+
+			if tt.setUpMocks != nil {
+				tt.setUpMocks(t, &tt.mocks)
+			}
+			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
+			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 
 			var lastErr error
 			for i, op := range tt.operations {
 				t.Logf("Running operation %d of %d", i+1, len(tt.operations))
-				lastErr = op(t, pNode, pNodeInv, tt.args)
+				lastErr = op(t, pNode, pNodeInv)
 			}
 			if tt.wantErr != "" {
 				assert.ErrorContainsf(t, lastErr, tt.wantErr, "Run() error = %v, wantErr = %q", lastErr, tt.wantErr)
 			}
-			if tt.wantInjectorContain != nil {
-				inj := tt.args.injector.(*recordingInjector)
-				assert.Equal(t, tt.wantInjectorContain, inj.getSentACKs())
-			}
 
-			// FIXME: work on this assertion
-			t.Logf("want kernel: %s, got kernel: %s", tt.wantKernel, "????????")
+			node, found, err := tt.mocks.nodeDatastore.GetNode(context.Background(), nodeID)
+			assert.Equal(t, tt.wantNodeExists, found)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.wantKernelVersion, node.GetKernelVersion())
 		})
 	}
 }
 
 func createNodeInventory(id, kernelV string) *storage.NodeInventory {
 	return &storage.NodeInventory{
-		NodeId: id,
+		NodeId:   id,
+		NodeName: nodeName,
 		Components: &storage.NodeInventory_Components{
 			Namespace: "",
 			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
@@ -221,9 +277,60 @@ func createNodeMsg(id, kernel string) *central.MsgFromSensor {
 					Node: &storage.Node{
 						Id:            id,
 						KernelVersion: kernel,
+						Name:          nodeName,
 					},
 				},
 			},
 		},
 	}
+}
+
+var nodeScanFixture = &storage.NodeScan{
+	Components: []*storage.EmbeddedNodeScanComponent{
+		{
+			Vulns: []*storage.EmbeddedVulnerability{
+				{
+					Cve: "CVE-2020-1234",
+				},
+				{
+					Cve: "CVE-2021-1234",
+				},
+				{
+					Cve: "CVE-2022-1234",
+				},
+			},
+		},
+	},
+}
+
+var _ types.NodeScanner = (*fakeNodeScanner)(nil)
+
+type fakeNodeScanner struct {
+	requestedScan bool
+}
+
+func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
+	return semaphore.NewWeighted(1)
+}
+
+func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
+	f.requestedScan = true
+	return nodeScanFixture, nil
+}
+
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
+	f.requestedScan = true
+	return nodeScanFixture, nil
+}
+
+func (*fakeNodeScanner) TestNodeScanner() error {
+	return nil
+}
+
+func (*fakeNodeScanner) Type() string {
+	return "type"
+}
+
+func (*fakeNodeScanner) Name() string {
+	return "name"
 }

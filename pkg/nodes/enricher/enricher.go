@@ -46,3 +46,20 @@ func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
 
 	return enricher
 }
+
+// NewWithCreator returns a new NodeEnricher instance for the given subsystem.
+// (The subsystem is just used for Prometheus metrics.)
+func NewWithCreator(cves CVESuppressor, subsystem pkgMetrics.Subsystem, fn func() (string, scanners.NodeScannerCreator)) NodeEnricher {
+	enricher := &enricherImpl{
+		cves: cves,
+
+		scanners: make(map[string]types.NodeScannerWithDataSource),
+		creators: make(map[string]scanners.NodeScannerCreator),
+
+		metrics: newMetrics(subsystem),
+	}
+	name, creator := fn()
+	enricher.creators[name] = creator
+
+	return enricher
+}
