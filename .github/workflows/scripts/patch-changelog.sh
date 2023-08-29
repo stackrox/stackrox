@@ -34,7 +34,7 @@ if grep "^## \[${VERSION}\]$" CHANGELOG.md; then
 fi
 
 CHANGELOG_BRANCH="automation/changelog-$VERSION"
-TITLE="Advance \`CHANGELOG.md\` to the next release"
+TITLE="chore(release): Advance \`CHANGELOG.md\` to the next release"
 
 if git ls-remote --quiet --exit-code origin "$CHANGELOG_BRANCH"; then
     gh_summary "Branch \`$CHANGELOG_BRANCH\` already exists."
