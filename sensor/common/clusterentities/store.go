@@ -76,9 +76,11 @@ func (e *Store) initMaps() {
 }
 
 // WIP
+
 // EndpointIPType is an Enum representing the type of IP the endpoint has
 type EndpointIPType int64
 
+// Enum of available EndpointIPTypes
 const (
 	ClusterIP EndpointIPType = iota
 	LoadBalancerIP
