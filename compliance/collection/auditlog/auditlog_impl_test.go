@@ -140,18 +140,36 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchRe
 	}
 
 	// Then something that doesn't get filtered out
-	line, expectedEvent := s.fakeAuditLogLine("get", "secrets", "fake-token", "stackrox")
-	_, err = f.Write([]byte(line))
-	s.NoError(err)
-	s.NoError(f.Sync())
+	validResources := map[string]string{
+		"secrets":                    "fake-token",
+		"configmaps":                 "fake-map",
+		"clusterrolebindings":        "my-cluster-role-binding",
+		"clusterroles":               "my-cluster-role",
+		"networkpolicies":            "this-net-pol",
+		"securitycontextconstraints": "s-c-c",
+		"egressfirewalls":            "wall-that-fire",
+	}
+	var expectedEvents []auditEvent
+	for r, n := range validResources {
+		line, expectedEvent := s.fakeAuditLogLine("create", r, n, "stackrox")
+		_, err = f.Write([]byte(line))
+		s.NoError(err)
+		s.NoError(f.Sync())
+		expectedEvents = append(expectedEvents, expectedEvent)
+	}
 
 	started, err := reader.StartReader(context.Background())
 	s.True(started)
 	s.NoError(err)
 	defer reader.StopReader()
 
-	event := s.getSentEvent(sender.sentC)
-	s.Equal(expectedEvent, *event) // First event received should match the one not filtered out
+	// Give it a sec to catch up
+	time.Sleep(1 * time.Second)
+
+	for _, expectedEvent := range expectedEvents {
+		event := s.getSentEvent(sender.sentC)
+		s.Equal(expectedEvent, *event)
+	}
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsForValidStages() {
