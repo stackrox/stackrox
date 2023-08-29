@@ -227,5 +227,5 @@ class CustomSetTest(BaseTest):
         print("Executing small set of qa-tests-backend tests for p/z")
 
         self.run_with_graceful_kill(
-            ["qa-tests-backend/scripts/run-part-1.sh"], CustomSetTest.TEST_TIMEOUT
+            ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
         )
