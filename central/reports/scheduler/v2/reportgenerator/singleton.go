@@ -5,6 +5,7 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -25,7 +26,8 @@ func initialize() {
 	_, collectionQueryRes := collectionDS.Singleton()
 	schema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
 	utils.CrashOnError(err)
-	rg = New(reportSnapshotDS.Singleton(),
+	rg = New(globaldb.GetPostgres(),
+		reportSnapshotDS.Singleton(),
 		deploymentDS.Singleton(),
 		watchedImageDS.Singleton(),
 		collectionQueryRes,

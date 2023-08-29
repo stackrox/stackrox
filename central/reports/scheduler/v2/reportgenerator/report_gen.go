@@ -10,6 +10,7 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/pkg/notifier"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // ReportGenerator interface is used to generate vulnerability report and send notification.
@@ -24,6 +25,7 @@ type ReportGenerator interface {
 
 // New will create a new instance of the ReportGenerator
 func New(
+	db postgres.DB,
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
@@ -35,6 +37,7 @@ func New(
 	schema *graphql.Schema,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
+		db,
 		reportSnapshotStore,
 		deploymentDatastore,
 		watchedImageDatastore,
@@ -48,6 +51,7 @@ func New(
 }
 
 func newReportGeneratorImpl(
+	db postgres.DB,
 	reportSnapshotStore reportSnapshotDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	watchedImageDatastore watchedImageDS.DataStore,
@@ -67,6 +71,8 @@ func newReportGeneratorImpl(
 		clusterDatastore:        clusterDatastore,
 		namespaceDatastore:      namespaceDatastore,
 		blobStore:               blobStore,
-		Schema:                  schema,
+		db:                      db,
+
+		Schema: schema,
 	}
 }

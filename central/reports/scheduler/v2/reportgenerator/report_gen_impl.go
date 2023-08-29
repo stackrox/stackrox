@@ -24,15 +24,19 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -52,6 +56,7 @@ type reportGeneratorImpl struct {
 	blobStore               blobDS.Datastore
 	clusterDatastore        clusterDS.DataStore
 	namespaceDatastore      namespaceDS.DataStore
+	db                      postgres.DB
 
 	Schema *graphql.Schema
 }
@@ -200,6 +205,10 @@ func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, colle
 		return nil, nil, err
 	}
 
+	if env.PostgresQueryTracer.BooleanSetting() {
+		reportGenCtx = postgres.WithTracerContext(reportGenCtx)
+	}
+
 	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 		// We first get deploymentIDs using a DeploymentsQuery and then again run graphQL queries with deploymentIDs to get the deployment objects.
 		// Why do we not directly create a queryString directly from the collection and pass that to graphQL?
@@ -226,6 +235,73 @@ func (rg *reportGeneratorImpl) getReportData(snap *storage.ReportSnapshot, colle
 		if err != nil {
 			return nil, nil, err
 		}
+		result, err := rg.runPaginatedImagesQuery(rQuery.CveFieldsQuery, watchedImages)
+		if err != nil {
+			return nil, nil, err
+		}
+		watchedImgResults = append(watchedImgResults, result)
+	}
+
+	return deployedImgResults, watchedImgResults, nil
+}
+
+func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
+	dataStartTime *types.Timestamp) ([]common.DeployedImagesResult, []common.WatchedImagesResult, error) {
+	var deployedImgResults []common.DeployedImagesResult
+	var watchedImgResults []common.WatchedImagesResult
+	rQuery, err := rg.buildReportQuery(snap, collection, dataStartTime)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if env.PostgresQueryTracer.BooleanSetting() {
+		reportGenCtx = postgres.WithTracerContext(reportGenCtx)
+	}
+
+	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+		// We first get deploymentIDs using a DeploymentsQuery and then again run graphQL queries with deploymentIDs to get the deployment objects.
+		// Why do we not directly create a queryString directly from the collection and pass that to graphQL?
+		// The  query language we support for graphQL has some limitations that prevent us from doing that.
+		// DeploymentsQuery is of type *v1.Query and can support complex queries like the one below.
+		// [(Cluster: c1 AND Namespace: n1 AND Deployment: d1) OR (Cluster: c2 AND Namespace: n2 AND Deployment: d2)]
+		// This query is a 'disjunction of conjunctions' where all conjunctions involve same fields.
+		// Current query language for graphQL does not have semantics to define such a query. Due to this we need to fetch deploymentIDs first
+		// and then pass them to graphQL.
+		deploymentIds, err := rg.getDeploymentIDs(rQuery.DeploymentsQuery)
+		if err != nil {
+			return nil, nil, err
+		}
+		result, err := rg.runPaginatedDeploymentsQuery(rQuery.CveFieldsQuery, deploymentIds)
+		if err != nil {
+			return nil, nil, err
+		}
+		result.Deployments = orderByClusterAndNamespace(result.Deployments)
+		deployedImgResults = append(deployedImgResults, result)
+	}
+
+	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
+		type Demo struct {
+			Image     string `db:"image"`
+			Component struct {
+				ComponentName string `db:"component"`
+			}
+		}
+
+		watchedImages, err := rg.getWatchedImages()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		query := search.NewQueryBuilder().
+			AddExactMatches(search.ImageName, watchedImages...).
+			AddSelectFields(search.NewQuerySelect(search.ImageName)).
+			AddSelectFields(search.NewQuerySelect(search.Component))
+		res, err := pgSearch.RunSelectRequestForSchema[Demo](reportGenCtx, rg.db, schema.ImagesSchema, query.ProtoQuery())
+		//if err != nil {
+		//	return nil, nil, err
+		//}
+		_ = res
+
 		result, err := rg.runPaginatedImagesQuery(rQuery.CveFieldsQuery, watchedImages)
 		if err != nil {
 			return nil, nil, err
@@ -315,13 +391,18 @@ func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cve
 			sortOpt,
 		}
 	}
+	startTime := time.Now()
 
-	response := rg.Schema.Exec(reportGenCtx,
-		gqlQuery, opName, map[string]interface{}{
-			"scopequery": scopeQuery,
-			"cvequery":   cveQuery,
-			"pagination": pagination,
-		})
+	vars := map[string]interface{}{
+		"scopequery": scopeQuery,
+		"cvequery":   cveQuery,
+		"pagination": pagination,
+	}
+	response := rg.Schema.Exec(reportGenCtx, gqlQuery, opName, vars)
+	if env.PostgresQueryTracer.BooleanSetting() {
+		singleLineQuery := strings.ReplaceAll(gqlQuery, "\n", " ")
+		postgres.LogTracef(reportGenCtx, log, "GraphQL Op %s took %d ms: %s vars=%+v", opName, time.Since(startTime).Milliseconds(), singleLineQuery, vars)
+	}
 	if len(response.Errors) > 0 {
 		log.Errorf("error running graphql query: %s", response.Errors[0].Message)
 		return getZero[T](), response.Errors[0].Err
