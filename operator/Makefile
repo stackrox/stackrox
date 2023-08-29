@@ -175,6 +175,7 @@ $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, too
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v4, tools)
 $(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools)
+$(call go-tool, YQ, github.com/mikefarah/yq/v4, tools)
 
 OPERATOR_SDK_VERSION = $(shell cd tools; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
 
@@ -192,6 +193,9 @@ operator-sdk: $(OPERATOR_SDK) ## Download operator-sdk necessary for scaffolding
 
 .PHONY: kuttl
 kuttl: $(KUTTL) ## Download kuttl.
+
+.PHONY: yq
+yq: $(YQ) ## Download yq.
 
 ##@ Development
 
@@ -230,8 +234,8 @@ test-integration: manifests generate envtest ## Run go integration tests
 
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
-validate-crs:
-	./tests/scripts/validate-crs.sh ./tests $(CRDS)
+validate-crs: yq
+	YQ=$(YQ) ./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
