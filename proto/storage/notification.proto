@@ -14,17 +14,17 @@ package storage;
 message Notification {
     // The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
     // resource_type, resource_id, message). It is used for deduplication of notifications.
-    string id                               = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    NotificationType type                   = 2 [(gogoproto.moretags) = 'search:"Notification Type,hidden"'];
-    NotificationLevel level                 = 3 [(gogoproto.moretags) = 'search:"Notification Level,hidden"'];
-    string message                          = 4;
-    string hint                             = 5;
-    string domain                           = 6 [(gogoproto.moretags) = 'search:"Notification Domain,hidden"'];
-    string resource_type                    = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
-    string resource_id                      = 8;
-    int64 occurrences                       = 9;
-    google.protobuf.Timestamp last_occurred = 10 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
-    google.protobuf.Timestamp created_at    = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+    string id                                  = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    NotificationType type                      = 2 [(gogoproto.moretags) = 'search:"Notification Type,hidden"'];
+    NotificationLevel level                    = 3 [(gogoproto.moretags) = 'search:"Notification Level,hidden"'];
+    string message                             = 4;
+    string hint                                = 5;
+    string domain                              = 6 [(gogoproto.moretags) = 'search:"Notification Domain,hidden"'];
+    string resource_type                       = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
+    string resource_id                         = 8;
+    int64 num_occurrences                      = 9;
+    google.protobuf.Timestamp last_occurred_at = 10 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
+    google.protobuf.Timestamp created_at       = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
 }
 
 // Notification type is the storage representation of the Notification type.

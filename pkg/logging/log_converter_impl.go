@@ -39,12 +39,12 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	}
 
 	notification := &storage.Notification{
-		Message:      msg,
-		Type:         storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
-		CreatedAt:    timestamp.TimestampNow(),
-		LastOccurred: timestamp.TimestampNow(),
-		Occurrences:  1,
-		Level:        logLevelToNotificationLevel(level),
+		Message:        msg,
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
+		CreatedAt:      timestamp.TimestampNow(),
+		LastOccurredAt: timestamp.TimestampNow(),
+		NumOccurrences: 1,
+		Level:          logLevelToNotificationLevel(level),
 	}
 
 	if resourceType != "" {

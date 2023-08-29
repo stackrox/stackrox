@@ -376,12 +376,12 @@
           "type": "string",
           "description": "Resource ID associated with the notification. If a notification refers to an underlying resource,\nthe resource ID identifies the underlying resource."
         },
-        "occurrences": {
+        "numOccurrences": {
           "type": "string",
           "format": "int64",
           "description": "Occurrences associated with the notification. Notifications may occur multiple times, the occurrences\nwill track the amount."
         },
-        "lastOccurred": {
+        "lastOccurredAt": {
           "type": "string",
           "format": "date-time",
           "description": "Specifies the time the notification has last occurred."

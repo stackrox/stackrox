@@ -16,46 +16,46 @@ package v1;
 // Currently, notifications only cover logs emitted by Central.
 message Notification {
     // UUID of the notification.
-    string id                               = 1;
+    string id                                  = 1;
 
     // Type of the notification.
-    NotificationType type                   = 2;
+    NotificationType type                      = 2;
 
     // Level associated with the notification. The level is categorized into danger, warn, info,
     // success.
-    NotificationLevel level                 = 3;
+    NotificationLevel level                    = 3;
 
     // Message associated with the notification. The message may include detailed information
     // for this particular notification.
-    string message                          = 4;
+    string message                             = 4;
 
     // Hint associated with the notification. The hint may include different information based
     // on the type of notification. It can include instructions to resolve a notification, or
     // informational hints.
-    string hint                             = 5;
+    string hint                                = 5;
 
     // Domain associated with the notification. A notification's domain outlines the feature domain where
     // the notification was created from. As an example, this might be "Image Scanning".
     // In case of notifications that cannot be tied to a specific domain, this will be "General".
-    string domain                           = 6;
+    string domain                              = 6;
 
     // Resource type associated with the notification. A notification may refer to an underlying resource
     // such as a particular image. In that case, the resource type will be filled here.
-    string resource_type                    = 7;
+    string resource_type                       = 7;
 
     // Resource ID associated with the notification. If a notification refers to an underlying resource,
     // the resource ID identifies the underlying resource.
-    string resource_id                      = 8;
+    string resource_id                         = 8;
 
     // Occurrences associated with the notification. Notifications may occur multiple times, the occurrences
     // will track the amount.
-    int64 occurrences                       = 9;
+    int64 num_occurrences                      = 9;
 
     // Specifies the time the notification has last occurred.
-    google.protobuf.Timestamp last_occurred = 10;
+    google.protobuf.Timestamp last_occurred_at = 10;
 
     // Specifies the time the notification has been created.
-    google.protobuf.Timestamp created_at    = 11;
+    google.protobuf.Timestamp created_at       = 11;
 }
 
 // Notification type exposes the different types of notifications.

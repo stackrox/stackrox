@@ -13,14 +13,14 @@ func TestConvert(t *testing.T) {
 	zc := &zapLogConverter{}
 
 	expectedNotification := &storage.Notification{
-		Type:         storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
-		Level:        storage.NotificationLevel_NOTIFICATION_LEVEL_WARN,
-		Message:      "this is a notification test",
-		Hint:         notifications.GetHint("Image Scanning", "Image"),
-		Domain:       "Image Scanning",
-		ResourceType: "Image",
-		ResourceId:   "some-image",
-		Occurrences:  1,
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
+		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_WARN,
+		Message:        "this is a notification test",
+		Hint:           notifications.GetHint("Image Scanning", "Image"),
+		Domain:         "Image Scanning",
+		ResourceType:   "Image",
+		ResourceId:     "some-image",
+		NumOccurrences: 1,
 	}
 
 	notification := zc.Convert("this is a notification test", "warn", "reprocessor", ImageName("some-image"),
@@ -33,8 +33,8 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expectedNotification.GetDomain(), notification.GetDomain())
 	assert.Equal(t, expectedNotification.GetResourceType(), notification.GetResourceType())
 	assert.Equal(t, expectedNotification.GetResourceId(), notification.GetResourceId())
-	assert.Equal(t, expectedNotification.GetOccurrences(), notification.GetOccurrences())
-	assert.NotEmpty(t, notification.GetLastOccurred())
+	assert.Equal(t, expectedNotification.GetNumOccurrences(), notification.GetNumOccurrences())
+	assert.NotEmpty(t, notification.GetLastOccurredAt())
 	assert.NotEmpty(t, notification.GetCreatedAt())
 	assert.Empty(t, notification.GetId())
 }
