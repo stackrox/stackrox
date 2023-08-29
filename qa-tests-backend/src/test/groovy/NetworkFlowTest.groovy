@@ -1,8 +1,6 @@
 import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
-import java.util.concurrent.TimeUnit
-
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
@@ -34,8 +32,6 @@ import util.NetworkGraphUtil
 import util.Timer
 
 import org.junit.Assume
-import org.junit.Rule
-import org.junit.rules.Timeout
 import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Shared
@@ -209,11 +205,6 @@ class NetworkFlowTest extends BaseSpecification {
         DEPLOYMENTS.add(icmp)
         */
     }
-
-    // Overwrite the default timeout, as these tests may take longer than 800 seconds to finish.
-    @Rule
-    @SuppressWarnings(["JUnitPublicProperty"])
-    Timeout globalTimeout = new Timeout(1600, TimeUnit.SECONDS)
 
     def setupSpec() {
         orchestrator.createNamespace(OTHER_NAMESPACE)
