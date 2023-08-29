@@ -219,3 +219,13 @@ class ScaleTest(BaseTest):
             ScaleTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
+
+class CustomSetTest(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+
+    def run(self):
+        print("Executing small set of qa-tests-backend tests for p/z")
+
+        self.run_with_graceful_kill(
+            ["qa-tests-backend/scripts/run-part-1.sh"], CustomSetTest.TEST_TIMEOUT
+        )
