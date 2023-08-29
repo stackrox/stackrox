@@ -1,3 +1,10 @@
+# Make kuttl ignore this file if running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "false"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -59,9 +66,6 @@ spec:
            readOnly: true
          - name: secret-2
            mountPath: /run/stackrox.io/declarative-configuration/secret-2
-           readOnly: true
-         - mountPath: /etc/pki/injected-ca-trust/
-           name: trusted-ca-volume
            readOnly: true
       volumes:
       - emptyDir: {}
@@ -148,13 +152,5 @@ spec:
           secretName: secret-2
           optional: true
           defaultMode: 420
-      - configMap:
-          defaultMode: 420
-          items:
-          - key: ca-bundle.crt
-            path: tls-ca-bundle.pem
-          name: injected-cabundle-stackrox-central-services
-          optional: true
-        name: trusted-ca-volume
 status:
   availableReplicas: 1
