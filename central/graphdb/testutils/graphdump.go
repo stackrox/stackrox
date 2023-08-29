@@ -335,175 +335,93 @@ func GetImageGraph(ctx context.Context, t *testing.T, db postgres.DB) DebugImage
 	return graph
 }
 
-func listDeployments(ctx context.Context, _ *testing.T, db postgres.DB) []DebugDeployment {
-	results := make([]DebugDeployment, 0)
+func listDeployments(ctx context.Context, t *testing.T, db postgres.DB) []DebugDeployment {
 	const selectStmt = "select id, name, namespace, clusterid, clustername from deployments"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	defer rows.Close()
-	results = make([]DebugDeployment, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 5 {
-			continue
-		}
-		var deployment DebugDeployment
+	const fieldCount = 5
+	populate := func(deployment *DebugDeployment, r [][]byte) {
 		deployment.ID = string(r[0])
 		deployment.Name = string(r[1])
 		deployment.Namespace = string(r[2])
 		deployment.ClusterID = string(r[3])
 		deployment.ClusterName = string(r[4])
-		results = append(results, deployment)
 	}
-	return results
+	return populateListFromDB[DebugDeployment](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listContainers(ctx context.Context, _ *testing.T, db postgres.DB) []DebugContainer {
-	results := make([]DebugContainer, 0)
+func listContainers(ctx context.Context, t *testing.T, db postgres.DB) []DebugContainer {
 	const selectStmt = "select deployment_id, idx, image_id from deployments_containers"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	defer rows.Close()
-	results = make([]DebugContainer, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 3 {
-			continue
-		}
-		var container DebugContainer
+	const fieldCount = 3
+	populate := func(container *DebugContainer, r [][]byte) {
 		container.DeploymentID = string(r[0])
 		container.ID = string(r[1])
 		container.ImageID = string(r[2])
-		results = append(results, container)
 	}
-	return results
+	return populateListFromDB[DebugContainer](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImages(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImage {
-	results := make([]DebugImage, 0)
+func listImages(ctx context.Context, t *testing.T, db postgres.DB) []DebugImage {
 	const selectStmt = "select id from images"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImage, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
-			continue
-		}
-		var image DebugImage
+	const fieldCount = 1
+	populate := func(image *DebugImage, r [][]byte) {
 		image.ID = string(r[0])
-		results = append(results, image)
 	}
-	return results
+	return populateListFromDB[DebugImage](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImageToComponentEdges(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImageComponentEdge {
-	results := make([]DebugImageComponentEdge, 0)
+func listImageToComponentEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageComponentEdge {
 	const selectStmt = "select id, imageid, imagecomponentid from image_component_edges"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImageComponentEdge, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 3 {
-			continue
-		}
-		var edge DebugImageComponentEdge
+	const fieldCount = 3
+	populate := func(edge *DebugImageComponentEdge, r [][]byte) {
 		edge.ID = string(r[0])
 		edge.ImageID = string(r[1])
 		edge.ImageComponentID = string(r[2])
-		results = append(results, edge)
 	}
-	return results
+	return populateListFromDB[DebugImageComponentEdge](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImageComponents(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImageComponent {
-	results := make([]DebugImageComponent, 0)
+func listImageComponents(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageComponent {
 	const selectStmt = "select id from image_components"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImageComponent, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
-			continue
-		}
-		var component DebugImageComponent
+	const fieldCount = 1
+	populate := func(component *DebugImageComponent, r [][]byte) {
 		component.ID = string(r[0])
-		results = append(results, component)
 	}
-	return results
+	return populateListFromDB[DebugImageComponent](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImageComponentToCVEEdges(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImageComponentCVEEdge {
-	results := make([]DebugImageComponentCVEEdge, 0)
+func listImageComponentToCVEEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageComponentCVEEdge {
 	const selectStmt = "select id, imagecomponentid, imagecveid from image_component_cve_edges"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImageComponentCVEEdge, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 3 {
-			continue
-		}
-		var edge DebugImageComponentCVEEdge
+	const fieldCount = 3
+	populate := func(edge *DebugImageComponentCVEEdge, r [][]byte) {
 		edge.ID = string(r[0])
 		edge.ImageComponentID = string(r[1])
 		edge.ImageCVEID = string(r[2])
-		results = append(results, edge)
 	}
-	return results
+	return populateListFromDB[DebugImageComponentCVEEdge](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImageToCVEEdges(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImageCVEEdge {
-	results := make([]DebugImageCVEEdge, 0)
+func listImageToCVEEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageCVEEdge {
 	const selectStmt = "select id, imageid, imagecveid, state from image_cve_edges"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImageCVEEdge, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 4 {
-			continue
-		}
-		var edge DebugImageCVEEdge
+	const fieldCount = 4
+	populate := func(edge *DebugImageCVEEdge, r [][]byte) {
 		edge.ID = string(r[0])
 		edge.ImageID = string(r[1])
 		edge.ImageCVEID = string(r[2])
 		state, err := strconv.ParseInt(string(r[3]), 10, 64)
 		if err != nil {
-			continue
+			return
 		}
 		edge.State = int32(state)
-		results = append(results, edge)
 	}
-	return results
+	return populateListFromDB[DebugImageCVEEdge](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listImageCVEs(ctx context.Context, _ *testing.T, db postgres.DB) []DebugImageCVE {
-	results := make([]DebugImageCVE, 0)
+func listImageCVEs(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageCVE {
 	const selectStmt = "select id from image_cves"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugImageCVE, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
-			continue
-		}
-		var vulnerability DebugImageCVE
+	const fieldCount = 1
+	populate := func(vulnerability *DebugImageCVE, r [][]byte) {
 		vulnerability.ID = string(r[0])
-		results = append(results, vulnerability)
 	}
-	return results
+	return populateListFromDB[DebugImageCVE](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
 // GetNodeGraph retrieves a stripped down dump of DB entries to troubleshoot
@@ -518,101 +436,70 @@ func GetNodeGraph(ctx context.Context, t *testing.T, db postgres.DB) DebugNodeGr
 	return graph
 }
 
-func listNodes(ctx context.Context, _ *testing.T, db postgres.DB) []DebugNode {
-	results := make([]DebugNode, 0)
+func listNodes(ctx context.Context, t *testing.T, db postgres.DB) []DebugNode {
 	const selectStmt = "select id from nodes"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugNode, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
-			continue
-		}
-		var node DebugNode
+	const fieldCount = 1
+	populate := func(node *DebugNode, r [][]byte) {
 		node.ID = string(r[0])
-		results = append(results, node)
 	}
-	return results
+	return populateListFromDB[DebugNode](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listNodeToComponentEdges(ctx context.Context, _ *testing.T, db postgres.DB) []DebugNodeComponentEdge {
-	results := make([]DebugNodeComponentEdge, 0)
+func listNodeToComponentEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugNodeComponentEdge {
 	const selectStmt = "select id, nodeid, nodecomponentid from node_component_edges"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugNodeComponentEdge, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 3 {
-			continue
-		}
-		var edge DebugNodeComponentEdge
+	const fieldCount = 3
+	populate := func(edge *DebugNodeComponentEdge, r [][]byte) {
 		edge.ID = string(r[0])
 		edge.NodeID = string(r[1])
 		edge.NodeComponentID = string(r[2])
-		results = append(results, edge)
 	}
-	return results
+	return populateListFromDB[DebugNodeComponentEdge](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listNodeComponents(ctx context.Context, _ *testing.T, db postgres.DB) []DebugNodeComponent {
-	results := make([]DebugNodeComponent, 0)
+func listNodeComponents(ctx context.Context, t *testing.T, db postgres.DB) []DebugNodeComponent {
 	const selectStmt = "select id from node_components"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugNodeComponent, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
-			continue
-		}
-		var component DebugNodeComponent
+	const fieldCount = 1
+	populate := func(component *DebugNodeComponent, r [][]byte) {
 		component.ID = string(r[0])
-		results = append(results, component)
 	}
-	return results
+	return populateListFromDB[DebugNodeComponent](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listNodeComponentToCVEEdges(ctx context.Context, _ *testing.T, db postgres.DB) []DebugNodeComponentCVEEdge {
-	results := make([]DebugNodeComponentCVEEdge, 0)
+func listNodeComponentToCVEEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugNodeComponentCVEEdge {
 	const selectStmt = "select id, nodecomponentid, nodecveid from node_components_cves_edges"
-	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
-	if err != nil {
-		return results
-	}
-	results = make([]DebugNodeComponentCVEEdge, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 3 {
-			continue
-		}
-		var edge DebugNodeComponentCVEEdge
+	const fieldCount = 3
+	populate := func(edge *DebugNodeComponentCVEEdge, r [][]byte) {
 		edge.ID = string(r[0])
 		edge.NodeComponentID = string(r[1])
 		edge.NodeCVEID = string(r[2])
-		results = append(results, edge)
 	}
-	return results
+	return populateListFromDB[DebugNodeComponentCVEEdge](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
-func listNodeCVEs(ctx context.Context, _ *testing.T, db postgres.DB) []DebugNodeCVE {
-	results := make([]DebugNodeCVE, 0)
+func listNodeCVEs(ctx context.Context, t *testing.T, db postgres.DB) []DebugNodeCVE {
 	const selectStmt = "select id from node_cves"
+	const fieldCount = 1
+	populate := func(vulnerability *DebugNodeCVE, r [][]byte) {
+		vulnerability.ID = string(r[0])
+	}
+	return populateListFromDB[DebugNodeCVE](ctx, t, db, selectStmt, fieldCount, populate)
+}
+
+func populateListFromDB[T any](ctx context.Context, _ *testing.T, db postgres.DB, selectStmt string, fieldCount int, populate func(obj *T, row [][]byte)) []T {
+	results := make([]T, 0)
 	rows, err := db.Query(sac.WithAllAccess(ctx), selectStmt)
 	if err != nil {
 		return results
 	}
-	results = make([]DebugNodeCVE, 0, len(rows.RawValues()))
-	for _, r := range rows.RawValues() {
-		if len(r) < 1 {
+	defer rows.Close()
+	for rows.Next() {
+		values := rows.RawValues()
+		if len(values) < fieldCount {
 			continue
 		}
-		var vulnerability DebugNodeCVE
-		vulnerability.ID = string(r[0])
-		results = append(results, vulnerability)
+		var obj T
+		populate(&obj, values)
+		results = append(results, obj)
 	}
 	return results
 }
