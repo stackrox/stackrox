@@ -40,6 +40,11 @@ CRS=$(
 
 # Validate CRs.
 for cr in $CRS; do
+    if grep -q '^apiVersion: kuttl.dev/' "${cr}"; then
+        # TODO(ROX-19283): make it possible to validate these files somehow.
+        echo "Skipping ${cr} since it contains kuttl CR(s)."
+        continue
+    fi
     echo -n "Validating custom resource $cr with kubectl... "
     if output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1); then
         echo PASSED
