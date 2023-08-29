@@ -1,7 +1,7 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG RPMS_BASE_IMAGE=ubi8
-ARG BASE_TAG=8.6
+ARG BASE_TAG=latest
 
 FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS downloads
 
@@ -67,10 +67,10 @@ RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/s
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
-    microdnf upgrade && \
+    microdnf upgrade --nobest && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs lz4 bzip2 util-linux && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs lz4 bzip2 util-linux && \
     microdnf clean all && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities

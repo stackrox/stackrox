@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
-ARG BASE_TAG=8.8
+ARG BASE_TAG=latest
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -16,8 +16,8 @@ COPY scripts/ /
 COPY bin/scanner /
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 
-RUN microdnf -y upgrade && \
-    microdnf -y clean all && \
+RUN microdnf upgrade --nobest && \
+    microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
