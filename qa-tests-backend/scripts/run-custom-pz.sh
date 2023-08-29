@@ -114,7 +114,7 @@ test_custom() {
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
     fi
 
-    STACKROX_TESTNAMES=""
+    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest" "AuthServiceTest" "AutocompleteTest" "ClustersTest" "SACTest" "SecretsTest" "CSVTest" "DiagnosticBundleTest" "DeploymentEventGraphQLTest" "GlobalSearch")
 
     # fetch list of tests
    for testName in "${STACKROX_TESTNAMES[@]}";
