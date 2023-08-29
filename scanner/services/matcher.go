@@ -10,12 +10,15 @@ import (
 	"github.com/stackrox/rox/scanner/matcher"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpchealth "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 )
 
 // matcherService represents a vulnerability matcher gRPC service.
 type matcherService struct {
+	grpchealth.UnimplementedHealthServer
 	v4.UnimplementedMatcherServer
+
 	matcher matcher.Matcher
 }
 
@@ -34,8 +37,13 @@ func (s *matcherService) GetMetadata(_ context.Context, _ *types.Empty) (*v4.Met
 	return nil, status.Error(codes.Unimplemented, "method GetMetadata not implemented")
 }
 
+func (s *matcherService) Check(_ context.Context, _ *grpchealth.HealthCheckRequest) (*grpchealth.HealthCheckResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Check not implemented")
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *matcherService) RegisterServiceServer(grpcServer *grpc.Server) {
+	grpchealth.RegisterHealthServer(grpcServer, s)
 	v4.RegisterMatcherServer(grpcServer, s)
 }
 

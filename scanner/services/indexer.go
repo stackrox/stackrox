@@ -18,10 +18,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
 	"google.golang.org/grpc"
+	grpchealth "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type indexerService struct {
+	grpchealth.UnimplementedHealthServer
 	v4.UnimplementedIndexerServer
+
 	indexer indexer.Indexer
 }
 
@@ -158,8 +161,15 @@ func (s *indexerService) getClairIndexReport(ctx context.Context, hashID string)
 	return clairReport, nil
 }
 
+func (s *indexerService) Check(_ context.Context, _ *grpchealth.HealthCheckRequest) (*grpchealth.HealthCheckResponse, error) {
+	return &grpchealth.HealthCheckResponse{
+		Status: grpchealth.HealthCheckResponse_SERVING,
+	}, nil
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *indexerService) RegisterServiceServer(grpcServer *grpc.Server) {
+	grpchealth.RegisterHealthServer(grpcServer, s)
 	v4.RegisterIndexerServer(grpcServer, s)
 }
 
