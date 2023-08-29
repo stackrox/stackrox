@@ -83,6 +83,7 @@ const (
 	ClusterIP EndpointIPType = iota
 	LoadBalancerIP
 	ExternalIP
+	NodeIP
 )
 
 func (e EndpointIPType) String() string {
@@ -93,7 +94,10 @@ func (e EndpointIPType) String() string {
 		return "LoadBalancer"
 	case ExternalIP:
 		return "ExternalIP"
+	case NodeIP:
+		return "NodeIP"
 	}
+
 	return "Unknown"
 
 }
@@ -104,6 +108,7 @@ func (e EndpointIPType) String() string {
 type EndpointTargetInfo struct {
 	ContainerPort uint16
 	PortName      string
+	PortType      EndpointIPType
 }
 
 // EntityData is a data structure representing the updates to be applied to the store for a given deployment.

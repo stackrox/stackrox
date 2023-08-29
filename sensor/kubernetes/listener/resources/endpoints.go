@@ -162,7 +162,7 @@ func getAllServiceIPs(svc *v1.Service) (serviceIPs []typedServiceIP) {
 
 // WIP
 
-func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.IPAddress, nodeIPs []net.IPAddress, port v1.ServicePort, data *clusterentities.EntityData) {
+func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []typedServiceIP, nodeIPs []typedServiceIP, port v1.ServicePort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 
 	targetInfo := clusterentities.EndpointTargetInfo{
@@ -175,23 +175,28 @@ func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.
 	}
 
 	for _, serviceIP := range serviceIPs {
-		serviceEndpoint := net.MakeNumericEndpoint(serviceIP, uint16(port.Port), l4Proto)
+		serviceEndpoint := net.MakeNumericEndpoint(serviceIP.IP, uint16(port.Port), l4Proto)
+		targetInfo.PortType = serviceIP.IPType
 		data.AddEndpoint(serviceEndpoint, targetInfo)
 	}
 
 	if port.NodePort != 0 {
 		for _, nodeIP := range nodeIPs {
-			nodePortEndpoint := net.MakeNumericEndpoint(nodeIP, uint16(port.NodePort), l4Proto)
+			nodePortEndpoint := net.MakeNumericEndpoint(nodeIP.IP, uint16(port.NodePort), l4Proto)
+			targetInfo.PortType = nodeIP.IPType
 			data.AddEndpoint(nodePortEndpoint, targetInfo)
 		}
 	}
 }
 
 func (m *endpointManagerImpl) addEndpointDataForService(deployment *deploymentWrap, svc *serviceWrap, data *clusterentities.EntityData) {
-	var allNodeIPs []net.IPAddress
+	var allNodeIPs []typedServiceIP
 	if svc.Spec.Type == v1.ServiceTypeLoadBalancer || svc.Spec.Type == v1.ServiceTypeNodePort {
 		for _, node := range m.nodeStore.getNodes() {
-			allNodeIPs = append(allNodeIPs, node.addresses...)
+			for _, address := range node.addresses {
+				allNodeIPs = append(allNodeIPs, typedServiceIP{IP: address, IPType: clusterentities.NodeIP})
+			}
+
 		}
 	}
 
@@ -226,6 +231,11 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 		return
 	}
 
+	nodeAddresses := make([]typedServiceIP, 0)
+	for _, address := range node.addresses {
+		nodeAddresses = append(nodeAddresses, typedServiceIP{IP: address, IPType: clusterentities.NodeIP})
+	}
+
 	updates := make(map[string]*clusterentities.EntityData)
 	for _, svc := range m.serviceStore.nodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
@@ -234,9 +244,10 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 				update = &clusterentities.EntityData{}
 				updates[deployment.GetId()] = update
 			}
+
 			for _, port := range svc.Spec.Ports {
 				if port.NodePort != 0 {
-					addEndpointDataForServicePort(deployment, nil, node.addresses, port, update)
+					addEndpointDataForServicePort(deployment, nil, nodeAddresses, port, update)
 				}
 			}
 		}
