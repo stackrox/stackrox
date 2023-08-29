@@ -22,13 +22,13 @@ var (
 	errFake          = errors.New("fake error")
 	fakeID           = "0925514f-3a33-5931-b431-756406e1a008"
 	fakeNotification = &storage.Notification{
-		Id:          fakeID,
-		Level:       storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
-		Message:     "message",
-		Type:        storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
-		Hint:        "hint",
-		Domain:      "domain",
-		Occurrences: 1,
+		Id:             fakeID,
+		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Message:        "message",
+		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Hint:           "hint",
+		Domain:         "domain",
+		NumOccurrences: 1,
 	}
 	maxPagination = &v1.Pagination{
 		Limit: math.MaxInt32,

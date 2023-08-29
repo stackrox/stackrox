@@ -127,16 +127,16 @@ func convertToServiceType(notification *storage.Notification) *v1.Notification {
 		return nil
 	}
 	return &v1.Notification{
-		Id:           notification.GetId(),
-		Type:         v1.NotificationType(notification.GetType()),
-		Level:        v1.NotificationLevel(notification.GetLevel()),
-		Message:      notification.GetMessage(),
-		Hint:         notification.GetHint(),
-		Domain:       notification.GetDomain(),
-		ResourceType: notification.GetResourceType(),
-		ResourceId:   notification.GetResourceId(),
-		Occurrences:  notification.GetOccurrences(),
-		LastOccurred: notification.GetLastOccurred(),
-		CreatedAt:    notification.GetCreatedAt(),
+		Id:             notification.GetId(),
+		Type:           v1.NotificationType(notification.GetType()),
+		Level:          v1.NotificationLevel(notification.GetLevel()),
+		Message:        notification.GetMessage(),
+		Hint:           notification.GetHint(),
+		Domain:         notification.GetDomain(),
+		ResourceType:   notification.GetResourceType(),
+		ResourceId:     notification.GetResourceId(),
+		NumOccurrences: notification.GetNumOccurrences(),
+		LastOccurredAt: notification.GetLastOccurredAt(),
+		CreatedAt:      notification.GetCreatedAt(),
 	}
 }
