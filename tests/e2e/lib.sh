@@ -49,7 +49,6 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
     fi
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
     ci_export OUTPUT_FORMAT "helm"
-    ci_export DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS "true"
 
     # Repo name can't be too long or `helm search repo [REPO_NAME] -l` cuts off part of the name and the regex below fails.
     helm_repo_name="tmp-srox-compat"
