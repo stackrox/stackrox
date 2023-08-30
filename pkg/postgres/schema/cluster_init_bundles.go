@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -24,6 +26,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.InitBundleMeta)(nil)), "cluster_init_bundles")
+		schema.PermissionChecker = sac.NewAllGlobalResourceAllowedPermissionChecker(resources.Administration, resources.Integration)
 		RegisterTable(schema, CreateTableClusterInitBundlesStmt)
 		return schema
 	}()
