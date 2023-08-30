@@ -123,7 +123,7 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.12.0
 	golang.stackrox.io/grpc-http1 v0.2.11
-	google.golang.org/api v0.136.0
+	google.golang.org/api v0.138.0
 	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5
 	google.golang.org/grpc v1.57.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
@@ -241,7 +241,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
-	github.com/google/s2a-go v0.1.4 // indirect
+	github.com/google/s2a-go v0.1.5 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/trillian v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
