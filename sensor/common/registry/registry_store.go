@@ -268,7 +268,7 @@ func (rs *Store) IsLocal(image *storage.ImageName) bool {
 		return false
 	}
 
-	if rs.hasClusterLocalRegistryHost(image.GetRegistry()) {
+	if rs.HasClusterLocalRegistryHost(image.GetRegistry()) {
 		// This host is always cluster local irregardless of the DelegatedRegistryConfig (ie: OCP internal registry).
 		return true
 	}
@@ -312,7 +312,9 @@ func (rs *Store) AddClusterLocalRegistryHost(host string) {
 	log.Debugf("Added cluster local registry host %q", trimmed)
 }
 
-func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
+// HasClusterLocalRegistryHost will return true if host is found, which represents
+// a registry that is only accessible from within this cluster.
+func (rs *Store) HasClusterLocalRegistryHost(host string) bool {
 	trimmed := urlfmt.TrimHTTPPrefixes(host)
 
 	rs.clusterLocalRegistryHostsMutex.RLock()

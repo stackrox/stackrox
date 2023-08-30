@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -122,11 +123,16 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 		return
 	}
 
+	namespace := d.inferNamespace(ci)
+	if namespace != "" {
+		log.Debug("Using inferred namespace %q for image %q from req %q", namespace, ci.GetName().GetFullName(), scanReq.GetRequestId())
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
-	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
+	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, namespace, scanReq.GetRequestId(), scanReq.GetForce())
 	if err != nil {
 		log.Errorf("Scan failed for req %q image %q: %v", scanReq.GetRequestId(), ci.GetName().GetFullName(), err)
 
@@ -140,6 +146,16 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 			d.sendScanStatusUpdate(scanReq, err)
 		}
 	}
+}
+
+// inferNamespace attempts to infer a namespace based on an image, assumes the OCP integrated registry
+// convention is followed where the first part of the image's path/remote represents a project/namespace.
+func (d *delegatedRegistryImpl) inferNamespace(image *storage.ContainerImage) string {
+	if !d.registryStore.HasClusterLocalRegistryHost(image.GetName().GetRegistry()) {
+		return ""
+	}
+
+	return utils.ExtractOpenShiftProject(image.GetName())
 }
 
 func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage, enrichErr error) {
