@@ -116,16 +116,22 @@ test_custom() {
 
     STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest" "AuthServiceTest" "AutocompleteTest" "ClustersTest" "SACTest" "SecretsTest" "CSVTest" "DiagnosticBundleTest" "DeploymentEventGraphQLTest" "GlobalSearch")
 
-    # fetch list of tests
+    #Initialize variables
+    interval_sec=20
+    counter=0
+
+    #fetch list of tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
-      # test counter
+    #test counter
       counter=$(( counter + 1 ))
-      # execute test
+      printf "%s%s" "---------- Test $counter: $testName ----------"
+    #execute test
       ./gradlew test "$GRADLE_TEST_ARGS" --tests "$testName"
+
+    #allow previous test data to cleanup
+      sleep $interval_sec
     done
-
-
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
