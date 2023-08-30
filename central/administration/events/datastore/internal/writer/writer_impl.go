@@ -36,13 +36,13 @@ func (c *writerImpl) write(notification *storage.Notification) {
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, notification *storage.Notification) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
 	enrichedNotification := enrichNotificationWithDefaults(notification)
 	id := enrichedNotification.GetId()
 
 	var baseNotification *storage.Notification
+
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	notificationInBuffer, found := c.read(id)
 	// If a notification already exists in the buffer it is the most recent.
