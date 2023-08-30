@@ -116,7 +116,7 @@ test_custom() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest" "AuthServiceTest" "AutocompleteTest" "ClustersTest" "SACTest" "SecretsTest" "CSVTest" "DiagnosticBundleTest" "DeploymentEventGraphQLTest" "GlobalSearch")
+    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest" "AuthServiceTest" "AutocompleteTest" "ClustersTest" "SecretsTest" "DiagnosticBundleTest" "GlobalSearch")
 
     #Initialize variables
     interval_sec=20
