@@ -533,7 +533,7 @@ class NetworkFlowTest extends BaseSpecification {
                 }
                 log.warn("Edge coming from OpenShift ingress router to ${deploymentUid} not found")
                 // Debug dump of all router edges
-                currentGraph = NetworkGraphService.getNetworkGraph()
+                def currentGraph = NetworkGraphService.getNetworkGraph()
                 def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == defaultRouterId }
                 List<NetworkNode> outNodesRouter = currentGraph.nodesList.findAll { node ->
                     node.outEdgesMap.containsKey(index)
@@ -546,7 +546,7 @@ class NetworkFlowTest extends BaseSpecification {
                     NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
             if (edges == null || edges.size() == 0) {
                 // Debug dump of all INTERNET_EXTERNAL_SOURCE_ID edges
-                currentGraph = NetworkGraphService.getNetworkGraph()
+                def currentGraph = NetworkGraphService.getNetworkGraph()
                 def index = currentGraph.nodesList.findIndexOf {
                     node -> node.deploymentName == Constants.INTERNET_EXTERNAL_SOURCE_ID
                 }
