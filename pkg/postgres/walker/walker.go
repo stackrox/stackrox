@@ -18,7 +18,7 @@ var (
 	timestampType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
-type context struct {
+type walkerContext struct {
 	getter             string
 	column             string
 	searchDisabled     bool
@@ -29,7 +29,7 @@ type context struct {
 	ignoreSearchLabels set.StringSet
 }
 
-func (c context) Getter(name string) string {
+func (c walkerContext) Getter(name string) string {
 	get := fmt.Sprintf("Get%s()", name)
 	if c.getter == "" {
 		return get
@@ -37,15 +37,15 @@ func (c context) Getter(name string) string {
 	return c.getter + "." + get
 }
 
-func (c context) Column(name string) string {
+func (c walkerContext) Column(name string) string {
 	if c.column == "" {
 		return name
 	}
 	return c.column + "_" + name
 }
 
-func (c context) childContext(name string, searchDisabled bool, opts PostgresOptions) context {
-	return context{
+func (c walkerContext) childContext(name string, searchDisabled bool, opts PostgresOptions) walkerContext {
+	return walkerContext{
 		getter:             c.Getter(name),
 		column:             c.Column(name),
 		searchDisabled:     c.searchDisabled || searchDisabled,
@@ -147,7 +147,7 @@ func Walk(obj reflect.Type, table string) *Schema {
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
 	}
-	handleStruct(context{}, schema, obj.Elem())
+	handleStruct(walkerContext{}, schema, obj.Elem())
 
 	// Post-process schema
 	postProcessSchema(schema)
@@ -294,7 +294,7 @@ func getProtoBufName(protoBufTag string) string {
 	return ""
 }
 
-func getSearchOptions(ctx context, searchTag string) (SearchField, []DerivedSearchField) {
+func getSearchOptions(ctx walkerContext, searchTag string) (SearchField, []DerivedSearchField) {
 	ignored := searchTag == "-"
 	if ignored || searchTag == "" {
 		return SearchField{
@@ -348,7 +348,7 @@ func typeIsEnum(typ reflect.Type) bool {
 }
 
 // handleStruct takes in a struct object and properly handles all of the fields
-func handleStruct(ctx context, schema *Schema, original reflect.Type) {
+func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		structField := original.Field(i)
 		if strings.HasPrefix(structField.Name, "XXX") {
@@ -420,7 +420,7 @@ func handleStruct(ctx context, schema *Schema, original reflect.Type) {
 			// with references to the parent so we that we can create
 			schema.Children = append(schema.Children, childSchema)
 			handleStruct(
-				context{
+				walkerContext{
 					searchDisabled:     ctx.searchDisabled || searchOpts.Ignored,
 					ignorePK:           opts.IgnorePrimaryKey,
 					ignoreUnique:       opts.IgnoreUniqueConstraint,
