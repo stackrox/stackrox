@@ -279,11 +279,12 @@ deploy_sensor_via_operator() {
     template_cr_file=tests/e2e/yaml/secured-cluster-cr-template.yaml
     gen_cr_file=tests/e2e/yaml/secured-cluster-cr-gen.yaml
 
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
-       upper_case_collection_method="$(echo core_bpf | tr '[:lower:]' '[:upper:]')"
-       sed "s|__COLLECTION_METHOD__|$upper_case_collection_method|" "$template_cr_file" > "$gen_cr_file"
-    fi
+
+    # COLLECTION_METHOD should already be set, but let's make 100% sure that it is
+    ci_export COLLECTION_METHOD "${COLLECTION_METHOD:-ebpf}"
+    echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+    upper_case_collection_method="$(echo core_bpf | tr '[:lower:]' '[:upper:]')"
+    sed "s|__COLLECTION_METHOD__|$upper_case_collection_method|" "$template_cr_file" > "$gen_cr_file"
     kubectl apply -n stackrox -f "$gen_cr_file"
 
     wait_for_object_to_appear stackrox deploy/sensor 300
