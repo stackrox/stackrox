@@ -1,7 +1,7 @@
 # ACS API Guidelines
 An overview of the set of standardized guidelines and practices to ensure that the APIs across different 
 projects and teams adhere to a common structure and design. This consistency simplifies the process of understanding 
-and maintaining APIs. The guidelines helps identify potential pitfalls and design choices that could lead to issues to 
+and maintaining APIs. These guidelines help identify potential pitfalls and design choices that could lead to issues to 
 help developers avoid common mistakes and build more robust APIs. When in doubt, It is encouraged to seek resolution
 in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archives/C05MMG2PP8A).
 
@@ -15,27 +15,27 @@ in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archi
 ## Naming Guidelines
 
 ### gRPC Service Name
-Service name **must** be unique and should use a noun that generally refers to a resource or product component 
-e.g. `DeploymentService`, `ReportService`, `ComplianceService`. Intuitive and well-known short forms or 
-abbreviations may be used in some cases (and could even be preferable) for succinctness 
+The service name **must** be unique and use a noun that generally refers to a resource or product component and 
+**must** end with **Service** e.g. `DeploymentService`, `ReportService`, `ComplianceService`. Intuitive and well-known 
+short forms or abbreviations **may** be used in some cases (and could even be preferable) for succinctness 
 e.g. `ReportConfigService`, `RbacService`. 
-All gRPC methods grouped into a single service must generally pertain to the primary resource of the service.
-
-Note:
-- All service defined in versioned package [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/v2)
-**must not** import from [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage) and
-[/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi) packages.
-- All new gRPC methods defined in versioned package [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/v1) 
-**must not** import from `/proto/storage` and `/proto/internalapi` packages.
-- All services of the type `APIServiceWithCustomRoutes` **must not** import from `/proto/storage` and `/proto/internalapi` packages.
+All gRPC methods grouped into a single service **must** generally pertain to the primary resource of the service.
 
 ### gRPC Method Name
-Methods should be named such that they provide insights into the functionality. Typically, the method 
-name should follow the _VerbNoun_ convention. For example, `StartComplianceScan`, `RunComplianceScan`, 
-and `GetComplianceScan` are not the same. `StartComplianceScan` must return without waiting for the compliance 
-scan to complete. `RunComplianceScan` may or may not wait for a compliance scan; the method name is ambiguous 
-and should be avoided if it starts a process and returns without waiting. `GetComplianceScan` should not run 
-a compliance scan but only fetches a stored one.
+Methods **should** be named such that they provide insights into the functionality.
+
+Let us look at a few examples.`StartComplianceScan`, `RunComplianceScan`, and `GetComplianceScan` are not the same. 
+
+- `StartComplianceScan` **should** return without waiting for the compliance scan to complete. 
+- `RunComplianceScan` is ambiguous because it is unclear if the call waits for the scan to complete. 
+The ambiguity can be removed by adding a field to the request that helps clarify the expectation 
+e.g. `bool wait_for_scan_completion` if set to `true` informs the method to wait for the compliance 
+scan to complete. However, for long-running processes, it is **recommended** to create a job that 
+finishes the process asynchronously and return the job ID to the users which can be tracked via 
+dedicated job tracking method.
+- `GetComplianceScan` **should** not run a compliance scan but only fetches a stored one.
+
+Typically, the method name **should** follow the _VerbNoun_ convention.
 
 | Verb   | Noun           | Method name         |
 |--------|----------------|---------------------|
@@ -46,7 +46,7 @@ a compliance scan but only fetches a stored one.
 | Notify | Violation      | `NotifyViolation`   |
 | Run    | ComplianceScan | `RunComplianceScan` |
 
-It is **recommended** that the verbs be imperative instead of inquisitive. Generally, the noun should be the resource type. 
+It is **recommended** that the verbs be imperative instead of inquisitive. Generally, the noun **should** be the resource type. 
 In some cases, the noun portion could be composed of multiple nouns e.g. `GetVulnerabilityDeferralState`, `RunPolicyScan`.
 
 | Inquisitive               | Imperative                      |
@@ -126,7 +126,7 @@ GetBaselineGeneratedNetworkPolicyForDeployment
 `GetDeploymentBaselineNetworkPolicy` or merely `GetBaselineNetworkPolicy` if the concept of baselines applies
 to deployments only.
 
-The following example demonstrates design if that concept of baselines may apply to resource types other than deployments.
+The following example demonstrates design if that concept of baselines could apply to multiple resource types.
 
 ```
 GetBaselineNetworkPolicy
@@ -146,7 +146,7 @@ GetBaselineNetworkPolicyRequest {
 
 ### gRPC Message Name
 The request and response messages **must** be named after method names with suffix `Request` and `Response` unless 
-the request/response type is an empty message. Generally, resource type as response message should be avoided 
+the request/response type is an empty message. Generally, resource type as response message **should** be avoided 
 e.g. use `GetDeploymentResponse` response instead of `Deployment`. This allows augmenting the response with 
 supplemental information in the future.
 
