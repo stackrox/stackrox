@@ -116,7 +116,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
-			registry registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+			registry registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error)
@@ -268,7 +268,7 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 
 func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 	scan := LocalScan{
-		scannerClientSingleton: func() *scannerclient.Client { return nil },
+		scannerClientSingleton: func() scannerclient.ScannerClient { return nil },
 	}
 
 	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, &storage.ContainerImage{}, "", "", false)
@@ -523,15 +523,14 @@ func (suite *scanTestSuite) TestNotes() {
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
-	reg registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	reg registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 
 	if reg != nil {
 		reg.Config()
 	}
-	return &scannerV1.GetImageComponentsResponse{
-		ScannerVersion: "1",
-		Status:         scannerV1.ScanStatus_SUCCEEDED,
-		Components: &scannerV1.Components{
+	return &scannerclient.ImageAnalysis{
+		ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
+		V1Components: &scannerV1.Components{
 			Namespace: "default",
 			LanguageComponents: []*scannerV1.LanguageComponent{{
 				Type:    scannerV1.SourceType_JAVA,
@@ -553,7 +552,7 @@ func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher,
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	_ registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 	return nil, errors.New("failed scanning image")
 }
 
@@ -567,8 +566,19 @@ func failingFetchSignaturesUnauthorized(_ context.Context, _ signatures.Signatur
 	return nil, errox.NotAuthorized
 }
 
-func emptyScannerClientSingleton() *scannerclient.Client {
-	return &scannerclient.Client{}
+type emptyClient struct {
+}
+
+func (*emptyClient) Close() error {
+	return nil
+}
+
+func (*emptyClient) GetImageAnalysis(_ context.Context, _ *storage.Image, _ *registryTypes.Config) (*scannerclient.ImageAnalysis, error) {
+	return nil, nil
+}
+
+func emptyScannerClientSingleton() scannerclient.ScannerClient {
+	return &emptyClient{}
 }
 
 func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error) {

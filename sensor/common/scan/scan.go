@@ -51,9 +51,9 @@ var (
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
 	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
-	scannerClientSingleton            func() *scannerclient.Client
+	scannerClientSingleton            func() scannerclient.ScannerClient
 	getRegistryForImageInNamespace    func(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
 	getGlobalRegistryForImage         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 	createNoAuthImageRegistry         func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
@@ -148,6 +148,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		ImageName:      srcImage.GetName(),
 		Metadata:       pullSourceImage.GetMetadata(),
 		Components:     scannerResp.GetComponents(),
+		V4Contents:     scannerResp.GetContents(),
 		Notes:          scannerResp.GetNotes(),
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
@@ -315,7 +316,7 @@ func (s *LocalScan) enrichImageWithMetadata(errorList *errorhelpers.ErrorList, r
 }
 
 // fetchImageAnalysis analyzes an image via the local scanner. Does nothing if errorList contains errors.
-func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerV1.GetImageComponentsResponse {
+func (s *LocalScan) fetchImageAnalysis(ctx context.Context, errorList *errorhelpers.ErrorList, registry registryTypes.ImageRegistry, image *storage.Image) *scannerclient.ImageAnalysis {
 	if !errorList.Empty() {
 		// do nothing if errors previously encountered.
 		return nil
@@ -361,9 +362,13 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 
 // scanImage will scan the given image and return its components.
 func scanImage(ctx context.Context, image *storage.Image,
-	registry registryTypes.ImageRegistry, scannerClient *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 	// Get the image analysis from the local Scanner.
-	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
+	regCfg := registry.Config()
+	if regCfg == nil {
+		return nil, fmt.Errorf("internal error: missing registry config")
+	}
+	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, regCfg)
 	if err != nil {
 		return nil, err
 	}

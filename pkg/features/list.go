@@ -44,4 +44,7 @@ var (
 
 	// CentralEvents enables APIs (including collection) and UI pages for Central events.
 	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
+
+	// ScannerV4 use Scanner V4 as the default Stackrox Scanner across Central and Secured Clusters.
+	ScannerV4 = registerFeature("Enables ScannerV4 as the default stackrox image scanner", "ROX_SCANNERV4_ENABLE", false)
 )
