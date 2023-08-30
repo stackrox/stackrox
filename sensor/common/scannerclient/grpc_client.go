@@ -224,7 +224,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		HashId: hid,
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
-				Url:      fmt.Sprintf("%s://%s", scheme, image.GetName().GetRemote()),
+				Url:      fmt.Sprintf("%s://%s", scheme, image.GetName().GetFullName()),
 				Username: cfg.Username,
 				Password: cfg.Password,
 			},
