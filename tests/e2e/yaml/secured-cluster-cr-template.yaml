@@ -7,4 +7,3 @@ spec:
   perNode:
   collector:
     collection: __COLLECTION_METHOD__
-
