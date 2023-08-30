@@ -8,8 +8,36 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
+
+// enrichQueryWithSACFilter is used in standardizeQueryAndPopulatePath.
+// The role of the enrichQueryWithSACFilter function is to ensure data is
+// filtered according to the requested access scope.
+func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
+	switch queryType {
+	case DELETE:
+		if schema.PermissionChecker != nil {
+			if ok, err := schema.PermissionChecker.WriteAllowed(ctx); err != nil {
+				return nil, err
+			} else if !ok {
+				return nil, sac.ErrResourceAccessDenied
+			}
+			return q, nil
+		}
+		sacFilter, err := GetReadWriteSACQuery(ctx, schema.ScopingResource)
+		if err != nil {
+			return nil, err
+		}
+		pagination := q.GetPagination()
+		query := searchPkg.ConjunctionQuery(sacFilter, q)
+		query.Pagination = pagination
+		return query, nil
+	}
+	return q, nil
+}
 
 // GetReadWriteSACQuery returns SAC filter for resource or error is permission is denied.
 func GetReadWriteSACQuery(ctx context.Context, targetResource permissions.ResourceMetadata) (*v1.Query, error) {

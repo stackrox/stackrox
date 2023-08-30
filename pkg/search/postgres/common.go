@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/random"
-	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
@@ -324,29 +323,6 @@ func (p *parsedPaginationQuery) AsSQL() string {
 		paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", p.Offset))
 	}
 	return paginationSB.String()
-}
-
-func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
-	switch queryType {
-	case DELETE:
-		if schema.PermissionChecker != nil {
-			if ok, err := schema.PermissionChecker.WriteAllowed(ctx); err != nil {
-				return nil, err
-			} else if !ok {
-				return nil, sac.ErrResourceAccessDenied
-			}
-			return q, nil
-		}
-		sacFilter, err := GetReadWriteSACQuery(ctx, schema.ScopingResource)
-		if err != nil {
-			return nil, err
-		}
-		pagination := q.GetPagination()
-		query := searchPkg.ConjunctionQuery(sacFilter, q)
-		query.Pagination = pagination
-		return query, nil
-	}
-	return q, nil
 }
 
 func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
