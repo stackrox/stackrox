@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	"github.com/mitchellh/hashstructure/v2"
-	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -176,7 +176,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 	)
 
 	switch o := obj.(type) {
-	case *openshift_appsv1.DeploymentConfig:
+	case *openshiftAppsV1.DeploymentConfig:
 		if o.Spec.Template == nil {
 			return false, fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 		}
