@@ -2,7 +2,18 @@ import React from 'react';
 
 import './ResourceIcon.css';
 
-type K8sResourceKind = 'Cluster' | 'ConfigMap' | 'ClusterRoles' | 'ClusterRoleBindings' | 'NetworkPolicies' | 'SecurityContextConstraints' | 'EgressFirewalls' | 'Deployment' | 'Namespace' | 'Secret' | 'Unknown';
+type K8sResourceKind =
+    | 'Cluster'
+    | 'ConfigMap'
+    | 'ClusterRoles'
+    | 'ClusterRoleBindings'
+    | 'NetworkPolicies'
+    | 'SecurityContextConstraints'
+    | 'EgressFirewalls'
+    | 'Deployment'
+    | 'Namespace'
+    | 'Secret'
+    | 'Unknown';
 
 export type ResourceIconProps = {
     className?: string;
@@ -15,7 +26,10 @@ const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: s
     ClusterRoles: { text: 'CR', backgroundColor: 'var(--pf-global--palette--purple-600)' },
     ClusterRoleBindings: { text: 'CRB', backgroundColor: 'var(--pf-global--palette--purple-600)' },
     NetworkPolicies: { text: 'NP', backgroundColor: 'var(--pf-global--palette--purple-600)' },
-    SecurityContextConstraints: { text: 'SCC', backgroundColor: 'var(--pf-global--palette--purple-600)' },
+    SecurityContextConstraints: {
+        text: 'SCC',
+        backgroundColor: 'var(--pf-global--palette--purple-600)',
+    },
     EgressFirewalls: { text: 'EF', backgroundColor: 'var(--pf-global--palette--purple-600)' },
     Deployment: { text: 'D', backgroundColor: 'var(--pf-global--palette--blue-500)' },
     Namespace: { text: 'NS', backgroundColor: 'var(--pf-global--palette--green-500)' },
