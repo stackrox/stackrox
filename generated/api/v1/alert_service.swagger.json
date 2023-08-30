@@ -704,11 +704,11 @@
         "UNKNOWN",
         "SECRETS",
         "CONFIGMAPS",
-        "CLUSTERROLES",
-        "CLUSTERROLEBINDINGS",
-        "NETWORKPOLICIES",
-        "SECURITYCONTEXTCONSTRAINTS",
-        "EGRESSFIREWALLS"
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "UNKNOWN"
     },

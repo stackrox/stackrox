@@ -37,11 +37,11 @@ message Alert {
             UNKNOWN                    = 0;
             SECRETS                    = 1;
             CONFIGMAPS                 = 2;
-            CLUSTERROLES               = 3;
-            CLUSTERROLEBINDINGS        = 4;
-            NETWORKPOLICIES            = 5;
-            SECURITYCONTEXTCONSTRAINTS = 6;
-            EGRESSFIREWALLS            = 7;
+            CLUSTER_ROLES               = 3;
+            CLUSTER_ROLE_BINDINGS        = 4;
+            NETWORK_POLICIES            = 5;
+            SECURITY_CONTEXT_CONSTRAINTS = 6;
+            EGRESS_FIREWALLS            = 7;
         }
 
         ResourceType            resource_type       = 1 [(gogoproto.moretags) = 'search:"Resource Type,store"'];
