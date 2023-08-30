@@ -165,14 +165,6 @@ function launch_central {
 
     add_args "--offline=$OFFLINE_MODE"
 
-    if [[ -n "$SCANNER_IMAGE" ]]; then
-        add_args "--scanner-image=$SCANNER_IMAGE"
-    fi
-
-    if [[ -n "$SCANNER_DB_IMAGE" ]]; then
-        add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
-    fi
-
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
@@ -376,11 +368,8 @@ function launch_central {
         helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
       fi
 
-      set -x
       helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
-      set +x
-
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
         $unzip_dir/central/scripts/setup.sh
@@ -528,12 +517,6 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ -n "$COLLECTOR_IMAGE_REPO" && ${DISABLE_RHACS_IMAGE_REPOSITORY_PARAMS:-false} != "true" ]]; then
-        extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
-        extra_json_config+=", \"collectorImage\": \"${COLLECTOR_IMAGE_REPO}\""
-        extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
-    fi
-
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
@@ -640,11 +623,8 @@ function launch_sensor {
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      set -x
       helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
-      set +x
-
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }

@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
-export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-quay.io/stackrox-io}"
+export DEFAULT_IMAGE_REGISTRY="${DEFAULT_IMAGE_REGISTRY:-"$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" default-image-registry)"}"
 echo "DEFAULT_IMAGE_REGISTRY set to $DEFAULT_IMAGE_REGISTRY"
 
 export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/main}"
 echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
-
-export COLLECTOR_IMAGE_REPO="${COLLECTOR_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/collector}"
-echo "COLLECTOR_IMAGE_REPO set to $COLLECTOR_IMAGE_REPO"
 
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" tag)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
@@ -41,17 +38,6 @@ echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
 export ROX_RESYNC_DISABLED="${ROX_RESYNC_DISABLED:-true}"
 echo "Re-sync disabled for secured cluster set to $ROX_RESYNC_DISABLED"
-
-export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
-if [[ -z "${SCANNER_IMAGE}" ]]; then
-  SCANNER_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-fi
-export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
-if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  SCANNER_DB_IMAGE="$DEFAULT_IMAGE_REGISTRY/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
-  export SCANNER_DB_IMAGE
-fi
-echo "StackRox scanner image set to $SCANNER_IMAGE"
 
 function curl_central() {
 	cmd=(curl -k)
