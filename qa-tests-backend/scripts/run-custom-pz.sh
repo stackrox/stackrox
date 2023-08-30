@@ -125,7 +125,10 @@ test_custom() {
    do
     #test counter
       counter=$(( counter + 1 ))
-      printf "%s%s" "---------- Test $counter: $testName ----------"
+      printf "%s%s\n" "---------- Test $counter: $testName ----------"
+      #For debugging
+      echo $(pwd)
+      cd qa-tests-backend
     #execute test
       ./gradlew test --tests "$testName"
 
