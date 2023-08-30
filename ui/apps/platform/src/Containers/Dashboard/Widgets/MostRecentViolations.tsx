@@ -38,11 +38,11 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                     UNKNOWN: 'Unknown',
                                     SECRETS: 'Secret',
                                     CONFIGMAPS: 'ConfigMap',
-                                    CLUSTERROLES: 'ClusterRoles',
-                                    CLUSTERROLEBINDINGS: 'ClusterRoleBindings',
-                                    NETWORKPOLICIES: 'NetworkPolicies',
-                                    SECURITYCONTEXTCONSTRAINTS: 'SecurityContextConstraints',
-                                    EGRESSFIREWALLS: 'EgressFirewalls',
+                                    CLUSTER_ROLES: 'ClusterRoles',
+                                    CLUSTER_ROLE_BINDINGS: 'ClusterRoleBindings',
+                                    NETWORK_POLICIES: 'NetworkPolicies',
+                                    SECURITY_CONTEXT_CONSTRAINTS: 'SecurityContextConstraints',
+                                    EGRESS_FIREWALLS: 'EgressFirewalls',
                                 } as const;
                                 const kind = resourceTypeToKind[alert.resource.resourceType];
                                 icon = <ResourceIcon className="pf-u-mr-sm" kind={kind} />;

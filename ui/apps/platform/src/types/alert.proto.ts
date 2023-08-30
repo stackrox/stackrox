@@ -160,11 +160,11 @@ export type ResourceListAlert = {
         resourceType:
             | 'SECRETS'
             | 'CONFIGMAPS'
-            | 'CLUSTERROLES'
-            | 'CLUSTERROLEBINDINGS'
-            | 'NETWORKPOLICIES'
-            | 'SECURITYCONTEXTCONSTRAINTS'
-            | 'EGRESSFIREWALLS';
+            | 'CLUSTER_ROLES'
+            | 'CLUSTER_ROLE_BINDINGS'
+            | 'NETWORK_POLICIES'
+            | 'SECURITY_CONTEXT_CONSTRAINTS'
+            | 'EGRESS_FIREWALLS';
     };
     resource: {
         name: string;
@@ -188,11 +188,11 @@ export type ListAlertResourceType =
     | 'DEPLOYMENT'
     | 'SECRETS'
     | 'CONFIGMAPS'
-    | 'CLUSTERROLES'
-    | 'CLUSTERROLEBINDINGS'
-    | 'NETWORKPOLICIES'
-    | 'SECURITYCONTEXTCONSTRAINTS'
-    | 'EGRESSFIREWALLS';
+    | 'CLUSTER_ROLES'
+    | 'CLUSTER_ROLE_BINDINGS'
+    | 'NETWORK_POLICIES'
+    | 'SECURITY_CONTEXT_CONSTRAINTS'
+    | 'EGRESS_FIREWALLS';
 
 export type BaseListAlert = {
     id: string;
