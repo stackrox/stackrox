@@ -122,17 +122,16 @@ test_custom() {
     interval_sec=20
     counter=0
 
-    #Generate
+    #Generate srcs
     make -C qa-tests-backend compile
+    #Change directory into qa-tests-backend
+    cd qa-tests-backend
     #fetch list of tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
     #test counter
       counter=$(( counter + 1 ))
       printf "%s%s\n" "---------- Test $counter: $testName ----------"
-      #For debugging
-      echo $(pwd)
-      cd qa-tests-backend
     #execute test
       ./gradlew test --tests "$testName"
 
