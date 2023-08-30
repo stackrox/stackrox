@@ -120,7 +120,9 @@ test_custom() {
     interval_sec=20
     counter=0
 
-#fetch list of tests
+    #Generate
+    make -C qa-tests-backend compile
+    #fetch list of tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
     #test counter
