@@ -35,6 +35,7 @@ const (
 
 	// Pre-populated sha256 checksum of keys and certificates.
 	// To repopulate these values, run `shasum -a 256 <file-name>`
+	//#nosec G101 -- This is a false positive
 	checksumCaKey  = "ee4ce36941347600a9e520a9f7a12fda569c1c20a8435457e846b61cdc1704fe"
 	checksumCaCert = "ec4b9a04bed129018aafa9a791063d64d6ec45c2e7985a77bb17ed9dbbe1ec68"
 	checksumJwtKey = "57e27883493f7375671d30aa679789db3dcfcb2221c4dce0a17d83fc64da5c36"

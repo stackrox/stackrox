@@ -203,6 +203,7 @@ func TestPublicKeyVerifier_VerifySignature_Failure(t *testing.T) {
 }
 
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
+	//#nosec G101 -- This is a false positive
 	const b64CosignSignature = "MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAY" +
 		"ZNkn8hkAnXI="
 	const imgHash = "sha256:3a4d57227f02243dfc8a2849ec4a116646bed293b9e93cbf9d4a673a28ef6345"
