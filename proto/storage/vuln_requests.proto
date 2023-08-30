@@ -74,10 +74,7 @@ message VulnerabilityRequest {
             string tag       = 3;
         }
 
-        message Global {
-            // This field can be set to apply the request to all images in all clusters.
-            bool enabled = 1;
-        }
+        message Global {}
 
         oneof info {
             // This field can be used to apply the request to selected images.

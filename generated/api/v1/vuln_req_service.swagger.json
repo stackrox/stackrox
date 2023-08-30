@@ -364,13 +364,7 @@
   },
   "definitions": {
     "ScopeGlobal": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "This field can be set to apply the request to all images in all clusters."
-        }
-      }
+      "type": "object"
     },
     "VulnerabilityRequestCVEs": {
       "type": "object",
