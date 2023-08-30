@@ -5,5 +5,5 @@ metadata:
 spec:
   clusterName: remote
   perNode:
-  collector:
-    collection: __COLLECTION_METHOD__
+    collector:
+      collection: __COLLECTION_METHOD__
