@@ -120,14 +120,14 @@ test_custom() {
     interval_sec=20
     counter=0
 
-    #fetch list of tests
+#fetch list of tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
     #test counter
       counter=$(( counter + 1 ))
       printf "%s%s" "---------- Test $counter: $testName ----------"
     #execute test
-      ./gradlew test "$GRADLE_TEST_ARGS" --tests "$testName"
+      ./gradlew test --tests "$testName"
 
     #allow previous test data to cleanup
       sleep $interval_sec
@@ -137,4 +137,3 @@ test_custom() {
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     run_part_1 "$*"
 fi
-
