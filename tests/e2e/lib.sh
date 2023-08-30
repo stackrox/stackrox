@@ -298,11 +298,6 @@ deploy_sensor_via_operator() {
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
     fi
 
-    #if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-    #   echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
-    #   kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
-    #fi
-
     # Every E2E test should have ROX_RESYNC_DISABLED="true"
     kubectl -n stackrox set env deployment/sensor ROX_RESYNC_DISABLED="true"
 }
