@@ -279,7 +279,7 @@ deploy_sensor_via_operator() {
 
     # COLLECTION_METHOD should already be set, but let's make 100% sure that it is
     if [[ -n "$COLLECTION_METHOD:-}" ]]; then
-        echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
+	echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
         template_cr_file=tests/e2e/yaml/secured-cluster-cr-template.yaml
         gen_cr_file=tests/e2e/yaml/secured-cluster-cr-gen.yaml
         upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
