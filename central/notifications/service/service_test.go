@@ -108,7 +108,7 @@ func (s *getNotificationTestSuite) SetupTest() {
 
 	s.fakeResourceByIDRequest = &v1.ResourceByID{Id: fakeID}
 	s.fakeGetNotificationResponse = &v1.GetNotificationResponse{
-		Notification: convertToServiceType(fakeNotification),
+		Notification: toV1Proto(fakeNotification),
 	}
 }
 
@@ -151,7 +151,7 @@ func (s *listNotificationsTestSuite) SetupTest() {
 	s.baseTestSuite.SetupTest()
 
 	s.fakeStorageNotificationsList = []*storage.Notification{fakeNotification}
-	s.fakeServiceNotificationsList = []*v1.Notification{convertToServiceType(fakeNotification)}
+	s.fakeServiceNotificationsList = []*v1.Notification{toV1Proto(fakeNotification)}
 	s.fakeListNotificationRequest = &v1.ListNotificationsRequest{}
 	s.fakeListNotificationResponse = &v1.ListNotificationsResponse{Notifications: s.fakeServiceNotificationsList}
 }

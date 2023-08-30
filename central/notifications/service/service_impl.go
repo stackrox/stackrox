@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifications/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -74,7 +73,7 @@ func (s *serviceImpl) GetNotification(ctx context.Context, resource *v1.Resource
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get notification %q", resourceID)
 	}
-	return &v1.GetNotificationResponse{Notification: convertToServiceType(notification)}, err
+	return &v1.GetNotificationResponse{Notification: toV1Proto(notification)}, err
 }
 
 // ListNotifications returns all notifications matching the request query.
@@ -95,7 +94,7 @@ func (s *serviceImpl) ListNotifications(ctx context.Context, request *v1.ListNot
 	}
 	var respNotifications []*v1.Notification
 	for _, n := range notifications {
-		respNotifications = append(respNotifications, convertToServiceType(n))
+		respNotifications = append(respNotifications, toV1Proto(n))
 	}
 	return &v1.ListNotificationsResponse{Notifications: respNotifications}, nil
 }
@@ -120,23 +119,4 @@ func getQueryBuilderFromFilter(filter *v1.NotificationsFilter) *search.QueryBuil
 		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, resourceType)
 	}
 	return queryBuilder
-}
-
-func convertToServiceType(notification *storage.Notification) *v1.Notification {
-	if notification == nil {
-		return nil
-	}
-	return &v1.Notification{
-		Id:             notification.GetId(),
-		Type:           v1.NotificationType(notification.GetType()),
-		Level:          v1.NotificationLevel(notification.GetLevel()),
-		Message:        notification.GetMessage(),
-		Hint:           notification.GetHint(),
-		Domain:         notification.GetDomain(),
-		ResourceType:   notification.GetResourceType(),
-		ResourceId:     notification.GetResourceId(),
-		NumOccurrences: notification.GetNumOccurrences(),
-		LastOccurredAt: notification.GetLastOccurredAt(),
-		CreatedAt:      notification.GetCreatedAt(),
-	}
 }
