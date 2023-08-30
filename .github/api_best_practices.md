@@ -8,26 +8,28 @@ in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archi
 ## Table of Contents
 
 - [Naming Guidelines](#naming-guidelines)
-  - [Service Name](#service-name)
-  - [RPC Method Name](#rpc-method-name)
-  - [RPC Message Name](#rpc-message-name)
+  - [gRPC Service Name](#grpc-service-name)
+  - [gRPC Method Name](#grpc-method-name)
+  - [gRPC Message Name](#grpc-message-name)
 
 ## Naming Guidelines
 
-### Service Name
+### gRPC Service Name
 Service name **must** be unique and should use a noun that generally refers to a resource or product component 
 e.g. `DeploymentService`, `ReportService`, `ComplianceService`. Intuitive and well-known short forms or 
 abbreviations may be used in some cases (and could even be preferable) for succinctness 
 e.g. `ReportConfigService`, `RbacService`. 
-All RPC methods grouped into a single service must generally pertain to the primary resource of the service.
+All gRPC methods grouped into a single service must generally pertain to the primary resource of the service.
 
-All service defined in versioned package [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/v2)
+Note:
+- All service defined in versioned package [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/v2)
 **must not** import from [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage) and
 [/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi) packages.
-All new RPC methods defined in versioned package [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/v1) **must not** import from
-`/proto/storage` and `/proto/internalapi` packages.
+- All new gRPC methods defined in versioned package [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/v1) 
+**must not** import from `/proto/storage` and `/proto/internalapi` packages.
+- All services of the type `APIServiceWithCustomRoutes` **must not** import from `/proto/storage` and `/proto/internalapi` packages.
 
-### RPC Method Name
+### gRPC Method Name
 Methods should be named such that they provide insights into the functionality. Typically, the method 
 name should follow the _VerbNoun_ convention. For example, `StartComplianceScan`, `RunComplianceScan`, 
 and `GetComplianceScan` are not the same. `StartComplianceScan` must return without waiting for the compliance 
@@ -142,7 +144,7 @@ GetBaselineNetworkPolicyRequest {
 </tr>
 </table>
 
-### RPC Message Name
+### gRPC Message Name
 The request and response messages **must** be named after method names with suffix `Request` and `Response` unless 
 the request/response type is an empty message. Generally, resource type as response message should be avoided 
 e.g. use `GetDeploymentResponse` response instead of `Deployment`. This allows augmenting the response with 
