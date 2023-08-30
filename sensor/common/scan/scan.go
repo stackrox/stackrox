@@ -364,11 +364,7 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 func scanImage(ctx context.Context, image *storage.Image,
 	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 	// Get the image analysis from the local Scanner.
-	regCfg := registry.Config()
-	if regCfg == nil {
-		return nil, fmt.Errorf("internal error: missing registry config")
-	}
-	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, regCfg)
+	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
 	if err != nil {
 		return nil, err
 	}
