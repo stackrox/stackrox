@@ -286,7 +286,7 @@ deploy_sensor_via_operator() {
         sed "s|__COLLECTION_METHOD__|$upper_case_collection_method|" "$template_cr_file" > "$gen_cr_file"
         kubectl apply -n stackrox -f "$gen_cr_file"
     else
-	kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
+        kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
     fi
 
     wait_for_object_to_appear stackrox deploy/sensor 300
