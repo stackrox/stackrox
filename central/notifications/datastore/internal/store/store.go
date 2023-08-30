@@ -14,5 +14,4 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.Notification, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Notification, error)
 	UpsertMany(ctx context.Context, objs []*storage.Notification) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
 }
