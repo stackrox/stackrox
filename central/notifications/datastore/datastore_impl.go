@@ -17,6 +17,7 @@ var _ DataStore = (*datastoreImpl)(nil)
 type datastoreImpl struct {
 	searcher search.Searcher
 	store    store.Store
+	// Buffered writer. Flush to initiate batched upsert.
 	writer   writer.Writer
 }
 

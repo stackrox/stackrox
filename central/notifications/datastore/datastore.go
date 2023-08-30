@@ -14,11 +14,16 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
+	// AddNotification is intended to be used by the notification handler to add
+	// notifications to the buffered writer. Flush initiates a batched upsert to
+	// the database.
 	AddNotification(ctx context.Context, notification *storage.Notification) error
+	Flush(ctx context.Context) error
+
+	// These provide read-only access and are intended to be used by the API service.
 	CountNotifications(ctx context.Context, query *v1.Query) (int, error)
 	GetNotificationByID(ctx context.Context, id string) (*storage.Notification, error)
 	ListNotifications(ctx context.Context, query *v1.Query) ([]*storage.Notification, error)
-	Flush(ctx context.Context) error
 }
 
 func newDataStore(searcher search.Searcher, storage store.Store, writer writer.Writer) DataStore {
