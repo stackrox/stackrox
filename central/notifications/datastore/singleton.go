@@ -23,7 +23,6 @@ func Singleton() DataStore {
 		return nil
 	}
 	once.Do(func() {
-		log.Info("Created the singleton for the datastore")
 		searcher := search.New(pgStore.NewIndexer(globaldb.GetPostgres()))
 		store := pgStore.New(globaldb.GetPostgres())
 		writer := writer.New(store)
