@@ -10,7 +10,7 @@ source "$ROOT/scripts/ci/lib.sh"
 # shellcheck source=../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
-set -euo pipefail
+set -exuo pipefail
 
 openshift_ci_mods
 openshift_ci_import_creds
@@ -23,6 +23,14 @@ fi
 ci_job="$1"
 shift
 ci_export CI_JOB_NAME "$ci_job"
+
+REGISTRY="quay.io/rhacs-eng"
+if [[ "$ci_job" =~ downstream ]]; then
+    REGISTRY="brew.registry.redhat.io/rh-osbs"
+    ci_export USE_LOCAL_ROXCTL true
+fi
+
+ci_export REGISTRY "$REGISTRY"
 
 case "$ci_job" in
     gke*qa-e2e-tests|gke*nongroovy-e2e-tests|gke*upgrade-tests|gke-ui-e2e-tests|\
