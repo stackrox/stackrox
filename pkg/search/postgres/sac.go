@@ -39,7 +39,7 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
 		return query, nil
-	case GET:
+	default:
 		if schema.PermissionChecker != nil {
 			if ok, err := schema.PermissionChecker.ReadAllowed(ctx); err != nil {
 				return nil, err
