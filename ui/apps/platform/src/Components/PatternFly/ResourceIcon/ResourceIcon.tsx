@@ -46,7 +46,11 @@ const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: s
  *
  */
 function ResourceIcon(props: ResourceIconProps) {
-    const { text, backgroundColor } = IconAttributes[props.kind];
+    const { text, backgroundColor } = IconAttributes[props.kind] ?? {
+        text: '?',
+        backgroundColor: 'var(--pf-global--palette--black-700)',
+    };
+
     return (
         <span
             title={props.kind}
