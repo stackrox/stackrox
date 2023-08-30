@@ -63,12 +63,9 @@ func (c *writerImpl) Upsert(ctx context.Context, notification *storage.Notificat
 
 	// Merge notifications to up the occurrence and update the time stamps.
 	if baseNotification != nil {
-		c.write(mergeNotifications(baseNotification, enrichedNotification))
-		return nil
+		enrichedNotification = mergeNotifications(baseNotification, enrichedNotification)
 	}
 
-	// No notification with the dedup id exists in the buffer or the database.
-	// We simply write the new enriched notification to the buffer.
 	c.write(enrichedNotification)
 	return nil
 }
