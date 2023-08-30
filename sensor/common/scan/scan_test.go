@@ -436,7 +436,7 @@ func (suite *scanTestSuite) TestMultiplePullSources() {
 
 	var mirror2ScanTriggered bool
 	scan := LocalScan{
-		scanImg: func(ctx context.Context, i *storage.Image, ir registryTypes.ImageRegistry, c *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+		scanImg: func(ctx context.Context, i *storage.Image, ir registryTypes.ImageRegistry, c scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 			if i.GetName().GetFullName() == mirror2 {
 				mirror2ScanTriggered = true
 			}
