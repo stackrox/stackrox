@@ -22,10 +22,21 @@ func GetCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time
 		renewalTime            time.Time
 		renewalTimeInitialized bool
 	)
+	caCert, err := helpers.ParseCertificatePEM(certificates.GetCaPem())
+	if err != nil {
+		return renewalTime, err
+	}
 	for _, certificate := range certificates.GetServiceCerts() {
 		certRenewalTime, err := getCertificateRenewalTime(certificate)
 		if err != nil {
 			return renewalTime, err
+		}
+		cert, err := helpers.ParseCertificatePEM(certificate.GetCert().GetCertPem())
+		if err != nil {
+			return renewalTime, err
+		}
+		if !isCertValidForCa(cert, caCert) {
+			return renewalTime, nil
 		}
 		if !renewalTimeInitialized || certRenewalTime.Before(renewalTime) {
 			renewalTimeInitialized = true
@@ -33,6 +44,15 @@ func GetCertsRenewalTime(certificates *storage.TypedServiceCertificateSet) (time
 		}
 	}
 	return renewalTime, nil
+}
+
+func isCertValidForCa(cert, caCert *x509.Certificate) bool {
+	certPool := x509.NewCertPool()
+	certPool.AddCert(caCert)
+	chain, err := cert.Verify(x509.VerifyOptions{
+		Roots: certPool,
+	})
+	return err == nil && len(chain) > 0
 }
 
 func getCertificateRenewalTime(certificate *storage.TypedServiceCertificate) (time.Time, error) {
