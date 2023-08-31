@@ -29,6 +29,8 @@ func TestViolationMessageForAuditLogEvents(t *testing.T) {
 		{"Valid message when event is LIST on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_LIST, "", "Access to configmaps in \"namespace\""},
 		{"Valid message when event is WATCH on a specific configmap", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "all the configs", "Access to configmap \"all the configs\" in \"namespace\""},
 		{"Valid message when event is WATCH on all configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "", "Access to configmaps in \"namespace\""},
+		{"Valid message when event is CREATE on clusterrole", storage.KubernetesEvent_Object_CLUSTER_ROLES, storage.KubernetesEvent_CREATE, "test cr", "Access to clusterrole \"test cr\" in \"namespace\""},
+		{"Valid message when event is DELETE on netpol", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_DELETE, "test netpol", "Access to networkpolicy \"test netpol\" in \"namespace\""},
 	}
 
 	for _, c := range cases {

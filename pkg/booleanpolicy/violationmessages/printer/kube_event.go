@@ -80,7 +80,7 @@ func podPortForwardViolationMsg(event *storage.KubernetesEvent) (string, []*stor
 
 func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	object := event.GetObject()
-	readableResourceName := strings.ToLower(object.Resource.String())
+	readableResourceName := strings.ReplaceAll(strings.ToLower(object.Resource.String()), "_", "")
 
 	if object.GetName() == "" {
 		return fmt.Sprintf("Access to %s in \"%s\"",
@@ -88,8 +88,15 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 			object.GetNamespace())
 	}
 
+	// resources are plural but that's incorrect for non-list/watch verbs. Need to change when l10n happens
+	singularResourceName := strings.TrimSuffix(readableResourceName, "s")
+	if object.Resource == storage.KubernetesEvent_Object_NETWORK_POLICIES {
+		// The simple rule doesn't work for network policies
+		// Keep the rules simple here since only one of the resources (network policy) needs to be handled. Expand only when needed.
+		singularResourceName = "networkpolicy"
+	}
 	return fmt.Sprintf("Access to %s \"%s\" in \"%s\"",
-		strings.TrimSuffix(readableResourceName, "s"), // resources are plural but that's incorrect for non-list/watch verbs. Need to change when l10n happens
+		singularResourceName,
 		object.GetName(),
 		object.GetNamespace())
 }
