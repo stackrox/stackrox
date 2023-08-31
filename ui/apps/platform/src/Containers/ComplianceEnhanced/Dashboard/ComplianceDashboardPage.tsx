@@ -3,6 +3,7 @@ import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/
 
 import ComplianceByCluster from './Widgets/ComplianceByCluster';
 import ComplianceByProfile from './Widgets/ComplianceByProfile';
+import ScanResultsOverviewTable from './ScanResultsOverviewTable';
 
 function ComplianceDashboardPage() {
     return (
@@ -23,6 +24,9 @@ function ComplianceDashboardPage() {
                         </GridItem>
                         <GridItem>
                             <ComplianceByProfile />
+                        </GridItem>
+                        <GridItem span={12}>
+                            <ScanResultsOverviewTable />
                         </GridItem>
                     </Grid>
                 </PageSection>
