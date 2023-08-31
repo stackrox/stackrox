@@ -1,13 +1,6 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 
-import {
-    Button,
-    ButtonVariant,
-    Flex,
-    FlexItem,
-    SelectOption,
-    TextInput,
-} from '@patternfly/react-core';
+import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
 
 import SelectSingle from 'Components/SelectSingle';
@@ -98,6 +91,17 @@ function NotifierSelection({
                             handleSelect={onNotifierChange}
                             placeholderText="Select a notifier"
                             isDisabled={notifiers.length === 0}
+                            footer={
+                                allowCreate && (
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        onClick={onToggleEmailNotifierModal}
+                                    >
+                                        Create email notifier
+                                    </Button>
+                                )
+                            }
                         >
                             {notifiers.map(({ id, name }) => (
                                 <SelectOption key={id} value={id}>
@@ -106,16 +110,6 @@ function NotifierSelection({
                             ))}
                         </SelectSingle>
                     </FlexItem>
-                    {allowCreate && (
-                        <FlexItem>
-                            <Button
-                                variant={ButtonVariant.secondary}
-                                onClick={onToggleEmailNotifierModal}
-                            >
-                                Create email notifier
-                            </Button>
-                        </FlexItem>
-                    )}
                 </Flex>
             </FormLabelGroup>
             <FormLabelGroup
