@@ -52,7 +52,7 @@ type configServiceTestSuite struct {
 
 	ctx context.Context
 
-	pgtest    *pgtest.TestPostgres
+	db        *pgtest.TestPostgres
 	dataStore datastore.DataStore
 	srv       Service
 }
@@ -65,13 +65,13 @@ func (s *configServiceTestSuite) SetupSuite() {
 	}
 
 	s.ctx = sac.WithAllAccess(context.Background())
-	s.pgtest = pgtest.ForT(s.T())
-	s.dataStore = datastore.NewForTest(s.T(), s.pgtest)
+	s.db = pgtest.ForT(s.T())
+	s.dataStore = datastore.NewForTest(s.T(), s.db)
 	s.srv = New(s.dataStore)
 }
 
 func (s *configServiceTestSuite) TearDownSuite() {
-	s.pgtest.Teardown(s.T())
+	s.db.Teardown(s.T())
 }
 
 func (s *configServiceTestSuite) TestNotFound() {
@@ -89,7 +89,8 @@ func (s *configServiceTestSuite) TestDeferralConfigOps() {
 		},
 	}
 	// Insert initial record.
-	s.dataStore.UpsertConfig(s.ctx, initialCfg)
+	err := s.dataStore.UpsertConfig(s.ctx, initialCfg)
+	s.NoError(err)
 
 	// Verify the initial record exists.
 	expected := VulnerabilityDeferralConfigStorageToV1(defaultDeferralCfg)
