@@ -54,6 +54,11 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 			EnvVar:  env.VulnReportingEnhancements.EnvVar(),
 			Enabled: env.VulnReportingEnhancements.BooleanSetting(),
 		},
+		{
+			Name:    "Unified Vulnerability Deferral",
+			EnvVar:  env.UnifiedCVEDeferral.EnvVar(),
+			Enabled: env.UnifiedCVEDeferral.BooleanSetting(),
+		},
 	}
 	resp.FeatureFlags = append(resp.FeatureFlags, extraFlags...)
 	sort.Slice(resp.FeatureFlags, func(i, j int) bool {
