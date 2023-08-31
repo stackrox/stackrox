@@ -276,18 +276,20 @@ deploy_sensor_via_operator() {
         --output-secrets - \
     | kubectl -n stackrox apply -f -
 
-
-    # COLLECTION_METHOD should already be set, but let's make 100% sure that it is
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
 	echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
-        template_cr_file=tests/e2e/yaml/secured-cluster-cr-template.yaml
-        gen_cr_file=tests/e2e/yaml/secured-cluster-cr-gen.yaml
-        upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-        sed "s|__COLLECTION_METHOD__|$upper_case_collection_method|" "$template_cr_file" > "$gen_cr_file"
-        kubectl apply -n stackrox -f "$gen_cr_file"
     else
-        kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
+       die "COLLECTION_METHOD not set" 
     fi
+
+    upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+    env - \
+      collection_method="$upper_case_collection_method" \
+    envsubst \
+      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml \
+      > /tmp/secured-cluster-cr.yaml
+        
+    kubectl apply -n stackrox -f /tmp/secured-cluster-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300

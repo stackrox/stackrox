@@ -6,4 +6,4 @@ spec:
   clusterName: remote
   perNode:
     collector:
-      collection: __COLLECTION_METHOD__
+      collection: $collection_method
