@@ -279,7 +279,7 @@ deploy_sensor_via_operator() {
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
 	echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
     else
-       die "COLLECTION_METHOD not set" 
+       die "COLLECTION_METHOD not set"
     fi
 
     upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
