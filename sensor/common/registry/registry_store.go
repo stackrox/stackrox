@@ -312,8 +312,8 @@ func (rs *Store) AddClusterLocalRegistryHost(host string) {
 	log.Debugf("Added cluster local registry host %q", trimmed)
 }
 
-// HasClusterLocalRegistryHost will return true if host is found, which represents
-// a registry that is only accessible from within this cluster.
+// HasClusterLocalRegistryHost will return true if host represents a registry that is
+// only accessible from within this cluster, such as the OCP internal registry.
 func (rs *Store) HasClusterLocalRegistryHost(host string) bool {
 	trimmed := urlfmt.TrimHTTPPrefixes(host)
 

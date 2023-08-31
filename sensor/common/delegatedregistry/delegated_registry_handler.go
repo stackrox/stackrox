@@ -125,7 +125,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 
 	namespace := d.inferNamespace(ci)
 	if namespace != "" {
-		log.Debug("Using inferred namespace %q for image %q from req %q", namespace, ci.GetName().GetFullName(), scanReq.GetRequestId())
+		log.Debugf("Using inferred namespace %q for image %q from req %q", namespace, ci.GetName().GetFullName(), scanReq.GetRequestId())
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
