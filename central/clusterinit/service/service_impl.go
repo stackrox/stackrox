@@ -9,8 +9,11 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	"github.com/stackrox/rox/central/clusterinit/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,7 +21,34 @@ import (
 )
 
 var (
-	authorizer = user.WithRole(accesscontrol.Admin)
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.With(
+			permissions.View(resources.Administration),
+			permissions.View(resources.Integration),
+		): {
+			"/v1.ClusterInitService/GetCAConfig",
+		},
+		user.With(
+			permissions.View(resources.Administration),
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Integration),
+		): {
+			"/v1.ClusterInitService/GetInitBundles",
+		},
+		user.With(
+			permissions.Modify(resources.Administration),
+			permissions.Modify(resources.Integration),
+		): {
+			"/v1.ClusterInitService/GenerateInitBundle",
+		},
+		user.With(
+			permissions.Modify(resources.Administration),
+			permissions.Modify(resources.Integration),
+			permissions.View(resources.Cluster),
+		): {
+			"/v1.ClusterInitService/RevokeInitBundle",
+		},
+	})
 )
 
 var _ v1.ClusterInitServiceServer = (*serviceImpl)(nil)
