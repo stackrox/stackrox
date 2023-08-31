@@ -7,14 +7,7 @@ import (
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	k8sRoleBindingsSACPostgresSearchHelper = sac.ForResource(resources.K8sRoleBinding).
-		MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides a search implementation for k8s role bindings.
@@ -34,12 +27,12 @@ func (ds *searcherImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]
 
 // Search returns the raw search results from the query.
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Search(ctx, q)
+	return ds.index.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query.
 func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return k8sRoleBindingsSACPostgresSearchHelper.FilteredSearcher(ds.index).Count(ctx, q)
+	return ds.index.Count(ctx, q)
 }
 
 // SearchRawRoleBindings returns the rolebindings that match the query.
