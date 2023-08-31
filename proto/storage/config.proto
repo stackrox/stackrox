@@ -77,7 +77,6 @@ message PrivateConfig {
     VulnerabilityDeferralConfig             vulnerability_deferral_config               = 7;
 }
 
-
 message Config {
     PublicConfig public_config = 1;
     PrivateConfig private_config = 2;
