@@ -288,7 +288,7 @@ deploy_sensor_via_operator() {
     envsubst \
       < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml \
       > /tmp/secured-cluster-cr.yaml
-        
+
     kubectl apply -n stackrox -f /tmp/secured-cluster-cr.yaml
 
     wait_for_object_to_appear stackrox deploy/sensor 300
