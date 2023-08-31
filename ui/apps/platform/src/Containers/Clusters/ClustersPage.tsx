@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import React, { ReactElement, useCallback } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 
 import PageHeader from 'Components/PageHeader';
 import LinkShim from 'Components/PatternFly/LinkShim';
@@ -18,16 +18,14 @@ import ClustersTablePanel from './ClustersTablePanel';
 import ClustersSidePanel from './ClustersSidePanel';
 import ManageTokensButton from './Components/ManageTokensButton';
 
-const ClustersPage = ({
-    history,
-    location: { pathname, search },
-    match: {
-        params: { clusterId: selectedClusterId },
-    },
-}) => {
+function ClustersPage(): ReactElement {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForDelegatedScanning = hasReadAccess('Administration');
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
+
+    const history = useHistory();
+    const { pathname, search } = useLocation();
+    const { clusterId: selectedClusterId } = useParams(); // see routePaths for parameter
 
     const { searchFilter, setSearchFilter } = useURLSearch();
     const workflowState = parseURL({ pathname, search });
@@ -72,7 +70,7 @@ const ClustersPage = ({
                 {hasReadAccessForDelegatedScanning && (
                     <div className="flex items-center ml-4 mr-1">
                         <Button
-                            variant={ButtonVariant.secondary}
+                            variant="secondary"
                             component={LinkShim}
                             href={clustersDelegatedScanningPath}
                         >
@@ -111,12 +109,6 @@ const ClustersPage = ({
             </section>
         </workflowStateContext.Provider>
     );
-};
-
-ClustersPage.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
-};
+}
 
 export default ClustersPage;
