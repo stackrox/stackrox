@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -35,7 +36,7 @@ func init() {
 }
 
 func migrateAPITokens(postgresDB postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	oldStore := oldAPITokenStore.New(postgresDB)
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableAPITokensStmt)
 	newStore := newAPITokenStore.New(postgresDB)
