@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -38,7 +39,7 @@ var (
 
 // MigrateToPartitions updates the btree network flow indexes to be hash
 func MigrateToPartitions(gormDB *gorm.DB, db postgres.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 
 	err := analyzeOldTable(ctx, db)
 	if err != nil {

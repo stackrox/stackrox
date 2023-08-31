@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
@@ -223,7 +224,7 @@ func createCollectionsForScope(ctx context.Context, scopeID string,
 }
 
 func moveScopesInReportsToCollections(gormDB *gorm.DB, db postgres.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableCollectionsStmt)
 	reportConfigStore := reportConfigurationPostgres.New(db)
 	accessScopeStore := accessScopePostgres.New(db)

@@ -9,6 +9,7 @@ import (
 	permissionSetPostgresStore "github.com/stackrox/rox/migrator/migrations/m_168_to_m_169_postgres_remove_clustercve_permission/permissionsetpostgresstore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -52,7 +53,7 @@ func propagateAccessForPermission(permission string, accessLevel storage.Access,
 }
 
 func cleanupPermissionSets(db postgres.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	permissionSetStore := permissionSetPostgresStore.New(db)
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)
 	err := permissionSetStore.Walk(ctx, func(obj *storage.PermissionSet) error {

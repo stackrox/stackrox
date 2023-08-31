@@ -31,12 +31,51 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 		if err != nil {
 			return nil, err
 		}
+		if isEmptySACFilter(sacFilter) {
+			return q, nil
+		}
+		pagination := q.GetPagination()
+		query := searchPkg.ConjunctionQuery(sacFilter, q)
+		query.Pagination = pagination
+		return query, nil
+	case GET:
+		if schema.PermissionChecker != nil {
+			if ok, err := schema.PermissionChecker.ReadAllowed(ctx); err != nil {
+				return nil, err
+			} else if !ok {
+				return getMatchNoneQuery(), nil
+			}
+			return q, nil
+		}
+		sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
+		if err != nil {
+			return nil, err
+		}
+		if isEmptySACFilter(sacFilter) {
+			return q, nil
+		}
 		pagination := q.GetPagination()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
 		return query, nil
 	}
 	return q, nil
+}
+
+func isEmptySACFilter(sacFilter *v1.Query) bool {
+	// Hack to avoid having non-nil query but nil queryEntry in standardizeQueryAndPopulatePath
+	// which then results in Walk with unrestricted scope failing
+	switch sacFilter.GetQuery().(type) {
+	case *v1.Query_BaseQuery:
+		return false
+	case *v1.Query_Conjunction:
+		return false
+	case *v1.Query_Disjunction:
+		return false
+	case *v1.Query_BooleanQuery:
+		return false
+	}
+	return true
 }
 
 // GetReadWriteSACQuery returns SAC filter for resource or error is permission is denied.
