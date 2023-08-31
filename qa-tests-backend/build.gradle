@@ -15,7 +15,7 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.21.0'
+def grpcVersion = '1.30.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.23.2'
 def protobufVersion = '3.24.2'

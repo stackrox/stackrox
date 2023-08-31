@@ -116,8 +116,34 @@ class BaseService {
     private static Channel effectiveChannel = null
     private static Boolean useClientCert = false
 
-    static initializeChannel() {
+    static initializeChannel(boolean withRetry) {
         if (transportChannel == null) {
+            // See https://github.com/grpc/grpc-java/pull/7803 on why the serviceConfig
+            // has to be provided to enable retries.
+            def serviceConfig = [
+                methodConfig: [
+                    [
+                        // Empty value translates to all methods.
+                        name: [
+                            [service: "", method: "",]
+                        ],
+                        // Performs 12 retries with exponential backoff and jitter.
+                        retryPolicy: [
+                            backoffMultiplier: 2.0d,
+                            initialBackoff: "0.2s",
+                            maxAttempts: 13.0d,
+                            maxBackoff: "420s",
+                            retryableStatusCodes: [
+                                "ABORTED",
+                                "INTERNAL",
+                                "UNAVAILABLE",
+                                "UNKNOWN",
+                            ],
+                        ],
+                    ],
+                ],
+            ]
+
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -126,12 +152,16 @@ class BaseService {
             }
             def sslContext = sslContextBuilder.build()
 
-            transportChannel = NettyChannelBuilder
-                    .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+            def transportChannelBuilder = NettyChannelBuilder
+                .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                .negotiationType(NegotiationType.TLS)
+                .sslContext(sslContext)
+            if (withRetry) {
+                transportChannelBuilder = transportChannelBuilder
+                    .defaultServiceConfig(serviceConfig)
                     .enableRetry()
-                    .negotiationType(NegotiationType.TLS)
-                    .sslContext(sslContext)
-                    .build()
+            }
+            transportChannel = transportChannelBuilder.build()
             effectiveChannel = null
 
             log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
@@ -144,10 +174,10 @@ class BaseService {
         }
     }
 
-    static Channel getChannel() {
+    static Channel getChannel(boolean withRetry = true) {
         if (effectiveChannel == null) {
             synchronized(BaseService) {
-                initializeChannel()
+                initializeChannel(withRetry)
             }
         }
         return effectiveChannel
