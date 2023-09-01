@@ -183,7 +183,6 @@ func (g *garbageCollectorImpl) runGC() {
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
-	lastLogImbuePruneNullTime = time.Now()
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -932,7 +931,7 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 		lastLogImbuePruneTime = time.Now()
 	}()
 
-	postgres.PruneLogImbues(pruningCtx, g.postgres, logImbueWindow, pruneNulls)
+	postgres.PruneLogImbues(pruningCtx, g.postgres, logImbueWindow)
 }
 
 func (g *garbageCollectorImpl) Stop() {

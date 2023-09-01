@@ -188,7 +188,7 @@ func PruneReportHistory(ctx context.Context, pool postgres.DB, retentionDuration
 }
 
 // PruneLogImbues prunes old log imbues
-func PruneLogImbues(ctx context.Context, pool postgres.DB, orphanWindow time.Duration, pruneNulls bool) {
+func PruneLogImbues(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
 	query := fmt.Sprintf(pruneLogImbues, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune log imbues: %v", err)
