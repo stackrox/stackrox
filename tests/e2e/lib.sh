@@ -274,7 +274,7 @@ deploy_sensor_via_operator() {
     | kubectl -n stackrox apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-	echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
+       echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
     else
        die "COLLECTION_METHOD not set"
     fi
