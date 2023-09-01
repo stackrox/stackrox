@@ -696,7 +696,7 @@
           "type": "string"
         }
       },
-      "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "AlertResourceResourceType": {
       "type": "string",

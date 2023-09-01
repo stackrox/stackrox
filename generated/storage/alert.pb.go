@@ -684,7 +684,7 @@ func (m *Alert_Deployment_Container) Clone() *Alert_Deployment_Container {
 	return cloned
 }
 
-// Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
+// Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
 type Alert_Resource struct {
 	ResourceType         Alert_Resource_ResourceType `protobuf:"varint,1,opt,name=resource_type,json=resourceType,proto3,enum=storage.Alert_Resource_ResourceType" json:"resource_type,omitempty" search:"Resource Type,store"`
 	Name                 string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Resource"`
