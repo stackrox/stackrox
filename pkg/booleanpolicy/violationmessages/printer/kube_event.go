@@ -96,7 +96,7 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	if object.GetName() == "" {
 		header = fmt.Sprintf("Access to %s", readableResourceName)
 		if object.GetNamespace() != "" {
-			header = fmt.Sprintf("%s in \"%s\"", header, object.GetNamespace())
+			header = fmt.Sprintf("%s in namespace \"%s\"", header, object.GetNamespace())
 
 		}
 		return header
@@ -104,7 +104,7 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 
 	header = fmt.Sprintf("Access to %s \"%s\"", singularResourceName, object.GetName())
 	if object.GetNamespace() != "" {
-		header = fmt.Sprintf("%s in \"%s\"", header, object.GetNamespace())
+		header = fmt.Sprintf("%s in namespace \"%s\"", header, object.GetNamespace())
 
 	}
 	return header

@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	// THe audit logs report the resource all as one word, but the k8s event object (and elsewhere) uses underscore
+	// The audit logs report the resource all as one word, but the k8s event object (and elsewhere) uses underscore
 	auditResourceToKubeResource = map[string]storage.KubernetesEvent_Object_Resource{
 		"pods_exec":                  storage.KubernetesEvent_Object_PODS_EXEC,
 		"pods_portforward":           storage.KubernetesEvent_Object_PODS_PORTFORWARD,

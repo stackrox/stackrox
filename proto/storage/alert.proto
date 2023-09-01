@@ -31,7 +31,7 @@ message Alert {
         bool                    inactive            = 15 [(gogoproto.moretags) = 'search:"Inactive Deployment"'];
     }
 
-    // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
+    // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
     message Resource {
         enum ResourceType {
             UNKNOWN                    = 0;

@@ -34,6 +34,14 @@ type ComplianceAuditLogReaderTestSuite struct {
 	suite.Suite
 }
 
+func (s *ComplianceAuditLogReaderTestSuite) TestCompareK8sResourceLists() {
+	for _, r := range resourceTypesAllowList.AsSlice() {
+		if _, ok := auditResourceToKubeResource[fmt.Sprintf("%v", r)]; !ok {
+			s.T().Errorf("Missing entry in auditResourceToKubeResource map for resource %v", r)
+		}
+	}
+}
+
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderReturnsGracefullyIfFileDoesNotExist() {
 	logPath := "testdata/does_not_exist.log"
 	_, reader := s.getMocks(logPath)

@@ -27,10 +27,10 @@ var (
 	// resourceTypesAllowList is set of resources that will be sent.
 	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
 
-	// verbsDenyListShort is the set of verbs that will NOT be sent if encountered.
+	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
 	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
 
-	// verbsDenyListLong is the set of verbs that will NOT be sent if encountered.
+	// verbsDenyListWithGet is the set of verbs that will NOT be sent if encountered.
 	verbsDenyListWithGet = set.NewFrozenStringSet("WATCH", "LIST", "GET")
 
 	// verbsDenyListPerResource is the set of verbs that will NOT be sent if encountered.
