@@ -497,7 +497,7 @@ class NetworkFlowTest extends BaseSpecification {
             throw new RuntimeException("Unexpected OrchestratorType")
         }
 
-        then:
+        when:
         "Check for edge in network graph"
         withRetry(5, 20) {
             log.info "Generate traffic to the target deployment ${NGINXCONNECTIONTARGET}"
