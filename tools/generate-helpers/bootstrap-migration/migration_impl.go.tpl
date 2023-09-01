@@ -2,10 +2,7 @@
 package {{.packageName}}
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 // {{template "TODO"}}: generate/write and import any store required for the migration (skip any unnecessary step):
@@ -38,9 +35,8 @@ import (
 // to a software version that can no longer be supported by the database.
 
 func migrate(database *types.Databases) error {
-	ctx := sac.WithAllAccess(context.Background())
 	_ = database // {{template "TODO"}}: remove this line, it is there to make the compiler happy while the migration code is being written.
-	_ = ctx // {{template "TODO"}}: remove this line, it is there to make the compiler happy while the migration code is being written.
+	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
 
 	// {{template "TODO"}}: Migration code comes here
 
