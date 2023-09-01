@@ -114,7 +114,7 @@ spec:
       rules:
         - expr: |
             max by (build, central_id, hosting, install_method, sensor_id, sensor_version) (
-              rox_sensor_secured_nodes{branding="RHACS"} > bool 0
+              rox_sensor_secured_nodes{branding=~"rhacs|RHACS"} > bool 0
             )
           record: rhacs:telemetry:rox_sensor_info
 
