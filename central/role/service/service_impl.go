@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
@@ -53,10 +52,8 @@ var (
 			"/v1.RoleService/PutSimpleAccessScope",
 			"/v1.RoleService/DeleteSimpleAccessScope",
 		},
-		or.ServiceOr(user.Authenticated()): {
-			"/v1.RoleService/GetMyPermissions",
-		},
 		user.Authenticated(): {
+			"/v1.RoleService/GetMyPermissions",
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},

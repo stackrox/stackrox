@@ -10,15 +10,18 @@ import (
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
-	"github.com/stackrox/rox/pkg/grpc/authz/or"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		or.ServiceOr(authzUser.Authenticated()): {
+		allow.Anonymous(): {
+			// GetAuthStatus does return information about the caller identity
+			// (present in context). In case it is called by an anonymous
+			// user, it will return HTTP 401 (unauthorised) which is
+			// semantically correct.
 			"/v1.AuthService/GetAuthStatus",
 		},
 	})
