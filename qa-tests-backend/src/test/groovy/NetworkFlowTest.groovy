@@ -497,24 +497,23 @@ class NetworkFlowTest extends BaseSpecification {
             throw new RuntimeException("Unexpected OrchestratorType")
         }
 
-        when:
-        "ping the target deployment"
-        Response response = null
-        Timer t = new Timer(12, 5)
-        while (response?.statusCode() != 200 && t.IsValid()) {
-            try {
-                log.info "trying ${targetUrl}..."
-                response = given().get(targetUrl)
-            } catch (Exception e) {
-                log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
-            }
-        }
-        assert response?.getStatusCode() == 200
-        log.info response.asString()
-
         then:
         "Check for edge in network graph"
         withRetry(5, 20) {
+            log.info "Generate traffic to the target deployment ${NGINXCONNECTIONTARGET}"
+            Response response = null
+            Timer t = new Timer(12, 5)
+            while (response?.statusCode() != 200 && t.IsValid()) {
+                try {
+                    log.info "trying ${targetUrl}..."
+                    response = given().get(targetUrl)
+                } catch (Exception e) {
+                    log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
+                }
+            }
+            assert response?.getStatusCode() == 200
+            log.info response.asString()
+
             log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
 
             // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
