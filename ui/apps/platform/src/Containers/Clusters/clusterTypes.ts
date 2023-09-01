@@ -1,7 +1,3 @@
-import { Cluster } from 'types/cluster.proto';
-
-export type { Cluster }; // TODO replace all imports from this file with imports from types/cluster.proto file
-
 export type SensorHealthStatus = 'HEALTHY' | 'UNHEALTHY' | 'DEGRADED' | 'UNINITIALIZED';
 
 export type ClusterHealthItemStatus =
@@ -66,10 +62,6 @@ export type DynamicConfig = {
     };
 };
 
-export type HelmConfig = {
-    dynamicConfig: DynamicConfig;
-};
-
 export type CentralEnv = {
     kernelSupportAvailable?: boolean;
     successfullyFetched?: boolean;
@@ -92,9 +84,3 @@ export type ClusterStatus = {
     upgradeStatus: SensorUpgradeStatus;
     certExpiryStatus: CertExpiryStatus;
 };
-
-export type ClusterManagerType =
-    | 'MANAGER_TYPE_UNKNOWN'
-    | 'MANAGER_TYPE_MANUAL'
-    | 'MANAGER_TYPE_HELM_CHART'
-    | 'MANAGER_TYPE_KUBERNETES_OPERATOR';
