@@ -183,6 +183,7 @@ func (g *garbageCollectorImpl) runGC() {
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
+	lastLogImbuePruneNullTime = time.Now()
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -931,28 +932,7 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 		lastLogImbuePruneTime = time.Now()
 	}()
 
-	var logImbuesToPrune []string
-	now := types.TimestampNow()
-	walkFn := func() error {
-		logImbuesToPrune = logImbuesToPrune[:0]
-		return g.logimbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
-			if protoutils.Sub(now, li.Timestamp) < logImbueWindow {
-				return nil
-			}
-			logImbuesToPrune = append(logImbuesToPrune, li.GetId())
-			return nil
-		})
-	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk log imbues and mark for pruning"))
-		return
-	}
-
-	// call DeleteMany or whatever with the IDs.
-	err := g.logimbueStore.DeleteMany(pruningCtx, logImbuesToPrune)
-	if err != nil {
-		log.Error(errors.Wrap(err, "error removing process indicators"))
-	}
+	postgres.PruneLogImbues(pruningCtx, g.postgres, logImbueWindow, pruneNulls)
 }
 
 func (g *garbageCollectorImpl) Stop() {

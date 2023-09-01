@@ -84,6 +84,9 @@ const (
 			)
 			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
 		)`
+
+	// Delete the log imbues with old timestamp
+	pruneLogImbues = `DELETE FROM log_imbues WHERE timestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 )
 
 var (
@@ -181,5 +184,13 @@ func PruneReportHistory(ctx context.Context, pool postgres.DB, retentionDuration
 	query := fmt.Sprintf(pruneOldReportHistory, int(retentionDuration.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune report history: %v", err)
+	}
+}
+
+// PruneLogImbues prunes old log imbues
+func PruneLogImbues(ctx context.Context, pool postgres.DB, orphanWindow time.Duration, pruneNulls bool) {
+	query := fmt.Sprintf(pruneLogImbues, int(orphanWindow.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune log imbues: %v", err)
 	}
 }
