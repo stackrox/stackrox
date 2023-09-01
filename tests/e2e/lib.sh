@@ -224,10 +224,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < tests/e2e/yaml/central-cr.envsubst.yaml \
-      > /tmp/central-cr.yaml
-
-    kubectl apply -n stackrox -f /tmp/central-cr.yaml
+      < tests/e2e/yaml/central-cr.envsubst.yaml | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/central 300
 }
@@ -286,10 +283,7 @@ deploy_sensor_via_operator() {
     env - \
       collection_method="$upper_case_collection_method" \
     envsubst \
-      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml \
-      > /tmp/secured-cluster-cr.yaml
-
-    kubectl apply -n stackrox -f /tmp/secured-cluster-cr.yaml
+      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300
