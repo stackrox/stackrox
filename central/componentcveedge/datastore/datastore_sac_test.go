@@ -236,7 +236,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 		s.NoError(err)
 		if c.expectedEdgeFound[targetEdgeID] {
 			s.True(exists)
-			s.NotNil(edge)
+			s.Require().NotNil(edge)
 			s.Equal(expectedSrcID, edge.GetImageComponentId())
 			s.Equal(expectedTargetID, edge.GetImageCveId())
 		} else {
@@ -257,7 +257,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSingleCompon
 		s.NoError(err)
 		if c.expectedEdgeFound[targetEdgeID] {
 			s.True(exists)
-			s.NotNil(edge)
+			s.Require().NotNil(edge)
 			s.Equal(expectedSrcID, edge.GetImageComponentId())
 			s.Equal(expectedTargetID, edge.GetImageCveId())
 		} else {
@@ -278,7 +278,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestGetEdgeFromSharedCompon
 		s.NoError(err)
 		if c.expectedEdgeFound[targetEdgeID] {
 			s.True(exists)
-			s.NotNil(edge)
+			s.Require().NotNil(edge)
 			s.Equal(expectedSrcID, edge.GetImageComponentId())
 			s.Equal(expectedTargetID, edge.GetImageCveId())
 		} else {
@@ -316,7 +316,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearch() {
 		testCtx := s.testContexts[c.contextKey]
 		results, err := s.datastore.Search(testCtx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.ID])
 		}
@@ -335,7 +335,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchEdges() {
 		testCtx := s.testContexts[c.contextKey]
 		results, err := s.datastore.SearchEdges(testCtx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
@@ -354,7 +354,7 @@ func (s *imageComponentCVEEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 		testCtx := s.testContexts[c.contextKey]
 		results, err := s.datastore.SearchRawEdges(testCtx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}

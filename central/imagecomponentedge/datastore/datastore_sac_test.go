@@ -226,7 +226,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 			expectedFetchedSize++
 		}
 		fetchedMatches := 0
-		s.Equal(expectedFetchedSize, len(fetched))
+		s.Len(fetched, expectedFetchedSize)
 		for _, edge := range fetched {
 			if edge.GetId() == targetEdge1ID {
 				fetchedMatches++
@@ -269,7 +269,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 		}
 		results, err := s.datastore.Search(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.ID])
 		}
@@ -287,7 +287,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 		}
 		results, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
@@ -305,7 +305,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 		}
 		results, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}

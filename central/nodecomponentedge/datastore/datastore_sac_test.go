@@ -202,7 +202,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGet() {
 		s.NoError(err)
 		if c.expectedEdgeFound[targetEdgeID] {
 			s.True(found)
-			s.NotNil(obj)
+			s.Require().NotNil(obj)
 			s.Equal(targetEdgeID, obj.GetId())
 			s.Equal(expectedSrcID, obj.GetNodeId())
 			s.Equal(expectedTgtID, obj.GetNodeComponentId())
@@ -240,7 +240,7 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 			expectedEdge2 = true
 			expectedEdgeCount++
 		}
-		s.Equal(expectedEdgeCount, len(edges))
+		s.Len(edges, expectedEdgeCount)
 		foundEdge1 := false
 		foundEdge2 := false
 		for _, e := range edges {

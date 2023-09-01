@@ -386,7 +386,7 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 		readMeta, err := s.datastore.GetManyImageMetadata(ctx, []string{image.GetId(), image2.GetId()})
 		s.Require().NoError(err)
 		if testCase.ExpectedFound {
-			s.Require().Equal(2, len(readMeta))
+			s.Require().Len(readMeta, 2)
 			readImageMeta1 := readMeta[0]
 			readImageMeta2 := readMeta[1]
 			if readImageMeta1.GetId() == image.GetId() {
@@ -405,7 +405,7 @@ func (s *imageDatastoreSACSuite) TestGetImageMetadata() {
 				s.Equal(image.GetCves(), readImageMeta2.GetCves())
 			}
 		} else {
-			s.Equal(0, len(readMeta))
+			s.Len(readMeta, 0)
 		}
 	})
 }
@@ -423,7 +423,7 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 		readMeta, err := s.datastore.GetImagesBatch(ctx, []string{image1.GetId(), image2.GetId()})
 		s.Require().NoError(err)
 		if testCase.ExpectedFound {
-			s.Require().Equal(2, len(readMeta))
+			s.Require().Len(readMeta, 2)
 			readImageMeta1 := readMeta[0]
 			readImageMeta2 := readMeta[1]
 			if readImageMeta1.GetId() == image1.GetId() {
@@ -442,7 +442,7 @@ func (s *imageDatastoreSACSuite) TestGetImagesBatch() {
 				s.Equal(image1.GetCves(), readImageMeta2.GetCves())
 			}
 		} else {
-			s.Equal(0, len(readMeta))
+			s.Len(readMeta, 0)
 		}
 	})
 }

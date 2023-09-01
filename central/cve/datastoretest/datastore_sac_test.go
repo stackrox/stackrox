@@ -654,6 +654,9 @@ func (s *cveDataStoreSACTestSuite) runImageTest(testName string, testFunc func(c
 	failed := false
 	for _, c := range imageCVETestCases {
 		caseSucceeded := s.Run(c.contextKey, func() {
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
 			// s.T().Parallel()
 			testFunc(c)
 		})
@@ -718,7 +721,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSingleScopeOnly() {
 		s.NoError(err)
 		s.Equal(c.expectedCVEFound[cveName], found)
 		if c.expectedCVEFound[cveName] {
-			s.NotNil(nodeCVE)
+			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
 			s.Equal(cvss, nodeCVE.Cvss)
 		} else {
@@ -739,7 +742,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetSharedAcrossComponents() {
 		s.NoError(err)
 		s.Equal(c.expectedCVEFound[cveName], found)
 		if c.expectedCVEFound[cveName] {
-			s.NotNil(nodeCVE)
+			s.Require().NotNil(nodeCVE)
 			s.Equal(cveName, nodeCVE.GetCveBaseInfo().GetCve())
 			s.Equal(cvss, nodeCVE.Cvss)
 		} else {
