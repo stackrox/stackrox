@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package service
 
 import (
@@ -66,7 +68,7 @@ func (s *configServiceTestSuite) SetupSuite() {
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
-	s.dataStore = datastore.NewForTest(s.T(), s.db)
+	s.dataStore = datastore.NewForTest(s.T(), s.db.DB)
 	s.srv = New(s.dataStore)
 }
 
