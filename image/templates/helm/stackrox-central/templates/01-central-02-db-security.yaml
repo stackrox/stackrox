@@ -1,44 +1,5 @@
 {{- include "srox.init" . -}}
-
-{{- if and ._rox.env.openshift (not ._rox.central.db.external) ._rox.system.createSCCs }}
-kind: SecurityContextConstraints
-apiVersion: security.openshift.io/v1
-metadata:
-  name: {{ include "srox.globalResourceName" (list . "stackrox-central-db") }}
-  labels:
-    {{- include "srox.labels" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
-  annotations:
-    kubernetes.io/description: stackrox-central-db is the security constraint for the central database
-    {{- include "srox.annotations" (list . "securitycontextconstraints" "stackrox-central-db") | nindent 4 }}
-allowHostDirVolumePlugin: {{ ._rox.central.persistence.hostPath | not | not }}
-allowedCapabilities: []
-allowHostIPC: false
-allowHostNetwork: false
-allowHostPID: false
-allowHostPorts: false
-allowPrivilegeEscalation: false
-allowPrivilegedContainer: false
-defaultAddCapabilities: []
-fsGroup:
-  type: MustRunAs
-  ranges:
-    - max: 70
-      min: 70
-priority: 0
-readOnlyRootFilesystem: false
-requiredDropCapabilities: []
-runAsUser:
-  type: MustRunAs
-  uid: 70
-seLinuxContext:
-  type: "RunAsAny"
-seccompProfiles:
-  - '*'
-users:
-  - system:serviceaccount:{{ .Release.Namespace }}:central-db
-volumes:
-  - '*'
-{{- else if eq ._rox.env.openshift 4 }}
+{{- if eq ._rox.env.openshift 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

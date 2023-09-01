@@ -70,8 +70,6 @@ tests:
   values:
     env:
       openshift: 3
-    system:
-      createSCCs: true
   expect: |
     .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
     .roles["use-central-scc"] | assertThat(. == null)
@@ -89,8 +87,6 @@ tests:
   values:
     env:
       openshift: 4
-    system:
-      createSCCs: false
   expect: |
     .roles["use-central-scc"] | assertThat(. != null)
     .rolebindings["central-use-scc"] | assertThat(. != null)

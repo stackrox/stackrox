@@ -164,8 +164,6 @@ defaults:
       tag: [< required "" .ScannerImageTag >]
 
   system:
-    createSCCs: [< not .Operator >]
-
     [<- if not .AutoSensePodSecurityPolicies >]
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]

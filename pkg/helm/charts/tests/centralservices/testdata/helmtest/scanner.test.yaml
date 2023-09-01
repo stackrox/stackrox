@@ -104,8 +104,6 @@ tests:
   values:
     env:
       openshift: 3
-    system:
-      createSCCs: true
   expect: |
     .securitycontextconstraints["stackrox-scanner"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:scanner"))
     .roles["use-scanner-scc"] | assertThat(. == null)
@@ -128,8 +126,6 @@ tests:
   values:
     env:
       openshift: 4
-    system:
-      createSCCs: false
   expect: |
     .roles["use-scanner-scc"] | assertThat(. != null)
     .rolebindings["scanner-use-scc"] | assertThat(. != null)

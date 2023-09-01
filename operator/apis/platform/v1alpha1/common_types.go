@@ -7,14 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MiscSpec defines miscellaneous settings for custom resources.
-type MiscSpec struct {
-	// Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This
-	// isn't usually needed, and may interfere with other workloads.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Create SecurityContextConstraints for Operand"
-	CreateSCCs *bool `json:"createSCCs,omitempty"`
-}
-
 // CustomizeSpec defines customizations to apply.
 type CustomizeSpec struct {
 	// Custom labels to set on all managed objects.
