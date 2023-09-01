@@ -105,8 +105,6 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	v.AddChild("customize", &customize)
 
-	v.AddAllFrom(translation.GetMisc(c.Spec.Misc))
-
 	return v.Build()
 }
 

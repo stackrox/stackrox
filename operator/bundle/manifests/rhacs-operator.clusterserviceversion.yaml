@@ -75,11 +75,6 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
         displayName: Overlays
         path: overlays
@@ -576,11 +571,6 @@ spec:
       - description: Customizations to apply on all Central Services components.
         displayName: Customizations
         path: customize
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Miscellaneous settings.
-        displayName: Miscellaneous
-        path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Overlays
