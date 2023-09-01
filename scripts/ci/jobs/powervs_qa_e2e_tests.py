@@ -16,4 +16,4 @@ os.environ["REMOTE_CLUSTER_ARCH"] = "ppc64le"
 os.environ["COLLECTION_METHOD"] = "ebpf"
 
 # Trigger tests
-make_qa_e2e_test_runner_midstream(cluster=AutomationFlavorsCluster()).run()
+make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()

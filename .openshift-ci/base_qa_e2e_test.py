@@ -81,3 +81,21 @@ def make_qa_e2e_test_runner_midstream(cluster):
             store_qa_tests_data=True,
         ),
     )
+
+def make_qa_e2e_test_runner_custom(cluster):
+    return ClusterTestSetsRunner(
+        cluster=cluster,
+        sets=[
+            {
+                "name": "Custom set of tests for p/z",
+                "test": CustomSetTest(),
+                "post_test": PostClusterTest(
+                    check_stackrox_logs=True,
+                    artifact_destination_prefix="custom-pz",
+                ),
+            },
+        ],
+        final_post=FinalPost(
+            store_qa_tests_data=True,
+        ),
+    )
