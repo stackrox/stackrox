@@ -8,9 +8,129 @@ in slack channel [#forum-acs-api-design](https://redhat-internal.slack.com/archi
 ## Table of Contents
 
 - [Naming Guidelines](#naming-guidelines)
+  - [Decoupling](decoupling)
   - [gRPC Service Name](#grpc-service-name)
   - [gRPC Method Name](#grpc-method-name)
   - [gRPC Message Name](#grpc-message-name)
+
+## Decoupling
+
+While certain data may exist in the database for internal purposes or other functionalities, it is important to 
+exercise caution when deciding what data to make accessible through the API. The rule of thumb to follow is to **not 
+expose data structures defined for internal purposes at APIs**. Define a data structure for sole purpose of 
+API use, generally in the same package were the API is defined. This applies to all APIs including the 
+inter-component APIs.
+- All services defined in the package [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/api/v2)
+**must not** import from the following packages:
+  - [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage) 
+  - [/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi) 
+  - [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/api/v1)
+- All new services and methods defined in the package [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/api/v1) 
+**must not** import from the following packages:
+  - [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage)
+  - [/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi)
+  - [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/api/v2)
+- All new messages defined in the package [/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi)
+  **must not** import from the following packages:
+  - [/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage)
+  - [/proto/api/v1](https://github.com/stackrox/stackrox/blob/master/proto/api/v1)
+  - [/proto/api/v2](https://github.com/stackrox/stackrox/blob/master/proto/api/v2)
+- All services of the type `APIServiceWithCustomRoutes` **must not** import from 
+[/proto/storage](https://github.com/stackrox/stackrox/blob/master/proto/storage) and 
+[/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi) packages, at the minimum.
+- Structs used by APIs, such as those defined in [/proto/api/](https://github.com/stackrox/stackrox/blob/master/proto/api/), 
+[/proto/internalapi](https://github.com/stackrox/stackrox/blob/master/proto/internalapi), **should not** be 
+written to database.
+
+Exposing internal data structures, especially the ones representing and affecting database schema directly at 
+the API can pose security risks. By carefully selecting and limiting the data exposed via the API, we can prevent 
+unauthorized access and potential data breaches which can have compliance ramifications. 
+
+Furthermore, exposing unnecessary data in the API can lead to overfetching, where the client receives more data 
+than required. This inefficiency increases network traffic, consumes extra bandwidth, and impacts API performance. 
+By limiting API data to what is actually needed by clients, we optimize resource usage and improve response times. 
+
+```
+Consider the following database/internal structures used in Central.
+
+Deployment {
+  string id
+  string name
+  repeated KeyValue labels
+  repeated KeyValue annotations
+  repeated Container containers
+}
+  
+Container {
+  string name
+  string image_name
+  repeated Volume volumes
+}
+
+Exposing above structure at API will always lead to reading full container bytes from the database, 
+even if user does not need them. Instead, design the API such that users can select the information 
+they need as below:
+
+// GetDeploymentRequest requests deployment information. Deployment metadata is requested by default.
+GetDeploymentRequest {
+  Options {
+    bool get_container_spec `json: "getContainerSpec"`
+  }
+}
+
+// Default response
+GetDeploymentResponse {
+  Metadata {
+    string name `json: "name"`
+    string id `json: "id"`
+  }
+}
+
+// If `"getContainerSpec": true`
+GetDeploymentResponse {
+  Metadata {
+    string name `json: "name"`
+    string id `json: "name"`
+    ...
+  }
+  ContainerSpec {
+    string name `json: "name"`
+    string image_name `json: "imageName"`
+    ...
+  }
+}
+```
+
+As APIs evolve over time, adding or removing data fields becomes inevitable. By limiting the exposure of internal 
+database structures, we decouple the API from the database schema, allowing us to modify the internal structures
+without breaking existing client applications.
+
+```
+Alert {
+  string id
+  repeated Violation violations
+  string policy_name
+  string policy_description
+  string policy_enforcement
+}
+
+if `Alert` is exposed at API and is changed to the following structure, 
+the client application will break.
+
+Alert {
+  string id;
+  repeated Violation violations
+  
+  Policy {
+    string policy_name
+    string policy_description
+    string policy_enforcement
+  }
+} 
+```
+
+Keeping the API focused and concise simplifies maintenance efforts and reduces the chances of introducing bugs. 
+A clean and manageable codebase improves the overall maintainability and stability of the API.
 
 ## Naming Guidelines
 
@@ -191,16 +311,17 @@ GetDeploymentRequest {
 <td>
 
 ```
+GetDeploymentImageScanResponse {
+  Image image;
+}
+```
+or,
+```
 GetDeploymentResponse {
   Deployment deployment;
   Image image;
 }
 
-Or,
-
-GetDeploymentImageScanResponse {
-  Image image;
-}
 ```
 
 </td>
@@ -227,5 +348,7 @@ autogenerated by the proto compiler. By default, field names are converted to ca
 | `network_data_start_time`  | `networkDataStartTime` |
 | `expiry_date`              | `expiryDate`           |
 
-Be explicit about conveying the specific purpose of fields e.g. instead of `expires_on`
-use `expiry_date`(/`timestamp`), instead of `network_data_since` use `network_data_start_time`.
+Be explicit about conveying the specific purpose of fields e.g. instead of `expires_on` use `expiry_date`(/`timestamp`)
+as it informs users if the field return date portion of timestamp or full timestamp, instead of `network_data_since` 
+use `network_data_start_time` for similar reason. The fields should convey their purpose without requiring users to 
+read the documentation.
