@@ -4,7 +4,7 @@
 Run qa-tests-backend in a IBM CLOUD Z Openshift cluster provided via automation-flavors/ibmcloudz.
 """
 import os
-from base_qa_e2e_test import make_qa_e2e_test_runner_midstream
+from base_qa_e2e_test import make_qa_e2e_test_runner_custom
 from clusters import AutomationFlavorsCluster
 
 # set required test parameters

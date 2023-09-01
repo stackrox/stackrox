@@ -39,7 +39,7 @@ function apply_operator_manifests() {
   local -r image_tag_base="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
-  
+
   # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
   # CatalogSource resource or the namespace of the CatalogSource to have relaxed PSA enforcement, otherwise the
   # CatalogSource pod does not get deployed with PodSecurity errors.
@@ -53,7 +53,7 @@ function apply_operator_manifests() {
   if [[ "$has_scc_key" == "true" ]]; then
       disable_security_context_config=""
   fi
-  
+
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     # Get Operator channel from json for midstream
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')

@@ -4,7 +4,7 @@
 Run QA e2e tests against a given cluster.
 """
 from pre_tests import PreSystemTests
-from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest
+from ci_tests import QaE2eTestPart1, QaE2eTestPart2, QaE2eDBBackupRestoreTest, CustomSetTest
 from post_tests import PostClusterTest, CheckStackroxLogs, FinalPost
 from runners import ClusterTestSetsRunner
 
