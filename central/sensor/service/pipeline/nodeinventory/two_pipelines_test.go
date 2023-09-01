@@ -30,9 +30,10 @@ import (
 )
 
 const (
-	nodeID    = "node-id-1"
-	nodeName  = "node-name"
-	clusterID = "cluster1"
+	nodeID              = "node-id-1"
+	nodeName            = "node-name"
+	clusterID           = "cluster1"
+	kernelComponentName = "kernel"
 )
 
 func Test_TwoPipelines_Run(t *testing.T) {
@@ -46,7 +47,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		RiskScore:     1,
 	}
 
-	nodeWithScan := &storage.Node{
+	nodeWithScanWithKernelV1 := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
 		ClusterId:     clusterID,
@@ -54,14 +55,25 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		KernelVersion: "v1",
 		Notes:         []storage.Node_Note{},
 		RiskScore:     1,
-		Scan:          nodeScanFixture,
+		Scan:          nodeScanFixtureWithKernel("v1"),
 		SetComponents: &storage.Node_Components{Components: 1},
-		SetCves:       &storage.Node_Cves{Cves: 3},
-		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 0},
+		SetCves:       &storage.Node_Cves{Cves: 1},
+		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
 	}
 
-	nodeWithKernelV2 := nodeWithScan.Clone()
-	nodeWithKernelV2.KernelVersion = "v2"
+	nodeWithScanWithKernelV2 := &storage.Node{
+		Id:            nodeID,
+		Name:          nodeName,
+		ClusterId:     clusterID,
+		ClusterName:   clusterID,
+		KernelVersion: "v1",
+		Notes:         []storage.Node_Note{},
+		RiskScore:     1,
+		Scan:          nodeScanFixtureWithKernel("v2"),
+		SetComponents: &storage.Node_Components{Components: 1},
+		SetCves:       &storage.Node_Cves{Cves: 1},
+		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
+	}
 
 	type usedMocks struct {
 		clusterStore      *clusterDatastoreMocks.MockDataStore
@@ -73,15 +85,16 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		updater           updater.Updater
 	}
 	tests := []struct {
-		name              string
-		mocks             usedMocks
-		riskManager       manager.Manager
-		enricher          nodeEnricher.NodeEnricher
-		operations        []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error
-		wantErr           string
-		setUpMocks        func(t *testing.T, m *usedMocks)
-		wantNodeExists    bool
-		wantKernelVersion string
+		name                      string
+		mocks                     usedMocks
+		riskManager               manager.Manager
+		enricher                  nodeEnricher.NodeEnricher
+		operations                []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error
+		wantErr                   string
+		setUpMocks                func(t *testing.T, m *usedMocks)
+		wantNodeExists            bool
+		wantKernelVersionNode     string
+		wantKernelVersionNodeScan string
 	}{
 		{
 			name: "lone node inventory should not find the node in DB",
@@ -96,8 +109,8 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil),
 				)
 			},
-			wantNodeExists:    false,
-			wantKernelVersion: "",
+			wantNodeExists:        false,
+			wantKernelVersionNode: "",
 		},
 		{
 			name: "node inventory arriving after node should result in data from the node being overwritten",
@@ -123,14 +136,14 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScore, true, nil),
 					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
 					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScan).AnyTimes().Return(nil),
-
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
 					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithKernelV2, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV2, true, nil),
 				)
 			},
-			wantNodeExists:    true,
-			wantKernelVersion: "v2",
+			wantNodeExists:            true,
+			wantKernelVersionNode:     "v1",
+			wantKernelVersionNodeScan: "v2",
 		},
 		{
 			name: "node inventory arriving first should result in data from it being lost",
@@ -156,11 +169,12 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Return(nil),
 
 					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScan, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV1, true, nil),
 				)
 			},
-			wantNodeExists:    true,
-			wantKernelVersion: "v1",
+			wantNodeExists:            true,
+			wantKernelVersionNode:     "v1",
+			wantKernelVersionNodeScan: "v1",
 		},
 	}
 	for _, tt := range tests {
@@ -229,7 +243,18 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			node, found, err := tt.mocks.nodeDatastore.GetNode(context.Background(), nodeID)
 			assert.Equal(t, tt.wantNodeExists, found)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantKernelVersion, node.GetKernelVersion())
+			if found {
+				assert.Equal(t, tt.wantKernelVersionNode, node.GetKernelVersion())
+				var kernelComponentFound bool
+				for _, component := range node.GetScan().GetComponents() {
+					if component.GetName() == kernelComponentName {
+						kernelComponentFound = true
+						assert.Equal(t, tt.wantKernelVersionNodeScan, component.GetVersion(), "kernel version in node scan should match")
+					}
+				}
+				assert.True(t, kernelComponentFound)
+
+			}
 		})
 	}
 }
@@ -243,7 +268,7 @@ func createNodeInventory(id, kernelV string) *storage.NodeInventory {
 			RhelComponents: []*storage.NodeInventory_Components_RHELComponent{
 				{
 					Id:          1,
-					Name:        "kernel",
+					Name:        kernelComponentName,
 					Namespace:   "",
 					Version:     kernelV,
 					Arch:        "",
@@ -285,22 +310,32 @@ func createNodeMsg(id, kernel string) *central.MsgFromSensor {
 	}
 }
 
-var nodeScanFixture = &storage.NodeScan{
-	Components: []*storage.EmbeddedNodeScanComponent{
-		{
-			Vulns: []*storage.EmbeddedVulnerability{
-				{
-					Cve: "CVE-2020-1234",
+func nodeScanFixtureWithKernel(kernelVersion string) *storage.NodeScan {
+	return &storage.NodeScan{
+		Components: []*storage.EmbeddedNodeScanComponent{
+			{
+				Name:    kernelComponentName,
+				Version: kernelVersion,
+				Vulns:   nil,
+				Vulnerabilities: []*storage.NodeVulnerability{
+					{
+						CveBaseInfo: &storage.CVEInfo{
+							Cve: "CVE-2020-1234",
+						},
+						Cvss:         1,
+						Severity:     0,
+						SetFixedBy:   nil,
+						Snoozed:      false,
+						SnoozeStart:  nil,
+						SnoozeExpiry: nil,
+					},
 				},
-				{
-					Cve: "CVE-2021-1234",
-				},
-				{
-					Cve: "CVE-2022-1234",
-				},
+				Priority:   0,
+				SetTopCvss: &storage.EmbeddedNodeScanComponent_TopCvss{TopCvss: 1.0},
+				RiskScore:  1,
 			},
 		},
-	},
+	}
 }
 
 var _ types.NodeScanner = (*fakeNodeScanner)(nil)
@@ -315,12 +350,12 @@ func (*fakeNodeScanner) MaxConcurrentNodeScanSemaphore() *semaphore.Weighted {
 
 func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	f.requestedScan = true
-	return nodeScanFixture, nil
+	return nodeScanFixtureWithKernel("v1"), nil
 }
 
 func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
 	f.requestedScan = true
-	return nodeScanFixture, nil
+	return nodeScanFixtureWithKernel("v2"), nil
 }
 
 func (*fakeNodeScanner) TestNodeScanner() error {
