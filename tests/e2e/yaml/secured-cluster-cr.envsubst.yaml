@@ -4,3 +4,6 @@ metadata:
   name: stackrox-secured-cluster-services
 spec:
   clusterName: remote
+  perNode:
+    collector:
+      collection: $collection_method
