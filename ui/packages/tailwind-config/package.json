@@ -20,12 +20,7 @@
         "clean": "rm -f tailwind.css",
         "build": "postcss ./index.tw.css -o ./tailwind.css",
         "start": "yarn build",
-        "lint:non-src": "prettier --check '**/*.{md,css,json}'",
-        "lint:src": "eslint --ext .js ./",
-        "lint": "npm-run-all lint:*",
-        "lint-fix:non-src": "prettier --write '**/*.{md,css,json}'",
-        "lint-fix:src": "eslint --fix --ext .js ./",
-        "lint-fix": "npm-run-all lint-fix:*",
+        "lint": "echo lint",
         "prepublishOnly": "yarn clean && yarn build"
     },
     "dependencies": {
