@@ -9,6 +9,7 @@ import io.stackrox.proto.storage.ProcessBaselineOuterClass
 import objects.Deployment
 import services.ClusterService
 import services.DeploymentService
+import services.ImageService
 import services.ProcessBaselineService
 import services.ProcessService
 import util.Env
@@ -52,7 +53,7 @@ class RiskTest extends BaseSpecification {
         clusterId = ClusterService.getClusterId()
 
         // ROX-6260: pre scan the image to avoid different risk scores
-        Services.scanImage(TEST_IMAGE)
+        ImageService.scanImage(TEST_IMAGE)
 
         for (int i = 0; i < 2; i++) {
             DEPLOYMENTS.push(

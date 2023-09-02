@@ -413,7 +413,7 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "Scan Image and verify results"
-        ImageOuterClass.Image img = Services.scanImage(image)
+        ImageOuterClass.Image img = ImageService.scanImage(image)
         assert img.metadata.dataSource.id != ""
         assert img.metadata.dataSource.name != ""
         assert img.scan.dataSource.id != ""
@@ -464,7 +464,7 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "Scan Image and verify results"
-        ImageOuterClass.Image img = Services.scanImage(image)
+        ImageOuterClass.Image img = ImageService.scanImage(image)
         assert img.metadata.dataSource.id != ""
         assert img.metadata.dataSource.name != ""
         assert img.scan.dataSource.id != ""
@@ -520,7 +520,7 @@ class ImageScanningTest extends BaseSpecification {
         "Scan image"
         String image = IMAGES_FOR_ERROR_TESTS[scanner.name()][testAspect]
         assert image
-        Services.scanImage(image)
+        ImageService.scanImage(image)
 
         then:
         "Verify image scan outcome"
@@ -649,7 +649,7 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "Image is scanned"
-        Services.scanImage(image)
+        ImageService.scanImage(image)
 
         then:
         "get image by name"

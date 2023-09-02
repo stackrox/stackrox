@@ -16,6 +16,7 @@ import org.spockframework.runtime.SpockAssertionError
 @Slf4j
 class Helpers {
     static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
+        log.debug("Evaluating with retries. maxRetries=${retries}, pauseSecs=${pauseSecs}")
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()

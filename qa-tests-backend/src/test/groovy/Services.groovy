@@ -225,13 +225,6 @@ class Services extends BaseService {
         return violations == null || violations.isEmpty()
     }
 
-    static scanImage(String image) {
-        return getImageClient().scanImage(
-                ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                        .setImageName(image).build()
-        )
-    }
-
     static String getImageIdByName(String imageName) {
         String id = null
         Timer t = new Timer(10, 1)

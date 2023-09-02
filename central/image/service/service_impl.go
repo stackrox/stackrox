@@ -296,30 +296,34 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
-	enrichmentCtx := enricher.EnrichmentContext{
-		FetchOpt:  enricher.IgnoreExistingImages,
-		Delegable: true,
-	}
-	if request.GetForce() {
-		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
-	}
-	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
-	if err != nil {
-		return nil, err
-	}
-
-	// Save the image
-	img.Id = utils.GetSHA(img)
-	if img.GetId() != "" {
-		if err := s.saveImage(img); err != nil {
-			return nil, err
-		}
-	}
-	if !request.GetIncludeSnoozed() {
-		utils.FilterSuppressedCVEsNoClone(img)
-	}
-
-	return img, nil
+	log.Errorf("@@@ failed to scan image: %+v", request.GetImageName())
+	return nil, status.New(codes.Internal, "CUSTOM ERROR").Err()
+	// enrichmentCtx := enricher.EnrichmentContext{
+	// 	FetchOpt:  enricher.IgnoreExistingImages,
+	// 	Delegable: true,
+	// }
+	// if request.GetForce() {
+	// 	enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
+	// }
+	// img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
+	// if err != nil {
+	// 	log.Errorw("failed to enrich image by name", err)
+	// 	return nil, status.New(codes.Internal, err.Error()).Err()
+	// }
+	//
+	// // Save the image
+	// img.Id = utils.GetSHA(img)
+	// if img.GetId() != "" {
+	// 	if err := s.saveImage(img); err != nil {
+	// 		log.Errorw("failed to save image", err)
+	// 		return nil, status.New(codes.Internal, err.Error()).Err()
+	// 	}
+	// }
+	// if !request.GetIncludeSnoozed() {
+	// 	utils.FilterSuppressedCVEsNoClone(img)
+	// }
+	//
+	// return img, nil
 }
 
 // GetImageVulnerabilitiesInternal retrieves the vulnerabilities related to the image

@@ -116,8 +116,34 @@ class BaseService {
     private static Channel effectiveChannel = null
     private static Boolean useClientCert = false
 
-    static initializeChannel() {
+    static initializeChannel(boolean withRetry) {
         if (transportChannel == null) {
+            // See https://github.com/grpc/grpc-java/pull/7803 on why the serviceConfig
+            // has to be provided to enable retries.
+            def serviceConfig = [
+                methodConfig: [
+                    [
+                        // Empty values translate to all services/methods.
+                        name: [
+                            [service: "io.stackrox.proto.api.v1.ImageService", method: "",],
+                        ],
+                        // Performs 12 retries with exponential backoff and jitter.
+                        retryPolicy: [
+                            backoffMultiplier: "2.0",
+                            initialBackoff: "10s",
+                            maxAttempts: "13",
+                            maxBackoff: "420s",
+                            retryableStatusCodes: [
+                                "ABORTED",
+                                "INTERNAL",
+                                "UNAVAILABLE",
+                                "UNKNOWN",
+                            ],
+                        ],
+                    ],
+                ],
+            ]
+
             SslContextBuilder sslContextBuilder = GrpcSslContexts
                     .forClient()
                     .trustManager(InsecureTrustManagerFactory.INSTANCE)
@@ -127,11 +153,13 @@ class BaseService {
             def sslContext = sslContextBuilder.build()
 
             transportChannel = NettyChannelBuilder
-                    .forAddress(Env.mustGetHostname(), Env.mustGetPort())
-                    .enableRetry()
-                    .negotiationType(NegotiationType.TLS)
-                    .sslContext(sslContext)
-                    .build()
+                .forAddress(Env.mustGetHostname(), Env.mustGetPort())
+                .negotiationType(NegotiationType.TLS)
+                .sslContext(sslContext)
+                .defaultServiceConfig(serviceConfig)
+                .enableRetry()
+                .build()
+
             effectiveChannel = null
 
             log.debug("The gRPC channel to central was opened (useClientCert: ${useClientCert})")
@@ -144,10 +172,10 @@ class BaseService {
         }
     }
 
-    static Channel getChannel() {
+    static Channel getChannel(boolean withRetry = true) {
         if (effectiveChannel == null) {
             synchronized(BaseService) {
-                initializeChannel()
+                initializeChannel(withRetry)
             }
         }
         return effectiveChannel

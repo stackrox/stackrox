@@ -91,7 +91,7 @@ class SACTest extends BaseSpecification {
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
-        def img = Services.scanImage(TEST_IMAGE)
+        def img = ImageService.scanImage(TEST_IMAGE)
         assert img.hasScan()
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
