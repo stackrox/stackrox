@@ -46,11 +46,11 @@ export type AlertResourceType =
     | 'UNKNOWN'
     | 'SECRETS'
     | 'CONFIGMAPS'
-    | 'CLUSTERROLES'
-    | 'CLUSTERROLEBINDINGS'
-    | 'NETWORKPOLICIES'
-    | 'SECURITYCONTEXTCONSTRAINTS'
-    | 'EGRESSFIREWALLS';
+    | 'CLUSTER_ROLES'
+    | 'CLUSTER_ROLE_BINDINGS'
+    | 'NETWORK_POLICIES'
+    | 'SECURITY_CONTEXT_CONSTRAINTS'
+    | 'EGRESS_FIREWALLS';
 
 export function isDeploymentAlert(alert: Alert): alert is DeploymentAlert {
     return 'deployment' in alert && Boolean(alert.deployment);
