@@ -197,20 +197,20 @@ class ImageManagementTest extends BaseSpecification {
                 .addScope(ScopeOuterClass.Scope.newBuilder().setNamespace(TEST_NAMESPACE))
                 .build()
         policy = PolicyService.createAndFetchPolicy(policy)
-        def scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
+        def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null
 
         when:
         "Suppress CVE and check that it violates"
         def cve = "CVE-2019-14697"
         CVEService.suppressImageCVE(cve)
-        scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
+        scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
         assert scanResults.alertsList.find { y -> y.policy.id == policy.id } == null
 
         and:
         "Unsuppress CVE"
         CVEService.unsuppressImageCVE(cve)
-        scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
+        scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa", "kube-compose-controller-v0.4.23")
 
         then:
         "Verify unsuppressing lets the CVE show up again"
@@ -340,7 +340,7 @@ class ImageManagementTest extends BaseSpecification {
 
         and:
         "Request Image Scan with sendNotifications"
-        def scanResults = Services.requestBuildImageScan("docker.io", "library/busybox", "latest", true)
+        def scanResults = Services.requestBuildImageScan("quay.io", "quay/busybox", "latest", true)
 
         then:
         "verify violation matches expected violation status and notification sent"
@@ -353,9 +353,9 @@ class ImageManagementTest extends BaseSpecification {
             assert alert["policy"]["name"] == clone.name
             assert alert["image"] != null
             assert alert["deployment"] == null
-            assert alert["image"]["name"]["fullName"] == "docker.io/library/busybox:latest"
-            assert alert["image"]["name"]["registry"] == "docker.io"
-            assert alert["image"]["name"]["remote"] == "library/busybox"
+            assert alert["image"]["name"]["fullName"] == "quay.io/quay/busybox:latest"
+            assert alert["image"]["name"]["registry"] == "quay.io"
+            assert alert["image"]["name"]["remote"] == "quay/busybox"
             assert alert["image"]["name"]["tag"] == "latest"
         }
 
