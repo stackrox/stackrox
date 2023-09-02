@@ -16,6 +16,8 @@ import (
     "github.com/stackrox/rox/pkg/features"{{- end }}
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/postgres/walker"
+    "github.com/stackrox/rox/pkg/sac"
+    "github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     "github.com/stackrox/rox/pkg/search/postgres/mapping"
     "github.com/stackrox/rox/pkg/uuid"
@@ -70,6 +72,12 @@ var (
             {{- end}}
             }...)
             {{- end }}
+        {{- end }}
+
+        {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
+            schema.ScopingResource = resources.{{.Type | storageToResource}}
+        {{- else if .PermissionChecker }}
+            schema.PermissionChecker = {{ .PermissionChecker }}
         {{- end }}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})

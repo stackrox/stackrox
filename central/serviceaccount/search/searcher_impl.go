@@ -7,13 +7,7 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	serviceAccountsSACPostgresSearchHelper = sac.ForResource(resources.ServiceAccount).MustCreatePgSearchHelper()
 )
 
 type searcherImpl struct {
@@ -54,11 +48,11 @@ func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Search(ctx, q)
+	return ds.indexer.Search(ctx, q)
 }
 
 func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (int, error) {
-	return serviceAccountsSACPostgresSearchHelper.FilteredSearcher(ds.indexer).Count(ctx, q)
+	return ds.indexer.Count(ctx, q)
 }
 
 func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, []search.Result, error) {

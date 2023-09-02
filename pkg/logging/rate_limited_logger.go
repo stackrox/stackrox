@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	lru "github.com/stackrox/rox/pkg/expiringlru"
+	lru "github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap/zapcore"
@@ -16,7 +16,7 @@ import (
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
 	logger          Logger
-	rateLimitedLogs lru.Cache[string, *rateLimitedLog]
+	rateLimitedLogs *lru.LRU[string, *rateLimitedLog]
 }
 
 const (
@@ -59,7 +59,7 @@ func newRateLimitLogger(l Logger, size int, ttl time.Duration) *RateLimitedLogge
 	if size < 0 {
 		size = 0
 	}
-	logCache := lru.NewExpirableLRU[string, *rateLimitedLog](size, onEvict, ttl)
+	logCache := lru.NewLRU[string, *rateLimitedLog](size, onEvict, ttl)
 	logger := &RateLimitedLogger{
 		l,
 		logCache,
@@ -228,8 +228,6 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 func (rl *RateLimitedLogger) stop() {
 	// Flush logs
 	rl.rateLimitedLogs.Purge()
-	// Stop background thread
-	rl.rateLimitedLogs.Close()
 }
 
 func stopLogger(logger *RateLimitedLogger) {

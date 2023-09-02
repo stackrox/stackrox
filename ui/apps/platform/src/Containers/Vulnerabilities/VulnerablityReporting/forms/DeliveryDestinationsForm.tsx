@@ -25,6 +25,7 @@ import usePermissions from 'hooks/usePermissions';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import useIndexKey from 'hooks/useIndexKey';
 import NotifierSelection from './NotifierSelection';
 
 export type DeliveryDestinationsFormParams = {
@@ -35,6 +36,7 @@ export type DeliveryDestinationsFormParams = {
 function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormParams): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
+    const { keyFor } = useIndexKey();
 
     function addDeliveryDestination() {
         const newDeliveryDestination: DeliveryDestination = { notifier: null, mailingLists: [] };
@@ -106,10 +108,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
                                         return (
-                                            <li
-                                                key={deliveryDestination.notifier?.id}
-                                                className="pf-u-mb-md"
-                                            >
+                                            <li key={keyFor(index)} className="pf-u-mb-md">
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
