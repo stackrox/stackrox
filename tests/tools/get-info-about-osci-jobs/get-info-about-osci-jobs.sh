@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
+# Given a directory with multiple artifacts for OSCI jobs looks through all of the collector logs
+# and produces output for a csv file with the name of the job, the kernel version used in the job,
+# and the collection method used by collector.
+
 log_dir=$1
 
 get_info_from_collector_log_file() {

@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -eou pipefail
 
+# Runs the script get-info-about-osci-jobs.sh to get infromation about which kernel versions and
+# collection methods were used for OSCI jobs, from artifacts for multiple CI runs. The artifacts
+# are obtained by downloading them from gcp buckets. The buckets are specified with commit shas.
+# 
+# There are two options for the command line ncommit and sha
+#
+# ncommit gets the SHAs for the past ncommit and gets the artifacts for them.
+# sha adds a specific SHA to the list of SHAs to process.
+# If neither option is used ncommit is set to 6.
+#
+# Example usage:
+# ./get-info-for-shas.sh ncommit=4 sha=3c7bc3b7e08d11eeef2122c7b3ea801db4e07599
+
 ncommit=NA
 sha=NA
 
@@ -10,8 +23,6 @@ process_arg() {
     key="$(echo "$arg" | cut -d "=" -f 1)"
     value="$(echo "$arg" | cut -d "=" -f 2)"
 
-    echo "key= $key"
-
     if [[ "$key" == "ncommit" ]]; then
         ncommit="$value"
     elif [[ "$key" == "sha" ]]; then
@@ -20,9 +31,7 @@ process_arg() {
 }
 
 process_args() {
-    echo "In process_args"
     for arg in "$@"; do
-	echo "arg=$arg"
         process_arg "$arg"
     done
 }
