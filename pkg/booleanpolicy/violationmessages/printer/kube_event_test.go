@@ -19,25 +19,25 @@ func TestViolationMessageForAuditLogEvents(t *testing.T) {
 		name        string
 		expectedMsg string
 	}{
-		{"Valid message when event is GET on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_GET, "hush hush", "Access to secret \"hush hush\" in \"namespace\""},
-		{"Valid message when event is CREATE on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_CREATE, "hush hush", "Access to secret \"hush hush\" in \"namespace\""},
-		{"Valid message when event is LIST on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_LIST, "", "Access to secrets in \"namespace\""},
-		{"Valid message when event is WATCH on a specific secret", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_WATCH, "hush hush", "Access to secret \"hush hush\" in \"namespace\""},
-		{"Valid message when event is WATCH on all secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_WATCH, "", "Access to secrets in \"namespace\""},
-		{"Valid message when event is GET on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_GET, "all the configs", "Access to configmap \"all the configs\" in \"namespace\""},
-		{"Valid message when event is DELETE on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_DELETE, "all the configs", "Access to configmap \"all the configs\" in \"namespace\""},
-		{"Valid message when event is LIST on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_LIST, "", "Access to configmaps in \"namespace\""},
-		{"Valid message when event is WATCH on a specific configmap", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "all the configs", "Access to configmap \"all the configs\" in \"namespace\""},
-		{"Valid message when event is WATCH on all configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "", "Access to configmaps in \"namespace\""},
-		{"Valid message when event is CREATE on clusterrole", storage.KubernetesEvent_Object_CLUSTER_ROLES, storage.KubernetesEvent_CREATE, "test cr", "Access to cluster role \"test cr\" in \"namespace\""},
-		{"Valid message when event is DELETE on netpol", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_DELETE, "test netpol", "Access to network policy \"test netpol\" in \"namespace\""},
-		{"Valid message when event is CREATE on a network policy", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_CREATE, "new-net-pol", "Access to network policy \"new-net-pol\" in \"namespace\""},
-		{"Valid message when event is LIST on all network policies", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_LIST, "", "Access to network policies in \"namespace\""},
+		{"Valid message when event is GET on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_GET, "hush hush", "Access to secret \"hush hush\" in namespace \"ns\""},
+		{"Valid message when event is CREATE on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_CREATE, "hush hush", "Access to secret \"hush hush\" in namespace \"ns\""},
+		{"Valid message when event is LIST on secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_LIST, "", "Access to secrets in namespace \"ns\""},
+		{"Valid message when event is WATCH on a specific secret", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_WATCH, "hush hush", "Access to secret \"hush hush\" in namespace \"ns\""},
+		{"Valid message when event is WATCH on all secrets", storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_WATCH, "", "Access to secrets in namespace \"ns\""},
+		{"Valid message when event is GET on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_GET, "all the configs", "Access to configmap \"all the configs\" in namespace \"ns\""},
+		{"Valid message when event is DELETE on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_DELETE, "all the configs", "Access to configmap \"all the configs\" in namespace \"ns\""},
+		{"Valid message when event is LIST on configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_LIST, "", "Access to configmaps in namespace \"ns\""},
+		{"Valid message when event is WATCH on a specific configmap", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "all the configs", "Access to configmap \"all the configs\" in namespace \"ns\""},
+		{"Valid message when event is WATCH on all configmaps", storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_WATCH, "", "Access to configmaps in namespace \"ns\""},
+		{"Valid message when event is CREATE on clusterrole", storage.KubernetesEvent_Object_CLUSTER_ROLES, storage.KubernetesEvent_CREATE, "test cr", "Access to cluster role \"test cr\" in namespace \"ns\""},
+		{"Valid message when event is DELETE on netpol", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_DELETE, "test netpol", "Access to network policy \"test netpol\" in namespace \"ns\""},
+		{"Valid message when event is CREATE on a network policy", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_CREATE, "new-net-pol", "Access to network policy \"new-net-pol\" in namespace \"ns\""},
+		{"Valid message when event is LIST on all network policies", storage.KubernetesEvent_Object_NETWORK_POLICIES, storage.KubernetesEvent_LIST, "", "Access to network policies in namespace \"ns\""},
 	}
 
 	for _, c := range cases {
 		t.Run(c.testName, func(t *testing.T) {
-			kubeEvent := getKubeEvent(c.res, c.verb, "cluster-id", "namespace", c.name)
+			kubeEvent := getKubeEvent(c.res, c.verb, "cluster-id", "ns", c.name)
 			violation := GenerateKubeEventViolationMsg(kubeEvent)
 			assert.Equal(t, c.expectedMsg, violation.Message)
 		})
