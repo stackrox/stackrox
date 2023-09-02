@@ -4,6 +4,8 @@ set -eou pipefail
 # Runs the script get-info-about-osci-jobs.sh to get infromation about which kernel versions and
 # collection methods were used for OSCI jobs, from artifacts for multiple CI runs. The artifacts
 # are obtained by downloading them from gcp buckets. The buckets are specified with commit shas.
+#
+# The output is a set of csv files and stdout with only unique lines from the set of csv files
 # 
 # There are two options for the command line ncommit and sha
 #
@@ -62,9 +64,9 @@ for sha in "${shas[@]}"; do
     error_code=0
     gsutil -m cp -r "gs://roxci-artifacts/stackrox/$sha" "$temp_dir" || error_code=$?
     if (( error_code == 0 )); then
-        "$DIR/get-info-about-osci-jobs.sh" "$temp_dir" >> $output
+        "$DIR/get-info-about-osci-jobs.sh" "$temp_dir" >> "$output"
 	tail -n +2 "$output" >> "$temp_file"
-	header="$(head -1 $output)"
+	header="$(head -1 "$output")"
     else
         echo "WARNING: Unable to get artifacts for $sha"
     fi

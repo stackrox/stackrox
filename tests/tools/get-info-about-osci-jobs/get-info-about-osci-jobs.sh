@@ -30,11 +30,11 @@ get_info_from_collector_log_file() {
 }
 
 
-cd $log_dir
+cd "$log_dir"
 
 export -f get_info_from_collector_log_file
 
-collector_infos="$(find -name '*collector.log' -exec bash -c 'get_info_from_collector_log_file "$1"' _ {} \;)"
+collector_infos="$(find . -name '*collector.log' -exec bash -c 'get_info_from_collector_log_file "$1"' _ {} \;)"
 
 collector_infos="$(echo "$collector_infos" | sort -u)"
 
