@@ -13,17 +13,17 @@ get_info_from_collector_log_file() {
     dir_name=$(dirname "$log_file" | grep -oP ".*ci-stackrox-stackrox-\K.*")
     kernel_version=$(grep "Kernel Version" "$log_file" | grep -oP 'Kernel Version: \K.*')
     probe_type=""
-    
+
     if grep -q "Driver loaded into kernel: CO.RE eBPF probe" "$log_file"; then
         probe_type="core_bpf"
     elif grep -q "Driver loaded into kernel: collector-ebpf" "$log_file"; then
         probe_type="ebpf"
     fi
-    
+
     pattern="^([^/]+)/"
     [[ $dir_name =~ $pattern ]] && extracted="${BASH_REMATCH[1]}"
-    
-    
+
+
     if [ -n "$dir_name" ] && [ -n "$kernel_version" ] && [ -n "$probe_type" ]; then
         echo "$extracted,$kernel_version,$probe_type"
     fi

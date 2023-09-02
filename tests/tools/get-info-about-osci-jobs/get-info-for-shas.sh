@@ -6,7 +6,7 @@ set -eou pipefail
 # are obtained by downloading them from gcp buckets. The buckets are specified with commit shas.
 #
 # The output is a set of csv files and stdout with only unique lines from the set of csv files
-# 
+#
 # There are two options for the command line ncommit and sha
 #
 # ncommit gets the SHAs for the past ncommit and gets the artifacts for them.
