@@ -42,7 +42,15 @@ export type ResourceAlert = {
     };
 } & BaseAlert;
 
-export type AlertResourceType = 'UNKNOWN' | 'SECRETS' | 'CONFIGMAPS';
+export type AlertResourceType =
+    | 'UNKNOWN'
+    | 'SECRETS'
+    | 'CONFIGMAPS'
+    | 'CLUSTER_ROLES'
+    | 'CLUSTER_ROLE_BINDINGS'
+    | 'NETWORK_POLICIES'
+    | 'SECURITY_CONTEXT_CONSTRAINTS'
+    | 'EGRESS_FIREWALLS';
 
 export function isDeploymentAlert(alert: Alert): alert is DeploymentAlert {
     return 'deployment' in alert && Boolean(alert.deployment);
@@ -149,7 +157,14 @@ type DeploymentListAlert = {
 
 export type ResourceListAlert = {
     commonEntityInfo: CommonEntityInfo & {
-        resourceType: 'SECRETS' | 'CONFIGMAPS';
+        resourceType:
+            | 'SECRETS'
+            | 'CONFIGMAPS'
+            | 'CLUSTER_ROLES'
+            | 'CLUSTER_ROLE_BINDINGS'
+            | 'NETWORK_POLICIES'
+            | 'SECURITY_CONTEXT_CONSTRAINTS'
+            | 'EGRESS_FIREWALLS';
     };
     resource: {
         name: string;
@@ -169,7 +184,15 @@ export type CommonEntityInfo = {
  * Unlike AlertResourceType this also includes deployment as a type.
  * This must be kept in sync with AlertResourceType (excluding the deployment value).
  */
-export type ListAlertResourceType = 'DEPLOYMENT' | 'SECRETS' | 'CONFIGMAPS';
+export type ListAlertResourceType =
+    | 'DEPLOYMENT'
+    | 'SECRETS'
+    | 'CONFIGMAPS'
+    | 'CLUSTER_ROLES'
+    | 'CLUSTER_ROLE_BINDINGS'
+    | 'NETWORK_POLICIES'
+    | 'SECURITY_CONTEXT_CONSTRAINTS'
+    | 'EGRESS_FIREWALLS';
 
 export type BaseListAlert = {
     id: string;
