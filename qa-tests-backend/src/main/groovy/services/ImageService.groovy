@@ -1,5 +1,6 @@
 package services
 
+import static util.Helpers.evaluateWithRetry
 import static util.Helpers.withRetry
 
 import groovy.util.logging.Slf4j
@@ -35,20 +36,18 @@ class ImageService extends BaseService {
         getImageClient().invalidateScanAndRegistryCaches(EmptyOuterClass.Empty.newBuilder().build())
     }
 
-    static scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
-        try {
-            def req = ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                .setImageName(image)
-                .setIncludeSnoozed(includeSnoozed)
-                .setForce(force)
-                .build()
-            def response
-            withRetry(1, 15) {
-                response = getImageClient().scanImage(req)
-            }
-            return response
-        } catch (Exception e) {
-            log.error("Image failed to scan: ${image}", e)
+    static ImageOuterClass.Image scanImageNoRetry(String image, Boolean includeSnoozed = true, Boolean force = false) {
+        def req = ImageServiceOuterClass.ScanImageRequest.newBuilder()
+            .setImageName(image)
+            .setIncludeSnoozed(includeSnoozed)
+            .setForce(force)
+            .build()
+        return getImageClient().scanImage(req)
+    }
+
+    static ImageOuterClass.Image scanImage(String image, Boolean includeSnoozed = true, Boolean force = false) {
+        return evaluateWithRetry(10, 15) {
+            return scanImageNoRetry(image, includeSnoozed, force)
         }
     }
 

@@ -1,3 +1,5 @@
+import static util.Helpers.evaluateWithRetry
+
 import groovy.transform.CompileStatic
 import orchestratormanager.OrchestratorType
 import org.slf4j.Logger
@@ -225,13 +227,6 @@ class Services extends BaseService {
         return violations == null || violations.isEmpty()
     }
 
-    static scanImage(String image) {
-        return getImageClient().scanImage(
-                ImageServiceOuterClass.ScanImageRequest.newBuilder()
-                        .setImageName(image).build()
-        )
-    }
-
     static String getImageIdByName(String imageName) {
         String id = null
         Timer t = new Timer(10, 1)
@@ -247,20 +242,21 @@ class Services extends BaseService {
 
     static requestBuildImageScan(String registry, String remote, String tag, Boolean sendNotifications = false) {
         LOG.info "Request scan of ${registry}/${remote}:${tag} with sendNotifications=${sendNotifications}"
-        return getDetectionClient().detectBuildTime(
-                BuildDetectionRequest.newBuilder().
-                        setImage(
-                                ContainerImage.newBuilder()
-                                        .setName(ImageOuterClass.ImageName.newBuilder()
-                                                .setRegistry(registry)
-                                                .setRemote(remote)
-                                                .setTag(tag)
-                                                .build()
-                                        )
-                        ).
-                        setSendNotifications(sendNotifications).
-                        build()
-        )
+        return evaluateWithRetry(10, 15) {
+            return getDetectionClient().detectBuildTime(
+                BuildDetectionRequest.newBuilder()
+                    .setImage(ContainerImage.newBuilder()
+                        .setName(ImageOuterClass.ImageName.newBuilder()
+                            .setRegistry(registry)
+                            .setRemote(remote)
+                            .setTag(tag)
+                            .build()
+                        )
+                    )
+                    .setSendNotifications(sendNotifications)
+                    .build()
+            )
+        }
     }
 
     static updatePolicy(Policy policyDef) {
