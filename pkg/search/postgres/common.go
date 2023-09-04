@@ -325,8 +325,12 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-func standardizeQueryAndPopulatePath(q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
+	q, sacErr := enrichQueryWithSACFilter(ctx, q, schema, queryType)
+	if sacErr != nil {
+		return nil, sacErr
+	}
 	standardizeFieldNamesInQuery(q)
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 
@@ -700,7 +704,7 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 		}
 	}()
 
-	query, err = standardizeQueryAndPopulatePath(q, schema, SEARCH)
+	query, err = standardizeQueryAndPopulatePath(ctx, q, schema, SEARCH)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +730,7 @@ func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Quer
 
 // RunCountRequestForSchema executes a request for just the count against the database
 func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (int, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, COUNT)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, COUNT)
 	if err != nil || query == nil {
 		return 0, err
 	}
@@ -749,7 +753,7 @@ type unmarshaler[T any] interface {
 
 // RunGetQueryForSchema executes a request for just the search against the database
 func RunGetQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -778,7 +782,7 @@ func retryableRunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Con
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
 func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, err
 	}
@@ -794,7 +798,7 @@ func RunGetManyQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sch
 
 // RunCursorQueryForSchema creates a cursor against the database
 func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
-	query, err := standardizeQueryAndPopulatePath(q, schema, GET)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "error creating query")
 	}
@@ -842,7 +846,7 @@ func RunCursorQueryForSchema[T any, PT unmarshaler[T]](ctx context.Context, sche
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
 func RunDeleteRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) error {
-	query, err := standardizeQueryAndPopulatePath(q, schema, DELETE)
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, DELETE)
 	if err != nil || query == nil {
 		return err
 	}

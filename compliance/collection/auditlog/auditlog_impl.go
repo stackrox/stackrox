@@ -25,10 +25,24 @@ var (
 	stagesAllowList = set.NewFrozenStringSet("ResponseComplete", "Panic")
 
 	// resourceTypesAllowList is set of resources that will be sent.
-	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps")
+	resourceTypesAllowList = set.NewFrozenStringSet("secrets", "configmaps", "clusterrolebindings", "clusterroles", "networkpolicies", "securitycontextconstraints", "egressfirewalls")
 
 	// verbsDenyList is the set of verbs that will NOT be sent if encountered.
 	verbsDenyList = set.NewFrozenStringSet("WATCH", "LIST")
+
+	// verbsDenyListWithGet is the set of verbs that will NOT be sent if encountered.
+	verbsDenyListWithGet = set.NewFrozenStringSet("WATCH", "LIST", "GET")
+
+	// verbsDenyListPerResource is the set of verbs that will NOT be sent if encountered.
+	verbsDenyListPerResource = map[string]set.FrozenStringSet{
+		"secrets":                    verbsDenyList,
+		"configmaps":                 verbsDenyList,
+		"clusterrolebindings":        verbsDenyListWithGet,
+		"clusterroles":               verbsDenyListWithGet,
+		"networkpolicies":            verbsDenyListWithGet,
+		"securitycontextconstraints": verbsDenyListWithGet,
+		"egressfirewalls":            verbsDenyListWithGet,
+	}
 )
 
 type auditLogReaderImpl struct {
@@ -146,7 +160,7 @@ func (s *auditLogReaderImpl) shouldSendEvent(event *auditEvent, eventTS *types.T
 	// and when verb is not disallowed
 	return stagesAllowList.Contains(event.Stage) &&
 		resourceTypesAllowList.Contains(event.ObjectRef.Resource) &&
-		!verbsDenyList.Contains(strings.ToUpper(event.Verb))
+		!verbsDenyListPerResource[event.ObjectRef.Resource].Contains(strings.ToUpper(event.Verb))
 }
 
 func (s *auditLogReaderImpl) cleanupTailOnStop(tailer *tail.Tail) {

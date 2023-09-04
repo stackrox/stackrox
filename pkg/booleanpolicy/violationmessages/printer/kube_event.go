@@ -82,16 +82,32 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	object := event.GetObject()
 	readableResourceName := strings.ToLower(object.Resource.String())
 
+	var singularResourceName string
+	if strings.HasSuffix(readableResourceName, "ies") {
+		singularResourceName = strings.TrimSuffix(readableResourceName, "ies")
+		singularResourceName = fmt.Sprintf("%sy", singularResourceName)
+	} else {
+		singularResourceName = strings.TrimSuffix(readableResourceName, "s")
+	}
+	singularResourceName = strings.ReplaceAll(singularResourceName, "_", " ")
+	readableResourceName = strings.ReplaceAll(readableResourceName, "_", " ")
+
+	var header string
 	if object.GetName() == "" {
-		return fmt.Sprintf("Access to %s in \"%s\"",
-			readableResourceName,
-			object.GetNamespace())
+		header = fmt.Sprintf("Access to %s", readableResourceName)
+		if object.GetNamespace() != "" {
+			header = fmt.Sprintf("%s in namespace \"%s\"", header, object.GetNamespace())
+
+		}
+		return header
 	}
 
-	return fmt.Sprintf("Access to %s \"%s\" in \"%s\"",
-		strings.TrimSuffix(readableResourceName, "s"), // resources are plural but that's incorrect for non-list/watch verbs. Need to change when l10n happens
-		object.GetName(),
-		object.GetNamespace())
+	header = fmt.Sprintf("Access to %s \"%s\"", singularResourceName, object.GetName())
+	if object.GetNamespace() != "" {
+		header = fmt.Sprintf("%s in namespace \"%s\"", header, object.GetNamespace())
+
+	}
+	return header
 }
 
 func getDefaultViolationMsgViolationAttr(event *storage.KubernetesEvent, options *attributeOptions) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {

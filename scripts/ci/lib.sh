@@ -119,10 +119,7 @@ setup_deployment_env() {
         ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
-    REPO=rhacs-eng
-    ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-    ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
-    ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+    ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
 }
 
 get_central_debug_dump() {
@@ -271,6 +268,69 @@ push_main_image_set() {
                 _push_main_image_set "$registry" "latest-${arch}"
             fi
         fi
+    done
+}
+
+push_scanner_image_manifest_lists() {
+    info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_scanner_image_manifest_lists <architectures (CSV)>"
+    fi
+
+    local architectures="$1"
+    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make --quiet --no-print-directory -C scanner tag)"
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+        for image in "${scanner_image_set[@]}"; do
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
+        done
+    done
+}
+
+push_scanner_image_set() {
+    info "Pushing scanner-v4 and scanner-v4-db images"
+
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: push_scanner_image_set <arch>"
+    fi
+
+    local arch="$1"
+
+    local scanner_image_set=("scanner-v4" "scanner-v4-db")
+
+    _push_scanner_image_set() {
+        local registry="$1"
+        local tag="$2"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker push "${registry}/${image}:${tag}" | cat
+        done
+    }
+
+    _tag_scanner_image_set() {
+        local local_tag="$1"
+        local registry="$2"
+        local remote_tag="$3"
+
+        for image in "${scanner_image_set[@]}"; do
+            docker tag "stackrox/${image}:${local_tag}" "${registry}/${image}:${remote_tag}"
+        done
+    }
+
+    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
+
+    local tag
+    tag="$(make --quiet --no-print-directory -C scanner tag)"
+    for registry in "${registries[@]}"; do
+        registry_rw_login "$registry"
+
+        _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
+        _push_scanner_image_set "$registry" "$tag-$arch"
     done
 }
 
@@ -1056,7 +1116,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.10/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.11/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \

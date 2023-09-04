@@ -199,8 +199,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
-	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
-	ctx := authn.ContextWithIdentity(sac.WithNoAccess(context.Background()), mockID, s.T())
+	ctx := context.Background()
 
 	s.Run("when managed central", func() {
 		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")

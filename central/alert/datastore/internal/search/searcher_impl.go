@@ -11,15 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	alertPostgresSACSearchHelper = sac.ForResource(resources.Alert).MustCreatePgSearchHelper()
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -128,8 +124,7 @@ func convertAlert(alert *storage.ListAlert, result search.Result) *v1.SearchResu
 ///////////////////////////////////////////////
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	filteredSearcher := alertPostgresSACSearchHelper.FilteredSearcher(searcher)
-	withDefaultViolationState := withDefaultActiveViolations(filteredSearcher)
+	withDefaultViolationState := withDefaultActiveViolations(searcher)
 	return withDefaultViolationState
 }
 
