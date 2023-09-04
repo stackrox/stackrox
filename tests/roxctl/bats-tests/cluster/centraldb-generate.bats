@@ -57,7 +57,6 @@ assert_essential_files() {
   assert_file_exist "${output_dir}/central/01-central-12-central-db.yaml"
   if [ "${cluster_type}" = "openshift" ]; then
     assert_file_exist "${output_dir}/central/01-central-02-db-security.yaml"
-    run -0 grep -q "kind: SecurityContextConstraints" "${output_dir}/central/01-central-02-db-security.yaml"
   fi
 }
 

@@ -75,7 +75,7 @@ tests:
     verifyNodeAffinities(.deployments["central"])
     envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
 
-- name: "central with OpenShift 4 and disabled SCCs"
+- name: "central with OpenShift 4 and no SCCs"
   server:
     visibleSchemas:
     - openshift-4.1.0
@@ -85,9 +85,6 @@ tests:
     env:
       openshift: 4
   expect: |
-    .roles["use-central-scc"] | assertThat(. != null)
-    .rolebindings["central-use-scc"] | assertThat(. != null)
-    .securitycontextconstraints["stackrox-central"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)
