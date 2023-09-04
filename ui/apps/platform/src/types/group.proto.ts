@@ -1,3 +1,5 @@
+import { Traits } from './traits.proto';
+
 export type Group = {
     // GroupProperties define the properties of a group, applying to users when their properties match.
     // They also uniquely identify the group with the props.id field.
@@ -5,6 +7,8 @@ export type Group = {
 
     // This is the name of the role that will apply to users in this group.
     roleName: string;
+
+    traits?: Traits;
 };
 
 // GroupProperties defines the properties of a group.
@@ -20,14 +24,4 @@ export type GroupProperties = {
     authProviderId: string;
     key: string;
     value: string;
-};
-
-export type GetDefaultGroupRequest = {
-    authProviderId: string;
-    roleName: string;
-};
-
-export type GroupBatchUpdateRequest = {
-    previousGroups: Group[];
-    requiredGroups: Group[];
 };
