@@ -102,7 +102,7 @@ class DiagnosticBundleTest extends BaseSpecification {
             headers.put("Authorization", "Bearer " + token)
         }
 
-        def response = evaluateWithRetry(10, 10) {
+        def response = evaluateWithRetry(10, 10, true) {
             return given()
                 .config(RestAssured.config()
                     .httpClient(HttpClientConfig.httpClientConfig()

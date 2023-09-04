@@ -15,36 +15,47 @@ import org.spockframework.runtime.SpockAssertionError
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 @Slf4j
 class Helpers {
-    static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, Boolean withStackTrace=false, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
             } catch (Exception | PowerAssertionError | SpockAssertionError t) {
                 log.debug("Caught exception. Retrying in ${pauseSecs}s (attempt ${i} of ${retries}): " + t)
+                if (withStackTrace) {
+                    log.debug(t.getStackTrace())
+                }
             }
             sleep pauseSecs * 1000
         }
         return closure()
     }
 
-    static <V> void withRetry(int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithRetry(retries, pauseSecs, closure)
+    static <V> void withRetry(int retries, int pauseSecs, Boolean withStackTrace=false, Closure<V> closure) {
+        evaluateWithRetry(retries, pauseSecs, withStackTrace, closure)
     }
 
-    static <V> V evaluateWithK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
+    static <V> V evaluateWithK8sClientRetry(
+        int retries,
+        int pauseSecs,
+        Boolean withStackTrace=false,
+        Closure<V> closure
+    ) {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
             } catch (io.fabric8.kubernetes.client.KubernetesClientException t) {
                 log.debug("Caught k8 client exception. Retrying in ${pauseSecs}s", t)
+                if (withStackTrace) {
+                    log.debug(t.getStackTrace())
+                }
             }
             sleep pauseSecs * 1000
         }
         return closure()
     }
 
-    static <V> void withK8sClientRetry(int retries, int pauseSecs, Closure<V> closure) {
-        evaluateWithK8sClientRetry(retries, pauseSecs, closure)
+    static <V> void withK8sClientRetry(int retries, int pauseSecs, Boolean withStackTrace=false, Closure<V> closure) {
+        evaluateWithK8sClientRetry(retries, pauseSecs, withStackTrace, closure)
     }
 
     static boolean waitForTrue(int retries, int intervalSeconds, Closure closure) {
