@@ -61,7 +61,7 @@ tests:
     .rolebindings["stackrox-central-psp"] | assertThat(. == null)
     .clusterroles["stackrox-central-psp"] | assertThat(. == null)
 
-- name: "central with OpenShift 3 and enabled SCCs"
+- name: "central with OpenShift 3 and no custom SCCs"
   server:
     visibleSchemas:
     - openshift-3.11.0
@@ -71,9 +71,6 @@ tests:
     env:
       openshift: 3
   expect: |
-    .securitycontextconstraints["stackrox-central"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:central"))
-    .roles["use-central-scc"] | assertThat(. == null)
-    .rolebindings["central-use-scc"] | assertThat(. == null)
     .deployments["central"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     verifyNodeAffinities(.deployments["central"])
     envVars(.deployments.central; "central") | assertThat(has("ROX_OPENSHIFT") == true)

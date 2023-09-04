@@ -95,7 +95,7 @@ tests:
     .secrets["scanner-tls"].stringData | assertThat(.["cert.pem"] | length == 0)
     .secrets["scanner-db-tls"].stringData | assertThat(.["key.pem"] | length == 0)
 
-- name: "scanner with OpenShift 3 and enabled SCCs"
+- name: "scanner with OpenShift 3 and no custom SCCs"
   server:
     visibleSchemas:
     - openshift-3.11.0
@@ -105,9 +105,6 @@ tests:
     env:
       openshift: 3
   expect: |
-    .securitycontextconstraints["stackrox-scanner"] | .users[0] | assertThat(contains("system:serviceaccount:stackrox:scanner"))
-    .roles["use-scanner-scc"] | assertThat(. == null)
-    .rolebindings["scanner-use-scc"] | assertThat(. == null)
     .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["scanner"])
