@@ -360,7 +360,10 @@ func (s *nodeComponentCVEEdgeDatastoreSACTestSuite) run(testName string, f func(
 	for i := range testCases {
 		c := testCases[i]
 		caseSucceeded := s.Run(c.contextKey, func() {
-			s.T().Parallel()
+			// When triggered in parallel,
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			f(c)
 		})
 		if !caseSucceeded {

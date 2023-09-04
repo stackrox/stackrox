@@ -276,7 +276,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) runReadTest(testName string, te
 	for i := range testCases {
 		c := testCases[i]
 		caseSucceeded := s.Run(c.contextKey, func() {
-			s.T().Parallel()
+			// When triggered in parallel,
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			testFunc(c, nodeIDs)
 		})
 		if !caseSucceeded {
@@ -376,7 +379,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) run(testName string, f func(c e
 	for i := range testCases {
 		c := testCases[i]
 		caseSucceeded := s.Run(c.contextKey, func() {
-			s.T().Parallel()
+			// When triggered in parallel,
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
 			f(c)
 		})
 		if !caseSucceeded {
