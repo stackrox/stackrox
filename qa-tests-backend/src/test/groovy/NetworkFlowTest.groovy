@@ -497,25 +497,19 @@ class NetworkFlowTest extends BaseSpecification {
             throw new RuntimeException("Unexpected OrchestratorType")
         }
 
-        expect:
+        when:
+        log.info "Generate initial traffic to the target deployment ${NGINXCONNECTIONTARGET}"
+        def initialResponse = doHTTPGetExpectCode(targetUrl,200)
+        assert initialResponse?.getStatusCode() == 200
+
+        then:
         "Check for edge in network graph"
         withRetry(5, 20) {
-            log.info "Generate traffic to the target deployment ${NGINXCONNECTIONTARGET}"
-            Response response = null
-            Timer t = new Timer(12, 5)
-            while (response?.statusCode() != 200 && t.IsValid()) {
-                try {
-                    log.info "trying ${targetUrl}..."
-                    response = given().get(targetUrl)
-                } catch (Exception e) {
-                    log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
-                }
-            }
+            log.info "Retry traffic to the target deployment ${NGINXCONNECTIONTARGET}"
+            def response = doHTTPGetExpectCode(targetUrl,200)
             assert response?.getStatusCode() == 200
-            log.info response.asString()
 
             log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
-
             // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
             // router-default deployment in openshift-ingress namespace.
             if (ClusterService.isOpenShift4()) {
@@ -557,6 +551,21 @@ class NetworkFlowTest extends BaseSpecification {
             }
             assert edges
         }
+    }
+
+    def doHTTPGetExpectCode(String targetUrl, int code) {
+        Response response = null
+        Timer t = new Timer(12, 5)
+        while (response?.statusCode() != code && t.IsValid()) {
+            try {
+                log.info "Trying HTTP Get to ${targetUrl}..."
+                response = given().get(targetUrl)
+            } catch (Exception e) {
+                log.warn("Failed calling ${targetUrl}. Trying again in 5 sec...", e)
+            }
+        }
+        log.info "Response: " + response.asString()
+        return response
     }
 
     @Tag("NetworkFlowVisualization")
