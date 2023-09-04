@@ -499,14 +499,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         when:
         log.info "Generate initial traffic to the target deployment ${NGINXCONNECTIONTARGET}"
-        def initialResponse = doHTTPGetExpectCode(targetUrl,200)
+        def initialResponse = doHTTPGetExpectCode(targetUrl, 200)
         assert initialResponse?.getStatusCode() == 200
 
         then:
         "Check for edge in network graph"
         withRetry(5, 20) {
             log.info "Retry traffic to the target deployment ${NGINXCONNECTIONTARGET}"
-            def response = doHTTPGetExpectCode(targetUrl,200)
+            def response = doHTTPGetExpectCode(targetUrl, 200)
             assert response?.getStatusCode() == 200
 
             log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
