@@ -131,7 +131,7 @@ func ImageCVECSVHandler() http.HandlerFunc {
 		for _, row := range cveRows {
 			output.addRow(row)
 		}
-		filename := time.Now().Format("image_cve_export_2006_01_02_15_04_05") +".csv"
+		filename := time.Now().Format("image_cve_export_2006_01_02_15_04_05") + ".csv"
 		output.Write(w, filename)
 	}
 }
