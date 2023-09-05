@@ -1,7 +1,6 @@
-import React, { useState, useReducer } from 'react';
+import React, { ReactElement, useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import useDeepCompareEffect from 'use-deep-compare-effect';
-import get from 'lodash/get';
 import {
     Button,
     Dropdown,
@@ -26,7 +25,12 @@ import {
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
+import { SearchCategory } from 'services/SearchService';
+import { RestSearchOption } from 'services/searchOptionsToQuery';
+import { Cluster } from 'types/cluster.proto';
+import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
 
@@ -35,7 +39,17 @@ import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.h
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import AddClusterPrompt from './AddClusterPrompt';
 
-function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOptions }) {
+export type ClustersTablePanelProps = {
+    selectedClusterId: string;
+    setSelectedClusterId: (clusterId: string) => void;
+    searchOptions: SearchCategory[];
+};
+
+function ClustersTablePanel({
+    selectedClusterId,
+    setSelectedClusterId,
+    searchOptions,
+}: ClustersTablePanelProps): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
@@ -47,7 +61,9 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
-        element.focus();
+        if (element !== null) {
+            element.focus();
+        }
     }
 
     function onSelectInstallMenuItem() {
@@ -59,20 +75,26 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
 
     const { searchFilter: pageSearch } = useURLSearch();
 
-    const [checkedClusterIds, setCheckedClusters] = useState([]);
-    const [upgradableClusters, setUpgradableClusters] = useState([]);
+    const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
+    const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
     const [pollingCount, setPollingCount] = useState(0);
-    const [tableRef, setTableRef] = useState(null);
+    const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [fetchingClusters, setFetchingClusters] = useState(false);
 
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
-    const [currentClusters, setCurrentClusters] = useState([]);
-    const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] = useState({});
+    const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
+    const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
+        useState<ClusterIdToRetentionInfo>({});
 
-    function notificationsReducer(state, action) {
+    type NotificationAction = {
+        type: 'ADD_NOTIFICATION' | 'REMOVE_NOTIFICATION';
+        payload: string;
+    };
+
+    function notificationsReducer(state: string[], action: NotificationAction) {
         switch (action.type) {
             case 'ADD_NOTIFICATION': {
                 return [...state, action.payload];
@@ -125,9 +147,12 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         </DropdownItem>,
     ];
 
-    function refreshClusterList(restSearch) {
+    function refreshClusterList(restSearch?: RestSearchOption[]) {
         setFetchingClusters(true);
-        return fetchClustersWithRetentionInfo(restSearch)
+        // Although return works around typescript-eslint/no-floating-promises error elsewhere,
+        // removed here because it caused the error for callers.
+        // Anyway, catch block would be better.
+        fetchClustersWithRetentionInfo(restSearch)
             .then((clustersResponse) => {
                 setCurrentClusters(clustersResponse.clusters);
                 setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
@@ -165,11 +190,7 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
                 refreshClusterList();
             })
             .catch((error) => {
-                const serverError = get(
-                    error,
-                    'response.data.message',
-                    'An unknown error has occurred.'
-                );
+                const serverError = getAxiosErrorMessage(error);
                 const givenCluster = currentClusters.find((cluster) => cluster.id === id);
                 const clusterName = givenCluster ? givenCluster.name : '-';
                 const payload = `Failed to trigger upgrade for cluster ${clusterName}. Error: ${serverError}`;
@@ -179,8 +200,10 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     }
 
     function upgradeSelectedClusters() {
-        upgradeClusters(checkedClusterIds).then(() => {
-            setCheckedClusters([]);
+        // Although return works around typescript-eslint/no-floating-promises error,
+        // catch block would be better.
+        return upgradeClusters(checkedClusterIds).then(() => {
+            setCheckedClusterIds([]);
 
             refreshClusterList();
         });
@@ -197,9 +220,11 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
     function makeDeleteRequest() {
         deleteClusters(checkedClusterIds)
             .then(() => {
-                setCheckedClusters([]);
+                setCheckedClusterIds([]);
 
-                fetchClustersWithRetentionInfo().then((clustersResponse) => {
+                // Although return works around typescript-eslint/no-floating-promises error,
+                // catch block would be better.
+                return fetchClustersWithRetentionInfo().then((clustersResponse) => {
                     setCurrentClusters(clustersResponse.clusters);
                     setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 });
@@ -273,24 +298,24 @@ function ClustersTablePanel({ selectedClusterId, setSelectedClusterId, searchOpt
         setUpgradableClusters(upgradeableList);
     }
 
-    const onDeleteHandler = (cluster) => (e) => {
+    const onDeleteHandler = (cluster: Cluster) => (e) => {
         e.stopPropagation();
-        setCheckedClusters([cluster.id]);
+        setCheckedClusterIds([cluster.id]);
         setShowDialog(true);
     };
 
     function toggleCluster(id) {
         const selection = toggleRow(id, checkedClusterIds);
-        setCheckedClusters(selection);
+        setCheckedClusterIds(selection);
 
         calculateUpgradeableClusters(selection);
     }
 
     function toggleAllClusters() {
         const rowsLength = checkedClusterIds.length;
-        const ref = tableRef.reactTable;
+        const ref = tableRef?.reactTable;
         const selection = toggleSelectAll(rowsLength, checkedClusterIds, ref);
-        setCheckedClusters(selection);
+        setCheckedClusterIds(selection);
 
         calculateUpgradeableClusters(selection);
     }

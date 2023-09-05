@@ -30,7 +30,7 @@ export function getViewStateFromSearch(
 
 export function filterAllowedSearch(
     allowed: string[] = [],
-    currentSearch: Record<string, string> = {}
+    currentSearch: SearchFilter = {}
 ): Record<string, string> {
     const filtered = Object.keys(currentSearch)
         .filter((key) => allowed.includes(key))
