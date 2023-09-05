@@ -11,11 +11,11 @@ test('should call the passed callback after the specified delay', async () => {
         startTimeout(1000);
     });
 
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
     jest.advanceTimersByTime(500);
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
     jest.advanceTimersByTime(500);
-    expect(callback).toBeCalled();
+    expect(callback).toHaveBeenCalled();
 });
 
 test('should call the passed callback after the specified delay with the specified arguments', async () => {
@@ -28,9 +28,9 @@ test('should call the passed callback after the specified delay with the specifi
         startTimeout(1000, 'arg1', 'arg2');
     });
 
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
     jest.advanceTimersByTime(1000);
-    expect(callback).toBeCalledWith('arg1', 'arg2');
+    expect(callback).toHaveBeenCalledWith('arg1', 'arg2');
 });
 
 test('should cancel the timeout when the component is unmounted', async () => {
@@ -43,10 +43,10 @@ test('should cancel the timeout when the component is unmounted', async () => {
         startTimeout(1000);
     });
 
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
     unmount();
     jest.advanceTimersByTime(1000);
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
 });
 
 test('should cancel the timeout when the returned cleanup function is called', async () => {
@@ -61,7 +61,7 @@ test('should cancel the timeout when the returned cleanup function is called', a
         cancelTimeout();
     });
 
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
     jest.advanceTimersByTime(500);
-    expect(callback).not.toBeCalled();
+    expect(callback).not.toHaveBeenCalled();
 });
