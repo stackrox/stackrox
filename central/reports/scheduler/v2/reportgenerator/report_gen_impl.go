@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/reports/common"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -27,6 +28,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mathutil"
@@ -55,6 +57,7 @@ type reportGeneratorImpl struct {
 	blobStore               blobDS.Datastore
 	clusterDatastore        clusterDS.DataStore
 	namespaceDatastore      namespaceDS.DataStore
+	configDatastore         reportConfigDS.DataStore
 
 	Schema *graphql.Schema
 }
@@ -107,7 +110,14 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData)
+	reportConfig, found, err := rg.configDatastore.GetReportConfiguration(reportGenCtx, req.ReportSnapshot.GetReportConfigurationId())
+	if !found {
+		return errors.Wrapf(errox.NotFound, "Report configuration id %s not found", req.ReportSnapshot.GetReportConfigurationId())
+	}
+	if err != nil {
+		return err
+	}
+	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData, reportConfig.GetName())
 	if err != nil {
 		return err
 	}

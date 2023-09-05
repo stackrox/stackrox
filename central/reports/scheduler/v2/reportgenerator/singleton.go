@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -33,6 +34,8 @@ func initialize() {
 		blobDS.Singleton(),
 		clusterDS.Singleton(),
 		namespaceDS.Singleton(),
+		reportConfigDS.Singleton(),
+
 		schema,
 	)
 }

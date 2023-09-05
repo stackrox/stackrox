@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -34,6 +35,7 @@ var (
 		"Discovered At",
 		"Reference",
 	}
+	log = logging.LoggerForModule()
 )
 
 // ImageVulnerability contains image CVE data for vuln report
@@ -82,7 +84,7 @@ type WatchedImagesResult struct {
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
 // a flag if the report is empty or not
-func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult) (*bytes.Buffer, bool, error) {
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string) (*bytes.Buffer, bool, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
@@ -150,7 +152,12 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
+	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
+	log.Infof("configName %s", configName)
+	if configName != "" {
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_Config_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+	}
+	zipFile, err := zipWriter.Create(reportName)
 	if err != nil {
 		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
 

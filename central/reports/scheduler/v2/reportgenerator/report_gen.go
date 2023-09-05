@@ -6,6 +6,7 @@ import (
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -32,6 +33,7 @@ func New(
 	blobDatastore blobDS.Datastore,
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
+	configDatastore reportConfigDS.DataStore,
 	schema *graphql.Schema,
 ) ReportGenerator {
 	return newReportGeneratorImpl(
@@ -43,6 +45,7 @@ func New(
 		blobDatastore,
 		clusterDatastore,
 		namespaceDatastore,
+		configDatastore,
 		schema,
 	)
 }
@@ -56,6 +59,7 @@ func newReportGeneratorImpl(
 	blobStore blobDS.Datastore,
 	clusterDatastore clusterDS.DataStore,
 	namespaceDatastore namespaceDS.DataStore,
+	configDatastore reportConfigDS.DataStore,
 	schema *graphql.Schema,
 ) *reportGeneratorImpl {
 	return &reportGeneratorImpl{
@@ -67,7 +71,7 @@ func newReportGeneratorImpl(
 		clusterDatastore:        clusterDatastore,
 		namespaceDatastore:      namespaceDatastore,
 		blobStore:               blobStore,
-
-		Schema: schema,
+		configDatastore:         configDatastore,
+		Schema:                  schema,
 	}
 }
