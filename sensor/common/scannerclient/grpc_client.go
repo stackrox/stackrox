@@ -90,11 +90,10 @@ func (i *ImageAnalysis) GetContents() *v4.Contents {
 	return nil
 }
 
-// getScannerEndpoint returns and validate the Scanner gRPC endpoint available
-// in the cluster. If the endpoint is empty or not configured properly (invalid)
-// the value is returned and error will be set.
-func getScannerEndpoint() (string, error) {
-	s := env.ScannerSlimGRPCEndpoint
+// getScannerEndpoint reads and validate the Scanner gRPC endpoint setting. If
+// the endpoint is empty or not configured properly (invalid) the value is
+// returned and error will be set.
+func getScannerEndpoint(s env.Setting) (string, error) {
 	e := s.Setting()
 	if e == "" {
 		return e, errors.Errorf("%s is not set or empty", s.EnvVar())
@@ -126,7 +125,11 @@ func dial(endpoint string, certID mtls.Subject) (*grpc.ClientConn, error) {
 }
 
 // dialV2 connect to scanner V1 gRPC and return a new ScannerClient.
-func dialV2(endpoint string) (ScannerClient, error) {
+func dialV2() (ScannerClient, error) {
+	endpoint, err := getScannerEndpoint(env.ScannerV4GRPCEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	log.Infof("dialing scanner-v2 client: %s", endpoint)
 	conn, err := dial(endpoint, mtls.ScannerSubject)
 	if err != nil {
@@ -139,7 +142,11 @@ func dialV2(endpoint string) (ScannerClient, error) {
 }
 
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
-func dialV4(endpoint string) (ScannerClient, error) {
+func dialV4() (ScannerClient, error) {
+	endpoint, err := getScannerEndpoint(env.ScannerV4GRPCEndpoint)
+	if err != nil {
+		return nil, err
+	}
 	// TODO: [ROX-19050] Set the Scanner V4 certificate here.
 	log.Infof("dialing scanner-v4 client: %s", endpoint)
 	conn, err := dial(endpoint, mtls.ScannerSubject)

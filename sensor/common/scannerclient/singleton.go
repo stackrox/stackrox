@@ -2,7 +2,6 @@ package scannerclient
 
 import (
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -11,7 +10,7 @@ var (
 	once          sync.Once
 	scannerClient ScannerClient
 
-	isScannerV4Enabled = features.ScannerV4.Enabled()
+	isScannerV4Enabled = env.ScannerV4Enabled.BooleanSetting()
 )
 
 // GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
@@ -23,15 +22,11 @@ func GRPCClientSingleton() ScannerClient {
 				env.LocalImageScanningEnabled.EnvVar())
 			return
 		}
-		endpoint, err := getScannerEndpoint()
-		utils.Should(err)
-		if err != nil {
-			return
-		}
+		var err error
 		if isScannerV4Enabled {
-			scannerClient, err = dialV4(endpoint)
+			scannerClient, err = dialV4()
 		} else {
-			scannerClient, err = dialV2(endpoint)
+			scannerClient, err = dialV2()
 		}
 		utils.Should(err)
 	})
