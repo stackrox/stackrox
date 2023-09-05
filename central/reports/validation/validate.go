@@ -20,6 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+const (
+	CustomEmailSubjectMaxLen = 250
+	CustomEmailBodyMaxLen    = 1000
+)
+
 // Use this context only to
 // 1) check if notifiers and collection attached to report config exist
 // 2) Populating notifiers and collection in report snapshot
@@ -121,6 +126,12 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 	}
 	if len(emailConfig.GetMailingLists()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
+	}
+	if len(emailConfig.GetCustomSubject()) > CustomEmailSubjectMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email subject should not be longer than %d characters", CustomEmailSubjectMaxLen)
+	}
+	if len(emailConfig.GetCustomBody()) > CustomEmailBodyMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email body should not be longer than %d characters", CustomEmailBodyMaxLen)
 	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
