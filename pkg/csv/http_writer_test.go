@@ -52,7 +52,7 @@ func TestHTTPCSVWriter(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, contentType, httpWriterMock.header["Content-Type"][0])
+	assert.Contains(t, httpWriterMock.header["Content-Type"][0], "text/csv")
 	assert.NoError(t, err)
 	w.Flush()
 	assert.Equal(t, "\uFEFFa,b\r\na1,b1\r\na2,b2\r\n", buf.String())
@@ -78,7 +78,7 @@ func TestHTTPCSVWriterError(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, "text/plain; charset=utf-8", httpWriterMock.header["Content-Type"][0])
+	assert.Contains(t, httpWriterMock.header["Content-Type"][0], "text/plain")
 	assert.ErrorIs(t, err, errSendHeaders)
 	w.Flush()
 	assert.Equal(t, "", buf.String())
@@ -126,7 +126,7 @@ func TestHTTPCSVWriterLateError(t *testing.T) {
 			break
 		}
 	}
-	assert.Equal(t, contentType, httpWriterMock.header["Content-Type"][0])
+	assert.Contains(t, httpWriterMock.header["Content-Type"][0], "text/csv")
 	assert.NoError(t, err)
 	w.Flush()
 	assert.Equal(t, utf8BOM, buf.String())

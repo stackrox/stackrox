@@ -84,7 +84,7 @@ func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 		})
 	}
 
-	_, _ = w.Write([]byte("\uFEFF")) // UTF-8 BOM.
+	_, _ = w.Write([]byte(utf8BOM))
 	cw := csv.NewWriter(w)
 	cw.UseCRLF = true
 	_ = cw.Write(c.header)

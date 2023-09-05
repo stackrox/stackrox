@@ -15,13 +15,6 @@ var (
 	errSendBody    = errox.ServerError.New("failed to send body")
 )
 
-const (
-	// contentType is the Content-Type HTTP header value.
-	contentType = "text/csv; charset=utf-8"
-	// utf8BOM is the UTF-8 BOM byte sequence.
-	utf8BOM = "\uFEFF"
-)
-
 // Row is type to hold a CSV line.
 type Row = []string
 
