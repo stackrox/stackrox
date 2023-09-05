@@ -1,4 +1,4 @@
-package notifications
+package centralevents
 
 import (
 	"github.com/stackrox/rox/pkg/features"
@@ -11,7 +11,7 @@ var (
 	stream Stream
 )
 
-// Singleton returns an instance of the notification stream.
+// Singleton returns an instance of the Central events stream.
 func Singleton() Stream {
 	if !features.CentralEvents.Enabled() {
 		return nil

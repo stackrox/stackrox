@@ -3,17 +3,15 @@ package logging
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/notifications"
+	"github.com/stackrox/rox/pkg/centralevents"
 	"go.uber.org/zap"
 )
 
-var (
-	_ notifications.LogConverter = (*zapLogConverter)(nil)
-)
+var _ centralevents.LogConverter = (*zapLogConverter)(nil)
 
 type zapLogConverter struct{}
 
-func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.Notification {
+func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.CentralEvent {
 	enc := &stringObjectEncoder{
 		m: make(map[string]string, len(context)),
 	}
@@ -38,35 +36,35 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		}
 	}
 
-	notification := &storage.Notification{
+	event := &storage.CentralEvent{
 		Message:        msg,
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
+		Type:           storage.CentralEventType_CENTRAL_EVENT_TYPE_LOG_MESSAGE,
 		CreatedAt:      timestamp.TimestampNow(),
 		LastOccurredAt: timestamp.TimestampNow(),
 		NumOccurrences: 1,
-		Level:          logLevelToNotificationLevel(level),
+		Level:          logLevelToEventLevel(level),
 	}
 
 	if resourceType != "" {
-		notification.ResourceType = resourceType
-		notification.ResourceId = enc.m[resourceTypeKey]
+		event.ResourceType = resourceType
+		event.ResourceId = enc.m[resourceTypeKey]
 	}
 
-	notification.Domain = notifications.GetDomainFromModule(module)
-	notification.Hint = notifications.GetHint(notification.GetDomain(), resourceType)
+	event.Domain = centralevents.GetDomainFromModule(module)
+	event.Hint = centralevents.GetHint(event.GetDomain(), resourceType)
 
-	return notification
+	return event
 }
 
-func logLevelToNotificationLevel(level string) storage.NotificationLevel {
+func logLevelToEventLevel(level string) storage.CentralEventLevel {
 	switch level {
 	case "info":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_INFO
+		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_INFO
 	case "warn":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_WARN
+		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_WARN
 	case "error":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER
+		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_DANGER
 	default:
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
+		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_UNKNOWN
 	}
 }

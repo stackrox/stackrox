@@ -102,7 +102,7 @@
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
                 "PRODUCT_USAGE",
-                "NOTIFICATIONS"
+                "CENTRAL_LOG_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -204,7 +204,7 @@
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
                 "PRODUCT_USAGE",
-                "NOTIFICATIONS"
+                "CENTRAL_LOG_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -300,7 +300,7 @@
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
                 "PRODUCT_USAGE",
-                "NOTIFICATIONS"
+                "CENTRAL_LOG_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -445,7 +445,7 @@
         "COMPLIANCE_CHECK_RESULTS",
         "BLOB",
         "PRODUCT_USAGE",
-        "NOTIFICATIONS"
+        "CENTRAL_LOG_EVENTS"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 61"

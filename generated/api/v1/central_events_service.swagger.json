@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/notification_service.proto",
+    "title": "api/v1/central_events_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,15 +11,15 @@
     "application/json"
   ],
   "paths": {
-    "/v1/notifications": {
+    "/v1/centralevents": {
       "get": {
-        "summary": "ListNotifications returns the list of notifications after filtered by requested fields.",
-        "operationId": "NotificationService_ListNotifications",
+        "summary": "ListCentralEvents returns the list of events after filtered by requested fields.",
+        "operationId": "CentralEventService_ListCentralEvents",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListNotificationsResponse"
+              "$ref": "#/definitions/v1ListCentralEventsResponse"
             }
           },
           "default": {
@@ -77,7 +77,7 @@
           },
           {
             "name": "filter.from",
-            "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary.",
+            "description": "For filtering events starting from a specific timestamp, i.e. the lower boundary.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -85,7 +85,7 @@
           },
           {
             "name": "filter.until",
-            "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary.",
+            "description": "For filtering events up until a specific timestamp, i.e. the upper boundary.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -93,61 +93,61 @@
           },
           {
             "name": "filter.domain",
-            "description": "For filtering notifications from a specific domain.",
+            "description": "For filtering events from a specific domain.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "filter.resourceType",
-            "description": "For filtering notifications associated with a specific resource type.",
+            "description": "For filtering events associated with a specific resource type.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "filter.notificationType",
-            "description": "For filtering notifications based on their type.",
+            "name": "filter.type",
+            "description": "For filtering events based on their type.",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
-              "NOTIFICATION_TYPE_UNKNOWN",
-              "NOTIFICATION_TYPE_GENERIC",
-              "NOTIFICATION_TYPE_LOG_MESSAGE"
+              "CENTRAL_EVENT_TYPE_UNKNOWN",
+              "CENTRAL_EVENT_TYPE_GENERIC",
+              "CENTRAL_EVENT_TYPE_LOG_MESSAGE"
             ],
-            "default": "NOTIFICATION_TYPE_UNKNOWN"
+            "default": "CENTRAL_EVENT_TYPE_UNKNOWN"
           },
           {
             "name": "filter.level",
-            "description": "For filtering notifications based on their level.",
+            "description": "For filtering events based on their level.",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
-              "NOTIFICATION_LEVEL_UNKNOWN",
-              "NOTIFICATION_LEVEL_INFO",
-              "NOTIFICATION_LEVEL_SUCCESS",
-              "NOTIFICATION_LEVEL_WARN",
-              "NOTIFICATION_LEVEL_DANGER"
+              "CENTRAL_EVENT_LEVEL_UNKNOWN",
+              "CENTRAL_EVENT_LEVEL_INFO",
+              "CENTRAL_EVENT_LEVEL_SUCCESS",
+              "CENTRAL_EVENT_LEVEL_WARN",
+              "CENTRAL_EVENT_LEVEL_DANGER"
             ],
-            "default": "NOTIFICATION_LEVEL_UNKNOWN"
+            "default": "CENTRAL_EVENT_LEVEL_UNKNOWN"
           }
         ],
         "tags": [
-          "NotificationService"
+          "CentralEventService"
         ]
       }
     },
-    "/v1/notifications/{id}": {
+    "/v1/centralevents/{id}": {
       "get": {
-        "summary": "GetNotification retrieves a notification by ID.",
-        "operationId": "NotificationService_GetNotification",
+        "summary": "GetCentralEvent retrieves a event by ID.",
+        "operationId": "CentralEventService_GetCentralEvent",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetNotificationResponse"
+              "$ref": "#/definitions/v1GetCentralEventResponse"
             }
           },
           "default": {
@@ -166,19 +166,19 @@
           }
         ],
         "tags": [
-          "NotificationService"
+          "CentralEventService"
         ]
       }
     },
-    "/v1/notificationscount": {
+    "/v1/centraleventscount": {
       "get": {
-        "summary": "CountNotifications returns the number of notifications after filtered by requested fields.",
-        "operationId": "NotificationService_CountNotifications",
+        "summary": "CountCentralEvents returns the number of events after filtered by requested fields.",
+        "operationId": "CentralEventService_CountCentralEvents",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1CountNotificationsResponse"
+              "$ref": "#/definitions/v1CountCentralEventsResponse"
             }
           },
           "default": {
@@ -191,7 +191,7 @@
         "parameters": [
           {
             "name": "filter.from",
-            "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary.",
+            "description": "For filtering events starting from a specific timestamp, i.e. the lower boundary.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -199,7 +199,7 @@
           },
           {
             "name": "filter.until",
-            "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary.",
+            "description": "For filtering events up until a specific timestamp, i.e. the upper boundary.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -207,49 +207,49 @@
           },
           {
             "name": "filter.domain",
-            "description": "For filtering notifications from a specific domain.",
+            "description": "For filtering events from a specific domain.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "filter.resourceType",
-            "description": "For filtering notifications associated with a specific resource type.",
+            "description": "For filtering events associated with a specific resource type.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "filter.notificationType",
-            "description": "For filtering notifications based on their type.",
+            "name": "filter.type",
+            "description": "For filtering events based on their type.",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
-              "NOTIFICATION_TYPE_UNKNOWN",
-              "NOTIFICATION_TYPE_GENERIC",
-              "NOTIFICATION_TYPE_LOG_MESSAGE"
+              "CENTRAL_EVENT_TYPE_UNKNOWN",
+              "CENTRAL_EVENT_TYPE_GENERIC",
+              "CENTRAL_EVENT_TYPE_LOG_MESSAGE"
             ],
-            "default": "NOTIFICATION_TYPE_UNKNOWN"
+            "default": "CENTRAL_EVENT_TYPE_UNKNOWN"
           },
           {
             "name": "filter.level",
-            "description": "For filtering notifications based on their level.",
+            "description": "For filtering events based on their level.",
             "in": "query",
             "required": false,
             "type": "string",
             "enum": [
-              "NOTIFICATION_LEVEL_UNKNOWN",
-              "NOTIFICATION_LEVEL_INFO",
-              "NOTIFICATION_LEVEL_SUCCESS",
-              "NOTIFICATION_LEVEL_WARN",
-              "NOTIFICATION_LEVEL_DANGER"
+              "CENTRAL_EVENT_LEVEL_UNKNOWN",
+              "CENTRAL_EVENT_LEVEL_INFO",
+              "CENTRAL_EVENT_LEVEL_SUCCESS",
+              "CENTRAL_EVENT_LEVEL_WARN",
+              "CENTRAL_EVENT_LEVEL_DANGER"
             ],
-            "default": "NOTIFICATION_LEVEL_UNKNOWN"
+            "default": "CENTRAL_EVENT_LEVEL_UNKNOWN"
           }
         ],
         "tags": [
-          "NotificationService"
+          "CentralEventService"
         ]
       }
     }
@@ -312,138 +312,138 @@
       ],
       "default": "UNSET"
     },
-    "v1CountNotificationsResponse": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "string",
-          "format": "int64",
-          "description": "The total number of notifications after filtering and deduplication."
-        }
-      }
-    },
-    "v1GetNotificationResponse": {
-      "type": "object",
-      "properties": {
-        "notification": {
-          "$ref": "#/definitions/v1Notification"
-        }
-      }
-    },
-    "v1ListNotificationsResponse": {
-      "type": "object",
-      "properties": {
-        "notifications": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1Notification"
-          }
-        }
-      }
-    },
-    "v1Notification": {
+    "v1CentralEvent": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "UUID of the notification."
+          "description": "UUID of the event."
         },
         "type": {
-          "$ref": "#/definitions/v1NotificationType",
-          "description": "Type of the notification."
+          "$ref": "#/definitions/v1CentralEventType",
+          "description": "Type of the event."
         },
         "level": {
-          "$ref": "#/definitions/v1NotificationLevel",
-          "description": "Level associated with the notification. The level is categorized into danger, warn, info,\nsuccess."
+          "$ref": "#/definitions/v1CentralEventLevel",
+          "description": "Level associated with the event. The level is categorized into danger, warn, info,\nsuccess."
         },
         "message": {
           "type": "string",
-          "description": "Message associated with the notification. The message may include detailed information\nfor this particular notification."
+          "description": "Message associated with the event. The message may include detailed information\nfor this particular event."
         },
         "hint": {
           "type": "string",
-          "description": "Hint associated with the notification. The hint may include different information based\non the type of notification. It can include instructions to resolve a notification, or\ninformational hints."
+          "description": "Hint associated with the event. The hint may include different information based\non the type of event. It can include instructions to resolve a event, or\ninformational hints."
         },
         "domain": {
           "type": "string",
-          "description": "Domain associated with the notification. A notification's domain outlines the feature domain where\nthe notification was created from. As an example, this might be \"Image Scanning\".\nIn case of notifications that cannot be tied to a specific domain, this will be \"General\"."
+          "description": "Domain associated with the event. A event's domain outlines the feature domain where\nthe event was created from. As an example, this might be \"Image Scanning\".\nIn case of events that cannot be tied to a specific domain, this will be \"General\"."
         },
         "resourceType": {
           "type": "string",
-          "description": "Resource type associated with the notification. A notification may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
+          "description": "Resource type associated with the event. A event may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
         },
         "resourceId": {
           "type": "string",
-          "description": "Resource ID associated with the notification. If a notification refers to an underlying resource,\nthe resource ID identifies the underlying resource."
+          "description": "Resource ID associated with the event. If a event refers to an underlying resource,\nthe resource ID identifies the underlying resource."
         },
         "numOccurrences": {
           "type": "string",
           "format": "int64",
-          "description": "Occurrences associated with the notification. Notifications may occur multiple times, the occurrences\nwill track the amount."
+          "description": "Occurrences associated with the event. When events may occur multiple times, the\noccurrences track the amount."
         },
         "lastOccurredAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Specifies the time the notification has last occurred."
+          "description": "Specifies the time when the event has last occurred."
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Specifies the time the notification has been created."
+          "description": "Specifies the time when the event has been created."
         }
       },
-      "description": "Notifications are emitted by Central. They are used to create transparency for users\nfor asynchronous, background tasks.\nCurrently, notifications only cover logs emitted by Central."
+      "description": "CentralEvents are emitted by Central. They are used to create transparency for users\nfor asynchronous, background tasks. events are part of Central's system health view."
     },
-    "v1NotificationLevel": {
+    "v1CentralEventLevel": {
       "type": "string",
       "enum": [
-        "NOTIFICATION_LEVEL_UNKNOWN",
-        "NOTIFICATION_LEVEL_INFO",
-        "NOTIFICATION_LEVEL_SUCCESS",
-        "NOTIFICATION_LEVEL_WARN",
-        "NOTIFICATION_LEVEL_DANGER"
+        "CENTRAL_EVENT_LEVEL_UNKNOWN",
+        "CENTRAL_EVENT_LEVEL_INFO",
+        "CENTRAL_EVENT_LEVEL_SUCCESS",
+        "CENTRAL_EVENT_LEVEL_WARN",
+        "CENTRAL_EVENT_LEVEL_DANGER"
       ],
-      "default": "NOTIFICATION_LEVEL_UNKNOWN",
-      "description": "Notification level exposes the different levels which a notification can have."
+      "default": "CENTRAL_EVENT_LEVEL_UNKNOWN",
+      "description": "CentralEventLevel exposes the different levels of events."
     },
-    "v1NotificationType": {
+    "v1CentralEventType": {
       "type": "string",
       "enum": [
-        "NOTIFICATION_TYPE_UNKNOWN",
-        "NOTIFICATION_TYPE_GENERIC",
-        "NOTIFICATION_TYPE_LOG_MESSAGE"
+        "CENTRAL_EVENT_TYPE_UNKNOWN",
+        "CENTRAL_EVENT_TYPE_GENERIC",
+        "CENTRAL_EVENT_TYPE_LOG_MESSAGE"
       ],
-      "default": "NOTIFICATION_TYPE_UNKNOWN",
-      "description": "Notification type exposes the different types of notifications.\nCurrently, the notification type is either generic or contains a log message."
+      "default": "CENTRAL_EVENT_TYPE_UNKNOWN",
+      "description": "CentralEventType exposes the different types of events."
     },
-    "v1NotificationsFilter": {
+    "v1CentralEventsFilter": {
       "type": "object",
       "properties": {
         "from": {
           "type": "string",
           "format": "date-time",
-          "description": "For filtering notifications starting from a specific timestamp, i.e. the lower boundary."
+          "description": "For filtering events starting from a specific timestamp, i.e. the lower boundary."
         },
         "until": {
           "type": "string",
           "format": "date-time",
-          "description": "For filtering notifications up until a specific timestamp, i.e. the upper boundary."
+          "description": "For filtering events up until a specific timestamp, i.e. the upper boundary."
         },
         "domain": {
           "type": "string",
-          "description": "For filtering notifications from a specific domain."
+          "description": "For filtering events from a specific domain."
         },
         "resourceType": {
           "type": "string",
-          "description": "For filtering notifications associated with a specific resource type."
+          "description": "For filtering events associated with a specific resource type."
         },
-        "notificationType": {
-          "$ref": "#/definitions/v1NotificationType",
-          "description": "For filtering notifications based on their type."
+        "type": {
+          "$ref": "#/definitions/v1CentralEventType",
+          "description": "For filtering events based on their type."
         },
         "level": {
-          "$ref": "#/definitions/v1NotificationLevel",
-          "description": "For filtering notifications based on their level."
+          "$ref": "#/definitions/v1CentralEventLevel",
+          "description": "For filtering events based on their level."
+        }
+      }
+    },
+    "v1CountCentralEventsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "The total number of events after filtering and deduplication."
+        }
+      }
+    },
+    "v1GetCentralEventResponse": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/v1CentralEvent"
+        }
+      }
+    },
+    "v1ListCentralEventsResponse": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1CentralEvent"
+          }
         }
       }
     },

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+// CentralEvent is the storage representation of events in Central.
+//
+// Refer to v1.CentralEvent for a more detailed doc.
+message CentralEvent {
+    // The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
+    // resource_type, resource_id, message). It is used for deduplication of events.
+    string id                                  = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    CentralEventType type                      = 2 [(gogoproto.moretags) = 'search:"Event Type,hidden"'];
+    CentralEventLevel level                    = 3 [(gogoproto.moretags) = 'search:"Event Level,hidden"'];
+    string message                             = 4;
+    string hint                                = 5;
+    string domain                              = 6 [(gogoproto.moretags) = 'search:"Event Domain,hidden"'];
+    string resource_type                       = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
+    string resource_id                         = 8;
+    int64 num_occurrences                      = 9;
+    google.protobuf.Timestamp last_occurred_at = 10 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
+    google.protobuf.Timestamp created_at       = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+}
+
+// CentralEventType is the storage representation of the Central event type.
+//
+// Refer to v1.CentralEventType for a more detailed doc.
+enum CentralEventType {
+    CENTRAL_EVENT_TYPE_UNKNOWN     = 0;
+    CENTRAL_EVENT_TYPE_GENERIC     = 1;
+    CENTRAL_EVENT_TYPE_LOG_MESSAGE = 2;
+}
+
+// CentralEventLevel is the storage representation of the Central event level.
+//
+// Refer to v1.CentralEventLevel for a more detailed doc.
+enum CentralEventLevel {
+    CENTRAL_EVENT_LEVEL_UNKNOWN = 0;
+    CENTRAL_EVENT_LEVEL_INFO    = 1;
+    CENTRAL_EVENT_LEVEL_SUCCESS = 2;
+    CENTRAL_EVENT_LEVEL_WARN    = 3;
+    CENTRAL_EVENT_LEVEL_DANGER  = 4;
+}

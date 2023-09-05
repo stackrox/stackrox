@@ -69,7 +69,7 @@ enum SearchCategory {
     COMPLIANCE_CHECK_RESULTS  = 57;
     BLOB                      = 58;
     PRODUCT_USAGE             = 59;
-    NOTIFICATIONS             = 60;
+    CENTRAL_EVENTS            = 60;
 }
 
 enum SearchDataType {
