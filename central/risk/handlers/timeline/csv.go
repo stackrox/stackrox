@@ -276,6 +276,6 @@ func CSVHandler() http.HandlerFunc {
 		for i := range dataRows {
 			output.addRow(&dataRows[i])
 		}
-		output.Write(w, "events_export")
+		output.Write(w, "events_export.csv")
 	}
 }
