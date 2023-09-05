@@ -1,7 +1,6 @@
 package csv
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
