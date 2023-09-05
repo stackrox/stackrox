@@ -15,6 +15,7 @@ import (
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -33,7 +34,7 @@ var (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.Authenticated(): {
+		user.WithRole(accesscontrol.Admin): {
 			"/central.DevelopmentService/ReplicateImage",
 			"/central.DevelopmentService/URLHasValidCert",
 			"/central.DevelopmentService/RandomData",
