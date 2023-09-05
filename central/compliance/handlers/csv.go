@@ -123,7 +123,7 @@ func CSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		options, err := parseOptions(r)
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteErrorWithCode(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -134,7 +134,7 @@ func CSVHandler() http.HandlerFunc {
 			var unsupported []string
 			options.standardIDs, unsupported = standards.FilterSupported(options.standardIDs)
 			if len(unsupported) > 0 {
-				csv.WriteError(w, http.StatusBadRequest, standards.UnSupportedStandardsErr(unsupported...))
+				csv.WriteError(w, standards.UnSupportedStandardsErr(unsupported...))
 				return
 			}
 		}
@@ -142,7 +142,7 @@ func CSVHandler() http.HandlerFunc {
 		if len(options.clusterIDs) == 0 {
 			clusterIDs, err := getClusterIDs(r.Context())
 			if err != nil {
-				csv.WriteError(w, http.StatusInternalServerError, err)
+				csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
 				return
 			}
 			options.clusterIDs = clusterIDs
@@ -150,7 +150,7 @@ func CSVHandler() http.HandlerFunc {
 
 		data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
 			return
 		}
 		validResults, _ := datastore.ValidResultsAndSources(data)
