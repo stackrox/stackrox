@@ -1,6 +1,7 @@
 package csv
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -20,7 +21,7 @@ func WriteError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), errors.ErrToHTTPStatus(err))
 }
 
-// WriteHeaders sets appropriate HTTP headers for CSV response.
+// writeHeaders sets appropriate HTTP headers for CSV response.
 func writeHeaders(w http.ResponseWriter, filename string) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
