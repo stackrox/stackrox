@@ -175,6 +175,7 @@ $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, too
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v4, tools)
 $(call go-tool, OPERATOR_SDK, github.com/operator-framework/operator-sdk/cmd/operator-sdk, tools)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools)
+$(call go-tool, YQ, github.com/mikefarah/yq/v4, tools)
 
 OPERATOR_SDK_VERSION = $(shell cd tools; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
 
@@ -192,6 +193,9 @@ operator-sdk: $(OPERATOR_SDK) ## Download operator-sdk necessary for scaffolding
 
 .PHONY: kuttl
 kuttl: $(KUTTL) ## Download kuttl.
+
+.PHONY: yq
+yq: $(YQ) ## Download yq.
 
 ##@ Development
 
@@ -230,8 +234,8 @@ test-integration: manifests generate envtest ## Run go integration tests
 
 .PHONY: validate-crs
 CRDS := centrals.platform.stackrox.io securedclusters.platform.stackrox.io
-validate-crs:
-	./tests/scripts/validate-crs.sh ./tests $(CRDS)
+validate-crs: yq
+	YQ=$(YQ) ./tests/scripts/validate-crs.sh ./tests $(CRDS)
 
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
@@ -436,7 +440,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`
@@ -445,7 +449,7 @@ index-build: bundle-post-process ## Build Index (a.k.a. Catalog) image with the 
 # the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
 	$(SILENT)set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
-	./hack/build-index-image.sh \
+	YQ=$(YQ) ./hack/build-index-image.sh \
 		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
 		--index-tag "$(INDEX_IMG)" \
 		--bundle-tag "$(BUNDLE_IMG)" \
