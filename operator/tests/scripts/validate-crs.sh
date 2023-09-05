@@ -3,6 +3,7 @@
 set -euo pipefail
 FAILED=0
 CRS_VALIDATED=0
+YQ="${YQ:-yq}"
 
 die() {
     echo "$@" >&2
@@ -40,13 +41,8 @@ CRS=$(
 
 # Validate CRs.
 for cr in $CRS; do
-    if grep -q '^apiVersion: kuttl.dev/' "${cr}"; then
-        # TODO(ROX-19283): make it possible to validate these files somehow.
-        echo "Skipping ${cr} since it contains kuttl CR(s)."
-        continue
-    fi
-    echo -n "Validating custom resource $cr with kubectl... "
-    if output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1); then
+    echo -n "Validating stackrox custom resources in $cr with kubectl... "
+    if output=$("${YQ}" eval '. | select(.apiVersion | test("^platform.stackrox.io/"))' "$cr" | kubectl apply --dry-run=client --validate=true -f - 2>&1); then
         echo PASSED
     else
         FAILED=1
