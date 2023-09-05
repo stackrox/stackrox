@@ -119,10 +119,7 @@ setup_deployment_env() {
         ci_export MAIN_IMAGE_TAG "$(make --quiet --no-print-directory tag)"
     fi
 
-    REPO=rhacs-eng
-    ci_export MAIN_IMAGE_REPO "quay.io/$REPO/main"
-    ci_export CENTRAL_DB_IMAGE_REPO "quay.io/$REPO/central-db"
-    ci_export COLLECTOR_IMAGE_REPO "quay.io/$REPO/collector"
+    ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
 }
 
 get_central_debug_dump() {
@@ -1119,7 +1116,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.10/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.11/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \

@@ -124,8 +124,8 @@ func (u *updaterImpl) collectInfoAndSendResponse() bool {
 
 func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInfo {
 	var err error
-	var ns string
-	if u.complianceOperatorNS == "" {
+	ns := u.complianceOperatorNS
+	if ns == "" {
 		ns, err = u.getComplianceOperatorNamespace()
 		if err != nil {
 			return &central.ComplianceOperatorInfo{
@@ -152,7 +152,7 @@ func (u *updaterImpl) getComplianceOperatorInfo() *central.ComplianceOperatorInf
 
 	var version string
 	for key, val := range complianceOperator.Labels {
-		if strings.Contains(key, "owner") {
+		if strings.HasSuffix(key, "owner") {
 			version = strings.TrimPrefix(val, complianceoperator.Name+".")
 		}
 	}

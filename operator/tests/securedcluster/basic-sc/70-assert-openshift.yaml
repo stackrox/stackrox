@@ -1,3 +1,10 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
 # The central CR and its operands are gone in previous step.
 # However, the SecuredCluster reconciler should notice Central disappearing and
 # create a local scanner now that the central scanner is gone.

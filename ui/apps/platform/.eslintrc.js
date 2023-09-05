@@ -108,7 +108,7 @@ const commonReactRules = {
             ignoreDOMComponents: true,
         },
     ],
-    // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
+    // Neither require nor forbid destructuring assignment for props, state, context.
     'react/destructuring-assignment': 'off',
     // forbid 'data-test-id' in preference of 'data-testid'
     'react/forbid-dom-props': [
@@ -224,6 +224,8 @@ module.exports = {
             plugins: ['@typescript-eslint', 'prettier'],
             extends: [
                 'react-app',
+                // 'eslint:recommended',
+                // 'plugin:eslint-comments/recommended',
                 'plugin:react/recommended',
                 'plugin:@typescript-eslint/recommended',
                 'plugin:@typescript-eslint/recommended-requiring-type-checking',
@@ -255,6 +257,7 @@ module.exports = {
                 'plugin:import/warnings',
                 'plugin:import/typescript',
                 'plugin:jest/recommended',
+                // 'plugin:jest-dom/recommended',
                 'plugin:react/recommended',
                 'prettier',
                 'prettier/react',
@@ -276,6 +279,7 @@ module.exports = {
                 'react-app',
                 'plugin:testing-library/react',
                 'plugin:jest/recommended',
+                // 'plugin:jest-dom/recommended',
                 'plugin:react/recommended',
                 'plugin:@typescript-eslint/recommended',
                 'plugin:@typescript-eslint/recommended-requiring-type-checking',

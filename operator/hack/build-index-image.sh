@@ -5,7 +5,6 @@ set -eou pipefail
 
 # Global script variables
 OPM_VERSION="1.21.0"
-YQ_VERSION="4.24.2"
 
 function usage() {
   echo "
@@ -98,20 +97,20 @@ function fetch_opm() {
   "${SCRIPT_DIR}/get-github-release.sh" --to "${OPM}" --from "https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/${os_name}-${arch}-opm"
 }
 
-YQ="yq"
 function fetch_yq() {
   local -r os_name=$(uname | tr '[:upper:]' '[:lower:]') || true
   local -r arch=$(go env GOARCH) || true
+  local -r yq_version=$(cd "${SCRIPT_DIR}/../tools/" && go list -m github.com/mikefarah/yq/v4 | awk '{print substr($2,2)}')
 
-  YQ="${BASE_DIR}/bin/yq-${YQ_VERSION}"
-  "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_${os_name}_${arch}"
+  YQ="${BASE_DIR}/bin/yq-${yq_version}"
+  "${SCRIPT_DIR}/get-github-release.sh" --to "${YQ}" --from "https://github.com/mikefarah/yq/releases/download/v${yq_version}/yq_${os_name}_${arch}"
 }
 
 # Script body
 read_arguments "$@"
 validate_arguments
 fetch_opm
-fetch_yq
+if [[ -z ${YQ:-} ]]; then fetch_yq; fi
 
 if [[ "${CLEAN_OUTPUT_DIR}" = "true" ]]; then
   rm -rf "${BASE_DIR}/build/index"
