@@ -109,7 +109,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         >
                             <SelectOption value={runStates.PREPARING}>Preparing</SelectOption>
                             <SelectOption value={runStates.WAITING}>Waiting</SelectOption>
-                            <SelectOption value={runStates.SUCCESS}>Successful</SelectOption>
+                            <SelectOption value={runStates.GENERATED}>
+                                Download generated
+                            </SelectOption>
+                            <SelectOption value={runStates.DELIVERED}>Email delivered</SelectOption>
                             <SelectOption value={runStates.FAILURE}>Error</SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
@@ -228,9 +231,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const formValues =
                             getReportFormValuesFromConfiguration(reportConfiguration);
                         const hasDownloadableReport =
-                            isDownloadAvailable &&
-                            reportStatus.runState === 'SUCCESS' &&
-                            reportStatus.reportNotificationMethod === 'DOWNLOAD';
+                            isDownloadAvailable && reportStatus.runState === 'GENERATED';
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                         function onDownload() {
