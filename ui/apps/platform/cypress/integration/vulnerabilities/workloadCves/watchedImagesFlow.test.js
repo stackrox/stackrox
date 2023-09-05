@@ -39,4 +39,24 @@ describe('Workload CVE watched images flow', () => {
             // TODO - Test that the image appears with a "Watched image" label in the table
         });
     });
+
+    it('should allow management of watched images via the overview page header button', () => {
+        visitWorkloadCveOverview();
+
+        selectEntityTab('Image');
+
+        cy.get(selectors.manageWatchedImagesButton).click();
+
+        // TODO - Test that the image name input is empty
+
+        // TODO - Test for ability to add an image to the watch list by typing the name
+
+        // TODO - Test that the image appears in the table with a "Watched image" label
+
+        // TODO - Test for ability to remove images from the watch list
+
+        // TODO - Test that the image appears in the table without a "Watched image" label
+
+        // TODO - Test that the image is no longer visible in the modal
+    });
 });
