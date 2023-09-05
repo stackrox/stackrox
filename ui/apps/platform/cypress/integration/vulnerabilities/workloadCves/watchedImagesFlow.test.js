@@ -32,7 +32,7 @@ describe('Workload CVE watched images flow', () => {
             cy.get('button:contains("Watch image")').click();
 
             // Verify that the selected image is pre-populated in the modal
-            cy.get(`*[role="dialog"] *:contains("${fullName}")`);
+            cy.get(`${selectors.addWatchedImageNameInput}[value="${fullName}"]`);
 
             // TODO - Test for ability to add the selected image to the watch list
 
