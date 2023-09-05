@@ -49,4 +49,3 @@ operator/**/* @stackrox/draco
 /SCANNER_VERSION                                      @stackrox/scanner
 
 ui/**/* @stackrox/ui
-
