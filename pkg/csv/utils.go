@@ -30,6 +30,7 @@ func WriteError(w http.ResponseWriter, err error) {
 func writeHeaders(w http.ResponseWriter, filename string) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	w.WriteHeader(http.StatusOK)
 }
 
 // FromTimestamp creates a string representation of the given timestamp.
