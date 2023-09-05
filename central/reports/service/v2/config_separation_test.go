@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
+	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
@@ -36,6 +37,7 @@ type ServiceLevelConfigSeparationSuiteV2 struct {
 	notifierDatastore     notifierDS.DataStore
 	collectionDatastore   collectionDS.DataStore
 	scheduler             *schedulerMocks.MockScheduler
+	snapshotDS            snapshotDS.DataStore
 
 	mockCtrl *gomock.Controller
 
@@ -53,6 +55,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	s.reportConfigDatastore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.notifierDatastore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.snapshotDS = snapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 
 	var err error
 	s.collectionDatastore, _, err = collectionDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
@@ -67,6 +70,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) SetupSuite() {
 		collectionDatastore: s.collectionDatastore,
 		notifierDatastore:   s.notifierDatastore,
 		scheduler:           s.scheduler,
+		snapshotDatastore:   s.snapshotDS,
 		validator:           validator,
 	}
 
