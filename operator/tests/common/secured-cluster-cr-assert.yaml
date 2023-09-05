@@ -7,6 +7,8 @@ collectors:
 - type: pod
   selector: app=admission-control
   tail: -1
+- command: kubectl describe pod -n $NAMESPACE -l app=sensor
+- command: kubectl describe pod -n $NAMESPACE -l app=admission-control
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster

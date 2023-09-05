@@ -10,7 +10,7 @@ from common import popen_graceful_kill
 
 
 class BaseTest:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.test_outputs = []
 
     def run_with_graceful_kill(self, args, timeout, post_start_hook=None):
@@ -67,14 +67,27 @@ class UpgradeTest(BaseTest):
 
 
 class OperatorE2eTest(BaseTest):
-    TEST_TIMEOUT = 60 * 60 * 2
+    OLM_SETUP_TIMEOUT_SEC = 60 * 10
+    TEST_TIMEOUT_SEC = 60 * 60 * 2
+    OPERATOR_CLUSTER_TYPE_OPENSHIFT4 = "openshift4"
+
+    def __init__(self, *args, **kwargs):
+        super(OperatorE2eTest, self).__init__(*args, **kwargs)
+        self._operator_cluster_type = kwargs.get(
+            "operator_cluster_type", OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4)
 
     def run(self):
-        print("Executing operator e2e tests")
+        if self._operator_cluster_type != OperatorE2eTest.OPERATOR_CLUSTER_TYPE_OPENSHIFT4:
+            print("Running on cluster type %s, installing OLM" % self._operator_cluster_type)
+            self.run_with_graceful_kill(
+                ["make", "-C", "operator", "olm-install"],
+                OperatorE2eTest.TEST_TIMEOUT_SEC,
+            )
 
+        print("Executing operator e2e tests")
         self.run_with_graceful_kill(
             ["operator/tests/run.sh"],
-            OperatorE2eTest.TEST_TIMEOUT,
+            OperatorE2eTest.TEST_TIMEOUT_SEC,
         )
 
 
