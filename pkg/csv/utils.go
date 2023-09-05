@@ -7,15 +7,22 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 )
 
 // Utility functions to be used for CSV exporting.
 
-// WriteError Writes the given error to the given http.ResponseWriter.
-func WriteError(w http.ResponseWriter, code int, err error) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-	_, _ = fmt.Fprint(w, err)
+// WriteError responds with the error message and HTTP status code deduced from
+// the error class. Appropriate response headers are set.
+func WriteError(w http.ResponseWriter, err error) {
+	WriteErrorWithCode(w, errors.ErrToHTTPStatus(err), err)
+}
+
+// WriteErrorWithCode is similar to WriteError but uses the provided HTTP status
+// code. If err is a known internal error, use WriteError to ensure consistency
+// of HTTP status codes.
+func WriteErrorWithCode(w http.ResponseWriter, code int, err error) {
+	http.Error(w, err.Error(), code)
 }
 
 // FromTimestamp creates a string representation of the given timestamp.

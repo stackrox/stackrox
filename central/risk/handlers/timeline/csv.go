@@ -147,12 +147,12 @@ func CSVHandler() http.HandlerFunc {
 		resolver := resolvers.New()
 		podResolvers, err := resolver.Pods(ctx, resolvers.PaginatedQuery{Query: &rawQuery})
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
 			return
 		}
 		containerResolvers, err := resolver.GroupedContainerInstances(ctx, resolvers.RawQuery{Query: &rawQuery})
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
 			return
 		}
 

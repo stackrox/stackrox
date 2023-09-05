@@ -111,14 +111,14 @@ func ImageCVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteErrorWithCode(w, http.StatusBadRequest, err)
 			return
 		}
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
 
 		cveRows, err := ImageCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
 			return
 		}
 

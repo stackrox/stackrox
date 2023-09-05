@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -94,7 +93,7 @@ func (w *httpWriterImpl[Record]) SetHTTPError(err error) error {
 		// Too late to change the HTTP headers and status.
 		return nil
 	}
-	http.Error(w.writer, err.Error(), errors.ErrToHTTPStatus(err))
+	WriteError(w.writer, err)
 	return err
 }
 
