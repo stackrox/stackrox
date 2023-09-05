@@ -18,7 +18,7 @@ import {
     downloadClusterYaml,
     getClusterDefaults,
 } from 'services/ClustersService';
-import { Cluster } from 'types/cluster.proto';
+import { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
@@ -31,7 +31,7 @@ import {
     newClusterDefault,
     centralEnvDefault,
 } from './cluster.helpers';
-import { CentralEnv, ClusterManagerType } from './clusterTypes';
+import { CentralEnv } from './clusterTypes'; // augmented with successfullyFetched
 
 const requiredKeys = ['name', 'type', 'mainImage', 'centralApiEndpoint'];
 

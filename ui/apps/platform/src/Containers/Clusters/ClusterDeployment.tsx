@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { ReactElement } from 'react';
 import { Alert, Button } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
@@ -7,10 +6,21 @@ import { ClipLoader } from 'react-spinners';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ToggleSwitch from 'Components/ToggleSwitch';
+import { ClusterManagerType } from 'types/cluster.proto';
 
 const baseClass = 'py-6';
 
-const ClusterDeploymentPage = ({
+export type ClusterDeploymentProps = {
+    clusterCheckedIn: boolean;
+    createUpgraderSA: boolean;
+    editing: boolean;
+    isDownloadingBundle: boolean;
+    managerType: ClusterManagerType;
+    onFileDownload: () => void;
+    toggleSA: () => void;
+};
+
+function ClusterDeployment({
     onFileDownload,
     isDownloadingBundle,
     clusterCheckedIn,
@@ -18,7 +28,7 @@ const ClusterDeploymentPage = ({
     createUpgraderSA,
     toggleSA,
     managerType,
-}) => {
+}: ClusterDeploymentProps): ReactElement {
     let managerTypeTitle = 'Dynamic configurations are automatically applied';
     let managerTypeText =
         'If you edited static configurations or you need to redeploy, download a new bundle.';
@@ -54,7 +64,6 @@ const ClusterDeploymentPage = ({
                                     </label>
                                     <ToggleSwitch
                                         id="createUpgraderSA"
-                                        name="createUpgraderSA"
                                         toggleHandler={toggleSA}
                                         enabled={createUpgraderSA}
                                     />
@@ -113,16 +122,6 @@ const ClusterDeploymentPage = ({
             )}
         </div>
     );
-};
+}
 
-ClusterDeploymentPage.propTypes = {
-    onFileDownload: PropTypes.func.isRequired,
-    isDownloadingBundle: PropTypes.bool.isRequired,
-    clusterCheckedIn: PropTypes.bool.isRequired,
-    editing: PropTypes.bool.isRequired,
-    createUpgraderSA: PropTypes.bool.isRequired,
-    toggleSA: PropTypes.func.isRequired,
-    managerType: PropTypes.string.isRequired,
-};
-
-export default ClusterDeploymentPage;
+export default ClusterDeployment;
