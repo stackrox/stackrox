@@ -1,3 +1,10 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 collectors:
@@ -28,10 +35,6 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-            - name: ROX_TELEMETRY_ENDPOINT
-              value: https://telemetry.endpoint
-            - name: ROX_TELEMETRY_STORAGE_KEY_V1
-              value: my-api-key
             - name: ROX_OFFLINE_MODE
               value: "false"
             - name: ROX_ENABLE_OPENSHIFT_AUTH

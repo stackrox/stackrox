@@ -10,6 +10,8 @@ require (
 	sigs.k8s.io/kustomize/kustomize/v4 v4.5.7
 )
 
+replace github.com/kudobuilder/kuttl v0.15.0 => github.com/porridge/kuttl v0.15.1-0.20230822121151-29595547752a
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
