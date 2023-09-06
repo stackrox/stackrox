@@ -54,6 +54,11 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 					On("GetIndexReport", mock.Anything, mock.Anything, mock.Anything).
 					Return(&v4.IndexReport{}, status.Error(codes.Unavailable, "index failed"))
 			},
+			args: args{
+				image: &storage.Image{
+					Id: "fake-image-id",
+				},
+			},
 			wantErr: "index failed",
 		},
 		{
@@ -67,6 +72,9 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 					Return(&v4.IndexReport{}, status.Error(codes.Internal, "create failed"))
 			},
 			args: args{
+				image: &storage.Image{
+					Id: "fake-image-id",
+				},
 				cfg: &types.Config{},
 			},
 			wantErr: "create failed",
@@ -80,6 +88,11 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 						State:    "IndexFinished",
 						Contents: &v4.Contents{},
 					}, nil)
+			},
+			args: args{
+				image: &storage.Image{
+					Id: "fake-image-id",
+				},
 			},
 			want: &ImageAnalysis{
 				ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
