@@ -7,16 +7,7 @@
 # 6. kubectl get "${cluster_kinds}" -o yaml > cluster_resources_after.yaml
 # 7. ./operator/bin/yq-* --null-input  '[load("cluster_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("cluster_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] | .[] | split_doc' | sed 's,kuttl-ns,${NAMESPACE},g'
 # 8. Massage the output to omit the PersistentVolume whose name is unpredictable
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox-${NAMESPACE}-central-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox-${NAMESPACE}-scanner-psp
----
+# 9. Move the openshift-specific resources to delete-central-errors-cluster-openshift.envsubst.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

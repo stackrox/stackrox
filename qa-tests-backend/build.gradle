@@ -15,11 +15,11 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.21.0'
+def grpcVersion = '1.57.2'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.23.2'
 def protobufVersion = '3.24.2'
-def nettyTcNativeVersion = '2.0.45.Final'
+def nettyTcNativeVersion = '2.0.61.Final'
 def fabric8Version = '6.8.0'
 def jacksonVersion = '2.14.2'
 
@@ -76,7 +76,7 @@ dependencies {
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.3.1'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.8'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.11'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -116,7 +116,7 @@ dependencies {
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
     implementation 'org.javers:javers-core:7.3.2'
