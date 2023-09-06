@@ -54,6 +54,9 @@ combined_coverage.dat
 /stackrox-secured-cluster-services-chart/
 .vscode
 
+# Used for mounting into the qa e2e-test docker container.
+.gitconfig
+
 # Mac OS hidden file
 .DS_Store
 

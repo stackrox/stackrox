@@ -43,7 +43,8 @@ class ImageService extends BaseService {
                 .setForce(force)
                 .build()
             def response
-            withRetry(1, 15) {
+            withRetry(5, 10) {
+                log.debug("starting scan for image ${image}")
                 response = getImageClient().scanImage(req)
             }
             return response
