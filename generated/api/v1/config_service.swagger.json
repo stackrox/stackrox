@@ -85,6 +85,58 @@
         ]
       }
     },
+    "/v1/config/private/deferral/vulnerabilities": {
+      "get": {
+        "operationId": "ConfigService_GetVulnerabilityDeferralConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetVulnerabilityDeferralConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "ConfigService"
+        ]
+      },
+      "put": {
+        "operationId": "ConfigService_UpdateVulnerabilityDeferralConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnerabilityDeferralConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateVulnerabilityDeferralConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ConfigService"
+        ]
+      }
+    },
     "/v1/config/public": {
       "get": {
         "operationId": "ConfigService_GetPublicConfig",
@@ -214,6 +266,18 @@
         }
       }
     },
+    "storageDayOption": {
+      "type": "object",
+      "properties": {
+        "numDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "storageDecommissionedClusterRetentionConfig": {
       "type": "object",
       "properties": {
@@ -273,9 +337,12 @@
         },
         "reportRetentionConfig": {
           "$ref": "#/definitions/storageReportRetentionConfig"
+        },
+        "vulnerabilityDeferralConfig": {
+          "$ref": "#/definitions/storageVulnerabilityDeferralConfig"
         }
       },
-      "title": "next available tag:7"
+      "title": "next available tag:8"
     },
     "storagePublicConfig": {
       "type": "object",
@@ -324,11 +391,124 @@
         }
       }
     },
+    "storageVulnerabilityDeferralConfig": {
+      "type": "object",
+      "properties": {
+        "expiryOptions": {
+          "$ref": "#/definitions/storageVulnerabilityDeferralConfigExpiryOptions"
+        }
+      }
+    },
+    "storageVulnerabilityDeferralConfigExpiryOptions": {
+      "type": "object",
+      "properties": {
+        "dayOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageDayOption"
+          }
+        },
+        "fixableCveOptions": {
+          "$ref": "#/definitions/storageVulnerabilityDeferralConfigFixableCVEOptions"
+        },
+        "customDate": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageVulnerabilityDeferralConfigFixableCVEOptions": {
+      "type": "object",
+      "properties": {
+        "allFixable": {
+          "type": "boolean"
+        },
+        "anyFixable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DayOption": {
+      "type": "object",
+      "properties": {
+        "numDays": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1GetVulnerabilityDeferralConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityDeferralConfig"
+        }
+      }
+    },
     "v1PutConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
           "$ref": "#/definitions/storageConfig"
+        }
+      }
+    },
+    "v1UpdateVulnerabilityDeferralConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityDeferralConfig"
+        }
+      }
+    },
+    "v1UpdateVulnerabilityDeferralConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1VulnerabilityDeferralConfig"
+        }
+      }
+    },
+    "v1VulnerabilityDeferralConfig": {
+      "type": "object",
+      "properties": {
+        "expiryOptions": {
+          "$ref": "#/definitions/v1VulnerabilityDeferralConfigExpiryOptions"
+        }
+      }
+    },
+    "v1VulnerabilityDeferralConfigExpiryOptions": {
+      "type": "object",
+      "properties": {
+        "dayOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1DayOption"
+          },
+          "description": "This allows users to set expiry interval based on number of days."
+        },
+        "fixableCveOptions": {
+          "$ref": "#/definitions/v1VulnerabilityDeferralConfigFixableCVEOptions",
+          "description": "This allows users to set vulnerability request expiry based on the CVEs."
+        },
+        "customDate": {
+          "type": "boolean",
+          "description": "This option, if true, allows UI to show a custom date picker for setting expiry date."
+        }
+      }
+    },
+    "v1VulnerabilityDeferralConfigFixableCVEOptions": {
+      "type": "object",
+      "properties": {
+        "allFixable": {
+          "type": "boolean",
+          "description": "This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities\nin the requests become fixable."
+        },
+        "anyFixable": {
+          "type": "boolean",
+          "description": "This options allows users to expire the vulnerability deferral request if **any** vulnerability\nin the requests become fixable."
         }
       }
     }
