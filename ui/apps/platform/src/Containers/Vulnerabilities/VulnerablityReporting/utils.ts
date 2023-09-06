@@ -115,7 +115,7 @@ export function getReportConfigurationFromFormValues(
     const reportConfiguration: ReportConfiguration = {
         id: reportId,
         name: reportParameters.reportName,
-        description: reportParameters.description,
+        description: reportParameters.reportDescription,
         type: 'VULNERABILITY',
         vulnReportFilters,
         resourceScope: {
@@ -193,7 +193,7 @@ export function getReportFormValuesFromConfiguration(
         reportId: id,
         reportParameters: {
             reportName: name,
-            description,
+            reportDescription: description,
             cveSeverities: vulnReportFilters.severities,
             cveStatus:
                 vulnReportFilters.fixability === 'BOTH'
@@ -220,28 +220,25 @@ export function getReportStatusText(
 ): string {
     let statusText = '-';
 
-    if (reportStatus?.runState === 'DELIVERED') {
-        statusText = 'Emailed';
-    } else if (reportStatus?.runState === 'GENERATED' && isDownloadAvailable) {
-        statusText = 'Download prepared';
-    } else if (reportStatus?.runState === 'GENERATED' && !isDownloadAvailable) {
-        statusText = 'Download deleted';
-    } else if (
-        reportStatus?.runState === 'FAILURE' &&
-        reportStatus?.reportNotificationMethod === 'EMAIL'
-    ) {
-        statusText = 'Email attempted';
-    } else if (
-        reportStatus?.runState === 'FAILURE' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
-    ) {
-        statusText = 'Failed to generate download';
-    } else if (reportStatus?.runState === 'FAILURE') {
-        statusText = 'Error';
-    } else if (reportStatus?.runState === 'PREPARING') {
+    const isDownload = reportStatus?.reportNotificationMethod === 'DOWNLOAD';
+    const isEmail = reportStatus?.reportNotificationMethod === 'EMAIL';
+
+    if (reportStatus?.runState === 'PREPARING') {
         statusText = 'Preparing';
     } else if (reportStatus?.runState === 'WAITING') {
         statusText = 'Waiting';
+    } else if (reportStatus?.runState === 'FAILURE' && isEmail) {
+        statusText = 'Email attempted';
+    } else if (reportStatus?.runState === 'FAILURE' && isDownload) {
+        statusText = 'Failed to generate download';
+    } else if (!isDownload && reportStatus?.runState === 'DELIVERED') {
+        statusText = 'Emailed';
+    } else if (isDownload && isDownloadAvailable) {
+        statusText = 'Download prepared';
+    } else if (isDownload && !isDownloadAvailable) {
+        statusText = 'Download deleted';
+    } else if (reportStatus?.runState === 'FAILURE') {
+        statusText = 'Error';
     }
 
     return statusText;
