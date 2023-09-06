@@ -11,8 +11,8 @@ import (
 const (
 	// To re-generate hashes when files change, run:
 	// find pkg/branding/files -type f -print -exec bash -c 'base64 {} | tr -d \\n | sha256sum' \;
-	logoRHACSBase64hash    = "7f3e82963a705c41cac096b516dee068ec1e8693d55ec6d836546b12c617e195"
-	logoStackRoxBase64hash = "318908997d28eb54a31305290ded071bdd61d5dc8718b75dfb4a7a6ba4c162d8"
+	logoRHACSBase64hash    = "7f3e82963a705c41cac096b516dee068ec1e8693d55ec6d836546b12c617e195" //#nosec G101
+	logoStackRoxBase64hash = "318908997d28eb54a31305290ded071bdd61d5dc8718b75dfb4a7a6ba4c162d8" //#nosec G101
 )
 
 func TestGetBrandedLogo(t *testing.T) {

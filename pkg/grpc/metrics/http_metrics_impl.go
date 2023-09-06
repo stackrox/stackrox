@@ -83,7 +83,8 @@ func (h *httpMetricsImpl) GetMetrics() (map[string]map[int]int64, map[string]map
 	defer h.allMetricsMutex.RUnlock()
 	externalMetrics := make(map[string]map[int]int64, len(h.allMetrics))
 	externalPanics := make(map[string]map[string]int64, len(h.allMetrics))
-	for path, ppm := range h.allMetrics {
+	for path := range h.allMetrics {
+		ppm := h.allMetrics[path]
 		// Prevent the response code map from being updated while we copy it
 		concurrency.WithLock(&ppm.normalInvocationStatsMutex, func() {
 			externalCodeMap := make(map[int]int64, len(ppm.normalInvocationStats))

@@ -22,7 +22,7 @@ var (
 )
 
 const (
-	jwtAssertion = "X-Goog-IAP-JWT-Assertion"
+	jwtAssertion = "X-Goog-IAP-JWT-Assertion" //#nosec G101
 	issuerID     = "https://cloud.google.com/iap"
 	publicKeyURL = "https://www.gstatic.com/iap/verify/public_key-jwk"
 

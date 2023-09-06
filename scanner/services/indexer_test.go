@@ -84,6 +84,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenIn
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError() {
+	//#nosec G101 -- This is a false positive
 	iURL := "https://foobar:443/image:sha256@sha256:3d44fa76c2c83ed9296e4508b436ff583397cac0f4bad85c2b4ecc193ddb5106"
 	s.indexerMock.
 		EXPECT().
