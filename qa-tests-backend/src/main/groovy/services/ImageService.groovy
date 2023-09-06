@@ -3,7 +3,9 @@ package services
 import static util.Helpers.evaluateWithRetry
 import static util.Helpers.withRetry
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
@@ -11,6 +13,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.ImageOuterClass
 
 @Slf4j
+@CompileStatic
 class ImageService extends BaseService {
     static ImageServiceGrpc.ImageServiceBlockingStub getImageClient() {
         return ImageServiceGrpc.newBlockingStub(getChannel())
@@ -20,7 +23,7 @@ class ImageService extends BaseService {
         return getImageClient().listImages(request).imagesList
     }
 
-    static getImage(String digest, Boolean includeSnoozed = true) {
+    static ImageOuterClass.Image getImage(String digest, Boolean includeSnoozed = true) {
         if (digest == null) {
             return null
         }

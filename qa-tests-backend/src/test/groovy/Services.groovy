@@ -242,20 +242,19 @@ class Services extends BaseService {
 
     static requestBuildImageScan(String registry, String remote, String tag, Boolean sendNotifications = false) {
         LOG.info "Request scan of ${registry}/${remote}:${tag} with sendNotifications=${sendNotifications}"
-        return evaluateWithRetry(10, 15) {
-            return getDetectionClient().detectBuildTime(
-                BuildDetectionRequest.newBuilder()
-                    .setImage(ContainerImage.newBuilder()
-                        .setName(ImageOuterClass.ImageName.newBuilder()
-                            .setRegistry(registry)
-                            .setRemote(remote)
-                            .setTag(tag)
-                            .build()
-                        )
-                    )
-                    .setSendNotifications(sendNotifications)
+        def request = BuildDetectionRequest.newBuilder()
+            .setImage(ContainerImage.newBuilder()
+                .setName(ImageOuterClass.ImageName.newBuilder()
+                    .setRegistry(registry)
+                    .setRemote(remote)
+                    .setTag(tag)
                     .build()
+                )
             )
+            .setSendNotifications(sendNotifications)
+            .build()
+        return evaluateWithRetry(10, 15) {
+            return getDetectionClient().detectBuildTime(request)
         }
     }
 
