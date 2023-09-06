@@ -97,7 +97,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
-                    title="Delivery destination & schedule are both required to be configured since the 'Last successful scheduled run report' option has been selected in Step 1."
+                    title="Delivery destination & schedule are both required to be configured since the 'Last scheduled report that was successfully sent' option has been selected in Step 1."
                 />
             )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -181,20 +181,34 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                         label="Repeat every"
                                         fieldId="schedule.intervalType"
                                         errors={formik.errors}
+                                        isRequired={
+                                            formik.values.reportParameters.cvesDiscoveredSince ===
+                                            'SINCE_LAST_REPORT'
+                                        }
                                     >
                                         <RepeatScheduleDropdown
                                             fieldId="schedule.intervalType"
                                             value={formik.values.schedule.intervalType || ''}
                                             handleSelect={onScheduledRepeatChange}
                                             isEditable={
-                                                formik.values.deliveryDestinations.length > 0
+                                                formik.values.deliveryDestinations.length > 0 ||
+                                                formik.values.reportParameters
+                                                    .cvesDiscoveredSince === 'SINCE_LAST_REPORT'
+                                            }
+                                            showNoResultsOption={
+                                                formik.values.reportParameters
+                                                    .cvesDiscoveredSince !== 'SINCE_LAST_REPORT'
                                             }
                                         />
                                     </FormLabelGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <FormLabelGroup
-                                        isRequired={!!formik.values.schedule.intervalType}
+                                        isRequired={
+                                            !!formik.values.schedule.intervalType ||
+                                            formik.values.reportParameters.cvesDiscoveredSince ===
+                                                'SINCE_LAST_REPORT'
+                                        }
                                         label="On day(s)"
                                         fieldId={
                                             formik.values.schedule.intervalType === 'WEEKLY'

@@ -22,7 +22,7 @@ export const imageTypeLabelMap: Record<ImageType, string> = {
 
 export const cvesDiscoveredSinceLabelMap: Record<CVESDiscoveredSince, string> = {
     ALL_VULN: 'All time',
-    SINCE_LAST_REPORT: 'Last successful scheduled run report',
+    SINCE_LAST_REPORT: 'Last scheduled report that was successfully sent',
     START_DATE: 'Custom start date',
 };
 
