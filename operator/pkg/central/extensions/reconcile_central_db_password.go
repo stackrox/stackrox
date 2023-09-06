@@ -43,7 +43,13 @@ func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client
 		isExternalDB               bool
 		centralDBPasswordSecretKey = ctrlClient.ObjectKey{Namespace: c.GetNamespace(), Name: canonicalCentralDBPasswordSecretName}
 		password                   = renderer.CreatePassword()
+		isDeleting                 = c.GetDeletionTimestamp() != nil
 	)
+
+	if isDeleting {
+		// we don't need to do anything if the Central instance is being deleted
+		return nil
+	}
 
 	if c.Spec.Central != nil {
 		isExternalDB = c.Spec.Central.IsExternalDB()
