@@ -3,6 +3,7 @@ import {
     CheckCircleIcon,
     DownloadIcon,
     ExclamationCircleIcon,
+    ExclamationTriangleIcon,
     HelpIcon,
     InProgressIcon,
     PendingIcon,
@@ -18,7 +19,7 @@ export type ReportJobStatusProps = {
 };
 
 const genericMsg =
-    'An issue was encountered. Please try again later. If the issue persists, please contact support';
+    'An issue was encountered. Please try again later. If the issue persists, please contact support.';
 
 function ReportJobStatus({
     reportSnapshot,
@@ -32,8 +33,7 @@ function ReportJobStatus({
     let statusText: ReactElement;
 
     if (
-        reportStatus.runState === 'SUCCESS' &&
-        reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
+        reportStatus.runState === 'GENERATED' &&
         isDownloadAvailable &&
         areDownloadActionsDisabled
     ) {
@@ -63,8 +63,7 @@ function ReportJobStatus({
             </Flex>
         );
     } else if (
-        reportStatus.runState === 'SUCCESS' &&
-        reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
+        reportStatus.runState === 'GENERATED' &&
         isDownloadAvailable &&
         !areDownloadActionsDisabled
     ) {
@@ -75,11 +74,7 @@ function ReportJobStatus({
                 Ready for download
             </Button>
         );
-    } else if (
-        reportStatus.runState === 'SUCCESS' &&
-        reportStatus.reportNotificationMethod === 'DOWNLOAD' &&
-        !isDownloadAvailable
-    ) {
+    } else if (reportStatus.runState === 'GENERATED' && !isDownloadAvailable) {
         statusColorClass = 'pf-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was deleted" />;
         statusText = (
@@ -104,10 +99,10 @@ function ReportJobStatus({
                 </FlexItem>
             </Flex>
         );
-    } else if (reportStatus.runState === 'SUCCESS') {
+    } else if (reportStatus.runState === 'DELIVERED') {
         statusColorClass = 'pf-u-success-color-100';
-        statusIcon = <CheckCircleIcon title="Report run was successful" />;
-        statusText = <p className="pf-u-success-color-100">Successful</p>;
+        statusIcon = <CheckCircleIcon title="Report was successfully delivered" />;
+        statusText = <p className="pf-u-success-color-100">Successfully delivered</p>;
     } else if (reportStatus.runState === 'FAILURE') {
         statusColorClass = 'pf-u-danger-color-100';
         statusIcon = (
@@ -119,9 +114,17 @@ function ReportJobStatus({
     } else if (reportStatus.runState === 'PREPARING') {
         statusIcon = <InProgressIcon title="Report run is preparing" />;
         statusText = <p>Preparing</p>;
-    } else {
+    } else if (reportStatus.runState === 'WAITING') {
         statusIcon = <PendingIcon title="Report run is waiting" />;
         statusText = <p>Waiting</p>;
+    } else {
+        statusColorClass = 'pf-u-warning-color-100';
+        statusIcon = (
+            <Tooltip content="Please contact support for more help.">
+                <ExclamationTriangleIcon title="Report run status is unknown" />
+            </Tooltip>
+        );
+        statusText = <p>Unknown status</p>;
     }
 
     return (

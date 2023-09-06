@@ -36,7 +36,7 @@ describe('MyActiveJobStatus', () => {
 
     test('should show "-" when your active job status is a success', async () => {
         const reportStatus: ReportStatus = {
-            runState: 'SUCCESS',
+            runState: 'GENERATED',
             completedAt: '2023-06-20T10:59:46.383433891Z',
             errorMsg: '',
             reportRequestType: 'ON_DEMAND',
