@@ -1,0 +1,41 @@
+{{- include "srox.init" . -}}
+{{- if eq ._rox.env.openshift 4 }}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-privileged-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-privileged-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-privileged-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - privileged
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: collector-use-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "collector-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "collector-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-privileged-scc
+subjects:
+- kind: ServiceAccount
+  name: collector
+  namespace: {{ ._rox._namespace }}
+
+{{- end }}
