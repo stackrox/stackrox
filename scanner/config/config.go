@@ -45,7 +45,7 @@ type Config struct {
 func (c *Config) validate() error {
 	err := c.MTLS.validate()
 	if err != nil {
-		return err
+		return fmt.Errorf("mtls: %w", err)
 	}
 	return nil
 }
@@ -81,10 +81,10 @@ func (c *MTLSConfig) validate() error {
 	}
 	info, err := os.Stat(p)
 	if err != nil {
-		return fmt.Errorf("could not read mtls.certs_dir: %w", err)
+		return fmt.Errorf("could not read certs_dir: %w", err)
 	}
 	if !info.IsDir() {
-		return fmt.Errorf("mtls.certs_dir is not a directory")
+		return fmt.Errorf("certs_dir is not a directory: %s", p)
 	}
 	return nil
 }
