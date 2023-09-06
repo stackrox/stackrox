@@ -9,6 +9,7 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
+import isEqual from 'lodash/isEqual';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -73,13 +74,36 @@ function NotifierSelection({
             const notifierMailingLists = notifierObject.labelDefault.split(',');
             formik.setFieldValue(prefixId, {
                 notifier: notifierObject,
-                mailingLists: notifierMailingLists,
+                mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
             });
             setIsEmailNotifierModalOpen(false);
         }
     }
 
+    function getDefaultNotifierMailingLists(): string[] | null {
+        if (selectedNotifier) {
+            const notifierObject = notifiers.find(
+                (notifier) => notifier.id === selectedNotifier.id
+            );
+            if (notifierObject) {
+                return notifierObject.labelDefault.split(',');
+            }
+        }
+        return null;
+    }
+
+    function onSetToDefaultNotifierMailingLists() {
+        const notifierMailingLists = getDefaultNotifierMailingLists();
+        if (notifierMailingLists) {
+            formik.setFieldValue(`${prefixId}.mailingLists`, notifierMailingLists);
+        }
+    }
+
     const joinedMailingLists = mailingLists.join(', ');
+    const notifierMailingLists = getDefaultNotifierMailingLists();
+
+    const isResetToDefaultDisabled = isEqual(mailingLists, notifierMailingLists);
+
     return (
         <>
             <FormLabelGroup
@@ -133,6 +157,18 @@ function NotifierSelection({
                     placeholder="annie@example.com,jack@example.com"
                 />
             </FormLabelGroup>
+            {selectedNotifier && (
+                <Button
+                    className="pf-u-mt-sm"
+                    variant="link"
+                    isInline
+                    isSmall
+                    onClick={onSetToDefaultNotifierMailingLists}
+                    isDisabled={isResetToDefaultDisabled}
+                >
+                    Reset to default
+                </Button>
+            )}
             <EmailNotifierFormModal
                 isOpen={isEmailNotifierModalOpen}
                 updateNotifierList={setLastAddedNotifier}

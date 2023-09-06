@@ -8,6 +8,7 @@ export type RepeatScheduleDropdownProps = {
     value: string;
     handleSelect: (id, selection) => void;
     isEditable?: boolean;
+    showNoResultsOption?: boolean;
 };
 
 function RepeatScheduleDropdown({
@@ -15,7 +16,15 @@ function RepeatScheduleDropdown({
     value,
     handleSelect,
     isEditable = true,
+    showNoResultsOption = false,
 }: RepeatScheduleDropdownProps): ReactElement {
+    let options = [
+        <SelectOption value="WEEKLY">Weekly</SelectOption>,
+        <SelectOption value="MONTHLY">Monthly</SelectOption>,
+    ];
+    if (showNoResultsOption) {
+        options = [<SelectOption isNoResultsOption>None</SelectOption>, ...options];
+    }
     return (
         <SelectSingle
             id={fieldId}
@@ -25,9 +34,7 @@ function RepeatScheduleDropdown({
             placeholderText="Select frequency"
             menuAppendTo={() => document.body}
         >
-            <SelectOption isNoResultsOption>None</SelectOption>
-            <SelectOption value="WEEKLY">Weekly</SelectOption>
-            <SelectOption value="MONTHLY">Monthly</SelectOption>
+            {options}
         </SelectSingle>
     );
 }

@@ -145,7 +145,21 @@ const validationSchema = yup.object().shape({
         })
         .notRequired(),
     schedule: yup.object().shape({
-        intervalType: yup.string().oneOf(intervalTypes).nullable(),
+        intervalType: yup
+            .string()
+            .oneOf(intervalTypes)
+            .nullable()
+            .strict()
+            .test('schedule-is-required', 'A schedule is required', (value, context) => {
+                if (!context.from) {
+                    return false;
+                }
+                const contextValue: ReportFormValues = context.from[context.from.length - 1].value;
+                if (contextValue.reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
+                    return value !== null;
+                }
+                return true;
+            }),
         daysOfWeek: yup
             .array()
             .of(yup.string().oneOf(daysOfWeek))
