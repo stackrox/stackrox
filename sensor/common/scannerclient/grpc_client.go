@@ -212,23 +212,29 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 }
 
 func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	hid := fmt.Sprintf("/v4/containerimage/%s", image.GetId())
+	imgSHA := utils.GetSHA(image)
+	if imgSHA == "" {
+		// TODO: ROX-19576: Is the assumption that image always have SHA correct?
+		return nil, fmt.Errorf("internal: V4 scanning of an image without SHA: %s",
+			image.GetName().GetFullName())
+	}
+	hashID := fmt.Sprintf("/v4/containerimage/%s", imgSHA)
 	opts := []grpc.CallOption{grpc.WaitForReady(true)}
-	ir, err := c.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hid}, opts...)
+	ir, err := c.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID}, opts...)
 	if err == nil {
 		return convertIndexReportToAnalysis(ir), nil
 	}
 	// Check if index was "not found", so we create.
 	if s, _ := status.FromError(err); s.Code() != codes.NotFound {
-		return nil, fmt.Errorf("get index report (hashid: %s): %w", hid, err)
+		return nil, fmt.Errorf("get index report (hashid: %s): %w", hashID, err)
 	}
-	log.Infof("creating index report: %s", hid)
+	log.Infof("creating index report: %s", hashID)
 	scheme := "https"
 	if cfg.Insecure {
 		scheme = "http"
 	}
 	req := &v4.CreateIndexReportRequest{
-		HashId: hid,
+		HashId: hashID,
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{
 			ContainerImage: &v4.ContainerImageLocator{
 				Url:      fmt.Sprintf("%s://%s", scheme, image.GetName().GetFullName()),
@@ -239,7 +245,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 	}
 	ir, err = c.CreateIndexReport(ctx, req, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("create index report (hashid: %s): %w", hid, err)
+		return nil, fmt.Errorf("create index report (hashid: %s): %w", hashID, err)
 	}
 	return convertIndexReportToAnalysis(ir), nil
 }
