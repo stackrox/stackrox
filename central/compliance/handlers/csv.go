@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 type options struct {
@@ -123,7 +124,7 @@ func CSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		options, err := parseOptions(r)
 		if err != nil {
-			csv.WriteErrorWithCode(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 
@@ -142,7 +143,7 @@ func CSVHandler() http.HandlerFunc {
 		if len(options.clusterIDs) == 0 {
 			clusterIDs, err := getClusterIDs(r.Context())
 			if err != nil {
-				csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
+				csv.WriteError(w, errox.ServerError.CausedBy(err))
 				return
 			}
 			options.clusterIDs = clusterIDs
@@ -150,7 +151,7 @@ func CSVHandler() http.HandlerFunc {
 
 		data, err := complianceDS.GetLatestRunResultsBatch(r.Context(), options.clusterIDs, options.standardIDs, complianceDSTypes.WithMessageStrings)
 		if err != nil {
-			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 		validResults, _ := datastore.ValidResultsAndSources(data)

@@ -12,16 +12,12 @@ import (
 // Utility functions to be used for CSV exporting.
 
 // WriteError responds with the error message and HTTP status code deduced from
-// the error class. Appropriate response headers are set.
+// the error class. Appropriate response headers are set. Note that once data
+// have been written to ResponseWriter, depending on its implementation, headers
+// and the status code might have already been sent over HTTP. In such case,
+// calling WriteError will not have the desired effect.
 func WriteError(w http.ResponseWriter, err error) {
-	WriteErrorWithCode(w, errors.ErrToHTTPStatus(err), err)
-}
-
-// WriteErrorWithCode is similar to WriteError but uses the provided HTTP status
-// code. If err is a known internal error, use WriteError to ensure consistency
-// of HTTP status codes.
-func WriteErrorWithCode(w http.ResponseWriter, code int, err error) {
-	http.Error(w, err.Error(), code)
+	http.Error(w, err.Error(), errors.ErrToHTTPStatus(err))
 }
 
 // FromTimestamp creates a string representation of the given timestamp.

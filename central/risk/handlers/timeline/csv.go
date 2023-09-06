@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -147,12 +148,12 @@ func CSVHandler() http.HandlerFunc {
 		resolver := resolvers.New()
 		podResolvers, err := resolver.Pods(ctx, resolvers.PaginatedQuery{Query: &rawQuery})
 		if err != nil {
-			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 		containerResolvers, err := resolver.GroupedContainerInstances(ctx, resolvers.RawQuery{Query: &rawQuery})
 		if err != nil {
-			csv.WriteErrorWithCode(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 
