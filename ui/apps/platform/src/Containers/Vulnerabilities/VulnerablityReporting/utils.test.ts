@@ -6,7 +6,7 @@ describe('utils', () => {
     describe('getReportStatusText', () => {
         it('should show the correct text for different report statuses', () => {
             const reportStatus: ReportStatus = {
-                runState: 'SUCCESS',
+                runState: 'DELIVERED',
                 completedAt: '2023-06-20T10:59:46.383433891Z',
                 errorMsg: '',
                 reportRequestType: 'ON_DEMAND',
@@ -15,7 +15,7 @@ describe('utils', () => {
             let isDownloadAvailable = false;
             expect(getReportStatusText(reportStatus, isDownloadAvailable)).toEqual('Emailed');
 
-            reportStatus.runState = 'SUCCESS';
+            reportStatus.runState = 'GENERATED';
             reportStatus.reportNotificationMethod = 'DOWNLOAD';
             isDownloadAvailable = true;
 
@@ -23,7 +23,7 @@ describe('utils', () => {
                 'Download prepared'
             );
 
-            reportStatus.runState = 'SUCCESS';
+            reportStatus.runState = 'GENERATED';
             reportStatus.reportNotificationMethod = 'DOWNLOAD';
             isDownloadAvailable = false;
 
@@ -44,11 +44,6 @@ describe('utils', () => {
             expect(getReportStatusText(reportStatus, isDownloadAvailable)).toEqual(
                 'Failed to generate download'
             );
-
-            reportStatus.runState = 'SUCCESS';
-            reportStatus.reportNotificationMethod = 'UNSET';
-
-            expect(getReportStatusText(reportStatus, isDownloadAvailable)).toEqual('Success');
 
             reportStatus.runState = 'FAILURE';
             reportStatus.reportNotificationMethod = 'UNSET';
