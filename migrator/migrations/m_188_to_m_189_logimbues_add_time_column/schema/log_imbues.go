@@ -21,13 +21,8 @@ var (
 
 	// LogImbuesSchema is the go schema for table `log_imbues`.
 	LogImbuesSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("log_imbues")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
+		schema := walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
 		schema.ScopingResource = resources.Administration
-		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
 	}()
 )

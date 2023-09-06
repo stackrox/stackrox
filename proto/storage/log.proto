@@ -10,6 +10,6 @@ package storage;
 
 message LogImbue {
   string                    id        = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-  google.protobuf.Timestamp timestamp = 2;
+  google.protobuf.Timestamp timestamp = 2 [(gogoproto.moretags) = 'search:"Log Imbue Creation Time,hidden"'];
   bytes                     log       = 3;
 }
