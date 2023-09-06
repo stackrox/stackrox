@@ -28,4 +28,6 @@ export const selectors = {
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
+    firstUnwatchedImageRow:
+        'tbody tr:not(:has(td[data-label="Image"]:contains("Watched image"))):eq(0)',
 };

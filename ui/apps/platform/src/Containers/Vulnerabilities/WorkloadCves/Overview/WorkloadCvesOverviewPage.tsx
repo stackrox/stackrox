@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     PageSection,
     Title,
@@ -14,12 +14,14 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer from './ImagesTableContainer';
+import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -46,6 +48,9 @@ function WorkloadCvesOverviewPage() {
     );
 
     const pagination = useURLPagination(20);
+
+    const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
+    const watchedImagesModalToggle = useSelectToggle();
 
     return (
         <>
@@ -78,6 +83,10 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
+                                    onWatchImage={(imageName) => {
+                                        setDefaultWatchedImageName(imageName);
+                                        watchedImagesModalToggle.openSelect();
+                                    }}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
@@ -91,6 +100,14 @@ function WorkloadCvesOverviewPage() {
                     </Card>
                 </PageSection>
             </PageSection>
+            <WatchedImagesModal
+                defaultWatchedImageName={defaultWatchedImageName}
+                isOpen={watchedImagesModalToggle.isOpen}
+                onClose={() => {
+                    setDefaultWatchedImageName('');
+                    watchedImagesModalToggle.closeSelect();
+                }}
+            />
         </>
     );
 }
