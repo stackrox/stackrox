@@ -7,6 +7,7 @@ import {
     FlexItem,
     Card,
     CardBody,
+    Button,
 } from '@patternfly/react-core';
 import { useQuery } from '@apollo/client';
 
@@ -57,15 +58,31 @@ function WorkloadCvesOverviewPage() {
             <PageTitle title="Workload CVEs Overview" />
             {/* Default filters are disabled until fixability filters are fixed */}
             <Divider component="div" />
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-u-py-lg pf-u-pl-lg">
-                    <FlexItem>
-                        <Title headingLevel="h1">Workload CVEs</Title>
-                    </FlexItem>
+            <PageSection
+                className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
+                variant="light"
+                padding={{ default: 'noPadding' }}
+            >
+                <Flex
+                    direction={{ default: 'column' }}
+                    className="pf-u-py-lg pf-u-pl-lg pf-u-flex-grow-1"
+                >
+                    <Title headingLevel="h1">Workload CVEs</Title>
                     <FlexItem>
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
                 </Flex>
+                <FlexItem className="pf-u-pr-lg">
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            setDefaultWatchedImageName('');
+                            watchedImagesModalToggle.openSelect();
+                        }}
+                    >
+                        Manage watched images
+                    </Button>
+                </FlexItem>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
