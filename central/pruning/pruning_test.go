@@ -1960,6 +1960,7 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 
 			gc := &garbageCollectorImpl{
 				logimbueStore: logImbueStore,
+				postgres:      s.pool,
 			}
 
 			if c.recentlyRun {
