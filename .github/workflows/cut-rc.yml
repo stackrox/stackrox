@@ -175,7 +175,7 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{needs.variables.outputs.branch}}
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
