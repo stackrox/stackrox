@@ -74,7 +74,8 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     previous_y_stream = get_previous_y_stream(version)
 
     # An olm.skipRange doesn't hurt if it references non-existing versions.
-    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
+    prev_prev_y_stream ='4.0.0' # This is just for the 4.2.0 branch
+    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {prev_prev_y_stream} < {version}'
 
     if version_skips:
         csv_doc["spec"]["skips"] = version_skips
