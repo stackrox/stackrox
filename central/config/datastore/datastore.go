@@ -3,10 +3,13 @@ package datastore
 import (
 	"context"
 	"reflect"
+	"testing"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/config/store"
+	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -23,6 +26,13 @@ type DataStore interface {
 func New(store store.Store) DataStore {
 	return &datastoreImpl{
 		store: store,
+	}
+}
+
+// NewForTest returns an instance of DataStore for testing purpose.
+func NewForTest(_ *testing.T, db postgres.DB) DataStore {
+	return &datastoreImpl{
+		store: pgStore.New(db),
 	}
 }
 

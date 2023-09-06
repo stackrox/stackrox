@@ -88,35 +88,548 @@ func (m *PutConfigRequest) Clone() *PutConfigRequest {
 	return cloned
 }
 
+type DayOption struct {
+	NumDays              uint32   `protobuf:"varint,1,opt,name=num_days,json=numDays,proto3" json:"num_days,omitempty"`
+	Enabled              bool     `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DayOption) Reset()         { *m = DayOption{} }
+func (m *DayOption) String() string { return proto.CompactTextString(m) }
+func (*DayOption) ProtoMessage()    {}
+func (*DayOption) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{1}
+}
+func (m *DayOption) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DayOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DayOption.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DayOption) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DayOption.Merge(m, src)
+}
+func (m *DayOption) XXX_Size() int {
+	return m.Size()
+}
+func (m *DayOption) XXX_DiscardUnknown() {
+	xxx_messageInfo_DayOption.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DayOption proto.InternalMessageInfo
+
+func (m *DayOption) GetNumDays() uint32 {
+	if m != nil {
+		return m.NumDays
+	}
+	return 0
+}
+
+func (m *DayOption) GetEnabled() bool {
+	if m != nil {
+		return m.Enabled
+	}
+	return false
+}
+
+func (m *DayOption) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *DayOption) Clone() *DayOption {
+	if m == nil {
+		return nil
+	}
+	cloned := new(DayOption)
+	*cloned = *m
+
+	return cloned
+}
+
+type VulnerabilityDeferralConfig struct {
+	ExpiryOptions        *VulnerabilityDeferralConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
+	XXX_unrecognized     []byte                                     `json:"-"`
+	XXX_sizecache        int32                                      `json:"-"`
+}
+
+func (m *VulnerabilityDeferralConfig) Reset()         { *m = VulnerabilityDeferralConfig{} }
+func (m *VulnerabilityDeferralConfig) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityDeferralConfig) ProtoMessage()    {}
+func (*VulnerabilityDeferralConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{2}
+}
+func (m *VulnerabilityDeferralConfig) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VulnerabilityDeferralConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VulnerabilityDeferralConfig.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VulnerabilityDeferralConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityDeferralConfig.Merge(m, src)
+}
+func (m *VulnerabilityDeferralConfig) XXX_Size() int {
+	return m.Size()
+}
+func (m *VulnerabilityDeferralConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityDeferralConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VulnerabilityDeferralConfig proto.InternalMessageInfo
+
+func (m *VulnerabilityDeferralConfig) GetExpiryOptions() *VulnerabilityDeferralConfig_ExpiryOptions {
+	if m != nil {
+		return m.ExpiryOptions
+	}
+	return nil
+}
+
+func (m *VulnerabilityDeferralConfig) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *VulnerabilityDeferralConfig) Clone() *VulnerabilityDeferralConfig {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityDeferralConfig)
+	*cloned = *m
+
+	cloned.ExpiryOptions = m.ExpiryOptions.Clone()
+	return cloned
+}
+
+type VulnerabilityDeferralConfig_FixableCVEOptions struct {
+	// This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
+	// in the requests become fixable.
+	AllFixable bool `protobuf:"varint,1,opt,name=all_fixable,json=allFixable,proto3" json:"all_fixable,omitempty"`
+	// This options allows users to expire the vulnerability deferral request if **any** vulnerability
+	// in the requests become fixable.
+	AnyFixable           bool     `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable,proto3" json:"any_fixable,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Reset() {
+	*m = VulnerabilityDeferralConfig_FixableCVEOptions{}
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) String() string {
+	return proto.CompactTextString(m)
+}
+func (*VulnerabilityDeferralConfig_FixableCVEOptions) ProtoMessage() {}
+func (*VulnerabilityDeferralConfig_FixableCVEOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{2, 0}
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.Merge(m, src)
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Size() int {
+	return m.Size()
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions proto.InternalMessageInfo
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) GetAllFixable() bool {
+	if m != nil {
+		return m.AllFixable
+	}
+	return false
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) GetAnyFixable() bool {
+	if m != nil {
+		return m.AnyFixable
+	}
+	return false
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Clone() *VulnerabilityDeferralConfig_FixableCVEOptions {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityDeferralConfig_FixableCVEOptions)
+	*cloned = *m
+
+	return cloned
+}
+
+type VulnerabilityDeferralConfig_ExpiryOptions struct {
+	// This allows users to set expiry interval based on number of days.
+	DayOptions []*DayOption `protobuf:"bytes,1,rep,name=day_options,json=dayOptions,proto3" json:"day_options,omitempty"`
+	// This allows users to set vulnerability request expiry based on the CVEs.
+	FixableCveOptions *VulnerabilityDeferralConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions,proto3" json:"fixable_cve_options,omitempty"`
+	// This option, if true, allows UI to show a custom date picker for setting expiry date.
+	CustomDate           bool     `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) Reset() {
+	*m = VulnerabilityDeferralConfig_ExpiryOptions{}
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) String() string {
+	return proto.CompactTextString(m)
+}
+func (*VulnerabilityDeferralConfig_ExpiryOptions) ProtoMessage() {}
+func (*VulnerabilityDeferralConfig_ExpiryOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{2, 1}
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.Merge(m, src)
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Size() int {
+	return m.Size()
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions proto.InternalMessageInfo
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetDayOptions() []*DayOption {
+	if m != nil {
+		return m.DayOptions
+	}
+	return nil
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetFixableCveOptions() *VulnerabilityDeferralConfig_FixableCVEOptions {
+	if m != nil {
+		return m.FixableCveOptions
+	}
+	return nil
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetCustomDate() bool {
+	if m != nil {
+		return m.CustomDate
+	}
+	return false
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) Clone() *VulnerabilityDeferralConfig_ExpiryOptions {
+	if m == nil {
+		return nil
+	}
+	cloned := new(VulnerabilityDeferralConfig_ExpiryOptions)
+	*cloned = *m
+
+	if m.DayOptions != nil {
+		cloned.DayOptions = make([]*DayOption, len(m.DayOptions))
+		for idx, v := range m.DayOptions {
+			cloned.DayOptions[idx] = v.Clone()
+		}
+	}
+	cloned.FixableCveOptions = m.FixableCveOptions.Clone()
+	return cloned
+}
+
+type GetVulnerabilityDeferralConfigResponse struct {
+	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) Reset() {
+	*m = GetVulnerabilityDeferralConfigResponse{}
+}
+func (m *GetVulnerabilityDeferralConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVulnerabilityDeferralConfigResponse) ProtoMessage()    {}
+func (*GetVulnerabilityDeferralConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{3}
+}
+func (m *GetVulnerabilityDeferralConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GetVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GetVulnerabilityDeferralConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.Merge(m, src)
+}
+func (m *GetVulnerabilityDeferralConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *GetVulnerabilityDeferralConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVulnerabilityDeferralConfigResponse proto.InternalMessageInfo
+
+func (m *GetVulnerabilityDeferralConfigResponse) GetConfig() *VulnerabilityDeferralConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *GetVulnerabilityDeferralConfigResponse) Clone() *GetVulnerabilityDeferralConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(GetVulnerabilityDeferralConfigResponse)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type UpdateVulnerabilityDeferralConfigRequest struct {
+	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) Reset() {
+	*m = UpdateVulnerabilityDeferralConfigRequest{}
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateVulnerabilityDeferralConfigRequest) ProtoMessage()    {}
+func (*UpdateVulnerabilityDeferralConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{4}
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.Merge(m, src)
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest proto.InternalMessageInfo
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) GetConfig() *VulnerabilityDeferralConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) Clone() *UpdateVulnerabilityDeferralConfigRequest {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateVulnerabilityDeferralConfigRequest)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type UpdateVulnerabilityDeferralConfigResponse struct {
+	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) Reset() {
+	*m = UpdateVulnerabilityDeferralConfigResponse{}
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*UpdateVulnerabilityDeferralConfigResponse) ProtoMessage() {}
+func (*UpdateVulnerabilityDeferralConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{5}
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.Merge(m, src)
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse proto.InternalMessageInfo
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) GetConfig() *VulnerabilityDeferralConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) Clone() *UpdateVulnerabilityDeferralConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateVulnerabilityDeferralConfigResponse)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
 func init() {
 	proto.RegisterType((*PutConfigRequest)(nil), "v1.PutConfigRequest")
+	proto.RegisterType((*DayOption)(nil), "v1.DayOption")
+	proto.RegisterType((*VulnerabilityDeferralConfig)(nil), "v1.VulnerabilityDeferralConfig")
+	proto.RegisterType((*VulnerabilityDeferralConfig_FixableCVEOptions)(nil), "v1.VulnerabilityDeferralConfig.FixableCVEOptions")
+	proto.RegisterType((*VulnerabilityDeferralConfig_ExpiryOptions)(nil), "v1.VulnerabilityDeferralConfig.ExpiryOptions")
+	proto.RegisterType((*GetVulnerabilityDeferralConfigResponse)(nil), "v1.GetVulnerabilityDeferralConfigResponse")
+	proto.RegisterType((*UpdateVulnerabilityDeferralConfigRequest)(nil), "v1.UpdateVulnerabilityDeferralConfigRequest")
+	proto.RegisterType((*UpdateVulnerabilityDeferralConfigResponse)(nil), "v1.UpdateVulnerabilityDeferralConfigResponse")
 }
 
 func init() { proto.RegisterFile("api/v1/config_service.proto", fileDescriptor_266c60d3cc05a407) }
 
 var fileDescriptor_266c60d3cc05a407 = []byte{
-	// 326 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x91, 0xc1, 0x4a, 0xeb, 0x40,
-	0x14, 0x86, 0x3b, 0x59, 0x14, 0x3a, 0xf7, 0x4a, 0xeb, 0xb1, 0x95, 0x1a, 0x25, 0x48, 0x36, 0x8a,
-	0x8b, 0x09, 0xa9, 0x3b, 0xbb, 0x53, 0xa4, 0xb8, 0x91, 0xaa, 0x1b, 0x71, 0x23, 0xd3, 0x30, 0x86,
-	0xc1, 0x9a, 0x89, 0xc9, 0x74, 0xd0, 0xad, 0xaf, 0xe0, 0xc6, 0x67, 0xf1, 0x09, 0x5c, 0x0a, 0xbe,
-	0x80, 0x44, 0x1f, 0x44, 0x32, 0x33, 0x34, 0xa1, 0xd9, 0xfe, 0xf3, 0xfd, 0x1f, 0xe7, 0x9c, 0xc1,
-	0xdb, 0x34, 0xe5, 0x81, 0x0a, 0x83, 0x48, 0x24, 0x77, 0x3c, 0xbe, 0xcd, 0x59, 0xa6, 0x78, 0xc4,
-	0x48, 0x9a, 0x09, 0x29, 0xc0, 0x51, 0xa1, 0xbb, 0x13, 0x0b, 0x11, 0xcf, 0x59, 0x50, 0x72, 0x34,
-	0x49, 0x84, 0xa4, 0x92, 0x8b, 0x24, 0x37, 0x84, 0x0b, 0xb6, 0xce, 0x1e, 0x52, 0xf9, 0x6c, 0xb3,
-	0x7e, 0x2e, 0x45, 0x46, 0x63, 0x66, 0x9d, 0x26, 0xf5, 0xc7, 0xb8, 0x37, 0x5d, 0xc8, 0x13, 0x1d,
-	0x5d, 0xb2, 0xc7, 0x05, 0xcb, 0x25, 0xec, 0xe1, 0xb6, 0x61, 0x86, 0x68, 0x17, 0xed, 0xff, 0x1b,
-	0x75, 0x89, 0xad, 0x12, 0xcb, 0xd9, 0xe7, 0xd1, 0xbb, 0x83, 0xd7, 0x4c, 0x74, 0x65, 0x06, 0x84,
-	0x73, 0xdc, 0x9d, 0x30, 0x39, 0x5d, 0xcc, 0xe6, 0x3c, 0x32, 0x2f, 0xd0, 0x21, 0x2a, 0x24, 0xa7,
-	0xe5, 0x20, 0xee, 0x60, 0x29, 0xaa, 0x13, 0xfe, 0xd6, 0xcb, 0xd7, 0xef, 0xab, 0xb3, 0x01, 0xeb,
-	0xd5, 0xc6, 0x41, 0xaa, 0x01, 0xb8, 0xc0, 0xbd, 0xd2, 0x97, 0x71, 0x45, 0x25, 0x6b, 0x0a, 0x37,
-	0x2b, 0x61, 0x1d, 0xf1, 0x5d, 0x6d, 0xec, 0x03, 0xd4, 0x8d, 0x86, 0x80, 0x31, 0xee, 0x4c, 0x98,
-	0x6c, 0xba, 0x56, 0xb7, 0xf4, 0x41, 0x4b, 0xfe, 0x03, 0xae, 0x24, 0x70, 0x86, 0x3b, 0xcb, 0x73,
-	0x41, 0xbf, 0x2c, 0xaf, 0x5e, 0xaf, 0xe9, 0x19, 0x68, 0x4f, 0xd7, 0xad, 0x79, 0x8e, 0xd0, 0xc1,
-	0x31, 0xf9, 0x28, 0x3c, 0xf4, 0x59, 0x78, 0xe8, 0xbb, 0xf0, 0xd0, 0xdb, 0x8f, 0xd7, 0xc2, 0x43,
-	0x2e, 0x48, 0x2e, 0x69, 0x74, 0x9f, 0x89, 0x27, 0xf3, 0x3d, 0x84, 0xa6, 0x9c, 0xa8, 0xf0, 0xc6,
-	0x51, 0xe1, 0x75, 0x6b, 0xd6, 0xd6, 0xd9, 0xe1, 0x5f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xbc, 0x14,
-	0xab, 0x79, 0x1d, 0x02, 0x00, 0x00,
+	// 653 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xcf, 0x4f, 0xd4, 0x4e,
+	0x14, 0xa7, 0x4b, 0xbe, 0xc0, 0xbe, 0xfd, 0xae, 0xc0, 0x00, 0x66, 0x29, 0x66, 0xc1, 0x1e, 0x74,
+	0x45, 0xe9, 0xba, 0x90, 0x68, 0x02, 0x17, 0x23, 0x8b, 0xc4, 0x8b, 0x62, 0x15, 0x62, 0xbc, 0x6c,
+	0x66, 0xbb, 0x8f, 0x4d, 0x63, 0xe9, 0xd4, 0xce, 0xb4, 0xa1, 0x57, 0xe3, 0xd1, 0x83, 0x89, 0x17,
+	0xff, 0x14, 0xef, 0x5e, 0x3c, 0x9a, 0xf8, 0x0f, 0x18, 0xf4, 0x0f, 0x31, 0x9d, 0x19, 0x4b, 0x65,
+	0x93, 0xdd, 0x55, 0x6f, 0xed, 0xeb, 0xe7, 0xd7, 0xeb, 0xbc, 0x79, 0xb0, 0x42, 0x43, 0xaf, 0x99,
+	0xb4, 0x9a, 0x2e, 0x0b, 0x8e, 0xbd, 0x7e, 0x87, 0x63, 0x94, 0x78, 0x2e, 0xda, 0x61, 0xc4, 0x04,
+	0x23, 0xa5, 0xa4, 0x65, 0x5e, 0xe9, 0x33, 0xd6, 0xf7, 0xb1, 0x99, 0xe1, 0x68, 0x10, 0x30, 0x41,
+	0x85, 0xc7, 0x02, 0xae, 0x10, 0x26, 0xd1, 0x74, 0x3c, 0x09, 0x45, 0xaa, 0x6b, 0x8b, 0x5c, 0xb0,
+	0x88, 0xf6, 0x51, 0x6b, 0xaa, 0xaa, 0xb5, 0x03, 0x73, 0x07, 0xb1, 0xd8, 0x95, 0x25, 0x07, 0x5f,
+	0xc5, 0xc8, 0x05, 0xb9, 0x0e, 0x53, 0x0a, 0x53, 0x33, 0xd6, 0x8c, 0x46, 0x65, 0x73, 0xd6, 0xd6,
+	0x54, 0x5b, 0xe3, 0xf4, 0x67, 0xeb, 0x1e, 0x94, 0xdb, 0x34, 0x7d, 0x1c, 0x66, 0xd6, 0x64, 0x19,
+	0x66, 0x82, 0xf8, 0xa4, 0xd3, 0xa3, 0x29, 0x97, 0xbc, 0xaa, 0x33, 0x1d, 0xc4, 0x27, 0x6d, 0x9a,
+	0x72, 0x52, 0x83, 0x69, 0x0c, 0x68, 0xd7, 0xc7, 0x5e, 0xad, 0xb4, 0x66, 0x34, 0x66, 0x9c, 0x5f,
+	0xaf, 0xd6, 0xbb, 0x49, 0x58, 0x39, 0x8a, 0xfd, 0x00, 0x23, 0xda, 0xf5, 0x7c, 0x4f, 0xa4, 0x6d,
+	0x3c, 0xc6, 0x28, 0xa2, 0xbe, 0x72, 0x22, 0xcf, 0xe0, 0x12, 0x9e, 0x86, 0x5e, 0x94, 0x76, 0x98,
+	0x74, 0xe1, 0x3a, 0xd2, 0x86, 0x9d, 0xb4, 0xec, 0x21, 0x44, 0x7b, 0x4f, 0xb2, 0x54, 0x34, 0xee,
+	0x54, 0xb1, 0xf8, 0x6a, 0x1e, 0xc2, 0xfc, 0x03, 0xef, 0x34, 0x4b, 0xb0, 0x7b, 0xb4, 0xa7, 0x8b,
+	0x64, 0x15, 0x2a, 0xd4, 0xf7, 0x3b, 0xc7, 0xea, 0x83, 0xf4, 0x99, 0x71, 0x80, 0xfa, 0xbe, 0x86,
+	0x4a, 0x40, 0x90, 0xe6, 0x80, 0x92, 0x06, 0x04, 0xa9, 0x06, 0x98, 0x9f, 0x0c, 0xa8, 0xfe, 0xe6,
+	0x4b, 0x6c, 0xa8, 0xf4, 0x68, 0x31, 0xfb, 0x64, 0xa3, 0xb2, 0x59, 0xcd, 0xb2, 0xe7, 0xff, 0xcd,
+	0x81, 0x1e, 0xcd, 0xf1, 0x14, 0x16, 0xb4, 0x7c, 0xc7, 0x4d, 0x30, 0xe7, 0x95, 0x64, 0xcf, 0xad,
+	0x51, 0x3d, 0x0f, 0xf4, 0xe4, 0xcc, 0x6b, 0xb5, 0xdd, 0x04, 0x0b, 0x6d, 0xba, 0x31, 0x17, 0x2c,
+	0x3b, 0x29, 0x81, 0xb5, 0x49, 0xd5, 0x85, 0x2a, 0xb5, 0xa9, 0x40, 0x8b, 0xc2, 0xb5, 0x7d, 0x14,
+	0x43, 0x7c, 0x1c, 0xe4, 0x21, 0x0b, 0x38, 0x92, 0xbb, 0x17, 0xe6, 0x64, 0x75, 0x44, 0xc0, 0x7c,
+	0x6e, 0x5c, 0x68, 0x1c, 0x86, 0x99, 0xfd, 0x50, 0x17, 0x35, 0x8c, 0x7f, 0x6d, 0xd2, 0x83, 0x1b,
+	0x63, 0x98, 0xfc, 0x63, 0x2b, 0x9b, 0x6f, 0xfe, 0x83, 0xaa, 0x2a, 0x3d, 0x55, 0x77, 0x94, 0x3c,
+	0x82, 0xd9, 0x7d, 0x14, 0x07, 0x71, 0xd7, 0xf7, 0x5c, 0x3d, 0xc5, 0xe5, 0x4c, 0x6d, 0x2f, 0xbb,
+	0x8b, 0xe6, 0x52, 0x7e, 0x97, 0x8a, 0x08, 0x6b, 0xf9, 0xf5, 0xd7, 0x1f, 0xef, 0x4b, 0x0b, 0x64,
+	0xfe, 0xfc, 0xd2, 0x37, 0x43, 0x09, 0x20, 0x4f, 0x60, 0x2e, 0xd3, 0x8b, 0xbc, 0x84, 0x0a, 0x1c,
+	0x14, 0xbc, 0x7c, 0x2e, 0x58, 0x84, 0x58, 0xa6, 0x54, 0x5c, 0x24, 0xa4, 0xa8, 0xa8, 0x10, 0xe4,
+	0xad, 0x01, 0xf5, 0xe1, 0x67, 0x5c, 0x74, 0x58, 0xcf, 0x1e, 0xc7, 0x1b, 0x09, 0x6b, 0x4b, 0xba,
+	0x6e, 0x90, 0x9b, 0x83, 0xae, 0xcd, 0x9e, 0xa6, 0x34, 0x93, 0x82, 0x90, 0x87, 0x9c, 0x7c, 0x34,
+	0xe0, 0xea, 0xc8, 0xa3, 0x22, 0xb7, 0xb2, 0x18, 0xe3, 0x8e, 0x8d, 0xb9, 0x31, 0x26, 0x5a, 0xe7,
+	0xbe, 0x23, 0x73, 0xdf, 0x36, 0xff, 0x24, 0xf7, 0xb6, 0xb1, 0x4e, 0x76, 0xa0, 0xbc, 0x8f, 0x62,
+	0xf0, 0x9f, 0x5d, 0x5c, 0x99, 0x16, 0x91, 0x06, 0xff, 0x13, 0x38, 0x37, 0x20, 0x0f, 0xa1, 0x9c,
+	0xef, 0x5e, 0xb2, 0x98, 0x91, 0x2f, 0xae, 0xe2, 0x41, 0x9d, 0x25, 0xa9, 0x33, 0x6b, 0x16, 0x74,
+	0xb6, 0x8d, 0xf5, 0xfb, 0xf6, 0xe7, 0xb3, 0xba, 0xf1, 0xe5, 0xac, 0x6e, 0x7c, 0x3b, 0xab, 0x1b,
+	0x1f, 0xbe, 0xd7, 0x27, 0xa0, 0xe6, 0x31, 0x9b, 0x0b, 0xea, 0xbe, 0x8c, 0xd8, 0xa9, 0xda, 0xf5,
+	0x36, 0x0d, 0x3d, 0x3b, 0x69, 0xbd, 0x28, 0x25, 0xad, 0xe7, 0x13, 0xdd, 0x29, 0x59, 0xdb, 0xfa,
+	0x19, 0x00, 0x00, 0xff, 0xff, 0x82, 0xd8, 0xf6, 0x70, 0x6a, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -133,6 +646,8 @@ const _ = grpc.SupportPackageIsVersion6
 type ConfigServiceClient interface {
 	GetPublicConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PublicConfig, error)
 	GetPrivateConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PrivateConfig, error)
+	GetVulnerabilityDeferralConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityDeferralConfigResponse, error)
+	UpdateVulnerabilityDeferralConfig(ctx context.Context, in *UpdateVulnerabilityDeferralConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityDeferralConfigResponse, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
 }
@@ -163,6 +678,24 @@ func (c *configServiceClient) GetPrivateConfig(ctx context.Context, in *Empty, o
 	return out, nil
 }
 
+func (c *configServiceClient) GetVulnerabilityDeferralConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityDeferralConfigResponse, error) {
+	out := new(GetVulnerabilityDeferralConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.ConfigService/GetVulnerabilityDeferralConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configServiceClient) UpdateVulnerabilityDeferralConfig(ctx context.Context, in *UpdateVulnerabilityDeferralConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityDeferralConfigResponse, error) {
+	out := new(UpdateVulnerabilityDeferralConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.ConfigService/UpdateVulnerabilityDeferralConfig", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configServiceClient) GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error) {
 	out := new(storage.Config)
 	err := c.cc.Invoke(ctx, "/v1.ConfigService/GetConfig", in, out, opts...)
@@ -185,6 +718,8 @@ func (c *configServiceClient) PutConfig(ctx context.Context, in *PutConfigReques
 type ConfigServiceServer interface {
 	GetPublicConfig(context.Context, *Empty) (*storage.PublicConfig, error)
 	GetPrivateConfig(context.Context, *Empty) (*storage.PrivateConfig, error)
+	GetVulnerabilityDeferralConfig(context.Context, *Empty) (*GetVulnerabilityDeferralConfigResponse, error)
+	UpdateVulnerabilityDeferralConfig(context.Context, *UpdateVulnerabilityDeferralConfigRequest) (*UpdateVulnerabilityDeferralConfigResponse, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
 }
@@ -198,6 +733,12 @@ func (*UnimplementedConfigServiceServer) GetPublicConfig(ctx context.Context, re
 }
 func (*UnimplementedConfigServiceServer) GetPrivateConfig(ctx context.Context, req *Empty) (*storage.PrivateConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPrivateConfig not implemented")
+}
+func (*UnimplementedConfigServiceServer) GetVulnerabilityDeferralConfig(ctx context.Context, req *Empty) (*GetVulnerabilityDeferralConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilityDeferralConfig not implemented")
+}
+func (*UnimplementedConfigServiceServer) UpdateVulnerabilityDeferralConfig(ctx context.Context, req *UpdateVulnerabilityDeferralConfigRequest) (*UpdateVulnerabilityDeferralConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateVulnerabilityDeferralConfig not implemented")
 }
 func (*UnimplementedConfigServiceServer) GetConfig(ctx context.Context, req *Empty) (*storage.Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
@@ -242,6 +783,42 @@ func _ConfigService_GetPrivateConfig_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ConfigServiceServer).GetPrivateConfig(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConfigService_GetVulnerabilityDeferralConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).GetVulnerabilityDeferralConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ConfigService/GetVulnerabilityDeferralConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).GetVulnerabilityDeferralConfig(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ConfigService_UpdateVulnerabilityDeferralConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateVulnerabilityDeferralConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServiceServer).UpdateVulnerabilityDeferralConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.ConfigService/UpdateVulnerabilityDeferralConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServiceServer).UpdateVulnerabilityDeferralConfig(ctx, req.(*UpdateVulnerabilityDeferralConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -295,6 +872,14 @@ var _ConfigService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ConfigService_GetPrivateConfig_Handler,
 		},
 		{
+			MethodName: "GetVulnerabilityDeferralConfig",
+			Handler:    _ConfigService_GetVulnerabilityDeferralConfig_Handler,
+		},
+		{
+			MethodName: "UpdateVulnerabilityDeferralConfig",
+			Handler:    _ConfigService_UpdateVulnerabilityDeferralConfig_Handler,
+		},
+		{
 			MethodName: "GetConfig",
 			Handler:    _ConfigService_GetConfig_Handler,
 		},
@@ -346,6 +931,314 @@ func (m *PutConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DayOption) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DayOption) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DayOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Enabled {
+		i--
+		if m.Enabled {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.NumDays != 0 {
+		i = encodeVarintConfigService(dAtA, i, uint64(m.NumDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VulnerabilityDeferralConfig) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VulnerabilityDeferralConfig) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityDeferralConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.ExpiryOptions != nil {
+		{
+			size, err := m.ExpiryOptions.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfigService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.AnyFixable {
+		i--
+		if m.AnyFixable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.AllFixable {
+		i--
+		if m.AllFixable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.CustomDate {
+		i--
+		if m.CustomDate {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if m.FixableCveOptions != nil {
+		{
+			size, err := m.FixableCveOptions.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfigService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.DayOptions) > 0 {
+		for iNdEx := len(m.DayOptions) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DayOptions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintConfigService(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0xa
+		}
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfigService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfigService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if m.Config != nil {
+		{
+			size, err := m.Config.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintConfigService(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintConfigService(dAtA []byte, offset int, v uint64) int {
 	offset -= sovConfigService(v)
 	base := offset
@@ -358,6 +1251,131 @@ func encodeVarintConfigService(dAtA []byte, offset int, v uint64) int {
 	return base
 }
 func (m *PutConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovConfigService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *DayOption) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NumDays != 0 {
+		n += 1 + sovConfigService(uint64(m.NumDays))
+	}
+	if m.Enabled {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *VulnerabilityDeferralConfig) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ExpiryOptions != nil {
+		l = m.ExpiryOptions.Size()
+		n += 1 + l + sovConfigService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.AllFixable {
+		n += 2
+	}
+	if m.AnyFixable {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if len(m.DayOptions) > 0 {
+		for _, e := range m.DayOptions {
+			l = e.Size()
+			n += 1 + l + sovConfigService(uint64(l))
+		}
+	}
+	if m.FixableCveOptions != nil {
+		l = m.FixableCveOptions.Size()
+		n += 1 + l + sovConfigService(uint64(l))
+	}
+	if m.CustomDate {
+		n += 2
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *GetVulnerabilityDeferralConfigResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovConfigService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateVulnerabilityDeferralConfigRequest) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Config != nil {
+		l = m.Config.Size()
+		n += 1 + l + sovConfigService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *UpdateVulnerabilityDeferralConfigResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -439,6 +1457,676 @@ func (m *PutConfigRequest) Unmarshal(dAtA []byte) error {
 			}
 			if m.Config == nil {
 				m.Config = &storage.Config{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DayOption) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DayOption: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DayOption: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NumDays", wireType)
+			}
+			m.NumDays = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NumDays |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Enabled = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VulnerabilityDeferralConfig) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: VulnerabilityDeferralConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: VulnerabilityDeferralConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ExpiryOptions == nil {
+				m.ExpiryOptions = &VulnerabilityDeferralConfig_ExpiryOptions{}
+			}
+			if err := m.ExpiryOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FixableCVEOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FixableCVEOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllFixable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AllFixable = bool(v != 0)
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AnyFixable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.AnyFixable = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *VulnerabilityDeferralConfig_ExpiryOptions) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ExpiryOptions: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ExpiryOptions: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DayOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DayOptions = append(m.DayOptions, &DayOption{})
+			if err := m.DayOptions[len(m.DayOptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixableCveOptions", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FixableCveOptions == nil {
+				m.FixableCveOptions = &VulnerabilityDeferralConfig_FixableCVEOptions{}
+			}
+			if err := m.FixableCveOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CustomDate", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.CustomDate = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GetVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GetVulnerabilityDeferralConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GetVulnerabilityDeferralConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &VulnerabilityDeferralConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateVulnerabilityDeferralConfigRequest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &VulnerabilityDeferralConfig{}
+			}
+			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipConfigService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpdateVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowConfigService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowConfigService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthConfigService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Config == nil {
+				m.Config = &VulnerabilityDeferralConfig{}
 			}
 			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

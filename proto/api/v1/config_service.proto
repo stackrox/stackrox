@@ -14,6 +14,46 @@ message PutConfigRequest {
     storage.Config config      = 1;
 }
 
+message DayOption {
+    uint32 num_days = 1;
+    bool   enabled  = 2;
+}
+
+message VulnerabilityDeferralConfig {
+    message FixableCVEOptions {
+        // This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
+        // in the requests become fixable.
+        bool all_fixable = 1;
+        // This options allows users to expire the vulnerability deferral request if **any** vulnerability
+        // in the requests become fixable.
+        bool any_fixable = 2;
+    }
+
+    message ExpiryOptions {
+        // This allows users to set expiry interval based on number of days.
+        repeated DayOption  day_options          = 1;
+        // This allows users to set vulnerability request expiry based on the CVEs.
+        FixableCVEOptions   fixable_cve_options  = 2;
+        // This option, if true, allows UI to show a custom date picker for setting expiry date.
+        bool                custom_date          = 3;
+    }
+
+    ExpiryOptions expiry_options = 1;
+}
+
+message GetVulnerabilityDeferralConfigResponse {
+    VulnerabilityDeferralConfig config = 1;
+}
+
+
+message UpdateVulnerabilityDeferralConfigRequest {
+    VulnerabilityDeferralConfig config = 1;
+}
+
+message UpdateVulnerabilityDeferralConfigResponse {
+    VulnerabilityDeferralConfig config = 1;
+}
+
 // ConfigService APIs can be used to manage Central config.
 service ConfigService {
 
@@ -26,6 +66,19 @@ service ConfigService {
     rpc GetPrivateConfig(Empty) returns (storage.PrivateConfig) {
         option (google.api.http) = {
             get: "/v1/config/private"
+        };
+    }
+
+    rpc GetVulnerabilityDeferralConfig(Empty) returns (GetVulnerabilityDeferralConfigResponse) {
+        option (google.api.http) = {
+            get: "/v1/config/private/deferral/vulnerabilities"
+        };
+    }
+
+    rpc UpdateVulnerabilityDeferralConfig(UpdateVulnerabilityDeferralConfigRequest) returns (UpdateVulnerabilityDeferralConfigResponse) {
+        option (google.api.http) = {
+            put: "/v1/config/private/deferral/vulnerabilities"
+            body: "*"
         };
     }
 
