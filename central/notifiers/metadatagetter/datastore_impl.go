@@ -88,8 +88,12 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 		return nil
 	}
 
-	if namespaceName == "" || clusterID == "" {
-		log.Errorf("Alert entity doesn't contain namespace and cluster ID: %+v", alert.GetEntity())
+	if namespaceName == "" {
+		return nil
+	}
+
+	if clusterID == "" {
+		log.Errorf("Alert entity doesn't contain cluster ID: %+v", alert.GetEntity())
 		return nil
 	}
 

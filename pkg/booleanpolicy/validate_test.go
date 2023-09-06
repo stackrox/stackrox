@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -270,6 +271,72 @@ func (s *PolicyValueValidator) TestValidateKubeResourceSpecifiedForAuditEventSou
 			},
 		},
 	}, ValidateSourceIsAuditLogEvents()))
+}
+
+func (s *PolicyValueValidator) TestValidateExtendedResourceSet() {
+
+	s.T().Setenv(env.AuditPolicyExtendedSet.EnvVar(), "true")
+	for _, resource := range extendedResourceTypes.AsSlice() {
+		assert.NoError(s.T(), Validate(&storage.Policy{
+			Name:            "runtime-policy-valid",
+			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+			PolicyVersion:   policyversion.CurrentVersion().String(),
+			PolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.KubeResource,
+							Values: []*storage.PolicyValue{
+								{
+									Value: fmt.Sprintf("%s", resource),
+								},
+							},
+						},
+						{
+							FieldName: fieldnames.KubeAPIVerb,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "CREATE",
+								},
+							},
+						},
+					},
+				},
+			},
+		}, ValidateSourceIsAuditLogEvents()))
+	}
+
+	s.T().Setenv(env.AuditPolicyExtendedSet.EnvVar(), "false")
+	assert.Error(s.T(), Validate(&storage.Policy{
+		Name:            "runtime-policy-invalid",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_AUDIT_LOG_EVENT,
+		PolicyVersion:   policyversion.CurrentVersion().String(),
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.KubeResource,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "CLUSTER_ROLES",
+							},
+						},
+					},
+					{
+						FieldName: fieldnames.KubeAPIVerb,
+						Values: []*storage.PolicyValue{
+							{
+								Value: "CREATE",
+							},
+						},
+					},
+				},
+			},
+		},
+	}, ValidateSourceIsAuditLogEvents()))
+
 }
 
 func (s *PolicyValueValidator) TestValidateKubeAPIVerbSpecifiedForAuditEventSource() {

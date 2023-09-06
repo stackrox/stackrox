@@ -7,8 +7,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	extendedResourceTypes = set.NewFrozenStringSet(storage.KubernetesEvent_Object_CLUSTER_ROLES.String(),
+		storage.KubernetesEvent_Object_CLUSTER_ROLE_BINDINGS.String(),
+		storage.KubernetesEvent_Object_NETWORK_POLICIES.String(),
+		storage.KubernetesEvent_Object_SECURITY_CONTEXT_CONSTRAINTS.String(),
+		storage.KubernetesEvent_Object_EGRESS_FIREWALLS.String())
 )
 
 type validateConfiguration struct {
@@ -128,6 +137,13 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		for idx, v := range g.GetValues() {
 			if !m.valueRegex(configuration).MatchString(v.GetValue()) {
 				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String())
+			}
+		}
+		if !env.AuditPolicyExtendedSet.BooleanSetting() && g.GetFieldName() == fieldnames.KubeResource {
+			for idx, v := range g.GetValues() {
+				if extendedResourceTypes.Contains(v.GetValue()) {
+					errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must have environment variable %q set to true to use this value", g.GetFieldName(), idx, v.GetValue(), env.AuditPolicyExtendedSet.EnvVar())
+				}
 			}
 		}
 	}
