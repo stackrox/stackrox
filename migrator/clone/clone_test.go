@@ -342,6 +342,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 		},
 	}
 	for _, c := range testCases {
+		c := c
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
 			ver := &currVer
