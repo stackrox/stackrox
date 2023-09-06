@@ -1,10 +1,12 @@
 import static io.restassured.RestAssured.given
+import static util.Helpers.evaluateWithRetry
 
 import java.time.Instant
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
-import io.restassured.config.RestAssuredConfig
+import io.restassured.RestAssured
+import io.restassured.config.HttpClientConfig
 import io.restassured.config.SSLConfig
 
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
@@ -100,12 +102,24 @@ class DiagnosticBundleTest extends BaseSpecification {
             headers.put("Authorization", "Bearer " + token)
         }
 
-        def response = given()
-                .config(RestAssuredConfig.newConfig()
-                    .sslConfig(SSLConfig.sslConfig().relaxedHTTPSValidation().allowAllHostnames()))
+        def response = evaluateWithRetry(10, 10) {
+            return given()
+                .config(RestAssured.config()
+                    .httpClient(HttpClientConfig.httpClientConfig()
+                        // Times out after 1 minute of trying to establish a connection.
+                        .setParam("http.connection.timeout", 60000)
+                        // Times out after 5 minutes of connection inactivity.
+                        .setParam("http.socket.timeout", 300000)
+                    )
+                    .sslConfig(SSLConfig.sslConfig()
+                        .relaxedHTTPSValidation()
+                        .allowAllHostnames()
+                    )
+                )
                 .headers(headers)
                 .when()
                 .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}/api/extensions/diagnostics")
+        }
 
         then:
         "Check that response is as expected"

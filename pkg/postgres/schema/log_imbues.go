@@ -4,10 +4,12 @@ package schema
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
@@ -24,6 +26,7 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.LogImbue)(nil)), "log_imbues")
+		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
 	}()
@@ -36,6 +39,7 @@ const (
 
 // LogImbues holds the Gorm model for Postgres table `log_imbues`.
 type LogImbues struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID         string     `gorm:"column:id;type:varchar;primaryKey"`
+	Timestamp  *time.Time `gorm:"column:timestamp;type:timestamp"`
+	Serialized []byte     `gorm:"column:serialized;type:bytea"`
 }

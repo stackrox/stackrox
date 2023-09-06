@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm"
 )
@@ -31,7 +32,7 @@ func init() {
 }
 
 func moveDeclarativeConfigHealthToNewStore(db postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(ctx, gormDB, schema.CreateTableDeclarativeConfigHealthsStmt)
 
 	configStore := declarativeConfigStore.New(db)

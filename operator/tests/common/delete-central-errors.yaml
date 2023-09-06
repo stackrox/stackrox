@@ -12,6 +12,7 @@ metadata:
 # 6. kubectl get "${ns_kinds}" -n kuttl-ns -o yaml > ns_resources_after.yaml
 # 7. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "PersistentVolumeClaim" and .kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "EndpointSlice") | split_doc'
 # 8. Massage the output to omit those few Secrets whose names are unpredictable
+# 9. Move the openshift-specific resources to delete-central-errors-openshift.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -117,46 +118,6 @@ kind: Deployment
 metadata:
   name: scanner-db
 ---
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: central-use-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: scanner-use-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-central-diagnostics
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-central-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-scanner-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: stackrox-central-diagnostics
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-central-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-scanner-scc
----
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
@@ -221,16 +182,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: use-scanner-scc
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: central
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: central-mtls
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

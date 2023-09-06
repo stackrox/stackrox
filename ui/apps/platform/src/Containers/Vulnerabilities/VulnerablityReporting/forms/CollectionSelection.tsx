@@ -114,6 +114,7 @@ function CollectionSelection({
     }
 
     function onOpenCreateCollectionModal() {
+        onToggle(false);
         setModalAction({ type: 'create' });
         setIsCollectionModalOpen((current) => !current);
     }
@@ -171,7 +172,20 @@ function CollectionSelection({
                             overflowY: 'auto',
                         }}
                         validated={ValidatedOptions.default}
+                        footer={
+                            hasWriteAccessForCollections &&
+                            isRouteEnabledForCollections && (
+                                <Button
+                                    variant="link"
+                                    isInline
+                                    onClick={onOpenCreateCollectionModal}
+                                >
+                                    Create collection
+                                </Button>
+                            )
+                        }
                         menuAppendTo={() => document.body}
+                        direction="up"
                     >
                         {sortedCollections.map((collection) => (
                             <SelectOption
@@ -192,16 +206,6 @@ function CollectionSelection({
                             isDisabled={!selectedScope}
                         >
                             View
-                        </Button>
-                    </FlexItem>
-                )}
-                {hasWriteAccessForCollections && isRouteEnabledForCollections && (
-                    <FlexItem>
-                        <Button
-                            variant={ButtonVariant.secondary}
-                            onClick={onOpenCreateCollectionModal}
-                        >
-                            Create collection
                         </Button>
                     </FlexItem>
                 )}

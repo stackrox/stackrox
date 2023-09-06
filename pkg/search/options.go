@@ -294,6 +294,7 @@ var (
 	// Vulnerability Watch Request fields
 	RequestStatus               = newFieldLabel("Request Status")
 	ExpiredRequest              = newFieldLabel("Expired Request")
+	ExpiryType                  = newFieldLabel("Expiry Type")
 	RequestExpiryTime           = newFieldLabel("Request Expiry Time")
 	RequestExpiresWhenFixed     = newFieldLabel("Request Expires When Fixed")
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")

@@ -9,6 +9,8 @@ import (
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	sacTestUtils "github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -20,8 +22,7 @@ import (
 var (
 	imageScanOperatingSystem = "crime-stories"
 
-	dontWaitForIndexing = false
-	waitForIndexing     = true
+	log = logging.LoggerForModule()
 )
 
 func TestImageComponentEdgeDatastoreSAC(t *testing.T) {
@@ -174,29 +175,21 @@ var (
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestExistsEdge() {
 	// Inject the fixture graph and test for image1 to component1 edge
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
 	targetEdgeID := img1cmp1edge
-	for _, c := range testCases {
+	s.run("TestExistsEdge", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		exists, err := s.datastore.Exists(ctx, targetEdgeID)
 		s.NoError(err)
 		s.Equal(c.expectedEdgeFound[targetEdgeID], exists)
-	}
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 	// Inject the fixtures graph and fetch the image1 to component1 edge
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
 	targetEdgeID := img1cmp1edge
 	expectedSrcID := fixtures.GetImageSherlockHolmes1().GetId()
 	expectedDstID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
-	for _, c := range testCases {
+	s.run("TestGetEdge", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		fetched, found, err := s.datastore.Get(ctx, targetEdgeID)
 		s.NoError(err)
@@ -209,15 +202,11 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetEdge() {
 			s.False(found)
 			s.Nil(fetched)
 		}
-	}
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	// Inject the fixtures graph and fetch the image1 to component1 and image2 to component 4 edges
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
 	targetEdge1ID := img1cmp1edge
 	expectedSrc1ID := fixtures.GetImageSherlockHolmes1().GetId()
 	expectedDst1ID := getComponentID(fixtures.GetEmbeddedImageComponent1x1(), imageScanOperatingSystem)
@@ -225,7 +214,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 	expectedSrc2ID := fixtures.GetImageDoctorJekyll2().GetId()
 	expectedDst2ID := getComponentID(fixtures.GetEmbeddedImageComponent2x4(), imageScanOperatingSystem)
 	toFetch := []string{targetEdge1ID, targetEdge2ID}
-	for _, c := range testCases {
+	s.run("TestGetBatch", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		fetched, err := s.datastore.GetBatch(ctx, toFetch)
 		s.NoError(err)
@@ -237,7 +226,7 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 			expectedFetchedSize++
 		}
 		fetchedMatches := 0
-		s.Equal(expectedFetchedSize, len(fetched))
+		s.Len(fetched, expectedFetchedSize)
 		for _, edge := range fetched {
 			if edge.GetId() == targetEdge1ID {
 				fetchedMatches++
@@ -251,15 +240,11 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestGetBatch() {
 			}
 		}
 		s.Equal(expectedFetchedSize, fetchedMatches)
-	}
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
-	for _, c := range testCases {
+	s.run("TestCount", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
@@ -270,15 +255,11 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestCount() {
 		count, err := s.datastore.Count(ctx)
 		s.NoError(err)
 		s.Equal(expectedCount, count)
-	}
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
-	for _, c := range testCases {
+	s.run("TestSearch", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
@@ -288,19 +269,15 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearch() {
 		}
 		results, err := s.datastore.Search(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.ID])
 		}
-	}
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
-	for _, c := range testCases {
+	s.run("TestSearchEdges", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
@@ -310,20 +287,15 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 		}
 		results, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
-	}
-
+	})
 }
 
 func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
-	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
-	defer s.cleanImageToVulnerabilityGraph()
-	s.Require().NoError(err)
-
-	for _, c := range testCases {
+	s.run("TestSearchRawEdges", func(c edgeTestCase) {
 		ctx := s.testContexts[c.contextKey]
 		expectedCount := 0
 		for _, visible := range c.expectedEdgeFound {
@@ -333,10 +305,39 @@ func (s *imageComponentEdgeDatastoreSACTestSuite) TestSearchRawEdges() {
 		}
 		results, err := s.datastore.SearchRawEdges(ctx, search.EmptyQuery())
 		s.NoError(err)
-		s.Equal(expectedCount, len(results))
+		s.Len(results, expectedCount)
 		for _, r := range results {
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
-	}
+	})
+}
 
+func (s *imageComponentEdgeDatastoreSACTestSuite) run(testName string, testFunc func(c edgeTestCase)) {
+	err := s.testGraphDatastore.PushImageToVulnerabilitiesGraph()
+	defer s.cleanImageToVulnerabilityGraph()
+	s.Require().NoError(err)
+
+	imageGraphBefore := graphDBTestUtils.GetImageGraph(
+		sac.WithAllAccess(context.Background()),
+		s.T(),
+		s.testGraphDatastore.GetPostgresPool(),
+	)
+
+	failed := false
+	for _, c := range testCases {
+		caseSucceeded := s.Run(c.contextKey, func() {
+			// When triggered in parallel, most tests fail.
+			// TearDownTest is executed before the sub-tests.
+			// See https://github.com/stretchr/testify/issues/934
+			// s.T().Parallel()
+			testFunc(c)
+		})
+		if !caseSucceeded {
+			failed = true
+		}
+	}
+	if failed {
+		log.Infof("%s failed, dumping DB content.", testName)
+		imageGraphBefore.Log()
+	}
 }

@@ -22,8 +22,11 @@ function useURLPagination(defaultPerPage: number): UseURLPaginationResult {
         [setPageString]
     );
     const setPerPage = useCallback(
-        (num: number) => setPerPageString(num !== defaultPerPage ? String(num) : undefined),
-        [setPerPageString, defaultPerPage]
+        (num: number) => {
+            setPageString('1');
+            setPerPageString(num !== defaultPerPage ? String(num) : undefined);
+        },
+        [setPageString, setPerPageString, defaultPerPage]
     );
     return {
         page: safeNumber(page, 1),

@@ -1,11 +1,13 @@
 package walker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
@@ -96,6 +98,12 @@ func (s *SchemaRelationship) OtherSchemaColumnNames() []string {
 	return seq
 }
 
+// PermissionChecker is a permission checker that could be used by GenericStore
+type PermissionChecker interface {
+	ReadAllowed(ctx context.Context) (bool, error)
+	WriteAllowed(ctx context.Context) (bool, error)
+}
+
 // Schema is the go representation of the schema for a table
 // This is derived from walking the go struct
 type Schema struct {
@@ -128,6 +136,9 @@ type Schema struct {
 	// some categories in cases of overlapping search fields.
 	// This is optional.
 	SearchScope map[v1.SearchCategory]struct{}
+
+	ScopingResource   permissions.ResourceMetadata
+	PermissionChecker PermissionChecker
 }
 
 // TableFieldsGroup is the group of table fields. A slice of this struct can be used where the table order is essential,

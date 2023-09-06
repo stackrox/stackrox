@@ -1,0 +1,57 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+# The following resources are obtained by following the instructions in delete-central-errors.yaml
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: central-use-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: scanner-use-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-central-diagnostics
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-central-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-scanner-psp
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: stackrox-central-diagnostics
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: use-central-scc
+---
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: use-scanner-scc
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: central-mtls

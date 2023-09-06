@@ -14,6 +14,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -402,7 +403,7 @@ func (s *reportConfigsMigrationTestSuite) TearDownTest() {
 }
 
 func (s *reportConfigsMigrationTestSuite) TestMigration() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	s.NoError(s.accessScopeStore.UpsertMany(ctx, accessScopes))
 	s.NoError(s.reportConfigStore.UpsertMany(ctx, configSliceFromMap(configIDToReportConfig)))
 

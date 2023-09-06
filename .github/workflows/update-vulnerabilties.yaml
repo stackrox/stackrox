@@ -10,7 +10,7 @@ jobs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Generate matrix JSON
         id: output-matrix

@@ -15,12 +15,12 @@ repositories {
     mavenCentral()
 }
 
-def grpcVersion = '1.21.0'
+def grpcVersion = '1.57.2'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
 def protocVersion = '3.23.2'
-def protobufVersion = '3.23.4'
-def nettyTcNativeVersion = '2.0.45.Final'
-def fabric8Version = '6.8.0'
+def protobufVersion = '3.24.2'
+def nettyTcNativeVersion = '2.0.61.Final'
+def fabric8Version = '6.8.1'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -69,14 +69,14 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.13')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.14')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.3.1'
     testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.0'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.8'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.11'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -89,14 +89,14 @@ dependencies {
 
     implementation 'io.kubernetes:client-java:18.0.1'
 
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.2'
+    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.3'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
 
     implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.7.1'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.8'
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
 
@@ -116,10 +116,10 @@ dependencies {
     // See https://github.com/gradle/gradle/issues/12646.
     constraints {
         "codenarc"("org.codehaus.groovy:groovy:2.5.10")
-        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.22")
+        "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.3.1'
+    implementation 'org.javers:javers-core:7.3.2'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
 
     implementation 'commons-codec:commons-codec:1.16.0'

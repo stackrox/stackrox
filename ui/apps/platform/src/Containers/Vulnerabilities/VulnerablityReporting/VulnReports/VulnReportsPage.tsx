@@ -265,26 +265,33 @@ function VulnReportsPage() {
                                                         <FlexItem>
                                                             <p>
                                                                 The status of your last requested
-                                                                job from the active job queue. An
-                                                                active job queue includes any
-                                                                requested job with the status of
-                                                                preparing or waiting until completed
+                                                                job from the{' '}
+                                                                <strong>active job queue</strong>.
+                                                                An <strong>active job queue</strong>{' '}
+                                                                includes any requested job with the
+                                                                status of <strong>preparing</strong>{' '}
+                                                                or <strong>waiting</strong> until
+                                                                completed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Preparing:</p>
+                                                            <p>
+                                                                <strong>Preparing:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is still
-                                                                being processed
+                                                                being processed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Waiting:</p>
+                                                            <p>
+                                                                <strong>Waiting:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is in the
                                                                 queue and waiting to be processed
-                                                                since other users requested their
-                                                                jobs before you.
+                                                                since other requested jobs are being
+                                                                processed.
                                                             </p>
                                                         </FlexItem>
                                                     </Flex>
@@ -471,6 +478,7 @@ function VulnReportsPage() {
                                                         {isCollectionsRouteEnabled ? (
                                                             <Button
                                                                 variant="link"
+                                                                isInline
                                                                 onClick={() =>
                                                                     setCollectionModalId(
                                                                         collectionId
@@ -496,6 +504,7 @@ function VulnReportsPage() {
                                                             <ActionsColumn
                                                                 items={rowActions}
                                                                 isDisabled={isRunning}
+                                                                menuAppendTo={() => document.body}
                                                             />
                                                         </Td>
                                                     )}

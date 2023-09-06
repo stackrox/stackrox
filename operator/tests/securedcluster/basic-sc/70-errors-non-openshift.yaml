@@ -1,0 +1,15 @@
+# Make kuttl ignore this file if running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "false"
+---
+# The central CR and its operands are gone in previous step.
+# On platforms where local scanner is not supported (i.e. on non-OpenShift ones)
+# the reconciler should NOT create a local scanner now that the central scanner is gone.
+# So we have this errors file to make sure it is gone and not re-created.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner

@@ -113,15 +113,9 @@ spec:
     - name: rhacs.telemeter
       rules:
         - expr: |
-            max by (branding, build, central_id, hosting, install_method, sensor_id, sensor_version) (
-              rox_sensor_secured_nodes
+            max by (build, central_id, hosting, install_method, sensor_id, sensor_version) (
+              rox_sensor_secured_nodes{branding=~"rhacs|RHACS"} > bool 0
             )
-          record: rhacs:telemetry:rox_sensor_secured_nodes
-
-        - expr: |
-            max by (branding, build, central_id, hosting, install_method, sensor_id, sensor_version) (
-              rox_sensor_secured_vcpu
-            )
-          record: rhacs:telemetry:rox_sensor_secured_vcpu
+          record: rhacs:telemetry:rox_sensor_info
 
 {{- end -}}

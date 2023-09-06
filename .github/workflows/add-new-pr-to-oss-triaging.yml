@@ -19,7 +19,7 @@ jobs:
       is_external_pr: ${{ steps.check-external-pr.outputs.is_external_pr }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - id: check-external-pr
         run: |
           set -uo pipefail

@@ -42,6 +42,7 @@ func TestConvertQuantityToCores(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		c := c
 		t.Run(c.quantity.String(), func(t *testing.T) {
 			assert.Equal(t, c.expected, ConvertQuantityToCores(&c.quantity))
 		})
@@ -72,6 +73,7 @@ func TestConvertQuantityToMb(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		c := c
 		t.Run(c.quantity.String(), func(t *testing.T) {
 			assert.True(t, math.Abs(float64(c.expected-ConvertQuantityToMB(&c.quantity))) < 0.1)
 		})
