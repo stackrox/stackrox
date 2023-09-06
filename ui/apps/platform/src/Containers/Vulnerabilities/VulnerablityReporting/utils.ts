@@ -22,7 +22,7 @@ export const imageTypeLabelMap: Record<ImageType, string> = {
 
 export const cvesDiscoveredSinceLabelMap: Record<CVESDiscoveredSince, string> = {
     ALL_VULN: 'All time',
-    SINCE_LAST_REPORT: 'Last successful scheduled run report',
+    SINCE_LAST_REPORT: 'Last scheduled report that was successfully sent',
     START_DATE: 'Custom start date',
 };
 
@@ -220,22 +220,11 @@ export function getReportStatusText(
 ): string {
     let statusText = '-';
 
-    if (
-        reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'EMAIL'
-    ) {
+    if (reportStatus?.runState === 'DELIVERED') {
         statusText = 'Emailed';
-    } else if (
-        reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD' &&
-        isDownloadAvailable
-    ) {
+    } else if (reportStatus?.runState === 'GENERATED' && isDownloadAvailable) {
         statusText = 'Download prepared';
-    } else if (
-        reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD' &&
-        !isDownloadAvailable
-    ) {
+    } else if (reportStatus?.runState === 'GENERATED' && !isDownloadAvailable) {
         statusText = 'Download deleted';
     } else if (
         reportStatus?.runState === 'FAILURE' &&
@@ -247,8 +236,6 @@ export function getReportStatusText(
         reportStatus?.reportNotificationMethod === 'DOWNLOAD'
     ) {
         statusText = 'Failed to generate download';
-    } else if (reportStatus?.runState === 'SUCCESS') {
-        statusText = 'Success';
     } else if (reportStatus?.runState === 'FAILURE') {
         statusText = 'Error';
     } else if (reportStatus?.runState === 'PREPARING') {

@@ -7,12 +7,12 @@ jobs:
   update-collector:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout collector repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: stackrox/collector
         path: deps/collector

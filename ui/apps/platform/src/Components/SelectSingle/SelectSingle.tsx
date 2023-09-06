@@ -15,6 +15,7 @@ export type SelectSingleProps = {
     placeholderText?: string;
     onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
     menuAppendTo?: () => HTMLElement;
+    footer?: React.ReactNode;
 };
 
 function SelectSingle({
@@ -31,6 +32,7 @@ function SelectSingle({
     placeholderText = '',
     onBlur,
     menuAppendTo,
+    footer,
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -59,6 +61,7 @@ function SelectSingle({
             toggleId={id}
             onBlur={onBlur}
             menuAppendTo={menuAppendTo}
+            footer={footer}
         >
             {children}
         </Select>
