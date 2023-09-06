@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# This script fetches NVD CVE data for a given year, verifies its integrity, and uploads it to a GCS bucket.
+
+# ------------------------ Instructions ------------------------
+# 1. Ensure you have `curl`, `gunzip`, and `gsutil` installed.
+# 2. Make this script executable: `chmod +x <script_name>.sh`
+# 3. Run this script with a year as an argument: `./<script_name>.sh 2023`
+# 4. Check the script logs for any errors. The script will stop execution if there's an error.
+
 # Function to download a file with curl and handle errors
 download_file() {
     local url=$1
@@ -40,10 +48,7 @@ if [[ "$CHECKSUM_META" != "$CHECKSUM_DOWNLOADED" ]]; then
     exit 1
 fi
 
-gsutil cp -r "nvddata" "gs://scanner-v4-test/"
-
-# Check the exit status of the gsutil command
-if [ $? -ne 0 ]; then
+if ! gsutil cp -r "nvddata" "gs://scanner-v4-test/"; then
     echo "gsutil upload failed"
     exit 1
 fi

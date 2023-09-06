@@ -45,6 +45,10 @@ jobs:
 
     - uses: actions/checkout@v3
 
-    - name: Download data file and verify integrity
+    - name: Fetch, Validate, and Store NVD Data
       run: ./.github/workflows/scripts/download-nvd.sh ${{ matrix.year }}
 
+    - name: Send Slack notification on workflow failure
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Download and Upload Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
