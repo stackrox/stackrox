@@ -184,7 +184,7 @@ func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) 
 	}
 	if cfg.Matcher.Enable {
 		zlog.Info(ctx).Msg("matcher is enabled")
-		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher.DBConnString)
+		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher)
 		if err != nil {
 			return nil, fmt.Errorf("matcher: %w", err)
 		}
