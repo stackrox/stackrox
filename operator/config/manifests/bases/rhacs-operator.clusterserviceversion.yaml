@@ -959,6 +959,4 @@ spec:
   minKubeVersion: 1.15.0
   provider:
     name: Red Hat
-  skips:
-  - rhacs-operator.v4.1.0
   version: 0.0.0
