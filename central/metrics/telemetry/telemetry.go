@@ -53,6 +53,7 @@ func (i *telemetryImpl) Start() {
 	for _, gauge := range telemetry.gauges {
 		gauge.Set(0)
 	}
+	i.gauges[infoGaugeName].Set(1)
 }
 
 // SetClusterMetrics updates the telemetry metric with the cluster metrics.
