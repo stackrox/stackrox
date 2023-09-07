@@ -8,9 +8,7 @@ XyzVersion = patch_csv.XyzVersion
 
 @pytest.mark.parametrize("spec,raw_name,expected", [
     (
-            {
-                "skips": ["rhacs-operator.v4.1.0", "rhacs-operator.v3.72.0", "rhacs-operator.v3.62.2"]
-            },
+            {"skips": ["rhacs-operator.v4.1.0", "rhacs-operator.v3.72.0", "rhacs-operator.v3.62.2"]},
             "rhacs-operator",
             {XyzVersion(4, 1, 0), XyzVersion(3, 62, 2), XyzVersion(3, 72, 0)}
     ),
