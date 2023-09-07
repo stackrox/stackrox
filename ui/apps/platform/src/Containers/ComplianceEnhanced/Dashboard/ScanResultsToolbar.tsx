@@ -9,81 +9,14 @@ import {
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
-import { UsePaginationResult } from 'hooks/patternfly/usePagination';
-
-export type SearchFilter = {
-    scanName: string;
-    clusterName: string;
-    profileName: string;
-};
-
-type FilterInputProps = {
-    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
-};
-
-type ProfileFilterInputProps = FilterInputProps & {
-    profileFilter: string;
-    setProfileFilter: React.Dispatch<React.SetStateAction<string>>;
-};
-
-type ClusterFilterInputProps = FilterInputProps & {
-    clusterFilter: string;
-    setClusterFilter: React.Dispatch<React.SetStateAction<string>>;
-};
-
-function ProfileFilterInput({
-    profileFilter,
-    setSearchFilter,
-    setProfileFilter,
-}: ProfileFilterInputProps) {
-    return (
-        <ToolbarItem variant="search-filter">
-            <SearchInput
-                aria-label="Filter by profile name"
-                placeholder="Filter by profile name"
-                value={profileFilter}
-                onChange={(_e, selection: string) => setProfileFilter(selection)}
-                onSearch={() =>
-                    setSearchFilter((prev) => ({ ...prev, profileName: profileFilter }))
-                }
-                onClear={() => {
-                    setProfileFilter('');
-                    setSearchFilter((prev) => ({ ...prev, profileName: '' }));
-                }}
-            />
-        </ToolbarItem>
-    );
-}
-
-function ClusterFilterInput({
-    clusterFilter,
-    setSearchFilter,
-    setClusterFilter,
-}: ClusterFilterInputProps) {
-    return (
-        <ToolbarItem variant="search-filter">
-            <SearchInput
-                aria-label="Filter by cluster name"
-                placeholder="Filter by cluster name"
-                value={clusterFilter}
-                onChange={(_e, selection: string) => setClusterFilter(selection)}
-                onSearch={() =>
-                    setSearchFilter((prev) => ({ ...prev, clusterName: clusterFilter }))
-                }
-                onClear={() => {
-                    setClusterFilter('');
-                    setSearchFilter((prev) => ({ ...prev, clusterName: '' }));
-                }}
-            />
-        </ToolbarItem>
-    );
-}
+import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import { SearchFilter } from 'types/search';
 
 type ScanResultsToolbarProps = {
-    numberOfScanResults: number;
+    numberOfScanResults: number | null;
     searchFilter: SearchFilter;
-    setSearchFilter: React.Dispatch<React.SetStateAction<SearchFilter>>;
-} & UsePaginationResult;
+    setSearchFilter: (searchFilter: SearchFilter) => void;
+} & UseURLPaginationResult;
 
 function ScanResultsToolbar({
     numberOfScanResults,
@@ -91,8 +24,8 @@ function ScanResultsToolbar({
     setSearchFilter,
     page,
     perPage,
-    onSetPage,
-    onPerPageSelect,
+    setPage,
+    setPerPage,
 }: ScanResultsToolbarProps) {
     const [scanFilter, setScanFilter] = useState<string>('');
     const [profileFilter, setProfileFilter] = useState<string>('');
@@ -100,20 +33,21 @@ function ScanResultsToolbar({
     const [searchType, setSearchType] = useState<string>('Profile');
 
     const resetSearchFilterKey = (key: keyof SearchFilter) => {
-        setSearchFilter((previousFilter) => ({
-            ...previousFilter,
-            [key]: '',
-        }));
+        const currentFilter = searchFilter;
+        delete currentFilter[key];
+        setSearchFilter({
+            ...currentFilter,
+        });
     };
 
     function onSearchTypeSelect(_e, selection) {
         switch (selection) {
             case 'Profile':
-                resetSearchFilterKey('clusterName');
+                resetSearchFilterKey('Cluster Name');
                 setClusterFilter('');
                 break;
             case 'Cluster':
-                resetSearchFilterKey('profileName');
+                resetSearchFilterKey('Profile Name');
                 setProfileFilter('');
                 break;
             default:
@@ -131,26 +65,48 @@ function ScanResultsToolbar({
                         placeholder="Filter by scan name"
                         value={scanFilter}
                         onChange={(_e, selection: string) => setScanFilter(selection)}
-                        onSearch={() => setSearchFilter({ ...searchFilter, scanName: scanFilter })}
+                        onSearch={() =>
+                            setSearchFilter({ ...searchFilter, 'Scan Name': scanFilter })
+                        }
                         onClear={() => {
                             setScanFilter('');
-                            resetSearchFilterKey('scanName');
+                            resetSearchFilterKey('Scan Name');
                         }}
                     />
                 </ToolbarItem>
                 <ToolbarItem variant="separator" />
                 {searchType === 'Profile' ? (
-                    <ProfileFilterInput
-                        profileFilter={profileFilter}
-                        setSearchFilter={setSearchFilter}
-                        setProfileFilter={setProfileFilter}
-                    />
+                    <ToolbarItem variant="search-filter">
+                        <SearchInput
+                            aria-label="Filter by profile name"
+                            placeholder="Filter by profile name"
+                            value={profileFilter}
+                            onChange={(_e, selection: string) => setProfileFilter(selection)}
+                            onSearch={() =>
+                                setSearchFilter({ ...searchFilter, 'Profile Name': profileFilter })
+                            }
+                            onClear={() => {
+                                setProfileFilter('');
+                                resetSearchFilterKey('Profile Name');
+                            }}
+                        />
+                    </ToolbarItem>
                 ) : (
-                    <ClusterFilterInput
-                        clusterFilter={clusterFilter}
-                        setSearchFilter={setSearchFilter}
-                        setClusterFilter={setClusterFilter}
-                    />
+                    <ToolbarItem variant="search-filter">
+                        <SearchInput
+                            aria-label="Filter by cluster name"
+                            placeholder="Filter by cluster name"
+                            value={clusterFilter}
+                            onChange={(_e, selection: string) => setClusterFilter(selection)}
+                            onSearch={() =>
+                                setSearchFilter({ ...searchFilter, 'Cluster Name': clusterFilter })
+                            }
+                            onClear={() => {
+                                setClusterFilter('');
+                                resetSearchFilterKey('Cluster Name');
+                            }}
+                        />
+                    </ToolbarItem>
                 )}
                 <ToolbarItem variant="search-filter">
                     <SelectSingle
@@ -162,16 +118,18 @@ function ScanResultsToolbar({
                         <SelectOption value="Cluster" />
                     </SelectSingle>
                 </ToolbarItem>
-                <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
-                    <Pagination
-                        isCompact
-                        itemCount={numberOfScanResults}
-                        page={page}
-                        perPage={perPage}
-                        onSetPage={onSetPage}
-                        onPerPageSelect={onPerPageSelect}
-                    />
-                </ToolbarItem>
+                {numberOfScanResults && (
+                    <ToolbarItem variant="pagination" alignment={{ default: 'alignRight' }}>
+                        <Pagination
+                            isCompact
+                            itemCount={numberOfScanResults}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        />
+                    </ToolbarItem>
+                )}
             </ToolbarContent>
         </Toolbar>
     );

@@ -1,44 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
+    ActionsColumn,
+    IAction,
     TableComposable,
     Tbody,
     Td,
     Th,
     Thead,
     Tr,
-    ActionsColumn,
-    IAction,
 } from '@patternfly/react-table';
 import { format } from 'date-fns';
 
-import usePagination from 'hooks/patternfly/usePagination';
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSort from 'hooks/useURLSort';
+import useURLSearch from 'hooks/useURLSearch';
+import { complianceResultsOverview } from 'services/ComplianceEnhancedService';
+import { SortOption } from 'types/table';
 
-import { ComplianceScanResultsOverview } from './types';
-import ScanResultsToolbar, { SearchFilter } from './ScanResultsToolbar';
-
-import scanResultsOverviewMockData from './MockData/complianceScanResultsOverview.json';
-
-const defaultSearchFilter = {
-    scanName: '',
-    clusterName: '',
-    profileName: '',
-};
+import { Bullseye, Spinner } from '@patternfly/react-core';
+import ScanResultsToolbar from './ScanResultsToolbar';
 
 const sortFields = ['Scan Name', 'Failing Controls', 'Last Scanned'];
-const defaultSortOption = { field: 'Last Scanned', direction: 'asc' } as const;
+const defaultSortOption = { field: 'Scan Name', direction: 'asc' } as SortOption;
 
 function ScanResultsOverviewTable() {
-    const { page, perPage, onSetPage, onPerPageSelect } = usePagination();
-    const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
-    const [searchFilter, setSearchFilter] = useState<SearchFilter>(defaultSearchFilter);
-    const [scanResultsOverviewData] = useState<ComplianceScanResultsOverview[]>(
-        scanResultsOverviewMockData.scanOverviews
-    );
+    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+    });
+    const { searchFilter, setSearchFilter } = useURLSearch();
 
-    useEffect(() => {
-        // TODO: fetch GetComplianceScanResultsOverview once implemented and update scanResultsOverviewData
-    }, [searchFilter, page, perPage, sortOption]);
+    const listQuery = useCallback(
+        () => complianceResultsOverview(searchFilter, sortOption, page - 1, perPage),
+        [searchFilter, sortOption, page, perPage]
+    );
+    const { data: scanResultsOverviewData, loading: isLoading } = useRestQuery(listQuery);
 
     const defaultActions = (): IAction[] => [
         {
@@ -54,16 +52,49 @@ function ScanResultsOverviewTable() {
         return items[0];
     };
 
+    const renderTableContent = () => {
+        if (isLoading) {
+            return (
+                <Tr>
+                    <Td colSpan={8}>
+                        <Bullseye>
+                            <Spinner isSVG />
+                        </Bullseye>
+                    </Td>
+                </Tr>
+            );
+        }
+
+        return scanResultsOverviewData?.map(({ scanStats, clusterId, profileName }) => (
+            // TODO: verify scanName unique
+            <Tr key={scanStats.scanName}>
+                <Td>{scanStats.scanName}</Td>
+                <Td>{displayOnlyItemOrItemCount(clusterId, 'clusters')}</Td>
+                <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
+                <Td>{`${scanStats.numberOfFailingChecks}/${scanStats.numberOfChecks}`}</Td>
+                <Td>{format(scanStats.lastScan, 'DD MMM YYYY, h:mm:ss A')}</Td>
+                <Td isActionCell>
+                    <ActionsColumn items={defaultActions()} />
+                </Td>
+            </Tr>
+        ));
+    };
+
     return (
         <>
             <ScanResultsToolbar
-                numberOfScanResults={scanResultsOverviewData.length}
+                numberOfScanResults={
+                    scanResultsOverviewData ? scanResultsOverviewData.length : null
+                }
                 searchFilter={searchFilter}
-                setSearchFilter={setSearchFilter}
+                setSearchFilter={(value) => {
+                    setPage(1);
+                    setSearchFilter(value);
+                }}
                 page={page}
                 perPage={perPage}
-                onSetPage={onSetPage}
-                onPerPageSelect={onPerPageSelect}
+                setPage={setPage}
+                setPerPage={setPerPage}
             />
             <TableComposable borders={false}>
                 <Thead noWrap>
@@ -76,22 +107,7 @@ function ScanResultsOverviewTable() {
                         <Td />
                     </Tr>
                 </Thead>
-                <Tbody>
-                    {scanResultsOverviewData.map(({ scanStats, clusterId, profileName }) => {
-                        return (
-                            <Tr key={scanStats.scanName}>
-                                <Td>{scanStats.scanName}</Td> {/* TODO: link to scan details  */}
-                                <Td>{displayOnlyItemOrItemCount(clusterId, 'clusters')}</Td>
-                                <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
-                                <Td>{`${scanStats.numberOfFailingChecks}/${scanStats.numberOfChecks}`}</Td>
-                                <Td>{format(scanStats.lastScan, 'DD MMM YYYY, h:mm:ss A')}</Td>
-                                <Td isActionCell>
-                                    <ActionsColumn items={defaultActions()} />
-                                </Td>
-                            </Tr>
-                        );
-                    })}
-                </Tbody>
+                <Tbody>{renderTableContent()}</Tbody>
             </TableComposable>
         </>
     );
