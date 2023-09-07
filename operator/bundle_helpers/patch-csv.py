@@ -79,12 +79,10 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if rbac_proxy_replacement:
         rewrite(csv_doc, rbac_proxy_replace(rbac_proxy_replacement))
 
-    current_xyz = XyzVersion.parse_from(version)
-    first_xyz = XyzVersion.parse_from(first_version)
-    previous_xyz = XyzVersion.parse_from(get_previous_y_stream(version))
+    previous_y_stream = get_previous_y_stream(version)
 
     # An olm.skipRange doesn't hurt if it references non-existing versions.
-    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_xyz} < {version}'
+    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
 
     # multi-arch
     if "labels" not in csv_doc["metadata"]:
@@ -94,7 +92,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     skips = parse_skips(csv_doc["spec"], raw_name)
     replaced_xyz = calculate_replaced_version(
-        current_xyz=current_xyz, first_xyz=first_xyz, previous_xyz=previous_xyz, skips=skips)
+        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
@@ -103,7 +101,11 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     del csv_doc['spec']['relatedImages']
 
 
-def calculate_replaced_version(current_xyz, first_xyz, previous_xyz, skips):
+def calculate_replaced_version(version, first_version, previous_y_stream, skips):
+    current_xyz = XyzVersion.parse_from(version)
+    first_xyz = XyzVersion.parse_from(first_version)
+    previous_xyz = XyzVersion.parse_from(previous_y_stream)
+
     if current_xyz <= first_xyz:
         return None
 
