@@ -2,7 +2,6 @@ package csv
 
 import (
 	"encoding/csv"
-	"fmt"
 	"net/http"
 
 	"github.com/stackrox/rox/pkg/errox"
@@ -55,9 +54,7 @@ func NewHTTPWriter[Record any](w http.ResponseWriter, filename string,
 }
 
 func (w *httpWriterImpl[Record]) sendHeaders() error {
-	h := w.writer.Header()
-	h.Set("Content-Type", contentType)
-	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, w.filename))
+	writeHeaders(w.writer, w.filename)
 
 	// Set UTF-8 BOM to please Windows CSV editors.
 	if _, err := w.writer.Write(([]byte)(utf8BOM)); err != nil {
