@@ -140,6 +140,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			{ChildId: "1"},
 			{ChildId: "2"},
 		},
+		StringSlice: []string{"a", "b", "c"},
 	}))
 	s.Require().NoError(s.testParent1Store.Upsert(testCtx, &storage.TestParent1{
 		Id:       "2",
@@ -149,6 +150,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			{ChildId: "1"},
 			{ChildId: "3"},
 		},
+		StringSlice: []string{"a", "b", "c"},
 	}))
 	s.Require().NoError(s.testParent1Store.Upsert(testCtx, &storage.TestParent1{
 		Id:       "3",
@@ -159,6 +161,7 @@ func (s *GraphQueriesTestSuite) initializeTestGraph() {
 			{ChildId: "4"},
 			{ChildId: "5"},
 		},
+		StringSlice: []string{"a", "b", "c", "d", "e"},
 	}))
 	s.Require().NoError(s.testParent4Store.Upsert(testCtx, &storage.TestParent4{
 		Id:       parent4ID,
@@ -473,6 +476,16 @@ func (s *GraphQueriesTestSuite) TestDerivedPagination() {
 			orderMatters:      true,
 			expectedResultIDs: []string{"2", "1"},
 		},
+		// This is unit test that demonstrates that count on array data types does not function as expected.
+		// The expectation is count of individual values instead of count of arrays.
+		// Remove the `validateDerivedFieldDataType` check and run this test.
+		//{
+		//	desc:              "one-hop count",
+		//	queriedProtoType:  "testgrandparent",
+		//	q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1StringSliceCount.String()}}}},
+		//	orderMatters:      true,
+		//	expectedResultIDs: []string{"2", "1"},
+		//},
 		{
 			desc:              "one-hop count (reversed)",
 			queriedProtoType:  "testgrandparent",
