@@ -7,9 +7,9 @@ metadata:
   name: use-nonroot-v2-scc
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "role" "use-nonroot-v2-scc") | nindent 4 }}
 rules:
 - apiGroups:
   - security.openshift.io
@@ -26,9 +26,9 @@ metadata:
   name: monitoring-use-nonroot-v2-scc
   namespace: {{ ._rox._namespace }}
   labels:
-    {{- include "srox.labels" (list . "rolebinding" "monitoring-use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.labels" (list . "rolebinding" "monitoring-use-nonroot-v2-scc") | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "rolebinding" "monitoring-use-anyuid-scc") | nindent 4 }}
+    {{- include "srox.annotations" (list . "rolebinding" "monitoring-use-nonroot-v2-scc") | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
