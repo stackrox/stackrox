@@ -5,10 +5,9 @@ import logging
 import os
 import pathlib
 import subprocess
-from datetime import datetime, timezone
-
 import sys
 import yaml
+from datetime import datetime, timezone
 
 from rewrite import rewrite, string_replacer
 
