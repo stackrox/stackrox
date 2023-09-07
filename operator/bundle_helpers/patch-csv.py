@@ -51,8 +51,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, version_skips,
-              rbac_proxy_replacement):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, rbac_proxy_replacement):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -75,9 +74,6 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     # An olm.skipRange doesn't hurt if it references non-existing versions.
     csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
-
-    if version_skips:
-        csv_doc["spec"]["skips"] = version_skips
 
     # multi-arch
     if "labels" not in csv_doc["metadata"]:
@@ -119,11 +115,6 @@ def parse_args():
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
-    parser.add_argument("--add-version-skips", action='append', required=False,
-                        help='Add spec.skips values to CSV to configure which previously released versions should be '
-                             'skipped due to being unsafe (may be passed multiple times). '
-                             'Example usage: --add-version-skips rhacs-operator.v3.73.0',
-                        default=[])
     return parser.parse_args()
 
 
@@ -137,7 +128,6 @@ def main():
               first_version=args.first_version,
               no_related_images=args.no_related_images,
               extra_supported_arches=args.add_supported_arch,
-              version_skips=args.add_version_skips,
               rbac_proxy_replacement=args.replace_rbac_proxy)
     print(yaml.safe_dump(doc))
 
