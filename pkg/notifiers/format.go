@@ -3,10 +3,10 @@ package notifiers
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -41,7 +41,7 @@ const bplPolicyFormat = `
 	{{range .Violations}}
 		{{list .Message}}
 		{{if .MessageAttributes}}
-			{{if kindIs "Alert_Violation_KeyValueAttrs_" .MessageAttributes }}
+			{{if ptrTypeIs "Alert_Violation_KeyValueAttrs_" .MessageAttributes }}
 				{{if .MessageAttributes.KeyValueAttrs}}
 					{{range .MessageAttributes.KeyValueAttrs.Attrs}}
 						{{stringify .Key ":" .Value | nestedList}}
@@ -124,7 +124,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	}
 	funcMap["stringify"] = stringify
 	funcMap["default"] = stringutils.OrDefault
-	funcMap["kindIs"] = sprig.GenericFuncMap()["kindIs"]
+	funcMap["ptrTypeIs"] = ptrTypeIs
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
@@ -206,6 +206,16 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 		return "", err
 	}
 	return tpl.String(), nil
+}
+
+// ptrTypeIs checks if src is of type target. If src is a pointer or interface, it looks at its actual type
+// sprig has a `typeIs` and `kindIs` but it doesn't work cleanly with pointers
+func ptrTypeIs(target string, src interface{}) bool {
+	r := reflect.TypeOf(src)
+	for r.Kind() == reflect.Ptr || r.Kind() == reflect.Interface {
+		r = r.Elem()
+	}
+	return target == r.Name()
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
