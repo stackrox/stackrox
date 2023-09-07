@@ -17,13 +17,8 @@ jobs:
     - name: Determine years for matrix
       id: set-matrix
       run: |
-        range=""
-        start_year=2002
-        end_year=$(date +%Y)
-        for (( year=start_year; year<=end_year; year++ )); do
-            range="${range},${year}"
-        done
-        echo "::set-output name=matrix::{\"year\":[${range#*,}]}"
+        range=$(seq 2002 "$(date +%Y)" | tr '\n' ',')
+        echo "::set-output name=matrix::{\"year\":[${range%,}]}"
 
   fetch-data:
     needs: setup
@@ -46,9 +41,15 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Fetch, Validate, and Store NVD Data
-      run: ./.github/workflows/scripts/download-nvd.sh ${{ matrix.year }}
+      run: ./.github/workflows/scripts/fetch-update-nvd.sh ${{ matrix.year }}
 
+
+  send-notification:
+    needs:
+    - fetch-data
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
     - name: Send Slack notification on workflow failure
-      if: failure()
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<!subteam^S04S96AAVND|acs-scanner-primary> Failure in Scanner V4 Updater Workflow: Download and Upload Repository Mappings"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to download and update NVD CVSS data"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
