@@ -10,6 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/errors"
 )
 
+const (
+	// utf8BOM is the UTF-8 BOM byte sequence.
+	utf8BOM = "\uFEFF"
+)
+
 // Utility functions to be used for CSV exporting.
 
 // WriteError responds with the error message and HTTP status code deduced from
