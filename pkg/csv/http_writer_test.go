@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,6 +82,25 @@ func TestHTTPCSVWriterError(t *testing.T) {
 	assert.ErrorIs(t, err, errSendHeaders)
 	w.Flush()
 	assert.Equal(t, "", buf.String())
+	assert.Equal(t, http.StatusInternalServerError, httpWriterMock.status)
+}
+
+// TestHTTPCSVWriterSetError ensures SetHTTPError sets appropriate headers and
+// HTTP status code
+func TestHTTPCSVWriterSetError(t *testing.T) {
+	buf := bytes.NewBuffer(nil)
+	httpWriterMock := &httpWriterMock{
+		header: http.Header{},
+		buf:    buf,
+	}
+
+	converter := func(r *data) Row { return Row{r.a, r.b} }
+	header := Row{"a", "b"}
+	w := NewHTTPWriter(httpWriterMock, "filename", converter, header)
+	_ = w.SetHTTPError(errox.ServerError)
+	w.Flush()
+
+	assert.Contains(t, httpWriterMock.header["Content-Type"][0], "text/plain")
 	assert.Equal(t, http.StatusInternalServerError, httpWriterMock.status)
 }
 

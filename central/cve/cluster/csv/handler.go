@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
@@ -105,14 +106,14 @@ func ClusterCVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query, rQuery, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			csv.WriteError(w, http.StatusBadRequest, err)
+			csv.WriteError(w, errox.InvalidArgs.CausedBy(err))
 			return
 		}
 		rawQuery, paginatedQuery := resolvers.V1RawQueryAsResolverQuery(rQuery)
 
 		cveRows, err := ClusterCVECSVRows(loaders.WithLoaderContext(r.Context()), query, rawQuery, paginatedQuery)
 		if err != nil {
-			csv.WriteError(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, errox.ServerError.CausedBy(err))
 			return
 		}
 
