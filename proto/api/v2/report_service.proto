@@ -154,8 +154,9 @@ message ReportStatus {
     enum RunState {
         WAITING   = 0;
         PREPARING = 1;
-        SUCCESS   = 2;
-        FAILURE   = 3;
+        GENERATED = 2;
+        DELIVERED = 3;
+        FAILURE   = 4;
     }
 
     enum ReportMethod {
