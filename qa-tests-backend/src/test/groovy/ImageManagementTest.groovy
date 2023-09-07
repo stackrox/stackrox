@@ -96,7 +96,7 @@ class ImageManagementTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify image scan finds correct base OS - #qaImageTag"() {
         when:
-        def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag")
+        def img = ImageService.scanImage("quay.io/rhacs-eng/qa:$qaImageTag", false)
         then:
         assert img.scan.operatingSystem == expected
         where:
