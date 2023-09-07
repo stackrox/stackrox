@@ -2,6 +2,7 @@
 package schema
 
 import (
+	"github.com/lib/pq"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -12,10 +13,11 @@ func ConvertTestParent1FromProto(obj *storage.TestParent1) (*TestParent1, error)
 		return nil, err
 	}
 	model := &TestParent1{
-		ID:         obj.GetId(),
-		ParentID:   obj.GetParentId(),
-		Val:        obj.GetVal(),
-		Serialized: serialized,
+		ID:          obj.GetId(),
+		ParentID:    obj.GetParentId(),
+		Val:         obj.GetVal(),
+		StringSlice: pq.Array(obj.GetStringSlice()).(*pq.StringArray),
+		Serialized:  serialized,
 	}
 	return model, nil
 }
