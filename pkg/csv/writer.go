@@ -3,7 +3,6 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"net/http"
 	"sort"
 )
@@ -60,8 +59,7 @@ func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 
 // Write writes back the CSV file contents into the http.ResponseWriter.
 func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
-	w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, filename))
+	writeHeaders(w, filename)
 	w.WriteHeader(http.StatusOK)
 
 	if c.sort {

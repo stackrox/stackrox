@@ -200,7 +200,7 @@ func CSVHandler() http.HandlerFunc {
 				output.addAll(mcRow, controls, mcValue.GetControlResults())
 			}
 		}
-		output.Write(w, "compliance_export")
+		output.Write(w, "compliance_export.csv")
 	}
 }
 
