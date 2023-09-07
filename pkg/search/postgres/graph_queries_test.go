@@ -479,13 +479,13 @@ func (s *GraphQueriesTestSuite) TestDerivedPagination() {
 		// This is unit test that demonstrates that count on array data types does not function as expected.
 		// The expectation is count of individual values instead of count of arrays.
 		// Remove the `validateDerivedFieldDataType` check and run this test.
-		//{
+		// {
 		//	desc:              "one-hop count",
 		//	queriedProtoType:  "testgrandparent",
 		//	q:                 &v1.Query{Pagination: &v1.QueryPagination{SortOptions: []*v1.QuerySortOption{{Field: search.TestParent1StringSliceCount.String()}}}},
 		//	orderMatters:      true,
 		//	expectedResultIDs: []string{"2", "1"},
-		//},
+		// },
 		{
 			desc:              "one-hop count (reversed)",
 			queriedProtoType:  "testgrandparent",
