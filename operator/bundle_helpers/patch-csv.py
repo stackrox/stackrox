@@ -101,6 +101,17 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     del csv_doc['spec']['relatedImages']
 
 
+def parse_skips(spec, raw_name):
+    raw_skips = spec.get("skips", [])
+    return set([XyzVersion.parse_from(must_strip_prefix(item, f"{raw_name}.v")) for item in raw_skips])
+
+
+def must_strip_prefix(str, prefix):
+    if not str.startswith(prefix):
+        raise RuntimeError(f"{str} does not begin with {prefix}")
+    return str[len(prefix):]
+
+
 def calculate_replaced_version(version, first_version, previous_y_stream, skips):
     current_xyz = XyzVersion.parse_from(version)
     first_xyz = XyzVersion.parse_from(first_version)
@@ -124,17 +135,6 @@ def calculate_replaced_version(version, first_version, previous_y_stream, skips)
             f"Cannot identify safe patch version among skips {skips} that would be less than current {current_xyz}. Falling back to original {current_replace}.")
 
     return current_replace
-
-
-def parse_skips(spec, raw_name):
-    raw_skips = spec.get("skips", [])
-    return set([XyzVersion.parse_from(must_strip_prefix(item, f"{raw_name}.v")) for item in raw_skips])
-
-
-def must_strip_prefix(str, prefix):
-    if not str.startswith(prefix):
-        raise RuntimeError(f"{str} does not begin with {prefix}")
-    return str[len(prefix):]
 
 
 def get_previous_y_stream(version):
