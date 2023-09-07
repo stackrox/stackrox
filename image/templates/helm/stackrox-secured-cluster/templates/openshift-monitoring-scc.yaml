@@ -4,7 +4,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: use-anyuid-scc
+  name: use-nonroot-v2-scc
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
@@ -16,14 +16,14 @@ rules:
   resources:
   - securitycontextconstraints
   resourceNames:
-  - anyuid
+  - nonroot-v2
   verbs:
   - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: monitoring-use-anyuid-scc
+  name: monitoring-use-nonroot-v2-scc
   namespace: {{ ._rox._namespace }}
   labels:
     {{- include "srox.labels" (list . "rolebinding" "monitoring-use-anyuid-scc") | nindent 4 }}
@@ -32,7 +32,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: monitoring-use-anyuid-scc
+  name: use-nonroot-v2-scc
 subjects:
 - kind: ServiceAccount
   name: monitoring
