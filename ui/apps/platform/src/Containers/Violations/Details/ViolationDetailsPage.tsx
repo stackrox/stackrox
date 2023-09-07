@@ -1,5 +1,6 @@
 import React, { ReactElement, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import startCase from 'lodash/startCase';
 import {
     TabTitleText,
     Tabs,
@@ -68,15 +69,17 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, deployment, resource, commonEntityInfo, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    const { name: entityName } = resource || deployment || {};
+    const entityName = resource?.clusterName || deployment?.name || '';
     const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
+
+    const displayedResourceType = startCase(resourceType.toLowerCase());
 
     return (
         <>
             <ViolationsBreadcrumbs current={title} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title headingLevel="h2">{`in "${entityName as string}" ${resourceType}`}</Title>
+                <Title headingLevel="h2">{`in "${entityName}" ${displayedResourceType}`}</Title>
             </PageSection>
             <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs
