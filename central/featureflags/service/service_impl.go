@@ -50,11 +50,6 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 			Enabled: env.ActiveVulnMgmt.BooleanSetting(),
 		},
 		{
-			Name:    "Enable Extended Resource Set for Audit Log Policies",
-			EnvVar:  env.AuditPolicyExtendedSet.EnvVar(),
-			Enabled: env.AuditPolicyExtendedSet.BooleanSetting(),
-		},
-		{
 			Name:    "Vulnerability Reporting Enhancements",
 			EnvVar:  env.VulnReportingEnhancements.EnvVar(),
 			Enabled: env.VulnReportingEnhancements.BooleanSetting(),
