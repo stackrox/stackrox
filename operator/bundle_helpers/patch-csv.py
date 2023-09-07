@@ -92,7 +92,9 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     for arch in extra_supported_arches:
         csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
-    replaced_xyz = calculate_replaced_version(current_xyz=current_xyz, first_xyz=first_xyz, previous_xyz=previous_xyz)
+    skips = parse_skips(csv_doc["spec"], raw_name)
+    replaced_xyz = calculate_replaced_version(
+        current_xyz=current_xyz, first_xyz=first_xyz, previous_xyz=previous_xyz, skips=skips)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
@@ -101,14 +103,36 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     del csv_doc['spec']['relatedImages']
 
 
-def calculate_replaced_version(current_xyz, first_xyz, previous_xyz):
+def calculate_replaced_version(current_xyz, first_xyz, previous_xyz, skips):
     if current_xyz <= first_xyz:
         return None
 
-    if current_xyz.z == 0:
-        return previous_xyz
+    initial_replace = previous_xyz if current_xyz.z == 0 else \
+        XyzVersion(current_xyz.x, current_xyz.y, current_xyz.z - 1)
 
-    return XyzVersion(current_xyz.x, current_xyz.y, current_xyz.z - 1)
+    current_replace = initial_replace
+
+    while current_replace in skips:
+        logging.info(f"Looks like {current_replace} replace version is in skips list, trying next patch.")
+        current_replace = XyzVersion(current_replace.x, current_replace.y, current_replace.z + 1)
+
+    if current_replace >= current_xyz:
+        current_replace = initial_replace
+        logging.warning(
+            f"Cannot identify safe patch version among skips {skips} that would be less than current {current_xyz}. Falling back to original {current_replace}.")
+
+    return current_replace
+
+
+def parse_skips(spec, raw_name):
+    raw_skips = spec.get("skips", [])
+    return set([XyzVersion.parse_from(must_strip_prefix(item, f"{raw_name}.v")) for item in raw_skips])
+
+
+def must_strip_prefix(str, prefix):
+    if not str.startswith(prefix):
+        raise RuntimeError(f"{str} does not begin with {prefix}")
+    return str[len(prefix):]
 
 
 def get_previous_y_stream(version):
@@ -138,7 +162,8 @@ def parse_args():
 
 
 def main():
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO,
+                        format=f"%(asctime)s {pathlib.Path(__file__).name}: %(message)s")
     args = parse_args()
     doc = yaml.safe_load(sys.stdin)
     patch_csv(doc,
