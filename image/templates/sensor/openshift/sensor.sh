@@ -46,6 +46,11 @@ if [[ -f "$DIR/sensor-pod-security.yaml" ]]; then
   fi
 fi
 
+if [[ -f "$DIR/openshift-monitoring.yaml" ]]; then
+    echo "Creating OpenShift monitoring configuration..."
+    ${KUBE_COMMAND} apply -f "$DIR/openshift-monitoring.yaml"
+fi
+
 # OpenShift roles can be delayed to be added
 sleep 5
 
