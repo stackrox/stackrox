@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -40,9 +41,11 @@ const bplPolicyFormat = `
 	{{range .Violations}}
 		{{list .Message}}
 		{{if .MessageAttributes}}
-			{{if .MessageAttributes.KeyValueAttrs}}
-				{{range .MessageAttributes.KeyValueAttrs.Attrs}}
-					{{stringify .Key ":" .Value | nestedList}}
+			{{if kindIs "Alert_Violation_KeyValueAttrs_" .MessageAttributes }}
+				{{if .MessageAttributes.KeyValueAttrs}}
+					{{range .MessageAttributes.KeyValueAttrs.Attrs}}
+						{{stringify .Key ":" .Value | nestedList}}
+					{{end}}
 				{{end}}
 			{{end}}
 		{{end}}
@@ -121,6 +124,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	}
 	funcMap["stringify"] = stringify
 	funcMap["default"] = stringutils.OrDefault
+	funcMap["kindIs"] = sprig.GenericFuncMap()["kindIs"]
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
