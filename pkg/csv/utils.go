@@ -1,21 +1,23 @@
 package csv
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/pkg/grpc/errors"
 )
 
 // Utility functions to be used for CSV exporting.
 
-// WriteError Writes the given error to the given http.ResponseWriter.
-func WriteError(w http.ResponseWriter, code int, err error) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-	_, _ = fmt.Fprint(w, err)
+// WriteError responds with the error message and HTTP status code deduced from
+// the error class. Appropriate response headers are set. Note that once data
+// have been written to ResponseWriter, depending on its implementation, headers
+// and the status code might have already been sent over HTTP. In such case,
+// calling WriteError will not have the desired effect.
+func WriteError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), errors.ErrToHTTPStatus(err))
 }
 
 // FromTimestamp creates a string representation of the given timestamp.
