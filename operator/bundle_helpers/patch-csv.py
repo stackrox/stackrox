@@ -7,9 +7,20 @@ import pathlib
 import subprocess
 import sys
 import yaml
+from collections import namedtuple
 from datetime import datetime, timezone
 
 from rewrite import rewrite, string_replacer
+
+
+class XyzVersion(namedtuple("Version", ["x", "y", "z"])):
+    @staticmethod
+    def parse_from(version_str):
+        x, y, z = (int(c) for c in version_str.split('-', maxsplit=1)[0].split('.'))
+        return XyzVersion(x, y, z)
+
+    def __str__(self):
+        return f"{self.x}.{self.y}.{self.z}"
 
 
 def rbac_proxy_replace(updated_img):
@@ -50,7 +61,8 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, rbac_proxy_replacement):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches,
+              rbac_proxy_replacement):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -67,12 +79,12 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if rbac_proxy_replacement:
         rewrite(csv_doc, rbac_proxy_replace(rbac_proxy_replacement))
 
-    x, y, z = (int(c) for c in version.split('-', maxsplit=1)[0].split('.'))
-    first_x, first_y, first_z = (int(c) for c in first_version.split('-', maxsplit=1)[0].split('.'))
-    previous_y_stream = get_previous_y_stream(version)
+    current_xyz = XyzVersion.parse_from(version)
+    first_xyz = XyzVersion.parse_from(first_version)
+    previous_xyz = XyzVersion.parse_from(get_previous_y_stream(version))
 
     # An olm.skipRange doesn't hurt if it references non-existing versions.
-    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
+    csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_xyz} < {version}'
 
     # multi-arch
     if "labels" not in csv_doc["metadata"]:
@@ -80,11 +92,11 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     for arch in extra_supported_arches:
         csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
-    if (x, y, z) > (first_x, first_y, first_z):
-        if z == 0:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{previous_y_stream}'
+    if current_xyz > first_xyz:
+        if current_xyz.z == 0:
+            csv_doc["spec"]["replaces"] = f'{raw_name}.v{previous_xyz}'
         else:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z - 1}'
+            csv_doc["spec"]["replaces"] = f'{raw_name}.v{current_xyz.x}.{current_xyz.y}.{current_xyz.z - 1}'
 
     # OSBS fills relatedImages therefore we must not provide that ourselves.
     # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
