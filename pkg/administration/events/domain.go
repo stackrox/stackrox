@@ -1,4 +1,4 @@
-package centralevents
+package events
 
 const (
 	defaultDomain       = "General"
@@ -13,7 +13,7 @@ var (
 )
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be
-// used for Central events.
+// used for administration events.
 func GetDomainFromModule(module string) string {
 	domain := moduleToDomain[module]
 	if domain == "" {

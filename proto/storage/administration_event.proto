@@ -8,15 +8,15 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// CentralEvent is the storage representation of events in Central.
+// AdministrationEvent is the storage representation of administrative events in Central.
 //
-// Refer to v1.CentralEvent for a more detailed doc.
-message CentralEvent {
+// Refer to v1.AdministrationEvent for a more detailed doc.
+message AdministrationEvent {
     // The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
     // resource_type, resource_id, message). It is used for deduplication of events.
     string id                                  = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
-    CentralEventType type                      = 2 [(gogoproto.moretags) = 'search:"Event Type,hidden"'];
-    CentralEventLevel level                    = 3 [(gogoproto.moretags) = 'search:"Event Level,hidden"'];
+    AdministrationEventType type               = 2 [(gogoproto.moretags) = 'search:"Event Type,hidden"'];
+    AdministrationEventLevel level             = 3 [(gogoproto.moretags) = 'search:"Event Level,hidden"'];
     string message                             = 4;
     string hint                                = 5;
     string domain                              = 6 [(gogoproto.moretags) = 'search:"Event Domain,hidden"'];
@@ -27,22 +27,22 @@ message CentralEvent {
     google.protobuf.Timestamp created_at       = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
 }
 
-// CentralEventType is the storage representation of the Central event type.
+// AdministrationEventType is the storage representation of the event type.
 //
-// Refer to v1.CentralEventType for a more detailed doc.
-enum CentralEventType {
-    CENTRAL_EVENT_TYPE_UNKNOWN     = 0;
-    CENTRAL_EVENT_TYPE_GENERIC     = 1;
-    CENTRAL_EVENT_TYPE_LOG_MESSAGE = 2;
+// Refer to v1.AdministrationEventType for a more detailed doc.
+enum AdministrationEventType {
+    ADMINISTRATION_EVENT_TYPE_UNKNOWN     = 0;
+    ADMINISTRATION_EVENT_TYPE_GENERIC     = 1;
+    ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE = 2;
 }
 
-// CentralEventLevel is the storage representation of the Central event level.
+// AdministrationEventLevel is the storage representation of the event level.
 //
-// Refer to v1.CentralEventLevel for a more detailed doc.
-enum CentralEventLevel {
-    CENTRAL_EVENT_LEVEL_UNKNOWN = 0;
-    CENTRAL_EVENT_LEVEL_INFO    = 1;
-    CENTRAL_EVENT_LEVEL_SUCCESS = 2;
-    CENTRAL_EVENT_LEVEL_WARN    = 3;
-    CENTRAL_EVENT_LEVEL_DANGER  = 4;
+// Refer to v1.AdministrationEventLevel for a more detailed doc.
+enum AdministrationEventLevel {
+    ADMINISTRATION_EVENT_LEVEL_UNKNOWN = 0;
+    ADMINISTRATION_EVENT_LEVEL_INFO    = 1;
+    ADMINISTRATION_EVENT_LEVEL_SUCCESS = 2;
+    ADMINISTRATION_EVENT_LEVEL_WARNING = 3;
+    ADMINISTRATION_EVENT_LEVEL_ERROR   = 4;
 }

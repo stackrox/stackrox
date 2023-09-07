@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/pagination.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+// AdministrationEvents are administrative events emitted by Central. They are used to create
+// transparency for users for asynchronous, background tasks. Events are part of Central's
+// system health view.
+message AdministrationEvent {
+    // UUID of the event.
+    string id                                  = 1;
+
+    // Type of the event.
+    AdministrationEventType type               = 2;
+
+    // Level associated with the event. The level is categorized into danger, warn, info,
+    // success.
+    AdministrationEventLevel level             = 3;
+
+    // Message associated with the event. The message may include detailed information
+    // for this particular event.
+    string message                             = 4;
+
+    // Hint associated with the event. The hint may include different information based
+    // on the type of event. It can include instructions to resolve an event, or
+    // informational hints.
+    string hint                                = 5;
+
+    // Domain associated with the event. An event's domain outlines the feature domain where
+    // the event was created from. As an example, this might be "Image Scanning".
+    // In case of events that cannot be tied to a specific domain, this will be "General".
+    string domain                              = 6;
+
+    // Resource type associated with the event. An event may refer to an underlying resource
+    // such as a particular image. In that case, the resource type will be filled here.
+    string resource_type                       = 7;
+
+    // Resource ID associated with the event. If an event refers to an underlying resource,
+    // the resource ID identifies the underlying resource. The resource ID is not guaranteed
+    // to uniquely identify the object. For example, a resource name is a valid resource ID.
+    string resource_id                         = 8;
+
+    // Occurrences associated with the event. When events may occur multiple times, the
+    // occurrences track the amount.
+    int64 num_occurrences                      = 9;
+
+    // Specifies the time when the event has last occurred.
+    google.protobuf.Timestamp last_occurred_at = 10;
+
+    // Specifies the time when the event has been created.
+    google.protobuf.Timestamp created_at       = 11;
+}
+
+// AdministrationEventType exposes the different types of events.
+enum AdministrationEventType {
+    ADMINISTRATION_EVENT_TYPE_UNKNOWN     = 0;
+    ADMINISTRATION_EVENT_TYPE_GENERIC     = 1;
+    ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE = 2;
+}
+
+// AdministrationEventLevel exposes the different levels of events.
+enum AdministrationEventLevel {
+    ADMINISTRATION_EVENT_LEVEL_UNKNOWN = 0;
+    ADMINISTRATION_EVENT_LEVEL_INFO    = 1;
+    ADMINISTRATION_EVENT_LEVEL_SUCCESS = 2;
+    ADMINISTRATION_EVENT_LEVEL_WARNING = 3;
+    ADMINISTRATION_EVENT_LEVEL_ERROR   = 4;
+}
+
+message AdministrationEventsFilter {
+    // Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
+    google.protobuf.Timestamp from  = 1;
+
+    // Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
+    google.protobuf.Timestamp until = 2;
+
+    // Matches events from a specific domain.
+    string domain                   = 3;
+
+    // Matches events associated with a specific resource type.
+    string resource_type            = 4;
+
+    // Matches events based on their type.
+    AdministrationEventType type    = 5;
+
+    // Matches events based on their level.
+    AdministrationEventLevel level  = 6;
+}
+
+message CountAdministrationEventsRequest {
+    // For filtering the events based on the requested fields.
+    AdministrationEventsFilter filter = 1;
+}
+
+message CountAdministrationEventsResponse {
+    // The total number of events after filtering and deduplication.
+    int64 count = 1;
+}
+
+message GetAdministrationEventResponse {
+    AdministrationEvent event = 1;
+}
+
+message ListAdministrationEventsRequest {
+    // For dividing the events response into chunks.
+    Pagination pagination             = 1;
+
+    // For filtering the events based on the requested fields.
+    AdministrationEventsFilter filter = 2;
+}
+
+message ListAdministrationEventsResponse {
+    repeated AdministrationEvent events = 1;
+}
+
+service AdministrationEventService {
+    // CountAdministrationEvents returns the number of events after filtered by requested fields.
+    rpc CountAdministrationEvents(CountAdministrationEventsRequest) returns (CountAdministrationEventsResponse) {
+        option (google.api.http) = {
+            get: "/v1/administration/eventscount"
+        };
+    }
+
+    // GetAdministrationEvent retrieves an event by ID.
+    rpc GetAdministrationEvent(ResourceByID) returns (GetAdministrationEventResponse) {
+        option(google.api.http) = {
+            get: "/v1/administration/events/{id}"
+        };
+    }
+
+    // ListAdministrationEvents returns the list of events after filtered by requested fields.
+    rpc ListAdministrationEvents(ListAdministrationEventsRequest) returns (ListAdministrationEventsResponse) {
+        option (google.api.http) = {
+            get: "/v1/administration/events"
+        };
+    }
+}

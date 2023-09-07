@@ -3,15 +3,15 @@ package logging
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralevents"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"go.uber.org/zap"
 )
 
-var _ centralevents.LogConverter = (*zapLogConverter)(nil)
+var _ events.LogConverter = (*zapLogConverter)(nil)
 
 type zapLogConverter struct{}
 
-func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.CentralEvent {
+func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.AdministrationEvent {
 	enc := &stringObjectEncoder{
 		m: make(map[string]string, len(context)),
 	}
@@ -36,9 +36,9 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		}
 	}
 
-	event := &storage.CentralEvent{
+	event := &storage.AdministrationEvent{
 		Message:        msg,
-		Type:           storage.CentralEventType_CENTRAL_EVENT_TYPE_LOG_MESSAGE,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
 		CreatedAt:      timestamp.TimestampNow(),
 		LastOccurredAt: timestamp.TimestampNow(),
 		NumOccurrences: 1,
@@ -50,21 +50,21 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		event.ResourceId = enc.m[resourceTypeKey]
 	}
 
-	event.Domain = centralevents.GetDomainFromModule(module)
-	event.Hint = centralevents.GetHint(event.GetDomain(), resourceType)
+	event.Domain = events.GetDomainFromModule(module)
+	event.Hint = events.GetHint(event.GetDomain(), resourceType)
 
 	return event
 }
 
-func logLevelToEventLevel(level string) storage.CentralEventLevel {
+func logLevelToEventLevel(level string) storage.AdministrationEventLevel {
 	switch level {
 	case "info":
-		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_INFO
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO
 	case "warn":
-		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_WARN
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING
 	case "error":
-		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_DANGER
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR
 	default:
-		return storage.CentralEventLevel_CENTRAL_EVENT_LEVEL_UNKNOWN
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
 	}
 }

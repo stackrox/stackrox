@@ -1,4 +1,4 @@
-package centralevents
+package events
 
 import "github.com/stackrox/rox/pkg/sac/resources"
 
@@ -8,7 +8,7 @@ const (
 
 var (
 	hints = map[string]map[string]string{
-		// Currently, a hint is based on the domain and the resource associated with a Central event.
+		// Currently, a hint is based on the domain and the resource associated with an administration event.
 		// In the future, we may extend this, and possibly also ensure hints are loaded externally (similar to
 		// vulnerability definitions).
 		imageScanningDomain: {
