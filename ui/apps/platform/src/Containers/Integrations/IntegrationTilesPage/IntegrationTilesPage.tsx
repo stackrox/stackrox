@@ -8,6 +8,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { integrationsPath } from 'routePaths';
 import { selectors } from 'reducers';
 import { ClusterInitBundle } from 'services/ClustersService';
+import { IntegrationSource } from 'services/IntegrationsService';
 import { ApiToken } from 'types/apiToken.proto';
 import { BackupIntegration } from 'types/externalBackup.proto';
 import { ImageIntegration } from 'types/imageIntegration.proto';
@@ -18,8 +19,6 @@ import integrationsList, { IntegrationDescriptor } from '../utils/integrationsLi
 
 import IntegrationTile from './IntegrationTile';
 import IntegrationsSection from './IntegrationsSection';
-
-type IntegrationSource = keyof typeof integrationsList;
 
 // Although unnecessary for reducers in TypeScript, we intend to replace reducers and sagas with requests.
 type IntegrationsSelector = {
@@ -90,45 +89,30 @@ function IntegrationTilesPage(): ReactElement {
         }
     }
 
-    // Maybe caused by TypeScript error below.
-    /* eslint-disable @typescript-eslint/no-unsafe-return */
-    function renderIntegrationTiles(source: IntegrationSource): ReactElement[] {
-        return (
-            integrationsList[source]
-                // filter out non-visible integrations
-                // TypeScript 5.2 fixes the error: This expression is not callable
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore TS2349
-                .filter((integration) => {
-                    if (typeof integration.featureFlagDependency === 'string') {
-                        if (!isFeatureFlagEnabled(integration.featureFlagDependency)) {
-                            return false;
-                        }
+    function renderIntegrationTiles(
+        integrationDescriptors: IntegrationDescriptor[]
+    ): ReactElement[] {
+        return integrationDescriptors
+            .filter((integration) => {
+                if (typeof integration.featureFlagDependency === 'string') {
+                    if (!isFeatureFlagEnabled(integration.featureFlagDependency)) {
+                        return false;
                     }
-                    return true;
-                })
-                // get a list of rendered integration tiles
-                .map((integration: IntegrationDescriptor) => {
-                    const numIntegrations = countIntegrations(integration.source, integration.type);
-                    const linkTo = `${integrationsPath}/${integration.source}/${integration.type}`;
-
-                    return (
-                        <IntegrationTile
-                            key={integration.label}
-                            integration={integration}
-                            numIntegrations={numIntegrations}
-                            linkTo={linkTo}
-                        />
-                    );
-                })
-        );
+                }
+                return true;
+            })
+            .map((integration) => {
+                const { source, type } = integration;
+                return (
+                    <IntegrationTile
+                        key={type}
+                        integration={integration}
+                        numIntegrations={countIntegrations(source, type)}
+                        linkTo={`${integrationsPath}/${source}/${type}`}
+                    />
+                );
+            });
     }
-    /* eslint-enable @typescript-eslint/no-unsafe-return */
-
-    const imageIntegrationTiles = renderIntegrationTiles('imageIntegrations');
-    const notifierTiles = renderIntegrationTiles('notifiers');
-    const authProviderTiles = renderIntegrationTiles('authProviders');
-    const signatureTiles = renderIntegrationTiles('signatureIntegrations');
 
     return (
         <>
@@ -137,24 +121,24 @@ function IntegrationTilesPage(): ReactElement {
             </PageSection>
             <PageSection>
                 <IntegrationsSection headerName="Image Integrations" id="image-integrations">
-                    {imageIntegrationTiles}
+                    {renderIntegrationTiles(integrationsList.imageIntegrations)}
                 </IntegrationsSection>
                 <IntegrationsSection
                     headerName="Signature Integrations"
                     id="signature-integrations"
                 >
-                    {signatureTiles}
+                    {renderIntegrationTiles(integrationsList.signatureIntegrations)}
                 </IntegrationsSection>
                 <IntegrationsSection headerName="Notifier Integrations" id="notifier-integrations">
-                    {notifierTiles}
+                    {renderIntegrationTiles(integrationsList.notifiers)}
                 </IntegrationsSection>
                 {canUseCloudBackupIntegrations && (
                     <IntegrationsSection headerName="Backup Integrations" id="backup-integrations">
-                        {renderIntegrationTiles('backups')}
+                        {renderIntegrationTiles(integrationsList.backups)}
                     </IntegrationsSection>
                 )}
                 <IntegrationsSection headerName="Authentication Tokens" id="token-integrations">
-                    {authProviderTiles}
+                    {renderIntegrationTiles(integrationsList.authProviders)}
                 </IntegrationsSection>
             </PageSection>
         </>
