@@ -1,0 +1,41 @@
+{{- include "srox.init" . -}}
+{{- if eq ._rox.env.openshift 4 }}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-anyuid-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-anyuid-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-anyuid-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - anyuid
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitoring-use-anyuid-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "monitoring-use-anyuid-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "monitoring-use-anyuid-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: monitoring-use-anyuid-scc
+subjects:
+- kind: ServiceAccount
+  name: monitoring
+  namespace: {{ ._rox._namespace }}
+
+{{- end }}
