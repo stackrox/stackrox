@@ -7,13 +7,28 @@ XyzVersion = patch_csv.XyzVersion
 
 
 @pytest.mark.parametrize("current,first,previous,skips,expected", [
+    # Downstream trunk builds get no replace since their version is too small.
     ("1.0.0", "4.0.0", "0.0.0", [], None),
+    # First 4.0.0 release gets no replace despite previous Y-Stream.
     ("4.0.0", "4.0.0", "3.74.0", [], None),
-    ("4.1.3", "4.0.0", "4.1.0", [], "4.1.2"),
-    ("4.1.1", "4.0.0", "4.1.0", [], "4.1.0"),
-    ("4.1.1", "4.0.0", "4.1.0", ["4.1.0"], "4.1.0"),
+
+    # Patch follows normal release in absence of replaces.
+    ("4.0.1", "4.0.0", "3.74.0", [], "4.0.0"),
+    # Normal Y-Stream release replaces previous Y-Stream.
+    ("4.2.0", "4.0.0", "4.1.0", [], "4.1.0"),
+    # Normal patch, no skips, replaces previous patch.
+    ("4.1.3", "4.0.0", "4.0.0", [], "4.1.2"),
+    # Normal first patch, no skips, replaces its Y-Stream.
+    ("4.1.1", "4.0.0", "4.0.0", [], "4.1.0"),
+
+    # When the skipped patch is immediately preceding, it is still taken for replacement.
+    ("4.1.1", "4.0.0", "4.0.0", ["4.1.0"], "4.1.0"),
+    ("4.1.3", "4.0.0", "4.0.0", ["4.1.2"], "4.1.2"),
+    # When the previous Y-Stream is skipped, we'd target the next patch.
     ("4.2.0", "4.0.0", "4.1.0", ["4.1.0"], "4.1.1"),
+    # When skips don't hit, they play no role.
     ("4.3.0", "4.0.0", "4.2.0", ["4.1.0", "4.2.1", "4.4.0"], "4.2.0"),
+    # It should keep iterating patches until it finds the one that's not skipped.
     ("4.3.0", "4.0.0", "4.2.0", ["4.1.0", "4.2.0", "4.2.1", "4.2.2", "4.4.0"], "4.2.3"),
 ])
 def test_calculate_replaced_version(current, first, previous, skips, expected):
