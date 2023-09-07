@@ -8,21 +8,26 @@ import (
 
 var (
 	once          sync.Once
-	scannerClient *Client
+	scannerClient ScannerClient
+
+	isScannerV4Enabled = env.ScannerV4Enabled.BooleanSetting()
 )
 
-// GRPCClientSingleton returns a gRPC Client to a local Scanner.
-// Only one Client per Sensor is required.
-func GRPCClientSingleton() *Client {
+// GRPCClientSingleton returns a gRPC ScannerClient to a local Scanner.
+// Only one ScannerClient per Sensor is required.
+func GRPCClientSingleton() ScannerClient {
 	once.Do(func() {
 		if !env.LocalImageScanningEnabled.BooleanSetting() {
-			log.Info("Local scanning disabled, will not attempt to connect to a local scanner.")
+			log.Infof("scanner disabled: %s is false, will not attempt to connect to a local scanner",
+				env.LocalImageScanningEnabled.EnvVar())
 			return
 		}
-
 		var err error
-		scannerClient, err = dial(env.ScannerSlimGRPCEndpoint.Setting())
-		// If err is not nil, then there was a configuration error.
+		if isScannerV4Enabled {
+			scannerClient, err = dialV4()
+		} else {
+			scannerClient, err = dialV2()
+		}
 		utils.Should(err)
 	})
 	return scannerClient

@@ -4,12 +4,13 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
+import "api/v1/search_service.proto";
+import "internalapi/scanner/v4/common.proto";
 import "scanner/api/v1/component.proto";
 import "scanner/api/v1/note.proto";
-import "storage/image.proto";
 import "storage/deployment.proto";
+import "storage/image.proto";
 
 package v1;
 
@@ -70,6 +71,7 @@ message EnrichLocalImageInternalRequest {
     string                      error            = 8;
     string                      request_id       = 9;
     bool                        force            = 10;
+    scanner.v4.Contents         v4_contents      = 11;
 }
 
 message UpdateLocalScanStatusInternalRequest {
