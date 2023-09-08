@@ -168,7 +168,7 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		if entity.Resource.GetNamespace() != "" {
 			payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
 		} else {
-			payload.Source = fmt.Sprintf("%s", entity.Resource.GetClusterName())
+			payload.Source = entity.Resource.GetClusterName()
 		}
 		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
 	}
