@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
+	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
@@ -42,7 +43,8 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr = connMocks.NewMockManager(ctrl)
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-		d = New(deleClusterDS, connMgr, waiterMgr)
+
+		d = New(deleClusterDS, connMgr, waiterMgr, nil)
 	}
 
 	t.Run("error get config", func(t *testing.T) {
@@ -236,6 +238,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 func TestDelegateEnrichImage(t *testing.T) {
 	var deleClusterDS *deleDSMocks.MockDataStore
+	var namespaceDS *namespaceDSMocks.MockDataStore
 	var connMgr *connMocks.MockManager
 	var waiterMgr *waiterMocks.MockManager[*storage.Image]
 	var waiter *waiterMocks.MockWaiter[*storage.Image]
@@ -248,9 +251,11 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		waiter = waiterMocks.NewMockWaiter[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
+		namespaceDS = namespaceDSMocks.NewMockDataStore(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		d = New(deleClusterDS, connMgr, waiterMgr)
+		namespaceDS.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		d = New(deleClusterDS, connMgr, waiterMgr, namespaceDS)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {

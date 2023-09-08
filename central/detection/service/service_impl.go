@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterutil "github.com/stackrox/rox/central/cluster/util"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -39,6 +40,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	coreV1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
@@ -140,6 +143,20 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if err != nil {
 		return nil, err
 	}
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterutil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		if err != nil {
+			if errors.Is(err, clusterutil.ErrClusterNotFound) {
+				return nil, status.Error(codes.NotFound, "cluster not found, ensure cluster exists and have access")
+			}
+			return nil, err
+		}
+
+		enrichmentContext.ClusterID = clusterID
+	}
+
 	enrichmentContext.FetchOpt = fetchOpt
 	enrichmentContext.Delegable = true
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
@@ -308,6 +325,19 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, err
 	}
 	eCtx.FetchOpt = fetchOpt
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterutil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		if err != nil {
+			if errors.Is(err, clusterutil.ErrClusterNotFound) {
+				return nil, status.Error(codes.NotFound, "cluster not found, ensure cluster exists and have access")
+			}
+			return nil, err
+		}
+
+		eCtx.ClusterID = clusterID
+	}
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {

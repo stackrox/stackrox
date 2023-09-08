@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnerabilityrequest/suppressor"
@@ -43,7 +44,7 @@ var (
 )
 
 func initialize() {
-	scanDelegator := delegator.New(delegatedRegistryConfigDS.Singleton(), connection.ManagerSingleton(), scanwaiter.Singleton())
+	scanDelegator := delegator.New(delegatedRegistryConfigDS.Singleton(), connection.ManagerSingleton(), scanwaiter.Singleton(), namespaceDataStore.Singleton())
 
 	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),

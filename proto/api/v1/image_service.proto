@@ -31,6 +31,8 @@ message ScanImageRequest {
     string image_name      = 1;
     bool   force           = 2;
     bool   include_snoozed = 3;
+    // Cluster to delegate scan to, may be the cluster's name or ID.
+    string cluster         = 4;
 }
 
 message ScanImageInternalRequest {
