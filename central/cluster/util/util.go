@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// ErrClusterNotFound indicates a cluster was not found.
 	ErrClusterNotFound = errors.New("cluster not found")
 )
 
