@@ -99,6 +99,7 @@ export type Alert = {
     };
     resource?: {
         name: string;
+        clusterName: string;
         resourceType: string;
     };
     enforcement?: {

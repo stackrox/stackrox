@@ -29,7 +29,7 @@ describe('Violations', () => {
     it('should have violations in table', () => {
         visitViolationsWithFixture('alerts/alerts.json');
 
-        const count = 2;
+        const count = 3;
         cy.get(`h2:contains("${count} result")`); // Partial match is independent of singular or plural count
         cy.get('tbody tr').should('have.length', count);
     });
@@ -48,9 +48,21 @@ describe('Violations', () => {
         cy.get('th[scope="col"]:contains("Lifecycle")');
         cy.get('th[scope="col"]:contains("Time")');
 
+        // check Deployment type
         cy.get('tbody tr:nth-child(1) td[data-label="Entity"]').should('contain', 'ip-masq-agent'); // table cell also has cluster/namespace
-        cy.get('tbody tr:nth-child(1) td[data-label="Type"]').should('have.text', 'deployment');
+        cy.get('tbody tr:nth-child(1) td[data-label="Type"]').should('have.text', 'Deployment');
         cy.get('tbody tr:nth-child(1) td[data-label="Lifecycle"]').should('have.text', 'Runtime');
+
+        // check audit log type
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"]').should('contain', 'test-scc'); // table cell also has cluster
+        cy.get('tbody tr:nth-child(2) td[data-label="Entity"] div.pf-u-font-size-xs').should(
+            'have.text',
+            'in "aaa_remote"'
+        ); // table cell also has cluster
+        cy.get('tbody tr:nth-child(2) td[data-label="Type"]').should(
+            'have.text',
+            'Security Context Constraits'
+        );
     });
 
     it('should go to the detail page on row click', () => {
@@ -58,7 +70,7 @@ describe('Violations', () => {
         visitViolationFromTableWithFixture('alerts/alertFirstInAlerts.json');
 
         cy.get(selectors.details.title).should('have.text', 'Misuse of iptables');
-        cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" deployment');
+        cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" Deployment');
     });
 
     it('should have 4 tabs in the sidepanel', () => {
@@ -93,15 +105,15 @@ describe('Violations', () => {
         cy.get(`tbody tr:nth-child(1) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
 
         // Lifecycle: Deploy
-        cy.get(`tbody tr:nth-child(2) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
-        cy.get('tbody tr:nth-child(2)')
+        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to open actions menu
+        cy.get('tbody tr:nth-child(3)')
             .get(selectors.actions.resolveBtn)
             .should('not.exist')
             .get(selectors.actions.resolveAndAddToBaselineBtn)
             .should('not.exist')
             .get(selectors.actions.excludeDeploymentBtn)
             .should('exist');
-        cy.get(`tbody tr:nth-child(2) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
+        cy.get(`tbody tr:nth-child(3) ${selectors.actions.btn}`).click(); // click kabob to close actions menu
     });
 
     // TODO test of bulk actions
