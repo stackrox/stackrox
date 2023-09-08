@@ -253,6 +253,7 @@ message TestParent1 {
    repeated Child1Ref children = 3;
 
    string val = 4 [(gogoproto.moretags) = 'search:"Test Parent1 Val"'];
+   repeated string string_slice = 5 [(gogoproto.moretags) = 'search:"Test Parent1 String Slice"'];
 }
 
 message TestChild1 {
