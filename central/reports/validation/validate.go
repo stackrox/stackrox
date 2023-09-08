@@ -21,8 +21,10 @@ import (
 )
 
 const (
+	// CustomEmailSubjectMaxLen is the maximum allowed length for custom email subject
 	CustomEmailSubjectMaxLen = 250
-	CustomEmailBodyMaxLen    = 1000
+	// CustomEmailBodyMaxLen is the maximum allowed length for custom email body
+	CustomEmailBodyMaxLen = 1000
 )
 
 // Use this context only to
@@ -128,10 +130,10 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
 	}
 	if len(emailConfig.GetCustomSubject()) > CustomEmailSubjectMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email subject should not be longer than %d characters", CustomEmailSubjectMaxLen)
+		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", CustomEmailSubjectMaxLen)
 	}
 	if len(emailConfig.GetCustomBody()) > CustomEmailBodyMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email body should not be longer than %d characters", CustomEmailBodyMaxLen)
+		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", CustomEmailBodyMaxLen)
 	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
