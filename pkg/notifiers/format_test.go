@@ -190,6 +190,81 @@ Policy Definition:
 Image:
 	 - Name: stackrox.io/srox/mongo:latest
 `
+	expectedFormatNetworkAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: High
+
+Violations:
+	 - Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'External Entities'. Destination port: '9'. Protocol: 'L4_PROTOCOL_UDP'.
+	 - Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.
+
+Policy Definition:
+
+	Description:
+	 - This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.
+
+	Rationale:
+	 - The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.
+
+	Remediation:
+	 - Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Unexpected Network Flow Detected: true
+
+Deployment:
+	 - ID: ` + fixtureconsts.Deployment1 + `
+	 - Name: central
+	 - Cluster: remote
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
+	 - Namespace: stackrox
+	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+`
+	expectedFormattedResourceAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: Low
+
+Violations:
+	 - Access to secret "my-secret" in "cluster-id / stackrox"
+		 - Kubernetes API Verb : CREATE
+		 - username : test-user
+		 - user groups : groupA, groupB
+		 - resource : /api/v1/namespace/stackrox/secrets/my-secret
+		 - user agent : oc/4.7.0 (darwin/amd64) kubernetes/c66c03f
+		 - IP address : 192.168.0.1, 127.0.0.1
+		 - impersonated username : central-service-account
+		 - impersonated user groups : service-accounts, groupB
+
+Policy Definition:
+
+	Description:
+	 - Alert if the container contains vulnerabilities
+
+	Rationale:
+	 - This is the rationale
+
+	Remediation:
+	 - This is the remediation
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Kubernetes Resource: SECRETS
+			- Kubernetes API Verb: CREATE
+
+Resource:
+	 - Name: my-secret
+	 - Type: SECRETS
+	 - Cluster: prod cluster
+	 - ClusterId: ` + fixtureconsts.Cluster1 + `
+	 - Namespace: stackrox
+`
 )
 
 func TestFormatAlert(t *testing.T) {
@@ -198,6 +273,14 @@ func TestFormatAlert(t *testing.T) {
 	imageAlert := fixtures.GetAlert()
 	imageAlert.Entity = &storage.Alert_Image{Image: types.ToContainerImage(fixtures.GetImage())}
 	runFormatTest(t, imageAlert, expectedFormatImageAlert)
+}
+
+func TestNetworkAlert(t *testing.T) {
+	runFormatTest(t, fixtures.GetNetworkAlert(), expectedFormatNetworkAlert)
+}
+
+func TestResourceAlert(t *testing.T) {
+	runFormatTest(t, fixtures.GetResourceAlert(), expectedFormattedResourceAlert)
 }
 
 func TestFormatAlertWithMitre(t *testing.T) {
@@ -264,6 +347,11 @@ func TestSummaryForAlert(t *testing.T) {
 			name:            "Resource alert summary",
 			alert:           fixtures.GetResourceAlert(),
 			expectedSummary: "Policy 'Vulnerable Container' violated in cluster prod cluster",
+		},
+		{
+			name:            "Network alert summary",
+			alert:           fixtures.GetNetworkAlert(),
+			expectedSummary: "Deployment central (in cluster remote) violates 'Unauthorized Network Flow' Policy",
 		},
 		{
 			name:            "Unexpected entity alert summary",

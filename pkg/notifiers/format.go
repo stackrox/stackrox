@@ -3,6 +3,7 @@ package notifiers
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -40,9 +41,11 @@ const bplPolicyFormat = `
 	{{range .Violations}}
 		{{list .Message}}
 		{{if .MessageAttributes}}
-			{{if .MessageAttributes.KeyValueAttrs}}
-				{{range .MessageAttributes.KeyValueAttrs.Attrs}}
-					{{stringify .Key ":" .Value | nestedList}}
+			{{if isViolationKeyValue .MessageAttributes }}
+				{{if .MessageAttributes.KeyValueAttrs}}
+					{{range .MessageAttributes.KeyValueAttrs.Attrs}}
+						{{stringify .Key ":" .Value | nestedList}}
+					{{end}}
 				{{end}}
 			{{end}}
 		{{end}}
@@ -121,6 +124,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	}
 	funcMap["stringify"] = stringify
 	funcMap["default"] = stringutils.OrDefault
+	funcMap["isViolationKeyValue"] = isViolationKeyValue
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
@@ -202,6 +206,12 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 		return "", err
 	}
 	return tpl.String(), nil
+}
+
+// isViolationKeyValue returns try if src is of type **storage.Alert_Violation_KeyValueAttrs_
+// Used to validate if a one-of is of type KeyValueAttrs within a template
+func isViolationKeyValue(src interface{}) bool {
+	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_KeyValueAttrs_)(nil))
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
