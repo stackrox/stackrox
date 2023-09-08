@@ -24,7 +24,7 @@ var (
 	fp        driver.Fingerprint
 )
 
-type updater struct {
+type cvssUpdater struct {
 	file        *file.File
 	client      *http.Client
 	downloadURL string
@@ -34,7 +34,7 @@ type updater struct {
 	enricher    *cvss.Enricher
 }
 
-func NewUpdaterWithEnricher(file *file.File, client *http.Client, downloadURL string, interval time.Duration) (*updater, error) {
+func NewUpdaterWithEnricher(file *file.File, client *http.Client, downloadURL string, interval time.Duration) (*cvssUpdater, error) {
 	e := &cvss.Enricher{}
 	ctx := context.Background() // Or pass a context in if available.
 
@@ -52,7 +52,7 @@ func NewUpdaterWithEnricher(file *file.File, client *http.Client, downloadURL st
 		return nil, err
 	}
 
-	return &updater{
+	return &cvssUpdater{
 		file:        file,
 		client:      client,
 		downloadURL: downloadURL,
@@ -62,11 +62,11 @@ func NewUpdaterWithEnricher(file *file.File, client *http.Client, downloadURL st
 	}, nil
 }
 
-func (u *updater) Stop() {
+func (u *cvssUpdater) Stop() {
 	u.stopSig.Signal()
 }
 
-func (u *updater) Start() {
+func (u *cvssUpdater) Start() {
 	u.once.Do(func() {
 		ctx := context.Background()
 		u.update(ctx)
@@ -74,7 +74,7 @@ func (u *updater) Start() {
 	})
 }
 
-func (u *updater) runForever() {
+func (u *cvssUpdater) runForever() {
 	t := time.NewTicker(u.interval)
 	defer t.Stop()
 
@@ -90,13 +90,13 @@ func (u *updater) runForever() {
 	}
 }
 
-func (u *updater) update(ctx context.Context) {
+func (u *cvssUpdater) update(ctx context.Context) {
 	if err := u.doUpdate(ctx); err != nil {
 		// TODO log error
 	}
 }
 
-func (u *updater) doUpdate(ctx context.Context) error {
+func (u *cvssUpdater) doUpdate(ctx context.Context) error {
 	_, _, err := runEnricher(ctx, u.enricher)
 	if err != nil {
 		// TODO log error
