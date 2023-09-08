@@ -152,11 +152,10 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
-	log.Infof("configName %s", configName)
-	if configName != "" {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_Config_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+	if len(configName) > 80 {
+		configName = configName[0:80] + "..."
 	}
+	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
 	zipFile, err := zipWriter.Create(reportName)
 	if err != nil {
 		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
