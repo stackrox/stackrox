@@ -17,7 +17,7 @@ message ScanImage {
     // force will cause central and sensor caches to be ignored.
     bool   force      = 3;
 
-    // namespace is used by sensor to pull additonal secrets for registry authentication.
+    // namespace is used by sensor to pull additional secrets for registry authentication.
     string namespace  = 4;
 }
 

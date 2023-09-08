@@ -23,7 +23,10 @@ var (
 
 	fakeRegistry      = "fake-reg"
 	fakeImageFullName = fmt.Sprintf("%v/repo/something", fakeRegistry)
-	fakeImgName       = &storage.ImageName{FullName: fakeImageFullName}
+	fakeImgName       = &storage.ImageName{
+		Remote:   "repo/something",
+		FullName: fakeImageFullName,
+	}
 )
 
 func TestGetDelegateClusterID(t *testing.T) {
@@ -43,7 +46,6 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr = connMocks.NewMockManager(ctrl)
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-
 		d = New(deleClusterDS, connMgr, waiterMgr, nil)
 	}
 
@@ -313,5 +315,53 @@ func TestDelegateEnrichImage(t *testing.T) {
 		image, err := d.DelegateScanImage(ctxBG, fakeImgName, fakeClusterID, false)
 		assert.NoError(t, err)
 		assert.Equal(t, fakeImage, image)
+	})
+}
+
+func TestInferNamespace(t *testing.T) {
+	var namespaceDS *namespaceDSMocks.MockDataStore
+
+	var d *delegatorImpl
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		namespaceDS = namespaceDSMocks.NewMockDataStore(ctrl)
+
+		d = New(nil, nil, nil, namespaceDS)
+	}
+
+	t.Run("no namespace on error", func(t *testing.T) {
+		setup(t)
+		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(nil, errBroken)
+
+		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
+		assert.Zero(t, result)
+	})
+
+	t.Run("no namespace on empty search result", func(t *testing.T) {
+		setup(t)
+		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(nil, nil)
+
+		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
+		assert.Zero(t, result)
+	})
+
+	// This scenario shouldn't be possible due to using an exact matcher, but test for it just in case.
+	t.Run("no namespace when multiple found", func(t *testing.T) {
+		setup(t)
+		namespaces := []*storage.NamespaceMetadata{{Name: "repo"}, {Name: "ns2"}}
+		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(namespaces, nil)
+
+		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
+		assert.Zero(t, result)
+	})
+
+	t.Run("namespace found", func(t *testing.T) {
+		setup(t)
+		namespaces := []*storage.NamespaceMetadata{{Name: "repo"}}
+		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(namespaces, nil)
+
+		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
+		assert.Equal(t, "repo", result)
 	})
 }

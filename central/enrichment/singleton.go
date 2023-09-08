@@ -44,7 +44,12 @@ var (
 )
 
 func initialize() {
-	scanDelegator := delegator.New(delegatedRegistryConfigDS.Singleton(), connection.ManagerSingleton(), scanwaiter.Singleton(), namespaceDataStore.Singleton())
+	scanDelegator := delegator.New(
+		delegatedRegistryConfigDS.Singleton(),
+		connection.ManagerSingleton(),
+		scanwaiter.Singleton(),
+		namespaceDataStore.Singleton(),
+	)
 
 	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
 		metrics.CentralSubsystem, ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),

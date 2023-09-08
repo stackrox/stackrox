@@ -31,7 +31,7 @@ type ScanImage struct {
 	ImageName string `protobuf:"bytes,2,opt,name=image_name,json=imageName,proto3" json:"image_name,omitempty"`
 	// force will cause central and sensor caches to be ignored.
 	Force bool `protobuf:"varint,3,opt,name=force,proto3" json:"force,omitempty"`
-	// namespace is used by sensor to pull additonal secrets for registry authentication.
+	// namespace is used by sensor to pull additional secrets for registry authentication.
 	Namespace            string   `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
