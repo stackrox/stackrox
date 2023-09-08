@@ -457,6 +457,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "customSubject": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
         }
       }
     },

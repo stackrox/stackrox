@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -223,8 +224,7 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
 				s.reportConfigDataStore.EXPECT().GetReportConfiguration(userContext, protoReportConfig.GetId()).
 					Return(protoReportConfig, true, nil).Times(1)
-				snapshots := []*storage.ReportSnapshot{}
-				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(userContext, gomock.Any()).Return(snapshots, nil).Times(1)
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(userContext, gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
 				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(userContext, protoReportConfig).Return(nil).Times(1)
 			}
 			result, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
@@ -411,13 +411,12 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 			isError: false,
 		},
 	}
-	reportSnapshots := []*storage.ReportSnapshot{}
 
 	for _, tc := range testCases {
 		if !tc.isError {
 			s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
 				Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
-			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
+			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
 		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
@@ -556,6 +555,24 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers[1].NotifierConfig.(*apiV2.NotifierConfiguration_EmailConfig).EmailConfig.MailingLists = nil
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				return ret
+			},
+			isValidationError: true,
+		},
+		{
+			desc: "Report config with invalid notifier: Custom email subject too long",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = strings.Repeat("a", validation.CustomEmailSubjectMaxLen+1)
+				return ret
+			},
+			isValidationError: true,
+		},
+		{
+			desc: "Report config with invalid notifier: Custom email body too long",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomBody = strings.Repeat("a", validation.CustomEmailBodyMaxLen+1)
 				return ret
 			},
 			isValidationError: true,
