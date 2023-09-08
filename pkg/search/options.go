@@ -267,6 +267,7 @@ var (
 
 	// Following are derived fields
 	// Count-based derived fields. These fields are supported only in pagination.
+	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
 	NamespaceCount  = newDerivedFieldLabel("Namespace Count", NamespaceID, CountDerivationType)
 	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
 	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
@@ -397,6 +398,7 @@ var (
 	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
+	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
 	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
 	TestParent1ValCount         = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
 	TestParent1Count            = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
