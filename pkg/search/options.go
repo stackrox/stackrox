@@ -267,6 +267,7 @@ var (
 
 	// Following are derived fields
 	// Count-based derived fields. These fields are supported only in pagination.
+	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
 	NamespaceCount  = newDerivedFieldLabel("Namespace Count", NamespaceID, CountDerivationType)
 	DeploymentCount = newDerivedFieldLabel("Deployment Count", DeploymentID, CountDerivationType)
 	ImageCount      = newDerivedFieldLabel("Image Count", ImageSHA, CountDerivationType)
@@ -372,6 +373,7 @@ var (
 	TestGrandparentRiskScore = newFieldLabel("Test Grandparent Risk Score")
 	TestParent1ID            = newFieldLabel("Test Parent1 ID")
 	TestParent1Val           = newFieldLabel("Test Parent1 Val")
+	TestParent1StringSlice   = newFieldLabel("Test Parent1 String Slice")
 	TestChild1ID             = newFieldLabel("Test Child1 ID")
 	TestChild1Val            = newFieldLabel("Test Child1 Val")
 	TestGrandchild1ID        = newFieldLabel("Test Grandchild1 ID")
@@ -396,13 +398,15 @@ var (
 	TestShortCircuitID = newFieldLabel("Test ShortCircuit ID")
 
 	// Derived test fields
-	TestGrandparentCount    = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
-	TestParent1ValCount     = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
-	TestParent1Count        = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
-	TestChild1Count         = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
-	TestGrandParentPriority = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
-	TestNestedStringCount   = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
-	TestNestedString2Count  = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
+	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
+	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1ValCount         = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
+	TestParent1Count            = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count             = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandParentPriority     = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
+	TestNestedStringCount       = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
+	TestNestedString2Count      = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
+	TestParent1StringSliceCount = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
 )
 
 func init() {
