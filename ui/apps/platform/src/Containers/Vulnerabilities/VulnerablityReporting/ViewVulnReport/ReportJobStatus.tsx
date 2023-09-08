@@ -28,15 +28,13 @@ function ReportJobStatus({
 }: ReportJobStatusProps): ReactElement {
     const { reportStatus, isDownloadAvailable } = reportSnapshot;
 
+    const isDownload = reportStatus.reportNotificationMethod === 'DOWNLOAD';
+
     let statusColorClass = '';
     let statusIcon: ReactElement;
     let statusText: ReactElement;
 
-    if (
-        reportStatus.runState === 'GENERATED' &&
-        isDownloadAvailable &&
-        areDownloadActionsDisabled
-    ) {
+    if (isDownload && isDownloadAvailable && areDownloadActionsDisabled) {
         statusColorClass = 'pf-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
@@ -62,11 +60,7 @@ function ReportJobStatus({
                 </FlexItem>
             </Flex>
         );
-    } else if (
-        reportStatus.runState === 'GENERATED' &&
-        isDownloadAvailable &&
-        !areDownloadActionsDisabled
-    ) {
+    } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
         statusColorClass = 'pf-u-primary-color-100';
         statusIcon = <DownloadIcon title="Report download was successfully prepared" />;
         statusText = (
@@ -74,7 +68,7 @@ function ReportJobStatus({
                 Ready for download
             </Button>
         );
-    } else if (reportStatus.runState === 'GENERATED' && !isDownloadAvailable) {
+    } else if (isDownload && !isDownloadAvailable) {
         statusColorClass = 'pf-u-disabled-color-100';
         statusIcon = <DownloadIcon title="Report download was deleted" />;
         statusText = (

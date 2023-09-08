@@ -85,16 +85,16 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
-                    label="Description"
-                    fieldId="reportParameters.description"
+                    label="Report description"
+                    fieldId="reportParameters.reportDescription"
                     errors={formik.errors}
                 >
                     <TextArea
                         type="text"
-                        id="reportParameters.description"
-                        name="reportParameters.description"
-                        value={formik.values.reportParameters.description}
-                        onChange={handleTextChange('reportParameters.description')}
+                        id="reportParameters.reportDescription"
+                        name="reportParameters.reportDescription"
+                        value={formik.values.reportParameters.reportDescription}
+                        onChange={handleTextChange('reportParameters.reportDescription')}
                         onBlur={formik.handleBlur}
                     />
                 </FormLabelGroup>

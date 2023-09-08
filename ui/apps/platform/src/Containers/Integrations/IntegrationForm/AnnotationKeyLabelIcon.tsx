@@ -10,8 +10,7 @@ function AnnotationKeyLabelIcon(): ReactElement {
                 <div>
                     Using an annotation key, you can define an audience to notify about policy
                     violations associated with any given deployment or namespace. If the deployment
-                    has the annotation, its value overrides the default; otherwise, if the namespace
-                    has the annotation, its value overrides the default.
+                    and/or namespace has the annotation, its value overrides the default.
                 </div>
             }
         >
