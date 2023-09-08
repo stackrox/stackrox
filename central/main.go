@@ -801,6 +801,22 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			EnableAudit:   true,
 		},
 	)
+	scannerCvssRoute := "/api/extensions/scanner-v4/definitions"
+	utils.CrashOnError(err)
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route: scannerCvssRoute,
+			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
+				or.SensorOr(
+					or.ScannerOr(
+						user.With(permissions.View(resources.Administration)))): {
+					routes.RPCNameForHTTP(scannerCvssRoute, http.MethodGet),
+				},
+			}),
+			ServerHandler: definitionsFileGzipHandler(scannerV4CvssHandler.Singleton()), // using definitionsFileGzipHandler for now
+			EnableAudit:   true,
+		},
+	)
 
 	if features.VulnReportingEnhancements.Enabled() {
 		// Append report custom routes

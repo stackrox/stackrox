@@ -1,8 +1,10 @@
 package file
 
 import (
+	"bytes"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,25 +33,54 @@ func (file *File) Path() string {
 	return file.path
 }
 
-// Write writes the contents of r into the path represented by the given file.
-// The file's modified time is set to the given modifiedTime.
-// Write is thread-safe.
 func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
+	err := file.writeInternal(r)
+	if err != nil {
+		return err
+	}
+
+	// Set the file's modified time after the write is completed
+	err = os.Chtimes(file.path, time.Now(), modifiedTime)
+	if err != nil {
+		return errors.Wrap(err, "changing modified time of scanner defs")
+	}
+
+	return nil
+}
+
+func (file *File) WriteContent(r io.Reader) error {
+	return file.writeInternal(r)
+}
+
+func (file *File) writeInternal(r io.Reader) error {
+	// Check if r is empty by trying to read a single byte.
+	buf := make([]byte, 1)
+	n, err := r.Read(buf)
+	if err != nil && err != io.EOF {
+		log.Println(err.Error())
+		return errors.Wrap(err, "checking if reader is empty")
+	}
+
+	// If no bytes are read, then the reader is empty.
+	if n == 0 {
+		log.Println(errors.New("provided reader is empty").Error())
+		return errors.New("provided reader is empty")
+	}
+
+	// Combine the read byte with the original reader.
+	r = io.MultiReader(bytes.NewReader(buf[:n]), r)
+
 	dir := filepath.Dir(file.path)
 
-	err := os.MkdirAll(dir, 0755)
+	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return errors.Wrap(err, "creating subdirectory for scanner defs")
 	}
 
-	// Write the contents of r into a temporary destination to prevent us from having to hold a lock
-	// while reading from r. The reader may be dependent on the network, and we do not want to
-	// lock while depending on something as unpredictable as the network.
 	scannerDefsFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return errors.Wrap(err, "creating scanner defs file")
 	}
-	// Close the file in case of error.
 	defer utils.IgnoreError(scannerDefsFile.Close)
 
 	_, err = io.Copy(scannerDefsFile, r)
@@ -57,22 +88,11 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 		return errors.Wrapf(err, "writing scanner defs zip to temporary file %q", scannerDefsFile.Name())
 	}
 
-	// No longer need the file descriptor, so release it.
-	// Closing here, as it is possible Close updates the mtime
-	// (for example: the data is not flushed until Close is called).
 	err = scannerDefsFile.Close()
 	if err != nil {
 		return errors.Wrap(err, "closing temp scanner defs file")
 	}
 
-	err = os.Chtimes(scannerDefsFile.Name(), time.Now(), modifiedTime)
-	if err != nil {
-		return errors.Wrap(err, "changing modified time of scanner defs")
-	}
-
-	// Note: os.Rename does not alter the file's modified time,
-	// so there is no need to call os.Chtimes here.
-	// Rename is guaranteed to be atomic inside the same directory.
 	err = os.Rename(scannerDefsFile.Name(), file.path)
 	if err != nil {
 		return errors.Wrap(err, "renaming temporary scanner defs file to final location")
