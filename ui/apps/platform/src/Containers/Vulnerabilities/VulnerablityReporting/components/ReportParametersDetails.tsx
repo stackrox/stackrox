@@ -72,9 +72,9 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Description</DescriptionListTerm>
+                        <DescriptionListTerm>Report description</DescriptionListTerm>
                         <DescriptionListDescription>
-                            {formValues.reportParameters.description || 'None'}
+                            {formValues.reportParameters.reportDescription || 'None'}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                     <DescriptionListGroup>
