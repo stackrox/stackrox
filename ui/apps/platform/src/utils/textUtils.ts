@@ -1,4 +1,4 @@
-export function truncate(str, maxLength = 200) {
+export function truncate(str: string, maxLength = 200) {
     if (str.length <= maxLength) {
         return str;
     }
