@@ -2,7 +2,7 @@ import qs from 'qs';
 
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/Dashboard/MockData/complianceScanResultsOverview';
+import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/Status/MockData/complianceScanResultsOverview';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 interface ComplianceScanStatsShim {
