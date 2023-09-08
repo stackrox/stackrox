@@ -41,7 +41,7 @@ const bplPolicyFormat = `
 	{{range .Violations}}
 		{{list .Message}}
 		{{if .MessageAttributes}}
-			{{if ptrTypeIs "Alert_Violation_KeyValueAttrs_" .MessageAttributes }}
+			{{if isViolationKeyValue .MessageAttributes }}
 				{{if .MessageAttributes.KeyValueAttrs}}
 					{{range .MessageAttributes.KeyValueAttrs.Attrs}}
 						{{stringify .Key ":" .Value | nestedList}}
@@ -124,7 +124,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	}
 	funcMap["stringify"] = stringify
 	funcMap["default"] = stringutils.OrDefault
-	funcMap["ptrTypeIs"] = ptrTypeIs
+	funcMap["isViolationKeyValue"] = isViolationKeyValue
 	if _, ok := funcMap["valuePrinter"]; !ok {
 		funcMap["valuePrinter"] = valuePrinter
 	}
@@ -208,14 +208,10 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 	return tpl.String(), nil
 }
 
-// ptrTypeIs checks if src is of type target. If src is a pointer or interface, it looks at its actual type
-// sprig has a `typeIs` and `kindIs` but it doesn't work cleanly with pointers
-func ptrTypeIs(target string, src interface{}) bool {
-	r := reflect.TypeOf(src)
-	for r.Kind() == reflect.Ptr || r.Kind() == reflect.Interface {
-		r = r.Elem()
-	}
-	return target == r.Name()
+// isViolationKeyValue returns try if src is of type **storage.Alert_Violation_KeyValueAttrs_
+// Used to validate if a one-of is of type KeyValueAttrs within a template
+func isViolationKeyValue(src interface{}) bool {
+	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_KeyValueAttrs_)(nil))
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
