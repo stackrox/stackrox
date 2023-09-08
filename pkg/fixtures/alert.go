@@ -146,6 +146,87 @@ func getImageAlertWithID(ID string) *storage.Alert {
 	return imageAlert
 }
 
+// GetNetworkAlert returns a Mock Alert with a network flow violations
+func GetNetworkAlert() *storage.Alert {
+	return copyScopingInfo(&storage.Alert{
+		Id:             fixtureconsts.Alert1,
+		Policy:         GetNetworkFlowPolicy(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          fixtureconsts.Deployment1,
+				Name:        "central",
+				Type:        "Deployment",
+				Namespace:   "stackrox",
+				NamespaceId: fixtureconsts.Namespace1,
+				Labels: map[string]string{
+					"app":                         "central",
+					"app.kubernetes.io/component": "central",
+				},
+				ClusterId:   fixtureconsts.Cluster1,
+				ClusterName: "remote",
+				Containers: []*storage.Alert_Deployment_Container{{
+					Name:  "some-container",
+					Image: types.ToContainerImage(LightweightDeploymentImage()),
+				}},
+				Annotations: map[string]string{
+					"email":                     "support@stackrox.com",
+					"meta.helm.sh/release-name": "stackrox-central-services",
+				},
+			},
+		},
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'External Entities'. Destination port: '9'. Protocol: 'L4_PROTOCOL_UDP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "External Entities",
+							EntityType:          storage.NetworkEntityInfo_INTERNET,
+							DeploymentNamespace: "internet",
+							Port:                9,
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: ptypes.TimestampNow(),
+			},
+			{
+				Message: "Unexpected network flow found in deployment. Source name: 'central'. Destination name: 'scanner'. Destination port: '8080'. Protocol: 'L4_PROTOCOL_TCP'.",
+				MessageAttributes: &storage.Alert_Violation_NetworkFlowInfo_{
+					NetworkFlowInfo: &storage.Alert_Violation_NetworkFlowInfo{
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+						Source: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "central",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+						},
+						Destination: &storage.Alert_Violation_NetworkFlowInfo_Entity{
+							Name:                "scanner",
+							EntityType:          storage.NetworkEntityInfo_DEPLOYMENT,
+							DeploymentNamespace: "stackrox",
+							DeploymentType:      "Deployment",
+							Port:                8080,
+						},
+					},
+				},
+				Type: storage.Alert_Violation_NETWORK_FLOW,
+				Time: ptypes.TimestampNow(),
+			},
+		},
+		Time:          ptypes.TimestampNow(),
+		FirstOccurred: ptypes.TimestampNow(),
+	})
+}
+
 // GetAlertWithID returns a mock alert with the specified id.
 func GetAlertWithID(id string) *storage.Alert {
 	alert := GetAlert()
