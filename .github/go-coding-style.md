@@ -109,9 +109,6 @@ var (
 
 ## Guidelines
 
-- **Always** use `defer mutex.Unlock()` instead of explicitly calling `Unlock()`.
-  If you need to unlock before the function returns, use `concurrency.WithLock()`
-  or `concurrency.WithRLock()`.
 - A `Close()` on a file etc. should only be deferred and wrapped in
   `utils.IgnoreError` if you exclusively _read_. If you write to a file, you
   **must** check for a `nil` error upon close, otherwise you cannot be certain
@@ -152,7 +149,8 @@ var (
   that function.
 - Avoid naked returns
 ```go
-// bad: naked return requires to look on the func declaration to know what is being returned
+// Bad: naked return requires to look on the func declaration to know what is
+// being returned.
 func split(sum int) (x, y int) {
 	x = sum * 4 / 9
 	y = sum - x
@@ -161,7 +159,8 @@ func split(sum int) (x, y int) {
 ```
 
 ```go
-// good: it is known what is being returned by looking only at the return statement
+// Good: it is known what is being returned by looking only at the return
+// statement.
 func split(sum int) (x, y int) {
 	x = sum * 4 / 9
 	y = sum - x
@@ -180,6 +179,17 @@ func split(sum int) (x, y int) {
 - When setting elements in a slice, instantiate like `s := make([]string, 0, capacity)`
   and use `append` because this greatly decreases potential index out of bounds
   errors.
+
+### Concurrency
+
+- If you're new to Go, consider watching Malte's talk "Concurrency in Go (Part 1)":
+  [slides](https://docs.google.com/presentation/d/1yfFWn4Px6Xm_XKaHT0o-UBUVla1Tc5HWYD9lMp5Cu98),
+  [recording](https://drive.google.com/file/d/1oRKOI3QPPaJ31jf2_We02aPkIvPuDUUj/view).
+- **Always** use `defer mutex.Unlock()` instead of explicitly calling `Unlock()`.
+  If you need to unlock before the function returns, use `concurrency.WithLock()`
+  or `concurrency.WithRLock()`.
+- When you add the `go` keyword to a function call, check the function's
+  concurrent correctness. 
 
 ### Error handling
  
