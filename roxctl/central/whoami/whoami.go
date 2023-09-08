@@ -3,7 +3,6 @@ package whoami
 import (
 	"context"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -62,11 +61,6 @@ func (cmd *centralWhoAmICommand) whoami() error {
 		return err
 	}
 
-	roles, err := v1.NewRoleServiceClient(conn).GetRoles(ctx, &v1.Empty{})
-	if err != nil {
-		return err
-	}
-
 	// Lexicographically sort the set of resources we have (known) access to.
 	resourceToAccess := perms.GetResourceToAccess()
 	resources := make([]string, 0, len(resourceToAccess))
@@ -80,28 +74,20 @@ func (cmd *centralWhoAmICommand) whoami() error {
 User name:
 	%s`, auth.GetUserId(), auth.GetUserInfo().GetFriendlyName())
 
-	// Print resource access information
-	cmd.printRoles(roles.GetRoles())
+	// Print the roles associated with the user.
+	cmd.env.Logger().PrintfLn("Roles:")
+	for _, role := range auth.GetUserInfo().GetRoles() {
+		cmd.env.Logger().PrintfLn("\t- %s", role.GetName())
+	}
+
+	// Print resource access information.
 	cmd.env.Logger().PrintfLn("Access:")
 	for _, resource := range resources {
 		access := resourceToAccess[resource]
-		cmd.env.Logger().PrintfLn("  %s %s", accessString(access), resource)
+		cmd.env.Logger().PrintfLn("\t%s %s", accessString(access), resource)
 	}
 
 	return nil
-}
-
-func (cmd *centralWhoAmICommand) printRoles(roles []*storage.Role) {
-	cmd.env.Logger().PrintfLn("Roles:")
-	sb := strings.Builder{}
-	sb.WriteRune(' ')
-	for i, r := range roles {
-		sb.WriteString(r.GetName())
-		if i != len(roles)-1 {
-			sb.WriteString(", ")
-		}
-	}
-	cmd.env.Logger().PrintfLn(sb.String())
 }
 
 func accessString(access storage.Access) string {
