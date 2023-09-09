@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/search"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/store"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/writer"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -18,17 +18,18 @@ type datastoreImpl struct {
 	searcher search.Searcher
 	store    store.Store
 	// Buffered writer. Flush to initiate batched upsert.
-	writer   writer.Writer
+	writer writer.Writer
 }
 
-func (ds *datastoreImpl) AddNotification(ctx context.Context, notification *storage.Notification) error {
-	if err := ds.writer.Upsert(ctx, notification); err != nil {
+// The writer handles the SAC checks for the event.
+func (ds *datastoreImpl) AddEvent(ctx context.Context, event *storage.AdministrationEvent) error {
+	if err := ds.writer.Upsert(ctx, event); err != nil {
 		return errors.Wrap(err, "failed to upsert notification")
 	}
 	return nil
 }
 
-func (ds *datastoreImpl) CountNotifications(ctx context.Context, query *v1.Query) (int, error) {
+func (ds *datastoreImpl) CountEvents(ctx context.Context, query *v1.Query) (int, error) {
 	count, err := ds.searcher.Count(ctx, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to count notifications")
@@ -36,10 +37,10 @@ func (ds *datastoreImpl) CountNotifications(ctx context.Context, query *v1.Query
 	return count, nil
 }
 
-func (ds *datastoreImpl) GetNotificationByID(ctx context.Context, id string) (*storage.Notification, error) {
+func (ds *datastoreImpl) GetEventByID(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
 	notification, exists, err := ds.store.Get(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get notification by id")
+		return nil, errors.Wrap(err, "failed to get notification")
 	}
 	if !exists {
 		return nil, errox.NotFound.Newf("notification %q not found", id)
@@ -47,10 +48,10 @@ func (ds *datastoreImpl) GetNotificationByID(ctx context.Context, id string) (*s
 	return notification, nil
 }
 
-func (ds *datastoreImpl) ListNotifications(ctx context.Context, query *v1.Query) ([]*storage.Notification, error) {
+func (ds *datastoreImpl) ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error) {
 	notifications, err := ds.store.GetByQuery(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get notifications by query")
+		return nil, errors.Wrap(err, "failed to list notifications")
 	}
 	return notifications, nil
 }

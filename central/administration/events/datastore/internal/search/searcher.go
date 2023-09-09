@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifications/datastore/internal/index"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 

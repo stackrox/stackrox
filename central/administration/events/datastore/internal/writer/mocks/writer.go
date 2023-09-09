@@ -50,7 +50,7 @@ func (mr *MockWriterMockRecorder) Flush(ctx interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method.
-func (m *MockWriter) Upsert(ctx context.Context, obj *storage.Notification) error {
+func (m *MockWriter) Upsert(ctx context.Context, obj *storage.AdministrationEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)

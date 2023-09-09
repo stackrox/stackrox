@@ -21,8 +21,8 @@ import (
 )
 
 const (
-	baseTable = "notifications"
-	storeName = "Notification"
+	baseTable = "administration_events"
+	storeName = "AdministrationEvent"
 
 	// using copyFrom, we may not even want to batch.  It would probably be simpler
 	// to deal with failures if we just sent it all.  Something to think about as we
@@ -32,13 +32,13 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.NotificationsSchema
+	schema         = pkgSchema.AdministrationEventsSchema
 	targetResource = resources.Administration
 )
 
-type storeType = storage.Notification
+type storeType = storage.AdministrationEvent
 
-// Store is the interface to interact with the storage for storage.Notification
+// Store is the interface to interact with the storage for storage.AdministrationEvent
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -63,8 +63,8 @@ func New(db postgres.DB) Store {
 		db,
 		schema,
 		pkGetter,
-		insertIntoNotifications,
-		copyFromNotifications,
+		insertIntoAdministrationEvents,
+		copyFromAdministrationEvents,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
@@ -86,7 +86,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoNotifications(batch *pgx.Batch, obj *storage.Notification) error {
+func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.AdministrationEvent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
@@ -105,13 +105,13 @@ func insertIntoNotifications(batch *pgx.Batch, obj *storage.Notification) error 
 		serialized,
 	}
 
-	finalStr := "INSERT INTO notifications (Id, Type, Level, Domain, ResourceType, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, ResourceType = EXCLUDED.ResourceType, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, ResourceType, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, ResourceType = EXCLUDED.ResourceType, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
 }
 
-func copyFromNotifications(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Notification) error {
+func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AdministrationEvent) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
@@ -165,7 +165,7 @@ func copyFromNotifications(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			// clear the inserts and vals for the next batch
 			deletes = deletes[:0]
 
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"notifications"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"administration_events"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -188,11 +188,11 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
-	dropTableNotifications(ctx, db)
+	dropTableAdministrationEvents(ctx, db)
 }
 
-func dropTableNotifications(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS notifications CASCADE")
+func dropTableAdministrationEvents(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS administration_events CASCADE")
 
 }
 

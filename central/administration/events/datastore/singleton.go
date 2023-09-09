@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/search"
-	pgStore "github.com/stackrox/rox/central/notifications/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/writer"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
+	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,7 +19,7 @@ var (
 
 // Singleton returns a datastore instance to handle notifications.
 func Singleton() DataStore {
-	if !features.CentralNotifications.Enabled() {
+	if !features.AdministrationEvents.Enabled() {
 		return nil
 	}
 	once.Do(func() {

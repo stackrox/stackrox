@@ -3,7 +3,7 @@ package writer
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifications/datastore/internal/store"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -17,7 +17,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Writer interface {
-	Upsert(ctx context.Context, obj *storage.Notification) error
+	Upsert(ctx context.Context, obj *storage.AdministrationEvent) error
 	Flush(ctx context.Context) error
 }
 

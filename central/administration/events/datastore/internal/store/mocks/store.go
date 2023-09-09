@@ -36,25 +36,11 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, q *v1.Query) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, q)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteByQuery indicates an expected call of DeleteByQuery.
-func (mr *MockStoreMockRecorder) DeleteByQuery(ctx, q interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByQuery", reflect.TypeOf((*MockStore)(nil).DeleteByQuery), ctx, q)
-}
-
 // Get mocks base method.
-func (m *MockStore) Get(ctx context.Context, id string) (*storage.Notification, bool, error) {
+func (m *MockStore) Get(ctx context.Context, id string) (*storage.AdministrationEvent, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.Notification)
+	ret0, _ := ret[0].(*storage.AdministrationEvent)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -67,10 +53,10 @@ func (mr *MockStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetByQuery mocks base method.
-func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.Notification, error) {
+func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByQuery", ctx, query)
-	ret0, _ := ret[0].([]*storage.Notification)
+	ret0, _ := ret[0].([]*storage.AdministrationEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -82,7 +68,7 @@ func (mr *MockStoreMockRecorder) GetByQuery(ctx, query interface{}) *gomock.Call
 }
 
 // UpsertMany mocks base method.
-func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.Notification) error {
+func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.AdministrationEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertMany", ctx, objs)
 	ret0, _ := ret[0].(error)

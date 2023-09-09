@@ -13,7 +13,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-// NewIndexer returns new indexer for `storage.Notification`.
+// NewIndexer returns new indexer for `storage.AdministrationEvent`.
 func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -25,13 +25,13 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "Notification")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "AdministrationEvent")
 
-	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_NOTIFICATIONS, q, b.db)
+	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_ADMINISTRATION_EVENTS, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Notification")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "AdministrationEvent")
 
-	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_NOTIFICATIONS, q, b.db)
+	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_ADMINISTRATION_EVENTS, q, b.db)
 }
