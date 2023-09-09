@@ -60,7 +60,6 @@ func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 // Write writes back the CSV file contents into the http.ResponseWriter.
 func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 	writeHeaders(w, filename)
-	w.WriteHeader(http.StatusOK)
 
 	if c.sort {
 		sort.Slice(c.values, func(i, j int) bool {
