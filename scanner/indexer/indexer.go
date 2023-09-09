@@ -110,7 +110,7 @@ func (i *indexerImpl) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient := http.Client{Timeout: time.Minute}
+	httpClient := http.Client{Timeout: i.getLayerTimeout}
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}

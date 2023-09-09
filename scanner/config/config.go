@@ -17,8 +17,9 @@ var (
 		HTTPListenAddr: "127.0.0.1:9443",
 		GRPCListenAddr: "127.0.0.1:8443",
 		Indexer: IndexerConfig{
-			Enable:       true,
-			DBConnString: "postgresql:///postgres?host=/var/run/postgresql",
+			Enable:          true,
+			DBConnString:    "postgresql:///postgres?host=/var/run/postgresql",
+			GetLayerTimeout: Duration(time.Minute),
 		},
 		Matcher: MatcherConfig{
 			Enable:       true,
