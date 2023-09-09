@@ -134,6 +134,47 @@ func GetScopedResourceAlert(ID string, clusterID string, namespace string) *stor
 	})
 }
 
+// GetClusterResourceAlert returns a Mock Alert with a resource entity that is cluster wide (i.e. has no namespace)
+func GetClusterResourceAlert() *storage.Alert {
+	policy := GetAuditLogEventSourcePolicy()
+	policy.PolicySections[0].PolicyGroups[0].Values[0].Value = "CLUSTER_ROLES"
+
+	return copyScopingInfo(&storage.Alert{
+		Id: fixtureconsts.Alert1,
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "Access to cluster role \"my-cluster-role\"",
+				Type:    storage.Alert_Violation_K8S_EVENT,
+				MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+					KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+						Attrs: []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+							{Key: "Kubernetes API Verb", Value: "CREATE"},
+							{Key: "username", Value: "test-user"},
+							{Key: "user groups", Value: "groupA, groupB"},
+							{Key: "resource", Value: "/apis/rbac.authorization.k8s.io/v1/clusterroles/my-cluster-role"},
+							{Key: "user agent", Value: "oc/4.7.0 (darwin/amd64) kubernetes/c66c03f"},
+							{Key: "IP address", Value: "192.168.0.1, 127.0.0.1"},
+							{Key: "impersonated username", Value: "central-service-account"},
+							{Key: "impersonated user groups", Value: "service-accounts, groupB"},
+						},
+					},
+				},
+			},
+		},
+		Time:   ptypes.TimestampNow(),
+		Policy: policy,
+		Entity: &storage.Alert_Resource_{
+			Resource: &storage.Alert_Resource{
+				ResourceType: storage.Alert_Resource_CLUSTER_ROLES,
+				Name:         "my-cluster-role",
+				ClusterId:    fixtureconsts.Cluster3,
+				ClusterName:  "prod cluster",
+			},
+		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+	})
+}
+
 // GetImageAlert returns a Mock alert with an image for entity
 func GetImageAlert() *storage.Alert {
 	return getImageAlertWithID("Alert1")
