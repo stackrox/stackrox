@@ -277,7 +277,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVData, empty, err := common.Format(reportData, nil, req.ReportConfig.GetName())
+	zippedCSVData, empty, err := common.Format(reportData, nil, "")
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}

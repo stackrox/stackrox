@@ -83,7 +83,7 @@ type WatchedImagesResult struct {
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
-// a flag if the report is empty or not
+// a flag if the report is empty or not. For v1 config pass an empty string.
 func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string) (*bytes.Buffer, bool, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 	for _, r := range deployedImagesResults {
@@ -152,10 +152,16 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
+	var reportName string
 	if len(configName) > 80 {
 		configName = configName[0:80] + "..."
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+	} else if configName == "" {
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
+	} else {
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
 	}
-	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+
 	zipFile, err := zipWriter.Create(reportName)
 	if err != nil {
 		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
