@@ -14,8 +14,8 @@ import (
 var (
 	// DefaultConfiguration provides the default values for the scanner configuration.
 	DefaultConfiguration = Config{
-		HTTPListenAddr: ":9443",
-		GRPCListenAddr: ":8443",
+		HTTPListenAddr: "127.0.0.1:9443",
+		GRPCListenAddr: "127.0.0.1:8443",
 		Indexer: IndexerConfig{
 			Enable:       true,
 			DBConnString: "postgresql:///postgres?host=/var/run/postgresql",
@@ -46,6 +46,12 @@ func (c *Config) validate() error {
 	err := c.MTLS.validate()
 	if err != nil {
 		return fmt.Errorf("mtls: %w", err)
+	}
+	if c.HTTPListenAddr == "" {
+		return fmt.Errorf("http_listen_addr is empty")
+	}
+	if c.GRPCListenAddr == "" {
+		return fmt.Errorf("grpc_listen_addr is empty")
 	}
 	return nil
 }
