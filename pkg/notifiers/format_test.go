@@ -265,6 +265,46 @@ Resource:
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
 `
+	expectedFormattedClusterRoleResourceAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
+Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
+Time (UTC): 2021-01-20 22:42:02
+Severity: Low
+
+Violations:
+	 - Access to cluster role "my-cluster-role"
+		 - Kubernetes API Verb : CREATE
+		 - username : test-user
+		 - user groups : groupA, groupB
+		 - resource : /apis/rbac.authorization.k8s.io/v1/clusterroles/my-cluster-role
+		 - user agent : oc/4.7.0 (darwin/amd64) kubernetes/c66c03f
+		 - IP address : 192.168.0.1, 127.0.0.1
+		 - impersonated username : central-service-account
+		 - impersonated user groups : service-accounts, groupB
+
+Policy Definition:
+
+	Description:
+	 - Alert if the container contains vulnerabilities
+
+	Rationale:
+	 - This is the rationale
+
+	Remediation:
+	 - This is the remediation
+
+	Policy Criteria:
+
+		Section Unnamed :
+
+			- Kubernetes Resource: CLUSTER_ROLES
+			- Kubernetes API Verb: CREATE
+
+Resource:
+	 - Name: my-cluster-role
+	 - Type: CLUSTER_ROLES
+	 - Cluster: prod cluster
+	 - ClusterId: ` + fixtureconsts.Cluster3 + `
+`
 )
 
 func TestFormatAlert(t *testing.T) {
@@ -281,6 +321,7 @@ func TestNetworkAlert(t *testing.T) {
 
 func TestResourceAlert(t *testing.T) {
 	runFormatTest(t, fixtures.GetResourceAlert(), expectedFormattedResourceAlert)
+	runFormatTest(t, fixtures.GetClusterResourceAlert(), expectedFormattedClusterRoleResourceAlert)
 }
 
 func TestFormatAlertWithMitre(t *testing.T) {

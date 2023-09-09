@@ -71,8 +71,13 @@ func TestGetAnnotationValue(t *testing.T) {
 	alertWithNoClusterID := fixtures.GetResourceAlert()
 	alertWithNoClusterID.GetResource().ClusterId = ""
 
-	alertWithNoNamespace := fixtures.GetResourceAlert()
-	alertWithNoNamespace.GetResource().Namespace = ""
+	deployAlertWithNoNamespace := fixtures.GetAlert()
+	deployAlertWithNoNamespace.GetDeployment().Namespace = ""
+
+	resourceAlertWithNoNamespace := fixtures.GetResourceAlert()
+	resourceAlertWithNoNamespace.GetResource().Namespace = ""
+
+	clusterResourceAlert := fixtures.GetClusterResourceAlert()
 
 	cases := []struct {
 		name          string
@@ -131,10 +136,24 @@ func TestGetAnnotationValue(t *testing.T) {
 			expectedValue: "default",
 		},
 		{
-			name:          "Get default when no namespace name available to lookup namespace",
+			name:          "Get default when no namespace name available to lookup namespace in a deployment alert",
 			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
 			annotationKey: "annotKey",
-			alert:         alertWithNoNamespace,
+			alert:         deployAlertWithNoNamespace,
+			expectedValue: "default",
+		},
+		{
+			name:          "Get default when no namespace name available to lookup namespace in a resource alert",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			annotationKey: "annotKey",
+			alert:         resourceAlertWithNoNamespace,
+			expectedValue: "default",
+		},
+		{
+			name:          "Get default when no namespace name available to lookup namespace in a cluster level resource alert",
+			namespace:     []*storage.NamespaceMetadata{namespaceWithAnnotation("annotKey", "nsValue")},
+			annotationKey: "annotKey",
+			alert:         clusterResourceAlert,
 			expectedValue: "default",
 		},
 		{

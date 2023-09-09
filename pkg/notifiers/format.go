@@ -94,7 +94,7 @@ const bplPolicyFormat = `
 	{{stringify "Type:" .GetResource.ResourceType | list}}
 	{{stringify "Cluster:" .GetResource.ClusterName | list}}
 	{{stringify "ClusterId:" .GetResource.ClusterId | list}}
-	{{stringify "Namespace:" .GetResource.Namespace | list}}
+	{{if .GetResource.Namespace }}{{stringify "Namespace:" .GetResource.Namespace | list}}{{end}}
 {{end}}
 
 {{if .GetImage}}{{line ""}}{{header "Image:"}}
