@@ -320,7 +320,7 @@ func TestNetworkAlert(t *testing.T) {
 }
 
 func TestResourceAlert(t *testing.T) {
-	//runFormatTest(t, fixtures.GetResourceAlert(), expectedFormattedResourceAlert)
+	runFormatTest(t, fixtures.GetResourceAlert(), expectedFormattedResourceAlert)
 	runFormatTest(t, fixtures.GetClusterResourceAlert(), expectedFormattedClusterRoleResourceAlert)
 }
 

@@ -78,6 +78,11 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 		namespaceName = entity.Deployment.GetNamespace()
 		clusterID = entity.Deployment.GetClusterId()
 	case *storage.Alert_Resource_:
+		resourceType := entity.Resource.GetResourceType()
+		if resourceType == storage.Alert_Resource_CLUSTER_ROLES || resourceType == storage.Alert_Resource_CLUSTER_ROLE_BINDINGS {
+			// These two resource types have no namespace
+			return nil
+		}
 		namespaceName = entity.Resource.GetNamespace()
 		clusterID = entity.Resource.GetClusterId()
 	case *storage.Alert_Image:
@@ -88,12 +93,8 @@ func getNamespaceFromAlert(ctx context.Context, alert *storage.Alert, namespaceS
 		return nil
 	}
 
-	if namespaceName == "" {
-		return nil
-	}
-
-	if clusterID == "" {
-		log.Errorf("Alert entity doesn't contain cluster ID: %+v", alert.GetEntity())
+	if namespaceName == "" || clusterID == "" {
+		log.Errorf("Alert entity doesn't contain namespace and cluster ID: %+v", alert.GetEntity())
 		return nil
 	}
 
