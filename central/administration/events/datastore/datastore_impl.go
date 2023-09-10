@@ -21,8 +21,8 @@ type datastoreImpl struct {
 	writer writer.Writer
 }
 
-// The writer handles the SAC checks for the event.
 func (ds *datastoreImpl) AddEvent(ctx context.Context, event *storage.AdministrationEvent) error {
+	// The writer handles the SAC checks for the event.
 	if err := ds.writer.Upsert(ctx, event); err != nil {
 		return errors.Wrap(err, "failed to upsert notification")
 	}
