@@ -10,12 +10,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// DataStore provides an interface to handle notifications.
+// DataStore provides an interface to handle administration events.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	// AddEvent is intended to be used by the notification handler to add
-	// notifications to the buffered writer.
+	// AddEvent is intended to be used by the administration event handler
+	// to add events to the buffered writer.
 	AddEvent(ctx context.Context, event *storage.AdministrationEvent) error
 	// Flush initiates a batched upsert to the database.
 	Flush(ctx context.Context) error

@@ -24,7 +24,7 @@ type datastoreImpl struct {
 func (ds *datastoreImpl) AddEvent(ctx context.Context, event *storage.AdministrationEvent) error {
 	// The writer handles the SAC checks for the event.
 	if err := ds.writer.Upsert(ctx, event); err != nil {
-		return errors.Wrap(err, "failed to upsert notification")
+		return errors.Wrap(err, "failed to upsert administration event")
 	}
 	return nil
 }
@@ -32,34 +32,34 @@ func (ds *datastoreImpl) AddEvent(ctx context.Context, event *storage.Administra
 func (ds *datastoreImpl) CountEvents(ctx context.Context, query *v1.Query) (int, error) {
 	count, err := ds.searcher.Count(ctx, query)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to count notifications")
+		return 0, errors.Wrap(err, "failed to count administration events")
 	}
 	return count, nil
 }
 
 func (ds *datastoreImpl) GetEventByID(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
-	notification, exists, err := ds.store.Get(ctx, id)
+	event, exists, err := ds.store.Get(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get notification")
+		return nil, errors.Wrap(err, "failed to get administration event")
 	}
 	if !exists {
-		return nil, errox.NotFound.Newf("notification %q not found", id)
+		return nil, errox.NotFound.Newf("administration event %q not found", id)
 	}
-	return notification, nil
+	return event, nil
 }
 
 func (ds *datastoreImpl) ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error) {
-	notifications, err := ds.store.GetByQuery(ctx, query)
+	events, err := ds.store.GetByQuery(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list notifications")
+		return nil, errors.Wrap(err, "failed to list administration events")
 	}
-	return notifications, nil
+	return events, nil
 }
 
 func (ds *datastoreImpl) Flush(ctx context.Context) error {
 	err := ds.writer.Flush(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to flush notifications")
+		return errors.Wrap(err, "failed to flush administration events")
 	}
 	return nil
 }

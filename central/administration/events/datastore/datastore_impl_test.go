@@ -20,7 +20,7 @@ var (
 	fakeQuery = &v1.Query{}
 )
 
-func TestNotificationsDatastore(t *testing.T) {
+func TestEventsDatastore(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(datastoreTestSuite))
 }
@@ -46,8 +46,8 @@ func (s *datastoreTestSuite) SetupTest() {
 	s.datastore = newDataStore(s.searcher, s.store, s.writer)
 }
 
-func (s *datastoreTestSuite) TestAddNotification_Success() {
-	notification := &storage.AdministrationEvent{
+func (s *datastoreTestSuite) TestAddEvent_Success() {
+	event := &storage.AdministrationEvent{
 		Id:             "0925514f-3a33-5931-b431-756406e1a008",
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
@@ -57,14 +57,14 @@ func (s *datastoreTestSuite) TestAddNotification_Success() {
 		NumOccurrences: 1,
 	}
 
-	s.writer.EXPECT().Upsert(s.ctx, notification).Return(nil)
-	err := s.datastore.AddEvent(s.ctx, notification)
+	s.writer.EXPECT().Upsert(s.ctx, event).Return(nil)
+	err := s.datastore.AddEvent(s.ctx, event)
 
 	s.NoError(err)
 }
 
-func (s *datastoreTestSuite) TestAddNotification_Error() {
-	notification := &storage.AdministrationEvent{
+func (s *datastoreTestSuite) TestAddEvent_Error() {
+	event := &storage.AdministrationEvent{
 		Id:             "0925514f-3a33-5931-b431-756406e1a008",
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
@@ -74,13 +74,13 @@ func (s *datastoreTestSuite) TestAddNotification_Error() {
 		NumOccurrences: 1,
 	}
 
-	s.writer.EXPECT().Upsert(s.ctx, notification).Return(errFake)
-	err := s.datastore.AddEvent(s.ctx, notification)
+	s.writer.EXPECT().Upsert(s.ctx, event).Return(errFake)
+	err := s.datastore.AddEvent(s.ctx, event)
 
 	s.ErrorIs(err, errFake)
 }
 
-func (s *datastoreTestSuite) TestCountNotifications_Success() {
+func (s *datastoreTestSuite) TestCountEvents_Success() {
 	count := 10
 	s.searcher.EXPECT().Count(s.ctx, fakeQuery).Return(count, nil)
 
@@ -90,7 +90,7 @@ func (s *datastoreTestSuite) TestCountNotifications_Success() {
 	s.Equal(count, result)
 }
 
-func (s *datastoreTestSuite) TestCountNotifications_Error() {
+func (s *datastoreTestSuite) TestCountEvents_Error() {
 	s.searcher.EXPECT().Count(s.ctx, fakeQuery).Return(0, errFake)
 
 	_, err := s.datastore.CountEvents(s.ctx, fakeQuery)
@@ -98,9 +98,9 @@ func (s *datastoreTestSuite) TestCountNotifications_Error() {
 	s.ErrorIs(err, errFake)
 }
 
-func (s *datastoreTestSuite) TestGetNotification_Success() {
+func (s *datastoreTestSuite) TestGetEvent_Success() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
-	notification := &storage.AdministrationEvent{
+	event := &storage.AdministrationEvent{
 		Id:             id,
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
@@ -110,14 +110,14 @@ func (s *datastoreTestSuite) TestGetNotification_Success() {
 		NumOccurrences: 1,
 	}
 
-	s.store.EXPECT().Get(s.ctx, id).Return(notification, true, nil)
+	s.store.EXPECT().Get(s.ctx, id).Return(event, true, nil)
 	result, err := s.datastore.GetEventByID(s.ctx, id)
 
 	s.Require().NoError(err)
-	s.Equal(notification, result)
+	s.Equal(event, result)
 }
 
-func (s *datastoreTestSuite) TestGetNotification_Error() {
+func (s *datastoreTestSuite) TestGetEvent_Error() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
 
 	s.store.EXPECT().Get(s.ctx, id).Return(nil, false, errFake)
@@ -126,7 +126,7 @@ func (s *datastoreTestSuite) TestGetNotification_Error() {
 	s.ErrorIs(err, errFake)
 }
 
-func (s *datastoreTestSuite) TestGetNotification_NotFound() {
+func (s *datastoreTestSuite) TestGetEvent_NotFound() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
 
 	s.store.EXPECT().Get(s.ctx, id).Return(nil, false, nil)
@@ -135,8 +135,8 @@ func (s *datastoreTestSuite) TestGetNotification_NotFound() {
 	s.ErrorIs(err, errox.NotFound)
 }
 
-func (s *datastoreTestSuite) TestListNotifications_Success() {
-	notifications := []*storage.AdministrationEvent{
+func (s *datastoreTestSuite) TestListEvents_Success() {
+	events := []*storage.AdministrationEvent{
 		{
 			Id:             "0925514f-3a33-5931-b431-756406e1a008",
 			Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
@@ -148,14 +148,14 @@ func (s *datastoreTestSuite) TestListNotifications_Success() {
 		},
 	}
 
-	s.store.EXPECT().GetByQuery(s.ctx, fakeQuery).Return(notifications, nil)
+	s.store.EXPECT().GetByQuery(s.ctx, fakeQuery).Return(events, nil)
 	result, err := s.datastore.ListEvents(s.ctx, fakeQuery)
 
 	s.Require().NoError(err)
-	s.Equal(notifications, result)
+	s.Equal(events, result)
 }
 
-func (s *datastoreTestSuite) TestListNotifications_Error() {
+func (s *datastoreTestSuite) TestListEvents_Error() {
 	s.store.EXPECT().GetByQuery(s.ctx, fakeQuery).Return(nil, errFake)
 
 	_, err := s.datastore.ListEvents(s.ctx, fakeQuery)
