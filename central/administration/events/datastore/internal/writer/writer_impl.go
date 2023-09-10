@@ -26,12 +26,12 @@ type writerImpl struct {
 	store  store.Store
 }
 
-func (c *writerImpl) read(id string) (*storage.AdministrationEvent, bool) {
+func (c *writerImpl) readNoLock(id string) (*storage.AdministrationEvent, bool) {
 	event, found := c.buffer[id]
 	return event, found
 }
 
-func (c *writerImpl) write(event *storage.AdministrationEvent) {
+func (c *writerImpl) writeNoLock(event *storage.AdministrationEvent) {
 	c.buffer[event.GetId()] = event
 }
 
@@ -44,7 +44,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	eventInBuffer, found := c.read(id)
+	eventInBuffer, found := c.readNoLock(id)
 	// If an event already exists in the buffer it is the most recent.
 	// We use it as a base to merge with the new event.
 	if found {
@@ -66,7 +66,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 		enrichedEvent = mergeEvents(baseEvent, enrichedEvent)
 	}
 
-	c.write(enrichedEvent)
+	c.writeNoLock(enrichedEvent)
 	return nil
 }
 
