@@ -37,10 +37,6 @@ func (s *writerTestSuite) SetupTest() {
 	s.writer = New(s.store)
 }
 
-func (s *writerTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
-}
-
 func (s *writerTestSuite) TestWriteEvent_Success() {
 	event := &storage.AdministrationEvent{
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
@@ -52,7 +48,7 @@ func (s *writerTestSuite) TestWriteEvent_Success() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
 	enrichedEvent := &storage.AdministrationEvent{
-		Id:             "0925514f-3a33-5931-b431-756406e1a008",
+		Id:             "4a4c2178-7020-5724-816f-f742f88073d5",
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
 		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
@@ -73,7 +69,7 @@ func (s *writerTestSuite) TestWriteEvent_Success() {
 }
 
 func (s *writerTestSuite) TestWriteEvent_MergeWithBuffer() {
-	id := "0925514f-3a33-5931-b431-756406e1a008"
+	id := "4a4c2178-7020-5724-816f-f742f88073d5"
 	eventBase := &storage.AdministrationEvent{
 		Id:             id,
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
@@ -121,7 +117,7 @@ func (s *writerTestSuite) TestWriteEvent_MergeWithBuffer() {
 }
 
 func (s *writerTestSuite) TestWriteEvent_MergeWithDB() {
-	id := "0925514f-3a33-5931-b431-756406e1a008"
+	id := "4a4c2178-7020-5724-816f-f742f88073d5"
 	eventBase := &storage.AdministrationEvent{
 		Id:             id,
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
@@ -176,7 +172,7 @@ func (s *writerTestSuite) TestWriteEvent_Error() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
 	enrichedEvent := &storage.AdministrationEvent{
-		Id:             "0925514f-3a33-5931-b431-756406e1a008",
+		Id:             "4a4c2178-7020-5724-816f-f742f88073d5",
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
 		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
