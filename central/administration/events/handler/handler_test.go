@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
-	dsMocks "github.com/stackrox/rox/central/notifications/datastore/mocks"
+	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/notifications"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestNotificationsHandler(t *testing.T) {
+func TestEventsHandler(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(handlerTestSuite))
 }
@@ -23,17 +23,17 @@ type handlerTestSuite struct {
 	mockCtrl *gomock.Controller
 	mutex    sync.RWMutex
 
-	datastore          *dsMocks.MockDataStore
-	notificationStream notifications.Stream
-	handler            *handlerImpl
+	datastore   *dsMocks.MockDataStore
+	eventStream events.Stream
+	handler     *handlerImpl
 }
 
 func (s *handlerTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.datastore = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.notificationStream = notifications.NewStream()
-	s.handler = newHandler(s.datastore, s.notificationStream).(*handlerImpl)
+	s.eventStream = events.NewStream()
+	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
 	s.handler.Start()
 }
@@ -43,17 +43,17 @@ func (s *handlerTestSuite) TearDownTest() {
 	s.handler.Stop()
 }
 
-func (s *handlerTestSuite) TestConsumeNotifications() {
-	notification := &storage.Notification{
-		Level:   storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+func (s *handlerTestSuite) TestConsumeEvents() {
+	event := &storage.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message: "message",
-		Type:    storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:    "hint",
 		Domain:  "domain",
 	}
 
 	addCalled := false
-	addSetCalledFn := func(ctx context.Context, notification *storage.Notification) {
+	addSetCalledFn := func(ctx context.Context, event *storage.AdministrationEvent) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 		addCalled = true
@@ -63,7 +63,7 @@ func (s *handlerTestSuite) TestConsumeNotifications() {
 		defer s.mutex.RUnlock()
 		return addCalled
 	}
-	s.datastore.EXPECT().AddNotification(notificationWriteCtx, notification).Do(addSetCalledFn)
+	s.datastore.EXPECT().AddEvent(eventWriteCtx, event).Do(addSetCalledFn)
 
 	flushCalled := false
 	flushSetCalledFn := func(ctx context.Context) {
@@ -76,9 +76,9 @@ func (s *handlerTestSuite) TestConsumeNotifications() {
 		defer s.mutex.RUnlock()
 		return flushCalled
 	}
-	s.datastore.EXPECT().Flush(notificationWriteCtx).MinTimes(1).Do(flushSetCalledFn)
+	s.datastore.EXPECT().Flush(eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
 
-	err := s.notificationStream.Produce(notification)
+	err := s.eventStream.Produce(event)
 	s.Require().NoError(err)
 
 	s.Eventually(addCalledFn, 100*time.Millisecond, 10*time.Millisecond)

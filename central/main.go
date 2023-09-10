@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	eventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -93,7 +94,6 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkgraph/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
-	notificationHandler "github.com/stackrox/rox/central/notifications/handler"
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
@@ -344,8 +344,8 @@ func startServices() {
 	apiTokenExpiration.Singleton().Start()
 	productUsageInjector.Singleton().Start()
 
-	if features.CentralNotifications.Enabled() {
-		notificationHandler.Singleton().Start()
+	if features.AdministrationEvents.Enabled() {
+		eventHandler.Singleton().Start()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -864,8 +864,8 @@ func waitForTerminationSignal() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 	}
 
-	if features.CentralNotifications.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{notificationHandler.Singleton(), "notification handler"})
+	if features.AdministrationEvents.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{eventHandler.Singleton(), "administration events handler"})
 	}
 
 	var wg sync.WaitGroup
