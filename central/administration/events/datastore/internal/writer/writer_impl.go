@@ -63,7 +63,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 
 	// Merge events to up the occurrence and update the time stamps.
 	if baseEvent != nil {
-		enrichedEvent = mergeEvents(baseEvent, enrichedEvent)
+		mergeEvents(baseEvent, enrichedEvent)
 	}
 
 	c.writeNoLock(enrichedEvent)
@@ -116,24 +116,23 @@ func enrichEventWithDefaults(event *storage.AdministrationEvent) *storage.Admini
 	return enrichedEvent
 }
 
-func mergeEvents(base *storage.AdministrationEvent, new *storage.AdministrationEvent) *storage.AdministrationEvent {
+// Modifies `new` in place with the values of the merged event.
+func mergeEvents(base *storage.AdministrationEvent, new *storage.AdministrationEvent) {
 	if base == nil {
-		return nil
+		return
 	}
 	if new == nil {
-		return base
+		new = base
+		return
 	}
-
-	mergedEvent := base.Clone()
 
 	// Set CreatedAt timestamp to the earliest timestamp.
-	if new.GetCreatedAt().GetSeconds() < base.GetCreatedAt().GetSeconds() {
-		mergedEvent.CreatedAt = new.GetCreatedAt()
+	if base.GetCreatedAt().GetSeconds() < new.GetCreatedAt().GetSeconds() {
+		new.CreatedAt = base.GetCreatedAt()
 	}
 	// Set LastOccured timestamp to the latest timestamp.
-	if new.GetLastOccurredAt().GetSeconds() > base.GetLastOccurredAt().GetSeconds() {
-		mergedEvent.LastOccurredAt = new.GetLastOccurredAt()
+	if base.GetLastOccurredAt().GetSeconds() > new.GetLastOccurredAt().GetSeconds() {
+		new.LastOccurredAt = base.GetLastOccurredAt()
 	}
-	mergedEvent.NumOccurrences++
-	return mergedEvent
+	new.NumOccurrences = base.GetNumOccurrences() + 1
 }
