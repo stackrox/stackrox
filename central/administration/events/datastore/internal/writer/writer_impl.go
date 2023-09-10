@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifications/datastore/internal/store"
+	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sync"
@@ -22,51 +22,51 @@ var (
 type writerImpl struct {
 	mutex sync.Mutex
 
-	buffer map[string]*storage.Notification
+	buffer map[string]*storage.AdministrationEvent
 	store  store.Store
 }
 
-func (c *writerImpl) read(id string) (*storage.Notification, bool) {
-	notification, found := c.buffer[id]
-	return notification, found
+func (c *writerImpl) read(id string) (*storage.AdministrationEvent, bool) {
+	event, found := c.buffer[id]
+	return event, found
 }
 
-func (c *writerImpl) write(notification *storage.Notification) {
-	c.buffer[notification.GetId()] = notification
+func (c *writerImpl) write(event *storage.AdministrationEvent) {
+	c.buffer[event.GetId()] = event
 }
 
-func (c *writerImpl) Upsert(ctx context.Context, notification *storage.Notification) error {
-	enrichedNotification := enrichNotificationWithDefaults(notification)
-	id := enrichedNotification.GetId()
+func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEvent) error {
+	enrichedEvent := enrichEventWithDefaults(event)
+	id := enrichedEvent.GetId()
 
-	var baseNotification *storage.Notification
+	var baseEvent *storage.AdministrationEvent
 
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	notificationInBuffer, found := c.read(id)
-	// If a notification already exists in the buffer it is the most recent.
-	// We use it as a base to merge with the new notification.
+	eventInBuffer, found := c.read(id)
+	// If an event already exists in the buffer it is the most recent.
+	// We use it as a base to merge with the new event.
 	if found {
-		baseNotification = notificationInBuffer
+		baseEvent = eventInBuffer
 	} else {
-		// If no notification is in the buffer, we try to fetch a notification
+		// If no event is in the buffer, we try to fetch an event
 		// from the database. If found, we use it as the base for the merge.
-		notificationInDB, found, err := c.store.Get(ctx, id)
+		eventInDB, found, err := c.store.Get(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "failed to query for existing record")
 		}
 		if found {
-			baseNotification = notificationInDB
+			baseEvent = eventInDB
 		}
 	}
 
-	// Merge notifications to up the occurrence and update the time stamps.
-	if baseNotification != nil {
-		enrichedNotification = mergeNotifications(baseNotification, enrichedNotification)
+	// Merge events to up the occurrence and update the time stamps.
+	if baseEvent != nil {
+		enrichedEvent = mergeEvents(baseEvent, enrichedEvent)
 	}
 
-	c.write(enrichedNotification)
+	c.write(enrichedEvent)
 	return nil
 }
 
@@ -74,49 +74,49 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	notificationChunk := make([]*storage.Notification, 0, len(c.buffer))
-	for _, notification := range c.buffer {
-		notificationChunk = append(notificationChunk, notification)
+	eventChunk := make([]*storage.AdministrationEvent, 0, len(c.buffer))
+	for _, event := range c.buffer {
+		eventChunk = append(eventChunk, event)
 	}
-	c.buffer = make(map[string]*storage.Notification)
-	err := c.store.UpsertMany(ctx, notificationChunk)
+	c.buffer = make(map[string]*storage.AdministrationEvent)
+	err := c.store.UpsertMany(ctx, eventChunk)
 	if err != nil {
-		return errors.Wrap(err, "failed to upsert notification chunk")
+		return errors.Wrap(err, "failed to upsert event chunk")
 	}
 	return nil
 }
 
-func getNotificationID(notification *storage.Notification) string {
+func getEventID(event *storage.AdministrationEvent) string {
 	dedupKey := strings.Join([]string{
-		notification.GetDomain(),
-		notification.GetMessage(),
-		notification.GetResourceId(),
-		notification.GetResourceType(),
-		notification.GetType().String(),
+		event.GetDomain(),
+		event.GetMessage(),
+		event.GetResourceId(),
+		event.GetResourceType(),
+		event.GetType().String(),
 	}, ",")
 	return uuid.NewV5(rootNamespaceUUID, dedupKey).String()
 }
 
-func enrichNotificationWithDefaults(notification *storage.Notification) *storage.Notification {
-	if notification == nil {
+func enrichEventWithDefaults(event *storage.AdministrationEvent) *storage.AdministrationEvent {
+	if event == nil {
 		return nil
 	}
 
-	enrichedNotification := notification.Clone()
-	enrichedNotification.Id = getNotificationID(notification)
-	if notification.GetNumOccurrences() == 0 {
-		enrichedNotification.NumOccurrences = 1
+	enrichedEvent := event.Clone()
+	enrichedEvent.Id = getEventID(event)
+	if event.GetNumOccurrences() == 0 {
+		enrichedEvent.NumOccurrences = 1
 	}
-	if notification.GetCreatedAt() == nil {
-		enrichedNotification.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
+	if event.GetCreatedAt() == nil {
+		enrichedEvent.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
 	}
-	if notification.GetLastOccurredAt() == nil {
-		enrichedNotification.LastOccurredAt = protoconv.ConvertTimeToTimestamp(time.Now())
+	if event.GetLastOccurredAt() == nil {
+		enrichedEvent.LastOccurredAt = protoconv.ConvertTimeToTimestamp(time.Now())
 	}
-	return enrichedNotification
+	return enrichedEvent
 }
 
-func mergeNotifications(base *storage.Notification, new *storage.Notification) *storage.Notification {
+func mergeEvents(base *storage.AdministrationEvent, new *storage.AdministrationEvent) *storage.AdministrationEvent {
 	if base == nil {
 		return nil
 	}
@@ -124,16 +124,16 @@ func mergeNotifications(base *storage.Notification, new *storage.Notification) *
 		return base
 	}
 
-	mergedNotification := base.Clone()
+	mergedEvent := base.Clone()
 
 	// Set CreatedAt timestamp to the earliest timestamp.
 	if new.GetCreatedAt().GetSeconds() < base.GetCreatedAt().GetSeconds() {
-		mergedNotification.CreatedAt = new.GetCreatedAt()
+		mergedEvent.CreatedAt = new.GetCreatedAt()
 	}
 	// Set LastOccured timestamp to the latest timestamp.
 	if new.GetLastOccurredAt().GetSeconds() > base.GetLastOccurredAt().GetSeconds() {
-		mergedNotification.LastOccurredAt = new.GetLastOccurredAt()
+		mergedEvent.LastOccurredAt = new.GetLastOccurredAt()
 	}
-	mergedNotification.NumOccurrences++
-	return mergedNotification
+	mergedEvent.NumOccurrences++
+	return mergedEvent
 }

@@ -24,7 +24,7 @@ type Writer interface {
 // New returns a new writer instance.
 func New(store store.Store) Writer {
 	return &writerImpl{
-		buffer: make(map[string]*storage.Notification),
+		buffer: make(map[string]*storage.AdministrationEvent),
 		store:  store,
 	}
 }

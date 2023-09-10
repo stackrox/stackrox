@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	storeMocks "github.com/stackrox/rox/central/notifications/datastore/internal/store/mocks"
+	storeMocks "github.com/stackrox/rox/central/administration/events/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
@@ -15,7 +15,7 @@ import (
 
 var errFake = errors.New("fake error")
 
-func TestNotificationsWriter(t *testing.T) {
+func TestEventsWriter(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(writerTestSuite))
 }
@@ -41,21 +41,21 @@ func (s *writerTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *writerTestSuite) TestWriteNotification_Success() {
-	notification := &storage.Notification{
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+func (s *writerTestSuite) TestWriteEvent_Success() {
+	event := &storage.AdministrationEvent{
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
-	enrichedNotification := &storage.Notification{
+	enrichedEvent := &storage.AdministrationEvent{
 		Id:             "0925514f-3a33-5931-b431-756406e1a008",
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
@@ -63,44 +63,44 @@ func (s *writerTestSuite) TestWriteNotification_Success() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
 
-	s.store.EXPECT().Get(s.ctx, enrichedNotification.GetId()).Return(nil, false, nil)
-	err := s.writer.Upsert(s.ctx, notification)
+	s.store.EXPECT().Get(s.ctx, enrichedEvent.GetId()).Return(nil, false, nil)
+	err := s.writer.Upsert(s.ctx, event)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.ctx, []*storage.Notification{enrichedNotification}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.ctx, []*storage.AdministrationEvent{enrichedEvent}).Return(nil)
 	err = s.writer.Flush(s.ctx)
 	s.Require().NoError(err)
 }
 
-func (s *writerTestSuite) TestWriteNotification_MergeWithBuffer() {
+func (s *writerTestSuite) TestWriteEvent_MergeWithBuffer() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
-	notificationBase := &storage.Notification{
+	eventBase := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
-	notificationNew := &storage.Notification{
+	eventNew := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
 	}
-	notificationMerged := &storage.Notification{
+	eventMerged := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 2,
@@ -108,47 +108,47 @@ func (s *writerTestSuite) TestWriteNotification_MergeWithBuffer() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
 	}
 
-	s.store.EXPECT().Get(s.ctx, notificationBase.GetId()).Return(nil, false, nil)
-	err := s.writer.Upsert(s.ctx, notificationBase)
+	s.store.EXPECT().Get(s.ctx, eventBase.GetId()).Return(nil, false, nil)
+	err := s.writer.Upsert(s.ctx, eventBase)
 	s.Require().NoError(err)
 
-	err = s.writer.Upsert(s.ctx, notificationNew)
+	err = s.writer.Upsert(s.ctx, eventNew)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.ctx, []*storage.Notification{notificationMerged}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.ctx, []*storage.AdministrationEvent{eventMerged}).Return(nil)
 	err = s.writer.Flush(s.ctx)
 	s.Require().NoError(err)
 }
 
-func (s *writerTestSuite) TestWriteNotification_MergeWithDB() {
+func (s *writerTestSuite) TestWriteEvent_MergeWithDB() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
-	notificationBase := &storage.Notification{
+	eventBase := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
-	notificationNew := &storage.Notification{
+	eventNew := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
 	}
-	notificationMerged := &storage.Notification{
+	eventMerged := &storage.AdministrationEvent{
 		Id:             id,
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 2,
@@ -156,30 +156,30 @@ func (s *writerTestSuite) TestWriteNotification_MergeWithDB() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
 	}
 
-	s.store.EXPECT().Get(s.ctx, notificationBase.GetId()).Return(notificationBase, true, nil)
-	err := s.writer.Upsert(s.ctx, notificationNew)
+	s.store.EXPECT().Get(s.ctx, eventBase.GetId()).Return(eventBase, true, nil)
+	err := s.writer.Upsert(s.ctx, eventNew)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.ctx, []*storage.Notification{notificationMerged}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.ctx, []*storage.AdministrationEvent{eventMerged}).Return(nil)
 	err = s.writer.Flush(s.ctx)
 	s.Require().NoError(err)
 }
 
-func (s *writerTestSuite) TestWriteNotification_Error() {
-	notification := &storage.Notification{
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+func (s *writerTestSuite) TestWriteEvent_Error() {
+	event := &storage.AdministrationEvent{
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
-	enrichedNotification := &storage.Notification{
+	enrichedEvent := &storage.AdministrationEvent{
 		Id:             "0925514f-3a33-5931-b431-756406e1a008",
-		Level:          storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER,
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
-		Type:           storage.NotificationType_NOTIFICATION_TYPE_GENERIC,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
@@ -187,7 +187,7 @@ func (s *writerTestSuite) TestWriteNotification_Error() {
 		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 	}
 
-	s.store.EXPECT().Get(s.ctx, enrichedNotification.GetId()).Return(nil, false, errFake)
-	err := s.writer.Upsert(s.ctx, notification)
+	s.store.EXPECT().Get(s.ctx, enrichedEvent.GetId()).Return(nil, false, errFake)
+	err := s.writer.Upsert(s.ctx, event)
 	s.ErrorIs(err, errFake)
 }
