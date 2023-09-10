@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/testutils"
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	"github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,10 +17,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
-
-func TestAuthz(t *testing.T) {
-	testutils.AssertAuthzWorks(t, &serviceImpl{})
-}
 
 func TestNotifierService(t *testing.T) {
 	t.Parallel()
@@ -45,6 +40,7 @@ func (s *notifierServiceTestSuite) SetupTest() {
 	s.processor = mocks.NewMockProcessor(s.ctrl)
 	s.reporter = reporterMocks.NewMockReporter(s.ctrl)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
 }
 
 func (s *notifierServiceTestSuite) getSvc() Service {

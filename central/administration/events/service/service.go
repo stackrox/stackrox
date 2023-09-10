@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/notifications/datastore"
+	"github.com/stackrox/rox/central/administration/events/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -14,7 +14,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.NotificationServiceServer
+	v1.AdministrationEventServiceServer
 }
 
 func newService(datastore datastore.DataStore) Service {
