@@ -16,7 +16,7 @@ import (
 var (
 	_ Writer = (*writerImpl)(nil)
 
-	rootNamespaceUUID = uuid.Nil
+	rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
 )
 
 type writerImpl struct {
