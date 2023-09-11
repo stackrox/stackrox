@@ -126,6 +126,7 @@ export_test_environment() {
     ci_export ROX_SYSLOG_EXTRA_FIELDS "${ROX_SYSLOG_EXTRA_FIELDS:-true}"
     ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-false}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
+    ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
@@ -223,10 +224,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < tests/e2e/yaml/central-cr.envsubst.yaml \
-      > /tmp/central-cr.yaml
-
-    kubectl apply -n stackrox -f /tmp/central-cr.yaml
+      < tests/e2e/yaml/central-cr.envsubst.yaml | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/central 300
 }
@@ -275,7 +273,17 @@ deploy_sensor_via_operator() {
         --output-secrets - \
     | kubectl -n stackrox apply -f -
 
-    kubectl apply -n stackrox -f tests/e2e/yaml/secured-cluster-cr.yaml
+    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
+       echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
+    else
+       die "COLLECTION_METHOD not set"
+    fi
+
+    upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+    env - \
+      collection_method="$upper_case_collection_method" \
+    envsubst \
+      < tests/e2e/yaml/secured-cluster-cr.envsubst.yaml | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/sensor 300
     wait_for_object_to_appear stackrox ds/collector 300
@@ -287,11 +295,6 @@ deploy_sensor_via_operator() {
     if [[ -n "${ROX_PROCESSES_LISTENING_ON_PORT:-}" ]]; then
        kubectl -n stackrox set env deployment/sensor ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
        kubectl -n stackrox set env ds/collector ROX_PROCESSES_LISTENING_ON_PORT="${ROX_PROCESSES_LISTENING_ON_PORT}"
-    fi
-
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Using COLLECTION_METHOD=${COLLECTION_METHOD}"
-       kubectl -n stackrox set env ds/collector COLLECTION_METHOD="${COLLECTION_METHOD}"
     fi
 
     # Every E2E test should have ROX_RESYNC_DISABLED="true"

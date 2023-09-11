@@ -13,7 +13,11 @@ import {
 } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
 
-import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
+import {
+    CVESDiscoveredSince,
+    DeliveryDestination,
+    ReportFormValues,
+} from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
 import {
     cvesDiscoveredSinceLabelMap,
@@ -24,6 +28,7 @@ import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import { cloneDeep } from 'lodash';
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormParams = {
@@ -34,10 +39,6 @@ export type ReportParametersFormParams = {
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const handleTextChange = (fieldName: string) => (value: string) => {
         formik.setFieldValue(fieldName, value);
-    };
-
-    const handleSelectChange = (name: string, value: string) => {
-        formik.setFieldValue(name, value);
     };
 
     const handleCheckboxSelectChange = (fieldName: string) => (selection: string[]) => {
@@ -84,16 +85,16 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     />
                 </FormLabelGroup>
                 <FormLabelGroup
-                    label="Description"
-                    fieldId="reportParameters.description"
+                    label="Report description"
+                    fieldId="reportParameters.reportDescription"
                     errors={formik.errors}
                 >
                     <TextArea
                         type="text"
-                        id="reportParameters.description"
-                        name="reportParameters.description"
-                        value={formik.values.reportParameters.description}
-                        onChange={handleTextChange('reportParameters.description')}
+                        id="reportParameters.reportDescription"
+                        name="reportParameters.reportDescription"
+                        value={formik.values.reportParameters.reportDescription}
+                        onChange={handleTextChange('reportParameters.reportDescription')}
                         onBlur={formik.handleBlur}
                     />
                 </FormLabelGroup>
@@ -202,13 +203,36 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     <SelectSingle
                         id="reportParameters.cvesDiscoveredSince"
                         value={formik.values.reportParameters.cvesDiscoveredSince}
-                        handleSelect={handleSelectChange}
+                        handleSelect={(name: string, value: string) => {
+                            const newCVEsDiscoveredSinceValue = value as CVESDiscoveredSince;
+                            const modifiedFormValues = cloneDeep(formik.values);
+
+                            if (
+                                modifiedFormValues.deliveryDestinations.length === 0 &&
+                                newCVEsDiscoveredSinceValue === 'SINCE_LAST_REPORT'
+                            ) {
+                                // since delivery destinations are required in this case, we will
+                                // automatically add to the array so the user doesn't need to do it
+                                // manually
+                                const newDeliveryDestination: DeliveryDestination = {
+                                    notifier: null,
+                                    mailingLists: [],
+                                };
+                                modifiedFormValues.deliveryDestinations.push(
+                                    newDeliveryDestination
+                                );
+                            }
+                            modifiedFormValues.reportParameters.cvesDiscoveredSince =
+                                newCVEsDiscoveredSinceValue;
+
+                            formik.setValues(modifiedFormValues);
+                        }}
                         onBlur={formik.handleBlur}
                         menuAppendTo={() => document.body}
                     >
                         <SelectOption
                             value="SINCE_LAST_REPORT"
-                            description="Only applicable if there is a schedule configured in the report"
+                            description="At least one delivery destination and schedule will be required in the next step."
                         >
                             {cvesDiscoveredSinceLabelMap.SINCE_LAST_REPORT}
                         </SelectOption>

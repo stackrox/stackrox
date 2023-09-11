@@ -13,85 +13,11 @@
 # 12. echo ---
 # 13. ./operator/bin/yq-* --null-input  '[load("ns_resources_after.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})] - [load("ns_resources_before.yaml") | .items[] | (with_entries(select(.key == "apiVersion" or .key == "kind")) + {"metadata": {"name": .metadata.name}})]| .[]| select(.kind != "Event" and .kind != "Pod" and .kind != "PodMetrics" and .kind != "ReplicaSet" and .kind != "ControllerRevision" and .kind != "EndpointSlice") | split_doc'
 # 14. Massage the output from the last command to omit those few Secrets whose names are unpredictable
+# 15. Move the openshift-specific resources to delete-securedcluster-errors-openshift.yaml
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: stackrox
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:create-events-binding
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:enforce-policies
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:monitor-cluster
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:network-policies-binding
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:review-tokens-binding
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: stackrox:update-namespaces-binding
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox-admission-control-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox-collector-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox-sensor-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:create-events
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:edit-workloads
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:network-policies
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:review-tokens
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:update-namespaces
----
-apiVersion: authorization.openshift.io/v1
-kind: ClusterRole
-metadata:
-  name: stackrox:view-cluster
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -254,56 +180,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sensor
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: admission-control-use-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: admission-control-watch-config
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: collector-use-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: manage-namespace
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-admission-control-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-collector-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: RoleBinding
-metadata:
-  name: stackrox-sensor-psp
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: edit
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: use-privileged-scc
----
-apiVersion: authorization.openshift.io/v1
-kind: Role
-metadata:
-  name: watch-config
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

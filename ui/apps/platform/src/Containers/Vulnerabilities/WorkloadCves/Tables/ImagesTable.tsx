@@ -1,7 +1,7 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Flex } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
@@ -73,14 +73,21 @@ type Image = {
     scanTime: string | null;
 };
 
-type ImagesTableProps = {
+export type ImagesTableProps = {
     images: Image[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    onWatchImage: (imageName: string) => void;
 };
 
-function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: ImagesTableProps) {
+function ImagesTable({
+    images,
+    getSortParams,
+    isFiltered,
+    filteredSeverities,
+    onWatchImage,
+}: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -98,6 +105,7 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
+                    <Td />
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={6} />}
@@ -163,6 +171,21 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                 </Td>
                                 <Td>
                                     <DateDistanceTd date={scanTime} />
+                                </Td>
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        items={[
+                                            {
+                                                title: 'Watch image',
+                                                onClick: () =>
+                                                    onWatchImage(
+                                                        name
+                                                            ? `${name.registry}/${name.remote}:${name.tag}`
+                                                            : ''
+                                                    ),
+                                            },
+                                        ]}
+                                    />
                                 </Td>
                             </Tr>
                         </Tbody>

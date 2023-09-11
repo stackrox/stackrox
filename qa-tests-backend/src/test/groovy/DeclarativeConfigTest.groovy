@@ -47,7 +47,7 @@ class DeclarativeConfigTest extends BaseSpecification {
 
     static final private int CREATED_RESOURCES = 7
 
-    static final private int RETRIES = 45
+    static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
     static final private int PAUSE_SECS = 2
 
@@ -257,6 +257,18 @@ splunk:
 
     def cleanup() {
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
+
+        // Ensure we do not have stale integration health info and only the Config Map one exists.
+        withRetry(DELETION_RETRIES, PAUSE_SECS) {
+            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
+            assert response.getHealthsCount() == 1
+            def configMapHealth = response.getHealths(0)
+            assert configMapHealth
+            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
+            assert configMapHealth.getErrorMessage() == ""
+            assert configMapHealth.getStatus() == Status.HEALTHY
+        }
+
         annotateTaskHandle.cancel(true)
     }
 

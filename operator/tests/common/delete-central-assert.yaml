@@ -5,12 +5,11 @@ kind: TestAssert
 commands:
 - script: |
     set -eu # shell in CI does not grok -o pipefail
-    errors_file=$(mktemp)
     # Note: apparently $PWD is NOT set to directory of this file for TestAssert but it is for TestStep
-    env - PATH=$PATH NAMESPACE=$NAMESPACE envsubst < tests/common/delete-central-errors-cluster.envsubst.yaml > $errors_file
     # Note: As of kuttl 0.11.0 the timeout value actually means "the number of attempts".
     # With 6 objects in the assert file, each attempt typically takes ~22 seconds (including the 1s sleep between attempts),
     # although it can occasionally take significantly longer, see https://github.com/kudobuilder/kuttl/issues/321
-    # So we specify a timeout value of 13, aiming for under 5 minutes.
-    ${KUTTL:-kubectl-kuttl} errors --timeout 13 $errors_file
-    rm $errors_file
+    # With 3 objects we specify a timeout value of 25, aiming for ~5 minutes.
+    ./hack/envsubst-kuttl.sh tests/common/delete-central-errors-cluster.envsubst.yaml errors --timeout 25
+    # With 2 objects we specify a timeout value of 32, aiming for ~5 minutes.
+    if kubectl get scc > /dev/null 2>&1; then ./hack/envsubst-kuttl.sh tests/common/delete-central-errors-cluster-openshift.envsubst.yaml errors --timeout 32; fi

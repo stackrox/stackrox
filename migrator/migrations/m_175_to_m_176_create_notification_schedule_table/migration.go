@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +29,7 @@ func init() {
 }
 
 func createNotificationScheduleTable(_ postgres.DB, gormDB *gorm.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	pgutils.CreateTableFromModel(ctx, gormDB, frozenSchema.CreateTableNotificationSchedulesStmt)
 	return nil
 }

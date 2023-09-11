@@ -15,6 +15,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -437,6 +438,10 @@ func entriesFromQueries(
 }
 
 func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) (*pgsearch.QueryEntry, error) {
+	if err := validateDerivedFieldDataType(queryFields); err != nil {
+		return nil, err
+	}
+
 	switch sub := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
 		switch subBQ := q.GetBaseQuery().Query.(type) {
@@ -890,4 +895,23 @@ func unmarshal[T any, PT unmarshaler[T]](row pgx.Row) (*T, error) {
 
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
+}
+
+func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {
+	errList := errorhelpers.NewErrorList("validating supported derived field datatype")
+	for _, queryField := range queryFields {
+		if queryField.derivedMetadata == nil {
+			continue
+		}
+		dbField := queryField.baseField
+		if dbField.Schema.OptionsMap == nil {
+			continue
+		}
+
+		dataType := dbField.DataType
+		if postgres.UnsupportedDerivedFieldDataTypes.Contains(dataType) {
+			errList.AddError(errors.Errorf("datatype %s is not supported in aggregation", string(dataType)))
+		}
+	}
+	return errList.ToError()
 }

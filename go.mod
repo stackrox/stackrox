@@ -12,12 +12,12 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.7.0
-	github.com/RoaringBitmap/roaring v1.3.0
+	github.com/RoaringBitmap/roaring v1.5.0
 	github.com/Shopify/toxiproxy/v2 v2.5.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.6.5
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.44.289
+	github.com/aws/aws-sdk-go v1.45.4
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.4
 	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
@@ -74,7 +74,7 @@ require (
 	github.com/np-guard/netpol-analyzer v0.4.3
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.11.0
+	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/openshift/api v0.0.0-20230502160752-c71432710382
@@ -87,7 +87,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
 	github.com/prometheus/common v0.44.0
-	github.com/quay/claircore v1.5.13
+	github.com/quay/claircore v1.5.16
 	github.com/quay/zlog v1.1.5
 	github.com/rs/zerolog v1.30.0
 	github.com/russellhaering/gosaml2 v0.9.1
@@ -113,19 +113,19 @@ require (
 	go.uber.org/goleak v1.2.1
 	go.uber.org/mock v0.2.0
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.12.0
+	golang.org/x/crypto v0.13.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
-	golang.org/x/net v0.14.0
+	golang.org/x/net v0.15.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.11.0
-	golang.org/x/text v0.12.0
+	golang.org/x/sys v0.12.0
+	golang.org/x/text v0.13.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.12.0
+	golang.org/x/tools v0.13.0
 	golang.stackrox.io/grpc-http1 v0.2.11
 	google.golang.org/api v0.138.0
 	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.58.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
@@ -134,13 +134,13 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
 	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.7
+	k8s.io/api v0.26.8
 	k8s.io/apiextensions-apiserver v0.26.3
 	k8s.io/apimachinery v0.27.4
 	k8s.io/apiserver v0.26.7
-	k8s.io/cli-runtime v0.26.7
-	k8s.io/client-go v0.26.7
-	k8s.io/kubectl v0.26.7
+	k8s.io/cli-runtime v0.26.8
+	k8s.io/client-go v0.26.8
+	k8s.io/kubectl v0.26.8
 	k8s.io/kubelet v0.26.7
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/controller-runtime v0.14.6
@@ -186,7 +186,7 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/containers/storage v1.45.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
 	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
@@ -380,7 +380,7 @@ require (
 	go.starlark.net v0.0.0-20221010140840-6bf6f0955179 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -392,17 +392,17 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.26.7 // indirect
+	k8s.io/component-base v0.26.8 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
 	modernc.org/cc/v3 v3.40.0 // indirect
 	modernc.org/ccgo/v3 v3.16.13 // indirect
-	modernc.org/libc v1.22.5 // indirect
+	modernc.org/libc v1.24.1 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
-	modernc.org/memory v1.5.0 // indirect
+	modernc.org/memory v1.6.0 // indirect
 	modernc.org/opt v0.1.3 // indirect
-	modernc.org/sqlite v1.24.0 // indirect
+	modernc.org/sqlite v1.25.0 // indirect
 	modernc.org/strutil v1.1.3 // indirect
 	modernc.org/token v1.0.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect

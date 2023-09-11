@@ -108,21 +108,27 @@ spec:
     - name: rhacs.telemeter
       rules:
         - expr: |
-            max by (branding, build, central_id, central_version, hosting, install_method) (
-              rox_central_secured_clusters
+            max by (build, central_id, central_version, hosting, install_method) (
+              rox_central_info{branding="RHACS"}
+            )
+          record: rhacs:telemetry:rox_central_info
+
+        - expr: |
+            max by (central_id) (
+              rox_central_secured_clusters{branding="RHACS"}
             )
           record: rhacs:telemetry:rox_central_secured_clusters
 
         - expr: |
-            max by (branding, build, central_id, central_version, hosting, install_method) (
-              rox_central_secured_nodes
+            max by (central_id) (
+              rox_central_secured_nodes{branding="RHACS"}
             )
           record: rhacs:telemetry:rox_central_secured_nodes
 
         - expr: |
-            max by (branding, build, central_id, central_version, hosting, install_method) (
-              rox_central_secured_vcpu
+            max by (central_id) (
+              rox_central_secured_vcpus{branding="RHACS"}
             )
-          record: rhacs:telemetry:rox_central_secured_vcpu
+          record: rhacs:telemetry:rox_central_secured_vcpus
 
 {{- end -}}

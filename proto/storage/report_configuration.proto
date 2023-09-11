@@ -96,4 +96,6 @@ message NotifierConfiguration {
 message EmailNotifierConfiguration  {
     string                 notifier_id           = 1;
     repeated string        mailing_lists         = 2;
+    string                 custom_subject        = 3;
+    string                 custom_body           = 4;
 }

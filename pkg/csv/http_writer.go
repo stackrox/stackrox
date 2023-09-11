@@ -2,11 +2,9 @@ package csv
 
 import (
 	"encoding/csv"
-	"fmt"
 	"net/http"
 
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -15,13 +13,6 @@ var (
 
 	errSendHeaders = errox.ServerError.New("failed to send headers")
 	errSendBody    = errox.ServerError.New("failed to send body")
-)
-
-const (
-	// contentType is the Content-Type HTTP header value.
-	contentType = "text/csv; charset=utf-8"
-	// utf8BOM is the UTF-8 BOM byte sequence.
-	utf8BOM = "\uFEFF"
 )
 
 // Row is type to hold a CSV line.
@@ -56,9 +47,7 @@ func NewHTTPWriter[Record any](w http.ResponseWriter, filename string,
 }
 
 func (w *httpWriterImpl[Record]) sendHeaders() error {
-	h := w.writer.Header()
-	h.Set("Content-Type", contentType)
-	h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, w.filename))
+	writeHeaders(w.writer, w.filename)
 
 	// Set UTF-8 BOM to please Windows CSV editors.
 	if _, err := w.writer.Write(([]byte)(utf8BOM)); err != nil {
@@ -94,7 +83,7 @@ func (w *httpWriterImpl[Record]) SetHTTPError(err error) error {
 		// Too late to change the HTTP headers and status.
 		return nil
 	}
-	http.Error(w.writer, err.Error(), errors.ErrToHTTPStatus(err))
+	WriteError(w.writer, err)
 	return err
 }
 

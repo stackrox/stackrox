@@ -20,17 +20,22 @@ spec:
     - podSelector:
         matchLabels:
           app: central
-{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
-  - from:
-    - podSelector:
-        matchLabels:
-          app: sensor
-{{ end }}
     ports:
     - port: 8080
       protocol: TCP
     - port: 8443
       protocol: TCP
+{{ if or (eq ._rox.scanner.mode "slim") ._rox.env.openshift }}
+  - from:
+    - podSelector:
+        matchLabels:
+          app: sensor
+    ports:
+    - port: 8080
+      protocol: TCP
+    - port: 8443
+      protocol: TCP
+{{ end }}
   policyTypes:
     - Ingress
 

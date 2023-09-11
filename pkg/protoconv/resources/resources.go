@@ -6,7 +6,7 @@ import (
 	"reflect"
 
 	ptypes "github.com/gogo/protobuf/types"
-	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -229,7 +229,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	var podSpec v1.PodSpec
 
 	switch o := obj.(type) {
-	case *openshift_appsv1.DeploymentConfig:
+	case *openshiftAppsV1.DeploymentConfig:
 		if o.Spec.Template == nil {
 			log.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 			return

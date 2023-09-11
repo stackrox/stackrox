@@ -24,6 +24,8 @@ pkg/sac/**/*    @stackrox/merlin
 */declarativeconfig/**/* @stackrox/merlin
 tests/performance @stackrox/merlin
 
+/ui/**/* @stackrox/ui
+
 pkg/images/defaults/**/* @stackrox/maple
 
 # Data Shepherds team's responsibilities include migrator and interactions with Postgres

@@ -2,22 +2,18 @@ import React, { ReactElement, CSSProperties } from 'react';
 import {
     Badge,
     Card,
+    CardActions,
+    CardFooter,
     CardHeader,
     CardHeaderMain,
     CardTitle,
-    CardFooter,
-    CardActions,
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom';
 
-type IntegrationType = {
-    label: string;
-    image: string;
-    categories: string;
-};
+import { IntegrationDescriptor } from '../utils/integrationsList';
 
 type IntegrationTileProps = {
-    integration: IntegrationType;
+    integration: IntegrationDescriptor;
     numIntegrations: number;
     linkTo: string;
 };
@@ -28,10 +24,10 @@ const styleCard = {
 
 function IntegrationTile({
     integration,
-    numIntegrations = 0,
+    numIntegrations,
     linkTo,
 }: IntegrationTileProps): ReactElement {
-    const { image, label, categories } = integration;
+    const { image, label } = integration;
 
     return (
         <Link to={linkTo} data-testid="integration-tile">
@@ -45,8 +41,8 @@ function IntegrationTile({
                     </CardActions>
                 </CardHeader>
                 <CardTitle className="pf-u-color-100">{label}</CardTitle>
-                {categories !== '' && categories !== undefined && (
-                    <CardFooter className="pf-u-color-200">{categories}</CardFooter>
+                {'categories' in integration && integration.categories && (
+                    <CardFooter className="pf-u-color-200">{integration.categories}</CardFooter>
                 )}
             </Card>
         </Link>

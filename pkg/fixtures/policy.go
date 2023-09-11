@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 )
 
 var (
@@ -245,4 +246,30 @@ func GetAuditLogEventSourcePolicy() *storage.Policy {
 		},
 	}
 	return p
+}
+
+// GetNetworkFlowPolicy returns a mock policy with criteria "Unexpected Network Flow Detected"
+func GetNetworkFlowPolicy() *storage.Policy {
+	return &storage.Policy{
+		Id:                 fixtureconsts.NetworkPolicy1,
+		Name:               "Unauthorized Network Flow",
+		Description:        "This policy generates a violation for the network flows that fall outside baselines for which 'alert on anomalous violations' is set.",
+		Rationale:          "The network baseline is a list of flows that are allowed, and once it is frozen, any flow outside that is a concern.",
+		Remediation:        "Evaluate this network flow. If deemed to be okay, add it to the baseline. If not, investigate further as required.",
+		Categories:         []string{"Anomalous Activity"},
+		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		Severity:           storage.Severity_HIGH_SEVERITY,
+		SORTName:           "Unauthorized Network Flow",
+		SORTLifecycleStage: "RUNTIME",
+		PolicyVersion:      "1.1",
+		PolicySections: []*storage.PolicySection{{
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: "Unexpected Network Flow Detected",
+				Values: []*storage.PolicyValue{{
+					Value: "true",
+				}},
+			}},
+		}},
+		EventSource: storage.EventSource_DEPLOYMENT_EVENT,
+	}
 }
