@@ -8,7 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -16,7 +19,11 @@ import (
 var (
 	_ Writer = (*writerImpl)(nil)
 
+	log = logging.LoggerForModule()
+
 	rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
+
+	eventSAC = sac.ForResource(resources.Administration)
 )
 
 type writerImpl struct {
@@ -38,6 +45,13 @@ func (c *writerImpl) writeNoLock(event *storage.AdministrationEvent) {
 func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEvent) error {
 	enrichedEvent := enrichEventWithDefaults(event)
 	id := enrichedEvent.GetId()
+
+	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
+		if err != nil {
+			log.Errorf("failed to verify scope access control: ", err)
+		}
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "administration event %q", enrichedEvent.GetId())
+	}
 
 	var baseEvent *storage.AdministrationEvent
 
