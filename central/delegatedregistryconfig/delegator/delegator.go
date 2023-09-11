@@ -133,6 +133,10 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 		return namespace
 	}
 
+	if len(namespaces) > 1 {
+		log.Warnf("Skipping namespace inference, multiple %q namespaces found for cluster %q", namespace, clusterID)
+	}
+
 	return ""
 }
 
