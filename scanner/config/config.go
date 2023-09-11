@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -49,10 +50,10 @@ func (c *Config) validate() error {
 		return fmt.Errorf("mtls: %w", err)
 	}
 	if c.HTTPListenAddr == "" {
-		return fmt.Errorf("http_listen_addr is empty")
+		return errors.New("http_listen_addr is empty")
 	}
 	if c.GRPCListenAddr == "" {
-		return fmt.Errorf("grpc_listen_addr is empty")
+		return errors.New("grpc_listen_addr is empty")
 	}
 	return nil
 }
