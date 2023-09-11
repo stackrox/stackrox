@@ -63,10 +63,6 @@ func (s *baseTestSuite) SetupTest() {
 	s.service = newService(s.datastoreMock)
 }
 
-func (s *baseTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
-}
-
 // Test CountAdministrationEvents
 
 type countEventsTestSuite struct {
