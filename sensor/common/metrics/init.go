@@ -18,6 +18,8 @@ func init() {
 		totalNetworkFlowsReceivedCounter,
 		totalNetworkEndpointsSentCounter,
 		totalNetworkEndpointsReceivedCounter,
+		totalProcessesSentCounter,
+		totalProcessesReceivedCounter,
 		sensorEvents,
 		k8sObjectCounts,
 		k8sObjectProcessingDuration,
