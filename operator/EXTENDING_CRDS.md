@@ -101,3 +101,25 @@ Some data types are discouraged, in particular:
 * Nullability: See [Kubernetes Documentation](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#defaulting-and-nullable).
 * Late initialization: See [API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#late-initialization).
 * Labels, Selector and Annotations: See [API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#label-selector-and-annotation-conventions).
+
+## Breaking changes
+
+The CR of an operator acts like a public API to the ACS configuration.
+Additionally we need to keep in mind that CRs are often managed in CI/CD pipelines which would 
+break existing automations.
+
+ * Never remove a CR field from a CRD
+ * Never remove an enum field from a CRD
+ * Defined values must continue to stay valid values, i.e.: 
+   * `KERNEL_MODULE` defaults to `EBPF`, but `KERNEL_MODULE` remains a valid value as an alias for `EBPF`
+   * central-db is still a valid config in the Central CR even though users must use postgres
+ * Defaults can change when the change is not going to break things
+
+**Introducing a breaking change:**
+
+This is possible by promoting a CR, i.e. from `v1alpha1` to `v1beta`. Technically this 
+is equally to introducing moving from a `/v1` to a `/v2` API.
+
+ * Using conversion webhooks from v1alpha1 to v1beta1 (introducing a CRD with a new version)
+ * Kubernetes deprecation notices are 2 years on their resources
+
