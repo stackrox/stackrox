@@ -1,4 +1,4 @@
-package scannerV4Definitions
+package cvss
 
 import (
 	"context"
@@ -12,11 +12,6 @@ import (
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-)
-
-const (
-	lastModifiedHeader    = "Last-Modified"
-	ifModifiedSinceHeader = "If-Modified-Since"
 )
 
 var (
@@ -97,12 +92,12 @@ func (u *cvssUpdater) update(ctx context.Context) {
 }
 
 func (u *cvssUpdater) doUpdate(ctx context.Context) error {
-	_, _, err := runEnricher(ctx, u.enricher)
+	rc, _, err := runEnricher(ctx, u.enricher)
 	if err != nil {
 		// TODO log error
 		return err
 	}
-	return nil
+	return u.file.WriteContent(rc)
 }
 
 func runEnricher(ctx context.Context, u driver.EnrichmentUpdater) (io.ReadCloser, driver.Fingerprint, error) {
