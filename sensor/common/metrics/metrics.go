@@ -288,27 +288,19 @@ func DecOutputChannelSize() {
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
 func SetTelemetryMetrics(cm *central.ClusterMetrics) {
-	telemetryInfo.Reset()
-	telemetryInfo.WithLabelValues(
+	labels := []string{
 		centralid.Get(),
 		getHosting(),
 		installmethod.Get(),
 		clusterid.GetNoWait(),
-	).Set(1)
+	}
+
+	telemetryInfo.Reset()
+	telemetryInfo.WithLabelValues(labels...).Set(1)
 
 	telemetrySecuredNodes.Reset()
-	telemetrySecuredNodes.WithLabelValues(
-		centralid.Get(),
-		getHosting(),
-		installmethod.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetNodeCount()))
+	telemetrySecuredNodes.WithLabelValues(labels...).Set(float64(cm.GetNodeCount()))
 
 	telemetrySecuredVCPU.Reset()
-	telemetrySecuredVCPU.WithLabelValues(
-		centralid.Get(),
-		getHosting(),
-		installmethod.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetCpuCapacity()))
+	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
 }
