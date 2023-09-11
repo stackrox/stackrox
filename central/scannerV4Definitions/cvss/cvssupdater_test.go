@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	defURL = "https://definitions.stackrox.io/e799c68a-671f-44db-9682-f24248cd0ffe/diff.zip"
+	defURL = "https://storage.googleapis.com/scanner-v4-test/nvddata/"
 )
 
 func assertOnFileExistence(t *testing.T, path string, shouldExist bool) {
