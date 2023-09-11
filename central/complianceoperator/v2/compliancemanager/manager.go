@@ -1,13 +1,22 @@
 package compliancemanager
 
-import "context"
+import (
+	"context"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Manager provides functionality to manage compliance requests.
 // Use Manager to process compliance requests and forward them to Sensor.
+//
+//go:generate mockgen-wrapper
 type Manager interface {
 	// Sync reconclies the compliance scan configurations stored in Central with all Sensors.
 	// Use it to sync scan configurations upon Central start, Sensor start, and ad-hoc sync requests.
 	Sync(ctx context.Context)
+
+	// ProcessComplianceOperatorInfo processes and stores the compliance operator metadata coming from sensor
+	ProcessComplianceOperatorInfo(ctx context.Context, complianceIntegration *storage.ComplianceIntegration) error
 
 	// TODO: update interface{} type to exact struct once API modeling is complete.
 

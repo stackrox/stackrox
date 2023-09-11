@@ -147,6 +147,18 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", request.GetId())
 	}
 
+	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, request.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
+	reportSnapshots, err := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	slimUser := authn.UserFromContext(ctx)
+	for _, reportSnapshot := range reportSnapshots {
+		if slimUser.GetId() == reportSnapshot.GetRequester().GetId() {
+			return nil, errors.Wrap(errox.InvalidArgs, "User has a report job running for this configuration.")
+		}
+	}
+
 	updatedConfig := s.convertV2ReportConfigurationToProto(request, currentConfig.GetCreator(),
 		currentConfig.GetVulnReportFilters().GetAccessScopeRules())
 
@@ -238,6 +250,11 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	}
 	if !common.IsV2ReportConfig(config) {
 		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
+	}
+	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
+	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
+	if len(reportSnapshots) > 0 {
+		return &apiV2.Empty{}, errors.Wrapf(errox.InvalidArgs, "Report config ID '%s' has job in preparing or waiting state", id.GetId())
 	}
 
 	if err := s.reportConfigStore.RemoveReportConfiguration(ctx, id.GetId()); err != nil {

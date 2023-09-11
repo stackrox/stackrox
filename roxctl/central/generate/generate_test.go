@@ -28,6 +28,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// #nosec G101 -- This is a false positive
 const (
 	// Generated test data file.
 	backupBundleWithDer = "testdata/stackrox_with_der.zip"

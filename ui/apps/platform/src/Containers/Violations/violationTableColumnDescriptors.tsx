@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
+import startCase from 'lodash/startCase';
 import { Button, ButtonVariant, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
@@ -31,12 +32,13 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
     const { commonEntityInfo, resource, deployment } = original;
     const { name } = resource || deployment;
     const { namespace, clusterName } = commonEntityInfo;
+
+    const entityPath = namespace ? `${clusterName}/${namespace}` : clusterName;
+
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem className="pf-u-mb-0">{name}</FlexItem>
-            <FlexItem className="pf-u-color-200 pf-u-font-size-xs">
-                {`in "${clusterName}/${namespace}"`}
-            </FlexItem>
+            <FlexItem className="pf-u-color-200 pf-u-font-size-xs">{`in "${entityPath}"`}</FlexItem>
         </Flex>
     );
 }
@@ -102,7 +104,7 @@ const tableColumnDescriptor = [
     {
         Header: 'Type',
         accessor: 'commonEntityInfo.resourceType',
-        Cell: ({ value }): string => value.toLowerCase() as string,
+        Cell: ({ value }): string => startCase(value.toLowerCase()),
     },
     {
         Header: 'Enforced',

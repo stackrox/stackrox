@@ -181,7 +181,7 @@ func (s *syslog) alertToCEF(ctx context.Context, alert *storage.Alert) string {
 			extensionList = append(extensionList, makeExtensionPair("ns", alert.GetNamespace()))
 			extensionList = append(extensionList, makeJSONExtensionPair("nslabels", s.metadataGetter.GetNamespaceLabels(ctx, alert)))
 		} else {
-			// The actual error is logged in getNamespaceFromAlert
+			// This may not be an error as image alerts and certain resource alerts don't have a namespace associated with it
 			log.Debugf("Alert entity doesn't contain namespace: %+v", alert.GetEntity())
 		}
 	}

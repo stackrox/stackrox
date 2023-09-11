@@ -97,10 +97,11 @@ func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 		obj.GetId(),
 		obj.GetParentId(),
 		obj.GetVal(),
+		obj.GetStringSlice(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO test_parent1 (Id, ParentId, Val, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_parent1 (Id, ParentId, Val, StringSlice, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, StringSlice = EXCLUDED.StringSlice, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -142,6 +143,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"id",
 		"parentid",
 		"val",
+		"stringslice",
 		"serialized",
 	}
 
@@ -160,6 +162,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetId(),
 			obj.GetParentId(),
 			obj.GetVal(),
+			obj.GetStringSlice(),
 			serialized,
 		})
 

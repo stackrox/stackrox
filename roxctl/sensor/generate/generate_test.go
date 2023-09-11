@@ -351,6 +351,7 @@ func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
 	}
 
 	for name, testCase := range testCases {
+		testCase := testCase
 		s.Run(name, func() {
 			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport), postClusterFake)
 			defer closeF()

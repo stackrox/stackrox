@@ -696,14 +696,19 @@
           "type": "string"
         }
       },
-      "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "AlertResourceResourceType": {
       "type": "string",
       "enum": [
         "UNKNOWN",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "UNKNOWN"
     },
@@ -1292,7 +1297,12 @@
       "enum": [
         "DEPLOYMENT",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "DEPLOYMENT",
       "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"

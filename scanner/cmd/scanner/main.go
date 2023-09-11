@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
@@ -39,16 +40,11 @@ type Backends struct {
 }
 
 func main() {
-	// TODO: Use a configuration file.
-	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
+	configPath := flag.String("conf", "", "Path to scanner's configuration file.")
 	flag.Parse()
-
-	// If certs was specified, configure the identity environment.
-	if *certsPath != "" {
-		utils.CrashOnError(os.Setenv(mtls.CAFileEnvName, filepath.Join(*certsPath, mtls.CACertFileName)))
-		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(*certsPath, mtls.CAKeyFileName)))
-		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName)))
-		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
+	cfg, err := config.Read(*configPath)
+	if err != nil {
+		golog.Fatalf("failed to load configuration %q: %v", *configPath, err)
 	}
 
 	// Create cancellable context.
@@ -56,12 +52,21 @@ func main() {
 	defer cancel()
 
 	// Initialize logging and setup context.
-	err := initializeLogging()
+	err = initializeLogging(zerolog.Level(cfg.LogLevel))
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Msg("starting scanner")
+
+	// If certs was specified, configure the identity environment.
+	if p := cfg.MTLS.CertsDir; p != "" {
+		zlog.Info(ctx).Str("certs_prefix", p).Msg("identity certificates filename prefix changed")
+		utils.CrashOnError(os.Setenv(mtls.CAFileEnvName, filepath.Join(p, mtls.CACertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CAKeyFileEnvName, filepath.Join(p, mtls.CAKeyFileName)))
+		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(p, mtls.ServiceCertFileName)))
+		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(p, mtls.ServiceKeyFileName)))
+	}
 
 	// Initialize metrics and metrics server.
 	metricsSrv := metrics.NewServer(metrics.ScannerSubsystem, metrics.NewTLSConfigurerFromEnv())
@@ -70,7 +75,7 @@ func main() {
 	metrics.GatherThrottleMetricsForever(metrics.ScannerSubsystem.String())
 
 	// Create backends.
-	backends, err := createBackends(ctx)
+	backends, err := createBackends(ctx, cfg)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("failed to create backends")
 		os.Exit(1)
@@ -79,7 +84,7 @@ func main() {
 	zlog.Info(ctx).Msg("backends are ready")
 
 	// Initialize gRPC API service.
-	grpcSrv, err := createGRPCService(backends)
+	grpcSrv, err := createGRPCService(backends, cfg)
 	if err != nil {
 		zlog.Error(ctx).Err(err).Msg("failed to initialize gRPC")
 		os.Exit(1)
@@ -95,13 +100,13 @@ func main() {
 }
 
 // initializeLogging Initialize zerolog and Quay's zlog.
-func initializeLogging() error {
+func initializeLogging(logLevel zerolog.Level) error {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return err
 	}
 	logger := zerolog.New(os.Stdout).
-		Level(zerolog.DebugLevel).
+		Level(logLevel).
 		With().
 		Timestamp().
 		Str("host", hostname).
@@ -113,7 +118,7 @@ func initializeLogging() error {
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.
-func createGRPCService(backends *Backends) (grpc.API, error) {
+func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error) {
 	// Create identity extractors.
 	identityExtractor, err := service.NewExtractor()
 	if err != nil {
@@ -137,13 +142,13 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 		HTTPMetrics:        grpcmetrics.NewHTTPMetrics(),
 		Endpoints: []*grpc.EndpointConfig{
 			{
-				ListenEndpoint: ":8443",
+				ListenEndpoint: cfg.GRPCListenAddr,
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      false,
 			},
 			{
-				ListenEndpoint: ":9095",
+				ListenEndpoint: cfg.HTTPListenAddr,
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      false,
 				ServeHTTP:      true,
@@ -165,22 +170,28 @@ func createGRPCService(backends *Backends) (grpc.API, error) {
 }
 
 // createAPIServices creates all backends.
-func createBackends(ctx context.Context) (*Backends, error) {
-	// TODO: Use modes to decide which backends to start.
-	// Indexer.
-	i, err := indexer.NewIndexer(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("indexer: %w", err)
+func createBackends(ctx context.Context, cfg *config.Config) (*Backends, error) {
+	var b Backends
+	var err error
+	if cfg.Indexer.Enable {
+		zlog.Info(ctx).Msg("indexer is enabled")
+		b.Indexer, err = indexer.NewIndexer(ctx, cfg.Indexer)
+		if err != nil {
+			return nil, fmt.Errorf("indexer: %w", err)
+		}
+	} else {
+		zlog.Info(ctx).Msg("indexer is disabled")
 	}
-	// Matcher.
-	m, err := matcher.NewMatcher(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("matcher: %w", err)
+	if cfg.Matcher.Enable {
+		zlog.Info(ctx).Msg("matcher is enabled")
+		b.Matcher, err = matcher.NewMatcher(ctx, cfg.Matcher)
+		if err != nil {
+			return nil, fmt.Errorf("matcher: %w", err)
+		}
+	} else {
+		zlog.Info(ctx).Msg("matcher is disabled")
 	}
-	return &Backends{
-		Indexer: i,
-		Matcher: m,
-	}, nil
+	return &b, nil
 }
 
 // Close closes all the backends used by the scanner.

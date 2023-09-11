@@ -33,7 +33,7 @@ export type SetReportFormFieldValue = (fieldName: string, value: FormFieldValue)
 
 export type ReportParametersFormValues = {
     reportName: string;
-    description: string;
+    reportDescription: string;
     cveSeverities: VulnerabilitySeverity[];
     cveStatus: CVEStatus[];
     imageType: ImageType[];
@@ -71,7 +71,7 @@ export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
     reportParameters: {
         reportName: '',
-        description: '',
+        reportDescription: '',
         cveSeverities: ['CRITICAL_VULNERABILITY_SEVERITY', 'IMPORTANT_VULNERABILITY_SEVERITY'],
         cveStatus: ['FIXABLE'],
         imageType: ['DEPLOYED', 'WATCHED'],
@@ -91,7 +91,7 @@ const validationSchema = yup.object().shape({
     reportId: yup.string(),
     reportParameters: yup.object().shape({
         reportName: yup.string().required('Report name is required'),
-        description: yup.string(),
+        reportDescription: yup.string(),
         cveSeverities: yup
             .array()
             .of(yup.string().oneOf(vulnerabilitySeverities))
@@ -145,7 +145,21 @@ const validationSchema = yup.object().shape({
         })
         .notRequired(),
     schedule: yup.object().shape({
-        intervalType: yup.string().oneOf(intervalTypes).nullable(),
+        intervalType: yup
+            .string()
+            .oneOf(intervalTypes)
+            .nullable()
+            .strict()
+            .test('schedule-is-required', 'A schedule is required', (value, context) => {
+                if (!context.from) {
+                    return false;
+                }
+                const contextValue: ReportFormValues = context.from[context.from.length - 1].value;
+                if (contextValue.reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
+                    return value !== null;
+                }
+                return true;
+            }),
         daysOfWeek: yup
             .array()
             .of(yup.string().oneOf(daysOfWeek))

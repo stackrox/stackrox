@@ -31,12 +31,26 @@ enum RequestStatus {
 }
 
 message RequestExpiry {
+    enum ExpiryType {
+        TIME            = 0;
+        ALL_CVE_FIXABLE = 1;
+        ANY_CVE_FIXABLE = 2;
+    }
+
     oneof expiry {
         // Indicates that this request expires when the associated vulnerability is fixed.
         bool                       expires_when_fixed = 1 [(gogoproto.moretags) = 'search:"Request Expires When Fixed"'];
         // Indicates the timestamp when this request expires.
         google.protobuf.Timestamp  expires_on         = 2 [(gogoproto.moretags) = 'search:"Request Expiry Time"'];
     }
+
+    // This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
+    // This field can be used only for deferral requests.
+    // This field indicates the type of expiry set for the request.
+    // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
+    // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
+    // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
+    ExpiryType expiry_type = 3 [(gogoproto.moretags) = 'search:"Expiry Type"'];
 }
 
 message DeferralRequest {
@@ -60,18 +74,10 @@ message VulnerabilityRequest {
             string tag       = 3;
         }
 
-        // For now global scopes out all the images (i.e. .*). The field could be extended in future to support
-        //unrestricted regex or restricted regex. For example,
-        // message Global {
-        //   oneof desc {
-        //     Image image_scope;
-        //     string image_regex;
-        //   }
-        // }
-
         message Global {}
 
         oneof info {
+            // This field can be used to apply the request to selected images.
             Image  image_scope  = 1;
             // If set, the scope of this request is system-wide.
             Global global_scope = 2;

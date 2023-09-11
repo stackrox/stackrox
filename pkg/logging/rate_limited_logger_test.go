@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	lru "github.com/stackrox/rox/pkg/expiringlru"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/pkg/logging/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -30,10 +30,10 @@ type rateLimitedLoggerTestSuite struct {
 	mockLogger *mocks.MockLogger
 	rlLogger   *RateLimitedLogger
 
-	testLRU lru.TestCache[string, *rateLimitedLog]
+	testLRU *expirable.LRU[string, *rateLimitedLog]
 }
 
-func newTestRateLimitedLogger(_ *testing.T, logger Logger, c lru.TestCache[string, *rateLimitedLog]) *RateLimitedLogger {
+func newTestRateLimitedLogger(_ *testing.T, logger Logger, c *expirable.LRU[string, *rateLimitedLog]) *RateLimitedLogger {
 	testLogger := &RateLimitedLogger{
 		logger,
 		c,
@@ -45,7 +45,7 @@ func newTestRateLimitedLogger(_ *testing.T, logger Logger, c lru.TestCache[strin
 func (s *rateLimitedLoggerTestSuite) SetupTest() {
 	mockController := gomock.NewController(s.T())
 	s.mockLogger = mocks.NewMockLogger(mockController)
-	s.testLRU = lru.NewTestExpirableLRU[string, *rateLimitedLog](s.T(), testCacheSize, onEvict, testLimiterPeriod)
+	s.testLRU = expirable.NewLRU[string, *rateLimitedLog](testCacheSize, onEvict, testLimiterPeriod)
 	s.rlLogger = newTestRateLimitedLogger(s.T(), s.mockLogger, s.testLRU)
 }
 
@@ -144,10 +144,6 @@ func getLogCallerPrefix(line int) string {
 	return fmt.Sprintf("%s:%d - ", testCallerFile, line)
 }
 
-func getTestLogKey(limiter string, level zapcore.Level, line int, payload string) string {
-	return getLogKey(limiter, level, testCallerFile, line, payload)
-}
-
 func (s *rateLimitedLoggerTestSuite) validateRateLimitedLogCount(expectedLogCount int) {
 	cacheKeys := s.rlLogger.rateLimitedLogs.Keys()
 	for _, k := range cacheKeys {
@@ -218,182 +214,6 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsDebugLBurst() {
 	s.validateRateLimitedLogCount(3*testBurstSize - 1)
 }
 
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsErrorLCoolDown() {
-	limiter := "test limiter"
-
-	lineNum := getLogCallerLineNum(5)
-	prefix := getLogCallerPrefix(lineNum)
-	resolvedErrorMsg := fmt.Sprintf(templateWithFields, "error", 2)
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, "").Times(1)
-
-	logError := func() { s.rlLogger.ErrorL(limiter, templateWithFields, "error", 2) }
-
-	for i := 0; i < 2; i++ {
-		logError()
-	}
-
-	// Burst limit should allow no more trace
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logError()
-	}
-
-	// Burst limit should not allow any trace
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logError()
-	}
-
-	// Rate limiter should allow one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 5, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.ErrorLevel, lineNum, resolvedErrorMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, "").Times(1)
-
-	for i := 0; i < 2; i++ {
-		logError()
-	}
-
-	s.validateRateLimitedLogCount(1)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsWarnLCoolDown() {
-	limiter := "test limiter"
-
-	lineNum := getLogCallerLineNum(5)
-	prefix := getLogCallerPrefix(lineNum)
-	resolvedWarnMsg := fmt.Sprintf(templateWithFields, "warn", 2)
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, "").Times(1)
-
-	logWarn := func() { s.rlLogger.WarnL(limiter, templateWithFields, "warn", 2) }
-
-	for i := 0; i < 2; i++ {
-		logWarn()
-	}
-
-	// Burst limit should allow no more trace
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logWarn()
-	}
-
-	// Burst limit should not allow any trace
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logWarn()
-	}
-
-	// Rate limiter should allow one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 5, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.WarnLevel, lineNum, resolvedWarnMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, "").Times(1)
-
-	for i := 0; i < 2; i++ {
-		logWarn()
-	}
-
-	s.validateRateLimitedLogCount(1)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsInfoLCoolDown() {
-	limiter := "test limiter"
-
-	lineNum := getLogCallerLineNum(5)
-	prefix := getLogCallerPrefix(lineNum)
-	resolvedInfoMsg := fmt.Sprintf(templateWithFields, "info", 2)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, "").Times(1)
-
-	logInfo := func() { s.rlLogger.InfoL(limiter, templateWithFields, "info", 2) }
-
-	for i := 0; i < 2; i++ {
-		logInfo()
-	}
-
-	// Burst limit should allow no more trace
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logInfo()
-	}
-
-	// Burst limit should not allow any trace
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logInfo()
-	}
-
-	// Rate limiter should allow one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 5, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.InfoLevel, lineNum, resolvedInfoMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, "").Times(1)
-
-	for i := 0; i < 2; i++ {
-		logInfo()
-	}
-
-	s.validateRateLimitedLogCount(1)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsDebugLCoolDown() {
-	limiter := "test limiter"
-
-	lineNum := getLogCallerLineNum(5)
-	prefix := getLogCallerPrefix(lineNum)
-	resolvedDebugMsg := fmt.Sprintf(templateWithFields, "debug", 2)
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, "").Times(1)
-
-	logDebug := func() { s.rlLogger.DebugL(limiter, templateWithFields, "debug", 2) }
-
-	for i := 0; i < 2; i++ {
-		logDebug()
-	}
-
-	// Burst limit should allow no more trace
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logDebug()
-	}
-
-	// Burst limit should not allow any trace
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, "").Times(0)
-
-	for i := 0; i < 2; i++ {
-		logDebug()
-	}
-
-	// Rate limiter should allow one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 5, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.DebugLevel, lineNum, resolvedDebugMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, "").Times(1)
-
-	for i := 0; i < 2; i++ {
-		logDebug()
-	}
-
-	s.validateRateLimitedLogCount(1)
-}
-
 func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsSameLimiterDifferentLogs() {
 	template1 := "This is a log to be rate limited"
 	template2 := "This is another log to be rate limited"
@@ -443,112 +263,4 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 		s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix2, expected, "").Times(1)
 		logDebug(fillerTemplate, i+1)
 	}
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsErrorLTimedFlush() {
-	limiter := "test limiter"
-
-	// Issued traces
-	resolvedErrorMsg := fmt.Sprintf(templateWithFields, "error", 2)
-
-	lineNum := getLogCallerLineNum(2)
-	prefix := getLogCallerPrefix(lineNum)
-	logError := func() { s.rlLogger.ErrorL(limiter, templateWithFields, "error", 2) }
-
-	// First burst
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, "").Times(1)
-
-	for i := 0; i < 3*testBurstSize; i++ {
-		logError()
-	}
-
-	// flush should send one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 3*testBurstSize-1, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", prefix, resolvedErrorMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.ErrorLevel, lineNum, resolvedErrorMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.validateRateLimitedLogCount(0)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsWarnLTimedFlush() {
-	limiter := "test limiter"
-
-	// Issued traces
-	resolvedWarnMsg := fmt.Sprintf(templateWithFields, "warn", 2)
-
-	lineNum := getLogCallerLineNum(2)
-	prefix := getLogCallerPrefix(lineNum)
-	logWarn := func() { s.rlLogger.WarnL(limiter, templateWithFields, "warn", 2) }
-
-	// First burst
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, "").Times(1)
-
-	for i := 0; i < 3*testBurstSize; i++ {
-		logWarn()
-	}
-
-	// flush should send one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 3*testBurstSize-1, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", prefix, resolvedWarnMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.WarnLevel, lineNum, resolvedWarnMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.validateRateLimitedLogCount(0)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsInfolTimedFlush() {
-	limiter := "test limiter"
-
-	// Issued traces
-	resolvedInfoMsg := fmt.Sprintf(templateWithFields, "info", 2)
-
-	lineNum := getLogCallerLineNum(2)
-	prefix := getLogCallerPrefix(lineNum)
-	logInfo := func() { s.rlLogger.InfoL(limiter, templateWithFields, "info", 2) }
-
-	// First burst
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, "").Times(1)
-
-	for i := 0; i < 3*testBurstSize; i++ {
-		logInfo()
-	}
-
-	// flush should send one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 3*testBurstSize-1, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, resolvedInfoMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.InfoLevel, lineNum, resolvedInfoMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.validateRateLimitedLogCount(0)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsDebugLTimedFlush() {
-	limiter := "test limiter"
-
-	// Issued traces
-	resolvedDebugMsg := fmt.Sprintf(templateWithFields, "debug", 2)
-
-	lineNum := getLogCallerLineNum(2)
-	prefix := getLogCallerPrefix(lineNum)
-	logDebug := func() { s.rlLogger.DebugL(limiter, templateWithFields, "debug", 2) }
-
-	// First burst
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, "").Times(1)
-
-	for i := 0; i < 3*testBurstSize; i++ {
-		logDebug()
-	}
-
-	// flush should send one trace
-	limiterSuffix := fmt.Sprintf(limitedLogSuffixFormat, 3*testBurstSize-1, limiter)
-	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix, resolvedDebugMsg, limiterSuffix).Times(1)
-
-	s.testLRU.ExpireItem(s.T(), getTestLogKey(limiter, zapcore.DebugLevel, lineNum, resolvedDebugMsg))
-	s.testLRU.TriggerExpiration(s.T())
-
-	s.validateRateLimitedLogCount(0)
 }

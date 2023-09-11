@@ -115,7 +115,9 @@ tests:
     verifyNodeAffinities(.deployments["scanner"])
     verifyNodeAffinities(.deployments["scanner-db"])
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[0] | .ports | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+    .networkpolicys["scanner"].spec.ingress[1] | .ports | assertThat(length == 2)
 
 - name: "scanner with OpenShift 4 and disabled SCCs"
   server:
@@ -137,7 +139,9 @@ tests:
     verifyNodeAffinities(.deployments["scanner"])
     verifyNodeAffinities(.deployments["scanner-db"])
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
+    .networkpolicys["scanner"].spec.ingress[0] | .ports | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
+    .networkpolicys["scanner"].spec.ingress[1] | .ports | assertThat(length == 2)
 
 - name: "Installation fails with slim mode"
   values:

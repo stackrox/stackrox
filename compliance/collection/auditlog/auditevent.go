@@ -12,6 +12,21 @@ const (
 	reasonAnnotationKey = "authorization.k8s.io/reason"
 )
 
+var (
+	// The audit logs report the resource all as one word, but the k8s event object (and elsewhere) uses underscore
+	auditResourceToKubeResource = map[string]storage.KubernetesEvent_Object_Resource{
+		"pods_exec":                  storage.KubernetesEvent_Object_PODS_EXEC,
+		"pods_portforward":           storage.KubernetesEvent_Object_PODS_PORTFORWARD,
+		"secrets":                    storage.KubernetesEvent_Object_SECRETS,
+		"configmaps":                 storage.KubernetesEvent_Object_CONFIGMAPS,
+		"clusterroles":               storage.KubernetesEvent_Object_CLUSTER_ROLES,
+		"clusterrolebindings":        storage.KubernetesEvent_Object_CLUSTER_ROLE_BINDINGS,
+		"networkpolicies":            storage.KubernetesEvent_Object_NETWORK_POLICIES,
+		"securitycontextconstraints": storage.KubernetesEvent_Object_SECURITY_CONTEXT_CONSTRAINTS,
+		"egressfirewalls":            storage.KubernetesEvent_Object_EGRESS_FIREWALLS,
+	}
+)
+
 type auditEvent struct {
 	Annotations              map[string]string `json:"annotations"`
 	APIVersion               string            `json:"apiVersion"`
@@ -101,11 +116,16 @@ func (e *auditEvent) ToKubernetesEvent(clusterID string) *storage.KubernetesEven
 
 	reason := e.Annotations[reasonAnnotationKey]
 
+	resource, found := auditResourceToKubeResource[strings.ToLower(e.ObjectRef.Resource)]
+	if !found {
+		resource = storage.KubernetesEvent_Object_UNKNOWN
+	}
+
 	k8sEvent := &storage.KubernetesEvent{
 		Id: e.AuditID,
 		Object: &storage.KubernetesEvent_Object{
 			Name:      e.ObjectRef.Name,
-			Resource:  storage.KubernetesEvent_Object_Resource(storage.KubernetesEvent_Object_Resource_value[strings.ToUpper(e.ObjectRef.Resource)]),
+			Resource:  resource,
 			ClusterId: clusterID,
 			Namespace: e.ObjectRef.Namespace,
 		},

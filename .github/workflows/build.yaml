@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -77,7 +77,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -112,7 +112,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -151,7 +151,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -207,7 +207,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -296,7 +296,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -454,7 +454,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -519,7 +519,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -589,7 +589,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -645,7 +645,7 @@ jobs:
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}

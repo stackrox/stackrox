@@ -913,68 +913,69 @@ func enrichImage(image *storage.Image, scan *storage.ImageScan, dataSource *stor
 
 // FillScanStats fills in the higher level stats from the scan data.
 func FillScanStats(i *storage.Image) {
-	if i.GetScan() != nil {
-		i.SetComponents = &storage.Image_Components{
-			Components: int32(len(i.GetScan().GetComponents())),
-		}
+	if i.GetScan() == nil {
+		return
+	}
+	i.SetComponents = &storage.Image_Components{
+		Components: int32(len(i.GetScan().GetComponents())),
+	}
 
-		var fixedByProvided bool
-		var imageTopCVSS float32
-		vulns := make(map[string]bool)
-		for _, c := range i.GetScan().GetComponents() {
-			var componentTopCVSS float32
-			var hasVulns bool
-			for _, v := range c.GetVulns() {
-				hasVulns = true
-				if _, ok := vulns[v.GetCve()]; !ok {
-					vulns[v.GetCve()] = false
-				}
-
-				if v.GetCvss() > componentTopCVSS {
-					componentTopCVSS = v.GetCvss()
-				}
-
-				if v.GetSetFixedBy() == nil {
-					continue
-				}
-
-				fixedByProvided = true
-				if v.GetFixedBy() != "" {
-					vulns[v.GetCve()] = true
-				}
+	var fixedByProvided bool
+	var imageTopCVSS float32
+	vulns := make(map[string]bool)
+	for _, c := range i.GetScan().GetComponents() {
+		var componentTopCVSS float32
+		var hasVulns bool
+		for _, v := range c.GetVulns() {
+			hasVulns = true
+			if _, ok := vulns[v.GetCve()]; !ok {
+				vulns[v.GetCve()] = false
 			}
 
-			if hasVulns {
-				c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
-					TopCvss: componentTopCVSS,
-				}
+			if v.GetCvss() > componentTopCVSS {
+				componentTopCVSS = v.GetCvss()
 			}
 
-			if componentTopCVSS > imageTopCVSS {
-				imageTopCVSS = componentTopCVSS
+			if v.GetSetFixedBy() == nil {
+				continue
+			}
+
+			fixedByProvided = true
+			if v.GetFixedBy() != "" {
+				vulns[v.GetCve()] = true
 			}
 		}
 
-		i.SetCves = &storage.Image_Cves{
-			Cves: int32(len(vulns)),
-		}
-
-		if len(vulns) > 0 {
-			i.SetTopCvss = &storage.Image_TopCvss{
-				TopCvss: imageTopCVSS,
+		if hasVulns {
+			c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
+				TopCvss: componentTopCVSS,
 			}
 		}
 
-		if int32(len(vulns)) == 0 || fixedByProvided {
-			var numFixableVulns int32
-			for _, fixable := range vulns {
-				if fixable {
-					numFixableVulns++
-				}
+		if componentTopCVSS > imageTopCVSS {
+			imageTopCVSS = componentTopCVSS
+		}
+	}
+
+	i.SetCves = &storage.Image_Cves{
+		Cves: int32(len(vulns)),
+	}
+
+	if len(vulns) > 0 {
+		i.SetTopCvss = &storage.Image_TopCvss{
+			TopCvss: imageTopCVSS,
+		}
+	}
+
+	if int32(len(vulns)) == 0 || fixedByProvided {
+		var numFixableVulns int32
+		for _, fixable := range vulns {
+			if fixable {
+				numFixableVulns++
 			}
-			i.SetFixable = &storage.Image_FixableCves{
-				FixableCves: numFixableVulns,
-			}
+		}
+		i.SetFixable = &storage.Image_FixableCves{
+			FixableCves: numFixableVulns,
 		}
 	}
 }

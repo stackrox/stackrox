@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/stackrox/rox/scanner/config"
 )
 
 // Matcher represents a vulnerability matcher.
@@ -22,8 +23,8 @@ type matcherImpl struct {
 }
 
 // NewMatcher creates a new matcher.
-func NewMatcher(ctx context.Context) (Matcher, error) {
-	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libvuln")
+func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
+	pool, err := postgres.Connect(ctx, cfg.DBConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}

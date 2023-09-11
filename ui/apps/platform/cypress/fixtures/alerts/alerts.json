@@ -27,7 +27,42 @@
                 "resourceType": "DEPLOYMENT"
             },
             "stale": false,
-            "markedStale": null
+            "markedStale": null,
+            "enforcementAction": "UNSET_ENFORCEMENT",
+            "enforcementCount": 0
+        },
+        {
+            "id": "8aaa344c-6266-4037-bc21-cd9323a54a4c",
+            "time": "2018-09-27T21:30:00.729700614Z",
+            "lifecycleStage": "RUNTIME",
+            "policy": {
+                "id": "75db9968-8c45-4e18-8180-024f59973d15",
+                "name": "00 test scc",
+                "severity": "HIGH_SEVERITY",
+                "description": "Access to security context constraint",
+                "categories": ["Network Configuration Change", "Reconnaissance"],
+                "lifecycleStage": "RUNTIME"
+            },
+            "deployment": null,
+            "commonEntityInfo": {
+                "clusterName": "aaa_remote",
+                "namespace": "",
+                "clusterId": "99aa88df-b6df-444d-b077-4812cb501ccf",
+                "namespaceId": "",
+                "resourceType": "SECURITY_CONTEXT_CONSTRAITS"
+            },
+            "resource": {
+                "name": "test-scc",
+                "clusterName": "aaa_remote",
+                "namespace": "",
+                "clusterId": "99aa88df-b6df-444d-b077-4812cb501ccf",
+                "namespaceId": "",
+                "resourceType": "SECURITY_CONTEXT_CONSTRAITS"
+            },
+            "stale": false,
+            "markedStale": null,
+            "enforcementAction": "UNSET_ENFORCEMENT",
+            "enforcementCount": 0
         },
         {
             "id": "83f1d8d0-1e2b-410a-b1c3-c77ae2bb5ad9",
