@@ -219,12 +219,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 
 // IncrementTotalProcessesSentCounter increments the total number of endpoints sent
 func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
-	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
+	totalProcessesSentCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
+	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
