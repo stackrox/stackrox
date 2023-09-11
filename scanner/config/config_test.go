@@ -21,7 +21,7 @@ func Test_Load(t *testing.T) {
 			name: "when yaml is empty then use defaults",
 			yaml: `---
 `,
-			want: &DefaultConfiguration,
+			want: &defaultConfiguration,
 		},
 		{
 			name: "when yaml contains invalid key then error",
@@ -75,18 +75,18 @@ func Test_MTLSConfig_validate(t *testing.T) {
 
 func Test_validate(t *testing.T) {
 	t.Run("when default configuration then no error", func(t *testing.T) {
-		c := DefaultConfiguration
+		c := defaultConfiguration
 		err := c.validate()
 		assert.NoError(t, err)
 	})
 	t.Run("when http_listen_addr is empty then error", func(t *testing.T) {
-		c := DefaultConfiguration
+		c := defaultConfiguration
 		c.HTTPListenAddr = ""
 		err := c.validate()
 		assert.ErrorContains(t, err, "http_listen_addr is empty")
 	})
 	t.Run("when grpc_listen_addr is empty then error", func(t *testing.T) {
-		c := DefaultConfiguration
+		c := defaultConfiguration
 		c.GRPCListenAddr = ""
 		err := c.validate()
 		assert.ErrorContains(t, err, "grpc_listen_addr is empty")

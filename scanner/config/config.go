@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	// DefaultConfiguration provides the default values for the scanner configuration.
-	DefaultConfiguration = Config{
+	// defaultConfiguration provides the default values for the scanner configuration.
+	defaultConfiguration = Config{
 		HTTPListenAddr: "127.0.0.1:9443",
 		GRPCListenAddr: "127.0.0.1:8443",
 		Indexer: IndexerConfig{
@@ -129,7 +129,7 @@ func (d *Duration) UnmarshalText(dBytes []byte) error {
 func Load(r io.Reader) (*Config, error) {
 	yd := yaml.NewDecoder(r)
 	yd.KnownFields(true)
-	cfg := DefaultConfiguration
+	cfg := defaultConfiguration
 	if err := yd.Decode(&cfg); err != nil {
 		msg := strings.TrimPrefix(err.Error(), `yaml: `)
 		return nil, fmt.Errorf("malformed yaml: %v", msg)
@@ -140,7 +140,7 @@ func Load(r io.Reader) (*Config, error) {
 // Read load Scanner configuration from a file.
 func Read(filename string) (*Config, error) {
 	if filename == "" {
-		cfg := DefaultConfiguration
+		cfg := defaultConfiguration
 		return &cfg, nil
 	}
 	r, err := os.Open(filename)
