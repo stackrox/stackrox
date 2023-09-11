@@ -85,6 +85,13 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 }
 
 func (c *writerImpl) Flush(ctx context.Context) error {
+	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
+		if err != nil {
+			log.Errorf("failed to verify scope access control: ", err)
+		}
+		return errors.Wrap(sac.ErrResourceAccessDenied, "administration events flush")
+	}
+
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

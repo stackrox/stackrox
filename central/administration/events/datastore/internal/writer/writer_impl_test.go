@@ -216,3 +216,8 @@ func (s *writerTestSuite) TestWriteEvent_SACNoWrite_Error() {
 	err := s.writer.Upsert(s.readCtx, event)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }
+
+func (s *writerTestSuite) TestFlushEvents_SACNoWrite_Error() {
+	err := s.writer.Flush(s.readCtx)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+}
