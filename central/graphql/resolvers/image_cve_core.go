@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -38,6 +39,7 @@ func init() {
 				"firstDiscoveredInSystem: Time",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
+				"vulnerabilityRequests: [VulnerabilityRequest!]!",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -222,6 +224,24 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *imageCVECoreResolver) VulnerabilityRequests(
+	ctx context.Context,
+	args struct{ Pagination *inputtypes.Pagination },
+) ([]*VulnerabilityRequestResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "VulnerabilityRequests")
+
+	query := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetCVE()).Query()
+	reqs, err := resolver.root.VulnerabilityRequests(ctx, struct {
+		Query             *string
+		RequestIDSelector *string
+		Pagination        *inputtypes.Pagination
+	}{Query: &query, Pagination: args.Pagination})
+	if errors.Is(err, errox.NotAuthorized) {
+		return nil, nil
+	}
+	return reqs, err
 }
 
 // ImageCVE returns graphQL resolver for specified image cve.
