@@ -70,3 +70,11 @@ EOM
 # the deploy scripts
 $ ./dev-tools/upgrade-dev-secured-cluster.sh -f test-values.yaml
 ```
+
+## Breaking changes
+
+Helm values are similar to public APIs or CLI parameters. When parameters change they might break CI pipelines or existing scripts.
+
+ * Helm values structure must be always backward compatible
+ * Defaults can change when the change is not going to break things
+ * Location and names of Helm charts, existing installations can't upgrade without updating to the new Helm chart metadata
