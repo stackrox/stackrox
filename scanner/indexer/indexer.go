@@ -20,6 +20,7 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/scanner/config"
 )
 
 // Indexer represents an image indexer.
@@ -32,13 +33,13 @@ type Indexer interface {
 }
 
 type indexerImpl struct {
-	indexer *libindex.Libindex
+	indexer         *libindex.Libindex
+	getLayerTimeout time.Duration
 }
 
 // NewIndexer creates a new indexer.
-func NewIndexer(ctx context.Context) (Indexer, error) {
-	// TODO: Update the conn string to something configurable.
-	pool, err := postgres.Connect(ctx, "postgresql:///postgres?host=/var/run/postgresql", "libindex")
+func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
+	pool, err := postgres.Connect(ctx, cfg.DBConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
@@ -79,7 +80,8 @@ func NewIndexer(ctx context.Context) (Indexer, error) {
 	}
 
 	return &indexerImpl{
-		indexer: indexer,
+		indexer:         indexer,
+		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
 }
 
@@ -108,7 +110,7 @@ func (i *indexerImpl) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient := http.Client{Timeout: time.Minute}
+	httpClient := http.Client{Timeout: i.getLayerTimeout}
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
