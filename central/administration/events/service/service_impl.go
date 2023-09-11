@@ -92,7 +92,7 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list administration events")
 	}
-	var respEvents []*v1.AdministrationEvent
+	respEvents := make([]*v1.AdministrationEvent, 0, len(events))
 	for _, n := range events {
 		respEvents = append(respEvents, toV1Proto(n))
 	}
