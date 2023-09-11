@@ -15,9 +15,9 @@ type OptionsFunc = func(option *options)
 // Errorw and Warnw as administration events to the end-user.
 //
 // Before enabling logging for your package, ensure that:
-// * your module resolves to a specific domain (see pkg/administration/events/domain.go).
-// * Administration events emitted from your specific package have hints defined to help
-//   users (see pkg/administration/events/hints.go).
+//   - your module resolves to a specific domain (see pkg/administration/events/domain.go).
+//   - Administration events emitted from your specific package have hints defined to help
+//     users (see pkg/administration/events/hints.go).
 func EnableAdministrationEvents() OptionsFunc {
 	return func(option *options) {
 		option.AdministrationEventsConverter = &zapLogConverter{}
