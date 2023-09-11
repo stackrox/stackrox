@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,7 +62,7 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 	}
 
 	if clusterID == "" {
-		return "", true, errors.New("no ad-hoc cluster specified in delegated registry config")
+		return "", true, errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")
 	}
 
 	if err := d.ValidateCluster(clusterID); err != nil {

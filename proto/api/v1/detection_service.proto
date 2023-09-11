@@ -11,8 +11,8 @@ package v1;
 
 message BuildDetectionRequest {
     oneof Resource {
-        storage.ContainerImage image       = 1;
-        string                 image_name  = 3;
+        storage.ContainerImage image      = 1;
+        string                 image_name = 3;
     }
     bool            no_external_metadata = 2;
     bool            send_notifications   = 4;

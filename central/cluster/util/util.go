@@ -2,14 +2,9 @@ package util
 
 import (
 	"context"
-	"errors"
 
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
-)
-
-var (
-	// ErrClusterNotFound indicates a cluster was not found.
-	ErrClusterNotFound = errors.New("cluster not found")
+	"github.com/stackrox/rox/pkg/errox"
 )
 
 // GetClusterIDFromNameOrID returns the ID of cluster. If cluster is already an ID than it is returned
@@ -38,5 +33,5 @@ func GetClusterIDFromNameOrID(ctx context.Context, ds cluster.DataStore, cluster
 		}
 	}
 
-	return "", ErrClusterNotFound
+	return "", errox.NotFound.Newf("cluster %q not found, ensure cluster exists and have access", cluster)
 }
