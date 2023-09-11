@@ -70,7 +70,7 @@ func (h *handlerImpl) runDatastoreFlush() {
 		select {
 		case <-ticker.C:
 			if err := h.ds.Flush(eventWriteCtx); err != nil {
-				log.Error("failed to flush administration events")
+				log.Error(err)
 			}
 		case <-h.stopSignal.Done():
 			return
