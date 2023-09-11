@@ -2,10 +2,10 @@ package writer
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -13,15 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	_ Writer = (*writerImpl)(nil)
 
 	log = logging.LoggerForModule()
-
-	rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
 
 	eventSAC = sac.ForResource(resources.Administration)
 )
@@ -107,24 +104,13 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	return nil
 }
 
-func getEventID(event *storage.AdministrationEvent) string {
-	dedupKey := strings.Join([]string{
-		event.GetDomain(),
-		event.GetMessage(),
-		event.GetResourceId(),
-		event.GetResourceType(),
-		event.GetType().String(),
-	}, ",")
-	return uuid.NewV5(rootNamespaceUUID, dedupKey).String()
-}
-
 func enrichEventWithDefaults(event *storage.AdministrationEvent) *storage.AdministrationEvent {
 	if event == nil {
 		return nil
 	}
 
 	enrichedEvent := event.Clone()
-	enrichedEvent.Id = getEventID(event)
+	enrichedEvent.Id = events.GenerateEventID(event)
 	if event.GetNumOccurrences() == 0 {
 		enrichedEvent.NumOccurrences = 1
 	}
