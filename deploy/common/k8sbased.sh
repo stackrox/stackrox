@@ -343,12 +343,6 @@ function launch_central {
         )
       fi
 
-      if [[ -n "$ROX_ADMINISTRATION_EVENTS" ]]; then
-        helm_args+=(
-          --set customize.central.envVars.ROX_ADMINISTRATION_EVENTS="${ROX_ADMINISTRATION_EVENTS}"
-        )
-      fi
-
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
           --set env.managedServices=true
