@@ -31,4 +31,5 @@ export const selectors = {
     firstUnwatchedImageRow:
         'tbody tr:not(:has(td[data-label="Image"]:contains("Watched image"))):eq(0)',
     manageWatchedImagesButton: 'button:contains("Manage watched images")',
+    addWatchedImageNameInput: '*[role="dialog"] input[id="imageName"]',
 };
