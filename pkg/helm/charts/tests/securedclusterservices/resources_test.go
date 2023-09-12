@@ -27,6 +27,10 @@ mainImagePullSecrets:
   allowNone: true
 config:
   createSecrets: false
+scanner:
+  disable: false
+imagePullSecrets:
+  allowNone: true
 `
 )
 
@@ -156,7 +160,66 @@ func (s *resourcesSuite) TestDefaultResources() {
 					corev1.ResourceMemory: resource.MustParse("10Mi"),
 				},
 			},
-		}, {
+		},
+		{
+			name:          "default scanner resources",
+			workloadKind:  "Deployment",
+			workloadName:  "scanner",
+			containerName: "scanner",
+			values: []string{
+				defaultValues,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("1500Mi"),
+				},
+			},
+		},
+		{
+			name:          "default scanner-db resources",
+			workloadKind:  "Deployment",
+			workloadName:  "scanner-db",
+			containerName: "db",
+			values: []string{
+				defaultValues,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2000m"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("200m"),
+					corev1.ResourceMemory: resource.MustParse("200Mi"),
+				},
+			},
+		},
+		{
+			name:            "default scanner init-db resources",
+			workloadKind:    "Deployment",
+			workloadName:    "scanner-db",
+			containerName:   "init-db",
+			isInitContainer: true,
+			values: []string{
+				defaultValues,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2000m"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("200m"),
+					corev1.ResourceMemory: resource.MustParse("200Mi"),
+				},
+			},
+		},
+		{
 			name:          "overridden sensor resources",
 			workloadKind:  "Deployment",
 			workloadName:  "sensor",
@@ -241,7 +304,7 @@ collector:
 			},
 		},
 		{
-			name:          "default compliance resources",
+			name:          "overridden compliance resources",
 			workloadKind:  "DaemonSet",
 			workloadName:  "collector",
 			containerName: "compliance",
@@ -250,6 +313,71 @@ collector:
 				`
 collector:
   complianceResources:
+    limits:
+      cpu: 100m
+      memory: 100Mi`,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
+		},
+
+		{
+			name:          "overridden scanner resources",
+			workloadKind:  "Deployment",
+			workloadName:  "scanner",
+			containerName: "scanner",
+			values: []string{
+				defaultValues,
+				`
+scanner:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 100Mi`,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
+		},
+		{
+			name:          "overridden scanner-db resources",
+			workloadKind:  "Deployment",
+			workloadName:  "scanner-db",
+			containerName: "db",
+			values: []string{
+				defaultValues,
+				`
+scanner:
+  dbResources:
+    limits:
+      cpu: 100m
+      memory: 100Mi`,
+			},
+			expectedResources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
+		},
+		{
+			name:            "overridden scanner-db init container resources",
+			workloadKind:    "Deployment",
+			workloadName:    "scanner-db",
+			containerName:   "init-db",
+			isInitContainer: true,
+			values: []string{
+				defaultValues,
+				`
+scanner:
+  dbResources:
     limits:
       cpu: 100m
       memory: 100Mi`,

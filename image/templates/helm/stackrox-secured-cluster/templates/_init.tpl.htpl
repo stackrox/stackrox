@@ -136,6 +136,12 @@
 {{ if and $.Values.collector $.Values.collector.nodeScanningResources }}
 {{ $_ = set $._rox.collector "_nodeScanningResources" ($.Values.collector.nodeScanningResources | toYaml) }}
 {{ end }}
+{{ if and $.Values.scanner $.Values.scanner.resources }}
+{{ $_ = set $._rox.scanner "_resources" ($.Values.scanner.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.scanner $.Values.scanner.dbResources }}
+{{ $_ = set $._rox.scanner "_dbResources" ($.Values.scanner.dbResources | toYaml) }}
+{{ end }}
 
 {{/*
     General validation of effective settings.
