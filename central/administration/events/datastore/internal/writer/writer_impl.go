@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -18,9 +19,9 @@ import (
 var (
 	_ Writer = (*writerImpl)(nil)
 
-	log = logging.LoggerForModule()
-
-	eventSAC = sac.ForResource(resources.Administration)
+	log           = logging.LoggerForModule()
+	maxWriterSize = 1000
+	eventSAC      = sac.ForResource(resources.Administration)
 )
 
 type writerImpl struct {
@@ -37,6 +38,10 @@ func (c *writerImpl) readNoLock(id string) (*storage.AdministrationEvent, bool) 
 
 func (c *writerImpl) writeNoLock(event *storage.AdministrationEvent) {
 	c.buffer[event.GetId()] = event
+}
+
+func (c *writerImpl) resetNoLock() {
+	c.buffer = make(map[string]*storage.AdministrationEvent)
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEvent) error {
@@ -61,6 +66,11 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 	if found {
 		baseEvent = eventInBuffer
 	} else {
+		// Short circuit if buffer reached capacity and we're about to add another event.
+		if len(c.buffer) >= maxWriterSize {
+			return retry.MakeRetryable(errWriteBufferExhausted)
+		}
+
 		// If no event is in the buffer, we try to fetch an event
 		// from the database. If found, we use it as the base for the merge.
 		eventInDB, found, err := c.store.Get(ctx, id)
@@ -96,11 +106,12 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	for _, event := range c.buffer {
 		eventChunk = append(eventChunk, event)
 	}
-	c.buffer = make(map[string]*storage.AdministrationEvent)
 	err := c.store.UpsertMany(ctx, eventChunk)
 	if err != nil {
 		return errors.Wrap(err, "failed to upsert event chunk")
 	}
+	// Reset buffer only if upsert was successful.
+	c.resetNoLock()
 	return nil
 }
 

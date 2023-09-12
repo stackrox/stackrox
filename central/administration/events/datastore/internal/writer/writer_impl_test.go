@@ -9,6 +9,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/administration/events/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -200,6 +201,24 @@ func (s *writerTestSuite) TestWriteEvent_Error() {
 	s.store.EXPECT().Get(s.writeCtx, enrichedEvent.GetId()).Return(nil, false, errFake)
 	err := s.writer.Upsert(s.writeCtx, event)
 	s.ErrorIs(err, errFake)
+}
+
+func (s *writerTestSuite) TestWriteEvent_WriteBufferExhaustedIsRetryable() {
+	event := &storage.AdministrationEvent{
+		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:        "message",
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:           "hint",
+		Domain:         "domain",
+		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+	}
+
+	maxWriterSize = 0
+	defer func() { maxWriterSize = 1000 }()
+	err := s.writer.Upsert(s.writeCtx, event)
+	s.Require().Equal(err.Error(), errWriteBufferExhausted.Error())
+	s.True(retry.IsRetryable(err))
 }
 
 func (s *writerTestSuite) TestWriteEvent_SACNoWrite_Error() {
