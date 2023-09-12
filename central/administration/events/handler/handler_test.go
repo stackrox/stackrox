@@ -43,7 +43,7 @@ func (s *handlerTestSuite) TearDownTest() {
 }
 
 func (s *handlerTestSuite) TestConsumeEvents() {
-	event := &storage.AdministrationEvent{
+	event := &events.AdministrationEvent{
 		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message: "message",
 		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
@@ -52,7 +52,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 	}
 
 	addCalled := false
-	addSetCalledFn := func(ctx context.Context, event *storage.AdministrationEvent) {
+	addSetCalledFn := func(ctx context.Context, event *events.AdministrationEvent) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
 		addCalled = true
