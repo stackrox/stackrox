@@ -9,11 +9,10 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { Bullseye, Button, ButtonVariant, Spinner } from '@patternfly/react-core';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 import { format } from 'date-fns';
-import { generatePath } from 'react-router-dom';
+import { Link, generatePath } from 'react-router-dom';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
@@ -71,14 +70,12 @@ function ScanResultsOverviewTable() {
         return scanResultsOverviewData?.map(({ scanStats, clusterId, profileName }) => (
             <Tr key={scanStats.id}>
                 <Td>
-                    <Button
-                        variant={ButtonVariant.link}
-                        isInline
-                        component={LinkShim}
-                        href={generatePath(complianceEnhancedStatusScansPath, { id: scanStats.id })}
+                    <Link
+                        to={generatePath(complianceEnhancedStatusScansPath, { id: scanStats.id })}
+                        className="your-button-class-name-if-any"
                     >
                         {scanStats.scanName}
-                    </Button>
+                    </Link>
                 </Td>
                 <Td>{displayOnlyItemOrItemCount(clusterId, 'clusters')}</Td>
                 <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
