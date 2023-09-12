@@ -4,7 +4,6 @@ import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
-import uniq from 'lodash/uniq';
 
 import {
     defaultHeaderClassName,
@@ -45,7 +44,7 @@ import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
 import WorkflowListPage from '../WorkflowListPage';
-import { getFilteredCVEColumns } from './ListCVEs.utils';
+import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
 export const defaultCveSort = [
     {
@@ -53,14 +52,6 @@ export const defaultCveSort = [
         desc: true,
     },
 ];
-
-function parseCveNamesFromIds(cveIds) {
-    const cveNames = cveIds.map((cveId) => {
-        return cveId.split('#')[0] || '';
-    })
-
-    return uniq(cveNames);
-}
 
 export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
