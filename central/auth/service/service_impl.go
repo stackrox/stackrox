@@ -9,8 +9,22 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"google.golang.org/grpc"
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		allow.Anonymous(): {
+			// GetAuthStatus does return information about the caller identity
+			// (present in context). In case it is called by an anonymous
+			// user, it will return HTTP 401 (unauthorised) which is
+			// semantically correct.
+			"/v1.AuthService/GetAuthStatus",
+		},
+	})
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -30,7 +44,7 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 // GetAuthStatus retrieves the auth status based on the credentials given to the server.

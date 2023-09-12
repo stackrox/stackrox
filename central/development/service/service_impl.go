@@ -15,8 +15,11 @@ import (
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/random"
@@ -27,6 +30,18 @@ var (
 	log = logging.LoggerForModule()
 
 	x509Err = x509.UnknownAuthorityError{}.Error()
+)
+
+var (
+	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
+		user.WithRole(accesscontrol.Admin): {
+			"/central.DevelopmentService/ReplicateImage",
+			"/central.DevelopmentService/URLHasValidCert",
+			"/central.DevelopmentService/RandomData",
+			"/central.DevelopmentService/EnvVars",
+			"/central.DevelopmentService/ReconciliationStatsByCluster",
+		},
+	})
 )
 
 // New creates a new Service.
@@ -147,5 +162,5 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
