@@ -499,11 +499,15 @@ function AuthProviderForm({
                                         returned from the authentication provider.
                                     </p>
                                     <p>
-                                        In case a required attribute is not returned from the authentication provider, the login
-                                        attempt will fail and no role will be assigned to the user.
+                                        In case a required attribute is not returned from the
+                                        authentication provider, the login attempt will fail and no
+                                        role will be assigned to the user.
                                     </p>
                                 </Alert>
                             </div>
+                            {values.requiredAttributes.length === 0 && (
+                                <p>No required attributes defined</p>
+                            )}
                             <FieldArray
                                 name="requiredAttributes"
                                 render={(arrayHelpers) => (
