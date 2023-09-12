@@ -2,15 +2,13 @@ package writer
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -45,7 +43,7 @@ func (c *writerImpl) resetNoLock() {
 	c.buffer = make(map[string]*storage.AdministrationEvent)
 }
 
-func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEvent) error {
+func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEvent) error {
 	if c == nil {
 		return nil
 	}
@@ -53,7 +51,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 		return errox.InvalidArgs.CausedBy("empty event")
 	}
 
-	enrichedEvent := enrichEventWithDefaults(event)
+	enrichedEvent := event.ToStorageEvent()
 	id := enrichedEvent.GetId()
 
 	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
@@ -125,25 +123,6 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	// Reset buffer only if upsert was successful.
 	c.resetNoLock()
 	return nil
-}
-
-func enrichEventWithDefaults(event *storage.AdministrationEvent) *storage.AdministrationEvent {
-	if event == nil {
-		return nil
-	}
-
-	enrichedEvent := event.Clone()
-	enrichedEvent.Id = events.GenerateEventID(event)
-	if event.GetNumOccurrences() == 0 {
-		enrichedEvent.NumOccurrences = 1
-	}
-	if event.GetCreatedAt() == nil {
-		enrichedEvent.CreatedAt = protoconv.ConvertTimeToTimestamp(time.Now())
-	}
-	if event.GetLastOccurredAt() == nil {
-		enrichedEvent.LastOccurredAt = protoconv.ConvertTimeToTimestamp(time.Now())
-	}
-	return enrichedEvent
 }
 
 // Modifies `new` in place with the values of the merged event.

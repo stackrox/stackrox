@@ -3,13 +3,12 @@ package writer
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/administration/events/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -54,165 +53,95 @@ func (s *writerTestSuite) SetupTest() {
 }
 
 func (s *writerTestSuite) TestWriteEvent_Success() {
-	event := &storage.AdministrationEvent{
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
 	}
-	enrichedEvent := &storage.AdministrationEvent{
-		Id:             "73072ecb-2222-5922-8948-5944338861c8",
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-	}
+	id := "73072ecb-2222-5922-8948-5944338861c8"
 
-	s.store.EXPECT().Get(s.writeCtx, enrichedEvent.GetId()).Return(nil, false, nil)
+	s.store.EXPECT().Get(s.writeCtx, id).Return(nil, false, nil)
 	err := s.writer.Upsert(s.writeCtx, event)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.writeCtx, []*storage.AdministrationEvent{enrichedEvent}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.writeCtx, eqEventsMatcher{event, 1}).Return(nil)
 	err = s.writer.Flush(s.writeCtx)
 	s.Require().NoError(err)
 }
 
 func (s *writerTestSuite) TestWriteEvent_MergeWithBuffer() {
 	id := "73072ecb-2222-5922-8948-5944338861c8"
-	eventBase := &storage.AdministrationEvent{
-		Id:             id,
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-	}
-	eventNew := &storage.AdministrationEvent{
-		Id:             id,
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
-	}
-	eventMerged := &storage.AdministrationEvent{
-		Id:             id,
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 2,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
 	}
 
-	s.store.EXPECT().Get(s.writeCtx, eventBase.GetId()).Return(nil, false, nil)
-	err := s.writer.Upsert(s.writeCtx, eventBase)
+	s.store.EXPECT().Get(s.writeCtx, id).Return(nil, false, nil)
+	err := s.writer.Upsert(s.writeCtx, event)
 	s.Require().NoError(err)
 
-	err = s.writer.Upsert(s.writeCtx, eventNew)
+	err = s.writer.Upsert(s.writeCtx, event)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.writeCtx, []*storage.AdministrationEvent{eventMerged}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.writeCtx, eqEventsMatcher{event, 2}).Return(nil)
 	err = s.writer.Flush(s.writeCtx)
 	s.Require().NoError(err)
 }
 
 func (s *writerTestSuite) TestWriteEvent_MergeWithDB() {
 	id := "73072ecb-2222-5922-8948-5944338861c8"
-	eventBase := &storage.AdministrationEvent{
-		Id:             id,
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
+	}
+	eventInDB := &storage.AdministrationEvent{
 		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
 		Message:        "message",
 		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 		Hint:           "hint",
 		Domain:         "domain",
 		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-	}
-	eventNew := &storage.AdministrationEvent{
-		Id:             id,
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
-	}
-	eventMerged := &storage.AdministrationEvent{
-		Id:             id,
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 2,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(100, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
 	}
 
-	s.store.EXPECT().Get(s.writeCtx, eventBase.GetId()).Return(eventBase, true, nil)
-	err := s.writer.Upsert(s.writeCtx, eventNew)
+	s.store.EXPECT().Get(s.writeCtx, id).Return(eventInDB, true, nil)
+	err := s.writer.Upsert(s.writeCtx, event)
 	s.Require().NoError(err)
 
-	s.store.EXPECT().UpsertMany(s.writeCtx, []*storage.AdministrationEvent{eventMerged}).Return(nil)
+	s.store.EXPECT().UpsertMany(s.writeCtx, eqEventsMatcher{event, 2}).Return(nil)
 	err = s.writer.Flush(s.writeCtx)
 	s.Require().NoError(err)
 }
 
 func (s *writerTestSuite) TestWriteEvent_Error() {
-	event := &storage.AdministrationEvent{
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
 	}
-	enrichedEvent := &storage.AdministrationEvent{
-		Id:             "73072ecb-2222-5922-8948-5944338861c8",
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-	}
+	id := "73072ecb-2222-5922-8948-5944338861c8"
 
-	s.store.EXPECT().Get(s.writeCtx, enrichedEvent.GetId()).Return(nil, false, errFake)
+	s.store.EXPECT().Get(s.writeCtx, id).Return(nil, false, errFake)
 	err := s.writer.Upsert(s.writeCtx, event)
 	s.ErrorIs(err, errFake)
 }
 
 func (s *writerTestSuite) TestWriteEvent_WriteBufferExhaustedIsRetryable() {
-	event := &storage.AdministrationEvent{
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
 	}
 
 	maxWriterSize = 0
@@ -228,14 +157,12 @@ func (s *writerTestSuite) TestWriteEvent_NilEvent_Error() {
 }
 
 func (s *writerTestSuite) TestWriteEvent_SACNoWrite_Error() {
-	event := &storage.AdministrationEvent{
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		CreatedAt:      protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
-		LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
+	event := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
 	}
 
 	err := s.writer.Upsert(s.readCtx, event)

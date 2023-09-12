@@ -1,6 +1,25 @@
 package events
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"strings"
+
+	gogoTimestamp "github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
+)
+
+var rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
+
+func generateEventID(event *AdministrationEvent) string {
+	dedupKey := strings.Join([]string{
+		event.GetDomain(),
+		event.GetMessage(),
+		event.GetResourceId(),
+		event.GetResourceType(),
+		event.GetType().String(),
+	}, ",")
+	return uuid.NewV5(rootNamespaceUUID, dedupKey).String()
+}
 
 // AdministrationEvent contains a sub set of *storage.AdministrationEvent.
 //
@@ -70,4 +89,21 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 		return m.Type
 	}
 	return storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN
+}
+
+func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
+	tsNow := gogoTimestamp.TimestampNow()
+	return &storage.AdministrationEvent{
+		Id:             generateEventID(m),
+		Type:           m.GetType(),
+		Level:          m.GetLevel(),
+		Message:        m.GetMessage(),
+		Hint:           m.GetHint(),
+		Domain:         m.GetDomain(),
+		ResourceId:     m.GetResourceId(),
+		ResourceType:   m.GetResourceType(),
+		NumOccurrences: 1,
+		CreatedAt:      tsNow,
+		LastOccurredAt: tsNow,
+	}
 }
