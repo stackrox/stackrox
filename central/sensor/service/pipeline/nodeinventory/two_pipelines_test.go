@@ -90,7 +90,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		riskManager               manager.Manager
 		enricher                  nodeEnricher.NodeEnricher
 		operations                []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error
-		wantErr                   string
 		setUpMocks                func(t *testing.T, m *usedMocks)
 		wantNodeExists            bool
 		wantKernelVersionNode     string
@@ -226,13 +225,9 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 
-			var lastErr error
 			for i, op := range tt.operations {
 				t.Logf("Running operation %d of %d", i+1, len(tt.operations))
-				lastErr = op(t, pNode, pNodeInv)
-			}
-			if tt.wantErr != "" {
-				assert.ErrorContainsf(t, lastErr, tt.wantErr, "Run() error = %v, wantErr = %q", lastErr, tt.wantErr)
+				assert.NoError(t, op(t, pNode, pNodeInv))
 			}
 
 			node, found, err := tt.mocks.nodeDatastore.GetNode(context.Background(), nodeID)
