@@ -10,7 +10,7 @@ import {
 } from 'routePaths';
 
 import IntegrationsNotFoundPage from './IntegrationsNotFoundPage';
-import IntegrationTilesPage from './IntegrationTilesPage';
+import IntegrationTilesPage from './IntegrationTiles/IntegrationTilesPage';
 import IntegrationsListPage from './IntegrationsListPage';
 import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
