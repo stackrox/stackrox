@@ -1,4 +1,4 @@
-// //go:build sql_integration
+//go:build sql_integration
 
 package datastore
 
