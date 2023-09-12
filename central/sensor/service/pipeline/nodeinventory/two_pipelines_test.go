@@ -244,7 +244,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					}
 				}
 				assert.True(t, kernelComponentFound)
-
 			}
 		})
 	}
