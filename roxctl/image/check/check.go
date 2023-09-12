@@ -117,6 +117,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
+	c.Flags().StringVarP(&imageCheckCmd.cluster, "cluster", "", "", "cluster name or ID to delegate image scan to")
 
 	// deprecated, old output format specific flags
 	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
@@ -146,6 +147,7 @@ type imageCheckCommand struct {
 	policyCategories   []string
 	printAllViolations bool
 	timeout            time.Duration
+	cluster            string
 
 	// values injected from either Construct, parent command or for abstracting external dependencies
 	env                      environment.Environment
@@ -210,7 +212,7 @@ func (i *imageCheckCommand) CheckImage() error {
 
 func (i *imageCheckCommand) checkImage() error {
 	// Get the violated policies for the input data.
-	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories)
+	req, err := buildRequest(i.image, i.sendNotifications, i.force, i.policyCategories, i.cluster)
 	if err != nil {
 		return err
 	}
@@ -324,7 +326,7 @@ func printAdditionalWarnsAndErrs(numTotalViolatedPolicies int, results []policy.
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string, sendNotifications, force bool, policyCategories []string) (*v1.BuildDetectionRequest, error) {
+func buildRequest(image string, sendNotifications, force bool, policyCategories []string, cluster string) (*v1.BuildDetectionRequest, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
@@ -334,5 +336,6 @@ func buildRequest(image string, sendNotifications, force bool, policyCategories 
 		SendNotifications: sendNotifications,
 		Force:             force,
 		PolicyCategories:  policyCategories,
+		Cluster:           cluster,
 	}, nil
 }
