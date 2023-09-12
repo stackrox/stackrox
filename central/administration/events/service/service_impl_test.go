@@ -196,3 +196,13 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 	assert.Contains(t, rawQuery, `Event Type:"ADMINISTRATION_EVENT_TYPE_GENERIC"`)
 	assert.Contains(t, rawQuery, `Resource Type:"resourceType"`)
 }
+
+func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
+	t.Parallel()
+	queryBuilder := getQueryBuilderFromFilter(nil)
+
+	rawQuery, err := queryBuilder.RawQuery()
+	require.NoError(t, err)
+
+	assert.Empty(t, rawQuery)
+}

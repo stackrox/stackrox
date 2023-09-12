@@ -100,7 +100,12 @@ func (s *serviceImpl) ListAdministrationEvents(ctx context.Context, request *v1.
 }
 
 func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.QueryBuilder {
-	queryBuilder := search.NewQueryBuilder().
+	queryBuilder := search.NewQueryBuilder()
+	if filter == nil {
+		return queryBuilder
+	}
+
+	queryBuilder = queryBuilder.
 		AddTimeRangeField(
 			search.CreatedTime,
 			protoconv.ConvertTimestampToTimeOrDefault(filter.GetFrom(), time.Unix(0, 0)),
