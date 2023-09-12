@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -51,6 +50,11 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 		return errox.InvalidArgs.CausedBy("empty event")
 	}
 
+	// If the buffer is full, first flush and clear the buffer.
+	if len(c.buffer) >= maxWriterSize {
+		c.Flush(ctx)
+	}
+
 	enrichedEvent := event.ToStorageEvent()
 	id := enrichedEvent.GetId()
 
@@ -72,11 +76,6 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 	if found {
 		baseEvent = eventInBuffer
 	} else {
-		// Short circuit if buffer reached capacity and we're about to add another event.
-		if len(c.buffer) >= maxWriterSize {
-			return retry.MakeRetryable(errWriteBufferExhausted)
-		}
-
 		// If no event is in the buffer, we try to fetch an event
 		// from the database. If found, we use it as the base for the merge.
 		eventInDB, found, err := c.store.Get(ctx, id)
