@@ -10,6 +10,7 @@ import (
 	writerMocks "github.com/stackrox/rox/central/administration/events/datastore/internal/writer/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -47,14 +48,12 @@ func (s *datastoreTestSuite) SetupTest() {
 }
 
 func (s *datastoreTestSuite) TestAddEvent_Success() {
-	event := &storage.AdministrationEvent{
-		Id:             "0925514f-3a33-5931-b431-756406e1a008",
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
+	event := &events.AdministrationEvent{
+		Domain:  "domain",
+		Hint:    "hint",
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 	}
 
 	s.writer.EXPECT().Upsert(s.ctx, event).Return(nil)
@@ -64,14 +63,12 @@ func (s *datastoreTestSuite) TestAddEvent_Success() {
 }
 
 func (s *datastoreTestSuite) TestAddEvent_Error() {
-	event := &storage.AdministrationEvent{
-		Id:             "0925514f-3a33-5931-b431-756406e1a008",
-		Level:          storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:        "message",
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:           "hint",
-		Domain:         "domain",
-		NumOccurrences: 1,
+	event := &events.AdministrationEvent{
+		Domain:  "domain",
+		Hint:    "hint",
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
 	}
 
 	s.writer.EXPECT().Upsert(s.ctx, event).Return(errFake)

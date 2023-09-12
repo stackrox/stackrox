@@ -4,20 +4,20 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 )
 
-// Writer implements a buffered write for the notifications datastore.
+// Writer implements a buffered write for the administration events datastore.
 //
-// When notifications are upserted to the writer, they first end up in a buffer.
-// The buffered notification has the most recent notification state. If
-// an entry for the notification is already present in the data store, this record
-// is merged with the buffered record. The buffer is written to the data store
-// once the writer is flushed.
+// When events are upserted to the writer, they first end up in a buffer.
+// The buffered event has the most recent event state. If an entry for
+// the event is already present in the data store, this record is merged
+// with the buffered record. The buffer is written to the data store once
+// the writer is flushed.
 //
 //go:generate mockgen-wrapper
 type Writer interface {
-	Upsert(ctx context.Context, obj *storage.AdministrationEvent) error
+	Upsert(ctx context.Context, obj *events.AdministrationEvent) error
 	Flush(ctx context.Context) error
 }
 

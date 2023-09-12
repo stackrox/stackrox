@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	storage "github.com/stackrox/rox/generated/storage"
+	events "github.com/stackrox/rox/pkg/administration/events"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -50,7 +50,7 @@ func (mr *MockWriterMockRecorder) Flush(ctx interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method.
-func (m *MockWriter) Upsert(ctx context.Context, obj *storage.AdministrationEvent) error {
+func (m *MockWriter) Upsert(ctx context.Context, obj *events.AdministrationEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", ctx, obj)
 	ret0, _ := ret[0].(error)

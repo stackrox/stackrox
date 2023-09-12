@@ -208,7 +208,7 @@ func (l *LoggerImpl) createNotificationFromLog(msg string, level string, keysAnd
 		return
 	}
 
-	// We will use the log converter to convert logs to a storage.AdministrationEvent.
+	// We will use the log converter to convert logs to an events.AdministrationEvent.
 	event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
 	err := retry.WithRetry(func() error {
 		return l.opts.AdministrationEventsStream.Produce(event)

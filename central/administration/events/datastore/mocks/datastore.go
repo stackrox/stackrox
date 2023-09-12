@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	events "github.com/stackrox/rox/pkg/administration/events"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -37,7 +38,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddEvent mocks base method.
-func (m *MockDataStore) AddEvent(ctx context.Context, event *storage.AdministrationEvent) error {
+func (m *MockDataStore) AddEvent(ctx context.Context, event *events.AdministrationEvent) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddEvent", ctx, event)
 	ret0, _ := ret[0].(error)

@@ -1,7 +1,6 @@
 package logging
 
 import (
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"go.uber.org/zap"
@@ -11,7 +10,7 @@ var _ events.LogConverter = (*zapLogConverter)(nil)
 
 type zapLogConverter struct{}
 
-func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.AdministrationEvent {
+func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *events.AdministrationEvent {
 	enc := &stringObjectEncoder{
 		m: make(map[string]string, len(context)),
 	}
@@ -36,13 +35,10 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		}
 	}
 
-	event := &storage.AdministrationEvent{
-		Message:        msg,
-		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
-		CreatedAt:      timestamp.TimestampNow(),
-		LastOccurredAt: timestamp.TimestampNow(),
-		NumOccurrences: 1,
-		Level:          logLevelToEventLevel(level),
+	event := &events.AdministrationEvent{
+		Message: msg,
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+		Level:   logLevelToEventLevel(level),
 	}
 
 	if resourceType != "" {

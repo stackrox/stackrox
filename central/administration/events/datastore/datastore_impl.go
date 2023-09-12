@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
@@ -21,7 +22,7 @@ type datastoreImpl struct {
 	writer writer.Writer
 }
 
-func (ds *datastoreImpl) AddEvent(ctx context.Context, event *storage.AdministrationEvent) error {
+func (ds *datastoreImpl) AddEvent(ctx context.Context, event *events.AdministrationEvent) error {
 	// The writer handles the SAC checks for the event.
 	if err := ds.writer.Upsert(ctx, event); err != nil {
 		return errors.Wrap(err, "failed to upsert administration event")
