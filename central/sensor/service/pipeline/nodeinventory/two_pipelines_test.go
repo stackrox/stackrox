@@ -104,9 +104,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				},
 			},
 			setUpMocks: func(t *testing.T, m *usedMocks) {
-				gomock.InOrder(
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil),
-				)
+				m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).MinTimes(1).Return(nil, false, nil)
 			},
 			wantNodeExists:        false,
 			wantKernelVersionNode: "",
