@@ -158,10 +158,33 @@
 {{ $_ = set $rox "_defaults" $defaultsCfg }}
 {{ $_ = include "srox.mergeInto" (list $rox $defaultsCfg.defaults) }}
 
-
 {{/* Expand applicable config values */}}
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
+
+{{/* Default resources adjustment */}}
+{{/*
+
+    If the user specifies resources for central/central-db/etc, they must be honored as is.
+    If we rely on the default defaulting mechanism, we might end up with resources that do
+    not correspond to what the user specified. For example, if the user only specifies
+    requests, but the default also include limits, the result will include both requests
+    and limits, which is not what the user specified. So we need to adjust those values.
+
+*/}}
+
+{{ if and $.Values.central $.Values.central.resources }}
+{{ $_ = set $._rox.central "_resources" ($.Values.central.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.central $.Values.central.db $.Values.central.db.resources }}
+{{ $_ = set $._rox.central.db "_resources" ($.Values.central.db.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.scanner $.Values.scanner.resources }}
+{{ $_ = set $._rox.scanner "_resources" ($.Values.scanner.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.scanner $.Values.scanner.dbResources }}
+{{ $_ = set $._rox.scanner "_dbResources" ($.Values.scanner.dbResources | toYaml) }}
+{{ end }}
 
 {{/* Initial image pull secret setup.
 

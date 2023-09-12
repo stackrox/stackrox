@@ -110,6 +110,33 @@
 {{ $expandables := $.Files.Get "internal/expandables.yaml" | fromYaml }}
 {{ include "srox.expandAll" (list $ $rox $expandables) }}
 
+{{/* Default resources adjustment */}}
+{{/*
+
+    If the user specifies resources for sensor/admission-control/etc, they must be honored as is.
+    If we rely on the default defaulting mechanism, we might end up with resources that do
+    not correspond to what the user specified. For example, if the user only specifies
+    requests, but the default also include limits, the result will include both requests
+    and limits, which is not what the user specified. So we need to adjust those values.
+
+*/}}
+
+{{ if and $.Values.sensor $.Values.sensor.resources }}
+{{ $_ = set $._rox.sensor "_resources" ($.Values.sensor.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.admissionControl $.Values.admissionControl.resources }}
+{{ $_ = set $._rox.admissionControl "_resources" ($.Values.admissionControl.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.collector $.Values.collector.resources }}
+{{ $_ = set $._rox.collector "_resources" ($.Values.collector.resources | toYaml) }}
+{{ end }}
+{{ if and $.Values.collector $.Values.collector.complianceResources }}
+{{ $_ = set $._rox.collector "_complianceResources" ($.Values.collector.complianceResources | toYaml) }}
+{{ end }}
+{{ if and $.Values.collector $.Values.collector.nodeScanningResources }}
+{{ $_ = set $._rox.collector "_nodeScanningResources" ($.Values.collector.nodeScanningResources | toYaml) }}
+{{ end }}
+
 {{/*
     General validation of effective settings.
    */}}
