@@ -134,15 +134,15 @@ require (
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
 	helm.sh/helm/v3 v3.11.3
-	k8s.io/api v0.26.8
+	k8s.io/api v0.28.1
 	k8s.io/apiextensions-apiserver v0.26.3
-	k8s.io/apimachinery v0.27.4
+	k8s.io/apimachinery v0.28.1
 	k8s.io/apiserver v0.26.7
 	k8s.io/cli-runtime v0.26.8
 	k8s.io/client-go v0.26.8
 	k8s.io/kubectl v0.26.8
 	k8s.io/kubelet v0.26.7
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
+	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 	sigs.k8s.io/controller-runtime v0.14.6
 	sigs.k8s.io/controller-tools v0.11.3
 	sigs.k8s.io/e2e-framework v0.2.0
@@ -238,6 +238,7 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
+	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
@@ -394,7 +395,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/component-base v0.26.8 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
+	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
 	modernc.org/cc/v3 v3.40.0 // indirect
 	modernc.org/ccgo/v3 v3.16.13 // indirect
