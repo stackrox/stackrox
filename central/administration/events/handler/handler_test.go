@@ -39,7 +39,6 @@ func (s *handlerTestSuite) SetupTest() {
 }
 
 func (s *handlerTestSuite) TearDownTest() {
-	s.mockCtrl.Finish()
 	s.handler.Stop()
 }
 
