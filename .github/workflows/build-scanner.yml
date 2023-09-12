@@ -14,11 +14,12 @@ on:
     - synchronize
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goarch: ['arm64', 'amd64', 'ppc64le']
+        # If this is updated, be sure to update architectures in push-manifests below.
+        goarch: ['amd64', 'arm64', 'ppc64le']
         goos: ['linux']
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.59
@@ -29,7 +30,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -48,4 +49,45 @@ jobs:
     - name: Build Scanner and ScannerDB images
       run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
-# TODO: Push Scanner and ScannerDB images
+    - name: Push Scanner and ScannerDB images
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+        push_scanner_image_set ${{ matrix.goarch }}
+
+  push-manifests:
+    runs-on: ubuntu-latest
+    needs:
+    - build-and-push
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.59
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Push Scanner and ScannerDB image manifests
+      # Skip for external contributions.
+      if: |
+        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      run: |
+        source ./scripts/ci/lib.sh
+
+        # If this is updated, be sure to update goarch in build-and-push above.
+        architectures="amd64,arm64,ppc64le"
+
+        push_scanner_image_manifest_lists "$architectures"

@@ -74,7 +74,7 @@ HEAD
         classname="${classname%.log}"
         url="$(get_spec_log_url "${log}")"
         cat >> "$artifact_file" << DETAILS
-        <li><a target=_blank href="${url}">${classname}</a></li>
+        <li><a target="_blank" href="${url}">${classname}</a></li>
 DETAILS
     done
 

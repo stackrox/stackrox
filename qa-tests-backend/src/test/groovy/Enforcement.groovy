@@ -462,8 +462,8 @@ class Enforcement extends BaseSpecification {
         and:
         "Request Image Scan"
         def scanResults = Services.requestBuildImageScan(
-                "docker.io",
-                "library/nginx",
+                "quay.io",
+                "rhacs-eng/qa",
                 "latest"
         )
 

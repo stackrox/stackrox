@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -30,9 +31,11 @@ var (
 		user.With(permissions.View(resources.Administration)): {
 			"/v1.ConfigService/GetConfig",
 			"/v1.ConfigService/GetPrivateConfig",
+			"/v1.ConfigService/GetVulnerabilityDeferralConfig",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.ConfigService/PutConfig",
+			"/v1.ConfigService/UpdateVulnerabilityDeferralConfig",
 		},
 	})
 )
@@ -124,4 +127,46 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		centralclient.Disable()
 	}
 	return req.GetConfig(), nil
+}
+
+// GetVulnerabilityDeferralConfig returns Central's vulnerability deferral configuration.
+func (s *serviceImpl) GetVulnerabilityDeferralConfig(ctx context.Context, _ *v1.Empty) (*v1.GetVulnerabilityDeferralConfigResponse, error) {
+	if !env.UnifiedCVEDeferral.BooleanSetting() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", env.UnifiedCVEDeferral.EnvVar())
+	}
+	config, err := s.datastore.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetVulnerabilityDeferralConfigResponse{
+		Config: VulnerabilityDeferralConfigStorageToV1(config.GetPrivateConfig().GetVulnerabilityDeferralConfig()),
+	}, nil
+}
+
+// UpdateVulnerabilityDeferralConfig updates Central's vulnerability deferral configuration.
+func (s *serviceImpl) UpdateVulnerabilityDeferralConfig(ctx context.Context, req *v1.UpdateVulnerabilityDeferralConfigRequest) (*v1.UpdateVulnerabilityDeferralConfigResponse, error) {
+	if !env.UnifiedCVEDeferral.BooleanSetting() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", env.UnifiedCVEDeferral.EnvVar())
+	}
+	if req.GetConfig() == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "vulnerability deferral config must be specified")
+	}
+	config, err := s.datastore.GetConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if config == nil {
+		config = &storage.Config{}
+	}
+	if config.GetPrivateConfig() == nil {
+		config.PrivateConfig = &storage.PrivateConfig{}
+	}
+	config.PrivateConfig.VulnerabilityDeferralConfig = VulnerabilityDeferralConfigV1ToStorage(req.GetConfig())
+	if err := s.datastore.UpsertConfig(ctx, config); err != nil {
+		return nil, err
+	}
+
+	return &v1.UpdateVulnerabilityDeferralConfigResponse{
+		Config: req.GetConfig(),
+	}, nil
 }

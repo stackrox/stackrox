@@ -38,10 +38,18 @@ const initialDelegatedState: DelegatedRegistryConfig = {
     registries: [],
 };
 
+function getUuid() {
+    const MAX_RANDOM = 1000000;
+
+    // eslint-disable-next-line no-restricted-globals
+    const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
+
+    return uuid;
+}
+
 function addUuidstoRegistries(config: DelegatedRegistryConfig) {
     const newRegistries = config.registries.map((registry) => {
-        // eslint-disable-next-line no-restricted-globals
-        const uuid = self.crypto.randomUUID();
+        const uuid = getUuid();
 
         return {
             path: registry.path,
@@ -121,21 +129,6 @@ function DelegateScanningPage() {
             });
     }
 
-    function toggleDelegation() {
-        const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
-
-        if (delegatedRegistryConfig.enabledFor === 'NONE') {
-            if (delegatedRegistryConfig.registries.length > 0) {
-                newState.enabledFor = 'SPECIFIC';
-            } else {
-                newState.enabledFor = 'ALL';
-            }
-        } else {
-            newState.enabledFor = 'NONE';
-        }
-        setDedicatedRegistryConfig(newState);
-    }
-
     function onChangeEnabledFor(newEnabledState) {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
@@ -155,12 +148,11 @@ function DelegateScanningPage() {
     function addRegistryRow() {
         const newState: DelegatedRegistryConfig = { ...delegatedRegistryConfig };
 
-        // eslint-disable-next-line no-restricted-globals
-        const uuid = self.crypto.randomUUID();
+        const uuid = getUuid();
 
         newState.registries.push({
             path: '',
-            clusterId: delegatedRegistryConfig.defaultClusterId,
+            clusterId: '',
             uuid,
         });
 
@@ -185,6 +177,7 @@ function DelegateScanningPage() {
                 return {
                     path: value,
                     clusterId: registry.clusterId,
+                    uuid: registry.uuid,
                 };
             }
 
@@ -204,6 +197,7 @@ function DelegateScanningPage() {
                 return {
                     path: registry.path,
                     clusterId: value,
+                    uuid: registry.uuid,
                 };
             }
 
@@ -290,14 +284,12 @@ function DelegateScanningPage() {
                 <Form>
                     <ToggleDelegatedScanning
                         enabledFor={delegatedRegistryConfig.enabledFor}
-                        toggleDelegation={toggleDelegation}
+                        onChangeEnabledFor={onChangeEnabledFor}
                     />
                     {/* TODO: decide who to structure this form, where the `enabledFor` value spans multiple inputs */}
                     {delegatedRegistryConfig.enabledFor !== 'NONE' && (
                         <>
                             <DelegatedScanningSettings
-                                enabledFor={delegatedRegistryConfig.enabledFor}
-                                onChangeEnabledFor={onChangeEnabledFor}
                                 clusters={delegatedRegistryClusters}
                                 selectedClusterId={delegatedRegistryConfig.defaultClusterId}
                                 setSelectedClusterId={onChangeDefaultCluster}

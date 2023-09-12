@@ -2,6 +2,8 @@ import React from 'react';
 import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
 
 import ComplianceByCluster from './Widgets/ComplianceByCluster';
+import ComplianceByProfile from './Widgets/ComplianceByProfile';
+import ScanResultsOverviewTable from './ScanResultsOverviewTable';
 
 function ComplianceDashboardPage() {
     return (
@@ -19,6 +21,12 @@ function ComplianceDashboardPage() {
                     <Grid hasGutter md={6} xl2={4}>
                         <GridItem>
                             <ComplianceByCluster />
+                        </GridItem>
+                        <GridItem>
+                            <ComplianceByProfile />
+                        </GridItem>
+                        <GridItem span={12}>
+                            <ScanResultsOverviewTable />
                         </GridItem>
                     </Grid>
                 </PageSection>

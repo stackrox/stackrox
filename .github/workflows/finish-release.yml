@@ -74,7 +74,7 @@ jobs:
     needs: [variables, properties]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.variables.outputs.branch }}
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
@@ -151,7 +151,7 @@ jobs:
       BRANCH: "bump-demo-versions-${{ inputs.version }}"
     steps:
       - name: Checkout stackrox/infra repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: stackrox/infra
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}

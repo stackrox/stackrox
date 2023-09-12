@@ -35,12 +35,6 @@ type Deleter interface {
 	DeleteMany(ctx context.Context, identifiers []string) error
 }
 
-// PermissionChecker is a permission checker that could be used by GenericStore
-type PermissionChecker interface {
-	ReadAllowed(ctx context.Context) (bool, error)
-	WriteAllowed(ctx context.Context) (bool, error)
-}
-
 type primaryKeyGetter[T any, PT unmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
 type inserter[T any, PT unmarshaler[T]] func(batch *pgx.Batch, obj PT) error
@@ -57,7 +51,7 @@ type GenericStore[T any, PT unmarshaler[T]] struct {
 	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
-	permissionChecker                PermissionChecker
+	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
 }
@@ -98,7 +92,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
-	checker PermissionChecker,
+	checker walker.PermissionChecker,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
 		db:                               db,
@@ -116,25 +110,7 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Exists)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil {
-			return false, err
-		} else if !ok {
-			return false, nil
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return false, err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
 	count, err := RunCountRequestForSchema(ctx, s.schema, q, s.db)
 	// With joins and multiple paths to the scoping resources, it can happen that the Count query for an object identifier
@@ -146,37 +122,12 @@ func (s *GenericStore[T, PT]) Exists(ctx context.Context, id string) (bool, erro
 func (s *GenericStore[T, PT]) Count(ctx context.Context) (int, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Count)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return 0, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return 0, err
-		}
-		sacQueryFilter = filter
-	}
-
-	return RunCountRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	return RunCountRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
 func (s *GenericStore[T, PT]) Walk(ctx context.Context, fn func(obj PT) error) error {
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, sacQueryFilter, s.db)
+	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return err
 	}
@@ -216,23 +167,7 @@ func (s *GenericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, false, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, false, err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
 
 	data, err := RunGetQueryForSchema[T, PT](ctx, s.schema, q, s.db)
 	if err != nil {
@@ -246,27 +181,7 @@ func (s *GenericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-
-	pagination := query.GetPagination()
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-	q.Pagination = pagination
-
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
@@ -279,19 +194,7 @@ func (s *GenericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) (
 // GetIDs returns all the IDs for the store.
 func (s *GenericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, err
-		}
-		sacQueryFilter = filter
-	}
-	result, err := RunSearchRequestForSchema(ctx, s.schema, sacQueryFilter, s.db)
+	result, err := RunSearchRequestForSchema(ctx, s.schema, search.EmptyQuery(), s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -312,22 +215,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 		return nil, nil, nil
 	}
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.ReadAllowed(ctx); err != nil || !ok {
-			return nil, nil, err
-		}
-	} else {
-		filter, err := GetReadSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return nil, nil, err
-		}
-		sacQueryFilter = filter
-	}
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery(),
-	)
+	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
 	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
 	if err != nil {
@@ -362,27 +250,7 @@ func (s *GenericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 func (s *GenericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
-
-	q := search.ConjunctionQuery(
-		sacQueryFilter,
-		query,
-	)
-
-	return RunDeleteRequestForSchema(ctx, s.schema, q, s.db)
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
 }
 
 // Delete removes the object associated to the specified ID from the store.
@@ -394,21 +262,6 @@ func (s *GenericStore[T, PT]) Delete(ctx context.Context, id string) error {
 // DeleteMany removes the objects associated to the specified IDs from the store.
 func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []string) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.RemoveMany)
-
-	var sacQueryFilter *v1.Query
-	if s.hasPermissionsChecker() {
-		if ok, err := s.permissionChecker.WriteAllowed(ctx); err != nil {
-			return err
-		} else if !ok {
-			return sac.ErrResourceAccessDenied
-		}
-	} else {
-		filter, err := GetReadWriteSACQuery(ctx, s.targetResource)
-		if err != nil {
-			return err
-		}
-		sacQueryFilter = filter
-	}
 
 	// Batch the deletes
 	localBatchSize := deleteBatchSize
@@ -423,10 +276,7 @@ func (s *GenericStore[T, PT]) DeleteMany(ctx context.Context, identifiers []stri
 		}
 
 		identifierBatch := identifiers[:localBatchSize]
-		q := search.ConjunctionQuery(
-			sacQueryFilter,
-			search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery(),
-		)
+		q := search.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
 		if err := RunDeleteRequestForSchema(ctx, s.schema, q, s.db); err != nil {
 			return errors.Wrapf(err, "unable to delete the records.  Successfully deleted %d out of %d", numRecordsToDelete-len(identifiers), numRecordsToDelete)

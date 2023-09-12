@@ -51,7 +51,7 @@ run-name: >-
     format('Cut {0}{1}{2}',
       github.event.milestone.title,
       inputs.version,
-      fromJSON('[" (dry-run)", ""]')[inputs.dry-run != true]
+      fromJSON('[" (dry-run)", ""]')[github.event.inputs.dry-run != 'true']
     )
   }}
 
@@ -97,9 +97,10 @@ jobs:
     name: Check Jira tickets for release
     needs: [variables, properties]
     runs-on: ubuntu-latest
+    # Checking unequal with "false" because closed milestones have unset input values.
+    if: github.event.inputs.check-jira-issues != 'false'
     steps:
       - name: Query JIRA
-        if: github.event.inputs.check-jira-issues == 'true'
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
@@ -174,7 +175,7 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{needs.variables.outputs.branch}}
           token: ${{ secrets.ROBOT_ROX_GITHUB_TOKEN }}
@@ -305,15 +306,19 @@ jobs:
     secrets: inherit
     needs: [variables, cut-rc]
     uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
-    if: >- # Skip if no clusters are going to be created.
+    if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||
       needs.variables.outputs.rc == '1' &&
       github.event.inputs.create-long-cluster != 'false'
     with:
       version: ${{needs.variables.outputs.milestone}}
-      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster == 'true'}}
-      create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
-      create-long-cluster: ${{needs.variables.outputs.rc == '1' && github.event.inputs.create-long-cluster == 'true'}}
+      create-k8s-cluster: ${{github.event.inputs.create-k8s-cluster != 'false'}}
+      create-os4-cluster: ${{github.event.inputs.create-os4-cluster != 'false'}}
+      create-long-cluster: ${{needs.variables.outputs.rc == '1' && github.event.inputs.create-long-cluster != 'false'}}
       dry-run: ${{github.event.inputs.dry-run == 'true'}}
       workflow-ref: v1
+      kube-burner-config-ref: ${{needs.variables.outputs.milestone}}
+      kube-burner-config-repo: stackrox
+      cluster-with-fake-load-name: gke-long-running-fake-load-${{needs.variables.outputs.milestone}}
+      cluster-with-real-load-name: gke-long-running-real-load-${{needs.variables.outputs.milestone}}

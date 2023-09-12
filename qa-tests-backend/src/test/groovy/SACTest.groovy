@@ -37,6 +37,7 @@ import spock.lang.Unroll
 
 @Tag("BAT")
 class SACTest extends BaseSpecification {
+    static final private String IMAGE = "quay.io/rhacs-eng/qa:nginx-unprivileged-1.25.2"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"
@@ -46,7 +47,7 @@ class SACTest extends BaseSpecification {
     static final protected String NOACCESSTOKEN = "noAccess"
     static final protected Deployment DEPLOYMENT_QA1 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA1)
-            .setImage(TEST_IMAGE)
+            .setImage(IMAGE)
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
@@ -54,7 +55,7 @@ class SACTest extends BaseSpecification {
             .addLabel("app", "test")
     static final protected Deployment DEPLOYMENT_QA2 = new Deployment()
             .setName(DEPLOYMENTNGINX_NAMESPACE_QA2)
-            .setImage(TEST_IMAGE)
+            .setImage(IMAGE)
             .addPort(22, "TCP")
             .addAnnotation("test", "annotation")
             .setEnv(["CLUSTER_NAME": "main"])
@@ -91,7 +92,7 @@ class SACTest extends BaseSpecification {
 
     def setupSpec() {
         // Make sure we scan the image initially to make reprocessing faster.
-        def img = Services.scanImage(TEST_IMAGE)
+        def img = ImageService.scanImage(TEST_IMAGE, false)
         assert img.hasScan()
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)

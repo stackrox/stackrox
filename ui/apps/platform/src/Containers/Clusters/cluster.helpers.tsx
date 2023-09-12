@@ -12,7 +12,7 @@ import {
     ResourcesEmptyIcon,
 } from '@patternfly/react-icons';
 
-import { ClusterProviderMetadata } from 'types/cluster.proto';
+import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate } from 'utils/dateUtils';
 import { CertExpiryStatus } from './clusterTypes';
 
@@ -491,7 +491,7 @@ export function isUpToDateStateObject(upgradeStateObject) {
     return upgradeStateObject?.type === 'current';
 }
 
-export function getUpgradeableClusters(clusters = []) {
+export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
     return clusters.filter((cluster) => {
         const upgradeStatus: UpgradeStatus | null = get(cluster, 'status.upgradeStatus', null);
         const upgradeStateObject = findUpgradeState(upgradeStatus);

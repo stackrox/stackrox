@@ -6,6 +6,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -55,6 +56,34 @@ var (
 		},
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
+
+	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityDeferralConfig{
+		ExpiryOptions: &storage.VulnerabilityDeferralConfig_ExpiryOptions{
+			DayOptions: []*storage.DayOption{
+				{
+					NumDays: 14,
+					Enabled: true,
+				},
+				{
+					NumDays: 30,
+					Enabled: true,
+				},
+				{
+					NumDays: 60,
+					Enabled: true,
+				},
+				{
+					NumDays: 90,
+					Enabled: true,
+				},
+			},
+			FixableCveOptions: &storage.VulnerabilityDeferralConfig_FixableCVEOptions{
+				AllFixable: true,
+				AnyFixable: true,
+			},
+			CustomDate: false,
+		},
+	}
 )
 
 func initialize() {
@@ -93,6 +122,12 @@ func initialize() {
 			DownloadableReportGlobalRetentionBytes: DefaultDownloadableReportGlobalRetentionBytes,
 		}
 		needsUpsert = true
+	}
+
+	if env.UnifiedCVEDeferral.BooleanSetting() {
+		if privateConfig.GetVulnerabilityDeferralConfig() == nil {
+			privateConfig.VulnerabilityDeferralConfig = defaultVulnerabilityDeferralConfig
+		}
 	}
 
 	if needsUpsert {

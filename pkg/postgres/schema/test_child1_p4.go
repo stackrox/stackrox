@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -39,6 +40,7 @@ var (
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory(103),
 		}...)
+		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestChild1P4Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(103), schema)
 		return schema

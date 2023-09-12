@@ -97,7 +97,8 @@ export type ReportStatus = {
 export const runStates = {
     WAITING: 'WAITING',
     PREPARING: 'PREPARING',
-    SUCCESS: 'SUCCESS',
+    GENERATED: 'GENERATED',
+    DELIVERED: 'DELIVERED',
     FAILURE: 'FAILURE',
 } as const;
 

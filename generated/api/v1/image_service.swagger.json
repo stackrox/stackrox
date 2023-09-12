@@ -483,6 +483,17 @@
       ],
       "default": "UNKNOWN_VULNERABILITY"
     },
+    "EnvironmentList": {
+      "type": "object",
+      "properties": {
+        "environments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v4Environment"
+          }
+        }
+      }
+    },
     "WatchImageResponseErrorType": {
       "type": "string",
       "enum": [
@@ -933,6 +944,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "mirror": {
+          "type": "string"
         }
       }
     },
@@ -1064,12 +1078,12 @@
         "firstSystemOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the system."
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
           "format": "date-time",
-          "description": "Time when the CVE was first seen in the image."
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
@@ -1682,6 +1696,161 @@
         "errorMessage": {
           "type": "string",
           "description": "Only set if error_type is NOT equal to \"NO_ERROR\"."
+        }
+      }
+    },
+    "v4Contents": {
+      "type": "object",
+      "properties": {
+        "packages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v4Package"
+          }
+        },
+        "distributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v4Distribution"
+          }
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v4Repository"
+          }
+        },
+        "environments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EnvironmentList"
+          }
+        }
+      }
+    },
+    "v4Distribution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "did": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "versionCodeName": {
+          "type": "string"
+        },
+        "versionId": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpe": {
+          "type": "string"
+        },
+        "prettyName": {
+          "type": "string"
+        }
+      }
+    },
+    "v4Environment": {
+      "type": "object",
+      "properties": {
+        "packageDb": {
+          "type": "string"
+        },
+        "introducedIn": {
+          "type": "string"
+        },
+        "distributionId": {
+          "type": "string"
+        },
+        "repositoryIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Environment describes the surrounding environment a package was\ndiscovered in."
+    },
+    "v4NormalizedVersion": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "v": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    },
+    "v4Package": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "normalizedVersion": {
+          "$ref": "#/definitions/v4NormalizedVersion"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/v4Package"
+        },
+        "packageDb": {
+          "type": "string"
+        },
+        "repositoryHint": {
+          "type": "string"
+        },
+        "module": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpe": {
+          "type": "string"
+        }
+      }
+    },
+    "v4Repository": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "cpe": {
+          "type": "string"
         }
       }
     }

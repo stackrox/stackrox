@@ -17,6 +17,8 @@ import { Collection, CollectionSlim, listCollections } from 'services/Collection
 import { useCollectionFormSubmission } from 'Containers/Collections/hooks/useCollectionFormSubmission';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { usePaginatedQuery } from 'hooks/usePaginatedQuery';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
 import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 
 import CollectionsFormModal, {
@@ -30,7 +32,6 @@ type CollectionSelectionProps = {
     id: string;
     selectedScope: ReportScope | null;
     onChange: (selection: CollectionSlim | null) => void;
-    allowCreate: boolean;
     onBlur?: React.FocusEventHandler<HTMLInputElement>;
     onValidateField: (field: string) => void;
 };
@@ -40,10 +41,14 @@ function CollectionSelection({
     id,
     selectedScope,
     onChange,
-    allowCreate,
     onBlur,
     onValidateField,
 }: CollectionSelectionProps): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const isRouteEnabledForCollections = isRouteEnabled('collections');
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForCollections = hasReadWriteAccess('WorkflowAdministration');
+
     const { isOpen, onToggle } = useSelectToggle();
     const [modalAction, setModalAction] = useState<CollectionFormModalAction>({ type: 'create' });
     const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
@@ -109,6 +114,7 @@ function CollectionSelection({
     }
 
     function onOpenCreateCollectionModal() {
+        onToggle(false);
         setModalAction({ type: 'create' });
         setIsCollectionModalOpen((current) => !current);
     }
@@ -166,7 +172,20 @@ function CollectionSelection({
                             overflowY: 'auto',
                         }}
                         validated={ValidatedOptions.default}
+                        footer={
+                            hasWriteAccessForCollections &&
+                            isRouteEnabledForCollections && (
+                                <Button
+                                    variant="link"
+                                    isInline
+                                    onClick={onOpenCreateCollectionModal}
+                                >
+                                    Create collection
+                                </Button>
+                            )
+                        }
                         menuAppendTo={() => document.body}
+                        direction="up"
                     >
                         {sortedCollections.map((collection) => (
                             <SelectOption
@@ -179,29 +198,21 @@ function CollectionSelection({
                         ))}
                     </Select>
                 </FlexItem>
-                <FlexItem spacer={{ default: 'spacerMd' }}>
-                    <Button
-                        variant={ButtonVariant.tertiary}
-                        onClick={onOpenViewCollectionModal}
-                        isDisabled={!selectedScope}
-                    >
-                        View
-                    </Button>
-                </FlexItem>
-                {allowCreate && (
-                    <FlexItem>
+                {isRouteEnabledForCollections && (
+                    <FlexItem spacer={{ default: 'spacerMd' }}>
                         <Button
-                            variant={ButtonVariant.secondary}
-                            onClick={onOpenCreateCollectionModal}
+                            variant={ButtonVariant.tertiary}
+                            onClick={onOpenViewCollectionModal}
+                            isDisabled={!selectedScope}
                         >
-                            Create collection
+                            View
                         </Button>
                     </FlexItem>
                 )}
             </Flex>
             {isCollectionModalOpen && (
                 <CollectionsFormModal
-                    hasWriteAccessForCollections={allowCreate}
+                    hasWriteAccessForCollections={hasWriteAccessForCollections}
                     modalAction={modalAction}
                     onClose={() => setIsCollectionModalOpen(false)}
                     configError={configError}

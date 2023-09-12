@@ -20,7 +20,7 @@ const (
 	HealthMonitoringCap SensorCapability = "HealthMonitoring"
 
 	// NetworkGraphExternalSrcsCap identifies the capability to handle custom network graph external sources.
-	NetworkGraphExternalSrcsCap SensorCapability = "NetworkGraphExternalSrcs"
+	NetworkGraphExternalSrcsCap SensorCapability = "NetworkGraphExternalSrcs" //#nosec G101
 
 	// AuditLogEventsCap identifies the capability to handle audit log event detection.
 	AuditLogEventsCap SensorCapability = "AuditLogEvents"

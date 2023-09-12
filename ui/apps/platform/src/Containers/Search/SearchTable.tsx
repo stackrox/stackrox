@@ -1,12 +1,17 @@
 import React, { ReactElement } from 'react';
 import { TableComposable, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import { SearchResult, SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 
 import FilterLinks from './FilterLinks';
 import ViewLinks from './ViewLinks';
-import { SearchNavCategory, searchResultCategoryMap, searchNavMap } from './searchCategories';
+import {
+    SearchNavCategory,
+    searchNavMap,
+    searchResultCategoryMapFilteredIsRouteEnabled,
+} from './searchCategories';
 
 function getLocationTextForCategory(location: string, category: SearchResultCategory) {
     return category === 'DEPLOYMENTS' ? location.replace(/^\//, '') : location.replace(/\/.+/, '');
@@ -23,6 +28,9 @@ type SearchTableProps = {
 };
 
 function SearchTable({ navCategory, searchFilter, searchResults }: SearchTableProps): ReactElement {
+    const isRouteEnabled = useIsRouteEnabled();
+    const searchResultCategoryMap = searchResultCategoryMapFilteredIsRouteEnabled(isRouteEnabled);
+
     const firstColumnHeading = searchNavMap[navCategory];
     const hasLocationColumn =
         navCategory === 'DEPLOYMENTS' || navCategory === 'NAMESPACES' || navCategory === 'NODES';
@@ -105,7 +113,11 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                             )}
                             {hasViewLinkColumn && (
                                 <Td dataLabel="View on">
-                                    <ViewLinks id={id} resultCategory={category} />
+                                    <ViewLinks
+                                        id={id}
+                                        resultCategory={category}
+                                        searchResultCategoryMap={searchResultCategoryMap}
+                                    />
                                 </Td>
                             )}
                             {hasFilterLinkColumn && (
@@ -114,6 +126,7 @@ function SearchTable({ navCategory, searchFilter, searchResults }: SearchTablePr
                                         filterValue={name}
                                         resultCategory={category}
                                         searchFilter={searchFilter}
+                                        searchResultCategoryMap={searchResultCategoryMap}
                                     />
                                 </Td>
                             )}

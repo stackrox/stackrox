@@ -130,12 +130,16 @@ func (t *teams) getEntitySection(alert *storage.Alert) section {
 }
 
 func (t *teams) getResourceSection(resource *storage.Alert_Resource) section {
-	return section{Title: "Resource Details",
-		Facts: []fact{{Name: "Resource Name", Value: resource.GetName()},
-			{Name: "Type", Value: resource.GetResourceType().String()},
-			{Name: "Namespace", Value: resource.GetNamespace()},
-			{Name: "Cluster Id", Value: resource.GetClusterId()},
-			{Name: "Cluster Name", Value: resource.GetClusterName()}}}
+	facts := []fact{{Name: "Resource Name", Value: resource.GetName()},
+		{Name: "Type", Value: resource.GetResourceType().String()},
+		{Name: "Cluster Id", Value: resource.GetClusterId()},
+		{Name: "Cluster Name", Value: resource.GetClusterName()}}
+
+	if resource.GetNamespace() != "" {
+		facts = append(facts, fact{Name: "Namespace", Value: resource.GetNamespace()})
+	}
+
+	return section{Title: "Resource Details", Facts: facts}
 }
 
 func (t *teams) getImageSection(image *storage.ContainerImage) section {

@@ -49,6 +49,7 @@ func TestFeatureFlagSettings(t *testing.T) {
 	delete(actualFlagVals, "ROX_POSTGRES_DATASTORE")
 	delete(actualFlagVals, env.ActiveVulnMgmt.EnvVar())
 	delete(actualFlagVals, env.VulnReportingEnhancements.EnvVar())
+	delete(actualFlagVals, env.UnifiedCVEDeferral.EnvVar())
 
 	assert.Equal(t, expectedFlagVals, actualFlagVals, "mismatch between expected and actual feature flag settings")
 }

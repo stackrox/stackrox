@@ -67,19 +67,13 @@ const sortOptions = {
 function VulnReportsPage() {
     const history = useHistory();
 
-    const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
+    const hasWriteAccessForReport =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        hasReadAccess('Image') && // for vulnerabilities
+        hasReadAccess('Integration'); // for notifiers
 
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Access');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
-    const canCreateReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
-        hasNotifierIntegrationReadAccess;
-
+    const isRouteEnabled = useIsRouteEnabled();
     const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -175,7 +169,7 @@ function VulnReportsPage() {
                     </FlexItem>
                     {reportConfigurations &&
                         reportConfigurations.length > 0 &&
-                        canCreateReports && (
+                        hasWriteAccessForReport && (
                             <FlexItem>
                                 <CreateReportsButton />
                             </FlexItem>
@@ -271,26 +265,33 @@ function VulnReportsPage() {
                                                         <FlexItem>
                                                             <p>
                                                                 The status of your last requested
-                                                                job from the active job queue. An
-                                                                active job queue includes any
-                                                                requested job with the status of
-                                                                preparing or waiting until completed
+                                                                job from the{' '}
+                                                                <strong>active job queue</strong>.
+                                                                An <strong>active job queue</strong>{' '}
+                                                                includes any requested job with the
+                                                                status of <strong>preparing</strong>{' '}
+                                                                or <strong>waiting</strong> until
+                                                                completed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Preparing:</p>
+                                                            <p>
+                                                                <strong>Preparing:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is still
-                                                                being processed
+                                                                being processed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Waiting:</p>
+                                                            <p>
+                                                                <strong>Waiting:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is in the
                                                                 queue and waiting to be processed
-                                                                since other users requested their
-                                                                jobs before you.
+                                                                since other requested jobs are being
+                                                                processed.
                                                             </p>
                                                         </FlexItem>
                                                     </Flex>
@@ -298,7 +299,7 @@ function VulnReportsPage() {
                                             >
                                                 My active job status
                                             </HelpIconTh>
-                                            <Td />
+                                            {hasWriteAccessForReport && <Td />}
                                         </Tr>
                                     </Thead>
                                     {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
@@ -311,7 +312,7 @@ function VulnReportsPage() {
                                                             headingLevel="h2"
                                                             icon={FileIcon}
                                                         >
-                                                            {canCreateReports && (
+                                                            {hasWriteAccessForReport && (
                                                                 <Flex
                                                                     direction={{
                                                                         default: 'column',
@@ -345,7 +346,7 @@ function VulnReportsPage() {
                                                                 headingLevel="h2"
                                                                 icon={SearchIcon}
                                                             >
-                                                                {canCreateReports && (
+                                                                {hasWriteAccessForReport && (
                                                                     <Flex
                                                                         direction={{
                                                                             default: 'column',
@@ -477,6 +478,7 @@ function VulnReportsPage() {
                                                         {isCollectionsRouteEnabled ? (
                                                             <Button
                                                                 variant="link"
+                                                                isInline
                                                                 onClick={() =>
                                                                     setCollectionModalId(
                                                                         collectionId
@@ -497,12 +499,15 @@ function VulnReportsPage() {
                                                             }
                                                         />
                                                     </Td>
-                                                    <Td isActionCell>
-                                                        <ActionsColumn
-                                                            items={rowActions}
-                                                            isDisabled={isRunning}
-                                                        />
-                                                    </Td>
+                                                    {hasWriteAccessForReport && (
+                                                        <Td isActionCell>
+                                                            <ActionsColumn
+                                                                items={rowActions}
+                                                                isDisabled={isRunning}
+                                                                menuAppendTo={() => document.body}
+                                                            />
+                                                        </Td>
+                                                    )}
                                                 </Tr>
                                             </Tbody>
                                         );

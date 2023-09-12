@@ -106,6 +106,8 @@ message NotifierConfiguration {
 message EmailNotifierConfiguration  {
     string                 notifier_id    = 1;
     repeated string        mailing_lists  = 2;
+    string                 custom_subject = 3;
+    string                 custom_body    = 4;
 }
 
 message ListReportConfigurationsResponse {
@@ -154,8 +156,9 @@ message ReportStatus {
     enum RunState {
         WAITING   = 0;
         PREPARING = 1;
-        SUCCESS   = 2;
-        FAILURE   = 3;
+        GENERATED = 2;
+        DELIVERED = 3;
+        FAILURE   = 4;
     }
 
     enum ReportMethod {

@@ -30,7 +30,7 @@ var (
 	seccompProfileTypeValueRegex             = createRegex(`(?i:UNCONFINED|RUNTIME_DEFAULT|LOCALHOST)`)
 	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
 	auditEventAPIVerbValueRegex              = createRegex(`(?i:CREATE|DELETE|GET|PATCH|UPDATE)`)
-	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS)`)
+	auditEventResourceValueRegex             = createRegex(`(?i:SECRETS|CONFIGMAPS|CLUSTER_ROLES|CLUSTER_ROLE_BINDINGS|NETWORK_POLICIES|SECURITY_CONTEXT_CONSTRAINTS|EGRESS_FIREWALLS)`)
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	// TODO(ROX-9716): refactor to reference the same constant here and in

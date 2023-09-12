@@ -105,6 +105,10 @@ import (
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
+	productUsageCSV "github.com/stackrox/rox/central/productusage/csv"
+	productUsageDataStore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	productUsageInjector "github.com/stackrox/rox/central/productusage/injector"
+	productUsageService "github.com/stackrox/rox/central/productusage/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
@@ -336,6 +340,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
+	productUsageInjector.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -383,6 +388,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
+		productUsageService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
@@ -752,6 +758,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
 			Compression:   true,
 		},
+		{
+			Route:         "/api/product/usage/secured-units/csv",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: productUsageCSV.CSVHandler(productUsageDataStore.Singleton()),
+			Compression:   true,
+		},
 	}
 	scannerDefinitionsRoute := "/api/extensions/scannerdefinitions"
 	// Only grant compression to well-known content types. It should capture files
@@ -833,6 +845,7 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+		{productUsageInjector.Singleton(), "product usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
