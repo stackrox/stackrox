@@ -499,8 +499,8 @@ function AuthProviderForm({
                                         returned from the authentication provider.
                                     </p>
                                     <p>
-                                        In case a required attribute is not set, the login will fail
-                                        and no role will be set to the user.
+                                        In case a required attribute is not returned from the authentication provider, the login
+                                        attempt will fail and no role will be assigned to the user.
                                     </p>
                                 </Alert>
                             </div>
