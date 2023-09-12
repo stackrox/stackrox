@@ -4,6 +4,7 @@ import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
+import uniq from 'lodash/uniq';
 
 import {
     defaultHeaderClassName,
@@ -52,6 +53,14 @@ export const defaultCveSort = [
         desc: true,
     },
 ];
+
+function parseCveNamesFromIds(cveIds) {
+    const cveNames = cveIds.map((cveId) => {
+        return cveId.split('#')[0] || '';
+    })
+
+    return uniq(cveNames);
+}
 
 export function getCveTableColumns(workflowState, isFeatureFlagEnabled) {
     // to determine whether to show the counts as links in the table when not in pure CVE state
@@ -376,8 +385,11 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const cvesToToggle = cve ? [cve] : selectedCveIds;
-        suppressVulns(cveType, cvesToToggle, duration)
+        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        suppressVulns(cveType, selectedCveNames, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -386,7 +398,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully deferred and approved ${entityCountNounOrdinaryCase(
-                        cvesToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );
@@ -403,7 +415,10 @@ const VulnMgmtCves = ({
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
         const cveIdsToToggle = cve ? [cve] : selectedCveIds;
-        unsuppressVulns(cveType, cveIdsToToggle)
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        unsuppressVulns(cveType, selectedCveNames)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -412,7 +427,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully reobserved ${entityCountNounOrdinaryCase(
-                        cveIdsToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );
