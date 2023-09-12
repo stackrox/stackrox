@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
@@ -45,6 +46,13 @@ func (c *writerImpl) resetNoLock() {
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEvent) error {
+	if c == nil {
+		return nil
+	}
+	if event == nil {
+		return errox.InvalidArgs.CausedBy("empty event")
+	}
+
 	enrichedEvent := enrichEventWithDefaults(event)
 	id := enrichedEvent.GetId()
 
@@ -92,6 +100,10 @@ func (c *writerImpl) Upsert(ctx context.Context, event *storage.AdministrationEv
 }
 
 func (c *writerImpl) Flush(ctx context.Context) error {
+	if c == nil {
+		return nil
+	}
+
 	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
 		if err != nil {
 			log.Errorf("failed to verify scope access control: ", err)

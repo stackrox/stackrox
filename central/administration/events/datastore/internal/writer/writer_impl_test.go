@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	storeMocks "github.com/stackrox/rox/central/administration/events/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
@@ -219,6 +220,11 @@ func (s *writerTestSuite) TestWriteEvent_WriteBufferExhaustedIsRetryable() {
 	err := s.writer.Upsert(s.writeCtx, event)
 	s.Require().Equal(err.Error(), errWriteBufferExhausted.Error())
 	s.True(retry.IsRetryable(err))
+}
+
+func (s *writerTestSuite) TestWriteEvent_NilEvent_Error() {
+	err := s.writer.Upsert(s.writeCtx, nil)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *writerTestSuite) TestWriteEvent_SACNoWrite_Error() {
