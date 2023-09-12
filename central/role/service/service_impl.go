@@ -53,12 +53,12 @@ var (
 			"/v1.RoleService/DeleteSimpleAccessScope",
 		},
 		user.Authenticated(): {
+			"/v1.RoleService/GetMyPermissions",
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 		allow.Anonymous(): {
 			"/v1.RoleService/GetResources",
-			"/v1.RoleService/GetMyPermissions",
 		},
 	})
 )
