@@ -1,9 +1,11 @@
 package cvss
 
 import (
+	"compress/gzip"
 	"context"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -92,42 +94,54 @@ func (u *cvssUpdater) update(ctx context.Context) {
 }
 
 func (u *cvssUpdater) doUpdate(ctx context.Context) error {
-	rc, _, err := runEnricher(ctx, u.enricher)
+	tmpFile, err := os.CreateTemp("", "gzippedContent-")
 	if err != nil {
 		// TODO log error
 		return err
 	}
-	return u.file.WriteContent(rc)
+	defer os.RemoveAll(tmpFile.Name()) // Remove temp file after usage
+
+	if err := runEnricher(ctx, u.enricher, tmpFile); err != nil {
+		// TODO log error
+		os.RemoveAll(tmpFile.Name())
+		return err
+	}
+	tmpFile.Seek(0, 0) // Reset file pointer to the start
+
+	return u.file.WriteContent(tmpFile)
 }
 
-func runEnricher(ctx context.Context, u driver.EnrichmentUpdater) (io.ReadCloser, driver.Fingerprint, error) {
+func runEnricher(ctx context.Context, u driver.EnrichmentUpdater, w io.Writer) error {
 	var rc io.ReadCloser
-	var nfp driver.Fingerprint
 	var err error
 
 	for i := 0; i < 5; i++ {
-		rc, nfp, err = u.FetchEnrichment(ctx, fp)
+		rc, _, err = u.FetchEnrichment(ctx, fp)
 		if err == nil {
 			break
 		}
 
 		select {
 		case <-ctx.Done():
-			return nil, nfp, ctx.Err()
+			return ctx.Err()
 		case <-time.After((2 << i) * time.Second):
 		}
 	}
 
 	if err != nil {
-		return nil, nfp, err
+		return err
 	}
+	defer rc.Close() // Close the reader once done
 
-	defer func() {
-		if err := rc.Close(); err != nil {
-			// TODO log error
-			return
-		}
-	}()
+	return gzipContent(rc, w)
+}
 
-	return rc, nfp, nil
+// gzipContent takes an io.Reader and writes the gzipped content to an io.Writer.
+func gzipContent(r io.Reader, w io.Writer) error {
+	gzw := gzip.NewWriter(w)
+	_, err := io.Copy(gzw, r)
+	if err != nil {
+		return err
+	}
+	return gzw.Close()
 }
