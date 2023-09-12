@@ -2,7 +2,7 @@ import React, { ReactElement, useEffect, useState } from 'react';
 
 import { fetchImageIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchImageIntegrations } from 'services/ImageIntegrationsService';
-import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { imageIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { IntegrationMergedItem, mergeIntegrationResponses } from '../utils/integrations';
@@ -26,7 +26,7 @@ const ImageIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEleme
                     mergeIntegrationResponses(
                         integrationsHealth,
                         integrations,
-                        integrationsList.imageIntegrations
+                        imageIntegrationsDescriptors
                     )
                 );
                 setErrorMessageFetching('');
