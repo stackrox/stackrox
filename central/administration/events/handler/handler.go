@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -54,18 +53,7 @@ func (h *handlerImpl) watchForEvents() {
 	for {
 		select {
 		case event := <-h.stream.Consume():
-			if err := retry.WithRetry(
-				func() error {
-					return h.ds.AddEvent(h.eventWriteCtx, event)
-				},
-				retry.BetweenAttempts(
-					func(_ int) {
-						concurrency.WaitWithTimeout(h.eventWriteCtx, 10*time.Second)
-					},
-				),
-				retry.OnlyRetryableErrors(),
-				retry.Tries(10),
-			); err != nil {
+			if err := h.ds.AddEvent(h.eventWriteCtx, event); err != nil {
 				log.Errorf("failed to store administration event(message: %q): %v", event.GetMessage(), err)
 			}
 		case <-h.stopSignal.Done():
