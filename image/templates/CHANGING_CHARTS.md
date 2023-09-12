@@ -6,6 +6,14 @@ This section describes how to add a new field to the Helm values, with unit test
 
 [Small reference implementation](https://github.com/stackrox/stackrox/commit/98cc6bcd16f6d27170ab190d21e0ce8b835132b4) for the simple clusterLabels field.
 
+## Breaking changes
+
+Helm values are similar to public APIs or CLI parameters. When parameters change they might break CI pipelines or existing scripts.
+
+* Helm values structure must be always backward compatible
+* Defaults can change when the change is not going to break things
+* Location and names of Helm charts, existing installations can't upgrade without updating to the new Helm chart metadata
+
 ### Notes / Tips
 
 - Look at the [README](README.md) to see how to work with the Helm charts
@@ -70,11 +78,3 @@ EOM
 # the deploy scripts
 $ ./dev-tools/upgrade-dev-secured-cluster.sh -f test-values.yaml
 ```
-
-## Breaking changes
-
-Helm values are similar to public APIs or CLI parameters. When parameters change they might break CI pipelines or existing scripts.
-
- * Helm values structure must be always backward compatible
- * Defaults can change when the change is not going to break things
- * Location and names of Helm charts, existing installations can't upgrade without updating to the new Helm chart metadata
