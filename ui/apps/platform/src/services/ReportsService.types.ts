@@ -43,6 +43,8 @@ export type NotifierConfiguration = {
     emailConfig: {
         notifierId: string;
         mailingLists: string[];
+        customSubject: string;
+        customBody: string;
     };
     notifierName: string;
 };
