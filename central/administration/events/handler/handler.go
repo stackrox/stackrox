@@ -9,19 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
 var (
 	_ Handler = (*handlerImpl)(nil)
-
-	eventWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration),
-		),
-	)
 
 	flushInterval = time.Minute
 
@@ -35,14 +29,21 @@ type Handler interface {
 }
 
 type handlerImpl struct {
-	ds         datastore.DataStore
-	stream     events.Stream
-	stopSignal concurrency.Signal
+	ds            datastore.DataStore
+	eventWriteCtx context.Context
+	stream        events.Stream
+	stopSignal    concurrency.Signal
 }
 
 func newHandler(ds datastore.DataStore, stream events.Stream) Handler {
 	h := &handlerImpl{
-		ds:         ds,
+		ds: ds,
+		eventWriteCtx: sac.WithGlobalAccessScopeChecker(context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration),
+			),
+		),
 		stream:     stream,
 		stopSignal: concurrency.NewSignal(),
 	}
@@ -53,7 +54,18 @@ func (h *handlerImpl) watchForEvents() {
 	for {
 		select {
 		case event := <-h.stream.Consume():
-			if err := h.ds.AddEvent(eventWriteCtx, event); err != nil {
+			if err := retry.WithRetry(
+				func() error {
+					return h.ds.AddEvent(h.eventWriteCtx, event)
+				},
+				retry.BetweenAttempts(
+					func(_ int) {
+						concurrency.WaitWithTimeout(h.eventWriteCtx, 10*time.Second)
+					},
+				),
+				retry.OnlyRetryableErrors(),
+				retry.Tries(10),
+			); err != nil {
 				log.Errorf("failed to store administration event(message: %q): %v", event.GetMessage(), err)
 			}
 		case <-h.stopSignal.Done():
@@ -69,7 +81,7 @@ func (h *handlerImpl) runDatastoreFlush() {
 	for {
 		select {
 		case <-ticker.C:
-			if err := h.ds.Flush(eventWriteCtx); err != nil {
+			if err := h.ds.Flush(h.eventWriteCtx); err != nil {
 				log.Error(err)
 			}
 		case <-h.stopSignal.Done():

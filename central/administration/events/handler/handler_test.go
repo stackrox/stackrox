@@ -63,7 +63,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return addCalled
 	}
-	s.datastore.EXPECT().AddEvent(eventWriteCtx, event).Do(addSetCalledFn)
+	s.datastore.EXPECT().AddEvent(s.handler.eventWriteCtx, event).Do(addSetCalledFn)
 
 	flushCalled := false
 	flushSetCalledFn := func(ctx context.Context) {
@@ -76,7 +76,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 		defer s.mutex.RUnlock()
 		return flushCalled
 	}
-	s.datastore.EXPECT().Flush(eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
+	s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
 
 	err := s.eventStream.Produce(event)
 	s.Require().NoError(err)
