@@ -298,7 +298,11 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	if err = retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(req.Ctx, zippedCSVData,
+<<<<<<< HEAD
 			rc.GetEmailConfig().GetMailingLists(), messageText, "")
+=======
+			rc.GetEmailConfig().GetMailingLists(), "", messageText)
+>>>>>>> 5096449de5 (Add support for adding custom email subject, body and config details)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),

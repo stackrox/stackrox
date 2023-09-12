@@ -308,8 +308,9 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
-// ReportNotify takes in reporting data, a list of intended recipients, and an email message and subject to send out a report. Set subject to empty string for v1
-func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, messageText string, subject string) error {
+// ReportNotify takes in reporting data, a list of intended recipients, email subject and an email message to send out a report.
+// Set subject to empty string for v1 report configs
+func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
 	var from string
 	if e.config.GetFrom() != "" {
 		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
@@ -319,7 +320,6 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	if subject == "" {
 		subject = fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006"))
 	}
-
 	msg := message{
 		To:        recipients,
 		From:      from,
