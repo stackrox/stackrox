@@ -25,7 +25,7 @@ func (e eqEventsMatcher) Matches(x interface{}) bool {
 	if e.event.GetMessage() != cmpValue.FieldByName("Message").String() {
 		return false
 	}
-	if e.event.GetResourceId() != cmpValue.FieldByName("ResourceId").String() {
+	if e.event.GetResourceID() != cmpValue.FieldByName("ResourceId").String() {
 		return false
 	}
 	if e.event.GetResourceType() != cmpValue.FieldByName("ResourceType").String() {

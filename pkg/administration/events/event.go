@@ -14,7 +14,7 @@ func generateEventID(event *AdministrationEvent) string {
 	dedupKey := strings.Join([]string{
 		event.GetDomain(),
 		event.GetMessage(),
-		event.GetResourceId(),
+		event.GetResourceID(),
 		event.GetResourceType(),
 		event.GetType().String(),
 	}, ",")
@@ -100,7 +100,7 @@ func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 		Message:        m.GetMessage(),
 		Hint:           m.GetHint(),
 		Domain:         m.GetDomain(),
-		ResourceId:     m.GetResourceId(),
+		ResourceId:     m.GetResourceID(),
 		ResourceType:   m.GetResourceType(),
 		NumOccurrences: 1,
 		CreatedAt:      tsNow,
