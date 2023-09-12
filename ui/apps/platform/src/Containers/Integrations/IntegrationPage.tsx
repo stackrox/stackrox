@@ -19,7 +19,8 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
 import { isUserResource } from 'Containers/AccessControl/traits';
-import { getEditDisabledMessage, getIntegrationLabel } from './utils/integrationUtils';
+import { getIntegrationLabel } from './utils/integrationsList';
+import { getEditDisabledMessage } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
 import useIntegrationPermissions from './hooks/useIntegrationPermissions';
 
