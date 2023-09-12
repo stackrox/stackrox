@@ -26,7 +26,7 @@ type DataStore interface {
 	ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error)
 }
 
-func newDataStore(searcher search.Searcher, storage store.Store, writer writer.Writer) DataStore {
+func NewDataStore(searcher search.Searcher, storage store.Store, writer writer.Writer) DataStore {
 	return &datastoreImpl{
 		searcher: searcher,
 		store:    storage,

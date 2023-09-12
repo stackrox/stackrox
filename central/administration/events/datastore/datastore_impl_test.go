@@ -44,7 +44,7 @@ func (s *datastoreTestSuite) SetupTest() {
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.writer = writerMocks.NewMockWriter(s.mockCtrl)
-	s.datastore = newDataStore(s.searcher, s.store, s.writer)
+	s.datastore = NewDataStore(s.searcher, s.store, s.writer)
 }
 
 func (s *datastoreTestSuite) TestAddEvent_Success() {

@@ -24,7 +24,7 @@ func Singleton() DataStore {
 		searcher := search.New(pgStore.NewIndexer(globaldb.GetPostgres()))
 		store := pgStore.New(globaldb.GetPostgres())
 		writer := writer.New(store)
-		ds = newDataStore(searcher, store, writer)
+		ds = NewDataStore(searcher, store, writer)
 	})
 	return ds
 }
