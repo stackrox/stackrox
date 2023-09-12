@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/sync/semaphore"
 )
@@ -217,7 +218,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					NumConcurrentScans: 0,
 				}},
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			if tt.setUpMocks != nil {
 				tt.setUpMocks(t, &tt.mocks)
@@ -227,12 +228,12 @@ func Test_TwoPipelines_Run(t *testing.T) {
 
 			for i, op := range tt.operations {
 				t.Logf("Running operation %d of %d", i+1, len(tt.operations))
-				assert.NoError(t, op(t, pNode, pNodeInv))
+				require.NoError(t, op(t, pNode, pNodeInv))
 			}
 
 			node, found, err := tt.mocks.nodeDatastore.GetNode(context.Background(), nodeID)
 			assert.Equal(t, tt.wantNodeExists, found)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			if found {
 				assert.Equal(t, tt.wantKernelVersionNode, node.GetKernelVersion())
 				var kernelComponentFound bool
