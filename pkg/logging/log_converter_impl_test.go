@@ -29,7 +29,7 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expectedEvent.GetHint(), event.GetHint())
 	assert.Equal(t, expectedEvent.GetLevel(), event.GetLevel())
 	assert.Equal(t, expectedEvent.GetMessage(), event.GetMessage())
-	assert.Equal(t, expectedEvent.GetResourceId(), event.GetResourceId())
+	assert.Equal(t, expectedEvent.GetResourceID(), event.GetResourceID())
 	assert.Equal(t, expectedEvent.GetResourceType(), event.GetResourceType())
 	assert.Equal(t, expectedEvent.GetType(), event.GetType())
 }

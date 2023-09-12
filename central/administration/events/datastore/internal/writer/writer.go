@@ -22,6 +22,6 @@ type Writer interface {
 }
 
 // New returns a new writer instance.
-func New(store store.Store) Writer {
+func New(_ store.Store) Writer {
 	return nil
 }

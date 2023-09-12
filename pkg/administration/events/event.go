@@ -48,8 +48,8 @@ func (m *AdministrationEvent) GetMessage() string {
 	return ""
 }
 
-// GetResourceId returns the event resource ID.
-func (m *AdministrationEvent) GetResourceId() string {
+// GetResourceID returns the event resource ID.
+func (m *AdministrationEvent) GetResourceID() string {
 	if m != nil {
 		return m.ResourceID
 	}
