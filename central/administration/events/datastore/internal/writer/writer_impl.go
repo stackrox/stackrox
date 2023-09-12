@@ -62,7 +62,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 		if err != nil {
 			log.Errorf("failed to verify scope access control: ", err)
 		}
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "administration event %q", enrichedEvent.GetId())
+		return errors.Wrapf(sac.ErrResourceAccessDenied, "administration event %q", id)
 	}
 
 	var baseEvent *storage.AdministrationEvent
@@ -70,19 +70,19 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	eventInBuffer, found := c.readNoLock(id)
+	eventInBuffer, foundInBuffer := c.readNoLock(id)
 	// If an event already exists in the buffer it is the most recent.
 	// We use it as a base to merge with the new event.
-	if found {
+	if foundInBuffer {
 		baseEvent = eventInBuffer
 	} else {
 		// If no event is in the buffer, we try to fetch an event
-		// from the database. If found, we use it as the base for the merge.
-		eventInDB, found, err := c.store.Get(ctx, id)
+		// from the database. If foundInDB, we use it as the base for the merge.
+		eventInDB, foundInDB, err := c.store.Get(ctx, id)
 		if err != nil {
 			return errors.Wrap(err, "failed to query for existing record")
 		}
-		if found {
+		if foundInDB {
 			baseEvent = eventInDB
 		}
 	}

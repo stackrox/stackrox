@@ -10,7 +10,8 @@ import (
 
 var rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
 
-func generateEventID(event *AdministrationEvent) string {
+// GenerateEventID returns a deduplication ID as UUID5 based on the event content.
+func GenerateEventID(event *AdministrationEvent) string {
 	dedupKey := strings.Join([]string{
 		event.GetDomain(),
 		event.GetMessage(),
@@ -94,7 +95,7 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 	tsNow := gogoTimestamp.TimestampNow()
 	return &storage.AdministrationEvent{
-		Id:             generateEventID(m),
+		Id:             GenerateEventID(m),
 		Type:           m.GetType(),
 		Level:          m.GetLevel(),
 		Message:        m.GetMessage(),

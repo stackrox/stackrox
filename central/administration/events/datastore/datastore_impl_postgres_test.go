@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -28,6 +29,7 @@ type datastorePostgresTestSuite struct {
 	readCtx      context.Context
 	writeCtx     context.Context
 	postgresTest *pgtest.TestPostgres
+	store        pgStore.Store
 	datastore    DataStore
 	writer       writer.Writer
 }
@@ -41,7 +43,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	)
 	s.writeCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration),
 		),
 	)
@@ -49,12 +51,13 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.postgresTest = pgtest.ForT(s.T())
 	s.Require().NotNil(s.postgresTest)
 	searcher := search.New(pgStore.NewIndexer(s.postgresTest.DB))
-	store := pgStore.New(s.postgresTest.DB)
-	s.writer = writer.New(store)
-	s.datastore = NewDataStore(searcher, store, s.writer)
+	s.store = pgStore.New(s.postgresTest.DB)
+	s.writer = writer.New(s.store)
+	s.datastore = NewDataStore(searcher, s.store, s.writer)
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {
+	s.postgresTest.Teardown(s.T())
 	s.postgresTest.Close()
 }
 
@@ -67,6 +70,8 @@ func (s *datastorePostgresTestSuite) assertEventsEqual(
 	s.Equal(event.GetType(), storageEvent.GetType())
 	s.Equal(event.GetHint(), storageEvent.GetHint())
 	s.Equal(event.GetDomain(), storageEvent.GetDomain())
+	s.Equal(event.GetResourceID(), storageEvent.GetResourceId())
+	s.Equal(event.GetResourceType(), storageEvent.GetResourceType())
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
@@ -84,7 +89,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
-	id := "73072ecb-2222-5922-8948-5944338861c8"
+	id := events.GenerateEventID(event)
 	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
@@ -106,11 +111,14 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnc
 	err = s.datastore.AddEvent(s.writeCtx, event)
 	s.Require().NoError(err)
 
+	id := events.GenerateEventID(event)
+	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
+	s.Require().ErrorIs(err, errox.NotFound)
+
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
-	id := "73072ecb-2222-5922-8948-5944338861c8"
-	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err = s.datastore.GetEventByID(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
@@ -131,14 +139,19 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEac
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
+	id := events.GenerateEventID(event)
+	dbEvent, err := s.datastore.GetEventByID(s.writeCtx, id)
+	s.Require().NoError(err)
+	s.assertEventsEqual(event, dbEvent)
+	s.EqualValues(dbEvent.GetNumOccurrences(), 1)
+
 	err = s.datastore.AddEvent(s.writeCtx, event)
 	s.Require().NoError(err)
 
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
-	id := "73072ecb-2222-5922-8948-5944338861c8"
-	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err = s.datastore.GetEventByID(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
