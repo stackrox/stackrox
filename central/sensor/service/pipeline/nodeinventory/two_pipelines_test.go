@@ -85,8 +85,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		riskStorage       *riskStoreMock.MockDataStore
 		updater           updater.Updater
 	}
-	tests := []struct {
-		name                      string
+	tests := map[string]struct {
 		mocks                     usedMocks
 		riskManager               manager.Manager
 		enricher                  nodeEnricher.NodeEnricher
@@ -97,8 +96,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		wantKernelVersionNode     string
 		wantKernelVersionNodeScan string
 	}{
-		{
-			name: "lone node inventory should not find the node in DB",
+		"lone node inventory should not find the node in DB": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
 				// Node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
 				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
@@ -113,8 +111,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			wantNodeExists:        false,
 			wantKernelVersionNode: "",
 		},
-		{
-			name: "node inventory arriving after node should result in data from the node being overwritten",
+		"node inventory arriving after node should result in data from the node being overwritten": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
 				// Old node-scan for node1 arrives over the node pipeline
 				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
@@ -146,8 +143,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			wantKernelVersionNode:     "v1",
 			wantKernelVersionNodeScan: "v2",
 		},
-		{
-			name: "node inventory arriving first should result in data from it being lost",
+		"node inventory arriving first should result in data from it being lost": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error{
 				// New node-scan (node-inventory) for node1 arrives over the node-inventory pipeline
 				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error {
@@ -178,8 +174,8 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			wantKernelVersionNodeScan: "v1",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			tt.mocks = usedMocks{
 				clusterStore:      clusterDatastoreMocks.NewMockDataStore(ctrl),
