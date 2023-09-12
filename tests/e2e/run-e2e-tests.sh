@@ -44,7 +44,7 @@ Options:
     [qa flavor only]
   -s, --spin-cycle=<count> - repeat the test portion until a failure
     occurs or <count> is reached with no failures. [qa flavor only]
-  -w, --spin-wait=<seconds> - delay between tests when running repeat 
+  -w, --spin-wait=<seconds> - delay between tests when running repeat
     tests. default: no wait. [qa flavor only]
   -t <tag> - override 'make tag' which sets the main version to install
     and is used by some tests.
