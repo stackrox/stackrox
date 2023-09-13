@@ -18,5 +18,5 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 
 	getFilteredFactory := groupFilter.GetTestPostgresGroupFilterGenerator(t, pool)
 
-	return New(roleStore, permissionStore, scopeStore, getFilteredFactory.FilteredRetriever()), nil
+	return New(roleStore, permissionStore, scopeStore, getFilteredFactory.NewFilteredRetriever()), nil
 }

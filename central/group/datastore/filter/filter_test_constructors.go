@@ -9,14 +9,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
-// Factory is an interface to generate filtered group fetchers.
-type Factory interface {
-	FilteredRetriever() func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error)
+// RetrieverFactory is an interface to generate filtered group fetchers.
+type RetrieverFactory interface {
+	NewFilteredRetriever() Retriever
 }
 
 // GetTestPostgresGroupFilterGenerator returns a generator for filtered group
 // retrieval connected to a postgres database.
-func GetTestPostgresGroupFilterGenerator(_ *testing.T, db postgres.DB) Factory {
+func GetTestPostgresGroupFilterGenerator(_ *testing.T, db postgres.DB) RetrieverFactory {
 	groupStore := postgresStore.New(db)
 	return &factoryImpl{
 		store: groupStore,
@@ -27,8 +27,8 @@ type factoryImpl struct {
 	store postgresStore.Store
 }
 
-func (f *factoryImpl) FilteredRetriever() func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
-	return func(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
+func (f *factoryImpl) NewFilteredRetriever() Retriever {
+	return func(ctx context.Context, filter Filter) ([]*storage.Group, error) {
 		return GetFilteredWithStore(ctx, filter, f.store)
 	}
 }
