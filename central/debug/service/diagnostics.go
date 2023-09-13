@@ -216,6 +216,7 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 			return ctx.Err()
 		case file, ok := <-filesC:
 			if !ok {
+				log.Info("finished writing Sensor data to diagnostic bundle")
 				return nil
 			}
 			err := writePrefixedFileToZip(zipWriter, "sensor-metrics", file)
@@ -285,6 +286,7 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 			return ctx.Err()
 		case file, ok := <-filesC:
 			if !ok {
+				log.Info("finished writing Kubernetes data to diagnostic bundle")
 				return nil
 			}
 			err := writePrefixedFileToZip(zipWriter, "kubernetes", file)

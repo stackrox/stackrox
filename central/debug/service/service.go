@@ -581,6 +581,8 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		if err := getCentralDBData(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
+
+		log.Info("finished writing Central data to diagnostic bundle")
 	}
 
 	if opts.logs == fullK8sIntrospectionData {
@@ -702,6 +704,8 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 
 func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
+
+	log.Infof("started writing diagnostic bundle %s; withCentral = %t", filename, withCentral)
 
 	opts := debugDumpOptions{
 		logs:              fullK8sIntrospectionData,
