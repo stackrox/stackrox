@@ -42,7 +42,7 @@ func SensorOr(authorizer authz.Authorizer) authz.Authorizer {
 }
 
 // ScannerOr returns an Authorizer that authorizes the scanner,
-// or anything that the passed authorizer authorizers.
+// or anything that the passed authorizer authorizes.
 func ScannerOr(authorizer authz.Authorizer) authz.Authorizer {
 	return Or(idcheck.ScannerOnly(), authorizer)
 }

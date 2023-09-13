@@ -13,6 +13,7 @@ import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import services.AlertService
+import services.BaseService
 import services.ClusterService
 import services.DevelopmentService
 import services.MetadataService
@@ -69,6 +70,7 @@ class ReconciliationTest extends BaseSpecification {
         def clusterId = ClusterService.getClusterId()
         def reconciliationStatsForCluster = null
         withRetry(30, 2) {
+            BaseService.useBasicAuth()
             reconciliationStatsForCluster = DevelopmentService.
                 getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
             assert reconciliationStatsForCluster

@@ -33,6 +33,7 @@ func initialize() {
 		blobDS.Singleton(),
 		clusterDS.Singleton(),
 		namespaceDS.Singleton(),
+
 		schema,
 	)
 }
