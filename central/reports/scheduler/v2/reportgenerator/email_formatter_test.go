@@ -50,9 +50,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 		{
 			desc:     "All severities, image types, fixabilities; Cves since last scheduled report",
 			snapshot: testReportSnapshot(),
-			expectedHtml: `<html>
-				<body>
-					<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
+			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 						<tr>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
@@ -101,9 +99,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 								</table>
 							</td>
 						</tr>
-					</table>
-				</body>
-				</html>`,
+					</table>`,
 		},
 		{
 			desc: "All severities, image types, fixabilities; Cves since All time",
@@ -114,9 +110,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<html>
-				<body>
-					<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
+			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 						<tr>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
@@ -165,9 +159,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 								</table>
 							</td>
 						</tr>
-					</table>
-				</body>
-				</html>`,
+					</table>`,
 		},
 		{
 			desc: "Critical severity, fixable CVEs, Watched Images; Cves since custom date",
@@ -187,9 +179,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<html>
-				<body>
-					<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
+			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 						<tr>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
 							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
@@ -233,9 +223,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 								</table>
 							</td>
 						</tr>
-					</table>
-				</body>
-				</html>`,
+					</table>`,
 		},
 	}
 	return cases

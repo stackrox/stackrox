@@ -85,9 +85,6 @@ func addReportConfigDetails(emailBody, configDetailsHtml string) string {
 func formatReportConfigDetails(snapshot *storage.ReportSnapshot) (string, error) {
 	var writer strings.Builder
 
-	writer.WriteString("<html>")
-	writer.WriteString("<body>")
-
 	err := validateSnapshot(snapshot)
 	if err != nil {
 		return "", err
@@ -121,8 +118,6 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot) (string, error)
 	writer.WriteString("</tr>")
 
 	writer.WriteString("</table>")
-	writer.WriteString("</body>")
-	writer.WriteString("</html>")
 
 	return writer.String(), nil
 }
