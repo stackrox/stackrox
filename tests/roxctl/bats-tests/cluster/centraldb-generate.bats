@@ -6,7 +6,11 @@ output_dir=""
 
 setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
-  bats_require_minimum_version 1.5.0
+
+  # Uncomment when CI will be running on bats >=1.7.0
+  # bats_require_minimum_version 1.5.0
+  # BW02: Using flags on `run` requires at least BATS_VERSION=1.5.0. Use `bats_require_minimum_version 1.5.0` to fix this message.
+  # However, bats_require_minimum_version function was added first in 1.7.0
 
   command -v cat || skip "Command 'cat' required."
   command -v grep || skip "Command 'grep' required."
