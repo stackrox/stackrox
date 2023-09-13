@@ -60,7 +60,7 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
  *
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
- * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
+ * @returns {Cypress.Chainable | never[]}
  */
 export function waitForResponses(routeMatcherMap, waitOptions = {}) {
     if (routeMatcherMap) {
@@ -79,8 +79,7 @@ export function waitForResponses(routeMatcherMap, waitOptions = {}) {
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
-
- * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
+ * @returns {Cypress.Chainable | never[]}
  */
 export function interactAndWaitForResponses(
     interactionCallback,
