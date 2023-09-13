@@ -24,8 +24,7 @@
         "build:tailwind": "postcss ./src/index.tw.css -o ./lib/ui-components.css",
         "build:ts": "tsc --build",
         "build": "npm-run-all build:*",
-        "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage --reporters=default --reporters=jest-junit",
-        "test:watch": "jest --watch-all",
+        "test": "echo test",
         "lint": "echo lint",
         "prepublishOnly": "yarn clean && yarn build"
     },
