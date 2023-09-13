@@ -64,7 +64,6 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 									<tr><td style="padding: 10px;">Low</td></tr>
 								</table>
 							</td>
-				
 							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
 								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 									<tr><td style="padding: 10px;">Fixable</td></tr>
@@ -124,7 +123,6 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 									<tr><td style="padding: 10px;">Low</td></tr>
 								</table>
 							</td>
-				
 							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
 								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 									<tr><td style="padding: 10px;">Fixable</td></tr>
@@ -190,7 +188,6 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 									<tr><td style="padding: 10px;">Critical</td></tr>
 								</table>
 							</td>
-				
 							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
 								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
 									<tr><td style="padding: 10px;">Fixable</td></tr>
