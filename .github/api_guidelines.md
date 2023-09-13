@@ -68,7 +68,7 @@ Container {
 }
 ```
 
-Exposing the above data structure in the API will always lead to reading the all `Container` bytes from the database, 
+Exposing the above data structure in the API will always lead to reading all the `Container` bytes from the database, 
 even if the user does not need them. Instead, design the API such that users can request the information 
 they need, as below:
 
