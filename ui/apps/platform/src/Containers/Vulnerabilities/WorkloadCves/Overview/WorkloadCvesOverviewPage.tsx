@@ -9,7 +9,7 @@ import {
     CardBody,
     Button,
 } from '@patternfly/react-core';
-import { useQuery } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -21,7 +21,7 @@ import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../search
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
-import ImagesTableContainer from './ImagesTableContainer';
+import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 
 const emptyStorage: VulnMgmtLocalStorage = {
@@ -35,6 +35,8 @@ const emptyStorage: VulnMgmtLocalStorage = {
 };
 
 function WorkloadCvesOverviewPage() {
+    const apolloClient = useApolloClient();
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
@@ -124,6 +126,9 @@ function WorkloadCvesOverviewPage() {
                     setDefaultWatchedImageName('');
                     watchedImagesModalToggle.closeSelect();
                 }}
+                onWatchedImagesChange={() =>
+                    apolloClient.refetchQueries({ include: [imageListQuery] })
+                }
             />
         </>
     );

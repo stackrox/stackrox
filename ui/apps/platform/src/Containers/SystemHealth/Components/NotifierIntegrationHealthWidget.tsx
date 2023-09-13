@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchNotifierIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
-import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
 import { getAxiosErrorMessage } from '../../../utils/responseErrorUtils';
@@ -24,7 +24,7 @@ const NotifierIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactEl
                     mergeIntegrationResponses(
                         integrationsHealth,
                         notifiers,
-                        integrationsList.notifiers
+                        notifierIntegrationsDescriptors
                     )
                 );
                 setErrorMessageFetching('');

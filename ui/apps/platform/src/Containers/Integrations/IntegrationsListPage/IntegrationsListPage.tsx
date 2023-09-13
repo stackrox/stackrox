@@ -10,6 +10,8 @@ import {
 import { useParams, useHistory } from 'react-router-dom';
 import { connect } from 'react-redux';
 
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { actions as integrationsActions } from 'reducers/integrations';
@@ -17,23 +19,21 @@ import { actions as apitokensActions } from 'reducers/apitokens';
 import { actions as clusterInitBundlesActions } from 'reducers/clusterInitBundles';
 import { integrationsPath } from 'routePaths';
 import { ClusterInitBundle } from 'services/ClustersService';
+
+import useIntegrations from '../hooks/useIntegrations';
+import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsClusterInitBundle,
-    getIntegrationLabel,
     getIsSignatureIntegration,
-} from 'Containers/Integrations/utils/integrationUtils';
+} from '../utils/integrationUtils';
 
-import PageTitle from 'Components/PageTitle';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-
-import IntegrationsTable from './IntegrationsTable';
-import useIntegrations from '../hooks/useIntegrations';
 import {
     DeleteAPITokensConfirmationText,
     DeleteIntegrationsConfirmationText,
 } from './ConfirmationTexts';
 import DeleteClusterInitBundleConfirmationModal from './DeleteClusterInitBundleConfirmationModal';
+import IntegrationsTable from './IntegrationsTable';
 
 function IntegrationsListPage({
     deleteIntegrations,

@@ -126,7 +126,7 @@ func dial(endpoint string, certID mtls.Subject) (*grpc.ClientConn, error) {
 
 // dialV2 connect to scanner V1 gRPC and return a new ScannerClient.
 func dialV2() (ScannerClient, error) {
-	endpoint, err := getScannerEndpoint(env.ScannerV4GRPCEndpoint)
+	endpoint, err := getScannerEndpoint(env.ScannerSlimGRPCEndpoint)
 	if err != nil {
 		return nil, err
 	}
