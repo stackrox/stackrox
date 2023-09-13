@@ -144,7 +144,7 @@ function ImagesTable({
                                                     className="pf-u-mt-xs"
                                                     icon={<EyeIcon />}
                                                 >
-                                                    Watched Image
+                                                    Watched image
                                                 </Label>
                                             )}
                                         </ImageNameTd>

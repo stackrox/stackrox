@@ -8,6 +8,7 @@ import {
     Modal,
     pluralize,
     Spinner,
+    Text,
     Title,
 } from '@patternfly/react-core';
 import noop from 'lodash/noop';
@@ -57,7 +58,17 @@ function WatchedImagesModal({
 
     return (
         <Modal
-            title="Manage watched images"
+            header={
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
+                    <Title headingLevel="h2" size="2xl">
+                        Manage watched images
+                    </Title>
+                    <Text>
+                        Enter an image name to mark it as watched, so that it will continue to be
+                        scanned even if no deployments use it.
+                    </Text>
+                </Flex>
+            }
             isOpen={isOpen}
             onClose={onCloseModal}
             variant="medium"
@@ -92,12 +103,6 @@ function WatchedImagesModal({
                         {getAxiosErrorMessage(watchImageMutation.error)}
                     </Alert>
                 )}
-                <WatchedImagesForm
-                    defaultWatchedImageName={defaultWatchedImageName}
-                    watchImage={watchImageMutation.mutate}
-                    watchedImagesRequest={currentWatchedImagesRequest}
-                />
-                <Divider component="div" />
                 {unwatchImageMutation.isSuccess && (
                     <Alert
                         variant="success"
@@ -123,6 +128,12 @@ function WatchedImagesModal({
                         {getAxiosErrorMessage(currentWatchedImagesRequest.error)}
                     </Alert>
                 )}
+                <WatchedImagesForm
+                    defaultWatchedImageName={defaultWatchedImageName}
+                    watchImage={watchImageMutation.mutate}
+                    watchedImagesRequest={currentWatchedImagesRequest}
+                />
+                <Divider component="div" />
                 {currentWatchedImagesRequest.loading && !currentWatchedImagesRequest.data && (
                     <Bullseye>
                         <Spinner isSVG aria-label="Loading current watched images" />
