@@ -52,7 +52,7 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
       {{- end}}
-      serviceAccount: monitoring
+      serviceAccountName: monitoring
       # The uid and gid are set to make `/var/prometheus` writable. See https://github.com/prometheus/prometheus/issues/5976.
       securityContext:
         runAsUser: 1000

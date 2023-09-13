@@ -37,5 +37,22 @@ subjects:
 - kind: ServiceAccount
   name: monitoring
   namespace: {{ ._rox._namespace }}
-
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-monitoring-kube-state-metrics-use-nonroot-v2-scc
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "stackrox-monitoring-kube-state-metrics-use-nonroot-v2-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "stackrox-monitoring-kube-state-metrics-use-nonroot-v2-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-nonroot-v2-scc
+subjects:
+- kind: ServiceAccount
+  name: stackrox-monitoring-kube-state-metrics
+  namespace: {{ ._rox._namespace }}
 {{- end }}
