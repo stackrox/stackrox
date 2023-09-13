@@ -1116,7 +1116,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.12/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.13/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
