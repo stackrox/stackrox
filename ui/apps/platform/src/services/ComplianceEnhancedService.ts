@@ -6,6 +6,7 @@ import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 
 interface ComplianceScanStatsShim {
+    id: string; // TODO: id should be included in api response/proto
     scanName: string;
     numberOfChecks: number; // int32
     numberOfFailingChecks: number; // int32

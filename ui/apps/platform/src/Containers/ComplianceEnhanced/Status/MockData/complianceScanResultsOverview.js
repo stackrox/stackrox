@@ -3,6 +3,7 @@ export function mockComplianceScanResultsOverview() {
         scanOverviews: [
             {
                 scanStats: {
+                    id: '123456',
                     scanName: 'HIPPA Scan',
                     numberOfChecks: 54,
                     numberOfFailingChecks: 34,
@@ -14,6 +15,7 @@ export function mockComplianceScanResultsOverview() {
             },
             {
                 scanStats: {
+                    id: '234567',
                     scanName: 'CIS Scans',
                     numberOfChecks: 78,
                     numberOfFailingChecks: 23,
@@ -25,6 +27,7 @@ export function mockComplianceScanResultsOverview() {
             },
             {
                 scanStats: {
+                    id: '345678',
                     scanName: 'PCI Scans',
                     numberOfChecks: 45,
                     numberOfFailingChecks: 16,
