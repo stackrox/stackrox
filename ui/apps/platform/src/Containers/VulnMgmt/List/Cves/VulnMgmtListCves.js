@@ -44,7 +44,7 @@ import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
 import WorkflowListPage from '../WorkflowListPage';
-import { getFilteredCVEColumns } from './ListCVEs.utils';
+import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
 export const defaultCveSort = [
     {
@@ -376,8 +376,11 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const cvesToToggle = cve ? [cve] : selectedCveIds;
-        suppressVulns(cveType, cvesToToggle, duration)
+        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        suppressVulns(cveType, selectedCveNames, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -386,7 +389,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully deferred and approved ${entityCountNounOrdinaryCase(
-                        cvesToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );
@@ -403,7 +406,10 @@ const VulnMgmtCves = ({
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
         const cveIdsToToggle = cve ? [cve] : selectedCveIds;
-        unsuppressVulns(cveType, cveIdsToToggle)
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        unsuppressVulns(cveType, selectedCveNames)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -412,7 +418,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully reobserved ${entityCountNounOrdinaryCase(
-                        cveIdsToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );

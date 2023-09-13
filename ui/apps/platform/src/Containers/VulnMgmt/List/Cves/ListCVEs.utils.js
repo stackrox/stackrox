@@ -1,3 +1,5 @@
+import uniq from 'lodash/uniq';
+
 import entityTypes from 'constants/entityTypes';
 
 export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabled) {
@@ -67,6 +69,15 @@ export function getFilteredCVEColumns(columns, workflowState, isFeatureFlagEnabl
     });
 }
 
+export function parseCveNamesFromIds(cveIds) {
+    const cveNames = cveIds.map((cveId) => {
+        return cveId.split('#')[0];
+    });
+
+    return uniq(cveNames);
+}
+
 export default {
     getFilteredCVEColumns,
+    parseCveNamesFromIds,
 };
