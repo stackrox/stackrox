@@ -51,7 +51,3 @@ export function isValidEntityTab(value: unknown): value is EntityTab {
 }
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED';
-export const watchStatusLabel = {
-    WATCHED: 'watched',
-    NOT_WATCHED: 'not watched',
-};
