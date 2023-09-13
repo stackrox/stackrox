@@ -59,7 +59,7 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
  * Wait for responses after initial page visit or subsequent interaction.
  *
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
- * @param {TODO} waitOptions
+ * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
 export function waitForResponses(routeMatcherMap, waitOptions = {}) {
@@ -78,7 +78,8 @@ export function waitForResponses(routeMatcherMap, waitOptions = {}) {
  * @param {() => void} interactionCallback
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
- * @param {TODO} waitOptions
+ * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
+
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
 export function interactAndWaitForResponses(
