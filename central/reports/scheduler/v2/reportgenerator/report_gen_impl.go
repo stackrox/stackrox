@@ -141,7 +141,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			return errors.Wrap(err, "Error generating email body")
 		}
 
-		configDetailsHtml, err := formatReportConfigurationDetails(req.ReportSnapshot)
+		configDetailsHtml, err := formatReportConfigDetails(req.ReportSnapshot)
 		if err != nil {
 			return errors.Wrap(err, "Error adding report config details")
 		}

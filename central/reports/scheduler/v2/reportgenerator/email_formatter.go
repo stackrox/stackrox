@@ -10,11 +10,12 @@ import (
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"golang.org/x/exp/slices"
 )
 
 const (
-	MaxConfigNameLenInSubject     = 40
-	MaxCollectionNameLenInSubject = 40
+	maxConfigNameLenInSubject     = 40
+	maxCollectionNameLenInSubject = 40
 )
 
 var (
@@ -39,12 +40,12 @@ var (
 
 func formatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot) (string, error) {
 	configName := snapshot.GetName()
-	if len(configName) > MaxConfigNameLenInSubject {
-		configName = fmt.Sprintf("%s...", configName[0:MaxConfigNameLenInSubject])
+	if len(configName) > maxConfigNameLenInSubject {
+		configName = fmt.Sprintf("%s...", configName[0:maxConfigNameLenInSubject])
 	}
 	collectionName := snapshot.GetCollection().GetName()
-	if len(collectionName) > MaxCollectionNameLenInSubject {
-		collectionName = fmt.Sprintf("%s...", collectionName[0:MaxCollectionNameLenInSubject])
+	if len(collectionName) > maxCollectionNameLenInSubject {
+		collectionName = fmt.Sprintf("%s...", collectionName[0:maxCollectionNameLenInSubject])
 	}
 
 	data := &reportEmailSubjectFormat{
@@ -81,7 +82,7 @@ func addReportConfigDetails(emailBody, configDetailsHtml string) string {
 	return writer.String()
 }
 
-func formatReportConfigurationDetails(snapshot *storage.ReportSnapshot) (string, error) {
+func formatReportConfigDetails(snapshot *storage.ReportSnapshot) (string, error) {
 	var writer strings.Builder
 
 	writer.WriteString("<html>")
@@ -93,21 +94,29 @@ func formatReportConfigurationDetails(snapshot *storage.ReportSnapshot) (string,
 	}
 	reportFilters := snapshot.GetVulnReportFilters()
 
-	writer.WriteString("<table style=\"width: 100%; border-collapse: collapse; border: none; text-align: left;\">")
+	writer.WriteString("<table style=\"width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;\">")
 
 	// Add severities and fixabilities
 	fillTableHeadings(&writer, "CVE Severity", "CVE Status")
 	writer.WriteString("<tr>")
-	fillTableCellWithValues(&writer, reportFilters.GetSeverities())
+	// create a copy because severities will be sorted in descending order (critical, important, moderate, low)
+	severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
+	slices.SortFunc(severities, func(s1, s2 storage.VulnerabilitySeverity) bool {
+		return s1 > s2
+	})
+	fillTableCellWithValues(&writer, severities...)
 	fixabilities := expandFixability(reportFilters.GetFixability())
-	fillTableCellWithValues(&writer, fixabilities)
+	fillTableCellWithValues(&writer, fixabilities...)
 	writer.WriteString("</tr>")
 
 	// Add collection, image types and CVEs discovered since filters
 	fillTableHeadings(&writer, "Report Scope", "Image Type", "CVEs discovered since")
 	writer.WriteString("<tr>")
 	fillTableCellWithValues(&writer, snapshot.GetCollection())
-	fillTableCellWithValues(&writer, reportFilters.GetImageTypes())
+	// create a copy because image types will be sorted in ascending order (deployed, watched)
+	imageTypes := append([]storage.VulnerabilityReportFilters_ImageType{}, reportFilters.GetImageTypes()...)
+	slices.Sort(imageTypes)
+	fillTableCellWithValues(&writer, imageTypes...)
 	fillTableCellWithValues(&writer, reportFilters.GetCvesSince())
 	writer.WriteString("</tr>")
 
@@ -136,7 +145,7 @@ func fillTableHeadings(writer *strings.Builder, headings ...string) {
 	writer.WriteString("</tr>")
 }
 
-func fillTableCellWithValues(writer *strings.Builder, values ...interface{}) {
+func fillTableCellWithValues[T any](writer *strings.Builder, values ...T) {
 	writer.WriteString("<td style=\"padding: 10px; word-wrap: break-word; white-space: normal;\">")
 	if len(values) > 0 {
 		writer.WriteString("<table style=\"width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;\">")
