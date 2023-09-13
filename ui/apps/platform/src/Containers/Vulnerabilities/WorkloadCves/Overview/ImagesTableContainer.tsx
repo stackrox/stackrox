@@ -14,6 +14,8 @@ import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
+export { imageListQuery } from '../Tables/ImagesTable';
+
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;

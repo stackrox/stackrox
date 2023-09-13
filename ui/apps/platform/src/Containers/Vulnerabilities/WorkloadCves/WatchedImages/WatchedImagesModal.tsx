@@ -12,11 +12,18 @@ export type WatchedImagesModalProps = {
     defaultWatchedImageName: string;
     isOpen: boolean;
     onClose: () => void;
+    onWatchedImagesChange: () => void;
 };
 
-function WatchedImagesModal({ defaultWatchedImageName, isOpen, onClose }: WatchedImagesModalProps) {
+function WatchedImagesModal({
+    defaultWatchedImageName,
+    isOpen,
+    onClose,
+    onWatchedImagesChange,
+}: WatchedImagesModalProps) {
     const { data, mutate, isSuccess, isLoading, isError, error, reset } = useRestMutation(
-        (name: string) => watchImage(name)
+        (name: string) => watchImage(name),
+        { onSuccess: onWatchedImagesChange }
     );
 
     function onCloseModal() {
