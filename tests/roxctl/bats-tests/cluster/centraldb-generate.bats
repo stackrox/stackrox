@@ -56,10 +56,9 @@ assert_essential_files() {
   assert_file_exist "${output_dir}/central/01-central-08-external-db-configmap.yaml"
   assert_file_exist "${output_dir}/central/01-central-10-db-networkpolicy.yaml"
   assert_file_exist "${output_dir}/central/01-central-12-central-db.yaml"
-# TODO(ROX-17560): Check again whether to remove this
-#  if [ "${cluster_type}" = "openshift" ]; then
-#    assert_file_exist "${output_dir}/central/01-central-02-db-security.yaml"
-#  fi
+  if [ "${cluster_type}" = "openshift" ]; then
+    assert_file_exist "${output_dir}/central/01-central-02-db-security.yaml"
+  fi
 }
 
 test_generate_hostpath() {
