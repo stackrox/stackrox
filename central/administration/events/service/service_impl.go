@@ -109,7 +109,10 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 		AddTimeRangeField(
 			search.CreatedTime,
 			protoconv.ConvertTimestampToTimeOrDefault(filter.GetFrom(), time.Unix(0, 0)),
-			protoconv.ConvertTimestampToTimeOrNow(filter.GetUntil()),
+			// We could potentially miss events that were _just_ created, so create a jitter which allows to also
+			// include those events in the list response. This was discovered in tests, where the time from upserting
+			// events to listing them is relatively short.
+			protoconv.ConvertTimestampToTimeOrDefault(filter.GetUntil(), time.Now().Add(time.Second)),
 		)
 	if domain := filter.GetDomain(); domain != "" {
 		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, domain)
