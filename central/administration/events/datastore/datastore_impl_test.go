@@ -108,7 +108,7 @@ func (s *datastoreTestSuite) TestGetEvent_Success() {
 	}
 
 	s.store.EXPECT().Get(s.ctx, id).Return(event, true, nil)
-	result, err := s.datastore.GetEventByID(s.ctx, id)
+	result, err := s.datastore.GetEvent(s.ctx, id)
 
 	s.Require().NoError(err)
 	s.Equal(event, result)
@@ -118,7 +118,7 @@ func (s *datastoreTestSuite) TestGetEvent_Error() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
 
 	s.store.EXPECT().Get(s.ctx, id).Return(nil, false, errFake)
-	_, err := s.datastore.GetEventByID(s.ctx, id)
+	_, err := s.datastore.GetEvent(s.ctx, id)
 
 	s.ErrorIs(err, errFake)
 }
@@ -127,7 +127,7 @@ func (s *datastoreTestSuite) TestGetEvent_NotFound() {
 	id := "0925514f-3a33-5931-b431-756406e1a008"
 
 	s.store.EXPECT().Get(s.ctx, id).Return(nil, false, nil)
-	_, err := s.datastore.GetEventByID(s.ctx, id)
+	_, err := s.datastore.GetEvent(s.ctx, id)
 
 	s.ErrorIs(err, errox.NotFound)
 }

@@ -24,9 +24,6 @@ type streamImpl struct {
 
 // Consume returns the channel to retrieve administration events.
 func (s *streamImpl) Consume() <-chan *AdministrationEvent {
-	if s == nil {
-		return nil
-	}
 	return s.eventChan
 }
 
@@ -34,9 +31,6 @@ func (s *streamImpl) Consume() <-chan *AdministrationEvent {
 //
 // Should be retried with `retry.WithRetry(s.Produce(event))`.
 func (s *streamImpl) Produce(event *AdministrationEvent) error {
-	if s == nil {
-		return nil
-	}
 	select {
 	case s.eventChan <- event:
 		return nil

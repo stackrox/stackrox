@@ -38,7 +38,7 @@ func (ds *datastoreImpl) CountEvents(ctx context.Context, query *v1.Query) (int,
 	return count, nil
 }
 
-func (ds *datastoreImpl) GetEventByID(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
+func (ds *datastoreImpl) GetEvent(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
 	event, exists, err := ds.store.Get(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get administration event")

@@ -80,19 +80,19 @@ func (mr *MockDataStoreMockRecorder) Flush(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Flush", reflect.TypeOf((*MockDataStore)(nil).Flush), ctx)
 }
 
-// GetEventByID mocks base method.
-func (m *MockDataStore) GetEventByID(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
+// GetEvent mocks base method.
+func (m *MockDataStore) GetEvent(ctx context.Context, id string) (*storage.AdministrationEvent, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEventByID", ctx, id)
+	ret := m.ctrl.Call(m, "GetEvent", ctx, id)
 	ret0, _ := ret[0].(*storage.AdministrationEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetEventByID indicates an expected call of GetEventByID.
-func (mr *MockDataStoreMockRecorder) GetEventByID(ctx, id interface{}) *gomock.Call {
+// GetEvent indicates an expected call of GetEvent.
+func (mr *MockDataStoreMockRecorder) GetEvent(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEventByID", reflect.TypeOf((*MockDataStore)(nil).GetEventByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEvent", reflect.TypeOf((*MockDataStore)(nil).GetEvent), ctx, id)
 }
 
 // ListEvents mocks base method.

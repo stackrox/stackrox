@@ -22,7 +22,7 @@ type DataStore interface {
 	Flush(ctx context.Context) error
 
 	CountEvents(ctx context.Context, query *v1.Query) (int, error)
-	GetEventByID(ctx context.Context, id string) (*storage.AdministrationEvent, error)
+	GetEvent(ctx context.Context, id string) (*storage.AdministrationEvent, error)
 	ListEvents(ctx context.Context, query *v1.Query) ([]*storage.AdministrationEvent, error)
 }
 
