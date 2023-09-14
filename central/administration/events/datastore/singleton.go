@@ -1,20 +1,18 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	ds  DataStore
-	log = logging.LoggerForModule()
+	ds DataStore
 )
 
 // Singleton returns a datastore instance to handle notifications.
