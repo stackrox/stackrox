@@ -163,7 +163,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
-        // featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
+        featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     clusters: {
