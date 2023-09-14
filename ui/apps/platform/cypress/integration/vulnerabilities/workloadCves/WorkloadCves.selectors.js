@@ -1,6 +1,8 @@
 const watchedImageLabelText = 'Watched image';
+const filterChipSection = '.pf-c-toolbar .pf-c-toolbar__group[aria-label="applied search filters"]';
 
 export const selectors = {
+    // Toolbar selectors
     resourceDropdown: '.pf-c-toolbar button[aria-label="resource filter menu toggle"]',
     resourceMenuItem: (resource) =>
         `.pf-c-toolbar ul[aria-label="resource filter menu items"] button:contains("${resource}")`,
@@ -15,21 +17,36 @@ export const selectors = {
     fixabilityMenuItems: '.pf-c-toolbar ul[aria-label="CVE status filter menu items"]',
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
-    filterChipGroup: (category) => `.pf-c-toolbar .pf-c-chip-group *:contains("${category}")`,
+    filterChipGroup: `${filterChipSection} .pf-c-chip-group`,
+    filterChipGroupForCategory: (category) =>
+        `${selectors.filterChipGroup} *:contains("${category}")`,
     filterChipGroupRemove: (category) =>
-        `${selectors.filterChipGroup(category)} button[aria-label="close"]`,
+        `${selectors.filterChipGroupForCategory(category)} button[aria-label="close"]`,
     filterChipGroupItem: (category, item) =>
-        `${selectors.filterChipGroup(category)} + ul li:contains("${item}")`,
+        `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
-    clearFiltersButton: '.pf-c-toolbar button:contains("Clear filters")',
+    clearFiltersButton: `${filterChipSection} .pf-c-toolbar button:contains("Clear filters")`,
+
+    // General selectors
     filteredViewLabel: '.pf-c-label:contains("Filtered view")',
     entityTypeToggleItem: (entityType) =>
         `.pf-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
     summaryCard: (cardTitle) => `.pf-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
+
+    // Data table selectors
+    isUpdatingTable: '*[aria-busy="true"] table',
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
+    nonZeroImageSeverityCounts:
+        '*[aria-label*="images with"i][aria-label$="severity"i]:not([aria-label^="0"])',
+    nonZeroCveSeverityCount: (severity) =>
+        `span[aria-label*="${severity.toLowerCase()} severity CVEs across this"]`,
+    nonZeroImageSeverityCount: (severity) =>
+        `span[aria-label*="with ${severity.toLowerCase()} severity"]`,
+    hiddenSeverityCount: (severity) =>
+        `span[aria-label="${severity} severity is hidden by the applied filter"]`,
 
     // Watched image selectors
     watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,
