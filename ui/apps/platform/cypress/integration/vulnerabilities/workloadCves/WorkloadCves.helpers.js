@@ -107,6 +107,10 @@ export function watchImageFlowFromModal(imageFullName, imageNameAndTag) {
     // Add it to the watch list
     cy.get(selectors.addImageToWatchListButton).click();
 
+    // Watch for the success alert
+    cy.get(selectors.modalAlertWithText('The image was successfully added to the watch list'));
+    cy.get(selectors.modalAlertWithText(imageFullName));
+
     // Verify that the image is added to the watched images table
     cy.get(selectors.currentWatchedImageRow(imageFullName));
 
@@ -124,6 +128,9 @@ export function watchImageFlowFromModal(imageFullName, imageNameAndTag) {
 export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
     // Delete the image from the watch list
     cy.get(selectors.removeImageFromTableButton(imageFullName)).click();
+
+    // Watch for the success alert
+    cy.get(selectors.modalAlertWithText('The image was successfully removed from the watch list'));
 
     // Verify that the image is no longer in the table
     cy.get(selectors.currentWatchedImageRow(imageFullName)).should('not.exist');
