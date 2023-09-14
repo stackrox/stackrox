@@ -132,7 +132,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
-	c.Flags().StringVarP(&imageScanCmd.cluster, "cluster", "", "", "cluster name or ID to delegate image scan to")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "cluster name or ID to delegate image scan to")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts

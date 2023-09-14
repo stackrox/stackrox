@@ -117,7 +117,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		"whether to send notifications for violations (notifications will be sent to the notifiers "+
 			"configured in each violated policy).")
 	c.Flags().StringSliceVarP(&imageCheckCmd.policyCategories, "categories", "c", nil, "optional comma separated list of policy categories to run.  Defaults to all policy categories.")
-	c.Flags().StringVarP(&imageCheckCmd.cluster, "cluster", "", "", "cluster name or ID to delegate image scan to")
+	c.Flags().StringVar(&imageCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 
 	// deprecated, old output format specific flags
 	c.Flags().BoolVar(&imageCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")

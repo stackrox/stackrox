@@ -115,7 +115,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVar(&deploymentCheckCmd.printAllViolations, "print-all-violations", false, "whether to print all violations per alert or truncate violations for readability")
 	c.Flags().BoolVar(&deploymentCheckCmd.force, "force", false, "bypass Central's cache for images and force a new pull from the Scanner")
 	utils.Must(c.MarkFlagRequired("file"))
-	c.Flags().StringVarP(&deploymentCheckCmd.cluster, "cluster", "", "", "cluster name or ID to delegate image scans to")
+	c.Flags().StringVar(&deploymentCheckCmd.cluster, "cluster", "", "cluster name or ID to use as context for evaluation")
 
 	// mark legacy output format specific flags as deprecated
 	utils.Must(c.Flags().MarkDeprecated("json", "use the new output format which also offers JSON. NOTE: "+
