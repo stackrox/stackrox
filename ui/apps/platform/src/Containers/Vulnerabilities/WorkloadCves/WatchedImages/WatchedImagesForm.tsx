@@ -3,7 +3,9 @@ import { Button, Form, FormGroup, TextInput } from '@patternfly/react-core';
 import { FormikHelpers, useFormik } from 'formik';
 import * as yup from 'yup';
 
+import { UseRestQueryReturn } from 'hooks/useRestQuery';
 import { UseRestMutationReturn } from 'hooks/useRestMutation';
+import { WatchedImage } from 'types/image.proto';
 
 const validationSchema = yup.object({
     imageName: yup.string().required('A valid image name is required'),
@@ -13,10 +15,15 @@ type FormData = yup.InferType<typeof validationSchema>;
 
 export type WatchedImagesFormProps = {
     defaultWatchedImageName: string;
+    watchedImagesRequest: UseRestQueryReturn<WatchedImage[]>;
     watchImage: UseRestMutationReturn<string, string>['mutate'];
 };
 
-function WatchedImagesForm({ defaultWatchedImageName, watchImage }: WatchedImagesFormProps) {
+function WatchedImagesForm({
+    defaultWatchedImageName,
+    watchedImagesRequest,
+    watchImage,
+}: WatchedImagesFormProps) {
     const {
         values,
         errors,
@@ -36,6 +43,7 @@ function WatchedImagesForm({ defaultWatchedImageName, watchImage }: WatchedImage
 
     function addToWatchedImages(formValues: FormData, { setSubmitting }: FormikHelpers<FormData>) {
         watchImage(formValues.imageName, {
+            onSuccess: () => watchedImagesRequest.refetch(),
             onSettled: () => setSubmitting(false),
         });
     }
