@@ -170,9 +170,9 @@
         ]
       }
     },
-    "/v1/administration/eventscount": {
+    "/v1/count/administration/events": {
       "get": {
-        "summary": "CountAdministrationEvents returns the number of events after filtered by requested fields.",
+        "summary": "CountAdministrationEvents returns the number of events after filtering by requested fields.",
         "operationId": "AdministrationEventService_CountAdministrationEvents",
         "responses": {
           "200": {

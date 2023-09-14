@@ -339,7 +339,7 @@ func RegisterAdministrationEventServiceHandlerClient(ctx context.Context, mux *r
 }
 
 var (
-	pattern_AdministrationEventService_CountAdministrationEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "administration", "eventscount"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_AdministrationEventService_CountAdministrationEvents_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "count", "administration", "events"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_AdministrationEventService_GetAdministrationEvent_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "administration", "events", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
