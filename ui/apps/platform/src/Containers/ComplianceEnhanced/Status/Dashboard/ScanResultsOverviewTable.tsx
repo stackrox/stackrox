@@ -9,16 +9,18 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 import { format } from 'date-fns';
+import { Link, generatePath } from 'react-router-dom';
 
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
+import { complianceEnhancedStatusScansPath } from 'routePaths';
 import { complianceResultsOverview } from 'services/ComplianceEnhancedService';
 import { SortOption } from 'types/table';
 
-import { Bullseye, Spinner } from '@patternfly/react-core';
 import ScanResultsToolbar from './ScanResultsToolbar';
 
 const sortFields = ['Scan Name', 'Failing Controls', 'Last Scanned'];
@@ -66,9 +68,15 @@ function ScanResultsOverviewTable() {
         }
 
         return scanResultsOverviewData?.map(({ scanStats, clusterId, profileName }) => (
-            // TODO: verify scanName unique
-            <Tr key={scanStats.scanName}>
-                <Td>{scanStats.scanName}</Td>
+            <Tr key={scanStats.id}>
+                <Td>
+                    <Link
+                        to={generatePath(complianceEnhancedStatusScansPath, { id: scanStats.id })}
+                        className="your-button-class-name-if-any"
+                    >
+                        {scanStats.scanName}
+                    </Link>
+                </Td>
                 <Td>{displayOnlyItemOrItemCount(clusterId, 'clusters')}</Td>
                 <Td>{displayOnlyItemOrItemCount(profileName, 'profiles')}</Td>
                 <Td>{`${scanStats.numberOfFailingChecks}/${scanStats.numberOfChecks}`}</Td>

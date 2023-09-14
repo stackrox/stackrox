@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { generatePath } from 'react-router-dom';
 
 import WidgetCard from 'Components/PatternFly/WidgetCard';
+import { complianceEnhancedStatusProfilesPath } from 'routePaths';
 
 import HorizontalBarChart from './HorizontalBarChart';
 
@@ -14,22 +16,22 @@ const mockComplianceData: ComplianceByProfileData = [
     {
         name: 'HIPPA',
         passing: 83,
-        link: '',
+        link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
     },
     {
         name: 'PCI',
         passing: 80,
-        link: '',
+        link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
     },
     {
         name: 'CIS Docker',
         passing: 73,
-        link: '',
+        link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
     },
     {
         name: 'CIS K8s',
         passing: 69,
-        link: '',
+        link: generatePath(complianceEnhancedStatusProfilesPath, { id: '123456' }),
     },
 ];
 
