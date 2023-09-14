@@ -22,7 +22,7 @@ func Singleton() Stream {
 		return nil
 	}
 	once.Do(func() {
-		stream = NewStream()
+		stream = newStream()
 	})
 	return stream
 }
