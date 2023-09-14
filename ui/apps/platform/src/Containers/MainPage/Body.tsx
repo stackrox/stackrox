@@ -8,6 +8,7 @@ import {
     accessControlPath,
     apidocsPath,
     clustersDelegatedScanningPath,
+    clustersInitBundlesPathWithParam,
     clustersPathWithParam,
     collectionsPath,
     complianceEnhancedBasePath,
@@ -76,6 +77,11 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
         ),
         path: clustersDelegatedScanningPath,
+    },
+    // Cluster init bundles must precede generic Clusters.
+    'clusters/init-bundles': {
+        component: asyncComponent(() => import('Containers/Clusters/InitBundles/InitBundlesRoute')),
+        path: clustersInitBundlesPathWithParam,
     },
     clusters: {
         component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
