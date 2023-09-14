@@ -150,17 +150,16 @@ func (g *garbageCollectorImpl) Start() {
 }
 
 func (g *garbageCollectorImpl) pruneBasedOnConfig() {
-	config, err := g.config.GetConfig(pruningCtx)
+	pvtConfig, err := g.config.GetPrivateConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	if config == nil {
+	if pvtConfig == nil {
 		log.Error("UNEXPECTED: Got nil config")
 		return
 	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
-	pvtConfig := config.GetPrivateConfig()
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()

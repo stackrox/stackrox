@@ -557,10 +557,10 @@ func (s *PruningTestSuite) TestImagePruning() {
 				require.NoError(t, images.UpsertImage(ctx, image))
 			}
 
-			conf, err := config.GetConfig(ctx)
+			privateConfig, err := config.GetPrivateConfig(ctx)
 			require.NoError(t, err, "failed to get config")
 			// Garbage collect all of the images
-			gc.collectImages(conf.GetPrivateConfig())
+			gc.collectImages(privateConfig)
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
 			remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
@@ -1123,11 +1123,11 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			}
 			log.Infof("All query returns %d objects: %v", len(all), search.ResultsToIDs(all))
 
-			conf, err := config.GetConfig(ctx)
+			privateConfig, err := config.GetPrivateConfig(ctx)
 			require.NoError(t, err, "failed to get config")
 
 			// Garbage collect all of the alerts
-			gc.collectAlerts(conf.GetPrivateConfig())
+			gc.collectAlerts(privateConfig)
 
 			// Grab the actual remaining alerts and make sure they match the alerts expected to be remaining
 			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts())

@@ -79,26 +79,26 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetPublicConfig returns the publicly available config
 func (s *serviceImpl) GetPublicConfig(ctx context.Context, _ *v1.Empty) (*storage.PublicConfig, error) {
-	config, err := s.datastore.GetConfig(ctx)
+	publicConfig, err := s.datastore.GetPublicConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if config.GetPublicConfig() == nil {
+	if publicConfig == nil {
 		return &storage.PublicConfig{}, nil
 	}
-	return config.GetPublicConfig(), nil
+	return publicConfig, nil
 }
 
 // GetPrivateConfig returns the privately available config
 func (s *serviceImpl) GetPrivateConfig(ctx context.Context, _ *v1.Empty) (*storage.PrivateConfig, error) {
-	config, err := s.datastore.GetConfig(ctx)
+	privateConfig, err := s.datastore.GetPrivateConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if config.GetPrivateConfig() == nil {
+	if privateConfig == nil {
 		return &storage.PrivateConfig{}, nil
 	}
-	return config.GetPrivateConfig(), nil
+	return privateConfig, nil
 }
 
 // GetConfig returns Central's config
@@ -134,12 +134,12 @@ func (s *serviceImpl) GetVulnerabilityDeferralConfig(ctx context.Context, _ *v1.
 	if !env.UnifiedCVEDeferral.BooleanSetting() {
 		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", env.UnifiedCVEDeferral.EnvVar())
 	}
-	config, err := s.datastore.GetConfig(ctx)
+	privateConfig, err := s.datastore.GetPrivateConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &v1.GetVulnerabilityDeferralConfigResponse{
-		Config: VulnerabilityDeferralConfigStorageToV1(config.GetPrivateConfig().GetVulnerabilityDeferralConfig()),
+		Config: VulnerabilityDeferralConfigStorageToV1(privateConfig.GetVulnerabilityDeferralConfig()),
 	}, nil
 }
 

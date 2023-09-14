@@ -19,6 +19,8 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)
+	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
+	GetPublicConfig(context.Context) (*storage.PublicConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
 }
 
@@ -42,6 +44,32 @@ var (
 
 type datastoreImpl struct {
 	store store.Store
+}
+
+// GetPublicConfig returns the public part of the Central config
+func (d *datastoreImpl) GetPublicConfig(ctx context.Context) (*storage.PublicConfig, error) {
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration),
+		),
+	)
+
+	conf, _, err := d.store.Get(elevatedCtx)
+	return conf.GetPublicConfig(), err
+}
+
+// GetPrivateConfig returns Central's config
+func (d *datastoreImpl) GetPrivateConfig(ctx context.Context) (*storage.PrivateConfig, error) {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	conf, _, err := d.store.Get(ctx)
+	return conf.GetPrivateConfig(), err
 }
 
 // GetConfig returns Central's config
@@ -85,11 +113,11 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 }
 
 func (d *datastoreImpl) getClusterRetentionConfig(ctx context.Context) (*storage.DecommissionedClusterRetentionConfig, error) {
-	conf, err := d.GetConfig(ctx)
+	privateConf, err := d.GetPrivateConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return conf.GetPrivateConfig().GetDecommissionedClusterRetention(), nil
+	return privateConf.GetDecommissionedClusterRetention(), nil
 }
 
 func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConfig,

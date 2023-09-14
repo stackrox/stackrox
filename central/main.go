@@ -565,8 +565,8 @@ func startGRPCServer() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
 
-	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
-		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+	if cds, err := configDS.Singleton().GetPublicConfig(telemetryCtx); err == nil || cds == nil {
+		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				gs := cfg.Gatherer()

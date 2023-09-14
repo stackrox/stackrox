@@ -50,24 +50,106 @@ func (s *configDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *configDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().Get(gomock.Any()).Times(0)
+var (
+	sampleConfig = &storage.Config{
+		PublicConfig: &storage.PublicConfig{
+			LoginNotice: &storage.LoginNotice{
+				Enabled: false,
+				Text: "You step onto the road, and if you don't keep your feet, " +
+					"there's no knowing where you might be swept off to.",
+			},
+			Header: &storage.BannerConfig{
+				Enabled: false,
+				Text: "Home is behind, the world ahead, and there " +
+					"are many paths to tread through shadows to the edge of night, " +
+					"until the stars are all alight.",
+				Size_:           10,
+				Color:           "0x88bbff",
+				BackgroundColor: "0x0000ff",
+			},
+			Footer: &storage.BannerConfig{
+				Enabled:         false,
+				Text:            "All's well that ends better.",
+				Size_:           10,
+				Color:           "0x88bbff",
+				BackgroundColor: "0x0000ff",
+			},
+			Telemetry: nil,
+		},
+		PrivateConfig: &storage.PrivateConfig{
+			AlertRetention:                      nil,
+			ImageRetentionDurationDays:          7,
+			ExpiredVulnReqRetentionDurationDays: 7,
+			DecommissionedClusterRetention:      nil,
+			ReportRetentionConfig:               nil,
+			VulnerabilityDeferralConfig:         nil,
+		},
+	}
+)
 
-	config, err := s.dataStore.GetConfig(s.hasNoneCtx)
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(config, "expected return value to be nil")
+func (s *configDataStoreTestSuite) TestAllowsGetPublic() {
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	publicCfgNone, err := s.dataStore.GetPublicConfig(s.hasNoneCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(publicCfgNone)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	publicCfgRead, err := s.dataStore.GetPublicConfig(s.hasReadCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(publicCfgRead)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	publicCfgWrite, err := s.dataStore.GetPublicConfig(s.hasWriteCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(publicCfgWrite)
 }
 
-func (s *configDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
+func (s *configDataStoreTestSuite) TestEnforcesGetPrivate() {
+	s.storage.EXPECT().Get(gomock.Any()).Times(0)
 
-	_, err := s.dataStore.GetConfig(s.hasReadCtx)
+	privateConfigNone, err := s.dataStore.GetPrivateConfig(s.hasNoneCtx)
+	s.NoError(err, "expected no error, should return nil without access")
+	s.Nil(privateConfigNone, "expected return value to be nil")
+}
+
+func (s *configDataStoreTestSuite) TestAllowsGetPrivate() {
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
+
+	privateConfigRead, err := s.dataStore.GetPrivateConfig(s.hasReadCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(privateConfigRead)
 
 	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil).Times(1)
 
-	_, err = s.dataStore.GetConfig(s.hasWriteCtx)
+	privateConfigWrite, err := s.dataStore.GetPrivateConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(privateConfigWrite)
+
+}
+
+func (s *configDataStoreTestSuite) TestEnforcesGet() {
+	s.storage.EXPECT().Get(gomock.Any()).Times(0)
+
+	configForNone, err := s.dataStore.GetConfig(s.hasNoneCtx)
+	s.NoError(err, "expected no error, should return nil without access")
+	s.Nil(configForNone, "expected return value to be nil")
+}
+
+func (s *configDataStoreTestSuite) TestAllowsGet() {
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, false, nil).Times(1)
+
+	configForRead, err := s.dataStore.GetConfig(s.hasReadCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(configForRead)
+
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, false, nil).Times(1)
+
+	configForWrite, err := s.dataStore.GetConfig(s.hasWriteCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+	s.NotNil(configForWrite)
 }
 
 func (s *configDataStoreTestSuite) TestEnforcesUpdate() {
