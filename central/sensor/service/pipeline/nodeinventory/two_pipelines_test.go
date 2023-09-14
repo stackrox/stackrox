@@ -87,7 +87,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		updater           updater.Updater
 	}
 	tests := map[string]struct {
-		mocks                     usedMocks
+		mocks                     *usedMocks
 		riskManager               manager.Manager
 		enricher                  nodeEnricher.NodeEnricher
 		operations                []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment) error
@@ -173,9 +173,10 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
+		tt := tt
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			tt.mocks = usedMocks{
+			tt.mocks = &usedMocks{
 				clusterStore:      clusterDatastoreMocks.NewMockDataStore(ctrl),
 				nodeDatastore:     nodeDatastoreMocks.NewMockDataStore(ctrl),
 				cveDatastore:      nodeCVEDataStoreMocks.NewMockDataStore(ctrl),
@@ -221,7 +222,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.setUpMocks != nil {
-				tt.setUpMocks(t, &tt.mocks)
+				tt.setUpMocks(t, tt.mocks)
 			}
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
