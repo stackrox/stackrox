@@ -289,17 +289,6 @@ deploy_sensor() {
 
 deploy_sensor_via_operator() {
     info "Deploying sensor via operator"
-    #Temporarily upload the support package
-    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-        ROX_CENTRAL_ADDR=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host'):443
-        ROX_CENTRAL_PASS=$(kubectl -n stackrox get secret central-admin-pass -o go-template='{{index .data "password" | base64decode}}')
-        #Get correct URL based on the cluster architecture
-        SUPPORT_URL=$(< operator/midstream/iib.json jq -r --arg arch "$REMOTE_CLUSTER_ARCH" '.[$arch].support_url')
-        #Downloading the support package
-        wget -O support-pkg.zip "$SUPPORT_URL" &> /dev/null
-        #Uploading the package to central
-        roxctl --endpoint "$ROX_CENTRAL_ADDR" --password "$ROX_CENTRAL_PASS" --insecure-skip-tls-verify collector support-packages upload support-pkg.zip
-    fi
 
     kubectl -n stackrox exec deploy/central -- \
     roxctl central init-bundles generate my-test-bundle \
