@@ -19,6 +19,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 
+import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
 
@@ -90,7 +91,7 @@ function AffectedComponentsModal({
                     </Thead>
                     {filteredComponents.map((component, rowIndex) => {
                         const componentURL = workflowState
-                            .pushList('COMPONENT')
+                            .pushList(entityTypes.IMAGE_COMPONENT)
                             .pushListItem(component.id)
                             .toUrl();
                         return (
