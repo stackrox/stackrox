@@ -19,7 +19,7 @@ func TestValidateRole(t *testing.T) {
 				"Policy": storage.Access_READ_ACCESS,
 			},
 		},
-		"role must reference an existing permission set": constructRole("role with no permission set", "", ""),
+		"role must reference an existing permission set": constructRole("role with no permission set", "", GenerateAccessScopeID()),
 		"empty access scope reference is not allowed":    constructRole("role with no access scope", GeneratePermissionSetID(), ""),
 	}
 
@@ -129,6 +129,7 @@ func TestEnsureValidPermissionSetIDPostgres(t *testing.T) {
 func TestValidateSimpleAccessScope(t *testing.T) {
 	mockGoodID := uuid.NewDummy().String()
 	mockBadID := "42"
+	emptyID := ""
 	mockName := "Heart of Gold"
 	mockDescription := "HHGTTG"
 	mockGoodRules := &storage.SimpleAccessScope_Rules{
@@ -183,6 +184,11 @@ func TestValidateSimpleAccessScope(t *testing.T) {
 		{
 			name:                   "id is missing",
 			scope:                  &storage.SimpleAccessScope{Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
+			expectedNumberOfErrors: 1,
+		},
+		{
+			name:                   "empty id",
+			scope:                  &storage.SimpleAccessScope{Id: emptyID, Name: mockName, Rules: &storage.SimpleAccessScope_Rules{}},
 			expectedNumberOfErrors: 1,
 		}, {
 			name:                   "name is missing",

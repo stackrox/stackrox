@@ -127,12 +127,6 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	}
 	role.Name = roleRequest.GetName()
 
-	// Empty access scope ID is deprecated. Fill the default during the adoption
-	// period.
-	// TODO(ROX-9510): remove this block.
-	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
-	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
 		return nil, err
@@ -141,12 +135,6 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 }
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
-	// Empty access scope ID is deprecated. Fill the default during the adoption
-	// period.
-	// TODO(ROX-9510): remove this block.
-	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
-	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
 		return nil, err
