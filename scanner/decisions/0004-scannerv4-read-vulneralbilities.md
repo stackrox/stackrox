@@ -5,7 +5,12 @@
 
 ## Context
 
-We are in the process of transitioning the StackRox Scanner to utilize ClairCore as its primary scanning engine. Our objective is twofold: firstly, to allow Central to fetch NVD CVSS data, and secondly, to ensure the Scanner V4 seamlessly connecting with Central, triggering data updates and enriching vulnerabilities with CVSS data. Throughout this pipeline, the Claircore enricher will play a pivotal role. It will manage tasks including downloading CVSS data from Google storage, parsing the information, and updating the data accordingly for Scanner V4
+We are currently transitioning the StackRox Scanner to use ClairCore as its primary scanning engine. Our goals are twofold:
+
+1. Enable Central to retrieve NVD CVSS data and consolidate all CVSS data with available CVSS v3 scores.
+2. Ensure seamless integration between Scanner V4 and Central, further enhancing vulnerabilities with CVSS data.
+
+Throughout this workflow, a new CVSS enricher in Central will download and consolidate the CVSS data, then creating a JSON bundle. The ClairCore enricher will be instrumental in this process, handling tasks such as downloading, parsing, and updating CVSS data for Scanner V4.
 
 ## Decision
 
