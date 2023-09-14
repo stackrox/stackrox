@@ -226,7 +226,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
+	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil)
 
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -301,7 +301,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockImageDatastore := imageDatastoreMocks.NewMockDataStore(ctrl)
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
-	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
+	mockConfigDatastore.EXPECT().GetPrivateConfig(ctx).Return(testConfig.GetPrivateConfig(), nil)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
