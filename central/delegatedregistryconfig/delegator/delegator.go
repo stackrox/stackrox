@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -60,7 +61,11 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 		return "", false, nil
 	}
 
-	if err := d.validateCluster(clusterID); err != nil {
+	if clusterID == "" {
+		return "", true, errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")
+	}
+
+	if err := d.ValidateCluster(clusterID); err != nil {
 		return "", true, err
 	}
 
@@ -163,11 +168,8 @@ func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *stora
 	return false, ""
 }
 
-func (d *delegatorImpl) validateCluster(clusterID string) error {
-	if clusterID == "" {
-		return errors.New("no ad-hoc cluster specified in delegated registry config")
-	}
-
+// ValidateCluster returns nil if a cluster is a valid target for delegation, otherwise returns an error.
+func (d *delegatorImpl) ValidateCluster(clusterID string) error {
 	conn := d.connManager.GetConnection(clusterID)
 	if conn == nil {
 		return errors.Errorf("no connection to %q", clusterID)
