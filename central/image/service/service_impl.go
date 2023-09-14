@@ -8,6 +8,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	cluster "github.com/stackrox/rox/central/cluster/datastore"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -101,6 +103,8 @@ type serviceImpl struct {
 	internalScanSemaphore *semaphore.Weighted
 
 	scanWaiterManager waiter.Manager[*storage.Image]
+
+	clusterDataStore cluster.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -303,6 +307,17 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
+
+	if request.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterDataStore, request.GetCluster())
+		if err != nil {
+			return nil, err
+		}
+
+		enrichmentCtx.ClusterID = clusterID
+	}
+
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		return nil, err

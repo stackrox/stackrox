@@ -1496,6 +1496,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Cluster to delegate scan to, may be the cluster's name or ID."
         }
       }
     },
@@ -1565,6 +1569,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Cluster to delegate scan to, may be the cluster's name or ID."
         }
       }
     }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -17,7 +18,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), scanwaiter.Singleton())
+	as = New(datastore.Singleton(), watchedImageDataStore.Singleton(), manager.Singleton(), connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.ImageMetadataCacheSingleton(), scanwaiter.Singleton(), clusterDataStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

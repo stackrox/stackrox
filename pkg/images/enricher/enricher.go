@@ -68,6 +68,10 @@ type EnrichmentContext struct {
 	// Set via ad-hoc requests such as "roxctl image scan".
 	Delegable bool
 
+	// ClusterID contains the ID of the cluster to delegate the enrichment request to if the request is Delegable.
+	// Used to override the delegated registry configuration.
+	ClusterID string
+
 	Source *RequestSource
 }
 
