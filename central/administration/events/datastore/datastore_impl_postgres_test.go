@@ -195,10 +195,27 @@ func (s *datastorePostgresTestSuite) TestAddEvent_WriterBufferFull() {
 	s.Equal(1001, count)
 }
 
-func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) {
-	events := fixtures.GetMultipleAdministrationEvents(numOfEvents)
-	for _, event := range events {
-		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, event))
+func (s *datastorePostgresTestSuite) TestRemoveEvents() {
+	ids := s.addEvents(100)
+
+	err := s.datastore.RemoveEvents(s.readCtx, ids...)
+	s.Error(err)
+
+	err = s.datastore.RemoveEvents(s.writeCtx, ids...)
+	s.NoError(err)
+
+	count, err := s.datastore.CountEvents(s.readCtx, &v1.Query{})
+	s.NoError(err)
+	s.Zero(count)
+}
+
+func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) []string {
+	administrationEvents := fixtures.GetMultipleAdministrationEvents(numOfEvents)
+	eventIDs := make([]string, 0, len(administrationEvents))
+	for _, administrationEvent := range administrationEvents {
+		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, administrationEvent))
+		eventIDs = append(eventIDs, events.GenerateEventID(administrationEvent))
 	}
 	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+	return eventIDs
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -66,7 +68,7 @@ var (
 	lastLogImbuePruneTime time.Time
 )
 
-// GarbageCollector implements a generic garbage collection mechanism
+// GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
 	Start()
 	Stop()
@@ -91,57 +93,60 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store,
 	reportSnapshotDS snapshotDS.DataStore,
-	blobStore blobDatastore.Datastore) GarbageCollector {
+	blobStore blobDatastore.Datastore,
+	administrationEventsDS administrationEventDS.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:          alerts,
-		clusters:        clusters,
-		nodes:           nodes,
-		images:          images,
-		imageComponents: imageComponents,
-		deployments:     deployments,
-		pods:            pods,
-		processes:       processes,
-		plops:           plops,
-		processbaseline: processbaseline,
-		networkflows:    networkflows,
-		config:          config,
-		risks:           risks,
-		vulnReqs:        vulnReqs,
-		serviceAccts:    serviceAccts,
-		k8sRoles:        k8sRoles,
-		k8sRoleBindings: k8sRoleBindings,
-		logimbueStore:   logimbueStore,
-		stopper:         concurrency.NewStopper(),
-		postgres:        globaldb.GetPostgres(),
-		reportSnapshot:  reportSnapshotDS,
-		blobStore:       blobStore,
+		alerts:               alerts,
+		clusters:             clusters,
+		nodes:                nodes,
+		images:               images,
+		imageComponents:      imageComponents,
+		deployments:          deployments,
+		pods:                 pods,
+		processes:            processes,
+		plops:                plops,
+		processbaseline:      processbaseline,
+		networkflows:         networkflows,
+		config:               config,
+		risks:                risks,
+		vulnReqs:             vulnReqs,
+		serviceAccts:         serviceAccts,
+		k8sRoles:             k8sRoles,
+		k8sRoleBindings:      k8sRoleBindings,
+		logimbueStore:        logimbueStore,
+		stopper:              concurrency.NewStopper(),
+		postgres:             globaldb.GetPostgres(),
+		reportSnapshot:       reportSnapshotDS,
+		blobStore:            blobStore,
+		administrationEvents: administrationEventsDS,
 	}
 }
 
 type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
-	alerts          alertDatastore.DataStore
-	clusters        clusterDatastore.DataStore
-	nodes           nodeDatastore.DataStore
-	images          imageDatastore.DataStore
-	imageComponents imageComponentDatastore.DataStore
-	deployments     deploymentDatastore.DataStore
-	pods            podDatastore.DataStore
-	processes       processDatastore.DataStore
-	plops           plopDatastore.DataStore
-	processbaseline processBaselineDatastore.DataStore
-	networkflows    networkFlowDatastore.ClusterDataStore
-	config          configDatastore.DataStore
-	risks           riskDataStore.DataStore
-	vulnReqs        vulnReqDataStore.DataStore
-	serviceAccts    serviceAccountDataStore.DataStore
-	k8sRoles        k8sRoleDataStore.DataStore
-	k8sRoleBindings roleBindingDataStore.DataStore
-	logimbueStore   logimbueDataStore.Store
-	stopper         concurrency.Stopper
-	reportSnapshot  snapshotDS.DataStore
-	blobStore       blobDatastore.Datastore
+	alerts               alertDatastore.DataStore
+	clusters             clusterDatastore.DataStore
+	nodes                nodeDatastore.DataStore
+	images               imageDatastore.DataStore
+	imageComponents      imageComponentDatastore.DataStore
+	deployments          deploymentDatastore.DataStore
+	pods                 podDatastore.DataStore
+	processes            processDatastore.DataStore
+	plops                plopDatastore.DataStore
+	processbaseline      processBaselineDatastore.DataStore
+	networkflows         networkFlowDatastore.ClusterDataStore
+	config               configDatastore.DataStore
+	risks                riskDataStore.DataStore
+	vulnReqs             vulnReqDataStore.DataStore
+	serviceAccts         serviceAccountDataStore.DataStore
+	k8sRoles             k8sRoleDataStore.DataStore
+	k8sRoleBindings      roleBindingDataStore.DataStore
+	logimbueStore        logimbueDataStore.Store
+	stopper              concurrency.Stopper
+	reportSnapshot       snapshotDS.DataStore
+	blobStore            blobDatastore.Datastore
+	administrationEvents administrationEventDS.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -169,6 +174,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		g.removeOldReportHistory(pvtConfig)
 		g.removeOldReportBlobs(pvtConfig)
+	}
+	if features.AdministrationEvents.Enabled() {
+		g.removeExpiredAdministrationEvents(pvtConfig)
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -458,6 +466,25 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 
 	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
 		log.Error(errors.Wrap(err, "error removing PLOP"))
+	}
+}
+
+func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
+	results, err := g.administrationEvents.Search(pruningCtx, search.NewQueryBuilder().AddDays(search.LastUpdatedTime,
+		int64(config.GetAdministrationEventsConfig().GetRetentionDurationDays())).ProtoQuery())
+	if err != nil {
+		log.Errorf("[Administration Events Pruning] Error fetching administration events to prune: %v", err)
+		return
+	}
+
+	log.Infof("[Administration Events Pruning] Found %d administration events to prune.", len(results))
+
+	if len(results) == 0 {
+		return
+	}
+
+	if err := g.administrationEvents.RemoveEvents(pruningCtx, search.ResultsToIDs(results)...); err != nil {
+		log.Errorf("[Administration Events Pruning] Error removing administration events: %v", err)
 	}
 }
 

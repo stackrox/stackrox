@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -48,4 +49,19 @@ func (m *MockIndexer) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockIndexerMockRecorder) Count(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockIndexer)(nil).Count), ctx, q)
+}
+
+// Search mocks base method.
+func (m *MockIndexer) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search.
+func (mr *MockIndexerMockRecorder) Search(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), ctx, q)
 }

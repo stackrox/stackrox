@@ -39,6 +39,7 @@ import { initializeAnalytics } from 'global/initializeAnalytics';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
+import useFeatureFlags from '../../../hooks/useFeatureFlags';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -97,6 +98,7 @@ const SystemConfigForm = ({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     const telemetryConfig = useSelector(selectors.getTelemetryConfig);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -386,6 +388,28 @@ const SystemConfigForm = ({
                         </Split>
                     </FormGroup>
                 </GridItem>
+                {isFeatureFlagEnabled('ROX_ADMINISTRATION_EVENTS') && (
+                    <GridItem>
+                        <FormGroup
+                            label="Administration events retention days"
+                            isRequired
+                            fieldId="privateConfig.administrationEventConfig.retentionDurationDays"
+                        >
+                            <TextInput
+                                isRequired
+                                type="number"
+                                id="privateConfig.administrationEventConfig.retentionDurationDays"
+                                name="privateConfig.administrationEventConfig.retentionDurationDays"
+                                value={
+                                    values?.privateConfig?.administrationEventConfig
+                                        ?.retentionDurationDays
+                                }
+                                onChange={onChange}
+                                min={0}
+                            />
+                        </FormGroup>
+                    </GridItem>
+                )}
             </Grid>
             <Title headingLevel="h3">Cluster deletion</Title>
             <Grid hasGutter md={6}>
