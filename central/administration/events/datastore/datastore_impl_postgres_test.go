@@ -19,7 +19,6 @@ import (
 )
 
 func TestEventsDatastorePostgres(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(datastorePostgresTestSuite))
 }
 
