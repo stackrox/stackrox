@@ -62,8 +62,6 @@ export type AccessScopeFormProps = {
     hasAction: boolean;
     alertSubmit: ReactElement | null;
     formik: FormikContextType<AccessScope>;
-    labelSelectorsEditingState: LabelSelectorsEditingState;
-    setLabelSelectorsEditingState: React.Dispatch<React.SetStateAction<LabelSelectorsEditingState>>;
 };
 
 function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProps): ReactElement {

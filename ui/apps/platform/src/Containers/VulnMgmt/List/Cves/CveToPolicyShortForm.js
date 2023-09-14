@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import MultiSelect from 'Components/MultiSelect';
 import ReactSelect, { Creatable } from 'Components/ReactSelect';
 import ToggleSwitch from 'Components/ToggleSwitch';
 
@@ -145,11 +144,7 @@ function CveToPolicyShortForm({
                             placeholder="Select severity"
                             onChange={onSeverityChange}
                             className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
-                            wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full text-base-600 hover:border-base-400"
-                            triggerClass="border-l border-base-300"
                             value={policy.severity}
-                            disabled={!!policy.id}
-                            data-testid={identifierForSeverityField}
                         />
                     </div>
                 </div>
@@ -168,7 +163,9 @@ function CveToPolicyShortForm({
                         </span>
                     </label>
                     <div className="flex">
-                        <MultiSelect
+                        <ReactSelect
+                            isMulti
+                            hideSelectedOptions
                             id="lifecycleStages"
                             name="lifecycleStages"
                             options={lifecycleOptions}
@@ -176,8 +173,7 @@ function CveToPolicyShortForm({
                             onChange={onLifeCycleChange}
                             className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
                             value={policy.lifecycleStages}
-                            disabled={!!policy.id}
-                            data-testid={identifierForLifecycleField}
+                            inputId={identifierForLifecycleField}
                         />
                     </div>
                 </div>

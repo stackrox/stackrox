@@ -22,7 +22,6 @@ const entityType = 'PERMISSION_SET';
 export type PermissionSetsListProps = {
     permissionSets: PermissionSet[];
     roles: Role[];
-    handleCreate: () => void;
     handleDelete: (id: string) => Promise<void>;
 };
 
