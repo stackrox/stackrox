@@ -77,8 +77,7 @@ func (s *handlerTestSuite) TestConsumeEvents() {
 	}
 	s.datastore.EXPECT().Flush(s.handler.eventWriteCtx).MinTimes(1).Do(flushSetCalledFn)
 
-	err := s.eventStream.Produce(event)
-	s.Require().NoError(err)
+	s.eventStream.Produce(event)
 
 	s.Eventually(addCalledFn, 100*time.Millisecond, 10*time.Millisecond)
 	s.Eventually(flushCalledFn, 100*time.Millisecond, 10*time.Millisecond)

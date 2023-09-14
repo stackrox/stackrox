@@ -53,12 +53,14 @@ func newHandler(ds datastore.DataStore, stream events.Stream) Handler {
 func (h *handlerImpl) watchForEvents() {
 	for {
 		select {
-		case event := <-h.stream.Consume():
-			if err := h.ds.AddEvent(h.eventWriteCtx, event); err != nil {
-				log.Errorf("failed to store administration event(message: %q): %v", event.GetMessage(), err)
-			}
 		case <-h.stopSignal.Done():
 			return
+		default:
+			if event := h.stream.Consume(&h.stopSignal); event != nil {
+				if err := h.ds.AddEvent(h.eventWriteCtx, event); err != nil {
+					log.Errorf("failed to store administration event(message: %q): %v", event.GetMessage(), err)
+				}
+			}
 		}
 	}
 }
@@ -80,14 +82,10 @@ func (h *handlerImpl) runDatastoreFlush() {
 }
 
 func (h *handlerImpl) Start() {
-	if h != nil {
-		go h.watchForEvents()
-		go h.runDatastoreFlush()
-	}
+	go h.watchForEvents()
+	go h.runDatastoreFlush()
 }
 
 func (h *handlerImpl) Stop() {
-	if h != nil {
-		h.stopSignal.Signal()
-	}
+	h.stopSignal.Signal()
 }
