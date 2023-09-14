@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 )
 
 const (
@@ -55,6 +56,11 @@ type Store struct {
 
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
+}
+
+func (rs *Store) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -18,6 +19,11 @@ type DeploymentStore struct {
 	deploymentIDs map[string]map[string]struct{}
 	// Stores deployments by IDs.
 	deployments map[string]*deploymentWrap
+}
+
+func (ds *DeploymentStore) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // newDeploymentStore creates and returns a new deployment store.

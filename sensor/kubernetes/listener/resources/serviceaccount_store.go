@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 )
 
 type serviceAccountKey struct {
@@ -13,6 +14,11 @@ type serviceAccountKey struct {
 type ServiceAccountStore struct {
 	lock                        sync.RWMutex
 	serviceAccountToPullSecrets map[serviceAccountKey][]string
+}
+
+func (sas *ServiceAccountStore) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func newServiceAccountStore() *ServiceAccountStore {

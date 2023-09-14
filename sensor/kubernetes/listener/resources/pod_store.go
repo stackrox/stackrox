@@ -4,12 +4,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
 type PodStore struct {
 	lock sync.RWMutex
 	pods map[string]map[string]map[string]*storage.Pod
+}
+
+func (ps *PodStore) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Cleanup deletes all entries from store

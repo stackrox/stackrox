@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 	"github.com/stackrox/rox/sensor/common/store"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -80,6 +81,11 @@ type networkPolicyStoreImpl struct {
 	lock sync.RWMutex
 	// data: namespace -> result (map: policyID -> policy object ref)
 	data map[string]map[string]*storage.NetworkPolicy
+}
+
+func (n *networkPolicyStoreImpl) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func newNetworkPoliciesStore() *networkPolicyStoreImpl {

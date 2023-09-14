@@ -4,12 +4,18 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 )
 
 // OrchestratorNamespaces stores the set of orchestrator namespaces
 type OrchestratorNamespaces struct {
 	nsSet set.StringSet
 	lock  sync.RWMutex
+}
+
+func (n *OrchestratorNamespaces) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // NewOrchestratorNamespaces returns a new OrchestratorNamespaces store

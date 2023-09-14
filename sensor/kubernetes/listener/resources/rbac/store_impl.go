@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/rbac"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -31,6 +32,11 @@ func (rs *storeImpl) Cleanup() {
 	rs.bucketEvaluator = newBucketEvaluator(nil, nil)
 	rs.roles = make(map[namespacedRoleRef]namespacedRole)
 	rs.bindings = make(map[namespacedBindingID]*namespacedBinding)
+}
+
+func (s *storeImpl) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {

@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -42,6 +43,7 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	Cleanup()
+	Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error)
 
 	UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error
 	DeleteImageContentSourcePolicy(uid types.UID) error
@@ -106,6 +108,11 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 		SystemRegistriesConfPath: s.configPath,
 	}
 	return s
+}
+
+func (s *FileStore) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Cleanup resets the store which includes in-memory and disk resources.

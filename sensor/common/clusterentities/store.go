@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/reconcile"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -53,6 +54,11 @@ type Store struct {
 	publicIPsListeners map[PublicIPsListener]struct{}
 
 	mutex sync.RWMutex
+}
+
+func (e *Store) Reconcile(resType, resID string, resHash uint64) (*reconcile.SensorReconciliationEvent, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // NewStore creates and returns a new store instance.
