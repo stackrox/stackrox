@@ -122,7 +122,7 @@ func (s *configDataStoreTestSuite) TestAllowsGetPrivate() {
 	s.NoError(err, "expected no error trying to read with permissions")
 	s.NotNil(privateConfigRead)
 
-	s.storage.EXPECT().Get(gomock.Any()).Return(nil, false, nil).Times(1)
+	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
 
 	privateConfigWrite, err := s.dataStore.GetPrivateConfig(s.hasWriteCtx)
 	s.NoError(err, "expected no error trying to read with permissions")
