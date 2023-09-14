@@ -44,9 +44,6 @@ func (c *writerImpl) resetNoLock() {
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEvent) error {
-	if c == nil {
-		return nil
-	}
 	if event == nil {
 		return errox.InvalidArgs.CausedBy("empty event")
 	}
@@ -55,7 +52,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 		return err
 	}
 
-	isBufferFull := false
+	var isBufferFull bool
 	concurrency.WithLock(&c.mutex, func() {
 		isBufferFull = len(c.buffer) >= maxWriterSize
 	})
@@ -103,10 +100,6 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 }
 
 func (c *writerImpl) Flush(ctx context.Context) error {
-	if c == nil {
-		return nil
-	}
-
 	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}

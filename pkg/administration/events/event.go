@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
-var rootNamespaceUUID = uuid.FromStringOrNil("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
+var rootNamespaceUUID = uuid.FromStringOrPanic("d4dcc3d8-fcdf-4621-8386-0be1372ecbba")
 
 // GenerateEventID returns a deduplication ID as UUID5 based on the event content.
 func GenerateEventID(event *AdministrationEvent) string {

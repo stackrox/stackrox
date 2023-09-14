@@ -91,7 +91,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
 	s.Require().NoError(err)
 
 	id := events.GenerateEventID(event)
-	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err := s.datastore.GetEvent(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 1)
@@ -113,14 +113,14 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnc
 	s.Require().NoError(err)
 
 	id := events.GenerateEventID(event)
-	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err := s.datastore.GetEvent(s.readCtx, id)
 	s.Require().ErrorIs(err, errox.NotFound)
 	s.Empty(dbEvent)
 
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
-	dbEvent, err = s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err = s.datastore.GetEvent(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
@@ -142,7 +142,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEac
 	s.Require().NoError(err)
 
 	id := events.GenerateEventID(event)
-	dbEvent, err := s.datastore.GetEventByID(s.writeCtx, id)
+	dbEvent, err := s.datastore.GetEvent(s.writeCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 1)
@@ -153,7 +153,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEac
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
 
-	dbEvent, err = s.datastore.GetEventByID(s.readCtx, id)
+	dbEvent, err = s.datastore.GetEvent(s.readCtx, id)
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
@@ -180,14 +180,14 @@ func (s *datastorePostgresTestSuite) TestGetEvent() {
 	err := s.datastore.AddEvent(s.writeCtx, administrationEvent)
 	s.Require().NoError(err)
 
-	event, err := s.datastore.GetEventByID(s.readCtx, nonExistingID)
+	event, err := s.datastore.GetEvent(s.readCtx, nonExistingID)
 	s.ErrorIs(err, errox.NotFound)
 	s.Empty(event)
 
 	s.Require().NoError(s.datastore.Flush(s.writeCtx))
 
 	id := events.GenerateEventID(administrationEvent)
-	event, err = s.datastore.GetEventByID(s.readCtx, id)
+	event, err = s.datastore.GetEvent(s.readCtx, id)
 	s.NoError(err)
 	s.assertEventsEqual(administrationEvent, event)
 }
