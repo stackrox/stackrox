@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -16,7 +17,7 @@ import (
 var (
 	_ Handler = (*handlerImpl)(nil)
 
-	flushInterval = time.Minute
+	flushInterval = env.AdministrationEventFlushInterval.DurationSetting()
 
 	log = logging.LoggerForModule()
 )

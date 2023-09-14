@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	eventHandler "github.com/stackrox/rox/central/administration/events/handler"
+	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
@@ -345,7 +345,7 @@ func startServices() {
 	productUsageInjector.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
-		eventHandler.Singleton().Start()
+		administrationEventHandler.Singleton().Start()
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -865,7 +865,7 @@ func waitForTerminationSignal() {
 	}
 
 	if features.AdministrationEvents.Enabled() {
-		stoppables = append(stoppables, stoppableWithName{eventHandler.Singleton(), "administration events handler"})
+		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
 	}
 
 	var wg sync.WaitGroup
