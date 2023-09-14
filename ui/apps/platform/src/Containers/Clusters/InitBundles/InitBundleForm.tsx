@@ -1,13 +1,7 @@
 import React, { ReactElement } from 'react';
 
-import { ClusterInitBundle } from 'services/ClustersService';
-
-export type InitBundleFormProps = {
-    initBundle: ClusterInitBundle | null;
-};
-
-function InitBundleForm({ initBundle }: InitBundleFormProps): ReactElement {
-    return <>{initBundle?.name ?? ''}</>;
+function InitBundleForm(): ReactElement {
+    return <>TODO Form</>;
 }
 
 export default InitBundleForm;

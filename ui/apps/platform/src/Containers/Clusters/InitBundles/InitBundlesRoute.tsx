@@ -79,7 +79,7 @@ function InitBundlesRoute(): ReactElement {
                 ) : initBundle ? (
                     <InitBundleView initBundle={initBundle} />
                 ) : isCreateAction && hasWritePermissionForInitBundles ? (
-                    <InitBundleForm initBundle={null} />
+                    <InitBundleForm />
                 ) : (
                     <InitBundlesTable initBundles={initBundles} />
                 )}
