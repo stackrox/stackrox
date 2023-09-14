@@ -8,6 +8,7 @@ import (
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/administration/events/streams"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -32,7 +33,7 @@ func (s *handlerTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.datastore = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.eventStream = events.GetStreamForTesting(s.T())
+	s.eventStream = streams.GetStreamForTesting(s.T())
 	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
 	s.handler.Start()

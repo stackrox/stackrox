@@ -1,13 +1,14 @@
-package events
+package streams
 
 import (
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	once sync.Once
 
-	stream Stream
+	stream events.Stream
 )
 
 // Singleton returns an instance of the administration events stream.
@@ -16,7 +17,7 @@ var (
 //
 // Currently, the Stream is separated from `central` to allow packages under `pkg` to rely on it, instead
 // of requiring a dependency towards packages within `central`.
-func Singleton() Stream {
+func Singleton() events.Stream {
 	once.Do(func() {
 		stream = newStream()
 	})
