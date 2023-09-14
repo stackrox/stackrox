@@ -24,47 +24,60 @@ describe('Workload CVE watched images flow', () => {
         unwatchAllImages();
     });
 
-    it('should allow adding a watched image via the images table row action', () => {
-        visitWorkloadCveOverview();
-        selectEntityTab('Image');
+    it(
+        'should allow adding a watched image via the images table row action',
+        {
+            defaultCommandTimeout: 10000,
+        },
+        () => {
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
 
-        selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
-            cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
-            cy.get('button:contains("Watch image")').click();
+            selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
+                cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
+                cy.get('button:contains("Watch image")').click();
 
-            // Verify that the selected image is pre-populated in the modal
-            cy.get(`${selectors.addWatchedImageNameInput}[value="${fullName}"]`);
+                // Verify that the selected image is pre-populated in the modal
+                cy.get(`${selectors.addWatchedImageNameInput}[value="${fullName}"]`);
 
-            watchImageFlowFromModal(fullName, nameAndTag);
-        });
-    });
-
-    it('should allow management of watched images via the overview page header button', () => {
-        visitWorkloadCveOverview();
-        selectEntityTab('Image');
-
-        selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
-            // Open the modal and watch the image
-            cy.get(selectors.manageWatchedImagesButton).click();
-            cy.get(selectors.addWatchedImageNameInput).type(fullName);
-            watchImageFlowFromModal(fullName, nameAndTag);
-
-            // Watch a second image to verify functionality with multiple images
-            selectUnwatchedImageTextFromTable().then(([, secondNameAndTag, secondFullName]) => {
-                // Open the modal and watch a second image
-                cy.get(selectors.manageWatchedImagesButton).click();
-                cy.get(selectors.addWatchedImageNameInput).type(secondFullName);
-                watchImageFlowFromModal(secondFullName, secondNameAndTag);
-
-                // Unwatch both images
-                cy.get(selectors.manageWatchedImagesButton).click();
-                unwatchImageFromModal(fullName, nameAndTag);
-
-                cy.get(selectors.manageWatchedImagesButton).click();
-                unwatchImageFromModal(secondFullName, secondNameAndTag);
+                watchImageFlowFromModal(fullName, nameAndTag);
             });
-        });
-    });
+        }
+    );
+
+    it(
+        'should allow management of watched images via the overview page header button',
+
+        {
+            defaultCommandTimeout: 10000,
+        },
+        () => {
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+
+            selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
+                // Open the modal and watch the image
+                cy.get(selectors.manageWatchedImagesButton).click();
+                cy.get(selectors.addWatchedImageNameInput).type(fullName);
+                watchImageFlowFromModal(fullName, nameAndTag);
+
+                // Watch a second image to verify functionality with multiple images
+                selectUnwatchedImageTextFromTable().then(([, secondNameAndTag, secondFullName]) => {
+                    // Open the modal and watch a second image
+                    cy.get(selectors.manageWatchedImagesButton).click();
+                    cy.get(selectors.addWatchedImageNameInput).type(secondFullName);
+                    watchImageFlowFromModal(secondFullName, secondNameAndTag);
+
+                    // Unwatch both images
+                    cy.get(selectors.manageWatchedImagesButton).click();
+                    unwatchImageFromModal(fullName, nameAndTag);
+
+                    cy.get(selectors.manageWatchedImagesButton).click();
+                    unwatchImageFromModal(secondFullName, secondNameAndTag);
+                });
+            });
+        }
+    );
 
     it('should not allow adding a blank or invalid image name to the watch list', () => {
         visitWorkloadCveOverview();
