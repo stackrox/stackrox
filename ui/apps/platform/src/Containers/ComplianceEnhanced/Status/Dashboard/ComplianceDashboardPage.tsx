@@ -18,7 +18,7 @@ function ComplianceDashboardPage() {
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
-                    <Grid hasGutter md={6} xl2={4}>
+                    <Grid hasGutter md={6}>
                         <GridItem>
                             <ComplianceByCluster />
                         </GridItem>
