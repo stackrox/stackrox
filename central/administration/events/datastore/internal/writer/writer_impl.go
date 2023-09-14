@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -50,20 +51,25 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 		return errox.InvalidArgs.CausedBy("empty event")
 	}
 
-	// If the buffer is full, first flush and clear the buffer.
-	if len(c.buffer) >= maxWriterSize {
-		c.Flush(ctx)
+	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+
+	isBufferFull := false
+	concurrency.WithLock(&c.mutex, func() {
+		isBufferFull = len(c.buffer) >= maxWriterSize
+	})
+
+	// If the buffer is full, first flush and clear the buffer. This ensures concurrent callers won't receive
+	// unexpected errors and additional logic on their side to flush and retry.
+	if isBufferFull {
+		if err := c.Flush(ctx); err != nil {
+			return errors.Wrap(err, "failed to flush events when buffer was full")
+		}
 	}
 
 	enrichedEvent := event.ToStorageEvent()
 	id := enrichedEvent.GetId()
-
-	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
-		if err != nil {
-			log.Errorf("failed to verify scope access control: ", err)
-		}
-		return errors.Wrapf(sac.ErrResourceAccessDenied, "administration event %q", id)
-	}
 
 	var baseEvent *storage.AdministrationEvent
 
@@ -101,11 +107,8 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 		return nil
 	}
 
-	if ok, err := eventSAC.WriteAllowed(ctx); err != nil || !ok {
-		if err != nil {
-			log.Errorf("failed to verify scope access control: ", err)
-		}
-		return errors.Wrap(sac.ErrResourceAccessDenied, "administration events flush")
+	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
+		return err
 	}
 
 	c.mutex.Lock()
@@ -124,23 +127,23 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	return nil
 }
 
-// Modifies `new` in place with the values of the merged event.
-func mergeEvents(base *storage.AdministrationEvent, new *storage.AdministrationEvent) {
+// Modifies `updated` in place with the values of the merged event.
+func mergeEvents(base *storage.AdministrationEvent, updated *storage.AdministrationEvent) {
 	if base == nil {
 		return
 	}
-	if new == nil {
-		new = base
+	if updated == nil {
+		updated = base //nolint:staticcheck
 		return
 	}
 
 	// Set CreatedAt timestamp to the earliest timestamp.
-	if base.GetCreatedAt().GetSeconds() < new.GetCreatedAt().GetSeconds() {
-		new.CreatedAt = base.GetCreatedAt()
+	if base.GetCreatedAt().GetSeconds() < updated.GetCreatedAt().GetSeconds() {
+		updated.CreatedAt = base.GetCreatedAt()
 	}
 	// Set LastOccured timestamp to the latest timestamp.
-	if base.GetLastOccurredAt().GetSeconds() > new.GetLastOccurredAt().GetSeconds() {
-		new.LastOccurredAt = base.GetLastOccurredAt()
+	if base.GetLastOccurredAt().GetSeconds() > updated.GetLastOccurredAt().GetSeconds() {
+		updated.LastOccurredAt = base.GetLastOccurredAt()
 	}
-	new.NumOccurrences = base.GetNumOccurrences() + 1
+	updated.NumOccurrences = base.GetNumOccurrences() + 1
 }

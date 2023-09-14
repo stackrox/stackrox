@@ -1,14 +1,14 @@
-//go:build sql_integration
-
 package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
@@ -53,7 +53,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	searcher := search.New(pgStore.NewIndexer(s.postgresTest.DB))
 	s.store = pgStore.New(s.postgresTest.DB)
 	s.writer = writer.New(s.store)
-	s.datastore = NewDataStore(searcher, s.store, s.writer)
+	s.datastore = newDataStore(searcher, s.store, s.writer)
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {
@@ -114,6 +114,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnc
 	id := events.GenerateEventID(event)
 	dbEvent, err := s.datastore.GetEventByID(s.readCtx, id)
 	s.Require().ErrorIs(err, errox.NotFound)
+	s.Empty(dbEvent)
 
 	err = s.datastore.Flush(s.writeCtx)
 	s.Require().NoError(err)
@@ -155,4 +156,73 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEac
 	s.Require().NoError(err)
 	s.assertEventsEqual(event, dbEvent)
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
+}
+
+func (s *datastorePostgresTestSuite) TestFlushWithEmptyBuffer() {
+	err := s.datastore.Flush(s.writeCtx)
+	s.NoError(err)
+
+	err = s.datastore.Flush(s.writeCtx)
+	s.NoError(err)
+}
+
+func (s *datastorePostgresTestSuite) TestGetEvent() {
+	nonExistingID := "0925514f-3a33-5931-b431-756406e1a008"
+
+	administrationEvent := &events.AdministrationEvent{
+		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message: "message",
+		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:    "hint",
+		Domain:  "domain",
+	}
+	err := s.datastore.AddEvent(s.writeCtx, administrationEvent)
+	s.Require().NoError(err)
+
+	event, err := s.datastore.GetEventByID(s.readCtx, nonExistingID)
+	s.ErrorIs(err, errox.NotFound)
+	s.Empty(event)
+
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
+
+	id := events.GenerateEventID(administrationEvent)
+	event, err = s.datastore.GetEventByID(s.readCtx, id)
+	s.NoError(err)
+	s.assertEventsEqual(administrationEvent, event)
+}
+
+func (s *datastorePostgresTestSuite) TestCountEvents() {
+	count, err := s.datastore.CountEvents(s.readCtx, &v1.Query{})
+	s.NoError(err)
+	s.Zero(count)
+
+	s.addEvents(100)
+
+	count, err = s.datastore.CountEvents(s.readCtx, &v1.Query{})
+	s.NoError(err)
+	s.Equal(100, count)
+}
+
+func (s *datastorePostgresTestSuite) TestAddEvent_WriterBufferFull() {
+	// Ensure that when adding more events than the writer's internal buffer, `AddEvent()` will not
+	// return an error and the events are successfully added.
+	s.addEvents(1001)
+
+	count, err := s.datastore.CountEvents(s.readCtx, &v1.Query{})
+	s.NoError(err)
+	s.Equal(1001, count)
+}
+
+func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) {
+	for i := 0; i < numOfEvents; i++ {
+		event := &events.AdministrationEvent{
+			Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+			Message: fmt.Sprintf("message%d", i),
+			Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+			Hint:    fmt.Sprintf("hint%d", i),
+			Domain:  fmt.Sprintf("domain%d", i),
+		}
+		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, event))
+	}
+	s.Require().NoError(s.datastore.Flush(s.writeCtx))
 }

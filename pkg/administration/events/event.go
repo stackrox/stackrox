@@ -92,6 +92,7 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 	return storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN
 }
 
+// ToStorageEvent converts the event to its storage representation.
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 	tsNow := gogoTimestamp.TimestampNow()
 	return &storage.AdministrationEvent{
