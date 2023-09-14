@@ -114,7 +114,7 @@ func (s *getEventTestSuite) SetupTest() {
 }
 
 func (s *getEventTestSuite) TestGetAdministrationEvent_Success() {
-	s.datastoreMock.EXPECT().GetEventByID(s.ctx, fakeID).Return(fakeEvent, nil)
+	s.datastoreMock.EXPECT().GetEvent(s.ctx, fakeID).Return(fakeEvent, nil)
 	result, err := s.service.GetAdministrationEvent(s.ctx, s.fakeResourceByIDRequest)
 
 	s.Require().NoError(err)
@@ -122,7 +122,7 @@ func (s *getEventTestSuite) TestGetAdministrationEvent_Success() {
 }
 
 func (s *getEventTestSuite) TestGetAdministrationEvent_Error() {
-	s.datastoreMock.EXPECT().GetEventByID(s.ctx, fakeID).Return(nil, errFake)
+	s.datastoreMock.EXPECT().GetEvent(s.ctx, fakeID).Return(nil, errFake)
 	result, err := s.service.GetAdministrationEvent(s.ctx, s.fakeResourceByIDRequest)
 
 	s.ErrorIs(err, errFake)
@@ -130,7 +130,7 @@ func (s *getEventTestSuite) TestGetAdministrationEvent_Error() {
 }
 
 func (s *getEventTestSuite) TestGetAdministrationEvent_NotFound() {
-	s.datastoreMock.EXPECT().GetEventByID(s.ctx, fakeID).Return(nil, errox.NotFound)
+	s.datastoreMock.EXPECT().GetEvent(s.ctx, fakeID).Return(nil, errox.NotFound)
 	result, err := s.service.GetAdministrationEvent(s.ctx, s.fakeResourceByIDRequest)
 
 	s.ErrorIs(err, errox.NotFound)

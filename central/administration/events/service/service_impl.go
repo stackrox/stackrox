@@ -69,7 +69,7 @@ func (s *serviceImpl) CountAdministrationEvents(ctx context.Context, request *v1
 // GetAdministrationEvent returns a specific administration event based on its ID.
 func (s *serviceImpl) GetAdministrationEvent(ctx context.Context, resource *v1.ResourceByID) (*v1.GetAdministrationEventResponse, error) {
 	resourceID := resource.GetId()
-	event, err := s.ds.GetEventByID(ctx, resourceID)
+	event, err := s.ds.GetEvent(ctx, resourceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get administration event %q", resourceID)
 	}
