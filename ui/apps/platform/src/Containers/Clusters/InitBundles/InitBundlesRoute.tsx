@@ -1,30 +1,25 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import qs from 'qs';
 import { Alert, Bullseye, PageSection, Spinner, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
+import usePermissions from 'hooks/usePermissions';
 import { ClusterInitBundle, fetchClusterInitBundles } from 'services/ClustersService';
-import { getQueryObject } from 'utils/queryStringUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import InitBundleForm from './InitBundleForm';
 import InitBundleView from './InitBundleView';
 import InitBundlesTable from './InitBundlesTable';
 
-function getAction(search: string): 'create' | 'edit' | '' {
-    const queryObject = getQueryObject(search);
-
-    switch (queryObject.action) {
-        case 'create':
-        case 'edit':
-            return queryObject.action;
-        default:
-            return '';
-    }
-}
-
 function InitBundlesRoute(): ReactElement {
+    const { hasReadWriteAccess } = usePermissions();
+    // Pending resolution whether resources or Admin role.
+    const hasWritePermissionForInitBundles =
+        hasReadWriteAccess('Administration') && hasReadWriteAccess('Integration');
+
     const { search } = useLocation();
+    const isCreateAction = qs.parse(search, { ignoreQueryPrefix: true }).action === 'create';
     const { id } = useParams(); // see clustersInitBundlesPathWithParam in routePaths.ts
 
     const [isLoading, setIsLoading] = useState(false);
@@ -47,8 +42,7 @@ function InitBundlesRoute(): ReactElement {
             });
     }, [setIsLoading]);
 
-    const action = getAction(search);
-    const h1 = id || action === 'create' ? 'Init bundle' : 'Init bundles';
+    const h1 = id || isCreateAction ? 'Init bundle' : 'Init bundles';
     const title = `Clusters - ${h1}`;
     const initBundle = initBundles.find((initBundleArg) => initBundleArg.id === id);
 
@@ -82,11 +76,9 @@ function InitBundlesRoute(): ReactElement {
                     >
                         {id}
                     </Alert>
-                ) : action === 'edit' && initBundle ? (
-                    <InitBundleForm initBundle={initBundle} />
                 ) : initBundle ? (
                     <InitBundleView initBundle={initBundle} />
-                ) : action === 'create' && !initBundle ? (
+                ) : isCreateAction && hasWritePermissionForInitBundles ? (
                     <InitBundleForm initBundle={null} />
                 ) : (
                     <InitBundlesTable initBundles={initBundles} />
