@@ -15,11 +15,13 @@ import InitBundlesTable from './InitBundlesTable';
 function InitBundlesRoute(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     // Pending resolution whether resources or Admin role.
-    const hasWritePermissionForInitBundles =
+    const hasWriteAccessForInitBundles =
         hasReadWriteAccess('Administration') && hasReadWriteAccess('Integration');
 
     const { search } = useLocation();
-    const isCreateAction = qs.parse(search, { ignoreQueryPrefix: true }).action === 'create';
+    const isCreateAction =
+        hasWriteAccessForInitBundles &&
+        qs.parse(search, { ignoreQueryPrefix: true }).action === 'create';
     const { id } = useParams(); // see clustersInitBundlesPathWithParam in routePaths.ts
 
     const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +80,7 @@ function InitBundlesRoute(): ReactElement {
                     </Alert>
                 ) : initBundle ? (
                     <InitBundleView initBundle={initBundle} />
-                ) : isCreateAction && hasWritePermissionForInitBundles ? (
+                ) : isCreateAction ? (
                     <InitBundleForm />
                 ) : (
                     <InitBundlesTable initBundles={initBundles} />
