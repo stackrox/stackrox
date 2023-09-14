@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -507,6 +508,10 @@ type serviceImplTestSuite struct {
 	storedClusterIDs   []string
 	storedNamespaceIDs []string
 	clusterNameToIDMap map[string]string
+
+	storedPermissionSetIDs []string
+	storedAccessScopeIDs   []string
+	storedRoleNames        []string
 }
 
 func (s *serviceImplTestSuite) SetupSuite() {
@@ -534,6 +539,10 @@ func (s *serviceImplTestSuite) TearDownSuite() {
 }
 
 func (s *serviceImplTestSuite) SetupTest() {
+	s.storedAccessScopeIDs = make([]string, 0)
+	s.storedPermissionSetIDs = make([]string, 0)
+	s.storedRoleNames = make([]string, 0)
+
 	s.storedClusterIDs = make([]string, 0)
 	s.storedNamespaceIDs = make([]string, 0)
 	s.clusterNameToIDMap = make(map[string]string, 0)
@@ -573,6 +582,15 @@ func (s *serviceImplTestSuite) TearDownTest() {
 	s.storedClusterIDs = s.storedClusterIDs[:0]
 	for _, namespaceID := range s.storedNamespaceIDs {
 		s.Require().NoError(s.service.namespaceDataStore.RemoveNamespace(writeCtx, namespaceID))
+	}
+	for _, roleName := range s.storedRoleNames {
+		s.deleteRole(roleName)
+	}
+	for _, permissionSetID := range s.storedPermissionSetIDs {
+		s.deletePermissionSet(permissionSetID)
+	}
+	for _, accessScopeID := range s.storedAccessScopeIDs {
+		s.deleteAccessScope(accessScopeID)
 	}
 }
 
@@ -1026,6 +1044,177 @@ func (s *serviceImplTestSuite) TestGetNamespacesForClusterAndPermissions() {
 			s.ElementsMatch(namespaceResponse.GetNamespaces(), c.expectedNamespaces)
 		})
 	}
+}
+
+func getValidRole(name string) *storage.Role {
+	permissionSetID := accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin]
+	scopeID := accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
+	return &storage.Role{
+		Name:            name,
+		Description:     fmt.Sprintf("Test role for %s", name),
+		PermissionSetId: permissionSetID,
+		AccessScopeId:   scopeID,
+		Traits:          nil,
+	}
+}
+
+func (s *serviceImplTestSuite) TestCreateRoleValidAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	roleName := "TestCreateRoleValidAccessScopeID"
+
+	ps := s.createPermissionSet(roleName)
+	scope := s.createAccessScope(roleName)
+
+	role := getValidRole(roleName)
+	role.PermissionSetId = ps.GetId()
+	role.AccessScopeId = scope.GetId()
+	createRoleRequest := &v1.CreateRoleRequest{
+		Name: roleName,
+		Role: role,
+	}
+	_, err := s.service.CreateRole(ctx, createRoleRequest)
+	s.NoError(err)
+	s.storedRoleNames = append(s.storedRoleNames, role.GetName())
+}
+
+func (s *serviceImplTestSuite) TestCreateRoleEmptyAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	roleName := "TestCreateRoleEmptyAccessScopeID"
+
+	ps := s.createPermissionSet(roleName)
+
+	role := getValidRole(roleName)
+	role.PermissionSetId = ps.GetId()
+	role.AccessScopeId = ""
+	createRoleRequest := &v1.CreateRoleRequest{
+		Name: roleName,
+		Role: role,
+	}
+	_, err := s.service.CreateRole(ctx, createRoleRequest)
+	s.ErrorContains(err, "role access_scope_id field must be set")
+}
+
+func (s *serviceImplTestSuite) TestUpdateExistingRoleValidAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	role := s.createRole("TestUpdateExistingRoleValidAccessScopeID")
+	newScope := s.createAccessScope("new scope")
+	role.AccessScopeId = newScope.GetId()
+	_, err := s.service.UpdateRole(ctx, role)
+	s.NoError(err)
+}
+
+func (s *serviceImplTestSuite) TestUpdateExistingRoleEmptyAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	roleName := "TestUpdateExistingRoleEmptyAccessScopeID"
+	role := s.createRole(roleName)
+	role.AccessScopeId = ""
+	_, err := s.service.UpdateRole(ctx, role)
+	s.ErrorContains(err, "role access_scope_id field must be set")
+}
+
+func (s *serviceImplTestSuite) TestUpdateMissingRoleValidAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	roleName := "TestUpdateMissingRoleValidAccessScopeID"
+	ps := s.createPermissionSet(roleName)
+	scope := s.createAccessScope(roleName)
+	role := getValidRole(roleName)
+	role.PermissionSetId = ps.GetId()
+	role.AccessScopeId = scope.GetId()
+	_, err := s.service.UpdateRole(ctx, role)
+	s.ErrorIs(err, errox.NotFound)
+}
+
+func (s *serviceImplTestSuite) TestUpdateMissingRoleEmptyAccessScopeID() {
+	ctx := sac.WithAllAccess(context.Background())
+	roleName := "TestUpdateMissingRoleEmptyAccessScopeID"
+	ps := s.createPermissionSet(roleName)
+	role := getValidRole(roleName)
+	role.PermissionSetId = ps.GetId()
+	role.AccessScopeId = ""
+	_, err := s.service.UpdateRole(ctx, role)
+	s.ErrorContains(err, "role access_scope_id field must be set")
+}
+
+func (s *serviceImplTestSuite) createAccessScope(name string) *storage.SimpleAccessScope {
+	ctx := sac.WithAllAccess(context.Background())
+	scope := &storage.SimpleAccessScope{
+		Name:        name,
+		Description: fmt.Sprintf("Test access scope for %s", name),
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"test"},
+		},
+		Traits: nil,
+	}
+	postedScope, postErr := s.service.PostSimpleAccessScope(ctx, scope)
+	s.Require().NoError(postErr)
+	s.storedAccessScopeIDs = append(s.storedAccessScopeIDs, postedScope.GetId())
+	return postedScope
+}
+
+func (s *serviceImplTestSuite) deleteAccessScope(id string) {
+	ctx := sac.WithAllAccess(context.Background())
+	request := &v1.ResourceByID{
+		Id: id,
+	}
+	_, deleteErr := s.service.DeleteSimpleAccessScope(ctx, request)
+	s.Require().NoError(deleteErr)
+}
+
+func (s *serviceImplTestSuite) createPermissionSet(name string) *storage.PermissionSet {
+	ctx := sac.WithAllAccess(context.Background())
+	permissionSet := &storage.PermissionSet{
+		Name:             name,
+		Description:      fmt.Sprintf("Test permission set for %s", name),
+		ResourceToAccess: nil,
+		Traits:           nil,
+	}
+	ps, postErr := s.service.PostPermissionSet(ctx, permissionSet)
+	s.Require().NoError(postErr)
+	s.storedPermissionSetIDs = append(s.storedPermissionSetIDs, ps.GetId())
+	return ps
+}
+
+func (s *serviceImplTestSuite) deletePermissionSet(id string) {
+	ctx := sac.WithAllAccess(context.Background())
+	request := &v1.ResourceByID{
+		Id: id,
+	}
+	_, deleteErr := s.service.DeletePermissionSet(ctx, request)
+	s.Require().NoError(deleteErr)
+}
+
+func (s *serviceImplTestSuite) createRole(roleName string) *storage.Role {
+	ctx := sac.WithAllAccess(context.Background())
+
+	ps := s.createPermissionSet(roleName)
+	scope := s.createAccessScope(roleName)
+
+	createRoleRequest := &v1.CreateRoleRequest{
+		Name: roleName,
+		Role: getValidRole(roleName),
+	}
+	createRoleRequest.Role.PermissionSetId = ps.GetId()
+	createRoleRequest.Role.AccessScopeId = scope.GetId()
+
+	_, createErr := s.service.CreateRole(ctx, createRoleRequest)
+	s.Require().NoError(createErr)
+	s.storedRoleNames = append(s.storedRoleNames, roleName)
+
+	readRoleRequest := &v1.ResourceByID{
+		Id: roleName,
+	}
+	role, readErr := s.service.GetRole(ctx, readRoleRequest)
+	s.Require().NoError(readErr)
+	return role
+}
+
+func (s *serviceImplTestSuite) deleteRole(name string) {
+	ctx := sac.WithAllAccess(context.Background())
+	request := &v1.ResourceByID{
+		Id: name,
+	}
+	_, deleteErr := s.service.DeleteRole(ctx, request)
+	s.Require().NoError(deleteErr)
 }
 
 func TestGetMyPermissions(t *testing.T) {

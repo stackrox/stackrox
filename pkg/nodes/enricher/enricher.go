@@ -29,9 +29,15 @@ type CVESuppressor interface {
 	EnrichNodeWithSuppressedCVEs(image *storage.Node)
 }
 
-// New returns a new NodeEnricher instance for the given subsystem.
-// (The subsystem is just used for Prometheus metrics.)
+// New returns a new NodeEnricher for the given Prometheus metrics subsystem and the Clair node scanner creator.
 func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
+	return NewWithCreator(cves, subsystem, func() (string, scanners.NodeScannerCreator) {
+		return clairify.NodeScannerCreator()
+	})
+}
+
+// NewWithCreator returns a new NodeEnricher for the given Prometheus metrics subsystem and node scanner creator.
+func NewWithCreator(cves CVESuppressor, subsystem pkgMetrics.Subsystem, fn func() (string, scanners.NodeScannerCreator)) NodeEnricher {
 	enricher := &enricherImpl{
 		cves: cves,
 
@@ -40,9 +46,8 @@ func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
 
 		metrics: newMetrics(subsystem),
 	}
-
-	clairifyName, clairifyCreator := clairify.NodeScannerCreator()
-	enricher.creators[clairifyName] = clairifyCreator
+	name, creator := fn()
+	enricher.creators[name] = creator
 
 	return enricher
 }

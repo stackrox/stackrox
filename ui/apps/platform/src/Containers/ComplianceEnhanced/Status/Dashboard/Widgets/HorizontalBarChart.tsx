@@ -10,9 +10,9 @@ import {
 } from 'utils/chartUtils';
 
 import { getBarColor } from './ColorsForCompliance';
-import { PassingRateData } from '../types';
+import { PassingRateData } from '../../types';
 
-const labelLinkCallback = ({ datum }: ChartLabelProps, data: PassingRateData[]) => {
+const labelLinkCallback = ({ datum }: ChartLabelProps, data: PassingRateData[]): string => {
     return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
 };
 

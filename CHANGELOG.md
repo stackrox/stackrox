@@ -13,6 +13,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
+- ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
+
 ### Deprecated Fatures
 
 ### Technical Changes
