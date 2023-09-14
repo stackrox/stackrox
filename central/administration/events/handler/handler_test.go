@@ -32,7 +32,7 @@ func (s *handlerTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.datastore = dsMocks.NewMockDataStore(s.mockCtrl)
-	s.eventStream = events.NewStream()
+	s.eventStream = events.GetStreamForTesting(s.T())
 	s.handler = newHandler(s.datastore, s.eventStream).(*handlerImpl)
 	flushInterval = 10 * time.Millisecond
 	s.handler.Start()
