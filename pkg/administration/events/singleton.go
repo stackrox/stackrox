@@ -18,7 +18,7 @@ var (
 // Currently, the Stream is separated from `central` to allow packages under `pkg` to rely on it, instead
 // of requiring a dependency towards packages within `central`.
 func Singleton() Stream {
-	if !features.CentralEvents.Enabled() {
+	if !features.AdministrationEvents.Enabled() {
 		return nil
 	}
 	once.Do(func() {
