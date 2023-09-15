@@ -41,7 +41,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Fetch, Validate, and Store NVD Data
-      run: ./.github/workflows/scripts/fetch-update-nvd.sh ${{ matrix.year }}
+      run: ./.github/workflows/scripts/scanner-fetch-update-nvd.sh ${{ matrix.year }}
 
 
   send-notification:
