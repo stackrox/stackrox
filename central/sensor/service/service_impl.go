@@ -117,8 +117,6 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
 		}
 
-		log.Errorf("Sending Central Hello message: %v", centralHello)
-
 		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
 			return errors.Wrap(err, "sending CentralHello message to sensor")
 		}
