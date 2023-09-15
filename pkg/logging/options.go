@@ -21,11 +21,11 @@ type OptionsFunc = func(option *options)
 //   - your module resolves to a specific domain (see pkg/administration/events/domain.go).
 //   - Administration events emitted from your specific package have hints defined to help
 //     users (see pkg/administration/events/hints.go).
-func EnableAdministrationEvents() OptionsFunc {
+func EnableAdministrationEvents(stream events.Stream) OptionsFunc {
 	return func(option *options) {
 		if features.AdministrationEvents.Enabled() {
 			option.AdministrationEventsConverter = &zapLogConverter{}
-			option.AdministrationEventsStream = events.Singleton()
+			option.AdministrationEventsStream = stream
 		}
 	}
 }
