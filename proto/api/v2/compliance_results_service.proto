@@ -52,6 +52,7 @@ message ComplianceScanStatsShim {
     int32                                   number_of_failing_checks = 3;
     int32                                   number_of_passing_checks = 4;
     google.protobuf.Timestamp               last_scan                = 5;
+    string                                  scan_id                  = 6;
 }
 
 // ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration
@@ -65,12 +66,19 @@ message ComplianceScanResultsOverview {
 message ComplianceProfileScanStats {
     ComplianceScanStatsShim       scan_stats            = 1;
     string                        profile_name          = 2;
+    string                        profile_id            = 3;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 message ComplianceClusterScanStats {
     ComplianceScanStatsShim       scan_stats            = 1;
     string                        cluster_id            = 2;
+}
+
+// ComplianceProfile represents a profile related to a compliance scan
+message ComplianceProfile {
+    string profile_id   = 1;
+    string profile_name = 2;
 }
 
 // ListComplianceScanResultsOverviewResponse provides overviews for scans
@@ -93,6 +101,11 @@ message ListComplianceScanResultsResponse {
     repeated ComplianceScanResult scan_results = 1;
 }
 
+// ListComplianceProfilesResponse provides the profiles related to a compliance scan
+message ListComplianceProfilesResponse {
+    repeated ComplianceProfile profiles = 1;
+}
+
 service ComplianceResultsService {
     // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
     rpc GetComplianceScanResultsOverview (RawQuery) returns (ListComplianceScanResultsOverviewResponse) {
@@ -105,6 +118,27 @@ service ComplianceResultsService {
     rpc GetComplianceScanResults (RawQuery) returns (ListComplianceScanResultsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/results"
+        };
+    }
+
+    // GetComplianceScanProfiles fetches all profiles related to a scan
+    // Supported RawQuery query fields
+    //   - scan: id of the compliance scan (require(scan or cluster))
+    //   - cluster: id of the cluster (require(scan or cluster))
+    rpc GetComplianceScanProfiles (RawQuery) returns (ListComplianceProfilesResponse) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/profiles"
+        };
+    }
+
+    // GetComplianceScanProfileResults retrieves the most recent compliance operator scan results for the specified query
+    // Supported RawQuery query fields:
+    //   - profile: id of the profile (required)
+    //   - scan: id of the compliance scan (optional)
+    //   - cluster: id of the cluster (optional)
+    rpc GetComplianceScanProfileResults (RawQuery) returns (ComplianceScanResult) {
+        option (google.api.http) = {
+            get: "/v2/compliance/scan/profile/results"
         };
     }
 
