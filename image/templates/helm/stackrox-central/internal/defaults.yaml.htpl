@@ -163,6 +163,10 @@ defaults:
       name: [< required "" .ScannerDBImageRemote >]
       tag: [< required "" .ScannerImageTag >]
 
+  scannerV4:
+    disable: true
+
+
   system:
     createSCCs: [< not .Operator >]
 
