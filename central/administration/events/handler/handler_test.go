@@ -6,9 +6,9 @@ import (
 	"time"
 
 	dsMocks "github.com/stackrox/rox/central/administration/events/datastore/mocks"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/administration/events/streams"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -44,13 +44,7 @@ func (s *handlerTestSuite) TearDownTest() {
 }
 
 func (s *handlerTestSuite) TestConsumeEvents() {
-	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
-	}
+	event := fixtures.GetAdministrationEvent()
 
 	addCalled := false
 	addSetCalledFn := func(ctx context.Context, event *events.AdministrationEvent) {
