@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
@@ -420,6 +421,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

@@ -20,7 +20,7 @@ message AdministrationEvent {
     string message                             = 4;
     string hint                                = 5;
     string domain                              = 6 [(gogoproto.moretags) = 'search:"Event Domain,hidden"'];
-    string resource_type                       = 7 [(gogoproto.moretags) = 'search:"Resource,hidden"'];
+    string resource_type                       = 7 [(gogoproto.moretags) = 'search:"Resource Type,hidden"'];
     string resource_id                         = 8;
     int64 num_occurrences                      = 9;
     google.protobuf.Timestamp last_occurred_at = 10 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
