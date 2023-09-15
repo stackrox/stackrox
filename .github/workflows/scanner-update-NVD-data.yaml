@@ -1,9 +1,6 @@
 name: Fetch NVD Data Feeds
 
 on:
-  push:
-    branches:
-    - "yli3/**"
   schedule:
   - cron: '0 0 * * *'  # this runs every day at midnight
 
