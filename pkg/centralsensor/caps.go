@@ -43,7 +43,7 @@ func (c CentralCapability) String() string {
 	return string(c)
 }
 
-// CapSetFromStringSlice takes a slice of strings, and converts it into a SensorCapabilitySet.
+// CentralCapSetFromStringSlice takes a slice of strings, and converts it into a SensorCapabilitySet.
 func CentralCapSetFromStringSlice(capStrs ...string) set.Set[CentralCapability] {
 	capSet := set.NewSet[CentralCapability]()
 	for _, capStr := range capStrs {
@@ -52,7 +52,7 @@ func CentralCapSetFromStringSlice(capStrs ...string) set.Set[CentralCapability] 
 	return capSet
 }
 
-// CapSetToStringSlice takes a capability set, and converts it into a string slice.
+// CentralCapSetToStringSlice takes a capability set, and converts it into a string slice.
 func CentralCapSetToStringSlice(capSet set.Set[CentralCapability]) []string {
 	strs := make([]string, 0, len(capSet))
 	for capability := range capSet {

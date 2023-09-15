@@ -3,7 +3,7 @@ package centralsensor
 const (
 	// Central Caps
 
-	//SendHashesCap identifies the the capability to send hashes on central startup.
+	// SendHashesCap identifies the the capability to send hashes on central startup.
 	SendHashesCap CentralCapability = "SendHashes"
 
 	// Sensor Caps
