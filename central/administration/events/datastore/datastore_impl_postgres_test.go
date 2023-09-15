@@ -165,6 +165,11 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEac
 	s.EqualValues(dbEvent.GetNumOccurrences(), 2)
 }
 
+func (s *datastorePostgresTestSuite) TestUpsertEvent_NilEvent() {
+	err := s.datastore.AddEvent(s.writeCtx, nil)
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
 func (s *datastorePostgresTestSuite) TestFlushWithEmptyBuffer() {
 	err := s.datastore.Flush(s.writeCtx)
 	s.NoError(err)

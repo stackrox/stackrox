@@ -116,7 +116,7 @@ func mergeEvents(updated *storage.AdministrationEvent, base *storage.Administrat
 	if base.GetCreatedAt().GetSeconds() < updated.GetCreatedAt().GetSeconds() {
 		updated.CreatedAt = base.GetCreatedAt()
 	}
-	// Set LastOccured timestamp to the latest timestamp.
+	// Set LastOccurred timestamp to the latest timestamp.
 	if base.GetLastOccurredAt().GetSeconds() > updated.GetLastOccurredAt().GetSeconds() {
 		updated.LastOccurredAt = base.GetLastOccurredAt()
 	}
