@@ -4,8 +4,10 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,21 +23,31 @@ type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)
 	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
 	GetPublicConfig(context.Context) (*storage.PublicConfig, error)
+	GetCachedPublicConfig(context.Context) (*storage.PublicConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
 }
 
+const (
+	publicConfigCacheSize = 1
+	publicConfigKey       = "public configuration"
+)
+
 // New returns an instance of DataStore.
 func New(store store.Store) DataStore {
+	cache := expirable.NewLRU[string, *storage.PublicConfig](
+		publicConfigCacheSize,
+		nil,
+		1*time.Second,
+	)
 	return &datastoreImpl{
-		store: store,
+		store:             store,
+		publicConfigCache: cache,
 	}
 }
 
 // NewForTest returns an instance of DataStore for testing purpose.
 func NewForTest(_ *testing.T, db postgres.DB) DataStore {
-	return &datastoreImpl{
-		store: pgStore.New(db),
-	}
+	return New(pgStore.New(db))
 }
 
 var (
@@ -44,6 +56,28 @@ var (
 
 type datastoreImpl struct {
 	store store.Store
+
+	publicConfigCache *expirable.LRU[string, *storage.PublicConfig]
+}
+
+// GetCachedPublicConfig returns the public part of the Central config.
+// The primary data source will be the cache and the secondary the database.
+func (d *datastoreImpl) GetCachedPublicConfig(ctx context.Context) (*storage.PublicConfig, error) {
+	var err error
+	publicConfig, found := d.publicConfigCache.Get(publicConfigKey)
+	if found && publicConfig != nil {
+		return publicConfig, nil
+	}
+
+	publicConfig, err = d.GetPublicConfig(ctx)
+	if err != nil {
+		return publicConfig, err
+	}
+	// The result of the cache addition is ignored as the information
+	// whether the cache did evict anything is irrelevant.
+	_ = d.publicConfigCache.Add(publicConfigKey, publicConfig)
+
+	return publicConfig, err
 }
 
 // GetPublicConfig returns the public part of the Central config
