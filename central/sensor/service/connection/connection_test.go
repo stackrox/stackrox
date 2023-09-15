@@ -7,7 +7,9 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/hash/manager/mocks"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
+	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -61,6 +63,113 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 	s.Require().NotNil(policySync)
 	s.NotEmpty(policySync.Policies)
 	s.Equal(policyversion.CurrentVersion().String(), policySync.Policies[0].GetPolicyVersion())
+}
+
+func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
+
+	cases := map[string]struct {
+		givenSensorCapabilities       []centralsensor.SensorCapability
+		givenSensorState              central.SensorHello_SensorState
+		assertReconciliationMapClosed bool
+		assertDeduperState            map[string]uint64
+		assertDeduperStateSent        bool
+	}{
+		"Sensor reconciles: sensor has capability and status is reconnect": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:              central.SensorHello_RECONNECT,
+			assertReconciliationMapClosed: true,
+			assertDeduperStateSent:        true,
+			assertDeduperState:            map[string]uint64{"deployment:1": 0},
+		},
+		"Central reconciles: sensor has capability and status is startup": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:              central.SensorHello_STARTUP,
+			assertReconciliationMapClosed: false,
+			assertDeduperStateSent:        false,
+		},
+		"Central reconciles: sensor has capability and status is unknown": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:              central.SensorHello_UNKNOWN,
+			assertReconciliationMapClosed: false,
+			assertDeduperStateSent:        false,
+		},
+		"Central reconciles: sensor doesn't have capability status is reconnect": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{},
+			givenSensorState:              central.SensorHello_RECONNECT,
+			assertReconciliationMapClosed: false,
+			assertDeduperStateSent:        false,
+		},
+		"Central reconciles: sensor doesn't have capability status is startup": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{},
+			givenSensorState:              central.SensorHello_STARTUP,
+			assertReconciliationMapClosed: false,
+			assertDeduperStateSent:        false,
+		},
+		"Central reconciles: sensor doesn't have capability status is unknown": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{},
+			givenSensorState:              central.SensorHello_UNKNOWN,
+			assertReconciliationMapClosed: false,
+			assertDeduperStateSent:        false,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			ctx := context.Background()
+
+			ctrl := gomock.NewController(s.T())
+			mgrMock := clusterMgrMock.NewMockClusterManager(ctrl)
+			pipeline := pipelineMock.NewMockClusterPipeline(ctrl)
+			deduper := mocks.NewMockDeduper(ctrl)
+			stopSig := concurrency.NewErrorSignal()
+
+			hello := &central.SensorHello{
+				SensorVersion: "1.0",
+				SensorState:   tc.givenSensorState,
+			}
+
+			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper)
+
+			sensorMockConn := &sensorConnection{
+				clusterMgr:         mgrMock,
+				sensorEventHandler: eventHandler,
+				sensorHello:        hello,
+				hashDeduper:        deduper,
+			}
+
+			server := &mockServer{
+				sentList: make([]*central.MsgToSensor, 0),
+			}
+
+			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
+
+			mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
+			if tc.assertDeduperStateSent {
+				deduper.EXPECT().GetSuccessfulHashes().Return(tc.assertDeduperState).Times(1)
+			} else {
+				deduper.EXPECT().GetSuccessfulHashes().Times(0)
+			}
+
+			s.NoError(sensorMockConn.Run(ctx, server, caps))
+
+			var deduperState *central.DeduperState
+			for _, msg := range server.sentList {
+				if m := msg.GetDeduperState(); m != nil {
+					deduperState = m
+				}
+			}
+
+			if tc.assertDeduperStateSent {
+				s.NotNil(deduperState)
+				s.Equal(tc.assertDeduperState, deduperState.ResourceHashes)
+			} else {
+				s.Nil(deduperState)
+			}
+
+			s.Equal(tc.assertReconciliationMapClosed, eventHandler.reconciliationMap.IsClosed())
+		})
+	}
+
 }
 
 func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeInvalidVersions() {
