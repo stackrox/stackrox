@@ -26,7 +26,7 @@ This Updater will consolidate the data that only contains valid CVSS v3 scores, 
 
 Using a new CVSS enricher, the updater operates as a GoRoutine, set to refresh the CVSS data bundle every 4 hours. By leveraging GoRoutine, this pipeline runs independently from Central, ensuring that any failures won't disrupt Central.
 
-The CVSS Updater handler, paired with a singleton in Central, offers an HTTP handler for both the sensor and scanner, facilitating data retrieval requests, fetching the existing data bundle and delivering consolidated NVD CVSS data via a http URL.
+The CVSS Updater handler, paired with a singleton in Central, will offer an HTTP handler so Scanner can retrieve the consolidated NVD CVSS data.
 
 Within Scanner V4, there's a component named as 'data retriever', which in Scanner V2 was called the 'updater'. This name, 'updater', could be mistaken for the data updating GitHub action workflow in the Scanner V4 context. This CVSS data retriever in Scanner V4 communicates directly with Central's CVSS data retrieval endpoint.
 
