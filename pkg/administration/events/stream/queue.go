@@ -1,4 +1,4 @@
-package streams
+package stream
 
 import (
 	"container/list"
@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -15,6 +16,10 @@ const (
 	// 1 Administration event = 160 bytes
 	// 100000 *160 bytes = 16 MB
 	maxQueueSize = 100000
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 var (
@@ -74,6 +79,8 @@ func (q *administrationEventsQueue) push(event *events.AdministrationEvent) {
 	defer q.mutex.Unlock()
 
 	if q.queue.Len() >= maxQueueSize {
+		log.Warnf("Administration event queue limit reached (%d). Administration events will be dropped.",
+			maxQueueSize)
 		return
 	}
 

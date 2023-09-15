@@ -1,4 +1,4 @@
-package streams
+package stream
 
 import (
 	"github.com/stackrox/rox/pkg/administration/events"

@@ -1,4 +1,4 @@
-package streams
+package stream
 
 import (
 	"testing"
@@ -23,14 +23,13 @@ type streamImpl struct {
 	queue *administrationEventsQueue
 }
 
-// Consume returns the channel to retrieve administration events.
+// Consume returns an event.
+// Note that this is blocking and waits for events to be emitted before returning.
 func (s *streamImpl) Consume(waitable concurrency.Waitable) *events.AdministrationEvent {
 	return s.queue.pullBlocking(waitable)
 }
 
 // Produce adds an event to the stream.
-//
-// Should be retried with `retry.WithRetry(s.Produce(event))`.
 func (s *streamImpl) Produce(event *events.AdministrationEvent) {
 	s.queue.push(event)
 }

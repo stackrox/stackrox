@@ -76,6 +76,9 @@ func (h *handlerImpl) runDatastoreFlush() {
 				log.Error(err)
 			}
 		case <-h.stopSignal.Done():
+			if err := h.ds.Flush(h.eventWriteCtx); err != nil {
+				log.Error(err)
+			}
 			return
 		}
 	}
