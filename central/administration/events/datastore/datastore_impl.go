@@ -11,9 +11,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
-var _ DataStore = (*datastoreImpl)(nil)
+var (
+	_        DataStore = (*datastoreImpl)(nil)
+	eventSAC           = sac.ForResource(resources.Administration)
+)
 
 type datastoreImpl struct {
 	searcher search.Searcher
@@ -23,7 +28,13 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) AddEvent(ctx context.Context, event *events.AdministrationEvent) error {
-	// The writer handles the SAC checks for the event.
+	// We need an explicit SAC check for AddEvent since writer will do a buffered write and first hold events
+	// in-memory before flushing them to the database. Without the SAC check here, it'd be possible for unauthorized
+	// callers to add events to the buffer, and let them be flushed by an authorized caller.
+	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
+		return err
+	}
+
 	if err := ds.writer.Upsert(ctx, event); err != nil {
 		return errors.Wrap(err, "failed to upsert administration event")
 	}
