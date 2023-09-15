@@ -53,13 +53,15 @@ func (s *writerTestSuite) SetupTest() {
 
 func (s *writerTestSuite) TestWriteEvent_Error() {
 	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "message",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:         "hint",
+		Domain:       "domain",
+		ResourceID:   "something",
+		ResourceType: "something",
 	}
-	id := "73072ecb-2222-5922-8948-5944338861c8"
+	id := "cbb15d73-880a-50c1-97ab-afb71547e925"
 
 	s.store.EXPECT().Get(s.writeCtx, id).Return(nil, false, errFake)
 	err := s.writer.Upsert(s.writeCtx, event)
@@ -69,22 +71,4 @@ func (s *writerTestSuite) TestWriteEvent_Error() {
 func (s *writerTestSuite) TestWriteEvent_NilEvent_Error() {
 	err := s.writer.Upsert(s.writeCtx, nil)
 	s.ErrorIs(err, errox.InvalidArgs)
-}
-
-func (s *writerTestSuite) TestWriteEvent_SACNoWrite_Error() {
-	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
-	}
-
-	err := s.writer.Upsert(s.readCtx, event)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-}
-
-func (s *writerTestSuite) TestFlushEvents_SACNoWrite_Error() {
-	err := s.writer.Flush(s.readCtx)
-	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 }

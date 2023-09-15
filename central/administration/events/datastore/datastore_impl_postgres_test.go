@@ -77,11 +77,13 @@ func (s *datastorePostgresTestSuite) assertEventsEqual(
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
 	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "message",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:         "hint",
+		Domain:       "domain",
+		ResourceID:   "something",
+		ResourceType: "something",
 	}
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
@@ -99,11 +101,13 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnce() {
 	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "message",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:         "hint",
+		Domain:       "domain",
+		ResourceID:   "something",
+		ResourceType: "something",
 	}
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
@@ -128,11 +132,13 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnc
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEach() {
 	event := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "message",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:         "hint",
+		Domain:       "domain",
+		ResourceID:   "something",
+		ResourceType: "something",
 	}
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
@@ -171,11 +177,13 @@ func (s *datastorePostgresTestSuite) TestGetEvent() {
 	nonExistingID := "0925514f-3a33-5931-b431-756406e1a008"
 
 	administrationEvent := &events.AdministrationEvent{
-		Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message: "message",
-		Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:    "hint",
-		Domain:  "domain",
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Message:      "message",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+		Hint:         "hint",
+		Domain:       "domain",
+		ResourceID:   "something",
+		ResourceType: "something",
 	}
 	err := s.datastore.AddEvent(s.writeCtx, administrationEvent)
 	s.Require().NoError(err)
@@ -217,11 +225,13 @@ func (s *datastorePostgresTestSuite) TestAddEvent_WriterBufferFull() {
 func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) {
 	for i := 0; i < numOfEvents; i++ {
 		event := &events.AdministrationEvent{
-			Level:   storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-			Message: fmt.Sprintf("message%d", i),
-			Type:    storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-			Hint:    fmt.Sprintf("hint%d", i),
-			Domain:  fmt.Sprintf("domain%d", i),
+			Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+			Message:      fmt.Sprintf("message%d", i),
+			Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
+			Hint:         fmt.Sprintf("hint%d", i),
+			Domain:       fmt.Sprintf("domain%d", i),
+			ResourceID:   "something",
+			ResourceType: "something",
 		}
 		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, event))
 	}
