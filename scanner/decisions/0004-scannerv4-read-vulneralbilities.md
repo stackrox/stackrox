@@ -18,7 +18,9 @@ ClairCore will be instrumental in scanner V4 data retriever (will be explained i
 
 ## Decision
 
-The CVSS Updater will be housed within Central, where it will retrieve CVSS data from Google storage when needed. It is designed to make a single HTTP call for each yearly NVD data bundle, with the earliest data tracing back to 2002. The updater will also compare the sha256 from the CVSS meta file for each year to determine if any data can be bypassed.
+The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each yearly NVD data bundle, with the earliest data tracing back to 2002, and the latest to the current year. The updater will also compare the sha256 from the CVSS meta file for each year to detect and ignore corrupted data.
+
+A GitHub workflow will keep the NVD data bundle in the Google Storage up-to-date.
 
 This Updater will consolidate the data that only contains valid CVSS v3 scores, generate a json file and store it as a zip file in Central's file system. This compressed file is typically around 50 MB in size.
 
