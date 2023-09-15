@@ -42,6 +42,6 @@ var (
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
-	// CentralEvents enables APIs (including collection) and UI pages for Central events.
-	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
+	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
 )

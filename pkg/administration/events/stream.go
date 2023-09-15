@@ -12,6 +12,7 @@ type Stream interface {
 	Produce(event *storage.AdministrationEvent) error
 }
 
+// newStream creates a new event stream.
 func newStream() Stream {
 	return &streamImpl{
 		eventChan: make(chan *storage.AdministrationEvent, 100),
