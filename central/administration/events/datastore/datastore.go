@@ -2,13 +2,16 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
+	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore provides an interface to handle administration events.
@@ -32,4 +35,12 @@ func newDataStore(searcher search.Searcher, storage store.Store, writer writer.W
 		store:    storage,
 		writer:   writer,
 	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	searcher := search.New(pgStore.NewIndexer(pool))
+	store := pgStore.New(pool)
+	writer := writer.New(store)
+	return newDataStore(searcher, store, writer)
 }

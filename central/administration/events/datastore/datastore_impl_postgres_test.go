@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/search"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -76,15 +76,7 @@ func (s *datastorePostgresTestSuite) assertEventsEqual(
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
-	event := &events.AdministrationEvent{
-		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:      "message",
-		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:         "hint",
-		Domain:       "domain",
-		ResourceID:   "something",
-		ResourceType: "something",
-	}
+	event := fixtures.GetAdministrationEvent()
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
 	s.Require().NoError(err)
@@ -100,15 +92,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnce() {
-	event := &events.AdministrationEvent{
-		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:      "message",
-		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:         "hint",
-		Domain:       "domain",
-		ResourceID:   "something",
-		ResourceType: "something",
-	}
+	event := fixtures.GetAdministrationEvent()
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
 	s.Require().NoError(err)
@@ -131,15 +115,7 @@ func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushOnc
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_MultipleOccurrencesFlushEach() {
-	event := &events.AdministrationEvent{
-		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:      "message",
-		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:         "hint",
-		Domain:       "domain",
-		ResourceID:   "something",
-		ResourceType: "something",
-	}
+	event := fixtures.GetAdministrationEvent()
 
 	err := s.datastore.AddEvent(s.writeCtx, event)
 	s.Require().NoError(err)
@@ -181,15 +157,7 @@ func (s *datastorePostgresTestSuite) TestFlushWithEmptyBuffer() {
 func (s *datastorePostgresTestSuite) TestGetEvent() {
 	nonExistingID := "0925514f-3a33-5931-b431-756406e1a008"
 
-	administrationEvent := &events.AdministrationEvent{
-		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-		Message:      "message",
-		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Hint:         "hint",
-		Domain:       "domain",
-		ResourceID:   "something",
-		ResourceType: "something",
-	}
+	administrationEvent := fixtures.GetAdministrationEvent()
 	err := s.datastore.AddEvent(s.writeCtx, administrationEvent)
 	s.Require().NoError(err)
 
@@ -228,16 +196,8 @@ func (s *datastorePostgresTestSuite) TestAddEvent_WriterBufferFull() {
 }
 
 func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) {
-	for i := 0; i < numOfEvents; i++ {
-		event := &events.AdministrationEvent{
-			Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
-			Message:      fmt.Sprintf("message%d", i),
-			Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-			Hint:         fmt.Sprintf("hint%d", i),
-			Domain:       fmt.Sprintf("domain%d", i),
-			ResourceID:   "something",
-			ResourceType: "something",
-		}
+	events := fixtures.GetMultipleAdministrationEvents(numOfEvents)
+	for _, event := range events {
 		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, event))
 	}
 	s.Require().NoError(s.datastore.Flush(s.writeCtx))
