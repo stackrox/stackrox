@@ -18,6 +18,7 @@ func init() {
 	// KEEP THE FOLLOWING LIST SORTED IN LEXICOGRAPHIC ORDER (case-sensitive).
 	for s, r := range map[proto.Message]permissions.ResourceHandle{
 		&storage.ActiveComponent{}:                              resources.Deployment,
+		&storage.AdministrationEvent{}:                          resources.Administration,
 		&storage.AuthProvider{}:                                 resources.Access,
 		&storage.Blob{}:                                         resources.Administration,
 		&storage.ClusterHealthStatus{}:                          resources.Cluster,

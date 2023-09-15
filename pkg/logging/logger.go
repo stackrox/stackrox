@@ -203,15 +203,15 @@ func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
 }
 
 func (l *LoggerImpl) createNotificationFromLog(msg string, level string, keysAndValues ...interface{}) {
-	// Short-circuit if no notification stream or converter is found.
-	if l.opts.notificationStream == nil || l.opts.notificationConverter == nil {
+	// Short-circuit if no log event stream or converter is found.
+	if l.opts.AdministrationEventsStream == nil || l.opts.AdministrationEventsConverter == nil {
 		return
 	}
 
-	// We will use the log converter to convert logs to a storage.Notification.
-	notification := l.opts.notificationConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
+	// We will use the log converter to convert logs to a storage.AdministrationEvent.
+	event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
 	err := retry.WithRetry(func() error {
-		return l.opts.notificationStream.Produce(notification)
+		return l.opts.AdministrationEventsStream.Produce(event)
 	}, retry.Tries(3))
 	if err != nil {
 		l.Errorf("Failed to create notification from log: %v", err)
