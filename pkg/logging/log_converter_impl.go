@@ -3,17 +3,15 @@ package logging
 import (
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/notifications"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"go.uber.org/zap"
 )
 
-var (
-	_ notifications.LogConverter = (*zapLogConverter)(nil)
-)
+var _ events.LogConverter = (*zapLogConverter)(nil)
 
 type zapLogConverter struct{}
 
-func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.Notification {
+func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *storage.AdministrationEvent {
 	enc := &stringObjectEncoder{
 		m: make(map[string]string, len(context)),
 	}
@@ -38,35 +36,35 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		}
 	}
 
-	notification := &storage.Notification{
-		Message:      msg,
-		Type:         storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
-		CreatedAt:    timestamp.TimestampNow(),
-		LastOccurred: timestamp.TimestampNow(),
-		Occurrences:  1,
-		Level:        logLevelToNotificationLevel(level),
+	event := &storage.AdministrationEvent{
+		Message:        msg,
+		Type:           storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+		CreatedAt:      timestamp.TimestampNow(),
+		LastOccurredAt: timestamp.TimestampNow(),
+		NumOccurrences: 1,
+		Level:          logLevelToEventLevel(level),
 	}
 
 	if resourceType != "" {
-		notification.ResourceType = resourceType
-		notification.ResourceId = enc.m[resourceTypeKey]
+		event.ResourceType = resourceType
+		event.ResourceId = enc.m[resourceTypeKey]
 	}
 
-	notification.Domain = notifications.GetDomainFromModule(module)
-	notification.Hint = notifications.GetHint(notification.GetDomain(), resourceType)
+	event.Domain = events.GetDomainFromModule(module)
+	event.Hint = events.GetHint(event.GetDomain(), resourceType)
 
-	return notification
+	return event
 }
 
-func logLevelToNotificationLevel(level string) storage.NotificationLevel {
+func logLevelToEventLevel(level string) storage.AdministrationEventLevel {
 	switch level {
 	case "info":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_INFO
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_INFO
 	case "warn":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_WARN
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING
 	case "error":
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_DANGER
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR
 	default:
-		return storage.NotificationLevel_NOTIFICATION_LEVEL_UNKNOWN
+		return storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
 	}
 }
