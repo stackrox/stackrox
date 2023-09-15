@@ -1,0 +1,80 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{.resourceName}}-{{.Replica}}
+spec:
+  replicas: {{.podReplicas}}
+  selector:
+    matchLabels:
+      app: {{.resourceName}}-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: {{.resourceName}}-{{.Replica}}
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+      containers:
+      - args:
+        - sleep
+        - infinity
+        image: k8s.gcr.io/pause:3.1
+        resources:
+          requests:
+            memory: "10Mi"
+            cpu: "10m"
+        volumeMounts:
+        {{ range $i, $el := untilStep 1 .numConfigs 1 }}
+        - name: secret-{{ $el }}
+          mountPath: /secret{{ $el }}
+        {{ end }}
+        {{ range $i, $el := untilStep 1 .numConfigs 1 }}
+        - name: configmap-{{ $el }}
+          mountPath: /configmap{{ $el }}
+        {{ end }}
+        - name: podinfo
+          mountPath: /etc/podlabels
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        name: {{.podName}}
+        env:
+        - name: ENVVAR1
+          value: "{{randAlphaNum 250}}"
+        - name: ENVVAR2
+          value: "{{randAlphaNum 250}}"
+      {{ if .saName }}
+      serviceAccountName: {{.saName}}-{{.Replica}}
+      {{ end }}
+      volumes:
+      {{ range $i, $el := untilStep 1 .numConfigs 1 }}
+      - name: secret-{{ $el }}
+        secret:
+          secretName: {{ $.secretName }}-{{ $el }}
+      {{ end }}
+      {{ range $i, $el := untilStep 1 .numConfigs 1 }}
+      - name: configmap-{{ $el }}
+        configMap:
+          name: {{ $.cmName }}-{{ $el }}
+      {{ end }}
+      - name: podinfo
+        downwardAPI:
+          items:
+            - path: "labels"
+              fieldRef:
+                fieldPath: metadata.labels
+      # Add not-ready/unreachable tolerations for 15 minutes so that node
+      # failure doesn't trigger pod deletion.
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900

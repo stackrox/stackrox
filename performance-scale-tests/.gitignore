@@ -1,0 +1,11 @@
+.DS_Store
+
+# Cluster setup
+perf-bundle.yml
+
+# Kube-burner output
+collected-metrics
+collected-metrics.tar.gz
+
+# Downloaded kube-burner
+/kube-burner

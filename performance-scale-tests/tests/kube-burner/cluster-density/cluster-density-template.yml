@@ -1,0 +1,66 @@
+---
+global:
+  gc: true
+  indexerConfig:
+    enabled: true
+    {{ if env "ELASTICSEARCH_URL" -}}
+    type: elastic  # "opensearch" can be used in kube-burner >=v1.6
+    esServers: [ {{ env "ELASTICSEARCH_URL" }} ]
+    defaultIndex: kube-burner
+    {{ else -}}
+    type: local
+    metricsDirectory: collected-metrics
+    createTarball: true
+    tarballName: collected-metrics.tar.gz
+    {{ end }}
+  measurements: []
+jobs:
+  - name: cluster-density
+    namespace: cluster-density
+    jobIterations: {{ env "num_namespaces" }}
+    jobPause: 2m
+    qps: 20
+    burst: 20
+    namespacedIterations: true
+    podWait: false
+    waitWhenFinished: true
+    preLoadImages: true
+    preLoadPeriod: 30s
+    churn: false
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+
+      - objectTemplate: templates/deployment.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}
+          podReplicas: {{ env "num_pods" }}
+          secretName: {{ env "resource_name" }}
+          cmName: {{ env "resource_name" }}
+          numConfigs: {{ env "num_configs" }}
+
+      - objectTemplate: templates/service.yml
+        replicas: {{ env "num_deployments" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}
+          appName: {{ env "resource_name" }}
+
+      - objectTemplate: templates/route.yml
+        replicas: 1
+        inputVars:
+          resourceName: {{ env "resource_name" }}
+          svcName: {{ env "resource_name" }}
+
+      - objectTemplate: templates/secret.yml
+        replicas: {{ env "num_configs" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}
+
+      - objectTemplate: templates/configmap.yml
+        replicas: {{ env "num_configs" }}
+        inputVars:
+          resourceName: {{ env "resource_name" }}

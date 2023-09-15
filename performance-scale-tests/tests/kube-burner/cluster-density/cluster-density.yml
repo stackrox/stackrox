@@ -1,0 +1,46 @@
+---
+global:
+  gc: true
+  indexerConfig:
+    enabled: true
+    type: local
+    metricsDirectory: collected-metrics
+    createTarball: true
+    tarballName: collected-metrics.tar.gz
+  measurements: []
+jobs:
+  - name: cluster-density
+    namespace: cluster-density
+    jobIterations: 100
+    jobPause: 2m
+    qps: 20
+    burst: 20
+    namespacedIterations: true
+    podWait: false
+    waitWhenFinished: true
+    preLoadImages: true
+    preLoadPeriod: 30s
+    churn: false
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+
+      - objectTemplate: templates/deployment.yml
+        replicas: 5
+        inputVars:
+          podReplicas: 2
+
+      - objectTemplate: templates/service.yml
+        replicas: 5
+
+      - objectTemplate: templates/route.yml
+        replicas: 1
+
+      - objectTemplate: templates/secret.yml
+        replicas: 10
+
+      - objectTemplate: templates/configmap.yml
+        replicas: 10
