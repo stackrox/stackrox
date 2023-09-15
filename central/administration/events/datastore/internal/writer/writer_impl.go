@@ -89,7 +89,7 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 
 	// Merge events to up the occurrence and update the time stamps.
 	if baseEvent != nil {
-		enrichedEvent = mergeEvents(baseEvent, enrichedEvent)
+		enrichedEvent = mergeEvents(enrichedEvent, baseEvent)
 	}
 
 	c.writeNoLock(enrichedEvent)
@@ -102,8 +102,8 @@ func (c *writerImpl) Flush(ctx context.Context) error {
 	return c.flushNoLock(ctx)
 }
 
-// Modifies `updated` in place with the values of the merged event.
-func mergeEvents(base *storage.AdministrationEvent, updated *storage.AdministrationEvent) *storage.AdministrationEvent {
+// Modifies `updated` with the values of the base event and returns the merged event.
+func mergeEvents(updated *storage.AdministrationEvent, base *storage.AdministrationEvent) *storage.AdministrationEvent {
 	if base == nil {
 		return updated
 	}
