@@ -18,7 +18,7 @@ const (
 // legacy sensor info outgoing metadata in the given context. It does *not* indicate that the client wants to send
 // a SensorHello message.
 func AppendSensorHelloInfoToOutgoingMetadata(ctx context.Context, hello *central.SensorHello) (context.Context, error) {
-	ctx = appendCapsInfoToContext(ctx, CapSetFromStringSlice(hello.GetCapabilities()...))
+	ctx = appendCapsInfoToContext(ctx, CapSetFromStringSlice[SensorCapability](hello.GetCapabilities()...))
 	return appendSensorVersionInfoToContext(ctx, hello.GetSensorVersion())
 }
 

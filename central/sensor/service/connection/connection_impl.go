@@ -98,7 +98,7 @@ func newConnection(ctx context.Context,
 		imageIntegrationMgr:        imageIntegrationMgr,
 
 		sensorHello:  sensorHello,
-		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
+		capabilities: centralsensor.CapSetFromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...),
 	}
 
 	// Need a reference to conn for injector

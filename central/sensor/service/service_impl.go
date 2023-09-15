@@ -104,7 +104,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 		capsSet := set.NewSet[centralsensor.CentralCapability]()
 		capsSet.AddAll(centralsensor.SendHashesCap)
-		centralHello.Capabilities = centralsensor.CentralCapSetToStringSlice(capsSet)
+		centralHello.Capabilities = centralsensor.CapSetToStringSlice(capsSet)
 
 		if err := safe.RunE(func() error {
 			certBundle, err := clusters.IssueSecuredClusterCertificates(cluster, sensorHello.GetDeploymentIdentification().GetAppNamespace(), nil)
