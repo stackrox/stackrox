@@ -40,10 +40,9 @@ ci_exit_trap() {
 
     finalize_job_record "${exit_code}" "false"
 
-    # `post_process_test_results` will generate the Slack attachment first, then
-    # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
-    post_process_test_results
     (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
+
+    post_process_test_results
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
