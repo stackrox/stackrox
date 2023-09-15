@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
+	administrationEvents "github.com/stackrox/rox/central/administration/events"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -35,7 +36,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(administrationEvents.EnableAdministrationEvents())
 
 	riskDedupeNamespace = uuid.NewV4()
 

@@ -25,12 +25,14 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		if field, ok := c.(zap.Field); ok {
 			field.AddTo(enc)
 			if resource, exists := getResourceTypeField(field); exists {
-				if resourceType != "" {
-					thisModuleLogger.Warnf("Received multiple resource field in structured log."+
-						" Previous resource %q will be overwritten by %q", resourceType, resource)
+				// Allow structured logs to specify multiple resource fields (e.g. when a log is notifying about a
+				// node for a specific cluster). Ensure the highest priority resource field is used. A field is the
+				// highest priority when it should be the resource type. When both cluster and node is given, we
+				// use node as the resource type as it is assumed it is the main resource associated with the log.
+				if getHigherPriorityResourceField(resource, resourceType) {
+					resourceType = resource
+					resourceTypeKey = field.Key
 				}
-				resourceType = resource
-				resourceTypeKey = field.Key
 			}
 		}
 	}
