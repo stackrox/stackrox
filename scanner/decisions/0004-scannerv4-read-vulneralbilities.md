@@ -12,11 +12,11 @@ Our goal then are twofold:
 1. Enable Central to retrieve NVD CVSS data and consolidate all CVSS data that contains available CVSS v3 scores.
 2. Ensure seamless integration between Scanner V4 and Central, for enriching vulnerabilities with CVSS data.
 
-Throughout this workflow, a new CVSS Updater equipped by a novel enricher in Central will download and consolidate the CVSS data, then creating a JSON bundle. 
-
-ClairCore will be instrumental in scanner V4 data retriever (will be explained in detail below) while requesting this CVSS data bundle from central, handling tasks such as downloading, parsing, and updating CVSS data for Scanner V4.
-
 ## Decision
+
+Central will have a new NVD CVSS Updater equipped by a novel enricher, based on ClairCore. It will download and consolidate the NVD CVSS data in a JSON bundle. 
+
+ClairCore will also be used in Scanner V4 CVSS data retriever (will be explained in detail below). It will require the NVD CVSS data bundle stored in Central. Central will handle the task of downloading, parsing, and updating the NVD CVSS data bundle for Scanner V4 using ClairCore.
 
 The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each yearly NVD data bundle, with the earliest data tracing back to 2002, and the latest to the current year. The updater will also compare the sha256 from the CVSS meta file for each year to detect and ignore corrupted data.
 
