@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
@@ -65,10 +66,12 @@ func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool,
 		}
 	}
 
-	client := &http.Client{
-		Timeout:   timeout,
-		Transport: transport,
-	}
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.HTTPClient.Transport = transport
+	retryClient.HTTPClient.Timeout = timeout
+
+	client := retryClient.StandardClient()
 	return &roxctlClientImpl{http: client, am: am, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
 }
 
