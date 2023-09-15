@@ -30,7 +30,7 @@ The CVSS updater will operate as a GoRoutine, set to refresh the NVD CVSS data b
 
 The CVSS Updater handler, paired with a singleton in Central, will offer an HTTP handler so Scanner can retrieve the consolidated NVD CVSS data.
 
-Within Scanner V4, there's a component named as 'data retriever', which in Scanner V2 was called the 'updater'. This name, 'updater', could be mistaken for the data updating GitHub action workflow in the Scanner V4 context. This CVSS data retriever in Scanner V4 communicates directly with Central's CVSS data retrieval endpoint.
+Within Scanner V4, there's a component named as 'data retriever', which in Scanner V2 was called the 'updater'. We will rename to retriever because the name, 'updater', could be mistaken for the data updating GitHub action workflow in the Scanner V4 context. This CVSS data retriever in Scanner V4 communicates directly with Central's NVD CVSS data retrieval endpoint.
 
 ### Central CVSS data retrieving Endpoints
 
@@ -46,4 +46,4 @@ A novel CVSS enricher mentioned above will be introduced and it will be equipped
 
 Unlike the Claircore CVSS enricher (which can also be utilized as a library/tool in Central), which loads JSON into memory before parsing, this new enricher parses JSON as a stream. The data processing and consolidation managed by this novel enricher utilize approximately 130MB of memory.
 
-We are including ClairCore as a dependency in Central. While this is not ideal, it will enable us to avoid publishing the NVD CVSS bundle for every Stackrox release if we preprocess and store it in Google Storage during CI. It will also simplify the communication between Central and Scanner if we execute this process within each Scanner instance.```
+We are including ClairCore as a dependency in Central. While this is not ideal, it will enable us to avoid publishing the NVD CVSS bundle for every Stackrox release if we preprocess and store it in Google Storage during CI. It will also simplify the communication between Central and Scanner if we execute this process within each Scanner instance.
