@@ -24,7 +24,9 @@ A GitHub workflow will keep the NVD data bundle in the Google Storage up-to-date
 
 This Updater will consolidate the data that only contains valid CVSS v3 scores, generate a json file and store it as a zip file in Central's file system. This compressed file is typically around 50 MB in size.
 
-Using a new CVSS enricher, the updater operates as a GoRoutine, set to refresh the CVSS data bundle every 4 hours. By leveraging GoRoutine, this pipeline runs independently from Central, ensuring that any failures won't disrupt Central.
+To generate the zip file, the CVSS updater will use a custom ClairCore CVSS Enricher.
+
+The CVSS updater will operate as a GoRoutine, set to refresh the NVD CVSS data bundle in Central at a configurable interval (default is 4 hours). By leveraging GoRoutine, this pipeline runs independently from Central, ensuring that any failures won't disrupt Central.
 
 The CVSS Updater handler, paired with a singleton in Central, will offer an HTTP handler so Scanner can retrieve the consolidated NVD CVSS data.
 
