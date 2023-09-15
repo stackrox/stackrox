@@ -2,36 +2,35 @@ package events
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
 // Stream is an interface for the administration events stream.
 type Stream interface {
-	Consume() <-chan *storage.AdministrationEvent
-	Produce(event *storage.AdministrationEvent) error
+	Consume() <-chan *AdministrationEvent
+	Produce(event *AdministrationEvent) error
 }
 
 // newStream creates a new event stream.
 func newStream() Stream {
 	return &streamImpl{
-		eventChan: make(chan *storage.AdministrationEvent, 100),
+		eventChan: make(chan *AdministrationEvent, 100),
 	}
 }
 
 type streamImpl struct {
-	eventChan chan *storage.AdministrationEvent
+	eventChan chan *AdministrationEvent
 }
 
 // Consume returns the channel to retrieve administration events.
-func (s *streamImpl) Consume() <-chan *storage.AdministrationEvent {
+func (s *streamImpl) Consume() <-chan *AdministrationEvent {
 	return s.eventChan
 }
 
 // Produce adds an event to the stream.
 //
 // Should be retried with `retry.WithRetry(s.Produce(event))`.
-func (s *streamImpl) Produce(event *storage.AdministrationEvent) error {
+func (s *streamImpl) Produce(event *AdministrationEvent) error {
 	select {
 	case s.eventChan <- event:
 		return nil

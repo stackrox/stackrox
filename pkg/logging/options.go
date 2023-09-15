@@ -1,6 +1,9 @@
 package logging
 
-import "github.com/stackrox/rox/pkg/administration/events"
+import (
+	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/features"
+)
 
 // options for the logger.
 type options struct {
@@ -20,7 +23,9 @@ type OptionsFunc = func(option *options)
 //     users (see pkg/administration/events/hints.go).
 func EnableAdministrationEvents() OptionsFunc {
 	return func(option *options) {
-		option.AdministrationEventsConverter = &zapLogConverter{}
-		option.AdministrationEventsStream = events.Singleton()
+		if features.AdministrationEvents.Enabled() {
+			option.AdministrationEventsConverter = &zapLogConverter{}
+			option.AdministrationEventsStream = events.Singleton()
+		}
 	}
 }
