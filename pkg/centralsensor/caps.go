@@ -32,3 +32,32 @@ func CapSetToStringSlice(capSet set.Set[SensorCapability]) []string {
 	sort.Strings(strs)
 	return strs
 }
+
+// TODO: Generics
+
+// CentralCapability identifies a capability exposed by central.
+type CentralCapability string
+
+// String returns the string form of central capability.
+func (c CentralCapability) String() string {
+	return string(c)
+}
+
+// CapSetFromStringSlice takes a slice of strings, and converts it into a SensorCapabilitySet.
+func CentralCapSetFromStringSlice(capStrs ...string) set.Set[CentralCapability] {
+	capSet := set.NewSet[CentralCapability]()
+	for _, capStr := range capStrs {
+		capSet.Add(CentralCapability(capStr))
+	}
+	return capSet
+}
+
+// CapSetToStringSlice takes a capability set, and converts it into a string slice.
+func CentralCapSetToStringSlice(capSet set.Set[CentralCapability]) []string {
+	strs := make([]string, 0, len(capSet))
+	for capability := range capSet {
+		strs = append(strs, capability.String())
+	}
+	sort.Strings(strs)
+	return strs
+}

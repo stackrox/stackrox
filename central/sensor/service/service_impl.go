@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -101,6 +102,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
 			CentralId:      installInfo.GetId(),
 		}
+		capsSet := set.NewSet[centralsensor.CentralCapability]()
+		capsSet.AddAll(centralsensor.SendHashesCap)
+		centralHello.Capabilities = centralsensor.CentralCapSetToStringSlice(capsSet)
 
 		if err := safe.RunE(func() error {
 			certBundle, err := clusters.IssueSecuredClusterCertificates(cluster, sensorHello.GetDeploymentIdentification().GetAppNamespace(), nil)
@@ -112,6 +116,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}); err != nil {
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
 		}
+
+		log.Errorf("Sending Central Hello message: %v", centralHello)
 
 		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
 			return errors.Wrap(err, "sending CentralHello message to sensor")
