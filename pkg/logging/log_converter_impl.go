@@ -29,7 +29,7 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 				// node for a specific cluster). Ensure the highest priority resource field is used. A field is the
 				// highest priority when it should be the resource type. When both cluster and node is given, we
 				// use node as the resource type as it is assumed it is the main resource associated with the log.
-				if getHigherPriorityResourceField(resource, resourceType) {
+				if getHigherPriorityResourceField(field.Key, resourceTypeKey) {
 					resourceType = resource
 					resourceTypeKey = field.Key
 				}
