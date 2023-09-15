@@ -45,3 +45,5 @@ We are not making any decisions for the updating pipeline of other data (vulnera
 A novel CVSS enricher mentioned above will be introduced and it will be equipped with an NVD CVSS JSON data parsing feature for the CVSS updater's use. 
 
 Unlike the Claircore CVSS enricher (which can also be utilized as a library/tool in Central), which loads JSON into memory before parsing, this new enricher parses JSON as a stream. The data processing and consolidation managed by this novel enricher utilize approximately 130MB of memory.
+
+We are including ClairCore as a dependency in Central. While this is not ideal, it will enable us to avoid publishing the NVD CVSS bundle for every Stackrox release if we preprocess and store it in Google Storage during CI. It will also simplify the communication between Central and Scanner if we execute this process within each Scanner instance.```
