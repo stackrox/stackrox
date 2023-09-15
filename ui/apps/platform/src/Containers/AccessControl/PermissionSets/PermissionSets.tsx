@@ -221,7 +221,6 @@ function PermissionSets(): ReactElement {
                     <PermissionSetsList
                         permissionSets={permissionSets}
                         roles={roles}
-                        handleCreate={handleCreate}
                         handleDelete={handleDelete}
                     />
                 ) : typeof entityId === 'string' && !permissionSet ? (

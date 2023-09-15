@@ -18,8 +18,8 @@ import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScop
 import { AccessControlQueryAction } from '../accessControlPaths';
 
 import {
-    LabelSelectorsEditingState,
-    getIsEditingLabelSelectors,
+    // LabelSelectorsEditingState,
+    // getIsEditingLabelSelectors,
     getIsValidRules,
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
@@ -50,12 +50,15 @@ function AccessScopeFormWrapper({
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
+    /*
+    // See comment below about labelSelectorEditingState.
     // Disable Save button while editing label selectors.
     const [labelSelectorsEditingState, setLabelSelectorsEditingState] =
         useState<LabelSelectorsEditingState>({
             clusterLabelSelectors: -1,
             namespaceLabelSelectors: -1,
         });
+    */
 
     const formik = useFormik({
         initialValues: accessScope,
@@ -153,8 +156,8 @@ function AccessScopeFormWrapper({
                 hasAction={hasAction}
                 alertSubmit={alertSubmit}
                 formik={formik}
-                labelSelectorsEditingState={labelSelectorsEditingState}
-                setLabelSelectorsEditingState={setLabelSelectorsEditingState}
+                // labelSelectorsEditingState={labelSelectorsEditingState}
+                // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-u-pb-0">
@@ -168,7 +171,9 @@ function AccessScopeFormWrapper({
                                         !dirty ||
                                         !isValid ||
                                         !isValidRules ||
-                                        getIsEditingLabelSelectors(labelSelectorsEditingState) ||
+                                        // Separating FormWrapper from Form might have caused a bug here.
+                                        // Now that reports use collections, merge components to be parallel with permission sets and roles.
+                                        // getIsEditingLabelSelectors(labelSelectorsEditingState) ||
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}

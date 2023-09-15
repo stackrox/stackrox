@@ -7,7 +7,6 @@ import set from 'lodash/set';
 import uniqBy from 'lodash/uniqBy';
 import { Alert } from '@patternfly/react-core';
 
-import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
 import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import entityTypes from 'constants/entityTypes';
@@ -292,11 +291,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
                             <h3 className="mb-2">{`${cvesToDisplay.length} CVEs listed below will be added to this policy:`}</h3>
                             {cveLoading && <Loader />}
                             {!cveLoading && (
-                                <InfoList
-                                    items={cvesToDisplay}
-                                    renderItem={renderCve}
-                                    extraClassNames="h-48"
-                                />
+                                <ul className="bg-base-100 border-2 rounded p-2 border-base-300 w-full text-base-600 hover:border-base-400 leading-normal last:mb-0 overflow-scroll h-48">
+                                    {cvesToDisplay.map(renderCve)}
+                                </ul>
                             )}
                         </div>
                         {!cveLoading && disallowedCves.length > 0 && (
@@ -304,11 +301,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
                                 <h3 className="mb-2">
                                     {`The following ${disallowedCves.length} CVEs cannot be added to a policy.`}
                                 </h3>
-                                <InfoList
-                                    items={disallowedCves}
-                                    renderItem={renderCve}
-                                    extraClassNames="h-24"
-                                />
+                                <ul className="bg-base-100 border-2 rounded p-2 border-base-300 w-full text-base-600 hover:border-base-400 leading-normal last:mb-0 overflow-scroll h-24">
+                                    {disallowedCves.map(renderCve)}
+                                </ul>
                             </div>
                         )}
                     </>
