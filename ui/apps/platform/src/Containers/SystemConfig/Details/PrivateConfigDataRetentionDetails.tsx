@@ -245,7 +245,7 @@ const PrivateConfigDataRetentionDetails = ({
                         <CardBody>
                             <DataRetentionValue
                                 value={
-                                    privateConfig?.administrationEventConfig?.retentionDurationDays
+                                    privateConfig?.administrationEventsConfig?.retentionDurationDays
                                 }
                                 suffix="day"
                                 canRetainForever={false}

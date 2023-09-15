@@ -393,15 +393,15 @@ const SystemConfigForm = ({
                         <FormGroup
                             label="Administration events retention days"
                             isRequired
-                            fieldId="privateConfig.administrationEventConfig.retentionDurationDays"
+                            fieldId="privateConfig.administrationEventsConfig.retentionDurationDays"
                         >
                             <TextInput
                                 isRequired
                                 type="number"
-                                id="privateConfig.administrationEventConfig.retentionDurationDays"
-                                name="privateConfig.administrationEventConfig.retentionDurationDays"
+                                id="privateConfig.administrationEventsConfig.retentionDurationDays"
+                                name="privateConfig.administrationEventsConfig.retentionDurationDays"
                                 value={
-                                    values?.privateConfig?.administrationEventConfig
+                                    values?.privateConfig?.administrationEventsConfig
                                         ?.retentionDurationDays
                                 }
                                 onChange={onChange}

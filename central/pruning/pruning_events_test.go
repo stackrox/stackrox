@@ -41,21 +41,20 @@ func TestAdministrationEventsPruning(t *testing.T) {
 	events := []*storage.AdministrationEvent{
 		{
 			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(2 * 24 * time.Hour))),
+			LastOccurredAt: timeBeforeDays(2),
 		},
 		{
 			Id:             "460c8808-9f70-51e7-9f3a-973f44ab8595",
 			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
-		// Exactly 4 days ago should be subject to pruning.
+		// 4 days ago should be subject to pruning (incl. a bit of a leeway).
 		{
 			Id:             "a10c6cae-c72f-58a3-bd86-dc0363990fe6",
-			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(4 * 24 * time.Hour))),
+			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(96*24*time.Hour + 30*time.Minute))),
 		},
-		// Exactly 3 days and 23 hours ago should not be subject to pruning.
 		{
 			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(85 * time.Hour))),
+			LastOccurredAt: timeBeforeDays(3),
 		},
 		{
 			Id:             "13d24bd2-1373-57b3-af07-066cdd65d226",
@@ -63,11 +62,11 @@ func TestAdministrationEventsPruning(t *testing.T) {
 		},
 		{
 			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(12 * 24 * time.Hour))),
+			LastOccurredAt: timeBeforeDays(12),
 		},
 		{
 			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(365 * 24 * time.Hour))),
+			LastOccurredAt: timeBeforeDays(365),
 		},
 	}
 	require.NoError(t, administrationEventDS.UpsertTestEvents(ctx, t,
