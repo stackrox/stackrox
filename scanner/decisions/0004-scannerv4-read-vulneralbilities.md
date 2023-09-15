@@ -1,6 +1,6 @@
 # 0004 - Scanner V4 NVD CVSS enrichment data updating pipeline
 
-- **Author(s):** Yi Li
+- **Author(s):** Yi Li <yli3@redhat.com>, J. Victor Martins <jvdm@sdf.org>
 - **Created:** [2023-09-11]
 
 ## Context
