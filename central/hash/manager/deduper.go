@@ -15,6 +15,8 @@ import (
 )
 
 // Deduper is an interface to deduping logic used to determine whether an event should be processed
+//
+//go:generate mockgen-wrapper
 type Deduper interface {
 	// GetSuccessfulHashes returns a map of key to hashes that were successfully processed by Central
 	// and thus can be persisted in the database as being processed
