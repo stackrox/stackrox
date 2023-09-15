@@ -117,6 +117,12 @@ const commonReactRules = {
             forbid: ['data-test-id'],
         },
     ],
+    'react/forbid-prop-types': [
+        'error',
+        {
+            forbid: ['any', 'array'], // allow object
+        },
+    ],
     'react-hooks/exhaustive-deps': 'warn',
 
     // DEPRECATED in favor of label-has-associated-control

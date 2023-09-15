@@ -56,7 +56,7 @@ const Deployments = ({ original: policy, match, location, history, entityContext
 };
 
 Deployments.propTypes = {
-    original: PropTypes.shape({}).isRequired,
+    original: PropTypes.shape({ deployments: PropTypes.arrayOf(PropTypes.shape({})) }).isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,

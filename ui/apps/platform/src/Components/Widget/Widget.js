@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import ErrorBoundary from 'Containers/ErrorBoundary'; // @TODO Move ErrorBoundary to Components directory
-import { PagerDots, PagerButtonGroup } from 'Components/PagerControls';
+import { PagerButtonGroup } from 'Components/PagerControls';
 
 function Widget({
     header,
@@ -40,34 +40,15 @@ function Widget({
         changePage(targetPage);
     }
 
-    function handleSetPage(page) {
-        if (page < 0 || page >= pages) {
-            return;
-        }
-        setCurrentPage(page);
-    }
-
-    let pagerControls;
-    if (pages > 1) {
-        pagerControls = {
-            arrows: (
-                <PagerButtonGroup
-                    onPageNext={handlePageNext}
-                    onPagePrev={handlePagePrev}
-                    enablePrev={currentPage - 1 >= 0}
-                    enableNext={currentPage + 1 < pages}
-                />
-            ),
-            dots: (
-                <PagerDots
-                    onPageChange={handleSetPage}
-                    pageCount={pages}
-                    currentPage={currentPage}
-                    className="hidden"
-                />
-            ),
-        };
-    }
+    const pagerControls =
+        pages > 1 ? (
+            <PagerButtonGroup
+                onPageNext={handlePageNext}
+                onPagePrev={handlePagePrev}
+                enablePrev={currentPage - 1 >= 0}
+                enableNext={currentPage + 1 < pages}
+            />
+        ) : null;
 
     const childrenWithPageProp =
         pages && pages > 1 ? (
@@ -92,7 +73,7 @@ function Widget({
                         data-testid="widget-header"
                     >
                         <div className="w-full">{headerContent}</div>
-                        {pagerControls ? pagerControls.arrows : null}
+                        {pagerControls}
                     </div>
                     {headerComponents && (
                         <div className="flex justify-end items-center pr-2 relative border-l border-base-300 pl-2">
@@ -104,7 +85,6 @@ function Widget({
             <div className={`flex h-full ${bodyClassName}`} data-testid="widget-body">
                 <ErrorBoundary>{childrenWithPageProp}</ErrorBoundary>
             </div>
-            {pagerControls ? pagerControls.dots : null}
         </div>
     );
 }
