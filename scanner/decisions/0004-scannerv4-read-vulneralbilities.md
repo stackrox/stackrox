@@ -5,7 +5,9 @@
 
 ## Context
 
-We are currently transitioning the StackRox Scanner to use ClairCore as its primary scanning engine. Our goals are twofold:
+We are transitioning the StackRox Scanner to ClairCore as its primary scanning engine. To enrich vulnerabilities with CVSS information, ClairCore pulls CVSS scores from NVD during the Vulnerability Matching. However, Scanner V4 should not contact external endpoints other than registries and only contact Central for external data.
+
+Our goal then are twofold:
 
 1. Enable Central to retrieve NVD CVSS data and consolidate all CVSS data that contains available CVSS v3 scores.
 2. Ensure seamless integration between Scanner V4 and Central, for enriching vulnerabilities with CVSS data.
