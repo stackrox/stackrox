@@ -32,7 +32,7 @@ Within Scanner V4, there's a component named as 'data retriever', which in Scann
 
 ### Central CVSS data retrieving Endpoints
 
-1. `/api/extensions/scanner-v4/definitions`: is configured to handle GET requests, which are processed by the CVSS Updater handler in central.
+1. `/api/extensions/scanner-v4/definitions`: is configured to handle GET requests, which are processed by the NVD CVSS Updater handler in central.
 
 ## Consequences
 
