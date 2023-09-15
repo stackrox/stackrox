@@ -51,7 +51,7 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 }
 
 func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEvent) error {
-	if err := validateAdministrationEvent(event); err != nil {
+	if err := event.Validate(); err != nil {
 		return err
 	}
 

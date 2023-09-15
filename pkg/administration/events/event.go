@@ -5,6 +5,8 @@ import (
 
 	gogoTimestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -108,4 +110,23 @@ func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 		CreatedAt:      tsNow,
 		LastOccurredAt: tsNow,
 	}
+}
+
+// Validate will validate the administration event.
+// Note that Validate may be called on a nil administration event.
+func (m *AdministrationEvent) Validate() error {
+	if m == nil {
+		return errox.InvalidArgs.CausedBy("empty event given")
+	}
+
+	// This needs to be kept in-line with the fields used for generating the event ID (see GenerateEventID).
+	if stringutils.AtLeastOneEmpty(m.GetDomain(),
+		m.GetMessage(),
+		m.GetResourceID(),
+		m.GetResourceType(),
+		m.GetType().String()) {
+		return errox.InvalidArgs.CausedBy("all required fields must be set")
+	}
+
+	return nil
 }

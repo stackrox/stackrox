@@ -1,28 +1,27 @@
-package writer
+package events
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestValidateAdministrationEvent(t *testing.T) {
+func TestAdministrationEvent_Validate(t *testing.T) {
 	cases := []struct {
-		event *events.AdministrationEvent
+		event *AdministrationEvent
 		err   error
 	}{
 		{
 			err: errox.InvalidArgs,
 		},
 		{
-			event: &events.AdministrationEvent{},
+			event: &AdministrationEvent{},
 			err:   errox.InvalidArgs,
 		},
 		{
-			event: &events.AdministrationEvent{
+			event: &AdministrationEvent{
 				Domain:       "",
 				Hint:         "only hint",
 				Level:        0,
@@ -34,7 +33,7 @@ func TestValidateAdministrationEvent(t *testing.T) {
 			err: errox.InvalidArgs,
 		},
 		{
-			event: &events.AdministrationEvent{
+			event: &AdministrationEvent{
 				Domain:       "set",
 				Level:        0,
 				Message:      "set",
@@ -45,7 +44,7 @@ func TestValidateAdministrationEvent(t *testing.T) {
 			err: errox.InvalidArgs,
 		},
 		{
-			event: &events.AdministrationEvent{
+			event: &AdministrationEvent{
 				Domain:       "set",
 				Hint:         "set",
 				Level:        0,
@@ -59,7 +58,7 @@ func TestValidateAdministrationEvent(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("tc%d", i), func(t *testing.T) {
-			err := validateAdministrationEvent(tc.event)
+			err := tc.event.Validate()
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
 			} else {

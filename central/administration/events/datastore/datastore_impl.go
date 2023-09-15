@@ -28,6 +28,9 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) AddEvent(ctx context.Context, event *events.AdministrationEvent) error {
+	// We need an explicit SAC check for AddEvent since writer will do a buffered write and first hold events
+	// in-memory before flushing them to the database. Without the SAC check here, it'd be possible for unauthorized
+	// callers to add events to the buffer, and let them be flushed by an authorized caller.
 	if err := sac.VerifyAuthzOK(eventSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
