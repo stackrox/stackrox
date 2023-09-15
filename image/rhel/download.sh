@@ -31,7 +31,7 @@ mkdir -p "$output_dir/rpms"
 # Install all the required compression packages for RocksDB to compile for amd64. RocksDB is not required for other architectures.
 if [[ "$goarch" == "amd64" ]]; then
   rpm_url="http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/snappy-1.1.8-3.el8.x86_64.rpm"
-  curl --retry 3 -s -f -o "${output_dir}/rpms/snappy.rpm" "${rpm_url}"
+  curl --retry 3 -sS -f -o "${output_dir}/rpms/snappy.rpm" "${rpm_url}"
 fi
 
 postgres_major=13
