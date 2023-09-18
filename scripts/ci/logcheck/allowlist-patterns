@@ -24,3 +24,6 @@ policy/v1beta1 PodSecurityPolicy is deprecated in v1.21., unavailable in v1.25.
 # DeploymentConfigs are deprecated but there are no plans to remove them as this is written.
 # See: https://issues.redhat.com/browse/OCPSTRAT-118
 apps\.openshift\.io\/v1 DeploymentConfig is deprecated in v4\.14\+, unavailable in v4\.10000\+
+# Image enrichment errors are expected in some test (i.e. testing for non-existing images).
+# Skip those specifically.
+Error: error enriching image
