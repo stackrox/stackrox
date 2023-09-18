@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -158,9 +160,68 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	gomock.InOrder(orderedCalls...)
 }
 
+func (c *centralCommunicationSuite) Test_CentralCommunication_Start_ClientReconciliation() {
+	deploymentUUID := uuid.NewV4()
+	deploymentKey := fmt.Sprintf("deployment:%s", deploymentUUID)
+
+	centralHashes := map[string]uint64{
+		deploymentKey: 1234,
+	}
+
+	syncMessages := append(centralSyncMessages, debuggerMessage.DeduperState(centralHashes))
+
+	expectSyncMessages(syncMessages, c.mockService)
+
+	deploymentsReceived := 0
+	ch := make(chan struct{})
+	c.mockService.client.EXPECT().Send(gomock.Any()).Times(2).DoAndReturn(func(msg *central.MsgFromSensor) error {
+		if msg.GetEvent().GetDeployment() != nil {
+			deploymentsReceived++
+		}
+		if deploymentsReceived == 2 {
+			close(ch)
+		}
+		return nil
+	})
+
+	c.responsesC <- message.New(givenDeployment(uuid.NewV4().String(), "deployment-a", "4321"))
+	c.responsesC <- message.New(givenDeployment(deploymentUUID.String(), "deployment-b", "1234"))
+
+	// Wait for sync message or timeout after 5s
+	timeout := time.After(5 * time.Second)
+	select {
+	case <-timeout:
+		c.FailNow("Didn't receive deployments after 5 seconds")
+	case <-ch:
+		break
+	}
+}
+
 func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.SensorComponent {
 	return &fakeSensorComponent{
 		responsesC: responsesC,
+	}
+}
+
+func givenDeployment(uuid, name, hash string) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		HashKey:           "",
+		DedupeKey:         "", // TODO: check if these are the properties I need to use in deduper
+		ProcessingAttempt: 0,
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:              "",
+				Action:          0,
+				Timing:          nil,
+				SensorHashOneof: nil, // TODO: or maybe this hash?
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{
+						Id:   uuid,
+						Name: name,
+					},
+				},
+			},
+		},
 	}
 }
 

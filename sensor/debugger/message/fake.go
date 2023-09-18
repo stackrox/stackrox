@@ -17,6 +17,17 @@ func SensorHello(clsuterID string) *central.MsgToSensor {
 	}
 }
 
+// DeduperState returns as fake DeduperState message
+func DeduperState(state map[string]uint64) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_DeduperState{
+			DeduperState: &central.DeduperState{
+				ResourceHashes: state,
+			},
+		},
+	}
+}
+
 // ClusterConfig returns a fake ClusterConfig message
 func ClusterConfig() *central.MsgToSensor {
 	return &central.MsgToSensor{
