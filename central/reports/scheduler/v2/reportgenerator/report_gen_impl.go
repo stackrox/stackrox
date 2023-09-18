@@ -135,6 +135,10 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			templateStr = noVulnsFoundEmailTemplate
 		}
 		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
+		defaultMessageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportSnapshot.GetVulnReportFilters().GetImageTypes())
+		if err != nil {
+			return errors.Wrap(err, "error formatting the report email text")
+		}
 		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
@@ -142,16 +146,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
 				continue
 			}
-			emailBodyStrNotifier := notifierSnap.GetEmailConfig().GetCustomBody()
-			if notifierSnap.GetEmailConfig().GetCustomBody() == "" {
-				emailBodyStrNotifier, err = formatMessage(req.DataStartTime, templateStr, req.ReportSnapshot.GetVulnReportFilters().GetImageTypes())
-				if err != nil {
-					return errors.Wrap(err, "error formatting the report email text")
-				}
+			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
+			messageText := defaultMessageText
+			if customBody != "" {
+				messageText = customBody
 			}
-
 			err = rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, emailBodyStrNotifier, notifierSnap.GetEmailConfig().GetCustomSubject())
+				zippedCSVData, messageText, notifierSnap.GetEmailConfig().GetCustomSubject())
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
 					notifierSnap.GetEmailConfig().GetNotifierId(), err))

@@ -65,7 +65,7 @@ func (mr *MockReportNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // ReportNotify mocks base method.
-func (m *MockReportNotifier) ReportNotify(arg0 context.Context, arg1 *bytes.Buffer, arg2 []string, arg3 string, arg4 string) error {
+func (m *MockReportNotifier) ReportNotify(arg0 context.Context, arg1 *bytes.Buffer, arg2 []string, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReportNotify", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
