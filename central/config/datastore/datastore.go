@@ -143,7 +143,13 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		}
 	}
 
-	return d.store.Upsert(ctx, config)
+	upsertErr := d.store.Upsert(ctx, config)
+	if upsertErr != nil {
+		return upsertErr
+	}
+
+	_ = d.publicConfigCache.Add(publicConfigKey, config.GetPublicConfig())
+	return nil
 }
 
 func (d *datastoreImpl) getClusterRetentionConfig(ctx context.Context) (*storage.DecommissionedClusterRetentionConfig, error) {
