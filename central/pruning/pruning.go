@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -93,60 +92,57 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	k8sRoleBindings roleBindingDataStore.DataStore,
 	logimbueStore logimbueDataStore.Store,
 	reportSnapshotDS snapshotDS.DataStore,
-	blobStore blobDatastore.Datastore,
-	administrationEventsDS administrationEventDS.DataStore) GarbageCollector {
+	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
-		alerts:               alerts,
-		clusters:             clusters,
-		nodes:                nodes,
-		images:               images,
-		imageComponents:      imageComponents,
-		deployments:          deployments,
-		pods:                 pods,
-		processes:            processes,
-		plops:                plops,
-		processbaseline:      processbaseline,
-		networkflows:         networkflows,
-		config:               config,
-		risks:                risks,
-		vulnReqs:             vulnReqs,
-		serviceAccts:         serviceAccts,
-		k8sRoles:             k8sRoles,
-		k8sRoleBindings:      k8sRoleBindings,
-		logimbueStore:        logimbueStore,
-		stopper:              concurrency.NewStopper(),
-		postgres:             globaldb.GetPostgres(),
-		reportSnapshot:       reportSnapshotDS,
-		blobStore:            blobStore,
-		administrationEvents: administrationEventsDS,
+		alerts:          alerts,
+		clusters:        clusters,
+		nodes:           nodes,
+		images:          images,
+		imageComponents: imageComponents,
+		deployments:     deployments,
+		pods:            pods,
+		processes:       processes,
+		plops:           plops,
+		processbaseline: processbaseline,
+		networkflows:    networkflows,
+		config:          config,
+		risks:           risks,
+		vulnReqs:        vulnReqs,
+		serviceAccts:    serviceAccts,
+		k8sRoles:        k8sRoles,
+		k8sRoleBindings: k8sRoleBindings,
+		logimbueStore:   logimbueStore,
+		stopper:         concurrency.NewStopper(),
+		postgres:        globaldb.GetPostgres(),
+		reportSnapshot:  reportSnapshotDS,
+		blobStore:       blobStore,
 	}
 }
 
 type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
-	alerts               alertDatastore.DataStore
-	clusters             clusterDatastore.DataStore
-	nodes                nodeDatastore.DataStore
-	images               imageDatastore.DataStore
-	imageComponents      imageComponentDatastore.DataStore
-	deployments          deploymentDatastore.DataStore
-	pods                 podDatastore.DataStore
-	processes            processDatastore.DataStore
-	plops                plopDatastore.DataStore
-	processbaseline      processBaselineDatastore.DataStore
-	networkflows         networkFlowDatastore.ClusterDataStore
-	config               configDatastore.DataStore
-	risks                riskDataStore.DataStore
-	vulnReqs             vulnReqDataStore.DataStore
-	serviceAccts         serviceAccountDataStore.DataStore
-	k8sRoles             k8sRoleDataStore.DataStore
-	k8sRoleBindings      roleBindingDataStore.DataStore
-	logimbueStore        logimbueDataStore.Store
-	stopper              concurrency.Stopper
-	reportSnapshot       snapshotDS.DataStore
-	blobStore            blobDatastore.Datastore
-	administrationEvents administrationEventDS.DataStore
+	alerts          alertDatastore.DataStore
+	clusters        clusterDatastore.DataStore
+	nodes           nodeDatastore.DataStore
+	images          imageDatastore.DataStore
+	imageComponents imageComponentDatastore.DataStore
+	deployments     deploymentDatastore.DataStore
+	pods            podDatastore.DataStore
+	processes       processDatastore.DataStore
+	plops           plopDatastore.DataStore
+	processbaseline processBaselineDatastore.DataStore
+	networkflows    networkFlowDatastore.ClusterDataStore
+	config          configDatastore.DataStore
+	risks           riskDataStore.DataStore
+	vulnReqs        vulnReqDataStore.DataStore
+	serviceAccts    serviceAccountDataStore.DataStore
+	k8sRoles        k8sRoleDataStore.DataStore
+	k8sRoleBindings roleBindingDataStore.DataStore
+	logimbueStore   logimbueDataStore.Store
+	stopper         concurrency.Stopper
+	reportSnapshot  snapshotDS.DataStore
+	blobStore       blobDatastore.Datastore
 }
 
 func (g *garbageCollectorImpl) Start() {
