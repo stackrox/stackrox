@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"path"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -41,7 +43,6 @@ var _ suite.TearDownTestSuite = (*centralCommunicationSuite)(nil)
 
 func (c *centralCommunicationSuite) TearDownTest() {
 	c.fakeCentral.Stop()
-	c.fakeCentral.ServerPointer.GracefulStop()
 	c.closeF()
 }
 
@@ -53,24 +54,12 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	c.receivedMessages = make(chan *central.MsgFromSensor, 10)
 
-	c.fakeCentral = centralDebug.MakeFakeCentralWithInitialMessages(
-		debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
-		debuggerMessage.ClusterConfig(),
-		debuggerMessage.PolicySync([]*storage.Policy{}),
-		debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}))
-
-	c.fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		c.receivedMessages <- msg
-	})
-
 	certPath := "../../../tools/local-sensor/certs/"
 
 	c.T().Setenv("ROX_MTLS_CERT_FILE", path.Join(certPath, "/cert.pem"))
 	c.T().Setenv("ROX_MTLS_KEY_FILE", path.Join(certPath, "/key.pem"))
 	c.T().Setenv("ROX_MTLS_CA_FILE", path.Join(certPath, "/caCert.pem"))
 	c.T().Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(certPath, "/caKey.pem"))
-
-	c.conn, c.closeF = createConnectionAndStartServer(c.fakeCentral)
 
 	// Setup Mocks:
 	c.mockHandler.EXPECT().GetDeploymentIdentification().AnyTimes().Return(nil)
@@ -84,7 +73,8 @@ func Test_CentralCommunicationSuite(t *testing.T) {
 	suite.Run(t, new(centralCommunicationSuite))
 }
 
-func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
+func (c *centralCommunicationSuite) Test_CentralCommunication_Start() {
+	c.setupFakeCentral(c.serverReconciliationFakeCentral())
 	componentMessages := c.givenCentralCommunication()
 
 	// Pretend that a component (listener) is sending the sync event
@@ -96,10 +86,38 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	for syncReceived {
 		select {
 		case <-timeout:
-			c.Fail("Didn't receive sync message after 3 seconds")
+			c.Fail("Didn't receive sync message after 5 seconds")
 		case msg := <-c.receivedMessages:
-			c.T().Logf("Received: %s", msg.String())
 			syncReceived = msg.GetEvent().GetSynced() != nil
+		}
+	}
+}
+
+func (c *centralCommunicationSuite) Test_CentralCommunication_Start_ClientReconciliation() {
+	deploymentUUID := uuid.NewV4()
+	deploymentKey := fmt.Sprintf("deployment:%s", deploymentUUID)
+
+	centralHashes := map[string]uint64{
+		deploymentKey: 1234,
+	}
+
+	c.setupFakeCentral(c.clientReconciliationFakeCentral(centralHashes))
+	componentMessages := c.givenCentralCommunication()
+
+	componentMessages <- message.New(givenDeployment(uuid.NewV4().String(), "deployment-a", "4321"))
+	componentMessages <- message.New(givenDeployment(deploymentUUID.String(), "deployment-b", "1234"))
+
+	// Wait for sync message or timeout after 5s
+	timeout := time.After(5 * time.Second)
+	deploymentsReceived := 0
+	for deploymentsReceived != 2 {
+		select {
+		case <-timeout:
+			c.FailNow("Didn't receive deployments after 5 seconds")
+		case msg := <-c.receivedMessages:
+			if msg.GetEvent().GetDeployment() != nil {
+				deploymentsReceived += 1
+			}
 		}
 	}
 }
@@ -108,6 +126,33 @@ func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.Sen
 	return &fakeSensorComponent{
 		responsesC: responsesC,
 	}
+}
+
+func (c *centralCommunicationSuite) setupFakeCentral(fc *centralDebug.FakeService) {
+	c.fakeCentral = fc
+
+	c.fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
+		c.receivedMessages <- msg
+	})
+
+	c.conn, c.closeF = createConnectionAndStartServer(c.fakeCentral)
+}
+
+func (c *centralCommunicationSuite) clientReconciliationFakeCentral(deduperState map[string]uint64) *centralDebug.FakeService {
+	return centralDebug.MakeFakeCentralWithInitialMessages(
+		debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
+		debuggerMessage.ClusterConfig(),
+		debuggerMessage.PolicySync([]*storage.Policy{}),
+		debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+		debuggerMessage.DeduperState(deduperState))
+}
+
+func (c *centralCommunicationSuite) serverReconciliationFakeCentral() *centralDebug.FakeService {
+	return centralDebug.MakeFakeCentralWithInitialMessages(
+		debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
+		debuggerMessage.ClusterConfig(),
+		debuggerMessage.PolicySync([]*storage.Policy{}),
+		debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}))
 }
 
 func (c *centralCommunicationSuite) givenCentralCommunication() chan *message.ExpiringMessage {
@@ -119,6 +164,28 @@ func (c *centralCommunicationSuite) givenCentralCommunication() chan *message.Ex
 	comms.Start(c.conn, &reachable, c.mockHandler, c.mockDetector)
 
 	return componentMessages
+}
+
+func givenDeployment(uuid, name, hash string) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		HashKey:           "",
+		DedupeKey:         "", // TODO: check if these are the properties I need to use in deduper
+		ProcessingAttempt: 0,
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:              "",
+				Action:          0,
+				Timing:          nil,
+				SensorHashOneof: nil, // TODO: or maybe this hash?
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{
+						Id:   uuid,
+						Name: name,
+					},
+				},
+			},
+		},
+	}
 }
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
