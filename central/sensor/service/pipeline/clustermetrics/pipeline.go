@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +22,8 @@ var (
 	productUsageWriteSCC = sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Administration))
+
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
@@ -57,6 +60,10 @@ type pipelineImpl struct {
 	metricsStore     MetricsStore
 	telemetryMetrics telemetry.Telemetry
 	usageStore       usageDS.DataStore
+}
+
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
