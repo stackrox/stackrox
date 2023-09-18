@@ -120,15 +120,29 @@ def calculate_replaced_version(version, first_version, previous_y_stream, skips)
     if current_xyz <= first_xyz:
         return None
 
+    # If this is a new minor release, it will replace the previous minor release (e.g. 4.2.0 replaces 4.1.0).
+    # If this is a new patch, it replaces previous patch (e.g. 4.2.2 replaces 4.2.1, or 4.2.1 replaces 4.2.0).
     initial_replace = previous_xyz if current_xyz.z == 0 else \
         XyzVersion(current_xyz.x, current_xyz.y, current_xyz.z - 1)
 
+    # Next, in the presence of version skips, i.e. versions that are marked as broken with `skips` attribute, we need to
+    # handle a situation when the replaced version is also skipped, because the upgrade may fail.
+
     current_replace = initial_replace
 
+    # First, we loop over all skips and find a patch number that's not skipped. This assumes there always exists a
+    # released patch for any version that's skipped. E.g. we release 4.2.0, and 4.1.0 is broken and listed in `skips`,
+    # and so we cannot make 4.2.0 replace 4.1.0. We'll take 4.2.0 replace 4.1.1.
+    # The assumption should hold true because if some version is determined broken and is supported, we should create a
+    # patch release to fix it.
     while current_replace in skips:
         logging.info(f"Looks like {current_replace} replace version is in skips list, trying next patch.")
         current_replace = XyzVersion(current_replace.x, current_replace.y, current_replace.z + 1)
 
+    # The obvious exception from the above is when we release the immediate patch to the broken version.
+    # E.g. 4.1.0 is broken and listed in `skips` and we release 4.1.1. In this case 4.1.1 will still replace 4.1.0. The
+    # operator upgrade is still possible because 4.1.1 will additionally have skipRange >=4.0.0 and <4.1.1 thus allowing
+    # versions in that range to be upgraded to 4.1.1.
     if current_replace >= current_xyz:
         current_replace = initial_replace
         logging.warning(
