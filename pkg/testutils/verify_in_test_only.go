@@ -16,7 +16,7 @@ var (
 // It is essentially impossible to create a valid one outside a test since the
 // struct has no exported fields. We use this for methods that are "testing only", to make
 // sure that they do not get exercised outside tests.
-func MustBeInTest(t *testing.T) {
+func MustBeInTest(t testing.TB) {
 	if v := flag.Lookup("test.v"); v != nil && v.Value.String() == "true" {
 		return
 	}
