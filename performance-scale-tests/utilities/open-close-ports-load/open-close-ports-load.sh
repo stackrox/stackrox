@@ -30,4 +30,3 @@ for ((i = 0; i < num_concurrent; i = i + 1)); do
     start_port=$((start_port + increment))
     end_port=$((end_port + increment))
 done
-
