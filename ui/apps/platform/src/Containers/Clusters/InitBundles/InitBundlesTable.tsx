@@ -11,7 +11,7 @@ export type InitBundlesTableProps = {
 
 function InitBundlesTable({ initBundles }: InitBundlesTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" borders={false} id="InitBundlesTable">
+        <TableComposable variant="compact">
             <Thead>
                 <Tr>
                     <Th>Name</Th>
