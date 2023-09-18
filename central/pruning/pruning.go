@@ -470,23 +470,8 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
-	retentionDays := config.GetAdministrationEventsConfig().GetRetentionDurationDays()
-	retentionQuery := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, int64(retentionDays)).ProtoQuery()
-	results, err := g.administrationEvents.Search(pruningCtx, retentionQuery)
-	if err != nil {
-		log.Errorf("[Administration Events Pruning] Error fetching administration events to prune: %v", err)
-		return
-	}
-
-	log.Infof("[Administration Events Pruning] Found %d administration events to prune.", len(results))
-
-	if len(results) == 0 {
-		return
-	}
-
-	if err := g.administrationEvents.RemoveEvents(pruningCtx, search.ResultsToIDs(results)...); err != nil {
-		log.Errorf("[Administration Events Pruning] Error removing administration events: %v", err)
-	}
+	retentionDays := time.Duration(config.GetAdministrationEventsConfig().GetRetentionDurationDays()) * 24 * time.Hour
+	postgres.PruneAdministrationEvents(pruningCtx, g.postgres, retentionDays)
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {

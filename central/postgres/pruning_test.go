@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	protoTypes "github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
+	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterHealthPostgresStore "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
@@ -20,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -281,39 +284,6 @@ func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
 	s.Equal(len(idsToPrune), cluster2PodCount)
 }
 
-func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
-		pod := &storage.Pod{
-			Id:        uuid.NewV4().String(),
-			ClusterId: clusterID,
-		}
-		err := podDS.UpsertPod(s.ctx, pod)
-		s.Nil(err)
-	}
-}
-
-func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:            id,
-		DeploymentId:  deploymentID,
-		ContainerName: "",
-		PodId:         "",
-		Signal: &storage.ProcessSignal{
-			Time: timestampNowMinus(age),
-		},
-	}
-}
-
-func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID, podUID string) *storage.ProcessIndicator {
-	indicator := newIndicatorWithDeployment(id, age, deploymentID)
-	indicator.PodUid = podUID
-	return indicator
-}
-
-func timestampNowMinus(t time.Duration) *types.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
-
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
 		name              string
@@ -433,4 +403,93 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			}
 		})
 	}
+}
+
+func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
+	datastore := administrationEventDS.GetTestPostgresDataStore(s.T(), s.testDB)
+
+	events := []*storage.AdministrationEvent{
+		// Should not be subject to pruning.
+		{
+			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
+			LastOccurredAt: timeBeforeDays(2),
+		},
+		// Should not be subject to pruning.
+		{
+			Id:             "460c8808-9f70-51e7-9f3a-973f44ab8595",
+			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now()),
+		},
+		// Should be subject to pruning.
+		{
+			Id:             "a10c6cae-c72f-58a3-bd86-dc0363990fe6",
+			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(96*24*time.Hour + 30*time.Minute))),
+		},
+		// Should not be subject to pruning.
+		{
+			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
+			LastOccurredAt: timeBeforeDays(3),
+		},
+		// Should not be subject to pruning.
+		{
+			Id:             "13d24bd2-1373-57b3-af07-066cdd65d226",
+			LastOccurredAt: protoconv.ConvertTimeToTimestamp(time.Now().Add(4 * 24 * time.Hour)),
+		},
+		// Should be subject to pruning.
+		{
+			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
+			LastOccurredAt: timeBeforeDays(12),
+		},
+		// Should be subject to pruning.
+		{
+			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
+			LastOccurredAt: timeBeforeDays(365),
+		},
+	}
+	s.Require().NoError(administrationEventDS.UpsertTestEvents(s.ctx, s.T(),
+		datastore, events...))
+
+	PruneAdministrationEvents(s.ctx, s.testDB, 4*24*time.Hour)
+
+	storedEvents, err := datastore.ListEvents(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.ElementsMatch([]*storage.AdministrationEvent{events[0], events[1], events[3], events[4]}, storedEvents)
+}
+
+// Helper functions.
+
+func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID string, numberPods int) {
+	for i := 0; i < numberPods; i++ {
+		pod := &storage.Pod{
+			Id:        uuid.NewV4().String(),
+			ClusterId: clusterID,
+		}
+		err := podDS.UpsertPod(s.ctx, pod)
+		s.Nil(err)
+	}
+}
+
+func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:            id,
+		DeploymentId:  deploymentID,
+		ContainerName: "",
+		PodId:         "",
+		Signal: &storage.ProcessSignal{
+			Time: timestampNowMinus(age),
+		},
+	}
+}
+
+func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID, podUID string) *storage.ProcessIndicator {
+	indicator := newIndicatorWithDeployment(id, age, deploymentID)
+	indicator.PodUid = podUID
+	return indicator
+}
+
+func timestampNowMinus(t time.Duration) *types.Timestamp {
+	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+func timeBeforeDays(days int) *protoTypes.Timestamp {
+	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
 }

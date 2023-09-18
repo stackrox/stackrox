@@ -19,8 +19,8 @@ import { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
 import { HelpIcon } from '@patternfly/react-icons';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
-import useFeatureFlags from '../../../hooks/useFeatureFlags';
 
 type DataRetentionValueProps = {
     value: number | undefined;

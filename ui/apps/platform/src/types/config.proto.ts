@@ -49,7 +49,7 @@ export type ReportRetentionConfig = {
 };
 
 export type AdministrationEventsConfig = {
-    retentionDurationDays: number; // unit32
+    retentionDurationDays: number; // uint32
 };
 
 export type PrivateConfig = {
