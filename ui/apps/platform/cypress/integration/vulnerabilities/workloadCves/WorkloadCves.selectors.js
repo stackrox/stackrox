@@ -9,7 +9,7 @@ export const selectors = {
     resourceValueTypeahead: (resource) =>
         `.pf-c-toolbar input[aria-label="Filter by ${resource.toUpperCase()}"]`,
     resourceValueMenuItem: (resource, value) =>
-        `.pf-c-toolbar ul[aria-label="Filter by ${resource.toUpperCase()}"] button:contains("${value}")`,
+        `.pf-c-toolbar ul[aria-label="Filter by ${resource.toUpperCase()}"] button:contains('Add "${value}"')`,
     severityDropdown: '.pf-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
     severityMenuItems: '.pf-c-toolbar ul[aria-label="CVE severity filter menu items"]',
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
@@ -26,7 +26,7 @@ export const selectors = {
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
-    clearFiltersButton: `${filterChipSection} .pf-c-toolbar button:contains("Clear filters")`,
+    clearFiltersButton: `${filterChipSection} button:contains("Clear filters")`,
 
     // General selectors
     filteredViewLabel: '.pf-c-label:contains("Filtered view")',
