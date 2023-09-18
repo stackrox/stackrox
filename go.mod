@@ -54,6 +54,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.6
 	github.com/heimdalr/dag v1.3.1
@@ -64,6 +65,7 @@ require (
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joshdk/go-junit v1.0.0
+	github.com/klauspost/compress v1.16.7
 	github.com/lib/pq v1.10.9
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.7
@@ -147,11 +149,6 @@ require (
 	sigs.k8s.io/controller-tools v0.11.3
 	sigs.k8s.io/e2e-framework v0.2.0
 	sigs.k8s.io/yaml v1.3.0
-)
-
-require (
-	github.com/hashicorp/go-retryablehttp v0.7.2
-	github.com/klauspost/compress v1.16.7
 )
 
 require (
