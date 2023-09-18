@@ -46,7 +46,7 @@ export const validationSchema = yup.object().shape({
             .min(1, 'Must have at least one type selected')
             .required('A category is required'),
         ecr: yup.object().shape({
-            registryId: yup.string().trim().required('A registry ID is required'),
+            registryId: yup.string().trim().required('A 12-digit AWS ID is required'),
             endpoint: yup.string().trim(),
             region: yup.string().trim().required('An AWS region is required'),
             useIam: yup.bool(),
@@ -207,7 +207,7 @@ function EcrIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        label="Registry ID"
+                        label="12-digit AWS ID"
                         isRequired
                         fieldId="config.ecr.registryId"
                         touched={touched}

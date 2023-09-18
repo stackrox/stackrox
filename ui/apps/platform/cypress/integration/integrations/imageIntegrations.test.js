@@ -130,18 +130,18 @@ describe('Image Integrations', () => {
 
         // Step 1, check empty fields
         getInputByLabel('Integration name').type(' ');
-        getInputByLabel('Registry ID').type(' ');
+        getInputByLabel('12-digit AWS ID').type(' ');
         getInputByLabel('Region').type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
-        getHelperElementByLabel('Registry ID').contains('A registry ID is required');
+        getHelperElementByLabel('12-digit AWS ID').contains('A 12-digit AWS ID is required');
         getHelperElementByLabel('Region').contains('An AWS region is required');
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Step 2, check valid form and save
         getInputByLabel('Integration name').clear().type(integrationName);
-        getInputByLabel('Registry ID').clear().type('12345');
+        getInputByLabel('12-digit AWS ID').clear().type('12345789012');
         getInputByLabel('Region').clear().type('us-west-1');
         cy.get('label:contains("Use container IAM role")').click(); // turn on Use IAM Role
 
