@@ -36,7 +36,7 @@ func (s *EmailFormatterTestSuite) SetupSuite() {
 func (s *EmailFormatterTestSuite) TestFormatReportConfigDetails() {
 	for _, tc := range s.configDetailsTestCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			configHtml, err := formatReportConfigDetails(tc.snapshot)
+			configHtml, err := formatReportConfigDetails(tc.snapshot, 50, 30)
 			s.Require().NoError(err)
 			expectedHtml := strings.ReplaceAll(tc.expectedHtml, "\n", "")
 			expectedHtml = strings.ReplaceAll(expectedHtml, "\t", "")
@@ -50,55 +50,50 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 		{
 			desc:     "All severities, image types, fixabilities; Cves since last scheduled report",
 			snapshot: testReportSnapshot(),
-			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Critical</td></tr>
-									<tr><td style="padding: 10px;">Important</td></tr>
-									<tr><td style="padding: 10px;">Moderate</td></tr>
-									<tr><td style="padding: 10px;">Low</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Fixable</td></tr>
-									<tr><td style="padding: 10px;">Not Fixable</td></tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">Report Scope</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">Image Type</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVEs discovered since</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr>
-										<td style="padding: 10px;">
-											collection-1
-										</td>
-									</tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Deployed Images</td></tr>
-									<tr><td style="padding: 10px;">Watched Images</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Last successful scheduled report</td></tr>
-								</table>
-							</td>
-						</tr>
-					</table>`,
+			expectedHtml: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: 
+							</span>
+							<span>config-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: 
+							</span>
+							<span>50 in Deployed images, 30 in Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE severity: 
+							</span>
+							<span>Critical, Important, Moderate, Low</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE status: 
+							</span>
+							<span>Fixable, Not fixable</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Report scope: 
+							</span>
+							<span>collection-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Image type: 
+							</span>
+							<span>Deployed images, Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVEs discovered since: 
+							</span>
+							<span>Last successful scheduled report</span>
+						</div>
+					</div>`,
 		},
 		{
 			desc: "All severities, image types, fixabilities; Cves since All time",
@@ -109,58 +104,53 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Critical</td></tr>
-									<tr><td style="padding: 10px;">Important</td></tr>
-									<tr><td style="padding: 10px;">Moderate</td></tr>
-									<tr><td style="padding: 10px;">Low</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Fixable</td></tr>
-									<tr><td style="padding: 10px;">Not Fixable</td></tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">Report Scope</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">Image Type</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVEs discovered since</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr>
-										<td style="padding: 10px;">
-											collection-1
-										</td>
-									</tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Deployed Images</td></tr>
-									<tr><td style="padding: 10px;">Watched Images</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">All Time</td></tr>
-								</table>
-							</td>
-						</tr>
-					</table>`,
+			expectedHtml: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: 
+							</span>
+							<span>config-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: 
+							</span>
+							<span>50 in Deployed images, 30 in Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE severity: 
+							</span>
+							<span>Critical, Important, Moderate, Low</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE status: 
+							</span>
+							<span>Fixable, Not fixable</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Report scope: 
+							</span>
+							<span>collection-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Image type: 
+							</span>
+							<span>Deployed images, Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVEs discovered since: 
+							</span>
+							<span>All time</span>
+						</div>
+					</div>`,
 		},
 		{
-			desc: "Critical severity, fixable CVEs, Watched Images; Cves since custom date",
+			desc: "Critical severity, fixable CVEs, Deployed Images; Cves since custom date",
 			snapshot: func() *storage.ReportSnapshot {
 				snap := testReportSnapshot()
 				snap.GetVulnReportFilters().Severities = []storage.VulnerabilitySeverity{
@@ -177,50 +167,50 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Severity</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVE Status</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Critical</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Fixable</td></tr>
-								</table>
-							</td>
-						</tr>
-						<tr>
-							<th style="background-color: #f0f0f0; padding: 10px;">Report Scope</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">Image Type</th>
-							<th style="background-color: #f0f0f0; padding: 10px;">CVEs discovered since</th>
-						</tr>
-						<tr>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr>
-										<td style="padding: 10px;">
-											collection-1
-										</td>
-									</tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">Deployed Images</td></tr>
-								</table>
-							</td>
-							<td style="padding: 10px; word-wrap: break-word; white-space: normal;">
-								<table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;">
-									<tr><td style="padding: 10px;">January 20, 2023</td></tr>
-								</table>
-							</td>
-						</tr>
-					</table>`,
+			expectedHtml: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: 
+							</span>
+							<span>config-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: 
+							</span>
+							<span>50 in Deployed images, 30 in Watched images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE severity: 
+							</span>
+							<span>Critical</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVE status: 
+							</span>
+							<span>Fixable</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Report scope: 
+							</span>
+							<span>collection-1</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Image type: 
+							</span>
+							<span>Deployed images</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								CVEs discovered since: 
+							</span>
+							<span>January 20, 2023</span>
+						</div>
+					</div>`,
 		},
 	}
 	return cases

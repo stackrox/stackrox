@@ -29,12 +29,12 @@ var (
 
 	fixabilityToText = map[storage.VulnerabilityReportFilters_Fixability]string{
 		storage.VulnerabilityReportFilters_FIXABLE:     "Fixable",
-		storage.VulnerabilityReportFilters_NOT_FIXABLE: "Not Fixable",
+		storage.VulnerabilityReportFilters_NOT_FIXABLE: "Not fixable",
 	}
 
 	imageTypeToText = map[storage.VulnerabilityReportFilters_ImageType]string{
-		storage.VulnerabilityReportFilters_DEPLOYED: "Deployed Images",
-		storage.VulnerabilityReportFilters_WATCHED:  "Watched Images",
+		storage.VulnerabilityReportFilters_DEPLOYED: "Deployed images",
+		storage.VulnerabilityReportFilters_WATCHED:  "Watched images",
 	}
 )
 
@@ -82,7 +82,7 @@ func addReportConfigDetails(emailBody, configDetailsHtml string) string {
 	return writer.String()
 }
 
-func formatReportConfigDetails(snapshot *storage.ReportSnapshot) (string, error) {
+func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImageCVEs, numWatchedImageCVEs int) (string, error) {
 	var writer strings.Builder
 
 	err := validateSnapshot(snapshot)
@@ -91,33 +91,41 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot) (string, error)
 	}
 	reportFilters := snapshot.GetVulnReportFilters()
 
-	writer.WriteString("<table style=\"width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;\">")
+	writer.WriteString("<div>")
 
-	// Add severities and fixabilities
-	fillTableHeadings(&writer, "CVE Severity", "CVE Status")
-	writer.WriteString("<tr>")
+	// Config name
+	formatSingleDetail(&writer, "Config name", snapshot.GetName())
+
+	// Number of CVEs found
+	formatSingleDetail(&writer, "Number of CVEs found",
+		fmt.Sprintf("%d in Deployed images", numDeployedImageCVEs),
+		fmt.Sprintf("%d in Watched images", numWatchedImageCVEs))
+
+	// Severities
 	// create a copy because severities will be sorted in descending order (critical, important, moderate, low)
 	severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
 	slices.SortFunc(severities, func(s1, s2 storage.VulnerabilitySeverity) bool {
 		return s1 > s2
 	})
-	fillTableCellWithValues(&writer, severities...)
-	fixabilities := expandFixability(reportFilters.GetFixability())
-	fillTableCellWithValues(&writer, fixabilities...)
-	writer.WriteString("</tr>")
+	formatSingleDetail(&writer, "CVE severity", severities...)
 
-	// Add collection, image types and CVEs discovered since filters
-	fillTableHeadings(&writer, "Report Scope", "Image Type", "CVEs discovered since")
-	writer.WriteString("<tr>")
-	fillTableCellWithValues(&writer, snapshot.GetCollection())
+	// Fixability
+	fixabilities := expandFixability(reportFilters.GetFixability())
+	formatSingleDetail(&writer, "CVE status", fixabilities...)
+
+	// Collection
+	formatSingleDetail(&writer, "Report scope", snapshot.GetCollection())
+
+	// Image types
 	// create a copy because image types will be sorted in ascending order (deployed, watched)
 	imageTypes := append([]storage.VulnerabilityReportFilters_ImageType{}, reportFilters.GetImageTypes()...)
 	slices.Sort(imageTypes)
-	fillTableCellWithValues(&writer, imageTypes...)
-	fillTableCellWithValues(&writer, reportFilters.GetCvesSince())
-	writer.WriteString("</tr>")
+	formatSingleDetail(&writer, "Image type", imageTypes...)
 
-	writer.WriteString("</table>")
+	// CVEs discovered since
+	formatSingleDetail(&writer, "CVEs discovered since", reportFilters.GetCvesSince())
+
+	writer.WriteString("</div>")
 
 	return writer.String(), nil
 }
@@ -132,30 +140,33 @@ func expandFixability(fixability storage.VulnerabilityReportFilters_Fixability) 
 	return []storage.VulnerabilityReportFilters_Fixability{fixability}
 }
 
-func fillTableHeadings(writer *strings.Builder, headings ...string) {
-	writer.WriteString("<tr>")
-	for _, h := range headings {
-		writer.WriteString(fmt.Sprintf("<th style=\"background-color: #f0f0f0; padding: 10px;\">%s</th>", h))
-	}
-	writer.WriteString("</tr>")
-}
+func formatSingleDetail[T any](writer *strings.Builder, heading string, values ...T) {
+	writer.WriteString("<div style=\"padding: 0 0 10px 0\">")
 
-func fillTableCellWithValues[T any](writer *strings.Builder, values ...T) {
-	writer.WriteString("<td style=\"padding: 10px; word-wrap: break-word; white-space: normal;\">")
+	// Add heading
+	writer.WriteString("<span style=\"font-weight: bold; margin-right: 10px\">")
+	writer.WriteString(fmt.Sprintf("%s: ", heading))
+	writer.WriteString("</span>")
+
+	// Add values
 	if len(values) > 0 {
-		writer.WriteString("<table style=\"width: 100%; border-collapse: collapse; table-layout: fixed; border: none; text-align: left;\">")
-		for _, valI := range values {
-			writer.WriteString("<tr><td style=\"padding: 10px;\">")
+		writer.WriteString("<span>")
+		for i, valI := range values {
 			writer.WriteString(convertValueToFriendlyText(valI))
-			writer.WriteString("</td></tr>")
+			if i < (len(values) - 1) {
+				writer.WriteString(", ")
+			}
 		}
-		writer.WriteString("</table>")
+		writer.WriteString("</span>")
 	}
-	writer.WriteString("</td>")
+
+	writer.WriteString("</div>")
 }
 
 func convertValueToFriendlyText(valI interface{}) string {
 	switch val := valI.(type) {
+	case string:
+		return val
 	case *storage.CollectionSnapshot:
 		return val.GetName()
 	case storage.VulnerabilitySeverity:
@@ -165,7 +176,7 @@ func convertValueToFriendlyText(valI interface{}) string {
 	case storage.VulnerabilityReportFilters_ImageType:
 		return imageTypeToText[val]
 	case *storage.VulnerabilityReportFilters_AllVuln:
-		return "All Time"
+		return "All time"
 	case *storage.VulnerabilityReportFilters_SinceLastSentScheduledReport:
 		return "Last successful scheduled report"
 	case *storage.VulnerabilityReportFilters_SinceStartDate:

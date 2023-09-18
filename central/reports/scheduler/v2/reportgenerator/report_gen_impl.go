@@ -104,10 +104,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
+	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
 	if err != nil {
 		return err
 	}
+	zippedCSVData := zippedSCVResult.ZippedCsv
 
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
@@ -130,7 +131,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		// If it is an empty report, do not send an attachment in the final notification email and the email body
 		// will indicate that no vulns were found
 		templateStr := defaultEmailBodyTemplate_vulnsFound
-		if empty {
+		if zippedSCVResult.NumDeployedImageCVEs == 0 && zippedSCVResult.NumWatchedImageCVEs == 0 {
 			// If it is an empty report, the email body will indicate that no vulns were found
 			zippedCSVData = nil
 			templateStr = defaultEmailBodyTemplate_noVulnsFound
@@ -141,7 +142,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			return errors.Wrap(err, "Error generating email body")
 		}
 
-		configDetailsHtml, err := formatReportConfigDetails(req.ReportSnapshot)
+		configDetailsHtml, err := formatReportConfigDetails(req.ReportSnapshot, zippedSCVResult.NumDeployedImageCVEs,
+			zippedSCVResult.NumWatchedImageCVEs)
 		if err != nil {
 			return errors.Wrap(err, "Error adding report config details")
 		}
