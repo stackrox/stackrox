@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -92,6 +93,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return err
 	}
 
+	// Generate a pipeline for the cluster to use.
+	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
+	if err != nil {
+		return errors.Errorf("unable to generate a pipeline for cluster %q", cluster.GetId())
+	}
+
 	if sensorSupportsHello {
 		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
@@ -100,6 +107,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			ClusterId:      cluster.GetId(),
 			ManagedCentral: env.ManagedCentral.BooleanSetting(),
 			CentralId:      installInfo.GetId(),
+			Capabilities:   sliceutils.StringSlice(eventPipeline.Capabilities()...),
 		}
 
 		if err := safe.RunE(func() error {
@@ -126,12 +134,6 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
 			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
 		}
-	}
-
-	// Generate a pipeline for the cluster to use.
-	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
-	if err != nil {
-		return errors.Errorf("unable to generate a pipeline for cluster %q", cluster.GetId())
 	}
 
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())

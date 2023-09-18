@@ -12,6 +12,7 @@ import (
 	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
 	reconciliation "github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	central "github.com/stackrox/rox/generated/internalapi/central"
+	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -36,6 +37,20 @@ func NewMockBasePipeline(ctrl *gomock.Controller) *MockBasePipeline {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBasePipeline) EXPECT() *MockBasePipelineMockRecorder {
 	return m.recorder
+}
+
+// Capabilities mocks base method.
+func (m *MockBasePipeline) Capabilities() []centralsensor.CentralCapability {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Capabilities")
+	ret0, _ := ret[0].([]centralsensor.CentralCapability)
+	return ret0
+}
+
+// Capabilities indicates an expected call of Capabilities.
+func (mr *MockBasePipelineMockRecorder) Capabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockBasePipeline)(nil).Capabilities))
 }
 
 // OnFinish mocks base method.
@@ -71,6 +86,20 @@ func NewMockClusterPipeline(ctrl *gomock.Controller) *MockClusterPipeline {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClusterPipeline) EXPECT() *MockClusterPipelineMockRecorder {
 	return m.recorder
+}
+
+// Capabilities mocks base method.
+func (m *MockClusterPipeline) Capabilities() []centralsensor.CentralCapability {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Capabilities")
+	ret0, _ := ret[0].([]centralsensor.CentralCapability)
+	return ret0
+}
+
+// Capabilities indicates an expected call of Capabilities.
+func (mr *MockClusterPipelineMockRecorder) Capabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockClusterPipeline)(nil).Capabilities))
 }
 
 // OnFinish mocks base method.
@@ -172,6 +201,20 @@ func NewMockFragment(ctrl *gomock.Controller) *MockFragment {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFragment) EXPECT() *MockFragmentMockRecorder {
 	return m.recorder
+}
+
+// Capabilities mocks base method.
+func (m *MockFragment) Capabilities() []centralsensor.CentralCapability {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Capabilities")
+	ret0, _ := ret[0].([]centralsensor.CentralCapability)
+	return ret0
+}
+
+// Capabilities indicates an expected call of Capabilities.
+func (mr *MockFragmentMockRecorder) Capabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockFragment)(nil).Capabilities))
 }
 
 // Match mocks base method.

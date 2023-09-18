@@ -6,11 +6,14 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 )
 
 // BasePipeline represents methods that are shared between Pipelines and fragments of pipelines.
 type BasePipeline interface {
 	OnFinish(clusterID string)
+
+	Capabilities() []centralsensor.CentralCapability
 }
 
 // ClusterPipeline processes a message received from a given cluster.

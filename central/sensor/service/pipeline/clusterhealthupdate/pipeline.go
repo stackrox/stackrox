@@ -16,6 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
+var (
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
+)
+
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
 	return NewPipeline(clusterDataStore.Singleton())
@@ -30,6 +34,10 @@ func NewPipeline(clusters clusterDataStore.DataStore) pipeline.Fragment {
 
 type pipelineImpl struct {
 	clusters clusterDataStore.DataStore
+}
+
+func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
