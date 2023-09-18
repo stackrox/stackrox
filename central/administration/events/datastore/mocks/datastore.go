@@ -11,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	events "github.com/stackrox/rox/pkg/administration/events"
-	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -109,38 +108,4 @@ func (m *MockDataStore) ListEvents(ctx context.Context, query *v1.Query) ([]*sto
 func (mr *MockDataStoreMockRecorder) ListEvents(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEvents", reflect.TypeOf((*MockDataStore)(nil).ListEvents), ctx, query)
-}
-
-// RemoveEvents mocks base method.
-func (m *MockDataStore) RemoveEvents(ctx context.Context, ids ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "RemoveEvents", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveEvents indicates an expected call of RemoveEvents.
-func (mr *MockDataStoreMockRecorder) RemoveEvents(ctx interface{}, ids ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEvents", reflect.TypeOf((*MockDataStore)(nil).RemoveEvents), varargs...)
-}
-
-// Search mocks base method.
-func (m *MockDataStore) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, query)
-	ret0, _ := ret[0].([]search.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Search indicates an expected call of Search.
-func (mr *MockDataStoreMockRecorder) Search(ctx, query interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, query)
 }
