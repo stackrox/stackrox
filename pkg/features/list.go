@@ -39,6 +39,9 @@ var (
 	// SyslogNamespaceLabels enables sending namespace labels as part of the syslog alert notification.
 	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
 
+	// MoveInitBundlesUI is front-end only move from integrations to clusters route.
+	MoveInitBundlesUI = registerFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", false)
+
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 

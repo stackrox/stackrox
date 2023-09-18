@@ -22,6 +22,8 @@ export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
 export const clustersListPath = `${mainPath}/clusters-pf`;
 export const clustersDelegatedScanningPath = `${clustersBasePath}/delegated-image-scanning`;
+export const clustersInitBundlesPath = `${clustersBasePath}/init-bundles`;
+export const clustersInitBundlesPathWithParam = `${clustersInitBundlesPath}/:id?`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
 export const complianceBasePath = `${mainPath}/compliance`;
@@ -120,6 +122,8 @@ export type RouteKey =
     | 'apidocs'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
+    // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
+    | 'clusters/init-bundles'
     | 'clusters'
     | 'collections'
     | 'compliance'
@@ -156,6 +160,11 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     'clusters/delegated-image-scanning': {
         resourceAccessRequirements: everyResource(['Administration']),
+    },
+    // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
+    'clusters/init-bundles': {
+        featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
+        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
