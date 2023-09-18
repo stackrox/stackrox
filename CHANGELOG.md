@@ -19,6 +19,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
+- ROX-19738: Previously categories passed to the detection service's APIs `v1/detect/build, v1/detect/deploy, v1/detect/deploy/yaml`
+  have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
+  are required to be title-cased.
+
 ## [4.2.0]
 
 
