@@ -582,16 +582,16 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 			log.Error(err)
 		}
 
-		log.Info("finished writing Central data to diagnostic bundle")
+		log.Info("Finished writing Central data to diagnostic bundle")
 	}
 
 	if opts.logs == fullK8sIntrospectionData {
 		if err := s.getK8sDiagnostics(debugDumpCtx, zipWriter, opts); err != nil {
-			log.Errorf("could not get K8s diagnostics: %+q", err)
+			log.Errorf("Could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
 		if err := s.pullSensorMetrics(debugDumpCtx, zipWriter, opts); err != nil {
-			log.Errorf("could not get sensor metrics: %+q", err)
+			log.Errorf("Could not get sensor metrics: %+q", err)
 		}
 	}
 
@@ -705,8 +705,6 @@ func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) 
 func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *http.Request, withCentral bool) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
-	log.Infof("started writing diagnostic bundle %s; withCentral = %t", filename, withCentral)
-
 	opts := debugDumpOptions{
 		logs:              fullK8sIntrospectionData,
 		telemetryMode:     telemetryCentralAndSensors,
@@ -723,6 +721,7 @@ func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *htt
 		fmt.Fprint(w, err.Error())
 		return
 	}
+	log.Infof("Started writing diagnostic bundle %q with options: %+v", filename, opts)
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }
