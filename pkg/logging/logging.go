@@ -58,18 +58,8 @@ const (
 	// implementation and not to require clients to import zapcore lib
 	// explicitly.
 
-	// FatalLevel log level
-	FatalLevel = zapcore.FatalLevel
-	// PanicLevel log level
-	PanicLevel = zapcore.PanicLevel
-	// ErrorLevel log level
-	ErrorLevel = zapcore.ErrorLevel
 	// WarnLevel log level
 	WarnLevel = zapcore.WarnLevel
-	// InfoLevel log level
-	InfoLevel = zapcore.InfoLevel
-	// DebugLevel log level
-	DebugLevel = zapcore.DebugLevel
 )
 
 var (
@@ -267,19 +257,11 @@ func GetGlobalLogLevel() zapcore.Level {
 }
 
 // LoggerForModule returns a logger for the current module.
-func LoggerForModule() Logger {
-	return currentModule(3).Logger()
+func LoggerForModule(opts ...OptionsFunc) Logger {
+	return currentModule(3).Logger(opts...)
 }
 
 // convenience methods log apply to root logger
-
-// Log implements logging.Logger interface.
-func Log(level zapcore.Level, args ...interface{}) { rootLogger.Log(level, args...) }
-
-// Logf implements logging.Logger interface.
-func Logf(level zapcore.Level, template string, args ...interface{}) {
-	rootLogger.Logf(level, template, args...)
-}
 
 // Debug implements logging.Logger interface.
 func Debug(args ...interface{}) { rootLogger.Debug(args...) }
@@ -293,14 +275,8 @@ func Error(args ...interface{}) { rootLogger.Error(args...) }
 // Errorf implements logging.Logger interface.
 func Errorf(format string, args ...interface{}) { rootLogger.Errorf(format, args...) }
 
-// Fatal implements logging.Logger interface.
-func Fatal(args ...interface{}) { rootLogger.Fatal(args...) }
-
 // Fatalf implements logging.Logger interface.
 func Fatalf(format string, args ...interface{}) { rootLogger.Fatalf(format, args...) }
-
-// Fatalln implements logging.Logger interface.
-func Fatalln(args ...interface{}) { rootLogger.Fatal(args...) }
 
 // Info implements logging.Logger interface.
 func Info(args ...interface{}) { rootLogger.Info(args...) }
@@ -308,23 +284,8 @@ func Info(args ...interface{}) { rootLogger.Info(args...) }
 // Infof implements logging.Logger interface.
 func Infof(format string, args ...interface{}) { rootLogger.Infof(format, args...) }
 
-// Panic implements logging.Logger interface.
-func Panic(args ...interface{}) { rootLogger.Panic(args...) }
-
 // Panicf implements logging.Logger interface.
 func Panicf(format string, args ...interface{}) { rootLogger.Panicf(format, args...) }
-
-// Panicln implements logging.Logger interface.
-func Panicln(args ...interface{}) { rootLogger.Panic(args...) }
-
-// Print implements logging.Logger interface.
-func Print(args ...interface{}) { rootLogger.Info(args...) }
-
-// Printf implements logging.Logger interface.
-func Printf(format string, args ...interface{}) { rootLogger.Infof(format, args...) }
-
-// Println implements logging.Logger interface.
-func Println(args ...interface{}) { rootLogger.Info(args...) }
 
 // Warn implements logging.Logger interface.
 func Warn(args ...interface{}) { rootLogger.Warn(args...) }
@@ -365,14 +326,14 @@ func SortedLevels() []zapcore.Level {
 
 // CreateLogger creates (but does not register) a new logger instance.
 // Skip allows to specify how much layers of nested calls we will skip during logging.
-func CreateLogger(module *Module, skip int) *LoggerImpl {
+func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	lc := config
 	// Need to increase the skip by 1 by default since we call the logger inline. Otherwise, the location of the caller
 	// would also be set to this file.
-	return createLoggerWithConfig(&lc, module, skip+1)
+	return createLoggerWithConfig(&lc, module, skip+1, opts...)
 }
 
-func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImpl {
+func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	lc.Level = module.logLevel
 
 	logger, err := lc.Build(zap.AddCallerSkip(skip))
@@ -380,9 +341,15 @@ func createLoggerWithConfig(lc *zap.Config, module *Module, skip int) *LoggerImp
 		panic(errors.Wrap(err, "failed to instantiate logger"))
 	}
 
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+
 	result := &LoggerImpl{
 		InnerLogger: logger.Named(module.name).Sugar(),
 		module:      module,
+		opts:        o,
 	}
 
 	runtime.SetFinalizer(result, (*LoggerImpl).finalize)

@@ -170,14 +170,19 @@
           "type": "string"
         }
       },
-      "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)"
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "AlertResourceResourceType": {
       "type": "string",
       "enum": [
         "UNKNOWN",
         "SECRETS",
-        "CONFIGMAPS"
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
       ],
       "default": "UNKNOWN"
     },
@@ -1491,6 +1496,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Cluster to delegate scan to, may be the cluster's name or ID."
         }
       }
     },
@@ -1560,6 +1569,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Cluster to delegate scan to, may be the cluster's name or ID."
         }
       }
     }

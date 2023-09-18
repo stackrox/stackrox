@@ -1,30 +1,44 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Button, Card, CardBody, CardTitle, Grid, GridItem, Title } from '@patternfly/react-core';
+import {
+    Button,
+    Card,
+    CardBody,
+    CardTitle,
+    Flex,
+    FlexItem,
+    Grid,
+    GridItem,
+    Popover,
+    Title,
+} from '@patternfly/react-core';
 
 import LinkShim from 'Components/PatternFly/LinkShim';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
 
+import { HelpIcon } from '@patternfly/react-icons';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
 
 type DataRetentionValueProps = {
     value: number | undefined;
     suffix: string;
     shouldPluralize?: boolean;
+    canRetainForever?: boolean;
 };
 
 function DataRetentionValue({
     value,
     suffix,
+    canRetainForever = true,
     shouldPluralize = true,
 }: DataRetentionValueProps): ReactElement {
     let content = 'Unknown';
 
     if (typeof value === 'number') {
         if (value === 0) {
-            content = 'Never deleted';
+            content = canRetainForever ? 'Never deleted' : 'Deleted in every pruning cycle';
         } else if (value > 0) {
             content = `${value} ${shouldPluralize ? pluralize(suffix, value) : suffix}`;
         }
@@ -125,20 +139,86 @@ const PrivateConfigDataRetentionDetails = ({
             </GridItem>
             <GridItem>
                 <Card isFlat>
-                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardTitle>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <FlexItem>Vulnerability report job history retention</FlexItem>
+                            <FlexItem>
+                                <Popover
+                                    aria-label="Vulnerability report job history retention help text"
+                                    bodyContent={
+                                        <div>
+                                            <p>
+                                                The{' '}
+                                                <strong>
+                                                    &quot;Vulnerability report job history
+                                                    retention&quot;
+                                                </strong>{' '}
+                                                prunes all report job history beyond the set
+                                                retention limit, with the exception of these
+                                                specific cases:
+                                            </p>
+                                            <ul
+                                                className="pf-u-ml-md pf-u-mt-md"
+                                                style={{ listStyleType: 'disclosure-closed ' }}
+                                            >
+                                                <li>
+                                                    Jobs in the <strong>WAITING</strong> or{' '}
+                                                    <strong>PREPARING</strong> state (unfinished
+                                                    jobs)
+                                                </li>
+                                                <li>The last successful scheduled report job</li>
+                                                <li>
+                                                    The last successful on-demand emailed report job
+                                                </li>
+                                                <li>The last successful downloadable report job</li>
+                                                <li>
+                                                    Downloadable report jobs for which the report
+                                                    file has not been deleted by either manual
+                                                    deletion or by configuring the downloadable
+                                                    report pruning settings
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    }
+                                    enableFlip
+                                    position="top"
+                                >
+                                    <HelpIcon aria-label="Help for 'Vulnerability report job history retention' card" />
+                                </Popover>
+                            </FlexItem>
+                        </Flex>
+                    </CardTitle>
                     <CardBody>
                         <DataRetentionValue
                             value={
                                 privateConfig?.reportRetentionConfig?.historyRetentionDurationDays
                             }
                             suffix="day"
+                            canRetainForever={false}
                         />
                     </CardBody>
                 </Card>
             </GridItem>
             <GridItem>
                 <Card isFlat>
-                    <CardTitle>Vulnerability report run history retention</CardTitle>
+                    <CardTitle>
+                        Prepared downloadable vulnerability reports retention days
+                    </CardTitle>
+                    <CardBody>
+                        <DataRetentionValue
+                            value={
+                                privateConfig?.reportRetentionConfig
+                                    ?.downloadableReportRetentionDays
+                            }
+                            suffix="day"
+                            canRetainForever={false}
+                        />
+                    </CardBody>
+                </Card>
+            </GridItem>
+            <GridItem>
+                <Card isFlat>
+                    <CardTitle>Prepared downloadable vulnerability reports limit</CardTitle>
                     <CardBody>
                         Set a total limit for all prepared downloadable vulnerability reports. Once
                         the limit is reached, the oldest report in download queue will be removed.

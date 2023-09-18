@@ -3,6 +3,7 @@
 set -euo pipefail
 FAILED=0
 CRS_VALIDATED=0
+YQ="${YQ:-yq}"
 
 die() {
     echo "$@" >&2
@@ -40,8 +41,8 @@ CRS=$(
 
 # Validate CRs.
 for cr in $CRS; do
-    echo -n "Validating custom resource $cr with kubectl... "
-    if output=$(kubectl apply --dry-run=client --validate=true -f "$cr" 2>&1); then
+    echo -n "Validating stackrox custom resources in $cr with kubectl... "
+    if output=$("${YQ}" eval '. | select(.apiVersion | test("^platform.stackrox.io/"))' "$cr" | kubectl apply --dry-run=client --validate=true -f - 2>&1); then
         echo PASSED
     else
         FAILED=1

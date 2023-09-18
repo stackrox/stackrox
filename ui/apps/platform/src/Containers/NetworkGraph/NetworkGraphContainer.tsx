@@ -150,7 +150,7 @@ function getDisplayNodes(
             };
             if (showObjectTypeLabels) {
                 deploymentData = {
-                    ...data,
+                    ...deploymentData,
                     badge: deploymentBadgeText,
                     badgeColor: deploymentBadgeColor,
                     badgeTextColor: '#FFFFFF',

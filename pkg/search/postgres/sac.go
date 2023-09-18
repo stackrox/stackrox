@@ -8,8 +8,75 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
+
+// enrichQueryWithSACFilter is used in standardizeQueryAndPopulatePath.
+// The role of the enrichQueryWithSACFilter function is to ensure data is
+// filtered according to the requested access scope.
+func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
+	switch queryType {
+	// DELETE is expected to be the only Write use case for the query generator
+	case DELETE:
+		if schema.PermissionChecker != nil {
+			if ok, err := schema.PermissionChecker.WriteAllowed(ctx); err != nil {
+				return nil, err
+			} else if !ok {
+				return nil, sac.ErrResourceAccessDenied
+			}
+			return q, nil
+		}
+		sacFilter, err := GetReadWriteSACQuery(ctx, schema.ScopingResource)
+		if err != nil {
+			return nil, err
+		}
+		if isEmptySACFilter(sacFilter) {
+			return q, nil
+		}
+		pagination := q.GetPagination()
+		query := searchPkg.ConjunctionQuery(sacFilter, q)
+		query.Pagination = pagination
+		return query, nil
+	default:
+		if schema.PermissionChecker != nil {
+			if ok, err := schema.PermissionChecker.ReadAllowed(ctx); err != nil {
+				return nil, err
+			} else if !ok {
+				return getMatchNoneQuery(), nil
+			}
+			return q, nil
+		}
+		sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
+		if err != nil {
+			return nil, err
+		}
+		if isEmptySACFilter(sacFilter) {
+			return q, nil
+		}
+		pagination := q.GetPagination()
+		query := searchPkg.ConjunctionQuery(sacFilter, q)
+		query.Pagination = pagination
+		return query, nil
+	}
+}
+
+func isEmptySACFilter(sacFilter *v1.Query) bool {
+	// Hack to avoid having non-nil query but nil queryEntry in standardizeQueryAndPopulatePath
+	// which then results in Walk with unrestricted scope failing
+	switch sacFilter.GetQuery().(type) {
+	case *v1.Query_BaseQuery:
+		return false
+	case *v1.Query_Conjunction:
+		return false
+	case *v1.Query_Disjunction:
+		return false
+	case *v1.Query_BooleanQuery:
+		return false
+	}
+	return true
+}
 
 // GetReadWriteSACQuery returns SAC filter for resource or error is permission is denied.
 func GetReadWriteSACQuery(ctx context.Context, targetResource permissions.ResourceMetadata) (*v1.Query, error) {

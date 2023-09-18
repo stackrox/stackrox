@@ -2,9 +2,9 @@ import pluralize from 'pluralize';
 import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
 
-import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { notifierIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { eventSourceLabels, lifecycleStageLabels } from 'messages/common';
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 import { NotifierIntegration } from 'types/notifier.proto';
 import {
     EnforcementAction,
@@ -187,7 +187,7 @@ export function formatLifecycleStages(lifecycleStages: LifecycleStage[]): string
 // notifiers
 
 export function getNotifierTypeLabel(type: string): string {
-    return integrationsList.notifiers.find((notifier) => notifier.type === type)?.label ?? '';
+    return notifierIntegrationsDescriptors.find((notifier) => notifier.type === type)?.label ?? '';
 }
 
 /*
@@ -241,7 +241,7 @@ export type LabelAndNotifierIdsForType = [string, string[]];
 export function getLabelAndNotifierIdsForTypes(
     notifiers: NotifierIntegration[]
 ): LabelAndNotifierIdsForType[] {
-    return integrationsList.notifiers.map(({ label, type }) => [
+    return notifierIntegrationsDescriptors.map(({ label, type }) => [
         label,
         notifiers.filter((notifier) => notifier.type === type).map(({ id }) => id),
     ]);
@@ -249,7 +249,7 @@ export function getLabelAndNotifierIdsForTypes(
 
 // scope
 
-export function getClusterName(clusters: Cluster[], clusterId: string): string {
+export function getClusterName(clusters: ClusterScopeObject[], clusterId: string): string {
     const cluster = clusters.find(({ id }) => id === clusterId);
     return cluster?.name ?? clusterId;
 }

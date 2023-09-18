@@ -1,5 +1,6 @@
 include $(CURDIR)/make/env.mk
 
+PLATFORM ?= linux/amd64
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
@@ -454,8 +455,9 @@ syslog-build:build-prep
 
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: build-prep
-	@echo "+ $@"
-	CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server
+	for GOARCH in $$(echo $(PLATFORM) | sed -e 's/,/ /g') ; do \
+		GOARCH="$${GOARCH##*/}" CGO_ENABLED=0 $(GOBUILD) integration-tests/mock-grpc-server; \
+	done
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -656,9 +658,16 @@ syslog-image: syslog-build
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
-	cp bin/linux_$(GOARCH)/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	docker build \
+	cp -R bin integration-tests/mock-grpc-server/image
+	docker buildx build --platform $(PLATFORM) --load \
 		-t stackrox/grpc-server:$(TAG) \
+		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
+		integration-tests/mock-grpc-server/image
+
+.PHONY: mock-grpc-server-image-push
+mock-grpc-server-image-push: mock-grpc-server-build
+	cp -R bin integration-tests/mock-grpc-server/image
+	docker buildx build --platform $(PLATFORM) --push \
 		-t quay.io/rhacs-eng/grpc-server:$(TAG) \
 		integration-tests/mock-grpc-server/image
 

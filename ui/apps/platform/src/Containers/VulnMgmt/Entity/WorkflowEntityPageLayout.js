@@ -9,6 +9,7 @@ import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
+import entityTypes from 'constants/entityTypes';
 import parseURL from 'utils/URLParser';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -93,18 +94,21 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     classes="pr-0 ignore-react-onclickoutside"
                 >
                     <div className="flex flex-1 justify-end h-full">
-                        <div className="flex items-center pr-2">
-                            <ExportButton
-                                fileName={exportFilename}
-                                type={pageListType}
-                                page={useCase}
-                                disabled={!!sidePanelEntityId}
-                                pdfId={pdfId}
-                                customCsvExportHandler={customCsvExportHandler}
-                                isExporting={isExporting}
-                                setIsExporting={setIsExporting}
-                            />
-                        </div>
+                        {(pageListType === entityTypes.IMAGE_CVE ||
+                            pageListType === entityTypes.NODE_CVE ||
+                            pageListType === entityTypes.CLUSTER_CVE) && (
+                            <div className="flex items-center pr-2">
+                                <ExportButton
+                                    fileName={exportFilename}
+                                    type={pageListType}
+                                    page={useCase}
+                                    disabled={!!sidePanelEntityId}
+                                    customCsvExportHandler={customCsvExportHandler}
+                                    isExporting={isExporting}
+                                    setIsExporting={setIsExporting}
+                                />
+                            </div>
+                        )}
                         <div className="flex items-center">
                             <EntitiesMenu
                                 text="All Entities"

@@ -20,6 +20,13 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+const (
+	// CustomEmailSubjectMaxLen is the maximum allowed length for custom email subject
+	CustomEmailSubjectMaxLen = 250
+	// CustomEmailBodyMaxLen is the maximum allowed length for custom email body
+	CustomEmailBodyMaxLen = 1000
+)
+
 // Use this context only to
 // 1) check if notifiers and collection attached to report config exist
 // 2) Populating notifiers and collection in report snapshot
@@ -122,6 +129,12 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 	if len(emailConfig.GetMailingLists()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
 	}
+	if len(emailConfig.GetCustomSubject()) > CustomEmailSubjectMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", CustomEmailSubjectMaxLen)
+	}
+	if len(emailConfig.GetCustomBody()) > CustomEmailBodyMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", CustomEmailBodyMaxLen)
+	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
 	for _, addr := range emailConfig.GetMailingLists() {
@@ -167,10 +180,17 @@ func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) err
 }
 
 func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) error {
-	if config.GetVulnReportFilters() == nil {
+	filters := config.GetVulnReportFilters()
+	if filters == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must include Vulnerability report filters")
 	}
-	if config.GetVulnReportFilters().GetCvesSince() == nil {
+
+	if len(filters.GetImageTypes()) == 0 {
+		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters should specify which image types to scan for CVEs. "+
+			"The valid options are 'DEPLOYED' and 'WATCHED'.")
+	}
+
+	if filters.GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
 			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}

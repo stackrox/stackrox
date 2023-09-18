@@ -37,13 +37,13 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 		{
 			Route:         "/api/extensions/certgen/central",
 			Authorizer:    user.With(permissions.Modify(resources.Administration)),
-			ServerHandler: http.HandlerFunc(s.centralHandler),
+			ServerHandler: routes.NotImplementedOnManagedServices(http.HandlerFunc(s.centralHandler)),
 			Compression:   false,
 		},
 		{
 			Route:         "/api/extensions/certgen/scanner",
 			Authorizer:    user.With(permissions.Modify(resources.Administration)),
-			ServerHandler: http.HandlerFunc(s.scannerHandler),
+			ServerHandler: routes.NotImplementedOnManagedServices(http.HandlerFunc(s.scannerHandler)),
 			Compression:   false,
 		},
 

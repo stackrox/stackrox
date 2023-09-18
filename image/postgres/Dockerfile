@@ -1,9 +1,8 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
-ARG RPMS_BASE_TAG=8.7
+ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
-ARG BASE_TAG=8.7
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
@@ -27,20 +26,20 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade -y --nobest && \
+RUN microdnf upgrade --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y shadow-utils && \
+    microdnf --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install -y \
+    microdnf --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt python3 uuid && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
-    microdnf -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs reinstall tzdata && \
+    microdnf -y --setopt=install_weak_deps=0 --nodocs reinstall tzdata && \
     microdnf clean all && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \

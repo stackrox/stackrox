@@ -14,6 +14,7 @@ import VulnerabilityDefinitionsHealthCard from './VulnerabilityDefinitionsHealth
 import ImageIntegrationHealthWidget from './Components/ImageIntegrationHealthWidget';
 import NotifierIntegrationHealthWidget from './Components/NotifierIntegrationHealthWidget';
 import BackupIntegrationHealthWidget from './Components/BackupIntegrationHealthWidget';
+import ShowProductUsage from './UsageStatistics/ShowProductUsage';
 
 const SystemHealthDashboardPage = () => {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -45,7 +46,16 @@ const SystemHealthDashboardPage = () => {
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
                     <FlexItem align={{ default: 'alignRight' }}>
-                        <GenerateDiagnosticBundle />
+                        <Flex>
+                            <FlexItem>
+                                <ShowProductUsage />
+                            </FlexItem>
+                            {hasReadAccessForAdministration && (
+                                <FlexItem>
+                                    <GenerateDiagnosticBundle />
+                                </FlexItem>
+                            )}
+                        </Flex>
                     </FlexItem>
                 </Flex>
             </PageSection>

@@ -10,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	centralDetection "github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -140,6 +141,17 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	if err != nil {
 		return nil, err
 	}
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		if err != nil {
+			return nil, err
+		}
+
+		enrichmentContext.ClusterID = clusterID
+	}
+
 	enrichmentContext.FetchOpt = fetchOpt
 	enrichmentContext.Delegable = true
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
@@ -308,6 +320,16 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, err
 	}
 	eCtx.FetchOpt = fetchOpt
+
+	if req.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		if err != nil {
+			return nil, err
+		}
+
+		eCtx.ClusterID = clusterID
+	}
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {

@@ -313,7 +313,7 @@ class NetworkFlowTest extends BaseSpecification {
         def nodes = graph.nodesList
 
         nodes.each { node ->
-            node.outEdges.each { key, value ->
+            node.getOutEdgesMap().each { key, value ->
                 value.propertiesList.each { property ->
                     assert property.port > 0
                 }
@@ -498,45 +498,74 @@ class NetworkFlowTest extends BaseSpecification {
         }
 
         when:
-        "ping the target deployment"
-        Response response = null
-        Timer t = new Timer(12, 5)
-        while (response?.statusCode() != 200 && t.IsValid()) {
-            try {
-                log.info "trying ${targetUrl}..."
-                response = given().get(targetUrl)
-            } catch (Exception e) {
-                log.warn("Failure calling ${targetUrl}. Trying again in 5 sec...", e)
-            }
-        }
-        assert response?.getStatusCode() == 200
-        log.info response.asString()
+        log.info "Generate initial traffic to the target deployment ${NGINXCONNECTIONTARGET}"
+        def initialResponse = doHTTPGetExpectCode(targetUrl, 200)
+        assert initialResponse?.getStatusCode() == 200
 
         then:
         "Check for edge in network graph"
         withRetry(5, 20) {
-            log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
+            log.info "Retry traffic to the target deployment ${NGINXCONNECTIONTARGET}"
+            def response = doHTTPGetExpectCode(targetUrl, 200)
+            assert response?.getStatusCode() == 200
 
+            log.info "Checking for edge from external to ${NGINXCONNECTIONTARGET}"
             // Only on OpenShift 4.12, the edge will not show from EXTERNAL_SOURCE, but instead from
             // router-default deployment in openshift-ingress namespace.
-            List<Edge> routerDefaultEdges = null
             if (ClusterService.isOpenShift4()) {
+                log.info("Searching for edge coming from OpenShift ingress router to ${deploymentUid}")
                 SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
                         .setQuery("Namespace:openshift-ingress")
                         .build()
                 def ingressDeployments = DeploymentService.listDeploymentsSearch(query).deploymentsList
                 def defaultRouterId = ingressDeployments.find { it.getName() == "router-default" }.id
-                routerDefaultEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
-                if (routerDefaultEdges != null) {
+                def rEdges = NetworkGraphUtil.checkForEdge(defaultRouterId, deploymentUid, null, 180)
+                if (rEdges != null) {
                     log.info("Found edge coming from OpenShift ingress router")
                     return
                 }
+                log.warn("Edge coming from OpenShift ingress router to ${deploymentUid} not found")
+                // Debug dump of all router edges
+                def currentGraph = NetworkGraphService.getNetworkGraph()
+                def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == defaultRouterId }
+                List<NetworkNode> outNodesRouter = currentGraph.nodesList.findAll { node ->
+                    node.outEdgesMap.containsKey(index)
+                }
+                log.debug("All edges of 'router-default' ${defaultRouterId}: ${outNodesRouter}")
             }
+            log.info("Searching for edge coming from INTERNET_EXTERNAL_SOURCE_ID " +
+                "(${Constants.INTERNET_EXTERNAL_SOURCE_ID}) to ${deploymentUid}")
             List<Edge> edges =
                     NetworkGraphUtil.checkForEdge(Constants.INTERNET_EXTERNAL_SOURCE_ID, deploymentUid, null, 180)
-
+            if (edges == null || edges.size() == 0) {
+                // Debug dump of all INTERNET_EXTERNAL_SOURCE_ID edges
+                def currentGraph = NetworkGraphService.getNetworkGraph()
+                def index = currentGraph.nodesList.findIndexOf {
+                    node -> node.deploymentName == Constants.INTERNET_EXTERNAL_SOURCE_ID
+                }
+                List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
+                    node.outEdgesMap.containsKey(index)
+                }
+                log.debug("All edges of 'INTERNET_EXTERNAL_SOURCE_ID' " +
+                    "${Constants.INTERNET_EXTERNAL_SOURCE_ID}: ${outNodes}")
+            }
             assert edges
         }
+    }
+
+    def doHTTPGetExpectCode(String targetUrl, int code) {
+        Response response = null
+        Timer t = new Timer(12, 5)
+        while (response?.statusCode() != code && t.IsValid()) {
+            try {
+                log.info "Trying HTTP Get to ${targetUrl}..."
+                response = given().get(targetUrl)
+            } catch (Exception e) {
+                log.warn("Failed calling ${targetUrl}. Trying again in 5 sec...", e)
+            }
+        }
+        log.info "Response: " + response.asString()
+        return response
     }
 
     @Tag("NetworkFlowVisualization")

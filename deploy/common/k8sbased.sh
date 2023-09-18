@@ -86,11 +86,41 @@ function local_dev {
       echo "${is_local_dev}"
 }
 
+# Checks if central already exists in this cluster.
+# If yes, the user is asked if they want to continue. If they answer no, then the script is terminated.
+function prompt_if_central_exists() {
+    if "${ORCH_CMD}" -n stackrox get deployment central 2>&1; then
+        yes_no_prompt "Detected there is already a central running on this cluster. Are you sure you want to proceed with this deploy?" || { echo >&2 "Exiting as requested"; exit 1; }
+    fi
+}
+
+# yes_no_prompt "<message>" displays the given message and prompts the user to
+# input 'yes' or 'no'. The return value is 0 if the user has entered 'yes', 1
+# if they answered 'no', and 2 if the read was aborted (^C/^D) or no valid
+# answer was given after three tries.
+function yes_no_prompt() {
+  local prompt="$1"
+  local tries=0
+  [[ -z "$prompt" ]] || echo >&2 "$prompt"
+  local answer=""
+  while (( tries < 3 )) && { echo -n "Type 'yes' or 'no': "; read answer; } ; do
+    answer="$(echo "$answer" | tr '[:upper:]' '[:lower:]')"
+    [[ "$answer" == "yes" ]] && return 0
+    [[ "$answer" == "no" ]] && return 1
+    tries=$((tries + 1))
+  done
+  echo "Aborted."
+  return 2
+}
+
 function launch_central {
     local k8s_dir="$1"
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
+    if [[ -z "$CI" ]]; then
+        prompt_if_central_exists
+    fi
 
     echo "Generating central config..."
 
@@ -134,14 +164,6 @@ function launch_central {
     add_args "--lb-type=$LOAD_BALANCER"
 
     add_args "--offline=$OFFLINE_MODE"
-
-    if [[ -n "$SCANNER_IMAGE" ]]; then
-        add_args "--scanner-image=$SCANNER_IMAGE"
-    fi
-
-    if [[ -n "$SCANNER_DB_IMAGE" ]]; then
-        add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
-    fi
 
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
     	add_args "--default-tls-cert"
@@ -333,12 +355,20 @@ function launch_central {
         )
       fi
 
-      if [[ -n "$CI" ]]; then
-        helm lint "$unzip_dir/chart"
-        helm lint "$unzip_dir/chart" -n stackrox
-        helm lint "$unzip_dir/chart" -n stackrox "${helm_args[@]}"
+      local helm_chart="$unzip_dir/chart"
+
+      if [[ -n "${CENTRAL_CHART_DIR_OVERRIDE}" ]]; then
+        echo "Using override central helm chart from ${CENTRAL_CHART_DIR_OVERRIDE}"
+        helm_chart="${CENTRAL_CHART_DIR_OVERRIDE}"
       fi
-      helm upgrade --install -n stackrox stackrox-central-services "$unzip_dir/chart" \
+
+      if [[ -n "$CI" ]]; then
+        helm lint "${helm_chart}"
+        helm lint "${helm_chart}" -n stackrox
+        helm lint "${helm_chart}" -n stackrox "${helm_args[@]}"
+      fi
+
+      helm upgrade --install -n stackrox stackrox-central-services "$helm_chart" \
           "${helm_args[@]}"
     else
       if [[ -n "${REGISTRY_USERNAME}" ]]; then
@@ -487,12 +517,6 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
-        extra_config+=("--collector-image-repository=${COLLECTOR_IMAGE_REPO}")
-        extra_json_config+=", \"collectorImage\": \"${COLLECTOR_IMAGE_REPO}\""
-        extra_helm_config+=(--set "image.collector.repository=${COLLECTOR_IMAGE_REPO}")
-    fi
-
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
@@ -538,8 +562,6 @@ function launch_sensor {
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
-        --set "image.main.repository=${MAIN_IMAGE_REPO}"
-        --set "image.main.tag=${MAIN_IMAGE_TAG}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
       )
       if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
@@ -583,16 +605,25 @@ function launch_sensor {
         )
       fi
 
-      if [[ -n "$CI" ]]; then
-        helm lint "$k8s_dir/sensor-deploy/chart"
-        helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox
-        helm lint "$k8s_dir/sensor-deploy/chart" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
+      local helm_chart="$k8s_dir/sensor-deploy/chart"
+
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
+        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
+        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
       fi
+
+      if [[ -n "$CI" ]]; then
+        helm lint "${helm_chart}"
+        helm lint "${helm_chart}" -n stackrox
+        helm lint "${helm_chart}" -n stackrox "${helm_args[@]}" "${extra_helm_config[@]}"
+      fi
+
       if [[ "$sensor_namespace" != "stackrox" ]]; then
         kubectl create namespace "$sensor_namespace" &>/dev/null || true
         kubectl -n "$sensor_namespace" get secret stackrox &>/dev/null || kubectl -n "$sensor_namespace" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
-      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$k8s_dir/sensor-deploy/chart" \
+
+      helm upgrade --install -n "$sensor_namespace" --create-namespace stackrox-secured-cluster-services "$helm_chart" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
@@ -648,6 +679,15 @@ function launch_sensor {
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
       "${COMMON_DIR}/monitoring.sh"
+    fi
+
+    # If deploying with chaos proxy enabled, patch sensor to add toxiproxy proxy deployment
+    if [[ "$CHAOS_PROXY" == "true" ]]; then
+        original_endpoint=$(kubectl -n stackrox get deploy/sensor -ojsonpath='{.spec.template.spec.containers[0].env[?(@.name=="ROX_CENTRAL_ENDPOINT")].value}')
+
+        echo "Patching sensor with toxiproxy container"
+        kubectl -n stackrox patch deploy/sensor --type=json -p="$(cat "${common_dir}/sensor-toxiproxy-patch.json")"
+        kubectl -n stackrox set env deploy/sensor -e ROX_CENTRAL_ENDPOINT_NO_PROXY="$original_endpoint" -e ROX_CENTRAL_ENDPOINT="localhost:8989"
     fi
 
     echo

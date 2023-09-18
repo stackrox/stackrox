@@ -94,6 +94,23 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			},
 		},
 		{
+			testname: "Report config with custom email subject and body",
+			reportConfigGen: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
+				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				return ret
+			},
+			resultGen: func() *storage.ReportConfiguration {
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
+				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				ret.Creator = creator
+				ret.GetVulnReportFilters().AccessScopeRules = accessScopeRules
+				return ret
+			},
+		},
+		{
 			testname: "Report config without schedule",
 			reportConfigGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
@@ -222,6 +239,23 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			resultGen: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Notifiers = nil
+				setCollectionName(ret, mockCollectionName)
+				return ret
+			},
+		},
+		{
+			testname: "Report config with custom email subject and body",
+			reportConfigGen: func() *storage.ReportConfiguration {
+				ret := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
+				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				return ret
+			},
+			resultGen: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = "custom subject"
+				ret.Notifiers[0].GetEmailConfig().CustomBody = "custom body"
+				setAllNotifierNamesToFixedValue(ret, mockNotifierName)
 				setCollectionName(ret, mockCollectionName)
 				return ret
 			},

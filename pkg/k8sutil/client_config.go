@@ -20,7 +20,7 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 	// allows for easier proxy configuration.
 	if env.ManagedCentral.BooleanSetting() {
 		port := os.Getenv("KUBERNETES_SERVICE_PORT")
-		restCfg.Host = "https://" + net.JoinHostPort("kubernetes.default.svc", port)
+		restCfg.Host = "https://" + net.JoinHostPort("kubernetes.default.svc.cluster.local.", port)
 	}
 	return restCfg, nil
 }

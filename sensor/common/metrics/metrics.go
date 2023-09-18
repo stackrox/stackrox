@@ -4,11 +4,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/branding"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/common/installmethod"
 )
 
 var (
@@ -151,10 +151,20 @@ var (
 	telemetryLabels = prometheus.Labels{
 		"branding":       branding.GetProductNameShort(),
 		"build":          metrics.GetBuildType(),
-		"hosting":        getHosting(),
-		"install_method": env.InstallMethod.Setting(),
 		"sensor_version": version.GetMainVersion(),
 	}
+
+	telemetryInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "info",
+			Help:        "Telemetry information about Sensor",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
+	)
+
 	telemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
@@ -163,18 +173,18 @@ var (
 			Help:        "The number of nodes secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 
 	telemetrySecuredVCPU = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
-			Name:        "secured_vcpu",
+			Name:        "secured_vcpus",
 			Help:        "The number of vCPUs secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
-		[]string{"central_id", "sensor_id"},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
 
@@ -220,12 +230,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 
 // IncrementTotalProcessesSentCounter increments the total number of endpoints sent
 func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
-	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
+	totalProcessesSentCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
+	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
@@ -278,14 +288,19 @@ func DecOutputChannelSize() {
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
 func SetTelemetryMetrics(cm *central.ClusterMetrics) {
+	labels := []string{
+		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
+		clusterid.GetNoWait(),
+	}
+
+	telemetryInfo.Reset()
+	telemetryInfo.WithLabelValues(labels...).Set(1)
+
 	telemetrySecuredNodes.Reset()
-	telemetrySecuredNodes.WithLabelValues(
-		centralid.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetNodeCount()))
+	telemetrySecuredNodes.WithLabelValues(labels...).Set(float64(cm.GetNodeCount()))
+
 	telemetrySecuredVCPU.Reset()
-	telemetrySecuredVCPU.WithLabelValues(
-		centralid.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetCpuCapacity()))
+	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
 }

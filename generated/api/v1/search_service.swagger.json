@@ -100,7 +100,9 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -200,7 +202,9 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -294,7 +298,9 @@
                 "COMPLIANCE_SCAN_SETTINGS",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
-                "BLOB"
+                "BLOB",
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS"
               ]
             },
             "collectionFormat": "multi"
@@ -437,10 +443,12 @@
         "COMPLIANCE_SCAN_SETTINGS",
         "COMPLIANCE_SCAN",
         "COMPLIANCE_CHECK_RESULTS",
-        "BLOB"
+        "BLOB",
+        "PRODUCT_USAGE",
+        "ADMINISTRATION_EVENTS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 59"
+      "title": "Next available tag: 61"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

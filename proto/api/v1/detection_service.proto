@@ -11,13 +11,15 @@ package v1;
 
 message BuildDetectionRequest {
     oneof Resource {
-        storage.ContainerImage image = 1;
-        string image_name            = 3;
+        storage.ContainerImage image      = 1;
+        string                 image_name = 3;
     }
-    bool no_external_metadata         = 2;
-    bool send_notifications           = 4;
-    bool force                        = 6;
-    repeated string policy_categories = 5;
+    bool            no_external_metadata = 2;
+    bool            send_notifications   = 4;
+    bool            force                = 6;
+    repeated string policy_categories    = 5;
+    // Cluster to delegate scan to, may be the cluster's name or ID.
+    string          cluster              = 7;
 }
 
 message BuildDetectionResponse {
@@ -34,11 +36,13 @@ message DeployDetectionRequest {
 }
 
 message DeployYAMLDetectionRequest {
-    string yaml                       = 1;
-    bool no_external_metadata         = 2;
-    bool enforcement_only             = 3;
-    bool force                        = 5;
-    repeated string policy_categories = 4;
+    string          yaml                 = 1;
+    bool            no_external_metadata = 2;
+    bool            enforcement_only     = 3;
+    bool            force                = 5;
+    repeated string policy_categories    = 4;
+    // Cluster to delegate scan to, may be the cluster's name or ID.
+    string          cluster              = 6;
 }
 
 message DeployDetectionResponse {

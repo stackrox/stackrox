@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -37,6 +39,7 @@ var (
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory(62), "testparent1", (*storage.TestParent1)(nil)))
+		schema.ScopingResource = resources.Namespace
 		return schema
 	}()
 )
@@ -53,6 +56,7 @@ type TestParent1 struct {
 	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
 	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
+	StringSlice         *pq.StringArray  `gorm:"column:stringslice;type:text[]"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

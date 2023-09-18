@@ -441,7 +441,8 @@ function AuthProviderForm({
                             onBlur={handleBlur}
                             configErrors={errors.config}
                             configTouched={touched.config}
-                            disabled={values.active || getIsAuthProviderImmutable(values)}
+                            isAuthProviderActive={values.active}
+                            isAuthProviderDeclarative={getIsAuthProviderImmutable(values)}
                         />
                     </Grid>
                 </FormSection>

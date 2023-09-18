@@ -102,7 +102,6 @@ function TestLoginResultsPage({ authProviderTestResults }) {
                             type="button"
                             className="btn btn-base whitespace-nowrap h-10 ml-4"
                             onClick={closeThisWindow}
-                            dataTestId="button-close-window"
                         >
                             Close Window
                         </button>

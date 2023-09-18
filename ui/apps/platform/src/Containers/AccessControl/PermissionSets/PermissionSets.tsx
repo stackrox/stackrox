@@ -34,15 +34,13 @@ import { getNewPermissionSet, getCompletePermissionSet } from './permissionSets.
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
-import AccessControlNoPermission from '../AccessControlNoPermission';
 import usePermissions from '../../../hooks/usePermissions';
 import { isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 
 function PermissionSets(): ReactElement {
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessForPage = hasReadAccess('Access');
+    const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
@@ -132,15 +130,6 @@ function PermissionSets(): ReactElement {
                 setCounterFetching((counterPrev) => counterPrev - 1);
             });
     }, []);
-
-    // Return "no access" page immediately if user doesn't have enough permissions.
-    if (!hasReadAccessForPage) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="permission sets" entityType={entityType} />
-            </>
-        );
-    }
 
     function handleCreate() {
         history.push(getEntityPath(entityType, undefined, { action: 'create' }));
@@ -232,7 +221,6 @@ function PermissionSets(): ReactElement {
                     <PermissionSetsList
                         permissionSets={permissionSets}
                         roles={roles}
-                        handleCreate={handleCreate}
                         handleDelete={handleDelete}
                     />
                 ) : typeof entityId === 'string' && !permissionSet ? (

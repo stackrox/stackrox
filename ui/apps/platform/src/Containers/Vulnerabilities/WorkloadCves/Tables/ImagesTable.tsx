@@ -1,17 +1,18 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Flex } from '@patternfly/react-core';
+import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { EyeIcon } from '@patternfly/react-icons';
 import ImageNameTd from '../components/ImageNameTd';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel, watchStatusLabel, WatchStatus } from '../types';
+import { VulnerabilitySeverityLabel, WatchStatus } from '../types';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -73,14 +74,21 @@ type Image = {
     scanTime: string | null;
 };
 
-type ImagesTableProps = {
+export type ImagesTableProps = {
     images: Image[];
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    onWatchImage: (imageName: string) => void;
 };
 
-function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: ImagesTableProps) {
+function ImagesTable({
+    images,
+    getSortParams,
+    isFiltered,
+    filteredSeverities,
+    onWatchImage,
+}: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -98,6 +106,7 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
+                    <Td />
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={6} />}
@@ -126,7 +135,19 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                             <Tr>
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <ImageNameTd name={name} id={id} />
+                                        <ImageNameTd name={name} id={id}>
+                                            {watchStatus === 'WATCHED' && (
+                                                <Label
+                                                    isCompact
+                                                    variant="outline"
+                                                    color="grey"
+                                                    className="pf-u-mt-xs"
+                                                    icon={<EyeIcon />}
+                                                >
+                                                    Watched image
+                                                </Label>
+                                            )}
+                                        </ImageNameTd>
                                     ) : (
                                         'Image name not available'
                                     )}
@@ -142,7 +163,7 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
-                                <Td>
+                                <Td modifier="nowrap">
                                     {deploymentCount > 0 ? (
                                         <>
                                             {deploymentCount}{' '}
@@ -151,10 +172,6 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                     ) : (
                                         <Flex>
                                             <div>0 deployments</div>
-                                            {/* TODO: double check on what this links to */}
-                                            <span>
-                                                ({`${watchStatusLabel[watchStatus]}`} image)
-                                            </span>
                                         </Flex>
                                     )}
                                 </Td>
@@ -163,6 +180,21 @@ function ImagesTable({ images, getSortParams, isFiltered, filteredSeverities }: 
                                 </Td>
                                 <Td>
                                     <DateDistanceTd date={scanTime} />
+                                </Td>
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        items={[
+                                            {
+                                                title: 'Watch image',
+                                                onClick: () =>
+                                                    onWatchImage(
+                                                        name
+                                                            ? `${name.registry}/${name.remote}:${name.tag}`
+                                                            : ''
+                                                    ),
+                                            },
+                                        ]}
+                                    />
                                 </Td>
                             </Tr>
                         </Tbody>

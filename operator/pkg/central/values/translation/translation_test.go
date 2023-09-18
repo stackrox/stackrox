@@ -84,7 +84,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -130,7 +130,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -162,7 +162,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -567,7 +567,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -633,7 +633,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -675,7 +675,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -705,7 +705,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -751,7 +751,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -791,7 +791,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -834,7 +834,7 @@ func TestTranslate(t *testing.T) {
 			want: chartutil.Values{
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 				"central": map[string]interface{}{
@@ -876,7 +876,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -923,7 +923,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},
@@ -958,7 +958,7 @@ func TestTranslate(t *testing.T) {
 				},
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
-						"enabled": false,
+						"enabled": true,
 					},
 				},
 			},

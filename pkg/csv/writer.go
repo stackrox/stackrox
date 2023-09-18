@@ -3,11 +3,8 @@ package csv
 import (
 	"bytes"
 	"encoding/csv"
-	"fmt"
 	"net/http"
 	"sort"
-
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 // Header represents a CSV's header line.
@@ -62,9 +59,7 @@ func (c *GenericWriter) WriteBytes(buf *bytes.Buffer) error {
 
 // Write writes back the CSV file contents into the http.ResponseWriter.
 func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
-	w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.csv"`, filename))
-	w.WriteHeader(http.StatusOK)
+	writeHeaders(w, filename)
 
 	if c.sort {
 		sort.Slice(c.values, func(i, j int) bool {
@@ -88,11 +83,10 @@ func (c *GenericWriter) Write(w http.ResponseWriter, filename string) {
 		})
 	}
 
-	header := sliceutils.ShallowClone(c.header)
-	header[0] = "\uFEFF" + header[0]
+	_, _ = w.Write([]byte(utf8BOM))
 	cw := csv.NewWriter(w)
 	cw.UseCRLF = true
-	_ = cw.Write(header)
+	_ = cw.Write(c.header)
 	for _, v := range c.values {
 		_ = cw.Write(v)
 	}

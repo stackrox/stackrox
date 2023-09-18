@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+    AlertActionCloseButton,
+    AlertGroup,
     PageSection,
     Title,
     Flex,
@@ -30,6 +32,7 @@ import isEmpty from 'lodash/isEmpty';
 import { vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
 import useFetchReports from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReports';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
@@ -39,9 +42,12 @@ import useURLSort from 'hooks/useURLSort';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
+import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
+import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
+import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 const CreateReportsButton = () => {
     return (
@@ -62,15 +68,13 @@ function VulnReportsPage() {
     const history = useHistory();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
-    const hasWorkflowAdministrationWriteAccess = hasReadWriteAccess('WorkflowAdministration');
-    const hasImageReadAccess = hasReadAccess('Image');
-    const hasAccessScopeReadAccess = hasReadAccess('Access');
-    const hasNotifierIntegrationReadAccess = hasReadAccess('Integration');
-    const canCreateReports =
-        hasWorkflowAdministrationWriteAccess &&
-        hasImageReadAccess &&
-        hasAccessScopeReadAccess &&
-        hasNotifierIntegrationReadAccess;
+    const hasWriteAccessForReport =
+        hasReadWriteAccess('WorkflowAdministration') &&
+        hasReadAccess('Image') && // for vulnerabilities
+        hasReadAccess('Integration'); // for notifiers
+
+    const isRouteEnabled = useIsRouteEnabled();
+    const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
@@ -78,9 +82,12 @@ function VulnReportsPage() {
     const [searchValue, setSearchValue] = useState(() => {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
+    const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
+
+    const { toasts, addToast, removeToast } = useToasts();
 
     const {
-        reports,
+        reportConfigurations,
         totalReports,
         isLoading,
         error: fetchError,
@@ -91,8 +98,19 @@ function VulnReportsPage() {
         perPage,
         sortOption,
     });
+    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
-        onCompleted: fetchReports,
+        onCompleted: ({ reportNotificationMethod }) => {
+            if (reportNotificationMethod === 'EMAIL') {
+                addToast('The report has been sent to the configured email notifier', 'success');
+            } else if (reportNotificationMethod === 'DOWNLOAD') {
+                addToast(
+                    'The report generation has started and will be available for download once complete',
+                    'success'
+                );
+            }
+            fetchReports();
+        },
     });
 
     const {
@@ -108,6 +126,26 @@ function VulnReportsPage() {
 
     return (
         <>
+            <AlertGroup isToast isLiveRegion>
+                {toasts.map(({ key, variant, title, children }: Toast) => (
+                    <Alert
+                        key={key}
+                        variant={variant}
+                        title={title}
+                        timeout
+                        onTimeout={() => removeToast(key)}
+                        actionClose={
+                            <AlertActionCloseButton
+                                title={title}
+                                variantLabel={variant}
+                                onClose={() => removeToast(key)}
+                            />
+                        }
+                    >
+                        {children}
+                    </Alert>
+                ))}
+            </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
             {runError && <Alert variant={AlertVariant.danger} isInline title={runError} />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -129,11 +167,13 @@ function VulnReportsPage() {
                             </FlexItem>
                         </Flex>
                     </FlexItem>
-                    {reports.length > 0 && canCreateReports && (
-                        <FlexItem>
-                            <CreateReportsButton />
-                        </FlexItem>
-                    )}
+                    {reportConfigurations &&
+                        reportConfigurations.length > 0 &&
+                        hasWriteAccessForReport && (
+                            <FlexItem>
+                                <CreateReportsButton />
+                            </FlexItem>
+                        )}
                 </Flex>
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
@@ -153,10 +193,12 @@ function VulnReportsPage() {
                                             onSearch={(_event, value) => {
                                                 setSearchValue(value);
                                                 setSearchFilter({ [reportNameSearchKey]: value });
+                                                setPage(1);
                                             }}
                                             onClear={() => {
                                                 setSearchValue('');
                                                 setSearchFilter({});
+                                                setPage(1);
                                             }}
                                         />
                                     </ToolbarItem>
@@ -177,7 +219,7 @@ function VulnReportsPage() {
                                     </ToolbarItem>
                                 </ToolbarContent>
                             </Toolbar>
-                            {isLoading && (
+                            {isLoading && !reportConfigurations && (
                                 <div className="pf-u-p-md">
                                     <Bullseye>
                                         <Spinner isSVG />
@@ -196,7 +238,7 @@ function VulnReportsPage() {
                                     <EmptyStateBody>{fetchError}</EmptyStateBody>
                                 </EmptyState>
                             )}
-                            {!isLoading && !fetchError && (
+                            {reportConfigurations && (
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
@@ -223,26 +265,33 @@ function VulnReportsPage() {
                                                         <FlexItem>
                                                             <p>
                                                                 The status of your last requested
-                                                                job from the active job queue. An
-                                                                active job queue includes any
-                                                                requested job with the status of
-                                                                preparing or waiting until completed
+                                                                job from the{' '}
+                                                                <strong>active job queue</strong>.
+                                                                An <strong>active job queue</strong>{' '}
+                                                                includes any requested job with the
+                                                                status of <strong>preparing</strong>{' '}
+                                                                or <strong>waiting</strong> until
+                                                                completed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Preparing:</p>
+                                                            <p>
+                                                                <strong>Preparing:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is still
-                                                                being processed
+                                                                being processed.
                                                             </p>
                                                         </FlexItem>
                                                         <FlexItem>
-                                                            <p>Waiting:</p>
+                                                            <p>
+                                                                <strong>Waiting:</strong>
+                                                            </p>
                                                             <p>
                                                                 Your last requested job is in the
                                                                 queue and waiting to be processed
-                                                                since other users requested their
-                                                                jobs before you.
+                                                                since other requested jobs are being
+                                                                processed.
                                                             </p>
                                                         </FlexItem>
                                                     </Flex>
@@ -250,10 +299,10 @@ function VulnReportsPage() {
                                             >
                                                 My active job status
                                             </HelpIconTh>
-                                            <Td />
+                                            {hasWriteAccessForReport && <Td />}
                                         </Tr>
                                     </Thead>
-                                    {reports.length === 0 && isEmpty(searchFilter) && (
+                                    {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
                                                 <Td colSpan={4}>
@@ -263,7 +312,7 @@ function VulnReportsPage() {
                                                             headingLevel="h2"
                                                             icon={FileIcon}
                                                         >
-                                                            {canCreateReports && (
+                                                            {hasWriteAccessForReport && (
                                                                 <Flex
                                                                     direction={{
                                                                         default: 'column',
@@ -286,61 +335,66 @@ function VulnReportsPage() {
                                             </Tr>
                                         </Tbody>
                                     )}
-                                    {reports.length === 0 && !isEmpty(searchFilter) && (
-                                        <Tbody>
-                                            <Tr>
-                                                <Td colSpan={8}>
-                                                    <Bullseye>
-                                                        <EmptyStateTemplate
-                                                            title="No results found"
-                                                            headingLevel="h2"
-                                                            icon={SearchIcon}
-                                                        >
-                                                            {canCreateReports && (
-                                                                <Flex
-                                                                    direction={{
-                                                                        default: 'column',
-                                                                    }}
-                                                                >
-                                                                    <FlexItem>
-                                                                        <Text>
-                                                                            No results match this
-                                                                            filter criteria. Clear
-                                                                            the filter and try
-                                                                            again.
-                                                                        </Text>
-                                                                    </FlexItem>
-                                                                    <FlexItem>
-                                                                        <Button
-                                                                            variant="link"
-                                                                            onClick={() => {
-                                                                                setSearchValue('');
-                                                                                setSearchFilter({});
-                                                                            }}
-                                                                        >
-                                                                            Clear filter
-                                                                        </Button>
-                                                                    </FlexItem>
-                                                                </Flex>
-                                                            )}
-                                                        </EmptyStateTemplate>
-                                                    </Bullseye>
-                                                </Td>
-                                            </Tr>
-                                        </Tbody>
-                                    )}
-                                    {reports.map((report) => {
+                                    {reportConfigurations.length === 0 &&
+                                        !isEmpty(searchFilter) && (
+                                            <Tbody>
+                                                <Tr>
+                                                    <Td colSpan={8}>
+                                                        <Bullseye>
+                                                            <EmptyStateTemplate
+                                                                title="No results found"
+                                                                headingLevel="h2"
+                                                                icon={SearchIcon}
+                                                            >
+                                                                {hasWriteAccessForReport && (
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'column',
+                                                                        }}
+                                                                    >
+                                                                        <FlexItem>
+                                                                            <Text>
+                                                                                No results match
+                                                                                this filter
+                                                                                criteria. Clear the
+                                                                                filter and try
+                                                                                again.
+                                                                            </Text>
+                                                                        </FlexItem>
+                                                                        <FlexItem>
+                                                                            <Button
+                                                                                variant="link"
+                                                                                onClick={() => {
+                                                                                    setSearchValue(
+                                                                                        ''
+                                                                                    );
+                                                                                    setSearchFilter(
+                                                                                        {}
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Clear filter
+                                                                            </Button>
+                                                                        </FlexItem>
+                                                                    </Flex>
+                                                                )}
+                                                            </EmptyStateTemplate>
+                                                        </Bullseye>
+                                                    </Td>
+                                                </Tr>
+                                            </Tbody>
+                                        )}
+                                    {reportConfigurations.map((report) => {
                                         const vulnReportURL = generatePath(
                                             vulnerabilityReportPath,
                                             {
                                                 reportId: report.id,
                                             }
                                         ) as string;
+                                        const reportSnapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'PREPARING' ||
-                                            report.reportSnapshot?.reportStatus.runState ===
-                                                'WAITING';
+                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
+                                            reportSnapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -404,6 +458,8 @@ function VulnReportsPage() {
                                                 isDisabled: isReportStatusPending,
                                             },
                                         ];
+                                        const { collectionName, collectionId } =
+                                            report.resourceScope.collectionScope;
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -419,25 +475,39 @@ function VulnReportsPage() {
                                                         </Link>
                                                     </Td>
                                                     <Td>
-                                                        {
-                                                            report.resourceScope.collectionScope
-                                                                .collectionName
-                                                        }
+                                                        {isCollectionsRouteEnabled ? (
+                                                            <Button
+                                                                variant="link"
+                                                                isInline
+                                                                onClick={() =>
+                                                                    setCollectionModalId(
+                                                                        collectionId
+                                                                    )
+                                                                }
+                                                            >
+                                                                {collectionName}
+                                                            </Button>
+                                                        ) : (
+                                                            collectionName
+                                                        )}
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
                                                         <MyActiveJobStatus
                                                             reportStatus={
-                                                                report.reportSnapshot?.reportStatus
+                                                                reportSnapshot?.reportStatus
                                                             }
                                                         />
                                                     </Td>
-                                                    <Td isActionCell>
-                                                        <ActionsColumn
-                                                            items={rowActions}
-                                                            isDisabled={isRunning}
-                                                        />
-                                                    </Td>
+                                                    {hasWriteAccessForReport && (
+                                                        <Td isActionCell>
+                                                            <ActionsColumn
+                                                                items={rowActions}
+                                                                isDisabled={isRunning}
+                                                                menuAppendTo={() => document.body}
+                                                            />
+                                                        </Td>
+                                                    )}
                                                 </Tr>
                                             </Tbody>
                                         );
@@ -459,6 +529,13 @@ function VulnReportsPage() {
                 This report and any attached downloadable reports will be permanently deleted. The
                 action cannot be undone.
             </DeleteModal>
+            {collectionModalId && (
+                <CollectionsFormModal
+                    hasWriteAccessForCollections={false}
+                    modalAction={{ type: 'view', collectionId: collectionModalId }}
+                    onClose={() => setCollectionModalId(null)}
+                />
+            )}
         </>
     );
 }

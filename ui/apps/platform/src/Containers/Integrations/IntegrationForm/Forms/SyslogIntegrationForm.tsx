@@ -12,6 +12,8 @@ import {
     FormSelect,
     FormSelectOption,
     TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
 } from '@patternfly/react-core';
 import { PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
@@ -28,6 +30,8 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import './SyslogIntegrationForm.css';
 
 export const validationSchema = yup.object().shape({
     name: yup.string().required('Integration name is required'),
@@ -57,6 +61,7 @@ export const defaultValues: SyslogIntegration = {
     id: '',
     name: '',
     syslog: {
+        messageFormat: 'CEF',
         localFacility: undefined,
         extraFields: [],
         tcpConfig: {
@@ -170,7 +175,7 @@ function SyslogIntegrationForm({
                                 type="text"
                                 id="syslog.tcpConfig.hostname"
                                 value={values.syslog.tcpConfig.hostname}
-                                placeholder="example, host.example.com)"
+                                placeholder="(example, host.example.com)"
                                 onChange={onChange}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
@@ -193,6 +198,37 @@ function SyslogIntegrationForm({
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
                             />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label="Message Format"
+                            isRequired
+                            fieldId="messageFormat"
+                            touched={touched}
+                            errors={errors}
+                            helperText="For new integrations, choose CEF. If you have an existing integration that relies on the old behavior, leave Legacy selected."
+                        >
+                            <ToggleGroup id="messageFormat" areAllGroupsDisabled={!isEditable}>
+                                        <ToggleGroupItem
+                                            // The HTML ID and custom CSS rule are required to make the shorter option similar in size to the longer option
+                                            // because PatternFly does not allow the inner width of the toggle button to be expanded easily
+                                            // (setting a min-witch on Toggle Item just adds space to the right of the outlined button)
+                                            id="CEF-option"
+                                            key='CEF'
+                                            text="CEF"
+                                            isSelected={values.syslog.messageFormat === 'CEF'}
+                                            onChange={() =>
+                                                setFieldValue('syslog.messageFormat', 'CEF')
+                                            }
+                                        />
+                                        <ToggleGroupItem
+                                            key='LEGACY'
+                                            text="CEF (legacy field order)"
+                                            isSelected={values.syslog.messageFormat === 'LEGACY' || !values.syslog.messageFormat}
+                                            onChange={() =>
+                                                setFieldValue('syslog.messageFormat', 'LEGACY')
+                                            }
+                                        />
+                            </ToggleGroup>
                         </FormLabelGroup>
                         <FormLabelGroup fieldId="syslog.tcpConfig.useTls" errors={errors}>
                             <Checkbox

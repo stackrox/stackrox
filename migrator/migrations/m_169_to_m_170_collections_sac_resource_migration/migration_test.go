@@ -12,6 +12,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -101,7 +102,7 @@ func (s *psMigrationTestSuite) TearDownTest() {
 }
 
 func (s *psMigrationTestSuite) TestMigration() {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	var psToUpsert []*storage.PermissionSet
 	psToUpsert = append(psToUpsert, unmigratedPSs...)
 	psToUpsert = append(psToUpsert, alreadyMigratedPSs...)

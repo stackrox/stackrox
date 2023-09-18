@@ -22,7 +22,7 @@ export const imageTypeLabelMap: Record<ImageType, string> = {
 
 export const cvesDiscoveredSinceLabelMap: Record<CVESDiscoveredSince, string> = {
     ALL_VULN: 'All time',
-    SINCE_LAST_REPORT: 'Last successful scheduled run report',
+    SINCE_LAST_REPORT: 'Last scheduled report that was successfully sent',
     START_DATE: 'Custom start date',
 };
 
@@ -115,7 +115,7 @@ export function getReportConfigurationFromFormValues(
     const reportConfiguration: ReportConfiguration = {
         id: reportId,
         name: reportParameters.reportName,
-        description: reportParameters.description,
+        description: reportParameters.reportDescription,
         type: 'VULNERABILITY',
         vulnReportFilters,
         resourceScope: {
@@ -150,7 +150,8 @@ export function getReportFormValuesFromConfiguration(
         cvesDiscoveredSince = 'SINCE_LAST_REPORT';
     } else if ('sinceStartDate' in vulnReportFilters) {
         cvesDiscoveredSince = 'START_DATE';
-        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate;
+        // Strip off the google.protobuf.Timestamp time portion of the date string
+        cvesDiscoveredStartDate = vulnReportFilters.sinceStartDate.substring(0, 10);
     } else {
         // we'll default to this if none of these fields are present
         cvesDiscoveredSince = 'ALL_VULN';
@@ -192,7 +193,7 @@ export function getReportFormValuesFromConfiguration(
         reportId: id,
         reportParameters: {
             reportName: name,
-            description,
+            reportDescription: description,
             cveSeverities: vulnReportFilters.severities,
             cveStatus:
                 vulnReportFilters.fixability === 'BOTH'
@@ -213,37 +214,31 @@ export function getReportFormValuesFromConfiguration(
     return reportFormValues;
 }
 
-export function getReportStatusText(reportStatus: ReportStatus | null): string {
+export function getReportStatusText(
+    reportStatus: ReportStatus | null,
+    isDownloadAvailable: boolean
+): string {
     let statusText = '-';
 
-    if (
-        reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'EMAIL'
-    ) {
-        statusText = 'Emailed';
-    } else if (
-        reportStatus?.runState === 'SUCCESS' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
-    ) {
-        statusText = 'Download prepared';
-    } else if (
-        reportStatus?.runState === 'FAILURE' &&
-        reportStatus?.reportNotificationMethod === 'EMAIL'
-    ) {
-        statusText = 'Email attempted';
-    } else if (
-        reportStatus?.runState === 'FAILURE' &&
-        reportStatus?.reportNotificationMethod === 'DOWNLOAD'
-    ) {
-        statusText = 'Failed to generate download';
-    } else if (reportStatus?.runState === 'SUCCESS') {
-        statusText = 'Success';
-    } else if (reportStatus?.runState === 'FAILURE') {
-        statusText = 'Error';
-    } else if (reportStatus?.runState === 'PREPARING') {
+    const isDownload = reportStatus?.reportNotificationMethod === 'DOWNLOAD';
+    const isEmail = reportStatus?.reportNotificationMethod === 'EMAIL';
+
+    if (reportStatus?.runState === 'PREPARING') {
         statusText = 'Preparing';
     } else if (reportStatus?.runState === 'WAITING') {
         statusText = 'Waiting';
+    } else if (reportStatus?.runState === 'FAILURE' && isEmail) {
+        statusText = 'Email attempted';
+    } else if (reportStatus?.runState === 'FAILURE' && isDownload) {
+        statusText = 'Failed to generate download';
+    } else if (!isDownload && reportStatus?.runState === 'DELIVERED') {
+        statusText = 'Emailed';
+    } else if (isDownload && isDownloadAvailable) {
+        statusText = 'Download prepared';
+    } else if (isDownload && !isDownloadAvailable) {
+        statusText = 'Download deleted';
+    } else if (reportStatus?.runState === 'FAILURE') {
+        statusText = 'Error';
     }
 
     return statusText;

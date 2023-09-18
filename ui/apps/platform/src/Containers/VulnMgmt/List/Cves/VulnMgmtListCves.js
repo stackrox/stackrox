@@ -22,10 +22,12 @@ import PanelButton from 'Components/PanelButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import queryService from 'utils/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
+import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
+import queryService from 'utils/queryService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
@@ -38,15 +40,11 @@ import {
 
 import CveType from 'Components/CveType';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import usePermissions from 'hooks/usePermissions';
-import { isRouteEnabled, policyManagementBasePath } from 'routePaths';
-
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
 import WorkflowListPage from '../WorkflowListPage';
-import { getFilteredCVEColumns } from './ListCVEs.utils';
+import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
 export const defaultCveSort = [
     {
@@ -283,14 +281,13 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const isRouteEnabled = useIsRouteEnabled();
+    const { hasReadWriteAccess } = usePermissions();
 
     // Although request requires only WorkflowAdministration,
     // also require require resources for Policies route.
     const hasWriteAccessForAddToPolicy =
-        hasReadWriteAccess('WorkflowAdministration') &&
-        isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, policyManagementBasePath);
+        hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
 
     // Forbidden failures are explicit for Approvals and Requests but only implicit for Image.
     const hasWriteAccessForRiskAcceptance =
@@ -379,8 +376,11 @@ const VulnMgmtCves = ({
         e.stopPropagation();
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
-        const cvesToToggle = cve ? [cve] : selectedCveIds;
-        suppressVulns(cveType, cvesToToggle, duration)
+        const cveIdsToToggle = cve ? [cve] : selectedCveIds;
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        suppressVulns(cveType, selectedCveNames, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -389,7 +389,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully deferred and approved ${entityCountNounOrdinaryCase(
-                        cvesToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );
@@ -406,7 +406,10 @@ const VulnMgmtCves = ({
 
         const currentEntityType = workflowState.getCurrentEntity().entityType;
         const cveIdsToToggle = cve ? [cve] : selectedCveIds;
-        unsuppressVulns(cveType, cveIdsToToggle)
+
+        const selectedCveNames = parseCveNamesFromIds(cveIdsToToggle);
+
+        unsuppressVulns(cveType, selectedCveNames)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -415,7 +418,7 @@ const VulnMgmtCves = ({
 
                 addToast(
                     `Successfully reobserved ${entityCountNounOrdinaryCase(
-                        cveIdsToToggle.length,
+                        selectedCveNames.length,
                         currentEntityType
                     )} globally`
                 );

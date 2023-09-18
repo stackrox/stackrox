@@ -3,6 +3,7 @@ package create
 import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 )
 
@@ -30,6 +31,7 @@ If this is unset and the flag "config-map" is also unset, the created YAML will 
 If left empty, the default namespace in the current kube config will be used.`)
 
 	c.MarkFlagsMutuallyExclusive(k8sobject.ConfigMapFlag, k8sobject.SecretFlag)
+	flags.HideInheritedFlags(c)
 
 	return c
 }

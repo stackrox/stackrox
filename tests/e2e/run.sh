@@ -93,14 +93,6 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-
-    local registry="quay.io/rhacs-eng"
-
-    SCANNER_IMAGE="$registry/scanner:$(cat "$ROOT"/SCANNER_VERSION)"
-    export SCANNER_IMAGE
-    SCANNER_DB_IMAGE="$registry/scanner-db:$(cat "$ROOT"/SCANNER_VERSION)"
-    export SCANNER_DB_IMAGE
-
     export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
 }
 

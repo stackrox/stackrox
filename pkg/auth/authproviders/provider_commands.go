@@ -3,6 +3,7 @@ package authproviders
 import (
 	"context"
 
+	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -19,6 +20,9 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
+		if pr.storedInfo.LastUpdated == nil {
+			pr.storedInfo.LastUpdated = timestamp.TimestampNow()
+		}
 		return store.AddAuthProvider(ctx, pr.storedInfo)
 	}
 }
@@ -29,6 +33,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 		if pr.doNotStore {
 			return nil
 		}
+		pr.storedInfo.LastUpdated = timestamp.TimestampNow()
 		return store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }

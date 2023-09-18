@@ -86,6 +86,10 @@ choose_cluster_version() {
         gcloud container get-server-config --format json | jq .validMasterVersions
         unset GKE_CLUSTER_VERSION
     fi
+    # ROX-19109: Use v1.26 to get a more stable GKE clusters
+    if [[ -z "${GKE_CLUSTER_VERSION:-}" ]]; then
+        GKE_CLUSTER_VERSION="1.26"
+    fi
 }
 
 create_cluster() {
@@ -365,20 +369,22 @@ HEAD
     project="$(gcloud config get project --quiet)"
 
     for authUser in {0..2}; do
-    cat >> "$artifact_file" << LINK
+    cat << LINK |
       <li>
-        <a href="https://console.cloud.google.com/logs/query
+        <a target="_blank" href="https://console.cloud.google.com/logs/query
 ;query=
-resource.type=%22k8s_container%22%0A
-resource.labels.cluster_name%3D%22$CLUSTER_NAME%22%0A
+resource.type%3D%22k8s_container%22%0A
+resource.labels.cluster_name%3D%22${CLUSTER_NAME}%22%0A
 resource.labels.namespace_name%3D%22stackrox%22%0A
-;timeRange=$start_ts%2F$end_ts
-;cursorTimestamp=$start_ts
-?authuser=$authUser
-&project=$project
-&orgonly=true&supportedpurview=organizationId">authUser $authUser</a>
+;timeRange=${start_ts}%2F${end_ts}
+;cursorTimestamp=${start_ts}
+?authuser=${authUser}
+&amp;project=${project}
+&amp;orgonly=true
+&amp;supportedpurview=organizationId">authUser $authUser</a>
       </li>
 LINK
+tr -d '\n' >> "$artifact_file"
     done
 
     cat >> "$artifact_file" <<- FOOT

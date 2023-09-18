@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -97,8 +98,9 @@ func newConnection(ctx context.Context,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
 
-		sensorHello:  sensorHello,
-		capabilities: centralsensor.CapSetFromStringSlice(sensorHello.GetCapabilities()...),
+		sensorHello: sensorHello,
+		capabilities: set.NewSet(sliceutils.
+			FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)...),
 	}
 
 	// Need a reference to conn for injector

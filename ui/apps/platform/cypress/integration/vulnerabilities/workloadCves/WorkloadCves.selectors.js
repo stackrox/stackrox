@@ -1,3 +1,5 @@
+const watchedImageLabelText = 'Watched image';
+
 export const selectors = {
     resourceDropdown: '.pf-c-toolbar button[aria-label="resource filter menu toggle"]',
     resourceMenuItem: (resource) =>
@@ -28,4 +30,20 @@ export const selectors = {
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
+
+    // Watched image selectors
+    watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,
+    firstUnwatchedImageRow: `tbody tr:has(td[data-label="Image"]:not(:contains("${watchedImageLabelText}"))):eq(0)`,
+    watchedImageCellWithName: (name) =>
+        `tbody tr td[data-label="Image"]:contains("${name}"):contains("${watchedImageLabelText}")`,
+    manageWatchedImagesButton: 'button:contains("Manage watched images")',
+    closeWatchedImageDialogButton: '*[role="dialog"] button:contains("Close")',
+    addWatchedImageNameInput: '*[role="dialog"] input[id="imageName"]',
+    addImageToWatchListButton: 'button:contains("Add image to watch list")',
+    currentWatchedImagesTable: '*[role="dialog"] table',
+    modalAlertWithText: (text) => `*[role="dialog"] .pf-c-alert:contains("${text}")`,
+    currentWatchedImageRow: (name) =>
+        `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}"))`,
+    removeImageFromTableButton: (name) =>
+        `${selectors.currentWatchedImagesTable} tr:has(td:contains("${name}")) button:contains("Remove watch")`,
 };

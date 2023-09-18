@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/migrations/m_176_to_m_177_network_baselines_cidr/networkentitystore"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -77,7 +78,7 @@ func updatePeer(
 }
 
 func addCIDRBlockToBaselines(postgresDB postgres.DB) error {
-	ctx := context.Background()
+	ctx := sac.WithAllAccess(context.Background())
 	networkBaselineStore := networkbaselinestore.New(postgresDB)
 	networkEntityStore := networkentitystore.New(postgresDB)
 

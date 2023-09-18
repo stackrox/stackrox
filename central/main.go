@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
+	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
@@ -105,6 +107,10 @@ import (
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
+	productUsageCSV "github.com/stackrox/rox/central/productusage/csv"
+	productUsageDataStore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	productUsageInjector "github.com/stackrox/rox/central/productusage/injector"
+	productUsageService "github.com/stackrox/rox/central/productusage/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
@@ -176,7 +182,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/routes"
-	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -337,6 +342,11 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
+	productUsageInjector.Singleton().Start()
+
+	if features.AdministrationEvents.Enabled() {
+		administrationEventHandler.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -384,6 +394,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
+		productUsageService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
@@ -415,6 +426,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -648,7 +663,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/docs/swagger",
-			Authorizer:    user.With(permissions.View(resources.Integration)),
+			Authorizer:    user.Authenticated(),
 			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
@@ -716,7 +731,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/db/backup",
 			Authorizer: dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), false),
 			),
 			Compression: true,
@@ -724,7 +739,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:      "/api/extensions/backup",
 			Authorizer: user.WithRole(accesscontrol.Admin),
-			ServerHandler: notImplementedWithExternalDatabase(
+			ServerHandler: routes.NotImplementedWithExternalDatabase(
 				globaldbHandlers.BackupDB(globaldb.GetPostgres(), listener.Singleton(), true),
 			),
 			Compression: true,
@@ -751,6 +766,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/product/usage/secured-units/csv",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: productUsageCSV.CSVHandler(productUsageDataStore.Singleton()),
 			Compression:   true,
 		},
 	}
@@ -797,22 +818,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	return
 }
 
-func notImplementedOnManagedServices(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() {
-		return httputil.NotImplementedHandler("api is not supported in a managed central environment.")
-	}
-
-	return fn
-}
-
-func notImplementedWithExternalDatabase(fn http.Handler) http.Handler {
-	if env.ManagedCentral.BooleanSetting() || pgconfig.IsExternalDatabase() {
-		return httputil.NotImplementedHandler("api is not supported with the usage of an external database.")
-	}
-
-	return fn
-}
-
 func debugRoutes() []routes.CustomRoute {
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
@@ -850,12 +855,17 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+		{productUsageInjector.Singleton(), "product usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
 	}
 
 	var wg sync.WaitGroup

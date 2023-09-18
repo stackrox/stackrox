@@ -17,6 +17,7 @@ export type CheckboxSelectProps = {
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
+    menuAppendTo?: () => HTMLElement;
 };
 
 function CheckboxSelect({
@@ -30,6 +31,7 @@ function CheckboxSelect({
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
+    menuAppendTo,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -65,6 +67,7 @@ function CheckboxSelect({
             placeholderText={placeholderText}
             aria-label={ariaLabel}
             toggleId={toggleId}
+            menuAppendTo={menuAppendTo}
         >
             {children}
         </Select>

@@ -107,7 +107,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData)
+	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
 	if err != nil {
 		return err
 	}

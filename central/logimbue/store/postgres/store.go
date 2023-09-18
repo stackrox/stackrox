@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -95,10 +96,11 @@ func insertIntoLogImbues(batch *pgx.Batch, obj *storage.LogImbue) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		pgutils.NilOrTime(obj.GetTimestamp()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO log_imbues (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO log_imbues (Id, Timestamp, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -113,6 +115,7 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 
 	copyCols := []string{
 		"id",
+		"timestamp",
 		"serialized",
 	}
 
@@ -129,6 +132,7 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			pgutils.NilOrTime(obj.GetTimestamp()),
 			serialized,
 		})
 

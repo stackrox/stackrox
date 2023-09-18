@@ -25,6 +25,7 @@ import usePermissions from 'hooks/usePermissions';
 import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown';
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
+import useIndexKey from 'hooks/useIndexKey';
 import NotifierSelection from './NotifierSelection';
 
 export type DeliveryDestinationsFormParams = {
@@ -35,6 +36,7 @@ export type DeliveryDestinationsFormParams = {
 function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormParams): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
+    const { keyFor } = useIndexKey();
 
     function addDeliveryDestination() {
         const newDeliveryDestination: DeliveryDestination = { notifier: null, mailingLists: [] };
@@ -95,7 +97,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 <Alert
                     isInline
                     variant={AlertVariant.danger}
-                    title="Delivery destination & schedule are both required to be configured since the 'Last successful scheduled run report' option has been selected in Step 1."
+                    title="Delivery destination & schedule are both required to be configured since the 'Last scheduled report that was successfully sent' option has been selected in Step 1."
                 />
             )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
@@ -106,7 +108,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                 {formik.values.deliveryDestinations.map(
                                     (deliveryDestination, index) => {
                                         return (
-                                            <li className="pf-u-mb-md">
+                                            <li key={keyFor(index)} className="pf-u-mb-md">
                                                 <Card>
                                                     <CardTitle>
                                                         <Flex
@@ -176,24 +178,37 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                             <Flex direction={{ default: 'row' }}>
                                 <FlexItem>
                                     <FormLabelGroup
-                                        isRequired={formik.values.deliveryDestinations.length !== 0}
                                         label="Repeat every"
                                         fieldId="schedule.intervalType"
                                         errors={formik.errors}
+                                        isRequired={
+                                            formik.values.reportParameters.cvesDiscoveredSince ===
+                                            'SINCE_LAST_REPORT'
+                                        }
                                     >
                                         <RepeatScheduleDropdown
                                             fieldId="schedule.intervalType"
                                             value={formik.values.schedule.intervalType || ''}
                                             handleSelect={onScheduledRepeatChange}
                                             isEditable={
-                                                formik.values.deliveryDestinations.length > 0
+                                                formik.values.deliveryDestinations.length > 0 ||
+                                                formik.values.reportParameters
+                                                    .cvesDiscoveredSince === 'SINCE_LAST_REPORT'
+                                            }
+                                            showNoResultsOption={
+                                                formik.values.reportParameters
+                                                    .cvesDiscoveredSince !== 'SINCE_LAST_REPORT'
                                             }
                                         />
                                     </FormLabelGroup>
                                 </FlexItem>
                                 <FlexItem>
                                     <FormLabelGroup
-                                        isRequired={!!formik.values.schedule.intervalType}
+                                        isRequired={
+                                            !!formik.values.schedule.intervalType ||
+                                            formik.values.reportParameters.cvesDiscoveredSince ===
+                                                'SINCE_LAST_REPORT'
+                                        }
                                         label="On day(s)"
                                         fieldId={
                                             formik.values.schedule.intervalType === 'WEEKLY'

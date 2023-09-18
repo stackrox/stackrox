@@ -219,10 +219,15 @@ func (p *providerImpl) Validate(ctx context.Context, claims *tokens.Claims) erro
 		return errProviderDisabled
 	}
 
+	if err := validateTokenProviderUpdate(p.StorageView(), claims); err != nil {
+		return errors.Wrap(err, "token issued prior to provider update cannot be used")
+	}
+
 	backend, err := p.GetOrCreateBackend(ctx)
 	if err != nil {
 		return errors.Wrap(err, "provider is unavailable")
 	}
+
 	return backend.Validate(ctx, claims)
 }
 

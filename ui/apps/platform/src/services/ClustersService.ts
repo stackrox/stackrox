@@ -27,7 +27,7 @@ export type Cluster = {
 /**
  * Fetches list of registered clusters.
  */
-export function fetchClustersAsArray(options?: RestSearchOption[]): Promise<Cluster[]> {
+export function fetchClusters(options?: RestSearchOption[]): Promise<Cluster[]> {
     let queryString = '';
     if (options && options.length !== 0) {
         const query = searchOptionsToQuery(options);
@@ -127,7 +127,7 @@ export function rotateClusterCerts(id: string): Promise<Empty> {
 /**
  * Manually start a sensor upgrade for an array of clusters.
  */
-export function upgradeClusters(ids = []): Promise<Empty[]> {
+export function upgradeClusters(ids: string[] = []): Promise<Empty[]> {
     return Promise.all(ids.map((id) => upgradeCluster(id)));
 }
 

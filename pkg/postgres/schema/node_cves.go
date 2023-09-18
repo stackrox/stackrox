@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -37,6 +38,7 @@ var (
 			v1.SearchCategory_NODES,
 			v1.SearchCategory_CLUSTERS,
 		}...)
+		schema.ScopingResource = resources.Node
 		RegisterTable(schema, CreateTableNodeCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema)
 		return schema

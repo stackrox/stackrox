@@ -16,7 +16,7 @@ var (
 	QuayRobotAccounts = registerFeature("Enable Robot accounts in Quay Image Integration", "ROX_QUAY_ROBOT_ACCOUNTS", true)
 
 	// RoxctlNetpolGenerate enables 'roxctl netpol generate' command which integrates with NP-Guard
-	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl generate netpol' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
+	RoxctlNetpolGenerate = registerFeature("Enable 'roxctl netpol generate' command", "ROX_ROXCTL_NETPOL_GENERATE", true)
 
 	// RoxSyslogExtraFields enables user to add additional key value pairs in syslog alert notification in cef format.
 	RoxSyslogExtraFields = registerFeature("Enable extra fields for syslog integration", "ROX_SYSLOG_EXTRA_FIELDS", true)
@@ -42,6 +42,6 @@ var (
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
-	// CentralEvents enables APIs (including collection) and UI pages for Central events.
-	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
+	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
 )

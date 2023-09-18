@@ -1,19 +1,37 @@
 
 # Changelog
+
 Entries in this file should be limited to:
--  Any changes that introduce a deprecation in functionality, OR
--  Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
+
+- Any changes that introduce a deprecation in functionality, OR
+- Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
 ## [NEXT RELEASE]
 
 ### Added Features
 
+### Removed Features
+
+- ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.2.0]
+
+
+
+### Added Features
+
 - Telemetry collection enabled by default for self-managed installations. Opt-out is available on bundle generation, or at any time via the System Configuration UI.
 - Integration with OpenShift Container Platform monitoring is configured and enabled by default for OpenShift 4 installations. The flag `monitoring.openshift.enabled: false` disables the integration.
 - A new environment variable `ROX_DISABLE_REGISTRY_REPO_LIST` has been added to Central (defaults to `false`). When set to `true` will disable registry repo list (`/v2/_catalog`) usage when matching integrations to image registries.
-- A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added that when set to `true` will enable processing registry mirrors during image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
+- A new environment variable `ROX_REGISTRY_MIRRORING_ENABLED` has been added to Sensor that is set to `true` by default and enables processing registry mirrors during Sensor image enrichment. Mirror details are obtained via the `ImageContentSourcePolicy`, `ImageDigestMirrorSet`, and `ImageTagMirrorSet` CRs.
 - ROX-17112: CORE_BPF collection is now generally available.
+- ROX-17702: Product usage metrics experimental API: `/v1/product/usage/secured-units/current`, `/v1/product/usage/secured-units/max`. New `/api/product/usage/secured-units/csv` endpoint.
+- ROX-19096, ROX-19098, ROX-19099: StackRox Scanner now supports alpine:v3.18, debian:12, ubuntu:23.04, ubuntu:23.10
 
 ### Removed Features
 
@@ -26,7 +44,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 
 - RBAC risk was deprecated in release 4.0 due to poor performance.
+- (Tech preview feature) CLI command `roxctl generate netpol` is deprecated in favor of `roxctl netpol generate`
+- (Tech preview feature) CLI command `roxctl connextivity-map` is deprecated in favor of `roxctl netpol connectivity map`
 - The CIS Docker v1.2.0 standard will be removed from RHACS Compliance checks starting in RHACS version 4.4.
+- The Syslog notifier used to send the message header incorrect - the severity and name fields were flipped. Starting in this release, there is now an option
+  to choose which format the header should be sent it: `CEF` which is the correct order or `CEF (legacy field order)` which is the older incorrect way.
+  The UI will default to `CEF` but when using the API if a value isn't selected, it will default to `CEF (legacy field order)`.
+  Starting in version 4.4 the notifier will default to `CEF`.
+- A few public endpoints will soon require authentication, ensure that any flow interacting with these endpoints is authenticated going forward:
+  - `/v1/featureflags`
+  - `/v1/resources`
 
 ### Technical Changes
 
@@ -42,12 +69,16 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18477: Fixed an issue that breaks operator installations if a `Central` or `SecuredCluster` CR configures egress proxy environment variables while openshift cluster-wide proxy is enabled.
 - ROX-15969: The column `Component Upgrade` in vulnerability reports has been renamed to `CVE Fixed In`.
 - The removal of `/v1/report` APIs in this release, that was communicated in release 4.0.0, has been postponed by one release. Consequently, the `/v1/report` APIs will continue to be available in this release.
+- The `/api/docs/swagger` API previously required read on the resource `Integration`.
+  Now it only requires users to be authenticated to via the API docs.
+- StackRox Scanner will now opt to scan the image whose architecture matches the Scanner's architecture instead of always opting for amd64 when scanning a multi-arch image.
+  - For example, if StackRox Scanner is running on arm64, and there is an arm64 version of the multi-arch image, it will scan that arm64 image.
+  - If there is no image which matches Scanner's architecture, then it will attempt to scan the amd64 version, as it did previously.
 
 ## [4.1.0]
 
-
-
 ### Added Features
+
 - Two new default permission sets `Vulnerability Management Consumer` and `Vulnerability Management Admin` have been added for vulnerability management.
   - `Vulnerability Management Consumer` provides read-only access to analyze vulnerabilities and initiate risk acceptance process.
   - `Vulnerability Management Admin` provides administrative access to analyze vulnerabilities, generate reports, and manage risk acceptance process.
@@ -63,15 +94,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-16703: Helm setting `scanner.disable=false` now valid for any secured cluster (instead of OpenShift only). This enables scanner slim to be installed in non-OCP secured clusters.
 
 ### Removed Features
+
 - ROX-14398: As announced in 3.74, the permission `Access` replaces the deprecated permission `Role`.
 - ROX-14398: As announced in 3.74, the `Scope Manager` system role and permission set will be removed. If existing product installations do have customer references to either the `Scope Manager` system role or the `Scope Manager` system permission set, then the referenced object will be adjusted to contain a description mentioning its deprecation. Furthermore, the objects will not be marked as system resources, and will not be supported anymore.
 - ROX-17031: env var `ROX_FORCE_LOCAL_IMAGE_SCANNING` has been removed and replaced by the `DelegatedRegistryConfig` API.
-- ROX-13888: As announced in 3.74, the permission `WorkflowAdministration` replaces the deprecated permissions `Vulnerability Reports` and `Policy`. 
+- ROX-13888: As announced in 3.74, the permission `WorkflowAdministration` replaces the deprecated permissions `Vulnerability Reports` and `Policy`.
 
 - KernelModule collection has been removed, following deprecation in 4.0.
     - Secured clusters configured to use KernelModule collection will automatically switch to EBPF
 
 ### Deprecated Features
+
 - Vulnerability Management 1.0 sections Image CVEs, Image Components, Images, Deployments, and Namespaces are deprecated and will be removed in the future. Once removed, use Vulnerability Management 2.0 for managing workload vulnerabilities.
 - Custom Security Context Constraints (SCC) (e.g.: `stackrox-collector`, `stackrox-admission-control`, `stackrox-sensor`) are deprecated and will be removed in the future.
   Users should ensure that those SCCs are not being used by workloads other than Stackrox/RHACS.
@@ -81,6 +114,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs used to defer image vulnerabilities globally and undo deferral are deprecated and will be removed in a future release. Once removed, use Risk Acceptance workflow to defer image vulnerabilities globally.
 
 ### Technical Changes
+
 - The Central PVC stackrox-db is no longer required after this upgrade. To obsolete existing PVC, please check the docs online.
 - The output of `roxctl central whoami` now includes the username as well.
 - Helm setting `collector.nodeInventoryResources` has been renamed to `collector.nodeScanningResources`.

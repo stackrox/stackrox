@@ -2,13 +2,13 @@ import React, { ReactElement } from 'react';
 import { DescriptionList } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { Cluster } from 'types/cluster.proto';
+import { ClusterScopeObject } from 'services/RolesService';
 import { PolicyExcludedDeployment } from 'types/policy.proto';
 
 import { getClusterName } from '../policies.utils';
 
 type ExcludedDeploymentProps = {
-    clusters: Cluster[];
+    clusters: ClusterScopeObject[];
     excludedDeployment: PolicyExcludedDeployment;
 };
 

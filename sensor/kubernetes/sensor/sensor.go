@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/image"
+	"github.com/stackrox/rox/sensor/common/installmethod"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -96,6 +97,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		}
 	}
 
+	installmethod.Set(helmManagedConfig.GetManagedBy())
+
 	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
@@ -115,7 +118,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
 
-	localScan := scan.NewLocalScan(storeProvider.Registries())
+	localScan := scan.NewLocalScan(storeProvider.Registries(), storeProvider.RegistryMirrors())
 	delegatedRegistryHandler := delegatedregistry.NewHandler(storeProvider.Registries(), localScan)
 
 	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
@@ -123,7 +126,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	pipeline := eventpipeline.New(cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.resyncPeriod, cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize)
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
-	imageService := image.NewService(imageCache, storeProvider.Registries())
+	imageService := image.NewService(imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
@@ -150,14 +153,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		delegatedRegistryHandler,
 		imageService,
 	}
-	if env.RHCOSNodeScanning.BooleanSetting() {
-		matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-		nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
-		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
-		// complianceMultiplexer must start after all components that implement common.ComplianceComponent
-		// i.e., after nodeInventoryHandler
-		components = append(components, nodeInventoryHandler, complianceMultiplexer)
-	}
+	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), matcher)
+	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
+	// i.e., after nodeInventoryHandler
+	components = append(components, nodeInventoryHandler, complianceMultiplexer)
+
 	if features.ComplianceEnhancements.Enabled() {
 		coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0)
 		components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater))

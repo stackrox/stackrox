@@ -16,13 +16,14 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/completion"
-	connectivitymap "github.com/stackrox/rox/roxctl/connectivity-map"
+	connectivitymapDeprecated "github.com/stackrox/rox/roxctl/connectivity-map"
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/generate"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
+	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/scanner"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
@@ -47,6 +48,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 	c.PersistentFlags().Bool("json", false, "display extended version information as JSON")
+	flags.HideInheritedFlags(c)
 	return c
 }
 
@@ -79,7 +81,8 @@ func Command() *cobra.Command {
 		helm.Command(cliEnvironment),
 		versionCommand(cliEnvironment),
 		completion.Command(cliEnvironment),
-		connectivitymap.Command(cliEnvironment),
+		connectivitymapDeprecated.Command(cliEnvironment),
+		netpol.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))

@@ -89,11 +89,13 @@ message NotifierConfiguration {
     // values. In Go, we do not differentiate whether an empty string signifies an expected empty value or an
     // unset value, which is a requirement within SQL."
     oneof ref {
-        string                         id           = 2 [(gogoproto.moretags) = 'sql:"fk(Notifier:id)"'];
+        string                         id           = 2 [(gogoproto.moretags) = 'sql:"fk(Notifier:id),restrict-delete"'];
     }
 }
 
 message EmailNotifierConfiguration  {
     string                 notifier_id           = 1;
     repeated string        mailing_lists         = 2;
+    string                 custom_subject        = 3;
+    string                 custom_body           = 4;
 }

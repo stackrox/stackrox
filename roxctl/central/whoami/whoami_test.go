@@ -35,7 +35,6 @@ type mockAuthServiceServer struct {
 
 	userInfo         *storage.UserInfo
 	resourceToAccess map[string]storage.Access
-	roles            []*storage.Role
 }
 
 func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*v1.AuthStatus, error) {
@@ -49,10 +48,6 @@ func (m *mockAuthServiceServer) GetAuthStatus(_ context.Context, _ *v1.Empty) (*
 
 func (m *mockAuthServiceServer) GetMyPermissions(_ context.Context, _ *v1.Empty) (*v1.GetPermissionsResponse, error) {
 	return &v1.GetPermissionsResponse{ResourceToAccess: m.resourceToAccess}, nil
-}
-
-func (m *mockAuthServiceServer) GetRoles(_ context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
-	return &v1.GetRolesResponse{Roles: m.roles}, nil
 }
 
 func (c *centralWhoAmITestSuite) createGRPCMockServices(mockServer *mockAuthServiceServer) (*grpc.ClientConn, func()) {
@@ -103,7 +98,7 @@ func (c *centralWhoAmITestSuite) TestWhoAmIEmpty() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal("UserID:\n\t\nUser name:\n\t\nRoles:\n \nAccess:\n", stdout.String())
+	c.Assert().Equal("UserID:\n\t\nUser name:\n\t\nRoles:\nAccess:\n", stdout.String())
 }
 
 func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
@@ -111,13 +106,20 @@ func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 		userInfo: &storage.UserInfo{
 			Username:     "Harald",
 			FriendlyName: "Harald the second",
+			Roles: []*storage.UserInfo_Role{
+				{
+					Name: "Warrior",
+				},
+				{
+					Name: "Engineer",
+				},
+			},
 		},
 		resourceToAccess: map[string]storage.Access{
 			"Smartphone": storage.Access_READ_WRITE_ACCESS,
 			"Library":    storage.Access_READ_ACCESS,
 			"Valhalla":   storage.Access_NO_ACCESS,
 		},
-		roles: []*storage.Role{{Name: "Warrior"}, {Name: "Engineer"}},
 	}
 
 	cbr, closeFunction, stdout, _ := c.setupCommand(mockServer)
@@ -125,7 +127,17 @@ func (c *centralWhoAmITestSuite) TestWhoIsHarald() {
 
 	cbr.SetArgs([]string{"--timeout", "5s"})
 	c.Require().NoError(cbr.Execute())
-	c.Assert().Equal(
-		"UserID:\n\tHarald\nUser name:\n\tHarald the second\nRoles:\n Warrior, Engineer\nAccess:\n  r- Library\n  rw Smartphone\n  -- Valhalla\n",
+	c.Assert().Equal(`UserID:
+	Harald
+User name:
+	Harald the second
+Roles:
+	- Warrior
+	- Engineer
+Access:
+	r- Library
+	rw Smartphone
+	-- Valhalla
+`,
 		stdout.String())
 }

@@ -126,7 +126,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
-	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, "", scanReq.GetRequestId(), scanReq.GetForce())
+	_, err = d.localScan.EnrichLocalImageInNamespace(ctx, d.imageSvc, ci, scanReq.GetNamespace(), scanReq.GetRequestId(), scanReq.GetForce())
 	if err != nil {
 		log.Errorf("Scan failed for req %q image %q: %v", scanReq.GetRequestId(), ci.GetName().GetFullName(), err)
 

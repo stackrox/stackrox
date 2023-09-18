@@ -335,6 +335,26 @@ const SystemConfigForm = ({
                 </GridItem>
                 <GridItem>
                     <FormGroup
+                        label="Prepared downloadable vulnerability reports retention days"
+                        isRequired
+                        fieldId="privateConfig.reportRetentionConfig.downloadableReportRetentionDays"
+                    >
+                        <TextInput
+                            isRequired
+                            type="number"
+                            id="privateConfig.reportRetentionConfig.downloadableReportRetentionDays"
+                            name="privateConfig.reportRetentionConfig.downloadableReportRetentionDays"
+                            value={
+                                values?.privateConfig?.reportRetentionConfig
+                                    ?.downloadableReportRetentionDays
+                            }
+                            onChange={onChange}
+                            min={0}
+                        />
+                    </FormGroup>
+                </GridItem>
+                <GridItem>
+                    <FormGroup
                         label="Prepared downloadable vulnerability reports limit"
                         isRequired
                         fieldId="privateConfig.reportRetentionConfig.downloadableReportGlobalRetentionBytes"

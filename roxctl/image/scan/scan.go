@@ -132,6 +132,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "set time to wait between retries in seconds")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "cluster name or ID to delegate image scan to")
 
 	// Deprecated flag
 	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
@@ -154,6 +155,7 @@ type imageScanCommand struct {
 	retryDelay     int
 	retryCount     int
 	timeout        time.Duration
+	cluster        string
 
 	// injected or constructed values
 	env                environment.Environment
@@ -255,6 +257,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 		ImageName:      i.image,
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
+		Cluster:        i.cluster,
 	})
 	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
@@ -290,10 +293,10 @@ func printCVESummary(image string, cveSummary map[string]int, out logger.Logger)
 	out.PrintfLn("(%s: %d, %s: %d, %s: %d, %s: %d, %s: %d, %s: %d)\n",
 		totalComponentsMapKey, cveSummary[totalComponentsMapKey],
 		totalVulnerabilitiesMapKey, cveSummary[totalVulnerabilitiesMapKey],
-		lowCVESeverity, cveSummary["LOW"],
-		moderateCVESeverity, cveSummary["MEDIUM"],
-		importantCVESeverity, cveSummary["IMPORTANT"],
-		criticalCVESeverity, cveSummary["CRITICAL"])
+		lowCVESeverity, cveSummary[lowCVESeverity.String()],
+		moderateCVESeverity, cveSummary[moderateCVESeverity.String()],
+		importantCVESeverity, cveSummary[importantCVESeverity.String()],
+		criticalCVESeverity, cveSummary[criticalCVESeverity.String()])
 }
 
 // print warning with amount of CVEs found in components

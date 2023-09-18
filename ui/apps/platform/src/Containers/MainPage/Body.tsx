@@ -4,7 +4,7 @@ import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
-    isRouteEnabled, // predicate function
+    RouteKey,
     accessControlPath,
     apidocsPath,
     clustersDelegatedScanningPath,
@@ -16,6 +16,7 @@ import {
     dashboardPath,
     deprecatedPoliciesPath,
     integrationsPath,
+    isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
     mainPath,
     networkPath,
@@ -53,50 +54,125 @@ function NotFoundPage(): ReactElement {
     );
 }
 
-// routeComponentMap corresponds to routeDescriptionMap in src/routePaths.ts file.
-// Add path keys in alphabetical order to minimize merge conflicts when multiple people add routes.
-const routeComponentMap: Record<string, ElementType> = {
-    [accessControlPath]: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
-    [apidocsPath]: asyncComponent(() => import('Containers/Docs/ApiPage')),
-    [clustersDelegatedScanningPath]: asyncComponent(
-        () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
-    ),
-    [clustersPathWithParam]: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
-    [collectionsPath]: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
-    [compliancePath]: asyncComponent(() => import('Containers/Compliance/Page')),
-    [complianceEnhancedBasePath]: asyncComponent(
-        () => import('Containers/ComplianceEnhanced/Dashboard/ComplianceDashboardPage')
-    ),
-    [configManagementPath]: asyncComponent(() => import('Containers/ConfigManagement/Page')),
-    [dashboardPath]: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
-    [integrationsPath]: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
-    [listeningEndpointsBasePath]: asyncComponent(
-        () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
-    ),
-    [networkPath]: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
-    [policyManagementBasePath]: asyncComponent(
-        () => import('Containers/PolicyManagement/PolicyManagementPage')
-    ),
-    [riskPath]: asyncComponent(() => import('Containers/Risk/RiskPage')),
-    [searchPath]: asyncComponent(() => import('Containers/Search/SearchPage')),
-    [systemConfigPath]: asyncComponent(() => import('Containers/SystemConfig/SystemConfigPage')),
-    [systemHealthPath]: asyncComponent(() => import('Containers/SystemHealth/DashboardPage')),
-    [userBasePath]: asyncComponent(() => import('Containers/User/UserPage')),
-    [violationsPath]: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
-    // Reporting and Risk Acceptance must precede generic Vulnerability Management.
-    [vulnManagementReportsPath]: asyncComponent(
-        () => import('Containers/VulnMgmt/Reports/VulnMgmtReports')
-    ),
-    [vulnManagementRiskAcceptancePath]: asyncComponent(
-        () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
-    ),
-    [vulnManagementPath]: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
-    [vulnerabilitiesWorkloadCvesPath]: asyncComponent(
-        () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
-    ),
-    [vulnerabilityReportsPath]: asyncComponent(
-        () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
-    ),
+type RouteComponent = {
+    component: ElementType;
+    path: string;
+};
+
+// routeComponentMap corresponds to routeRequirementsMap in src/routePaths.ts file.
+// Add route keys in alphabetical order to minimize merge conflicts when multiple people add routes.
+const routeComponentMap: Record<RouteKey, RouteComponent> = {
+    'access-control': {
+        component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
+        path: accessControlPath,
+    },
+    apidocs: {
+        component: asyncComponent(() => import('Containers/Docs/ApiPage')),
+        path: apidocsPath,
+    },
+    // Delegated image scanning must precede generic Clusters.
+    'clusters/delegated-image-scanning': {
+        component: asyncComponent(
+            () => import('Containers/Clusters/DelegateScanning/DelegateScanningPage')
+        ),
+        path: clustersDelegatedScanningPath,
+    },
+    clusters: {
+        component: asyncComponent(() => import('Containers/Clusters/ClustersPage')),
+        path: clustersPathWithParam,
+    },
+    collections: {
+        component: asyncComponent(() => import('Containers/Collections/CollectionsPage')),
+        path: collectionsPath,
+    },
+    compliance: {
+        component: asyncComponent(() => import('Containers/Compliance/Page')),
+        path: compliancePath,
+    },
+    'compliance-enhanced': {
+        component: asyncComponent(
+            () => import('Containers/ComplianceEnhanced/Status/ComplianceStatusPage')
+        ),
+        path: complianceEnhancedBasePath,
+    },
+    configmanagement: {
+        component: asyncComponent(() => import('Containers/ConfigManagement/Page')),
+        path: configManagementPath,
+    },
+    dashboard: {
+        component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
+        path: dashboardPath,
+    },
+    integrations: {
+        component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
+        path: integrationsPath,
+    },
+    'listening-endpoints': {
+        component: asyncComponent(
+            () => import('Containers/Audit/ListeningEndpoints/ListeningEndpointsPage')
+        ),
+        path: listeningEndpointsBasePath,
+    },
+    'network-graph': {
+        component: asyncComponent(() => import('Containers/NetworkGraph/NetworkGraphPage')),
+        path: networkPath,
+    },
+    'policy-management': {
+        component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
+        path: policyManagementBasePath,
+    },
+    risk: {
+        component: asyncComponent(() => import('Containers/Risk/RiskPage')),
+        path: riskPath,
+    },
+    search: {
+        component: asyncComponent(() => import('Containers/Search/SearchPage')),
+        path: searchPath,
+    },
+    'system-health': {
+        component: asyncComponent(() => import('Containers/SystemHealth/DashboardPage')),
+        path: systemHealthPath,
+    },
+    systemconfig: {
+        component: asyncComponent(() => import('Containers/SystemConfig/SystemConfigPage')),
+        path: systemConfigPath,
+    },
+    user: {
+        component: asyncComponent(() => import('Containers/User/UserPage')),
+        path: userBasePath,
+    },
+    violations: {
+        component: asyncComponent(() => import('Containers/Violations/ViolationsPage')),
+        path: violationsPath,
+    },
+    'vulnerabilities/reports': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+        ),
+        path: vulnerabilityReportsPath,
+    },
+    // Reports must precede generic Vulnerability Management.
+    'vulnerability-management/reports': {
+        component: asyncComponent(() => import('Containers/VulnMgmt/Reports/VulnMgmtReports')),
+        path: vulnManagementReportsPath,
+    },
+    // Risk Acceptance must precede generic Vulnerability Management.
+    'vulnerability-management/risk-acceptance': {
+        component: asyncComponent(
+            () => import('Containers/VulnMgmt/RiskAcceptance/RiskAcceptancePage')
+        ),
+        path: vulnManagementRiskAcceptancePath,
+    },
+    'vulnerability-management': {
+        component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
+        path: vulnManagementPath,
+    },
+    'workload-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/WorkloadCves/WorkloadCvesPage')
+        ),
+        path: vulnerabilitiesWorkloadCvesPath,
+    },
 };
 
 type BodyProps = {
@@ -127,10 +203,11 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
-                    {Object.entries(routeComponentMap)
-                        .filter(([path]) => isRouteEnabled(routePredicates, path))
-                        .map(([path, component]) => {
-                            return <Route key={path} path={path} component={component} />;
+                    {Object.keys(routeComponentMap)
+                        .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
+                        .map((routeKey) => {
+                            const { component, path } = routeComponentMap[routeKey];
+                            return <Route key={routeKey} path={path} component={component} />;
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>

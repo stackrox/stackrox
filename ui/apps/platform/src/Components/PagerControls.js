@@ -2,54 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
-const Dot = ({ active, onClick }) => (
-    <>
-        <button
-            aria-label="Jump to page"
-            type="button"
-            onClick={onClick}
-            className={`bg-base-300 h-2 w-2 ml-1 mr-1 rounded-full ${
-                active ? 'bg-primary-400' : ''
-            }`}
-        />
-    </>
-);
-
-export const PagerDots = ({ onPageChange, pageCount, currentPage, className }) => {
-    const handleSetPage = (page) => () => {
-        if (page < 0 || page >= pageCount) {
-            return;
-        }
-
-        onPageChange(page);
-    };
-    return (
-        <div className={`absolute z-10 right-0 bottom-0 m-2 ${className}`}>
-            {Array(pageCount)
-                .fill()
-                .map((_, page) => (
-                    <Dot
-                        key={page.toString()}
-                        active={page === currentPage}
-                        onClick={handleSetPage(page)}
-                    />
-                ))}
-        </div>
-    );
-};
-
-PagerDots.propTypes = {
-    onPageChange: PropTypes.func.isRequired,
-    pageCount: PropTypes.number.isRequired,
-    currentPage: PropTypes.number,
-    className: PropTypes.string,
-};
-
-PagerDots.defaultProps = {
-    currentPage: 0,
-    className: '',
-};
-
 export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePrev }) => (
     <div className="-mt-1 flex">
         <button

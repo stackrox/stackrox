@@ -74,14 +74,14 @@ func (e *entry) IsError() bool {
 	return ok && err != nil
 }
 
-func (e *entry) Populate(client *http.Client, upstreamURL string, opts Options) {
-	err := e.doPopulate(client, upstreamURL, opts)
+func (e *entry) Populate(ctx context.Context, client httpClient, upstreamURL string, opts *options) {
+	err := e.doPopulate(ctx, client, upstreamURL, opts)
 	defer e.done.SignalWithError(err)
 	e.lastAccess.StoreAtomic(timestamp.Now())
 }
 
-func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+func (e *entry) doPopulate(ctx context.Context, client httpClient, upstreamURL string, opts *options) error {
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, upstreamURL, nil)
@@ -104,9 +104,9 @@ func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options
 	// Note that Golang's HTTP client by default follows redirects.
 	if resp.StatusCode != http.StatusOK {
 		// If the probe does not exist, we may receive 403 Forbidden due to security constraints
-		// on the storage. Convert this to errNotFound for better visibility of this scenario.
+		// on the storage. Convert this to errProbeNotFound for better visibility of this scenario.
 		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusForbidden {
-			return errNotFound
+			return errProbeNotFound
 		}
 		return errors.Errorf("upstream HTTP request returned status %s", resp.Status)
 	}

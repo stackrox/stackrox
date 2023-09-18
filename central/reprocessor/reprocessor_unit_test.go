@@ -8,7 +8,6 @@ import (
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"go.uber.org/mock/gomock"
 )
@@ -68,12 +67,8 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 			want: false,
 		},
 	}
-	t.Setenv("ROX_RHCOS_NODE_SCANNING", "true")
-	if !env.RHCOSNodeScanning.BooleanSetting() {
-		t.Log("Assuming this is a release build, so skipping due to ROX_RHCOS_NODE_SCANNING=false")
-		return
-	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			m := mocks{

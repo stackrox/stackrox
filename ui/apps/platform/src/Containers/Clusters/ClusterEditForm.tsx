@@ -2,13 +2,14 @@ import React, { ReactElement } from 'react';
 
 import Loader from 'Components/Loader';
 import { labelClassName } from 'constants/form.constants';
+import { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterSummary from './Components/ClusterSummary';
 import StaticConfigurationSection from './StaticConfigurationSection';
 import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
-import { CentralEnv, Cluster, ClusterManagerType } from './clusterTypes';
+import { CentralEnv } from './clusterTypes'; // augmented with successfullyFetched
 
 type ClusterEditFormProps = {
     centralEnv: CentralEnv;

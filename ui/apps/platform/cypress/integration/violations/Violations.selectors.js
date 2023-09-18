@@ -1,6 +1,6 @@
 export const selectors = {
     actions: {
-        btn: 'td.pf-c-table__action button[aria-label="Actions"]',
+        btn: 'td .pf-c-dropdown button[aria-label="Actions"]', // via ActionsColumn element
         excludeDeploymentBtn: 'button:contains("Exclude deployment")',
         resolveBtn: 'button:contains("Mark as resolved")',
         resolveAndAddToBaselineBtn: 'button:contains("Resolve and add to process baseline")',
@@ -19,13 +19,11 @@ export const selectors = {
         explanationMessage: '[aria-label="Enforcement explanation message"]',
     },
     deployment: {
-        overview: '[aria-label="Deployment details"] [aria-label="Deployment overview"]',
-        containerConfiguration:
-            '[aria-label="Deployment details"] [aria-label="Container configuration"]',
-        securityContext: '[aria-label="Deployment details"] [aria-label="Security context"]',
-        portConfiguration: '[aria-label="Deployment details"] [aria-label="Port configuration"]',
-        networkPolicy:
-            '[aria-label="Deployment details"] [aria-label="Network policies in namespace"]',
-        networkPolicyModal: "[role='dialog']:contains('Network policy details')",
+        overview: `[aria-label="Deployment details"] article:has('h3:contains("Deployment overview")')`,
+        containerConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Container configuration")')`,
+        securityContext: `[aria-label="Deployment details"] article:has('h3:contains("Security context")')`,
+        portConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Port configuration")')`,
+        networkPolicy: `[aria-label="Deployment details"] article:has('h3:contains("Network policies")')`,
+        networkPolicyModal: '[role="dialog"]:contains("Network policy details")',
     },
 };

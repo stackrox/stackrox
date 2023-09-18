@@ -1,0 +1,52 @@
+name: Fetch NVD Data Feeds
+
+on:
+  schedule:
+  - cron: '0 0 * * *'  # this runs every day at midnight
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+    - name: Determine years for matrix
+      id: set-matrix
+      run: |
+        range=$(seq 2002 "$(date +%Y)" | tr '\n' ',')
+        echo "::set-output name=matrix::{\"year\":[${range%,}]}"
+
+  fetch-data:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        year: ${{fromJson(needs.setup.outputs.matrix).year}}
+
+    steps:
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - uses: actions/checkout@v3
+
+    - name: Fetch, Validate, and Store NVD Data
+      run: ./.github/workflows/scripts/scanner-fetch-update-nvd.sh ${{ matrix.year }}
+
+
+  send-notification:
+    needs:
+    - fetch-data
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Send Slack notification on workflow failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"Workflow failed in workflow ${{ github.workflow }} in repository ${{ github.repository }}: Failed to download and update NVD CVSS data"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

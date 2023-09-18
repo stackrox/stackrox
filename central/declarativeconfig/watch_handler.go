@@ -7,7 +7,9 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
@@ -51,12 +53,21 @@ func (w *watchHandler) OnChange(dir string) (interface{}, error) {
 	declarativeConfigFiles := make(map[string][]byte, len(entries))
 	for _, entry := range entries {
 		if entry.IsDir() {
-			log.Warnf("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
+			log.Debugf("Found a directory entry within %s: %s. This entry will be skipped", dir, entry.Name())
+			continue
+		}
+		if strings.HasPrefix(entry.Name(), "..") {
+			log.Debugf(`Found an entry starting with ".." %s. This entry will be skipped`, entry.Name())
 			continue
 		}
 		entryContents, err := readDeclarativeConfigFile(path.Join(dir, entry.Name()))
 		if err != nil {
 			log.Errorf("Error reading file %s: %v", entry.Name(), err)
+			continue
+		}
+
+		if len(entryContents) == 0 {
+			log.Debugf("Found an empty file %s. This entry will be skipped", entry.Name())
 			continue
 		}
 		declarativeConfigFiles[entry.Name()] = entryContents
@@ -93,7 +104,9 @@ func (w *watchHandler) OnStableUpdate(val interface{}, err error) {
 }
 
 func (w *watchHandler) OnWatchError(err error) {
-	log.Errorf("Error watching declarative configuration directory: %v", err)
+	if !errors.Is(err, os.ErrNotExist) {
+		log.Errorf("Error watching declarative configuration directory: %v", err)
+	}
 }
 
 // compareHashesForChanges compares the file contents for changes based on previous hashes stored for this handler.

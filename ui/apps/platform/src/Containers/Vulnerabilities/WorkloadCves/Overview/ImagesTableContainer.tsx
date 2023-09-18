@@ -6,7 +6,7 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
-import ImagesTable, { imageListQuery } from '../Tables/ImagesTable';
+import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
 import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
@@ -14,11 +14,14 @@ import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
 import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
+export { imageListQuery } from '../Tables/ImagesTable';
+
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
     pagination: ReturnType<typeof useURLPagination>;
+    onWatchImage: ImagesTableProps['onWatchImage'];
 };
 
 function ImagesTableContainer({
@@ -26,6 +29,7 @@ function ImagesTableContainer({
     countsData,
     cveStatusTab,
     pagination,
+    onWatchImage,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -76,6 +80,7 @@ function ImagesTableContainer({
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                        onWatchImage={onWatchImage}
                     />
                 </div>
             )}

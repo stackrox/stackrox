@@ -21,6 +21,19 @@ usage() {
     echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
 }
 
+dump_logs() {
+    for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath="{${jpath}[*].name}"); do
+        kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
+        prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
+        if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
+            exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath="{${jpath}}" | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
+            if [ "$exit_code" -eq "0" ]; then
+                mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
+            fi
+        fi
+    done
+}
+
 main() {
     namespace="$1"
     if [ -z "${namespace}" ]; then
@@ -68,16 +81,12 @@ main() {
               echo '# Full YAML definition'
               kubectl get "${object}" "${item}" -n "${namespace}" -o yaml 2>&1
             } > "${log_dir}/${object}/${item}_describe.log"
-            for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
-                kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
-                prev_log_file="${log_dir}/${object}/${item}-${ctr}-previous.log"
-                if kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${prev_log_file}"; then
-                  exit_code="$(kubectl -n "${namespace}" get "${object}/${item}" -o jsonpath='{.status.containerStatuses}' | jq --arg ctr "$ctr" '.[] | select(.name == $ctr) | .lastState.terminated.exitCode')"
-                  if [ "$exit_code" -eq "0" ]; then
-                    mv "${prev_log_file}" "${log_dir}/${object}/${item}-${ctr}-prev-success.log"
-                  fi
-                fi
-            done
+
+            jpath='.status.containerStatuses'
+            dump_logs
+
+            jpath='.status.initContainerStatuses'
+            dump_logs
         done
     done
 

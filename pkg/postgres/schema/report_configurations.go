@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
@@ -44,6 +45,7 @@ var (
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_REPORT_SNAPSHOT,
 		}...)
+		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTableReportConfigurationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_REPORT_CONFIGURATIONS, schema)
 		return schema
@@ -74,5 +76,5 @@ type ReportConfigurationsNotifiers struct {
 	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree"`
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
 }

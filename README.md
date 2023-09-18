@@ -290,6 +290,10 @@ Then go to https://localhost:8000/ in your web browser.
 
 - **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
 
+- **Pull request guidelines**: [contributing.md](./github/contributing.md)
+
+- **Go coding style guide**: [go-coding-style.md](./github/go-coding-style.md) 
+
 ### Quickstart
 
 #### Build Tooling
@@ -493,7 +497,7 @@ configure paths for this plugin. See <https://github.com/jvolkman/intellij-proto
 
 </details>
 
-#### Running `sql_integration` tests
+#### Running sql_integration tests
 
 <details><summary>Click to expand</summary>
 

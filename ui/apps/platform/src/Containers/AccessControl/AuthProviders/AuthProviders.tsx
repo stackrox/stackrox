@@ -36,7 +36,6 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeading from '../AccessControlHeading';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import usePermissions from '../../../hooks/usePermissions';
-import AccessControlNoPermission from '../AccessControlNoPermission';
 
 const entityType = 'AUTH_PROVIDER';
 
@@ -63,8 +62,7 @@ function getNewAuthProviderObj(type) {
 }
 
 function AuthProviders(): ReactElement {
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
-    const hasReadAccessForPage = hasReadAccess('Access');
+    const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
     const history = useHistory();
     const { search } = useLocation();
@@ -85,21 +83,10 @@ function AuthProviders(): ReactElement {
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
     useEffect(() => {
-        if (hasReadAccessForPage) {
-            dispatch(authActions.fetchAuthProviders.request());
-            dispatch(roleActions.fetchRoles.request());
-            dispatch(groupActions.fetchGroups.request());
-        }
-    }, [dispatch, hasReadAccessForPage]);
-
-    // Return "no access" page immediately if user doesn't have enough permissions.
-    if (!hasReadAccessForPage) {
-        return (
-            <>
-                <AccessControlNoPermission subPage="auth providers" entityType={entityType} />
-            </>
-        );
-    }
+        dispatch(authActions.fetchAuthProviders.request());
+        dispatch(roleActions.fetchRoles.request());
+        dispatch(groupActions.fetchGroups.request());
+    }, [dispatch]);
 
     function onToggleCreateMenu(isOpen) {
         setIsCreateMenuOpen(isOpen);

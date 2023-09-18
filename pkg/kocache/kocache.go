@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -24,11 +23,12 @@ const (
 )
 
 var (
-	errNotFound = errors.New("not found")
+	errKoCacheShuttingDown = errors.New("kernel object cache is shutting down")
+	errProbeNotFound       = errors.New("probe not found")
 )
 
-// Options controls the behavior of the kernel object cache.
-type Options struct {
+// options controls the behavior of the kernel object cache.
+type options struct {
 	ObjMemLimit  int
 	ObjHardLimit int
 
@@ -37,10 +37,21 @@ type Options struct {
 	ErrorCleanUpAge  time.Duration
 	CleanupInterval  time.Duration
 
+	StartOnline bool
+
 	ModifyRequest func(*http.Request)
 }
 
-func (o *Options) applyDefaults() {
+// StartOffline sets the initial state of cache to offline.
+// Cache in the offline state will not attempt to reach Central.
+func StartOffline() func(o *options) {
+	return func(o *options) {
+		o.StartOnline = false
+	}
+}
+
+// defaultsOptions provides default set of options
+func applyDefaults(o *options) *options {
 	if o.ObjMemLimit == 0 {
 		o.ObjMemLimit = objMemLimit
 	}
@@ -59,34 +70,54 @@ func (o *Options) applyDefaults() {
 	if o.CleanupInterval == 0 {
 		o.CleanupInterval = cleanupInterval
 	}
+	o.StartOnline = true
+	return o
 }
 
 type koCache struct {
-	opts Options
+	*offlineCtrl
+	opts *options
 
+	parentCtx    context.Context
 	entries      map[string]*entry
-	entriesMutex sync.Mutex
+	entriesMutex *sync.Mutex
 
-	upstreamClient  *http.Client
+	upstreamClient  httpClient
 	upstreamBaseURL string
+}
+
+type httpClient interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // New returns a new kernel object cache whose lifetime is bound by the given context, using the given
 // HTTP client and base URL for upstream requests.
-func New(ctx context.Context, upstreamClient *http.Client, upstreamBaseURL string, opts Options) probeupload.ProbeSource {
-	opts.applyDefaults()
+func New(parentCtx context.Context, upstreamClient httpClient, upstreamBaseURL string, opts ...func(o *options)) *koCache {
+	opt := applyDefaults(&options{})
+	for _, option := range opts {
+		option(opt)
+	}
 	cache := &koCache{
-		opts:            opts,
+		opts:            opt,
+		parentCtx:       parentCtx,
 		entries:         make(map[string]*entry),
+		entriesMutex:    &sync.Mutex{},
 		upstreamClient:  upstreamClient,
 		upstreamBaseURL: strings.TrimSuffix(upstreamBaseURL, "/"),
+		offlineCtrl:     newOfflineCtrl(parentCtx, opt.StartOnline),
+	}
+	switch opt.StartOnline {
+	case true:
+		cache.GoOnline()
+	case false:
+		cache.GoOffline()
 	}
 
-	go cache.cleanupLoop(ctx)
+	go cache.cleanupLoop(parentCtx)
 	return cache
 }
 
-func (c *koCache) GetOrAddEntry(path string) *entry {
+func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 	c.entriesMutex.Lock()
 	defer c.entriesMutex.Unlock()
 
@@ -102,18 +133,18 @@ func (c *koCache) GetOrAddEntry(path string) *entry {
 	}
 
 	if e == nil {
-		if c.entries == nil {
-			return nil // was shutdown
+		if !c.IsOnline() {
+			return nil, context.Cause(c.Context())
+		} else if c.entries == nil {
+			return nil, errKoCacheShuttingDown
+		} else {
+			e = newEntry()
+			c.entries[path] = e
+			go e.Populate(c.Context(), c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 		}
-
-		e = newEntry()
-		c.entries[path] = e
-		go e.Populate(c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 	}
-
 	e.AcquireRef()
-
-	return e
+	return e, nil
 }
 
 func (c *koCache) cleanupLoop(ctx context.Context) {

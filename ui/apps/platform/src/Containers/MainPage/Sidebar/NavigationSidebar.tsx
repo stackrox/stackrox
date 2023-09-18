@@ -7,29 +7,23 @@ import { HasReadAccess } from 'hooks/usePermissions';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 import {
-    isRouteEnabled, // predicate function
+    RouteKey,
     accessControlBasePath,
-    accessControlPath,
     clustersBasePath,
-    clustersPathWithParam,
     collectionsBasePath,
-    collectionsPath,
     complianceBasePath,
-    complianceEnhancedBasePath,
-    compliancePath,
+    complianceEnhancedStatusPath,
     configManagementPath,
     dashboardPath,
     integrationsPath,
+    isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
     networkBasePath,
-    networkPath,
     policyManagementBasePath,
     riskBasePath,
-    riskPath,
     systemConfigPath,
     systemHealthPath,
     violationsBasePath,
-    violationsPath,
     vulnManagementPath,
     vulnManagementReportsPath,
     vulnManagementRiskAcceptancePath,
@@ -52,14 +46,14 @@ const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForVulnerabilityManagement1 = 'Vulnerability Management (1.0)';
 const keyForVulnerabilityManagement2 = 'Vulnerability Management (2.0)';
-
+const keyForCompliance2 = 'Compliance (2.0)';
 type IsActiveCallback = (pathname: string) => boolean;
 
 type ChildDescription = {
     type: 'child';
     content: string | TitleCallback | ReactElement;
     path: string;
-    to?: string; // only if path contains params
+    routeKey: RouteKey;
     isActive?: IsActiveCallback; // for example, exact match
 };
 
@@ -82,6 +76,7 @@ const navDescriptions: NavDescription[] = [
         type: 'child',
         content: 'Dashboard',
         path: dashboardPath,
+        routeKey: 'dashboard',
     },
     {
         type: 'parent',
@@ -91,45 +86,53 @@ const navDescriptions: NavDescription[] = [
             {
                 type: 'child',
                 content: 'Network Graph',
-                path: networkPath,
-                to: networkBasePath,
+                path: networkBasePath,
+                routeKey: 'network-graph',
             },
             {
                 type: 'child',
                 content: 'Listening Endpoints',
                 path: listeningEndpointsBasePath,
+                routeKey: 'listening-endpoints',
             },
         ],
     },
     {
         type: 'child',
         content: 'Violations',
-        path: violationsPath,
-        to: violationsBasePath,
+        path: violationsBasePath,
+        routeKey: 'violations',
     },
     {
-        type: 'child',
-        content: (navDescriptionsFiltered) =>
+        type: 'parent',
+        title: (navDescriptionsFiltered) =>
             navDescriptionsFiltered.some(
                 (navDescription) =>
-                    navDescription.type === 'child' && navDescription.path === compliancePath
+                    navDescription.type === 'child' && navDescription.routeKey === 'compliance'
             )
                 ? 'Compliance (2.0)'
                 : 'Compliance',
-        path: complianceEnhancedBasePath,
+        key: keyForCompliance2,
+        children: [
+            {
+                type: 'child',
+                content: 'Compliance Status',
+                path: complianceEnhancedStatusPath,
+                routeKey: 'compliance-enhanced',
+            },
+        ],
     },
     {
         type: 'child',
         content: (navDescriptionsFiltered) =>
             navDescriptionsFiltered.some(
                 (navDescription) =>
-                    navDescription.type === 'child' &&
-                    navDescription.path === complianceEnhancedBasePath
+                    navDescription.type === 'parent' && navDescription.key === keyForCompliance2
             )
                 ? 'Compliance (1.0)'
                 : 'Compliance',
-        path: compliancePath,
-        to: complianceBasePath,
+        path: complianceBasePath,
+        routeKey: 'compliance',
     },
     {
         type: 'parent',
@@ -147,11 +150,17 @@ const navDescriptions: NavDescription[] = [
                 type: 'child',
                 content: <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
                 path: vulnerabilitiesWorkloadCvesPath,
+                routeKey: 'workload-cves',
             },
             {
                 type: 'child',
-                content: 'Vulnerability Reporting',
+                content: (
+                    <NavigationContent variant="TechPreview">
+                        Vulnerability Reporting
+                    </NavigationContent>
+                ),
                 path: vulnerabilityReportsPath,
+                routeKey: 'vulnerabilities/reports',
             },
         ],
     },
@@ -171,6 +180,7 @@ const navDescriptions: NavDescription[] = [
                 type: 'child',
                 content: 'Dashboard',
                 path: vulnManagementPath,
+                routeKey: 'vulnerability-management',
                 isActive: (pathname) =>
                     Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
             },
@@ -178,11 +188,13 @@ const navDescriptions: NavDescription[] = [
                 type: 'child',
                 content: 'Risk Acceptance',
                 path: vulnManagementRiskAcceptancePath,
+                routeKey: 'vulnerability-management/risk-acceptance',
             },
             {
                 type: 'child',
                 content: 'Reporting',
                 path: vulnManagementReportsPath,
+                routeKey: 'vulnerability-management/reports',
             },
         ],
     },
@@ -190,12 +202,13 @@ const navDescriptions: NavDescription[] = [
         type: 'child',
         content: 'Configuration Management',
         path: configManagementPath,
+        routeKey: 'configmanagement',
     },
     {
         type: 'child',
         content: 'Risk',
-        path: riskPath,
-        to: riskBasePath,
+        path: riskBasePath,
+        routeKey: 'risk',
     },
     {
         type: 'parent',
@@ -205,40 +218,44 @@ const navDescriptions: NavDescription[] = [
             {
                 type: 'child',
                 content: 'Clusters',
-                path: clustersPathWithParam,
-                to: clustersBasePath,
+                path: clustersBasePath,
+                routeKey: 'clusters',
             },
             {
                 type: 'child',
                 content: 'Policy Management',
                 path: policyManagementBasePath,
+                routeKey: 'policy-management',
             },
             {
                 type: 'child',
                 content: 'Collections',
-                path: collectionsPath,
-                to: collectionsBasePath,
+                path: collectionsBasePath,
+                routeKey: 'collections',
             },
             {
                 type: 'child',
                 content: 'Integrations',
                 path: integrationsPath,
+                routeKey: 'integrations',
             },
             {
                 type: 'child',
                 content: 'Access Control',
-                path: accessControlPath,
-                to: accessControlBasePath,
+                path: accessControlBasePath,
+                routeKey: 'access-control',
             },
             {
                 type: 'child',
                 content: 'System Configuration',
                 path: systemConfigPath,
+                routeKey: 'systemconfig',
             },
             {
                 type: 'child',
                 content: 'System Health',
                 path: systemHealthPath,
+                routeKey: 'system-health',
             },
         ],
     },
@@ -262,8 +279,8 @@ function NavigationSidebar({
                     // Filter second-level children.
                     return {
                         ...navDescription,
-                        children: navDescription.children.filter(({ path }) =>
-                            isRouteEnabled(routePredicates, path)
+                        children: navDescription.children.filter(({ routeKey }) =>
+                            isRouteEnabled(routePredicates, routeKey)
                         ),
                     };
                 }
@@ -279,7 +296,7 @@ function NavigationSidebar({
                     return navDescription.children.length !== 0;
                 }
                 default: {
-                    return isRouteEnabled(routePredicates, navDescription.path);
+                    return isRouteEnabled(routePredicates, navDescription.routeKey);
                 }
             }
         });
@@ -310,12 +327,12 @@ function NavigationSidebar({
                                     }
                                 >
                                     {navDescription.children.map((childDescription) => {
-                                        const { content, path, to } = childDescription;
+                                        const { content, path } = childDescription;
                                         return (
                                             <NavigationItem
                                                 key={path}
                                                 isActive={isActiveChild(pathname, childDescription)}
-                                                path={to ?? path}
+                                                path={path}
                                                 content={
                                                     typeof content === 'function'
                                                         ? content(navDescriptionsFiltered)
@@ -328,12 +345,12 @@ function NavigationSidebar({
                             );
                         }
                         default: {
-                            const { content, path, to } = navDescription;
+                            const { content, path } = navDescription;
                             return (
                                 <NavigationItem
                                     key={path}
                                     isActive={isActiveChild(pathname, navDescription)}
-                                    path={to ?? path}
+                                    path={path}
                                     content={
                                         typeof content === 'function'
                                             ? content(navDescriptionsFiltered)

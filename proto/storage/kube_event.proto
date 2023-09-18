@@ -24,11 +24,16 @@ message KubernetesEvent {
     message Object {
         // Resource and sub-resource mapping is represented as resource_subresource.
         enum Resource {
-            UNKNOWN          = 0;
-            PODS_EXEC        = 1;
-            PODS_PORTFORWARD = 2;
-            SECRETS          = 3;
-            CONFIGMAPS       = 4;
+            UNKNOWN                      = 0;
+            PODS_EXEC                    = 1;
+            PODS_PORTFORWARD             = 2;
+            SECRETS                      = 3;
+            CONFIGMAPS                   = 4;
+            CLUSTER_ROLES                = 5;
+            CLUSTER_ROLE_BINDINGS        = 6;
+            NETWORK_POLICIES             = 7;
+            SECURITY_CONTEXT_CONSTRAINTS = 8;
+            EGRESS_FIREWALLS             = 9;
         }
 
         string   name       = 1 [(gogoproto.moretags) = 'policy:"Kubernetes Resource Name"'];

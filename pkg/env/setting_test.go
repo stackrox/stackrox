@@ -138,6 +138,10 @@ func TestSettingEnvVarsStartWithRox(t *testing.T) {
 		if k == NotifyEveryRuntimeEvent.EnvVar() {
 			continue
 		}
+		// This one needs to be aligned with scanner and sensor, so more common POD_NAMESPACE name was chosen.
+		if k == Namespace.EnvVar() {
+			continue
+		}
 		assert.True(t, strings.HasPrefix(k, "ROX_"), "Env var %s doesn't start with ROX_", k)
 	}
 }

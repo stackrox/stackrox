@@ -62,8 +62,8 @@ func newModule(name string, logLevel zap.AtomicLevel) *Module {
 }
 
 // Logger returns a new logger for m.
-func (m *Module) Logger() *LoggerImpl {
-	return CreateLogger(m, 0)
+func (m *Module) Logger(opts ...OptionsFunc) *LoggerImpl {
+	return CreateLogger(m, 0, opts...)
 }
 
 // Name returns the name of m

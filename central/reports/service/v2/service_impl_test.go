@@ -2,6 +2,7 @@ package v2
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -66,7 +67,9 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 		s.T().Skip("Skip test when reporting enhancements are disabled")
 		s.T().SkipNow()
 	}
+}
 
+func (s *ReportServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.reportConfigDataStore = reportConfigDSMocks.NewMockDataStore(s.mockCtrl)
@@ -80,6 +83,10 @@ func (s *ReportServiceTestSuite) SetupSuite() {
 }
 
 func (s *ReportServiceTestSuite) TearDownSuite() {
+	s.mockCtrl.Finish()
+}
+
+func (s *ReportServiceTestSuite) TeardownTest() {
 	s.mockCtrl.Finish()
 }
 
@@ -137,14 +144,68 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	s.Error(err)
 }
 
+func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
+
+	requester := &storage.SlimUser{
+		Id:   "uid",
+		Name: "name",
+	}
+
+	status := &storage.ReportStatus{
+		RunState: storage.ReportStatus_WAITING,
+	}
+
+	reportSnapshots := []*storage.ReportSnapshot{{
+		ReportId:     "test_report",
+		Name:         "test_report",
+		ReportStatus: status,
+		Requester:    requester,
+	},
+	}
+	user := reportSnapshots[0].GetRequester()
+	userContext := s.getContextForUser(user)
+
+	protoReportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
+		Return(protoReportConfig, true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return(reportSnapshots, nil).Times(1)
+	s.collectionDataStore.EXPECT().Exists(gomock.Any(), gomock.Any()).Return(true, nil).Times(1)
+	requestConfig := &apiV2.ReportConfiguration{
+		Id:   "test_rep",
+		Name: "test_rep",
+		ResourceScope: &apiV2.ResourceScope{
+			ScopeReference: &apiV2.ResourceScope_CollectionScope{
+				CollectionScope: &apiV2.CollectionReference{
+					CollectionId:   "collection-test",
+					CollectionName: "collection-test",
+				},
+			},
+		},
+		Filter: &apiV2.ReportConfiguration_VulnReportFilters{
+			VulnReportFilters: &apiV2.VulnerabilityReportFilters{
+				Fixability: apiV2.VulnerabilityReportFilters_FIXABLE,
+				Severities: []apiV2.VulnerabilityReportFilters_VulnerabilitySeverity{apiV2.VulnerabilityReportFilters_CRITICAL_VULNERABILITY_SEVERITY},
+				ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{
+					apiV2.VulnerabilityReportFilters_DEPLOYED,
+					apiV2.VulnerabilityReportFilters_WATCHED,
+				},
+				CvesSince: &apiV2.VulnerabilityReportFilters_SinceLastSentScheduledReport{SinceLastSentScheduledReport: true},
+			},
+		},
+	}
+	_, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
+	s.Error(err)
+
+}
+
 func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
-	allAccessContext := sac.WithAllAccess(context.Background())
 	s.scheduler.EXPECT().UpsertReportSchedule(gomock.Any()).Return(nil).AnyTimes()
 
 	creator := &storage.SlimUser{
 		Id:   "uid",
 		Name: "name",
 	}
+	userContext := s.getContextForUser(creator)
 
 	accessScopeRules := []*storage.SimpleAccessScope_Rules{
 		{
@@ -161,11 +222,12 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				protoReportConfig := tc.reportConfigGen()
 				protoReportConfig.Creator = creator
 				protoReportConfig.GetVulnReportFilters().AccessScopeRules = accessScopeRules
-				s.reportConfigDataStore.EXPECT().GetReportConfiguration(allAccessContext, protoReportConfig.GetId()).
+				s.reportConfigDataStore.EXPECT().GetReportConfiguration(userContext, protoReportConfig.GetId()).
 					Return(protoReportConfig, true, nil).Times(1)
-				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(allAccessContext, protoReportConfig).Return(nil).Times(1)
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(userContext, gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
+				s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(userContext, protoReportConfig).Return(nil).Times(1)
 			}
-			result, err := s.service.UpdateReportConfiguration(allAccessContext, requestConfig)
+			result, err := s.service.UpdateReportConfiguration(userContext, requestConfig)
 			if tc.isValidationError {
 				s.Error(err)
 			} else {
@@ -354,6 +416,7 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 		if !tc.isError {
 			s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), gomock.Any()).
 				Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
+			s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
 			s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(allAccessContext, tc.id).Return(nil).Times(1)
 		}
 		_, err := s.service.DeleteReportConfiguration(allAccessContext, &apiV2.ResourceByID{Id: tc.id})
@@ -497,6 +560,24 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			isValidationError: true,
 		},
 		{
+			desc: "Report config with invalid notifier: Custom email subject too long",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = strings.Repeat("a", validation.CustomEmailSubjectMaxLen+1)
+				return ret
+			},
+			isValidationError: true,
+		},
+		{
+			desc: "Report config with invalid notifier: Custom email body too long",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Notifiers[0].GetEmailConfig().CustomBody = strings.Repeat("a", validation.CustomEmailBodyMaxLen+1)
+				return ret
+			},
+			isValidationError: true,
+		},
+		{
 			desc: "Report config with invalid notifier : invalid email in email config",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
@@ -568,6 +649,19 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.CvesSince = nil
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
+				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
+
+				s.mockCollectionStoreCalls(ret, true, true, isUpdate)
+				return ret
+			},
+			isValidationError: true,
+		},
+		{
+			desc: "Report config with invalid vuln report filters : image types not set",
+			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
+				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+				ret.Filter.(*apiV2.ReportConfiguration_VulnReportFilters).VulnReportFilters.ImageTypes = nil
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[0], true, true, isUpdate)
 				s.mockNotifierStoreCalls(ret.GetNotifiers()[1], true, true, isUpdate)
 

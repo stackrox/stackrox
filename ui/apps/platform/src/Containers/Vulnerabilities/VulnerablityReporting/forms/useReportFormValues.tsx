@@ -33,7 +33,7 @@ export type SetReportFormFieldValue = (fieldName: string, value: FormFieldValue)
 
 export type ReportParametersFormValues = {
     reportName: string;
-    description: string;
+    reportDescription: string;
     cveSeverities: VulnerabilitySeverity[];
     cveStatus: CVEStatus[];
     imageType: ImageType[];
@@ -71,7 +71,7 @@ export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
     reportParameters: {
         reportName: '',
-        description: '',
+        reportDescription: '',
         cveSeverities: ['CRITICAL_VULNERABILITY_SEVERITY', 'IMPORTANT_VULNERABILITY_SEVERITY'],
         cveStatus: ['FIXABLE'],
         imageType: ['DEPLOYED', 'WATCHED'],
@@ -91,7 +91,7 @@ const validationSchema = yup.object().shape({
     reportId: yup.string(),
     reportParameters: yup.object().shape({
         reportName: yup.string().required('Report name is required'),
-        description: yup.string(),
+        reportDescription: yup.string(),
         cveSeverities: yup
             .array()
             .of(yup.string().oneOf(vulnerabilitySeverities))
@@ -148,19 +148,18 @@ const validationSchema = yup.object().shape({
         intervalType: yup
             .string()
             .oneOf(intervalTypes)
+            .nullable()
             .strict()
-            .test(
-                'non-empty-delivery-destinations',
-                'A schedule frequency is required',
-                (value, context) => {
-                    const deliveryDestinations = context?.from?.[1].value.deliveryDestinations;
-                    if (deliveryDestinations.length !== 0) {
-                        return value === 'MONTHLY' || value === 'WEEKLY';
-                    }
-                    return true;
+            .test('schedule-is-required', 'A schedule is required', (value, context) => {
+                if (!context.from) {
+                    return false;
                 }
-            )
-            .notRequired(),
+                const contextValue: ReportFormValues = context.from[context.from.length - 1].value;
+                if (contextValue.reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
+                    return value !== null;
+                }
+                return true;
+            }),
         daysOfWeek: yup
             .array()
             .of(yup.string().oneOf(daysOfWeek))

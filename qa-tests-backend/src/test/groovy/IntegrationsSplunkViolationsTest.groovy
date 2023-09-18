@@ -23,6 +23,7 @@ import util.Timer
 
 import org.junit.Rule
 import org.junit.rules.Timeout
+import spock.lang.Ignore
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -42,7 +43,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     "splunk-common-information-model-cim_511.tgz")
     private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
     private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
-    private static final String TEST_NAMESPACE = "qa-splunk-violation"
+    private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
 
     private SplunkDeployment splunkDeployment
@@ -106,6 +107,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     }
 
     @Tag("Integration")
+    @Ignore("ROX-15348")
     def "Verify Splunk violations: StackRox violations reach Splunk TA"() {
         given:
         "Splunk TA is installed and configured, network and process violations triggered"

@@ -1,7 +1,7 @@
 import axios from './instance';
 import { Empty } from './types';
 
-type IntegrationSource =
+export type IntegrationSource =
     | 'authProviders'
     | 'backups'
     | 'imageIntegrations'

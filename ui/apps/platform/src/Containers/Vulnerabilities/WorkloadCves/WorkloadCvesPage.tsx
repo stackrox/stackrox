@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link, Route, Switch } from 'react-router-dom';
-import { Alert, PageSection } from '@patternfly/react-core';
+import { Route, Switch } from 'react-router-dom';
+import { PageSection } from '@patternfly/react-core';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 
 import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import TechPreviewBanner from 'Components/TechPreviewBanner';
 import DeploymentPage from './Deployment/DeploymentPage';
 import ImagePage from './Image/ImagePage';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
@@ -20,16 +21,10 @@ const vulnerabilitiesWorkloadCveDeploymentSinglePath = `${vulnerabilitiesWorkloa
 function WorkloadCvesPage() {
     return (
         <>
-            <Alert
-                variant="warning"
-                isInline
-                title={
-                    <span>
-                        This is a Technology Preview of this feature. For all production
-                        requirements we recommend using{' '}
-                        <Link to={vulnManagementPath}>Vulnerability Management (1.0)</Link>
-                    </span>
-                }
+            <TechPreviewBanner
+                featureURL={vulnManagementPath}
+                featureName="Vulnerability Management (1.0)"
+                routeKey="vulnerability-management"
             />
             <Switch>
                 <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />

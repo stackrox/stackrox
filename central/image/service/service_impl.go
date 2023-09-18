@@ -8,6 +8,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	cluster "github.com/stackrox/rox/central/cluster/datastore"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -101,6 +103,8 @@ type serviceImpl struct {
 	internalScanSemaphore *semaphore.Weighted
 
 	scanWaiterManager waiter.Manager[*storage.Image]
+
+	clusterDataStore cluster.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -303,6 +307,17 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
+
+	if request.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterDataStore, request.GetCluster())
+		if err != nil {
+			return nil, err
+		}
+
+		enrichmentCtx.ClusterID = clusterID
+	}
+
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		return nil, err
@@ -399,12 +414,12 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	}
 
 	var imgExists bool
+	var existingImg *storage.Image
 	forceSigVerificationUpdate := true
 	forceScanUpdate := true
 	imgID := request.GetImageId()
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
-		var existingImg *storage.Image
 		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
@@ -440,10 +455,11 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		Id:   imgID,
 		Name: request.GetImageName(),
 		// 'Names' must be populated to enable cache hits in central AND sensor.
-		Names:          []*storage.ImageName{request.GetImageName()},
+		Names:          buildNames(request.GetImageName(), request.GetMetadata()),
 		Signature:      request.GetImageSignature(),
 		Metadata:       request.GetMetadata(),
 		Notes:          request.GetImageNotes(),
+		Scan:           existingImg.GetScan(),
 		IsClusterLocal: true,
 	}
 
@@ -455,6 +471,9 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				s.informScanWaiter(request.GetRequestId(), nil, err)
 				return nil, err
 			}
+		} else {
+			// If we didn't update the scan, fill in the stats from existing image (if there is one).
+			enricher.FillScanStats(img)
 		}
 
 		if forceSigVerificationUpdate {
@@ -483,6 +502,23 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 
 	s.informScanWaiter(request.GetRequestId(), img, err)
 	return internalScanRespFromImage(img), nil
+}
+
+// buildNames returns a slice containing the known image names from the various parameters.
+func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []*storage.ImageName {
+	names := []*storage.ImageName{srcImage}
+
+	// Add a mirror name if exists.
+	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
+		mirrorImg, err := utils.GenerateImageFromString(mirror)
+		if err != nil {
+			log.Warnf("Failed generating image from string %q: %v", mirror, err)
+		} else {
+			names = append(names, mirrorImg.GetName())
+		}
+	}
+
+	return names
 }
 
 func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr error) {

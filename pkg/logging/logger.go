@@ -43,6 +43,7 @@ type Logger interface {
 type LoggerImpl struct {
 	InnerLogger *zap.SugaredLogger
 	module      *Module
+	opts        *options
 }
 
 // Log logs at level.
@@ -144,6 +145,8 @@ func (l *LoggerImpl) Errorf(template string, args ...interface{}) {
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Errorw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Errorw(msg, keysAndValues...)
+
+	l.createAdministrationEventFromLog(msg, "error", keysAndValues...)
 }
 
 // Warn uses fmt.Sprintf to construct and log a message.
@@ -160,6 +163,8 @@ func (l *LoggerImpl) Warnf(template string, args ...interface{}) {
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Warnw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Warnw(msg, keysAndValues...)
+
+	l.createAdministrationEventFromLog(msg, "warn", keysAndValues...)
 }
 
 // Info uses fmt.Sprintf to construct and log a message.
@@ -176,6 +181,8 @@ func (l *LoggerImpl) Infof(template string, args ...interface{}) {
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Infow(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Infow(msg, keysAndValues...)
+
+	l.createAdministrationEventFromLog(msg, "info", keysAndValues...)
 }
 
 // Debug uses fmt.Sprintf to construct and log a message.
@@ -192,4 +199,15 @@ func (l *LoggerImpl) Debugf(template string, args ...interface{}) {
 // The variadic key-value pairs are treated as in zap SugaredLogger With.
 func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Debugw(msg, keysAndValues...)
+}
+
+func (l *LoggerImpl) createAdministrationEventFromLog(msg string, level string, keysAndValues ...interface{}) {
+	// Short-circuit if no log event stream or converter is found.
+	if l.opts.AdministrationEventsStream == nil || l.opts.AdministrationEventsConverter == nil {
+		return
+	}
+
+	// We will use the log converter to convert logs to an events.AdministrationEvent.
+	event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
+	l.opts.AdministrationEventsStream.Produce(event)
 }

@@ -214,8 +214,8 @@ type OpenShiftMonitoring struct {
 	Enabled bool `json:"enabled"`
 }
 
-// IsOpenShiftMonitoringEnabled returns true if OpenShiftMonitoring is enabled.
+// IsOpenShiftMonitoringDisabled returns true if OpenShiftMonitoring is disabled.
 // This function is nil safe.
-func (m *GlobalMonitoring) IsOpenShiftMonitoringEnabled() bool {
-	return m != nil && m.OpenShiftMonitoring != nil && m.OpenShiftMonitoring.Enabled
+func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
+	return m != nil && m.OpenShiftMonitoring != nil && !m.OpenShiftMonitoring.Enabled
 }

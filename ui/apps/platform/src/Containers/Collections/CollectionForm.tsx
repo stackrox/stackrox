@@ -50,7 +50,7 @@ function AttachedCollectionTable({
 }: {
     collections: Collection[];
     collectionTableCells: CollectionAttacherProps['collectionTableCells'];
-}) {
+}): ReactElement {
     return collections.length > 0 ? (
         <TableComposable aria-label="Attached collections">
             <Tbody>
@@ -90,8 +90,6 @@ export type CollectionFormProps = {
     getCollectionTableCells: (
         collectionErrorId: string | undefined
     ) => CollectionAttacherProps['collectionTableCells'];
-    /* content to render before the main form */
-    headerContent?: ReactElement;
 };
 
 function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
@@ -217,7 +215,7 @@ function CollectionForm({
     onSubmit,
     onCancel,
     getCollectionTableCells,
-}: CollectionFormProps) {
+}: CollectionFormProps): ReactElement {
     const isReadOnly = action.type === 'view' || !hasWriteAccessForCollections;
 
     const { isOpen: isRuleSectionOpen, onToggle: ruleSectionOnToggle } = useSelectToggle(true);
