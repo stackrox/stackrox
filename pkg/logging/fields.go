@@ -2,7 +2,6 @@ package logging
 
 import (
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/set"
 	"go.uber.org/zap"
 )
 
@@ -19,13 +18,6 @@ var (
 		imageIDField:   resources.Image.String(),
 		clusterIDField: resources.Cluster.String(),
 		nodeIDField:    resources.Node.String(),
-	}
-
-	// Defines the priority between resource type fields. In case multiple resource types are specified, the ones with
-	// the higher priority will be take higher priority and used for things like the resource type of the event.
-	resourceTypePriority = []set.StringSet{
-		set.NewStringSet(imageIDField, clusterIDField, imageField),
-		set.NewStringSet(clusterIDField),
 	}
 )
 
@@ -59,18 +51,4 @@ func NodeID(id string) zap.Field {
 func getResourceTypeField(field zap.Field) (string, bool) {
 	resource, exists := resourceTypeFields[field.Key]
 	return resource, exists
-}
-
-// getHigherPriorityResourceField returns true if the new resource is higher priority than the previous resource.
-// Note that when both fields are equal in priority, the existing resource will be kept and false will be returned.
-func getHigherPriorityResourceField(newResource string, existingResource string) bool {
-	for priority := range resourceTypePriority {
-		if resourceTypePriority[priority].Contains(existingResource) {
-			return false
-		}
-		if resourceTypePriority[priority].Contains(newResource) {
-			return true
-		}
-	}
-	return false
 }

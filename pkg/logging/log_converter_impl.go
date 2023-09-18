@@ -1,8 +1,11 @@
 package logging
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"go.uber.org/zap"
 )
 
@@ -25,11 +28,15 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		if field, ok := c.(zap.Field); ok {
 			field.AddTo(enc)
 			if resource, exists := getResourceTypeField(field); exists {
-				// Allow structured logs to specify multiple resource fields (e.g. when a log is notifying about a
-				// node for a specific cluster). Ensure the highest priority resource field is used. A field is the
-				// highest priority when it should be the resource type. When both cluster and node is given, we
-				// use node as the resource type as it is assumed it is the main resource associated with the log.
-				if getHigherPriorityResourceField(field.Key, resourceTypeKey) {
+				if resourceType != "" {
+					// We cannot import utils.Should, hence need to handle this conditionally here ourselves.
+					err := fmt.Errorf("duplicate resource field found: %s", field.Key)
+					if buildinfo.ReleaseBuild {
+						thisModuleLogger.Errorf("Failed to create event: %v", err)
+					} else {
+						thisModuleLogger.Panicf("Failed to create event: %v", err)
+					}
+				} else {
 					resourceType = resource
 					resourceTypeKey = field.Key
 				}

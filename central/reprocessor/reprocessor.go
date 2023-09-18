@@ -384,9 +384,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					},
 				})
 				if err != nil {
-					log.Errorw("Error sending updated image to sensor",
-						logging.ImageName(image.GetName().GetFullName()),
-						logging.ClusterID(clusterID), logging.Err(err))
+					log.Errorw("Error sending updated image to sensor "+clusterID,
+						logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 				}
 			}
 		}(result.ID, clusterIDSet)
