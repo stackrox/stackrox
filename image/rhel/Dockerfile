@@ -1,9 +1,11 @@
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_TAG=8.6
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
-ARG RPMS_BASE_IMAGE=ubi8
 ARG BASE_TAG=8.6
 
-FROM ${BASE_REGISTRY}/${RPMS_BASE_IMAGE}:${BASE_TAG} AS downloads
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
 
 ARG DEBUG_BUILD=no
 
@@ -14,7 +16,7 @@ RUN /download.sh
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
 
 RUN mkdir /stackrox-data
-RUN microdnf upgrade --nobest && microdnf install openssl zip
+RUN microdnf upgrade --nobest -y  && microdnf install -y openssl zip
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
@@ -71,11 +73,11 @@ RUN ln -s entrypoint-wrapper.sh /stackrox/admission-control && \
     ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
     ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux && \
     rpm --import RPM-GPG-KEY-CentOS-Official && \
-    microdnf upgrade && \
+    microdnf -y upgrade && \
     rpm -i --nodeps /tmp/postgres-libs.rpm && \
     rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs lz4 bzip2 util-linux && \
-    microdnf clean all && \
+    microdnf install --setopt=install_weak_deps=0 --setopt=tsflags=nodocs -y lz4 bzip2 util-linux && \
+    microdnf clean all -y && \
     rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     # TODO(ROX-13934): Potentially add *RPM* to this list again

@@ -17,10 +17,10 @@ mkdir $output_dir
 
 if [[ "$arch" == "s390x" ]]; then
   yum install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs postgresql-server postgresql-contrib
-  mv /tmp/postgresql-contrib-*.rpm /rpms/postgres-contrib.rpm
-  mv /tmp/postgresql-server-*.rpm /rpms/postgres-server.rpm
-  mv /tmp/postgresql-private-libs-*.rpm /rpms/postgres-libs.rpm
-  mv /tmp/postgresql-*.rpm /rpms/postgres.rpm
+  mv /tmp/postgresql-contrib-*.rpm "${output_dir}/postgres-contrib.rpm"
+  mv /tmp/postgresql-server-*.rpm "${output_dir}/postgres-server.rpm"
+  mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/postgres-libs.rpm"
+  mv /tmp/postgresql-*.rpm "${output_dir}/postgres.rpm"
 else
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"

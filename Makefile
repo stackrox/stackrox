@@ -75,9 +75,9 @@ ifeq ($(UNAME_M),s390x)
 	CENTRAL_DB_DOCKER_ARGS := \
 		--build-arg="BASE_IMAGE=ubi9-minimal" \
 		--build-arg="BASE_TAG=9.2" \
-		--build-arg="POSTGRES_REGISTRY=quay.io" \
-		--build-arg="POSTGRES_BASE_IMAGE=centos/centos" \
-		--build-arg="POSTGRES_BASE_TAG=stream9"
+		--build-arg="RPMS_REGISTRY=quay.io" \
+		--build-arg="RPMS_BASE_IMAGE=centos/centos" \
+		--build-arg="RPMS_BASE_TAG=stream9"
 endif
 
 ifeq ($(UNAME_S),Darwin)
@@ -575,6 +575,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		--build-arg LABEL_VERSION=$(TAG) \
 		--build-arg LABEL_RELEASE=$(TAG) \
 		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+		$(CENTRAL_DB_DOCKER_ARGS) \
 		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"

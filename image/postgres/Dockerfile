@@ -1,11 +1,11 @@
-ARG POSTGRES_REGISTRY=registry.access.redhat.com
-ARG POSTGRES_BASE_IMAGE=ubi8
-ARG POSTGRES_BASE_TAG=8.7
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_TAG=8.7
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=8.7
 
-FROM ${POSTGRES_REGISTRY}/${POSTGRES_BASE_IMAGE}:${POSTGRES_BASE_TAG} AS postgres_rpms
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
 COPY download.sh /download.sh
 RUN /download.sh
