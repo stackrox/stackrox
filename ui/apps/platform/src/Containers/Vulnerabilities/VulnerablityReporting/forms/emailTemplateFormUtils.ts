@@ -1,11 +1,6 @@
 import * as yup from 'yup';
-import { FormikProps } from 'formik';
 
-import {
-    ReportFormValues,
-    emailBodyValidation,
-    emailSubjectValidation,
-} from './useReportFormValues';
+import { emailBodyValidation, emailSubjectValidation } from './useReportFormValues';
 
 // Helper functions
 
@@ -18,22 +13,10 @@ export const defaultEmailBody =
 export const defaultEmailBodyWithNoCVEsFound =
     'Red Hat Advanced Cluster Security (RHACS) for Kubernetes has identified no workload CVEs in the images matched by the following report configuration parameters.\n\nPlease note that an attachment of the report data will not be provided if no CVEs are found.';
 
-export function getDefaultEmailSubject(formik: FormikProps<ReportFormValues>): string {
+export function getDefaultEmailSubject(reportName, reportScope = ''): string {
     return defaultEmailSubjectTemplate
-        .replace('<Config name>', formik.values.reportParameters.reportName)
-        .replace('<Collection name>', formik.values.reportParameters.reportScope?.name || '');
-}
-
-export function isDefaultEmailSubject(emailSubject: string): boolean {
-    // Create a regex from the template by escaping special characters and replacing the markers with regex wildcards
-    const regex = new RegExp(
-        `^${defaultEmailSubjectTemplate
-            .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape special chars
-            .replace(/<Config name>/g, '.*') // replace <Config name> marker
-            .replace(/<Collection name>/g, '.*')}$` // replace <Collection name> marker
-    );
-
-    return regex.test(emailSubject);
+        .replace('<Config name>', reportName)
+        .replace('<Collection name>', reportScope);
 }
 
 export function isDefaultEmailTemplate(emailSubject: string, emailBody: string): boolean {

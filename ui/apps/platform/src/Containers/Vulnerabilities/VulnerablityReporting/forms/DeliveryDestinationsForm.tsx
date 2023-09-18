@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import {
     Alert,
     AlertVariant,
@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { FormikProps } from 'formik';
-import get from 'lodash/get';
+import isEqual from 'lodash/isEqual';
 
 import {
     DeliveryDestination,
@@ -34,9 +34,9 @@ import RepeatScheduleDropdown from 'Components/PatternFly/RepeatScheduleDropdown
 import DayPickerDropdown from 'Components/PatternFly/DayPickerDropdown';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useIndexKey from 'hooks/useIndexKey';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import NotifierSelection from './NotifierSelection';
 import EmailTemplateFormModal from './EmailTemplateFormModal';
+import useEmailTemplateModal from '../hooks/useEmailTemplateModal';
 
 export type DeliveryDestinationsFormParams = {
     title: string;
@@ -48,27 +48,32 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
     const hasNotifierWriteAccess = hasReadWriteAccess('Integration');
     const { keyFor } = useIndexKey();
 
-    // @TODO: refactor useSelectToggle into a useToggle for a more generic name
     const {
-        isOpen: isEmailTemplateModalOpen,
-        openSelect: openEmailTemplateModal,
-        closeSelect: closeEmailTemplateModal,
-    } = useSelectToggle();
-    const [selectedDeliveryDestinationIndex, setSelectedDeliveryDestinationIndex] =
-        useState<number>(0);
-    const [emailSubjectToEdit, setEmailSubjectToEdit] = useState<string>('');
-    const [emailBodyToEdit, setEmailBodyToEdit] = useState<string>('');
+        isEmailTemplateModalOpen,
+        closeEmailTemplateModal,
+        selectedEmailSubject,
+        selectedEmailBody,
+        selectedDeliveryDestination,
+        setSelectedDeliveryDestination,
+    } = useEmailTemplateModal();
 
-    const defaultEmailSubject = getDefaultEmailSubject(formik);
+    const defaultEmailSubject = getDefaultEmailSubject(
+        formik.values.reportParameters.reportName,
+        formik.values.reportParameters.reportScope?.name
+    );
 
     function onEmailTemplateChange(formData: EmailTemplateFormData) {
-        const deliveryDestinationFieldId = `deliveryDestinations[${selectedDeliveryDestinationIndex}]`;
-        const prevDeliveryDestination = get(formik.values, deliveryDestinationFieldId);
-        formik.setFieldValue(deliveryDestinationFieldId, {
-            ...prevDeliveryDestination,
-            customSubject: formData.emailSubject,
-            customBody: formData.emailBody,
-        });
+        const index = formik.values.deliveryDestinations.findIndex((deliveryDestination) =>
+            isEqual(deliveryDestination, selectedDeliveryDestination)
+        );
+        if (index >= 0) {
+            const prevDeliveryDestination = formik.values.deliveryDestinations[index];
+            formik.setFieldValue(`deliveryDestinations[${index}]`, {
+                ...prevDeliveryDestination,
+                customSubject: formData.emailSubject,
+                customBody: formData.emailBody,
+            });
+        }
     }
 
     function addDeliveryDestination() {
@@ -229,16 +234,9 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                                                                     isInline
                                                                     icon={<PencilAltIcon />}
                                                                     onClick={() => {
-                                                                        setSelectedDeliveryDestinationIndex(
-                                                                            index
+                                                                        setSelectedDeliveryDestination(
+                                                                            deliveryDestination
                                                                         );
-                                                                        setEmailSubjectToEdit(
-                                                                            deliveryDestination.customSubject
-                                                                        );
-                                                                        setEmailBodyToEdit(
-                                                                            deliveryDestination.customBody
-                                                                        );
-                                                                        openEmailTemplateModal();
                                                                     }}
                                                                     iconPosition="right"
                                                                 >
@@ -347,8 +345,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 isOpen={isEmailTemplateModalOpen}
                 onClose={closeEmailTemplateModal}
                 onChange={onEmailTemplateChange}
-                initialEmailSubject={emailSubjectToEdit}
-                initialEmailBody={emailBodyToEdit}
+                initialEmailSubject={selectedEmailSubject}
+                initialEmailBody={selectedEmailBody}
                 defaultEmailSubject={defaultEmailSubject}
                 defaultEmailBody={defaultEmailBody}
             />

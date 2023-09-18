@@ -70,7 +70,7 @@ export type ReportNotifier = {
 };
 
 export const maxEmailSubjectLength = 256;
-export const maxEmailBodyLength = 1000;
+export const maxEmailBodyLength = 1500;
 
 export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
