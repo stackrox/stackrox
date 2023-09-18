@@ -49,7 +49,7 @@
     },
     "devDependencies": {
         "chalk-cli": "^5.0.0",
-        "lerna": "^3.22.1",
+        "lerna": "^5.6.1",
         "postinstall-postinstall": "^2.1.0"
     }
 }
