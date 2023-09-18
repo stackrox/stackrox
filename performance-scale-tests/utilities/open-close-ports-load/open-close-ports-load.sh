@@ -27,8 +27,7 @@ end_port=$increment
 for ((i = 0; i < num_concurrent; i = i + 1)); do
     $(run_open_close_ports_load_forever "$start_port" "$end_port" "$num_per_second") &
     nohup bash -c "$(declare -f run_open_close_ports_load_forever)" &
-    start_port=$((start_port + increment))  
-    end_port=$((end_port + increment))  
+    start_port=$((start_port + increment))
+    end_port=$((end_port + increment))
 done
-
 

@@ -14,6 +14,6 @@ export KUBECONFIG="$artifacts_dir"/kubeconfig
 "$DIR"/start-central-and-scanner.sh "$artifacts_dir"
 "$DIR"/wait-for-pods.sh "$artifacts_dir"
 "$DIR"/get-bundle.sh "$artifacts_dir"
-"$DIR"/start-secured-cluster.sh "$artifacts_dir" "$collector_image_tag" "$collector_image_registry" 
+"$DIR"/start-secured-cluster.sh "$artifacts_dir" "$collector_image_tag" "$collector_image_registry"
 "$DIR"/wait-for-pods.sh "$artifacts_dir"
 "$DIR"/turn-on-monitoring.sh "$artifacts_dir"

@@ -59,12 +59,12 @@ void open_and_close_ports(int start_port, int end_port, float num_per_second) {
     clock_gettime(CLOCK_MONOTONIC, &func_start_time);
 
     for (int port = start_port; port <= end_port; port++) {
-    	clock_gettime(CLOCK_MONOTONIC, &start_time);
+	clock_gettime(CLOCK_MONOTONIC, &start_time);
 
         server_fds[port - start_port] = open_port(port);
 
-    	clock_gettime(CLOCK_MONOTONIC, &end_time);
-	elapsed_time = ((double)(end_time.tv_sec - start_time.tv_sec)) + 
+	clock_gettime(CLOCK_MONOTONIC, &end_time);
+	elapsed_time = ((double)(end_time.tv_sec - start_time.tv_sec)) +
                        ((double)(end_time.tv_nsec - start_time.tv_nsec)) / 1.0e9;
 
         if (elapsed_time < sleep_time) {
@@ -73,7 +73,7 @@ void open_and_close_ports(int start_port, int end_port, float num_per_second) {
         }
     }
     clock_gettime(CLOCK_MONOTONIC, &func_end_time);
-    elapsed_time = ((double)(func_end_time.tv_sec - func_start_time.tv_sec)) + 
+    elapsed_time = ((double)(func_end_time.tv_sec - func_start_time.tv_sec)) +
                    ((double)(func_end_time.tv_nsec - func_start_time.tv_nsec)) / 1.0e9;
 
     float real_num_per_second = (float)nports / elapsed_time;
@@ -84,14 +84,14 @@ void open_and_close_ports(int start_port, int end_port, float num_per_second) {
     printf("Closing ports");
 
     for (int port = start_port; port <= end_port; port++) {
-    	clock_gettime(CLOCK_MONOTONIC, &start_time);
+	clock_gettime(CLOCK_MONOTONIC, &start_time);
 
 	if (server_fds[port - start_port] != -1) {
 		close(server_fds[port - start_port]);
 	}
 
-    	clock_gettime(CLOCK_MONOTONIC, &end_time);
-	elapsed_time = ((double)(end_time.tv_sec - start_time.tv_sec)) + 
+	clock_gettime(CLOCK_MONOTONIC, &end_time);
+	elapsed_time = ((double)(end_time.tv_sec - start_time.tv_sec)) +
                        ((double)(end_time.tv_nsec - start_time.tv_nsec)) / 1.0e9;
 
         if (elapsed_time < sleep_time) {
@@ -117,4 +117,3 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
-
