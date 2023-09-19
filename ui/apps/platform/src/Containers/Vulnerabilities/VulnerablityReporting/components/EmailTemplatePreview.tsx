@@ -70,9 +70,9 @@ function EmailTemplatePreview({
                     </CardBody>
                     <CardFooter>
                         {/* 
-                                        NOTE: When using this in plain HTML, replace the style
-                                        object with a style string like this: style="padding: 0 0 10px 0;"
-                                    */}
+                            NOTE: When using this in plain HTML, replace the style
+                            object with a style string like this: style="padding: 0 0 10px 0;"
+                        */}
                         <div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>

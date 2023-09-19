@@ -110,7 +110,7 @@ function EmailTemplateFormModal({
                 >
                     Apply
                 </Button>,
-                <Button key="cancel" variant="secondary" onClick={onCloseHandler}>
+                <Button key="cancel" variant="plain" isInline onClick={onCloseHandler}>
                     Cancel
                 </Button>,
             ]}
