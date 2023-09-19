@@ -254,6 +254,12 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_LABELS_ARGS) tests/upgrade
 
+.PHONY: test-bundle-helpers
+test-bundle-helpers: ## Run Python unit tests against helper scripts.
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	pytest -v bundle_helpers
+
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -408,7 +414,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 # Copy the original bundle to build/ directory.
 	mkdir -p build/
 	rm -rf build/bundle
