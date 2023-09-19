@@ -5,7 +5,12 @@ load "../helpers.bash"
 output_dir=""
 
 setup_file() {
-  echo "Testing roxctl version: '$(roxctl-development version)'" >&3
+  local -r roxctl_version="$(roxctl-development version || true)"
+  echo "Testing roxctl version: '${roxctl_version}'" >&3
+  echo "Using Bats version: '${BATS_VERSION}'" >&3
+
+  # Using flags on `run` requires at least BATS_VERSION=1.5.0
+  bats_require_minimum_version 1.5.0
 
   command -v cat || skip "Command 'cat' required."
   command -v grep || skip "Command 'grep' required."
