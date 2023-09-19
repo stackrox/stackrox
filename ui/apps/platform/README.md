@@ -252,9 +252,9 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 Read and obey comments to add strings or properties **in alphabetical order to minimize merge conflicts**.
 
-1. Edit ui/apps/platform/src/routePaths.ts file:
+1. Edit ui/apps/platform/src/routePaths.ts file.
 
-    * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element:
+    * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
 
         * Use a **plural** noun for something like **clusters**.
         * Use a **singular** noun for something like **compliance**.
@@ -264,13 +264,13 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         export const whateversPathWithParam = `${whateversBasePath}/:id?`;
         ```
 
-    * Add a string to `RouteKey` type **in alphabetical order** to minimize merge conflicts:
+    * Add a string to `RouteKey` type.
 
         ```ts
         | 'whatevers'
         ```
 
-    * Add a property to `routeRequirementsMap` object **in alphabetical order** to minimize merge conflicts:
+    * Add a property to `routeRequirementsMap` object.
 
         Specify a feature flag during development of a new route.
 
@@ -283,15 +283,15 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         },
         ```
 
-2. Edit ui/apps/platform/src/Containers/MainPage/Body.tsx
+2. Edit ui/apps/platform/src/Containers/MainPage/Body.tsx file.
 
-    * Import the path for the `Route` element **in alphabetical order** to minimize merge conflicts:
+    * Import the path for the `Route` element.
 
         ```ts
         whateversPathWithParam,
         ```
 
-    * Add a property to `routeComponentMap` object **in alphabetical order** to minimize merge conflicts:
+    * Add a property to `routeComponentMap` object.
 
         Specify the path to the root component of the asynchronously-loaded bundle file for the route (see step 4).
 
@@ -304,15 +304,15 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         },
         ```
 
-3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx if the route has a link:
+3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link:
 
-    * Import a path **without params** to minimize merge conflicts:
+    * Import a path **without params**.
 
     ```ts
     whateversBasePath,
     ```
 
-    * Add a child item for the link in the `navDescriptions` array:
+    * Add a child item for the link in the `navDescriptions` array.
 
     ```ts
     {
