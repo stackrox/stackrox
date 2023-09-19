@@ -62,6 +62,7 @@ export type ListAdministrationEventsResponse = {
     events: AdministrationEvent[];
 };
 
+// TODO CountAdministrationEventsRequest
 export function countAdministrationEvents(): Promise<string> {
     return axios
         .get<CountAdministrationEventsResponse>(eventsCountUrl)
@@ -74,6 +75,7 @@ export function getAdministrationEvent(id: string): Promise<AdministrationEvent>
         .then((response) => response.data.event);
 }
 
+// TODO ListAdministrationEventsRequest
 export function listAdministrationEvents(): Promise<AdministrationEvent[]> {
     return axios
         .get<ListAdministrationEventsResponse>(eventsUrl)
