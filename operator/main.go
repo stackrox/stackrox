@@ -73,8 +73,8 @@ var (
 	// to be managed by this operator. If the selector is empty, all Central instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
 	centralLabelSelector = env.RegisterSetting(keyCentralLabelSelector, env.WithDefault(""))
-	// securedClusterLabelSelector is a kubernetes label selector that is used to filter out Central instances
-	// to be managed by this operator. If the selector is empty, all Central instances are managed.
+	// securedClusterLabelSelector is a kubernetes label selector that is used to filter out Secured Cluster
+	// instances to be managed by this operator. If the selector is empty, all instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
 	securedClusterLabelSelector = env.RegisterSetting(keySecuredClusterLabelSelector, env.WithDefault(""))
 )
