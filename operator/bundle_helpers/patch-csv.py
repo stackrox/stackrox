@@ -5,12 +5,22 @@ import logging
 import os
 import pathlib
 import subprocess
-from datetime import datetime, timezone
-
 import sys
 import yaml
+from collections import namedtuple
+from datetime import datetime, timezone
 
 from rewrite import rewrite, string_replacer
+
+
+class XyzVersion(namedtuple("Version", ["x", "y", "z"])):
+    @staticmethod
+    def parse_from(version_str):
+        x, y, z = (int(c) for c in version_str.split('-', maxsplit=1)[0].split('.'))
+        return XyzVersion(x, y, z)
+
+    def __str__(self):
+        return f"{self.x}.{self.y}.{self.z}"
 
 
 def rbac_proxy_replace(updated_img):
@@ -51,7 +61,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, version_skips,
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches,
               rbac_proxy_replacement):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
@@ -69,15 +79,10 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if rbac_proxy_replacement:
         rewrite(csv_doc, rbac_proxy_replace(rbac_proxy_replacement))
 
-    x, y, z = (int(c) for c in version.split('-', maxsplit=1)[0].split('.'))
-    first_x, first_y, first_z = (int(c) for c in first_version.split('-', maxsplit=1)[0].split('.'))
     previous_y_stream = get_previous_y_stream(version)
 
     # An olm.skipRange doesn't hurt if it references non-existing versions.
     csv_doc["metadata"]["annotations"]["olm.skipRange"] = f'>= {previous_y_stream} < {version}'
-
-    if version_skips:
-        csv_doc["spec"]["skips"] = version_skips
 
     # multi-arch
     if "labels" not in csv_doc["metadata"]:
@@ -85,15 +90,65 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     for arch in extra_supported_arches:
         csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
-    if (x, y, z) > (first_x, first_y, first_z):
-        if z == 0:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{previous_y_stream}'
-        else:
-            csv_doc["spec"]["replaces"] = f'{raw_name}.v{x}.{y}.{z - 1}'
+    skips = parse_skips(csv_doc["spec"], raw_name)
+    replaced_xyz = calculate_replaced_version(
+        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips)
+    if replaced_xyz is not None:
+        csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
     # OSBS fills relatedImages therefore we must not provide that ourselves.
     # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
     del csv_doc['spec']['relatedImages']
+
+
+def parse_skips(spec, raw_name):
+    raw_skips = spec.get("skips", [])
+    return set([XyzVersion.parse_from(must_strip_prefix(item, f"{raw_name}.v")) for item in raw_skips])
+
+
+def must_strip_prefix(str, prefix):
+    if not str.startswith(prefix):
+        raise RuntimeError(f"{str} does not begin with {prefix}")
+    return str[len(prefix):]
+
+
+def calculate_replaced_version(version, first_version, previous_y_stream, skips):
+    current_xyz = XyzVersion.parse_from(version)
+    first_xyz = XyzVersion.parse_from(first_version)
+    previous_xyz = XyzVersion.parse_from(previous_y_stream)
+
+    if current_xyz <= first_xyz:
+        return None
+
+    # If this is a new minor release, it will replace the previous minor release (e.g. 4.2.0 replaces 4.1.0).
+    # If this is a new patch, it replaces previous patch (e.g. 4.2.2 replaces 4.2.1, or 4.2.1 replaces 4.2.0).
+    initial_replace = previous_xyz if current_xyz.z == 0 else \
+        XyzVersion(current_xyz.x, current_xyz.y, current_xyz.z - 1)
+
+    # Next, in the presence of version skips, i.e. versions that are marked as broken with `skips` attribute, we need to
+    # handle a situation when the replaced version is also skipped, because the upgrade may fail.
+
+    current_replace = initial_replace
+
+    # First, we loop over all skips and find a patch number that's not skipped. This assumes there always exists a
+    # released patch for any version that's skipped. E.g. we release 4.2.0, and 4.1.0 is broken and listed in `skips`,
+    # and so we cannot make 4.2.0 replace 4.1.0. We'll take 4.2.0 replace 4.1.1.
+    # The assumption should hold true because if some version is determined broken and is supported, we should create a
+    # patch release to fix it.
+    while current_replace in skips:
+        logging.info(f"Looks like {current_replace} replace version is in skips list, trying next patch.")
+        current_replace = XyzVersion(current_replace.x, current_replace.y, current_replace.z + 1)
+
+    # The obvious exception from the above is when we release the immediate patch to the broken version.
+    # E.g. 4.1.0 is broken and listed in `skips` and we release 4.1.1. In this case 4.1.1 will still replace 4.1.0. The
+    # operator upgrade is still possible because 4.1.1 will additionally have skipRange >=4.0.0 and <4.1.1 thus allowing
+    # versions in that range to be upgraded to 4.1.1.
+    if current_replace >= current_xyz:
+        current_replace = initial_replace
+        logging.warning(
+            f"Cannot identify safe patch version among skips {skips} that would be less than current {current_xyz}. Falling back to original {current_replace}.")
+
+    return current_replace
 
 
 def get_previous_y_stream(version):
@@ -119,16 +174,12 @@ def parse_args():
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
-    parser.add_argument("--add-version-skips", action='append', required=False,
-                        help='Add spec.skips values to CSV to configure which previously released versions should be '
-                             'skipped due to being unsafe (may be passed multiple times). '
-                             'Example usage: --add-version-skips rhacs-operator.v3.73.0',
-                        default=[])
     return parser.parse_args()
 
 
 def main():
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+    logging.basicConfig(stream=sys.stderr, level=logging.INFO,
+                        format=f"%(asctime)s {pathlib.Path(__file__).name}: %(message)s")
     args = parse_args()
     doc = yaml.safe_load(sys.stdin)
     patch_csv(doc,
@@ -137,7 +188,6 @@ def main():
               first_version=args.first_version,
               no_related_images=args.no_related_images,
               extra_supported_arches=args.add_supported_arch,
-              version_skips=args.add_version_skips,
               rbac_proxy_replacement=args.replace_rbac_proxy)
     print(yaml.safe_dump(doc))
 
