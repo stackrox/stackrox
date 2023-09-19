@@ -12,7 +12,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/config/mapkubeapis"
 	"helm.sh/helm/v3/pkg/storage/driver"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -80,20 +79,4 @@ func (r *mapKubeAPIsExtensionRun) Execute() error {
 	}
 
 	return nil
-}
-
-// AddSelectorOptionIfNeeded conditionally adds label selector to opts for reconciler
-func AddSelectorOptionIfNeeded(selector string, opts []pkgReconciler.Option) ([]pkgReconciler.Option, error) {
-	if len(selector) == 0 {
-		return opts, nil
-	}
-	labelSelector, err := v1.ParseToLabelSelector(selector)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse central label selector")
-	}
-	if labelSelector != nil {
-		ctrl.Log.Info("using label selector", "selector", selector)
-		opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
-	}
-	return opts, nil
 }
