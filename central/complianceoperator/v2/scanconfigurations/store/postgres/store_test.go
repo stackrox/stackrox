@@ -16,17 +16,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type ComplianceOperatorScanSettingV2StoreSuite struct {
+type ComplianceOperatorScanConfigurationV2StoreSuite struct {
 	suite.Suite
 	store  Store
 	testDB *pgtest.TestPostgres
 }
 
-func TestComplianceOperatorScanSettingV2Store(t *testing.T) {
-	suite.Run(t, new(ComplianceOperatorScanSettingV2StoreSuite))
+func TestComplianceOperatorScanConfigurationV2Store(t *testing.T) {
+	suite.Run(t, new(ComplianceOperatorScanConfigurationV2StoreSuite))
 }
 
-func (s *ComplianceOperatorScanSettingV2StoreSuite) SetupSuite() {
+func (s *ComplianceOperatorScanConfigurationV2StoreSuite) SetupSuite() {
 
 	s.T().Setenv(features.ComplianceEnhancements.EnvVar(), "true")
 	if !features.ComplianceEnhancements.Enabled() {
@@ -38,84 +38,84 @@ func (s *ComplianceOperatorScanSettingV2StoreSuite) SetupSuite() {
 	s.store = New(s.testDB.DB)
 }
 
-func (s *ComplianceOperatorScanSettingV2StoreSuite) SetupTest() {
+func (s *ComplianceOperatorScanConfigurationV2StoreSuite) SetupTest() {
 	ctx := sac.WithAllAccess(context.Background())
-	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_scan_setting_v2 CASCADE")
-	s.T().Log("compliance_operator_scan_setting_v2", tag)
+	tag, err := s.testDB.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2 CASCADE")
+	s.T().Log("compliance_operator_scan_configuration_v2", tag)
 	s.NoError(err)
 }
 
-func (s *ComplianceOperatorScanSettingV2StoreSuite) TearDownSuite() {
+func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TearDownSuite() {
 	s.testDB.Teardown(s.T())
 }
 
-func (s *ComplianceOperatorScanSettingV2StoreSuite) TestStore() {
+func (s *ComplianceOperatorScanConfigurationV2StoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
 	store := s.store
 
-	complianceOperatorScanSettingV2 := &storage.ComplianceOperatorScanSettingV2{}
-	s.NoError(testutils.FullInit(complianceOperatorScanSettingV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	complianceOperatorScanConfigurationV2 := &storage.ComplianceOperatorScanConfigurationV2{}
+	s.NoError(testutils.FullInit(complianceOperatorScanConfigurationV2, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	foundComplianceOperatorScanSettingV2, exists, err := store.Get(ctx, complianceOperatorScanSettingV2.GetId())
+	foundComplianceOperatorScanConfigurationV2, exists, err := store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorScanSettingV2)
+	s.Nil(foundComplianceOperatorScanConfigurationV2)
 
 	withNoAccessCtx := sac.WithNoAccess(ctx)
 
-	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingV2))
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetId())
+	s.NoError(store.Upsert(ctx, complianceOperatorScanConfigurationV2))
+	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanSettingV2, foundComplianceOperatorScanSettingV2)
+	s.Equal(complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
 
-	complianceOperatorScanSettingV2Count, err := store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err := store.Count(ctx)
 	s.NoError(err)
-	s.Equal(1, complianceOperatorScanSettingV2Count)
-	complianceOperatorScanSettingV2Count, err = store.Count(withNoAccessCtx)
+	s.Equal(1, complianceOperatorScanConfigurationV2Count)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(withNoAccessCtx)
 	s.NoError(err)
-	s.Zero(complianceOperatorScanSettingV2Count)
+	s.Zero(complianceOperatorScanConfigurationV2Count)
 
-	complianceOperatorScanSettingV2Exists, err := store.Exists(ctx, complianceOperatorScanSettingV2.GetId())
+	complianceOperatorScanConfigurationV2Exists, err := store.Exists(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
-	s.True(complianceOperatorScanSettingV2Exists)
-	s.NoError(store.Upsert(ctx, complianceOperatorScanSettingV2))
-	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanSettingV2), sac.ErrResourceAccessDenied)
+	s.True(complianceOperatorScanConfigurationV2Exists)
+	s.NoError(store.Upsert(ctx, complianceOperatorScanConfigurationV2))
+	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorScanConfigurationV2), sac.ErrResourceAccessDenied)
 
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetId())
+	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorScanSettingV2, foundComplianceOperatorScanSettingV2)
+	s.Equal(complianceOperatorScanConfigurationV2, foundComplianceOperatorScanConfigurationV2)
 
-	s.NoError(store.Delete(ctx, complianceOperatorScanSettingV2.GetId()))
-	foundComplianceOperatorScanSettingV2, exists, err = store.Get(ctx, complianceOperatorScanSettingV2.GetId())
+	s.NoError(store.Delete(ctx, complianceOperatorScanConfigurationV2.GetId()))
+	foundComplianceOperatorScanConfigurationV2, exists, err = store.Get(ctx, complianceOperatorScanConfigurationV2.GetId())
 	s.NoError(err)
 	s.False(exists)
-	s.Nil(foundComplianceOperatorScanSettingV2)
-	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanSettingV2.GetId()), sac.ErrResourceAccessDenied)
+	s.Nil(foundComplianceOperatorScanConfigurationV2)
+	s.ErrorIs(store.Delete(withNoAccessCtx, complianceOperatorScanConfigurationV2.GetId()), sac.ErrResourceAccessDenied)
 
-	var complianceOperatorScanSettingV2s []*storage.ComplianceOperatorScanSettingV2
-	var complianceOperatorScanSettingV2IDs []string
+	var complianceOperatorScanConfigurationV2s []*storage.ComplianceOperatorScanConfigurationV2
+	var complianceOperatorScanConfigurationV2IDs []string
 	for i := 0; i < 200; i++ {
-		complianceOperatorScanSettingV2 := &storage.ComplianceOperatorScanSettingV2{}
-		s.NoError(testutils.FullInit(complianceOperatorScanSettingV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-		complianceOperatorScanSettingV2s = append(complianceOperatorScanSettingV2s, complianceOperatorScanSettingV2)
-		complianceOperatorScanSettingV2IDs = append(complianceOperatorScanSettingV2IDs, complianceOperatorScanSettingV2.GetId())
+		complianceOperatorScanConfigurationV2 := &storage.ComplianceOperatorScanConfigurationV2{}
+		s.NoError(testutils.FullInit(complianceOperatorScanConfigurationV2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+		complianceOperatorScanConfigurationV2s = append(complianceOperatorScanConfigurationV2s, complianceOperatorScanConfigurationV2)
+		complianceOperatorScanConfigurationV2IDs = append(complianceOperatorScanConfigurationV2IDs, complianceOperatorScanConfigurationV2.GetId())
 	}
 
-	s.NoError(store.UpsertMany(ctx, complianceOperatorScanSettingV2s))
-	allComplianceOperatorScanSettingV2, err := store.GetAll(ctx)
+	s.NoError(store.UpsertMany(ctx, complianceOperatorScanConfigurationV2s))
+	allComplianceOperatorScanConfigurationV2, err := store.GetAll(ctx)
 	s.NoError(err)
-	s.ElementsMatch(complianceOperatorScanSettingV2s, allComplianceOperatorScanSettingV2)
+	s.ElementsMatch(complianceOperatorScanConfigurationV2s, allComplianceOperatorScanConfigurationV2)
 
-	complianceOperatorScanSettingV2Count, err = store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(200, complianceOperatorScanSettingV2Count)
+	s.Equal(200, complianceOperatorScanConfigurationV2Count)
 
-	s.NoError(store.DeleteMany(ctx, complianceOperatorScanSettingV2IDs))
+	s.NoError(store.DeleteMany(ctx, complianceOperatorScanConfigurationV2IDs))
 
-	complianceOperatorScanSettingV2Count, err = store.Count(ctx)
+	complianceOperatorScanConfigurationV2Count, err = store.Count(ctx)
 	s.NoError(err)
-	s.Equal(0, complianceOperatorScanSettingV2Count)
+	s.Equal(0, complianceOperatorScanConfigurationV2Count)
 }

@@ -31,8 +31,8 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorClusterScanConfigStatus)(nil)), "compliance_operator_cluster_scan_config_statuses")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":                         ClustersSchema,
-			"storage.ComplianceOperatorScanSettingV2": ComplianceOperatorScanSettingV2Schema,
+			"storage.Cluster": ClustersSchema,
+			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
