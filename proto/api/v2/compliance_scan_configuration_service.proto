@@ -27,11 +27,12 @@ message BaseComplianceScanConfigurationSettings {
     Schedule              scan_schedule            = 3;
 }
 
-// Next available tag: 5
+// Next available tag: 4
 message ComplianceScanConfiguration {
-    string                                     scan_name      = 1;
-    BaseComplianceScanConfigurationSettings    scan_config    = 2;
-    repeated string                            clusters       = 3;
+    string                                     id             = 1;
+    string                                     scan_name      = 2;
+    BaseComplianceScanConfigurationSettings    scan_config    = 3;
+    repeated string                            clusters       = 4;
 }
 
 // Next available tag: 8
@@ -79,13 +80,13 @@ service ComplianceScanConfigurationService {
         };
     }
 
-//    // UpdateComplianceScanConfiguration updates a compliance scan configuration
-//    rpc UpdateComplianceScanConfiguration (ComplianceScanConfiguration) returns (Empty) {
-//        option (google.api.http) = {
-//            put: "/v2/compliance/scan/configurations/{id}"
-//            body: "*"
-//        };
-//    }
+    // UpdateComplianceScanConfiguration updates a compliance scan configuration
+    rpc UpdateComplianceScanConfiguration (ComplianceScanConfiguration) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v2/compliance/scan/configurations/{id}"
+            body: "*"
+        };
+    }
 
     // DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
     rpc DeleteComplianceScanConfiguration (ResourceByID) returns (Empty) {
