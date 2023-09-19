@@ -29,11 +29,23 @@ type datastoreImpl struct {
 
 // GetScanConfiguration retrieves the scan configuration specified by name
 func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*storage.ComplianceOperatorScanSettingV2, bool, error) {
+	if ok, err := scanSettingsSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
 	return ds.storage.Get(ctx, id)
 }
 
 // GetScanConfigurationExists retrieves the existence of scan configuration specified by name
 func (ds *datastoreImpl) GetScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
+	if ok, err := scanSettingsSAC.ReadAllowed(ctx); err != nil {
+		return false, err
+	} else if !ok {
+		return false, nil
+	}
+
 	scanConfigs, err := ds.storage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanName, scanName).ProtoQuery())
 	if err != nil {
@@ -45,11 +57,23 @@ func (ds *datastoreImpl) GetScanConfigurationExists(ctx context.Context, scanNam
 
 // GetScanConfigurations retrieves the scan configurations specified by query
 func (ds *datastoreImpl) GetScanConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanSettingV2, error) {
+	if ok, err := scanSettingsSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
 	return ds.storage.GetByQuery(ctx, query)
 }
 
 // UpsertScanConfiguration adds or updates the scan configuration
 func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanSettingV2) error {
+	if ok, err := scanSettingsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	ds.keyedMutex.Lock(scanConfig.GetId())
 	defer ds.keyedMutex.Unlock(scanConfig.GetId())
 
@@ -60,6 +84,12 @@ func (ds *datastoreImpl) UpsertScanConfiguration(ctx context.Context, scanConfig
 
 // DeleteScanConfiguration deletes the scan configuration specified by name
 func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string) error {
+	if ok, err := scanSettingsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
@@ -68,6 +98,12 @@ func (ds *datastoreImpl) DeleteScanConfiguration(ctx context.Context, id string)
 
 // UpdateClusterStatus updates the scan configuration with the cluster status
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanID string, clusterID string, clusterStatus string) error {
+	if ok, err := scanSettingsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+	
 	ds.keyedMutex.Lock(scanID)
 	defer ds.keyedMutex.Unlock(scanID)
 
@@ -88,6 +124,12 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, scanID string,
 
 // GetScanConfigClusterStatus retrieves the scan configurations status per cluster specified by scan name
 func (ds *datastoreImpl) GetScanConfigClusterStatus(ctx context.Context, scanID string) ([]*storage.ComplianceOperatorClusterScanConfigStatus, error) {
+	if ok, err := scanSettingsSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
 	return ds.statusStorage.GetByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanID).ProtoQuery())
 }
