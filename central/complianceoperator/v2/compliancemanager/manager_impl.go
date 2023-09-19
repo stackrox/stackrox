@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -36,6 +37,8 @@ type managerImpl struct {
 	integrationDS compIntegration.DataStore
 	scanSettingDS compScanSetting.DataStore
 	requests      map[string]clusterScan
+
+	requestsLock sync.Mutex
 }
 
 // New returns on instance of Manager interface that provides functionality to process compliance requests and forward them to Sensor.
@@ -49,7 +52,7 @@ func New(sensorConnMgr connection.Manager, integrationDS compIntegration.DataSto
 }
 
 func (m *managerImpl) Sync(_ context.Context) {
-	//TODO: Sync scan configurations with sensor
+	// TODO (ROX-18711): Sync scan configurations with sensor
 }
 
 // ProcessComplianceOperatorInfo processes and stores the compliance operator metadata coming from sensor
@@ -92,19 +95,19 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	// Check if scan configuration already exists.
 	found, err := m.scanSettingDS.GetScanConfigurationExists(ctx, scanRequest.GetScanName())
 	if err != nil {
-		return nil, errors.Wrapf(err, "Unable to create Scan Configuration named %q.", scanRequest.GetScanName())
+		log.Error(err)
+		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanName())
 	}
 	if found {
-		return nil, errors.Errorf("Scan Configuration named %q already exists.", scanRequest.GetScanName())
+		return nil, errors.Errorf("Scan configuration named %q already exists.", scanRequest.GetScanName())
 	}
 
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = types.TimestampNow()
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
-		// TODO(SHREWS) wrap it with something useful maybe
-		log.Infof("SHREWS -- can't upsert config %v", err)
-		return nil, err
+		log.Error(err)
+		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanName())
 	}
 
 	var profiles []string
@@ -117,12 +120,14 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	if scanRequest.GetSchedule() != nil {
 		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
 		if err != nil {
-			// TODO(SHREWS) wrap it with something useful maybe
-			log.Infof("SHREWS -- can't convert schedule %v", err)
-			return nil, err
+			log.Error(err)
+			return nil, errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
 		}
 	}
-	log.Info("SHREWS -- manager.ProcessScanRequest build and send message per cluster")
+
+	m.requestsLock.Lock()
+	defer m.requestsLock.Unlock()
+
 	for _, cluster := range clusters {
 		// id for the request message to sensor
 		id := uuid.NewV4().String()
@@ -150,13 +155,11 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		}
 
 		err := m.sensorConnMgr.SendMessage(cluster, sensorMessage)
-		// TODO(SHREWS):  probably change Errors to Status
 		var status string
 		if err != nil {
 			status = err.Error()
 			log.Errorf("error sending compliance scan config to cluster %q: %v", cluster, err)
 		} else {
-			status = "Awaiting response."
 			// Request was not rejected so add it to map awaiting response
 			m.requests[id] = clusterScan{
 				clusterID: cluster,
@@ -167,8 +170,8 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		// Update status in DB
 		err = m.scanSettingDS.UpdateClusterStatus(ctx, scanRequest.GetId(), cluster, status)
 		if err != nil {
-			// TODO(SHREWS) wrap it with something useful maybe
-			return nil, err
+			log.Error(err)
+			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanName())
 		}
 		log.Infof("SHREWS -- manager.ProcessScanRequest -- scan ID = %q", id)
 	}
@@ -183,11 +186,9 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 		return nil
 	}
 
-	log.Infof("SHREWS -- manager.HandleScanRequestResponse -- request %q, cluster %q, response %q", requestID, clusterID, responsePayload)
+	m.requestsLock.Lock()
+	defer m.requestsLock.Unlock()
 
-	// Need to lock here.  We could be getting responses from multiple clusters at the same time.  Or we could push
-	// the cluster update to the datastore and lock there.
-	// TODO(SHREWS) safely access map
 	var scanID string
 	if clusterScanData, found := m.requests[requestID]; found {
 		if clusterScanData.clusterID != clusterID {
