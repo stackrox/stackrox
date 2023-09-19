@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -103,6 +104,11 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
 	resp, err := client.http.Do(req)
+	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
+	// See https://github.com/hashicorp/go-retryablehttp/issues/142.
+	if _, ok := err.(*url.Error); ok {
+		err = errors.Unwrap(err)
+	}
 	return resp, errors.Wrap(err, "error when doing http request")
 }
 

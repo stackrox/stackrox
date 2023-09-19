@@ -75,10 +75,7 @@ To specify timeout, run  'roxctl' command:
 
 func isTimeoutError(err error) bool {
 	var netErr net.Error
-	var urlErr *url.Error
 
-	// Need to unwrap the url.Error twice, since the first url.Error will not hold the correct timeout value.
-	return errors.As(err, &urlErr) && errors.As(urlErr.Err, &urlErr) && urlErr.Timeout() ||
-		errors.As(err, &netErr) && netErr.Timeout() ||
+	return errors.As(err, &netErr) && netErr.Timeout() ||
 		errors.Is(err, context.DeadlineExceeded)
 }
