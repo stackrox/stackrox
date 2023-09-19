@@ -42,14 +42,14 @@ type storeType = storage.ComplianceOperatorScanSettingV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
-	Delete(ctx context.Context, scanName string) error
+	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context) (int, error)
-	Exists(ctx context.Context, scanName string) (bool, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
-	Get(ctx context.Context, scanName string) (*storeType, bool, error)
+	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
@@ -76,7 +76,7 @@ func New(db postgres.DB) Store {
 // region Helper functions
 
 func pkGetter(obj *storeType) string {
-	return obj.GetScanName()
+	return obj.GetId()
 }
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
@@ -96,60 +96,38 @@ func insertIntoComplianceOperatorScanSettingV2(batch *pgx.Batch, obj *storage.Co
 
 	values := []interface{}{
 		// parent primary keys start
+		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetScanName(),
 		obj.GetCreatedBy().GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_v2 (ScanName, CreatedBy_Name, serialized) VALUES($1, $2, $3) ON CONFLICT(ScanName) DO UPDATE SET ScanName = EXCLUDED.ScanName, CreatedBy_Name = EXCLUDED.CreatedBy_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_v2 (Id, ScanName, CreatedBy_Name, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanName = EXCLUDED.ScanName, CreatedBy_Name = EXCLUDED.CreatedBy_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
 
 	for childIndex, child := range obj.GetProfiles() {
-		if err := insertIntoComplianceOperatorScanSettingV2Profiles(batch, child, obj.GetScanName(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorScanSettingV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
 
-	query = "delete from compliance_operator_scan_setting_v2_profiles where compliance_operator_scan_setting_v2_ScanName = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetScanName(), len(obj.GetProfiles()))
-	for childIndex, child := range obj.GetClusters() {
-		if err := insertIntoComplianceOperatorScanSettingV2Clusters(batch, child, obj.GetScanName(), childIndex); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from compliance_operator_scan_setting_v2_clusters where compliance_operator_scan_setting_v2_ScanName = $1 AND idx >= $2"
-	batch.Queue(query, obj.GetScanName(), len(obj.GetClusters()))
+	query = "delete from compliance_operator_scan_setting_v2_profiles where compliance_operator_scan_setting_v2_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
 	return nil
 }
 
-func insertIntoComplianceOperatorScanSettingV2Profiles(batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanSettingV2ScanName string, idx int) error {
+func insertIntoComplianceOperatorScanSettingV2Profiles(batch *pgx.Batch, obj *storage.ProfileShim, complianceOperatorScanSettingV2ID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
-		complianceOperatorScanSettingV2ScanName,
+		pgutils.NilOrUUID(complianceOperatorScanSettingV2ID),
 		idx,
 		obj.GetProfileId(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_v2_profiles (compliance_operator_scan_setting_v2_ScanName, idx, ProfileId) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_scan_setting_v2_ScanName, idx) DO UPDATE SET compliance_operator_scan_setting_v2_ScanName = EXCLUDED.compliance_operator_scan_setting_v2_ScanName, idx = EXCLUDED.idx, ProfileId = EXCLUDED.ProfileId"
-	batch.Queue(finalStr, values...)
-
-	return nil
-}
-
-func insertIntoComplianceOperatorScanSettingV2Clusters(batch *pgx.Batch, obj *storage.ComplianceOperatorScanSettingV2_ClusterScanStatus, complianceOperatorScanSettingV2ScanName string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		complianceOperatorScanSettingV2ScanName,
-		idx,
-		pgutils.NilOrUUID(obj.GetClusterId()),
-	}
-
-	finalStr := "INSERT INTO compliance_operator_scan_setting_v2_clusters (compliance_operator_scan_setting_v2_ScanName, idx, ClusterId) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_scan_setting_v2_ScanName, idx) DO UPDATE SET compliance_operator_scan_setting_v2_ScanName = EXCLUDED.compliance_operator_scan_setting_v2_ScanName, idx = EXCLUDED.idx, ClusterId = EXCLUDED.ClusterId"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_v2_profiles (compliance_operator_scan_setting_v2_Id, idx, ProfileId) VALUES($1, $2, $3) ON CONFLICT(compliance_operator_scan_setting_v2_Id, idx) DO UPDATE SET compliance_operator_scan_setting_v2_Id = EXCLUDED.compliance_operator_scan_setting_v2_Id, idx = EXCLUDED.idx, ProfileId = EXCLUDED.ProfileId"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -163,6 +141,7 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 	deletes := make([]string, 0, batchSize)
 
 	copyCols := []string{
+		"id",
 		"scanname",
 		"createdby_name",
 		"serialized",
@@ -180,13 +159,14 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 		}
 
 		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetScanName(),
 			obj.GetCreatedBy().GetName(),
 			serialized,
 		})
 
 		// Add the ID to be deleted.
-		deletes = append(deletes, obj.GetScanName())
+		deletes = append(deletes, obj.GetId())
 
 		// if we hit our batch size we need to push the data
 		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
@@ -210,10 +190,7 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 	for idx, obj := range objs {
 		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
 
-		if err := copyFromComplianceOperatorScanSettingV2Profiles(ctx, s, tx, obj.GetScanName(), obj.GetProfiles()...); err != nil {
-			return err
-		}
-		if err := copyFromComplianceOperatorScanSettingV2Clusters(ctx, s, tx, obj.GetScanName(), obj.GetClusters()...); err != nil {
+		if err := copyFromComplianceOperatorScanSettingV2Profiles(ctx, s, tx, obj.GetId(), obj.GetProfiles()...); err != nil {
 			return err
 		}
 	}
@@ -221,11 +198,11 @@ func copyFromComplianceOperatorScanSettingV2(ctx context.Context, s pgSearch.Del
 	return nil
 }
 
-func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.ProfileShim) error {
+func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ID string, objs ...*storage.ProfileShim) error {
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
-		"compliance_operator_scan_setting_v2_scanname",
+		"compliance_operator_scan_setting_v2_id",
 		"idx",
 		"profileid",
 	}
@@ -237,7 +214,7 @@ func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSe
 			"to simply use the object.  %s", obj)
 
 		inputRows = append(inputRows, []interface{}{
-			complianceOperatorScanSettingV2ScanName,
+			pgutils.NilOrUUID(complianceOperatorScanSettingV2ID),
 			idx,
 			obj.GetProfileId(),
 		})
@@ -248,43 +225,6 @@ func copyFromComplianceOperatorScanSettingV2Profiles(ctx context.Context, s pgSe
 			// delete for the top level parent
 
 			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_v2_profiles"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	return nil
-}
-
-func copyFromComplianceOperatorScanSettingV2Clusters(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, complianceOperatorScanSettingV2ScanName string, objs ...*storage.ComplianceOperatorScanSettingV2_ClusterScanStatus) error {
-	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"compliance_operator_scan_setting_v2_scanname",
-		"idx",
-		"clusterid",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-			complianceOperatorScanSettingV2ScanName,
-			idx,
-			pgutils.NilOrUUID(obj.GetClusterId()),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_scan_setting_v2_clusters"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
 				return err
 			}
 			// clear the input rows for the next batch
@@ -313,17 +253,11 @@ func Destroy(ctx context.Context, db postgres.DB) {
 func dropTableComplianceOperatorScanSettingV2(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_setting_v2 CASCADE")
 	dropTableComplianceOperatorScanSettingV2Profiles(ctx, db)
-	dropTableComplianceOperatorScanSettingV2Clusters(ctx, db)
 
 }
 
 func dropTableComplianceOperatorScanSettingV2Profiles(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_setting_v2_profiles CASCADE")
-
-}
-
-func dropTableComplianceOperatorScanSettingV2Clusters(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_setting_v2_clusters CASCADE")
 
 }
 
