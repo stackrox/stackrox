@@ -9,6 +9,7 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import {
     RouteKey,
     accessControlBasePath,
+    administrationEventsBasePath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
@@ -250,6 +251,12 @@ const navDescriptions: NavDescription[] = [
                 content: 'System Configuration',
                 path: systemConfigPath,
                 routeKey: 'systemconfig',
+            },
+            {
+                type: 'child',
+                content: 'Administration Events',
+                path: administrationEventsBasePath,
+                routeKey: 'administration-events',
             },
             {
                 type: 'child',

@@ -6,6 +6,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     RouteKey,
     accessControlPath,
+    administrationEventsPathWithParam,
     apidocsPath,
     clustersDelegatedScanningPath,
     clustersInitBundlesPathWithParam,
@@ -66,6 +67,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
         path: accessControlPath,
+    },
+    'administration-events': {
+        component: asyncComponent(
+            () => import('Containers/Administration/Events/AdministrationEventsRoute')
+        ),
+        path: administrationEventsPathWithParam,
     },
     apidocs: {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),
