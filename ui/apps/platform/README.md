@@ -304,7 +304,7 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         },
         ```
 
-3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link:
+3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link.
 
     * Import a path **without params**.
 
