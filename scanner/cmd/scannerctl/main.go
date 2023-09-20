@@ -85,7 +85,7 @@ func main() {
 	idxC := v4.NewIndexerClient(conn)
 	vulnC := v4.NewMatcherClient(conn)
 
-	hashId := fmt.Sprintf("/v4/containerimage/%x", imageDigest)
+	hashId := fmt.Sprintf("/v4/containerimage/%s", *imageDigest)
 	indexReport, err := idxC.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashId})
 	if err != nil || indexReport.State == "IndexError" {
 		indexReport, err = idxC.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
@@ -100,6 +100,7 @@ func main() {
 			log.Fatalf("create report failed: %#v (%v)", indexReport, err)
 		}
 	}
+	log.Printf("Index Report: %s", indexReport.GetHashId())
 	vulnResp, err := vulnC.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
 		HashId:   hashId,
 		Contents: nil,
