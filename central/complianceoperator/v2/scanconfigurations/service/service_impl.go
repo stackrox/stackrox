@@ -89,8 +89,7 @@ func (s *serviceImpl) PostComplianceScanConfiguration(ctx context.Context, req *
 	// Process scan request, config may be updated in the event of errors from sensor.
 	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
 	if err != nil {
-		log.Infof("SHREWS -- %v", err)
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config %q", req.GetScanName())
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. %v", err)
 	}
 
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
