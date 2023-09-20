@@ -34,6 +34,8 @@ const stackroxBranding: BrandingAssets = {
     favicon: stackroxFavicon,
 };
 
+// @TODO: This should be renamed to getProductBrandingAssets to be more specific. It would be nice
+// to have a function to just get the product brand itself (ie. RHACS_BRANDING, STACKROX_BRANDING)
 export function getProductBranding(): BrandingAssets {
     const productBranding: string | undefined = process.env.REACT_APP_ROX_PRODUCT_BRANDING;
 
