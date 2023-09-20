@@ -20,7 +20,7 @@ spec:
       - name: stackrox
       - name: stackrox-dockerhub
       containers:
-      - image: quay.io/rhacs-eng/webhookserver:1.2
+      - image: quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2
         name: webhookserver
         command: ["/webhookserver"]
         imagePullPolicy: IfNotPresent
