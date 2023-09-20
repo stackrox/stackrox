@@ -123,6 +123,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 			log.Error(err)
 			return nil, errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
 		}
+		log.Infof("SHREWS -- the cron is %q", cron)
 	}
 
 	m.requestsLock.Lock()
