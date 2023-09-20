@@ -177,7 +177,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 				suite.scanConfigDS.EXPECT().GetScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
-				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "Awaiting response.")
+				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "")
 			},
 			isErrorTest: false,
 		},

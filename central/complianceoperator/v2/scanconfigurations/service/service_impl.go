@@ -35,6 +35,7 @@ var (
 			"/v2.ComplianceScanConfigurationService/PostComplianceScanConfiguration",
 			"/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration",
 			"/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration",
+			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
 		},
 	})
 	log = logging.LoggerForModule()
