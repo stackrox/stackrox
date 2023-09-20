@@ -1,3 +1,5 @@
+include $(CURDIR)/../make/env.mk
+
 # Store tooling in a location that does not affect the system.
 GOBIN := $(CURDIR)/.gobin
 export GOBIN
@@ -30,11 +32,6 @@ GOOS := linux
 HOST_OS := linux
 ifeq ($(UNAME_S),Darwin)
 	HOST_OS := darwin
-endif
-
-GOARCH := amd64
-ifeq ($(UNAME_M),arm64)
-	GOARCH := arm64
 endif
 
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
