@@ -48,7 +48,6 @@ func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.Compl
 	}
 
 	var clusters []string
-	log.Infof("SHREWS -- scan config id %q", scanConfig.GetId())
 	scanClusters, err := configDS.GetScanConfigClusterStatus(ctx, scanConfig.GetId())
 	if err != nil {
 		return nil, err
@@ -185,9 +184,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		return nil, err
 	}
 
-	log.Infof("SHREWS -- convertStorageScanConfigToV2ScanStatus -- scan clusters length %d", len(scanClusters))
-
-	// TODO(ROX-18102):  See if we want to lookup profile name by id instead of storing it
+	// TODO(ROX-18102):  Lookup profiles
 	var profiles []string
 	scanProfiles := scanConfig.GetProfiles()
 	for _, profile := range scanProfiles {
@@ -214,7 +211,6 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 				})
 			}
 
-			log.Infof("SHREWS -- clusterStatuses %v", &clusterStatuses)
 			return clusterStatuses
 		}(),
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{

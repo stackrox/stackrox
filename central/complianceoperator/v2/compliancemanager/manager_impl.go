@@ -107,7 +107,6 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 			log.Error(err)
 			return nil, errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
 		}
-		log.Infof("SHREWS -- the cron is %q", cron)
 	}
 
 	// Check if scan configuration already exists.
@@ -181,10 +180,8 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 			log.Error(err)
 			return nil, errors.Errorf("Unable to save scan configuration status for scan named %q.", scanRequest.GetScanName())
 		}
-		log.Infof("SHREWS -- manager.ProcessScanRequest -- scan ID = %q", id)
 	}
 
-	log.Info("SHREWS -- manager.ProcessScanRequest END")
 	return scanRequest, nil
 }
 

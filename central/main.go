@@ -436,7 +436,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
-	// TODO(SHREWS):  make sure this works with flag OFF
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
 		networkEntityDataStore.Singleton(),

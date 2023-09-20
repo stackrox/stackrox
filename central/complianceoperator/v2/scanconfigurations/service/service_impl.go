@@ -74,7 +74,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) PostComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
-	log.Infof("SHREWS -- PostComplianceScanConfiguration %v", req)
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}

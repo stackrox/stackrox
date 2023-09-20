@@ -249,7 +249,6 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
 	case *central.MsgFromSensor_ComplianceResponse:
-		log.Infof("SHREWS -- compliance response %v", msg.GetComplianceResponse().Response)
 		return c.processComplianceResponse(ctx, msg.GetComplianceResponse())
 	case *central.MsgFromSensor_Event:
 		// Special case the reprocess deployment because its fields are already set
