@@ -318,13 +318,8 @@
           "type": "string",
           "description": "Domain associated with the event. An event's domain outlines the feature domain where\nthe event was created from. As an example, this might be \"Image Scanning\".\nIn case of events that cannot be tied to a specific domain, this will be \"General\"."
         },
-        "resourceType": {
-          "type": "string",
-          "description": "Resource type associated with the event. An event may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
-        },
-        "resourceId": {
-          "type": "string",
-          "description": "Resource ID associated with the event. If an event refers to an underlying resource,\nthe resource ID identifies the underlying resource. The resource ID is not guaranteed\nto uniquely identify the object. For example, a resource name is a valid resource ID."
+        "resource": {
+          "$ref": "#/definitions/v1AdministrationEventResource"
         },
         "numOccurrences": {
           "type": "string",
@@ -355,6 +350,24 @@
       ],
       "default": "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
       "description": "AdministrationEventLevel exposes the different levels of events."
+    },
+    "v1AdministrationEventResource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Resource type associated with the event. An event may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
+        },
+        "id": {
+          "type": "string",
+          "description": "Resource ID associated with the event. If an event refers to an underlying resource,\nthe resource ID identifies the underlying resource. The resource ID is not guaranteed\nto be set, depending on the context of the administration event."
+        },
+        "name": {
+          "type": "string",
+          "description": "Resource name associated with the event. If an event refers to an underlying resource,\nthe resource name identifies the underlying resource. The resource name is not guaranteed\nto be set, depending on the context of the administration event."
+        }
+      },
+      "description": "Resource holds all information about the resource associated with the event."
     },
     "v1AdministrationEventType": {
       "type": "string",
