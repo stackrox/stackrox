@@ -108,7 +108,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not marshal vulnerability report: %s", err)
 	}
-	log.Println(string(vulnJson))
+	fmt.Println(string(vulnJson))
 }
 
 func getHashIdFromRegistry(imageURL string, auth authn.Authenticator) (string, error) {
