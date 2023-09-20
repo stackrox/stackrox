@@ -103,7 +103,7 @@ func convertValue(val reflect.Value) (converted interface{}, isTerminalType bool
 	}
 	// This should never be hit, since the if conditions above are exhaustive.
 	// However, if a new Go version adds a new type, we could hit this.
-	return nil, false, utils.Should(fmt.Errorf("unsupported kind: %v", kind))
+	return nil, false, utils.ShouldErr(errors.Errorf("unsupported kind: %v", kind))
 }
 
 func convertStruct(val reflect.Value, out *map[string]interface{}) error {
