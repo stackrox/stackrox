@@ -162,6 +162,10 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 		ret.Interval = &v2.Schedule_DaysOfWeek_{
 			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
 		}
+	case *storage.Schedule_Weekly:
+		ret.Interval = &v2.Schedule_DaysOfWeek_{
+			DaysOfWeek: &v2.Schedule_DaysOfWeek{Days: schedule.GetDaysOfWeek().GetDays()},
+		}
 	case *storage.Schedule_DaysOfMonth_:
 		ret.Interval = &v2.Schedule_DaysOfMonth_{
 			DaysOfMonth: &v2.Schedule_DaysOfMonth{Days: schedule.GetDaysOfMonth().GetDays()},
