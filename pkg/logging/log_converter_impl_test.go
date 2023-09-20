@@ -16,7 +16,7 @@ func TestConvert(t *testing.T) {
 		Domain:       "Image Scanning",
 		Hint:         events.GetHint("Image Scanning", "Image"),
 		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
-		Message:      "this is an events test",
+		Message:      `this is an events test {"image": "some-image", "another": true}`,
 		ResourceID:   "some-image",
 		ResourceType: "Image",
 		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
