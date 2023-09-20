@@ -15,4 +15,5 @@ os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "s390x"
 os.environ["COLLECTION_METHOD"] = "core_bpf"
 
-make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()
+#make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()
+make_qa_e2e_test_runner_midstream(cluster=AutomationFlavorsCluster()).run()
