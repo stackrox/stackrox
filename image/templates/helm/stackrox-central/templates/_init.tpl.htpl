@@ -45,7 +45,6 @@
   {{ $_ = set $._rox "_configShapeScannerV4" $configShapeScannerV4 }}
 [< end >]
 
-
 {{/*
     General validation.
    */}}
@@ -258,7 +257,6 @@
 {{/*
     Central setup.
    */}}
-  
 [< if ne .RenderMode "scannerOnly" >]
 {{ include "srox.centralSetup" $ }}
 [< end >]

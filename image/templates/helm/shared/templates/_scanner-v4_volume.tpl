@@ -16,14 +16,12 @@
   {{ include "srox.warn" (list $ "You have selected no persistence backend. Every deletion of the StackRox Scanner v4 DB pod will cause you to lose all your data. This is STRONGLY recommended against.") }}
   {{ $_ := set $scannerV4DBVolumeCfg "emptyDir" dict }}
 {{ end }}
-
 {{ if $scannerV4DBCfg.persistence.hostPath }}
   {{ if not $scannerV4DBCfg.nodeSelector }}
     {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
   {{ end }}
   {{ $_ := set $scannerV4DBVolumeCfg "hostPath" (dict "path" $scannerV4DBCfg.persistence.hostPath) }}
 {{ end }}
-
 {{/* Configure PVC if any of the settings in `scannerV4.db.persistence.persistentVolumeClaim` is provided
      or no other persistence backend has been configured yet. */}}
 {{ if or (not (deepEqual $._rox._configShapeScannerV4.scannerV4.db.persistence.persistentVolumeClaim $scannerV4DBCfg.persistence.persistentVolumeClaim)) (not $scannerV4DBVolumeCfg) }}
