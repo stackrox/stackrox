@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/errox"
@@ -65,10 +67,13 @@ func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool,
 		}
 	}
 
-	client := &http.Client{
-		Timeout:   timeout,
-		Transport: transport,
-	}
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.HTTPClient.Transport = transport
+	retryClient.HTTPClient.Timeout = timeout
+	retryClient.RetryWaitMin = 10 * time.Second
+
+	client := retryClient.StandardClient()
 	return &roxctlClientImpl{http: client, am: am, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
 }
 
@@ -99,6 +104,11 @@ func (client *roxctlClientImpl) DoReqAndVerifyStatusCode(path string, method str
 // Do executes a http.Request
 func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
 	resp, err := client.http.Do(req)
+	// The url.Error returned by go-retryablehttp needs to be unwrapped to retrieve the correct timeout settings.
+	// See https://github.com/hashicorp/go-retryablehttp/issues/142.
+	if _, ok := err.(*url.Error); ok {
+		err = errors.Unwrap(err)
+	}
 	return resp, errors.Wrap(err, "error when doing http request")
 }
 
