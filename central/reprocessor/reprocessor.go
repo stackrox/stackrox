@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	activeComponentsUpdater "github.com/stackrox/rox/central/activecomponent/updater"
+	administrationEvents "github.com/stackrox/rox/central/administration/events"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -35,7 +36,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(administrationEvents.EnableAdministrationEvents())
 
 	riskDedupeNamespace = uuid.NewV4()
 
@@ -383,9 +384,8 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 					},
 				})
 				if err != nil {
-					log.Errorw("Error sending updated image to sensor",
-						logging.ImageName(image.GetName().GetFullName()),
-						logging.ClusterID(clusterID), logging.Err(err))
+					log.Errorw("Error sending updated image to sensor "+clusterID,
+						logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 				}
 			}
 		}(result.ID, clusterIDSet)

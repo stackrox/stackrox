@@ -3,6 +3,7 @@ package logging
 import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/features"
+	"go.uber.org/zap/zapcore"
 )
 
 // options for the logger.
@@ -24,7 +25,9 @@ type OptionsFunc = func(option *options)
 func EnableAdministrationEvents(stream events.Stream) OptionsFunc {
 	return func(option *options) {
 		if features.AdministrationEvents.Enabled() {
-			option.AdministrationEventsConverter = &zapLogConverter{}
+			option.AdministrationEventsConverter = &zapLogConverter{
+				consoleEncoder: zapcore.NewConsoleEncoder(config.EncoderConfig),
+			}
 			option.AdministrationEventsStream = stream
 		}
 	}
