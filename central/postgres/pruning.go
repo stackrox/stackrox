@@ -88,7 +88,7 @@ const (
 	// Delete the log imbues with old timestamp
 	pruneLogImbues = `DELETE FROM log_imbues WHERE timestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
-	pruneAdministrationEvents = `DELETE FROM %[1]s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 )
 
 var (
