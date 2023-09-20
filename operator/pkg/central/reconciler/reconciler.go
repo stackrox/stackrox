@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/central/extensions"
@@ -12,7 +11,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -46,7 +44,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPauseReconcileAnnotation(pauseReconcileAnnotation),
 	}
 
-	opts, err := addSelectorOptionIfNeeded(selector, opts)
+	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err
 	}
@@ -58,19 +56,4 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		proxy.InjectProxyEnvVars(translation.New(mgr.GetClient()), proxyEnv, mgr.GetLogger()),
 		opts...,
 	)
-}
-
-func addSelectorOptionIfNeeded(selector string, opts []pkgReconciler.Option) ([]pkgReconciler.Option, error) {
-	if len(selector) == 0 {
-		return opts, nil
-	}
-	labelSelector, err := v1.ParseToLabelSelector(selector)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse central label selector")
-	}
-	if labelSelector != nil {
-		ctrl.Log.Info("Using central label selector", "selector", selector)
-		opts = append(opts, pkgReconciler.WithSelector(*labelSelector))
-	}
-	return opts, nil
 }
