@@ -287,7 +287,7 @@
   */}}
 
 {{ if and (not ._rox.scannerV4.disable) }}
-  {{/* TODO: should also check if indexer and matcher are also disabled? */}}
+  {{/* TODO: should also check if indexer and matcher are disabled? */}}
   {{/* if and (not ._rox.scannerV4.indexer.disable) (not ._rox.scannerV4.matcher.disable) }}
   {{ end */}}
   {{ include "srox.scannerV4Volume" $ }}
