@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func toJsonAndBeautify(v any) (string, error) {
+func toJSONAndBeautify(v any) (string, error) {
 	jStr, err := json.Marshal(v)
 	if err != nil {
+
 		return "", err
 	}
 	var prettyJSON bytes.Buffer
@@ -22,7 +23,7 @@ func toJsonAndBeautify(v any) (string, error) {
 
 // LogAndBeautify converts an object to json and log the beautified json object
 func LogAndBeautify(t *testing.T, v any, heading string) {
-	str, err := toJsonAndBeautify(v)
+	str, err := toJSONAndBeautify(v)
 	assert.NoError(t, err)
 	t.Log(heading)
 	t.Log(str)
