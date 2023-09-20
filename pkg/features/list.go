@@ -47,4 +47,13 @@ var (
 
 	// OPABasedEvaluator enables the OPA-based policy evaluator.
 	OPABasedEvaluator = registerFeature("Use OPA-based evaluator", "ROX_OPA_BASED_EVALUATOR", false)
+
+	// NewOPABasedEvaluator enables the OPA-based policy evaluator.
+	NewOPABasedEvaluator = registerFeature("Use new OPA-based evaluator", "ROX_New_OPA_BASED_EVALUATOR", false)
+
+	// JmesPathBasedEvaluator enables the Cel-based policy evaluator
+	JmesPathBasedEvaluator = registerFeature("Use JmesPath based evaluator", "ROX_JMESPATH_BASED_EVALUATOR", false)
+
+	// CelBasedEvaluator enables the Cel-based policy evaluator
+	CelBasedEvaluator = registerFeature("Use CEL evaluator", "ROX_CEL_BASED_EVALUATOR", false)
 )

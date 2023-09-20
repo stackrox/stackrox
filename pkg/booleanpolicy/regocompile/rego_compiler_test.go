@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -87,6 +88,7 @@ func assertResultsAsExpected(t *testing.T, c testCase, actualRes *evaluator.Resu
 	assert.Equal(t, c.expectedResult != nil, actualMatched)
 	if c.expectedResult != nil {
 		require.NotNil(t, actualRes)
+		jsonutil.LogAndBeautify(t, actualRes, "--- Actual ---")
 		assert.ElementsMatch(t, c.expectedResult.Matches, actualRes.Matches)
 	}
 }
@@ -99,15 +101,21 @@ func runTestCases(t *testing.T, testCases []testCase) {
 	for _, testCase := range testCases {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
+			jsonutil.LogAndBeautify(t, c.obj, "--- Input ---")
+			jsonutil.LogAndBeautify(t, c.obj, "--- Expected ---")
 			t.Run("on fully hydrated object", func(t *testing.T) {
 				evaluator, err := compilerInstance.CompileRegoBasedEvaluator(c.q)
 				require.NoError(t, err)
+				t.Log("--- evaluator ---")
+				t.Log(evaluator.(*regoBasedEvaluator).module)
 				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
 				evaluator, err := augmentedCompilerInstance.CompileRegoBasedEvaluator(c.q)
 				require.NoError(t, err)
+				t.Log("--- evaluator ---")
+				t.Log(evaluator.(*regoBasedEvaluator).module)
 				topLevelBare := &TopLevelBare{
 					ValA: c.obj.ValA,
 				}

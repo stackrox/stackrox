@@ -24,7 +24,8 @@ type RegoCompiler interface {
 }
 
 type regoBasedEvaluator struct {
-	q rego.PreparedEvalQuery
+	q      rego.PreparedEvalQuery
+	module string // For debug
 }
 
 // convertBindingToResult converts a set of variable bindings to a result.
@@ -122,7 +123,7 @@ func (r *regoCompilerForType) CompileRegoBasedEvaluator(query *query.Query) (eva
 	if err != nil {
 		return nil, err
 	}
-	return &regoBasedEvaluator{q: q}, nil
+	return &regoBasedEvaluator{q: q, module: regoModule}, nil
 }
 
 type fieldMatchData struct {
