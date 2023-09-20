@@ -257,6 +257,7 @@
 {{/*
     Central setup.
    */}}
+
 [< if ne .RenderMode "scannerOnly" >]
 {{ include "srox.centralSetup" $ }}
 [< end >]
