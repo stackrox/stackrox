@@ -42,7 +42,7 @@ func NewMatcherService(matcher matcher.Matcher, indexer indexer.Indexer) *matche
 }
 
 func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVulnerabilitiesRequest) (*v4.VulnerabilityReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "service/matcher")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/matcher")
 	if err := validators.ValidateGetVulnerabilitiesRequest(req); err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}

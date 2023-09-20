@@ -32,7 +32,7 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
@@ -81,7 +81,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 }
 
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
 	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/service/indexer")
 	_, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
