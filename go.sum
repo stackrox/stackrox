@@ -1521,8 +1521,8 @@ github.com/stackrox/yaml/v2 v2.4.1 h1:09ux+QFfvp+Lk73pwGlMTAHeZoS2pqs6CCngYaJ6EQ
 github.com/stackrox/yaml/v2 v2.4.1/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
 github.com/stackrox/yaml/v3 v3.0.0 h1:GF9Xtco/eGpj6Ytivh7RcUJQR2jKxzEBfw2Qlrzci7g=
 github.com/stackrox/yaml/v3 v3.0.0/go.mod h1:360StwOazy3cplMWHzBAA9y6InmKu/v7WB0/eMiPXB8=
-github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f h1:Ofa3PAa609eSHcHP2kCJDUWUnuEWfiqXhsuppk/QtOE=
-github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
+github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e h1:tufzLLs6t5cNlZbCaU5ftO8qNc4UkcSRfF1Oj1dlIzg=
+github.com/stackrox/zap v1.15.1-0.20230918235618-2bd149903d0e/go.mod h1:MA8QOfq0BHJwdXa996Y4dYkAqRKB8/1K1QMMZVaNZjQ=
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
 github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
 github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
