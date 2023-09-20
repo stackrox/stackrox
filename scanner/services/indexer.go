@@ -4,12 +4,9 @@ import (
 	"context"
 	"crypto/sha512"
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
@@ -18,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/services/converters"
+	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
 
@@ -34,11 +32,12 @@ func NewIndexerService(indexer indexer.Indexer) *indexerService {
 }
 
 func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIndexReportRequest) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
 	// TODO We currently only support container images, hence we assume the resource
 	//      is of that type. When introducing nodes and other resources, this should
 	//      evolve.
 	resourceType := "containerimage"
-	if err := validateContainerImageRequest(req); err != nil {
+	if err := validators.ValidateContainerImageRequest(req); err != nil {
 		return nil, err
 	}
 	manifestDigest, err := createManifestDigest(req.GetHashId())
@@ -82,6 +81,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 }
 
 func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexReportRequest) (*v4.IndexReport, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
 	clairReport, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
@@ -92,44 +92,12 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 }
 
 func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexReportRequest) (*types.Empty, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "service/indexer")
 	_, err := s.getClairIndexReport(ctx, req.GetHashId())
 	if err != nil {
 		return nil, err
 	}
 	return &types.Empty{}, nil
-}
-
-// validateContainerImageRequest validates a container image request.
-func validateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
-	if req == nil {
-		return errox.InvalidArgs.New("empty request")
-	}
-	if !strings.HasPrefix(req.GetHashId(), "/v4/containerimage/") {
-		return errox.InvalidArgs.Newf("invalid hash id: %q", req.GetHashId())
-	}
-	if req.GetContainerImage() == nil {
-		return errox.InvalidArgs.New("invalid resource locator for container image")
-	}
-	// Validate container image URL.
-	imgURL := req.GetContainerImage().GetUrl()
-	if imgURL == "" {
-		return errox.InvalidArgs.New("missing image URL")
-	}
-	u, err := url.Parse(imgURL)
-	if err != nil {
-		return errox.InvalidArgs.Newf("invalid image URL: %q", imgURL).CausedBy(err)
-	}
-	switch u.Scheme {
-	case "http", "https":
-	default:
-		return errox.InvalidArgs.New("image URL does not start with http:// or https://")
-	}
-	imageRef := strings.TrimPrefix(imgURL, u.Scheme+"://")
-	_, err = name.ParseReference(imageRef, name.StrictValidation)
-	if err != nil {
-		return errox.InvalidArgs.CausedBy(err)
-	}
-	return nil
 }
 
 // createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
