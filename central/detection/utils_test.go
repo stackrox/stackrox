@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	testCategories = []string{"Joseph rules"}
+	testCategories = []string{"joseph rules"}
 	testPolicyOne  = &storage.Policy{
 		Categories: testCategories,
 	}
