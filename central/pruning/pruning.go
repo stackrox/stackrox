@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -66,7 +67,7 @@ var (
 	lastLogImbuePruneTime time.Time
 )
 
-// GarbageCollector implements a generic garbage collection mechanism
+// GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
 	Start()
 	Stop()
@@ -169,6 +170,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		g.removeOldReportHistory(pvtConfig)
 		g.removeOldReportBlobs(pvtConfig)
+	}
+	if features.AdministrationEvents.Enabled() {
+		g.removeExpiredAdministrationEvents(pvtConfig)
 	}
 	postgres.PruneActiveComponents(pruningCtx, g.postgres)
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
@@ -459,6 +463,11 @@ func (g *garbageCollectorImpl) removeOrphanedPLOP() {
 	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
 		log.Error(errors.Wrap(err, "error removing PLOP"))
 	}
+}
+
+func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {
+	retentionDays := time.Duration(config.GetAdministrationEventsConfig().GetRetentionDurationDays()) * 24 * time.Hour
+	postgres.PruneAdministrationEvents(pruningCtx, g.postgres, retentionDays)
 }
 
 func (g *garbageCollectorImpl) getOrphanedAlerts(ctx context.Context) ([]string, error) {

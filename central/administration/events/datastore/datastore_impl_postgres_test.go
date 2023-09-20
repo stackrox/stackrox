@@ -196,9 +196,9 @@ func (s *datastorePostgresTestSuite) TestAddEvent_WriterBufferFull() {
 }
 
 func (s *datastorePostgresTestSuite) addEvents(numOfEvents int) {
-	events := fixtures.GetMultipleAdministrationEvents(numOfEvents)
-	for _, event := range events {
-		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, event))
+	administrationEvents := fixtures.GetMultipleAdministrationEvents(numOfEvents)
+	for _, administrationEvent := range administrationEvents {
+		s.Require().NoError(s.datastore.AddEvent(s.writeCtx, administrationEvent))
 	}
 	s.Require().NoError(s.datastore.Flush(s.writeCtx))
 }
