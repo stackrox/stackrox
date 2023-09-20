@@ -36,6 +36,7 @@ export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
+export const deferralConfigurationPath = `${mainPath}/deferral-configuration`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
@@ -130,6 +131,7 @@ export type RouteKey =
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
+    | 'deferral-configuration'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -212,6 +214,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     dashboard: {
         resourceAccessRequirements: everyResource([]),
+    },
+    'deferral-configuration': {
+        featureFlagDependency: ['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL'],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
