@@ -152,4 +152,7 @@ spec:
           medium: Memory
           {{- /* Keep this in sync with shared_buffers in config-templates/scanner-v4-db/postgresql.conf.default */}}
           sizeLimit: 250Mi
+      - name: scanner-v4-db-password
+        secret:
+          secretName: scanner-v4-db-password
 {{- end }}

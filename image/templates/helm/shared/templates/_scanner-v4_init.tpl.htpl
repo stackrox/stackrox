@@ -32,12 +32,15 @@
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
 
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
-    {{ include "srox.configureCrypto" (list $ "scanner.serviceTLS" $scannerCertSpec) }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $scannerCertSpec) }}
+
+    {{ $scannerCertSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner v4 Matcher" "dnsBase" "scanner-v4" }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $scannerCertSpec) }}
 
     {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }}
-    {{ include "srox.configureCrypto" (list $ "scanner.dbServiceTLS" $scannerDBCertSpec) }}
+    {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
 {{ end }}
 
-{{ include "srox.configurePassword" (list $ "scanner-v4.db.password") }}
+{{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
 
 {{ end }}
