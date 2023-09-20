@@ -217,7 +217,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
     customize_envVars+=$'\n      - name: ROX_OPA_BASED_EVALUATOR'
-    customize_envVars+=$'\n        value: "'"${ROX_OPA_BASED_EVALUATOR:-DISABLED}"'"'
+    customize_envVars+=$'\n        value: "'"${ROX_OPA_BASED_EVALUATOR:-false}"'"'
 
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
