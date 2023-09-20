@@ -255,7 +255,7 @@ func (ds *datastoreImpl) GetProcessListeningOnPort(
 	}
 
 	if processesListeningOnPorts == nil {
-		log.Warnf("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
+		log.Debugf("In GetProcessListeningOnPort. Query for deployment %s returned nil", deploymentID)
 	}
 
 	return processesListeningOnPorts, nil
