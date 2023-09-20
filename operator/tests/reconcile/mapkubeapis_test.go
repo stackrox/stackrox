@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -202,7 +203,7 @@ func newReconciler(chrt chart.Chart, actionClientGetter helmClient.ActionClientG
 
 func getManagerOrFail() manager.Manager {
 	mgr, err := manager.New(cfg, manager.Options{
-		MetricsBindAddress: "0",
+		Metrics: server.Options{BindAddress: "0"},
 	})
 	Expect(err).NotTo(HaveOccurred())
 	return mgr

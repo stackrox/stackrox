@@ -41,7 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -117,17 +117,14 @@ func run() error {
 	}
 	defer restore()
 
-	var webhookServer *webhook.Server
+	var webhookServer webhook.Server
 	if enableWebhooks.BooleanSetting() {
-		webhookServer = &webhook.Server{
-			TLSOpts: getTLSOptions(enableHTTP2),
-		}
+		webhookServer = webhook.NewServer(getWebhookOptions(enableHTTP2))
 	}
 
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Metrics:                server.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
@@ -137,13 +134,12 @@ func run() error {
 		return errors.Wrap(err, "unable to create manager")
 	}
 
-	if !enableWebhooks.BooleanSetting() {
-		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
-	} else {
-		maybeUseLegacyTLSFileLocation(mgr)
+	if enableWebhooks.BooleanSetting() {
 		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
+	} else {
+		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	}
 
 	if enableProfiling.BooleanSetting() {
@@ -188,7 +184,7 @@ func run() error {
 	return nil
 }
 
-func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
+func getWebhookOptions(enableHTTP2 bool) webhook.Options {
 	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
 	// provide the TLS certificate/key in the location referenced by default by the controller runtime
 	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
@@ -196,17 +192,11 @@ func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
 	// If the files are missing at the default location, then we explicitly set the settings as follows
 	// to force usage of the legacy location, which is provided both by old and new OLM, but not
 	// by the "make deploy" scaffolding.
-	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
-		return
-	}
-	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
-	server := mgr.GetWebhookServer()
-	server.CertDir = "/apiserver.local.config/certificates"
-	server.CertName = "apiserver.crt"
-	server.KeyName = "apiserver.key"
-}
 
-func getTLSOptions(enableHTTP2 bool) []func(*tls.Config) {
+	opts := webhook.Options{
+		Port: 9443,
+	}
+
 	// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
 	// the Go standard library and golang.org/x/net are fully fixed.
 	// Right now, it is possible for authenticated and unauthenticated users to
@@ -220,10 +210,17 @@ func getTLSOptions(enableHTTP2 bool) []func(*tls.Config) {
 	}
 
 	if !enableHTTP2 {
-		return []func(*tls.Config){
+		opts.TLSOpts = []func(*tls.Config){
 			forceHTTP1,
 		}
 	}
 
-	return nil
+	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
+		return opts
+	}
+	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
+	opts.CertDir = "/apiserver.local.config/certificates"
+	opts.CertName = "apiserver.crt"
+	opts.KeyName = "apiserver.key"
+	return opts
 }

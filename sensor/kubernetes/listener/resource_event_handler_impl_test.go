@@ -70,7 +70,7 @@ func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHan
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
 	suite.resolver.EXPECT().Send(gomock.Any())
-	handler.OnAdd(obj)
+	handler.OnAdd(obj, false)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
 
@@ -124,7 +124,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestContextIsPassed() {
 	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
 	suite.resolver.EXPECT().Send(matchContextValue("abc"))
-	handler.OnAdd(obj)
+	handler.OnAdd(obj, false)
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) TestIDsAddedToMissingSet() {
@@ -198,7 +198,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_SYNC_RESOURCE).
 		Return(&component.ResourceEvent{})
 	suite.resolver.EXPECT().Send(gomock.Any())
-	handler.OnAdd(testMsgTwo)
+	handler.OnAdd(testMsgTwo, false)
 	suite.assertFinished(handler)
 }
 

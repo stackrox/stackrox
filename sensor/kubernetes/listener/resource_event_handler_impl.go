@@ -32,7 +32,7 @@ type resourceEventHandlerImpl struct {
 	hasSeenAllInitialIDsSignal concurrency.Signal
 }
 
-func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
+func (h *resourceEventHandlerImpl) OnAdd(obj interface{}, _ bool) {
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
 	if h.syncingResources != nil && h.syncingResources.Get() {
 		h.sendResourceEvent(obj, nil, central.ResourceAction_SYNC_RESOURCE)
