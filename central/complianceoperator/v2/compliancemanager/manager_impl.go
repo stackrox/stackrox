@@ -3,6 +3,7 @@ package compliancemanager
 import (
 	"context"
 
+	"github.com/adhocore/gronx"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	compIntegration "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -92,6 +93,22 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 		return nil, nil
 	}
 
+	// Convert and validate schedule
+	cron := defaultScanSchedule
+	var err error
+	if scanRequest.GetSchedule() != nil {
+		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
+		if err != nil {
+			log.Error(err)
+			return nil, errors.Errorf("Unable to convert schedule for scan configuration named %q to cron.", scanRequest.GetScanName())
+		}
+		cronValidator := gronx.New()
+		if !cronValidator.IsValid(cron) {
+			return nil, errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
+		}
+		log.Infof("SHREWS -- the cron is %q", cron)
+	}
+
 	// Check if scan configuration already exists.
 	found, err := m.scanSettingDS.GetScanConfigurationExists(ctx, scanRequest.GetScanName())
 	if err != nil {
@@ -113,17 +130,6 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	var profiles []string
 	for _, profile := range scanRequest.GetProfiles() {
 		profiles = append(profiles, profile.GetProfileName())
-	}
-
-	// Convert schedule to cron
-	cron := defaultScanSchedule
-	if scanRequest.GetSchedule() != nil {
-		cron, err = schedule.ConvertToCronTab(scanRequest.GetSchedule())
-		if err != nil {
-			log.Error(err)
-			return nil, errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanName())
-		}
-		log.Infof("SHREWS -- the cron is %q", cron)
 	}
 
 	m.requestsLock.Lock()
