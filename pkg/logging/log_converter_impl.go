@@ -7,15 +7,19 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var _ events.LogConverter = (*zapLogConverter)(nil)
 
-type zapLogConverter struct{}
+type zapLogConverter struct {
+	consoleEncoder zapcore.Encoder
+}
 
 func (z *zapLogConverter) Convert(msg string, level string, module string, context ...interface{}) *events.AdministrationEvent {
 	enc := &stringObjectEncoder{
-		m: make(map[string]string, len(context)),
+		m:              make(map[string]string, len(context)),
+		consoleEncoder: z.consoleEncoder,
 	}
 	fields := make([]zap.Field, 0, len(context))
 

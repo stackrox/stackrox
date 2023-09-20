@@ -20,7 +20,8 @@ var (
 //   - Arrays, Objects
 //   - Binary data
 type stringObjectEncoder struct {
-	m map[string]string
+	m              map[string]string
+	consoleEncoder zapcore.Encoder
 }
 
 func (z *stringObjectEncoder) AddBool(key string, value bool) {
@@ -51,17 +52,16 @@ func (z *stringObjectEncoder) AddUint64(key string, value uint64) {
 }
 
 func (z *stringObjectEncoder) CreateMessage(msg string, level string, fields []zapcore.Field) (string, error) {
-	consoleEncoder := zapcore.NewConsoleEncoder(config.EncoderConfig)
 	entry := zapcore.Entry{
 		Level:   toZapLevel(level),
 		Message: msg,
 	}
-	buf, err := consoleEncoder.EncodeEntry(entry, fields)
+	buf, err := z.consoleEncoder.EncodeEntry(entry, fields)
 	if err != nil {
 		return "", err
 	}
 
-	split := strings.SplitAfter(buf.String(), cases.Title(language.English, cases.Compact).String(entry.Level.String()))
+	split := strings.SplitAfterN(buf.String(), cases.Title(language.English, cases.Compact).String(entry.Level.String()), 2)
 	return strings.TrimSuffix(strings.TrimSpace(split[1]), "\n"), nil
 }
 

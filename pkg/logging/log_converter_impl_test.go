@@ -7,22 +7,23 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func TestConvert(t *testing.T) {
-	zc := &zapLogConverter{}
+	zc := &zapLogConverter{consoleEncoder: zapcore.NewConsoleEncoder(config.EncoderConfig)}
 
 	expectedEvent := &events.AdministrationEvent{
 		Domain:       "Image Scanning",
 		Hint:         events.GetHint("Image Scanning", "Image"),
 		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
-		Message:      `this is an events test {"image": "some-image", "another": true}`,
+		Message:      `Warn: this is an events test {"image": "some-image", "another": true}`,
 		ResourceID:   "some-image",
 		ResourceType: "Image",
 		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
 	}
 
-	event := zc.Convert("this is an events test", "warn", "reprocessor", ImageName("some-image"),
+	event := zc.Convert("Warn: this is an events test", "warn", "reprocessor", ImageName("some-image"),
 		zap.Bool("another", true))
 
 	assert.Equal(t, expectedEvent.GetDomain(), event.GetDomain())
