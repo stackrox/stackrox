@@ -134,12 +134,12 @@ func run() error {
 		return errors.Wrap(err, "unable to create manager")
 	}
 
-	if !enableWebhooks.BooleanSetting() {
-		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
-	} else {
+	if enableWebhooks.BooleanSetting() {
 		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
+	} else {
+		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	}
 
 	if enableProfiling.BooleanSetting() {
