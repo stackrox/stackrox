@@ -29,17 +29,6 @@ var (
 		storage.Schedule_WEEKLY:  v2.Schedule_WEEKLY,
 		storage.Schedule_MONTHLY: v2.Schedule_MONTHLY,
 	}
-
-	defaultSchedule = &storage.Schedule{
-		IntervalType: 1,
-		Hour:         15,
-		Minute:       0,
-		Interval: &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{
-				Days: []int32{1, 2, 3, 4, 5, 6, 7},
-			},
-		},
-	}
 )
 
 func convertStorageScanConfigToV2(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) (*v2.ComplianceScanConfiguration, error) {
@@ -122,10 +111,6 @@ func convertV2ScanConfigToStorage(ctx context.Context, scanConfig *v2.Compliance
 
 // convertV2ScheduleToProto converts v2.Schedule to storage.Schedule. Does not validate v2.Schedule
 func convertV2ScheduleToProto(schedule *v2.Schedule) *storage.Schedule {
-	if schedule == nil {
-		return defaultSchedule
-	}
-
 	ret := &storage.Schedule{
 		IntervalType: v2IntervalTypeToStorage[schedule.GetIntervalType()],
 		Hour:         schedule.GetHour(),
