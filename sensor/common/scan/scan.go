@@ -112,8 +112,9 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 //
 // Will return any errors that may occur during scanning or when reaching out to Central.
 func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, srcImage *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
-	if srcImage == nil {
-		return nil, pkgErrors.Wrap(ErrEnrichNotStarted, "missing image, nothing to enrich")
+	err := validateSourceImage(srcImage)
+	if err != nil {
+		return nil, errors.Join(err, ErrEnrichNotStarted)
 	}
 
 	// Check if there is a local Scanner.
@@ -135,7 +136,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	// Enrich image with metadata from one of registries.
 	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
 	if pullSourceImage == nil {
-		// A null pullSourceImage indicates that srcImage was not a valid image
+		// A null pullSourceImage indicates that the source image and all
+		// mirrors were invalid images.
 		return nil, errors.Join(errorList.ToError(), ErrEnrichNotStarted)
 	}
 
@@ -410,4 +412,23 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 	}
 
 	return regFactory.CreateRegistry(ii)
+}
+
+// validateSourceImage will return an error if an image is invalid per local
+// scanning expectations.
+func validateSourceImage(srcImage *storage.ContainerImage) error {
+	if srcImage == nil {
+		return pkgErrors.Errorf("missing image")
+	}
+
+	if srcImage.GetName() == nil {
+		return pkgErrors.Errorf("missing image name")
+	}
+
+	// A fully qualified image is expected at this point.
+	if srcImage.GetName().GetRegistry() == "" {
+		return pkgErrors.Errorf("missing image registry")
+	}
+
+	return nil
 }
