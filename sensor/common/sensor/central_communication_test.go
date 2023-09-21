@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -93,33 +93,103 @@ func (c *centralCommunicationSuite) Test_CentralCommunication_Start() {
 	}
 }
 
-func (c *centralCommunicationSuite) Test_CentralCommunication_Start_ClientReconciliation() {
-	deploymentUUID := uuid.NewV4()
-	deploymentKey := fmt.Sprintf("deployment:%s", deploymentUUID)
-
-	centralHashes := map[string]uint64{
-		deploymentKey: 1234,
+func (c *centralCommunicationSuite) Test_ClientReconciliation() {
+	testCases := map[string]struct {
+		deduperState           map[string]uint64
+		componentMessages      []*central.MsgFromSensor
+		neverMatchesState      func(messages []*central.MsgFromSensor) bool
+		eventuallyMatchesState func(messages []*central.MsgFromSensor) bool
+	}{
+		"Deduper hash hit": {
+			deduperState: map[string]uint64{
+				deploymentKey(fixtureconsts.Deployment1): 1111,
+			},
+			componentMessages: []*central.MsgFromSensor{
+				givenDeployment(fixtureconsts.Deployment1, "dep1", "1111"),
+			},
+			neverMatchesState: anyDeploymentSent,
+		},
+		"All deployments sent": {
+			deduperState: map[string]uint64{},
+			componentMessages: []*central.MsgFromSensor{
+				givenDeployment(fixtureconsts.Deployment1, "dep1", "1111"),
+				givenDeployment(fixtureconsts.Deployment2, "dep2", "2222"),
+			},
+			eventuallyMatchesState: deploymentsSentCount(2),
+		},
+		"Updated deployment": {
+			deduperState: map[string]uint64{
+				deploymentKey(fixtureconsts.Deployment1): 1111,
+			},
+			componentMessages: []*central.MsgFromSensor{
+				givenDeployment(fixtureconsts.Deployment1, "dep1", "1212"), // hash was updated
+			},
+			eventuallyMatchesState: deploymentIDSent(fixtureconsts.Deployment1),
+		},
 	}
 
-	c.setupFakeCentral(c.clientReconciliationFakeCentral(centralHashes))
-	componentMessages := c.givenCentralCommunication()
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			c.setupFakeCentral(c.clientReconciliationFakeCentral(tc.deduperState))
+			componentMessages := c.givenCentralCommunication()
 
-	componentMessages <- message.New(givenDeployment(uuid.NewV4().String(), "deployment-a", "4321"))
-	componentMessages <- message.New(givenDeployment(deploymentUUID.String(), "deployment-b", "1234"))
+			for _, msg := range tc.componentMessages {
+				componentMessages <- message.New(msg)
+			}
 
-	// Wait for sync message or timeout after 5s
-	timeout := time.After(5 * time.Second)
-	deploymentsReceived := 0
-	for deploymentsReceived != 2 {
-		select {
-		case <-timeout:
-			c.FailNow("Didn't receive deployments after 5 seconds")
-		case msg := <-c.receivedMessages:
-			if msg.GetEvent().GetDeployment() != nil {
-				deploymentsReceived += 1
+			if tc.eventuallyMatchesState != nil {
+				c.Assert().Eventually(func() bool {
+					return tc.eventuallyMatchesState(c.fakeCentral.GetAllMessages())
+				}, 3*time.Second, 100*time.Millisecond)
+			}
+
+			if tc.neverMatchesState != nil {
+				c.Assert().Never(func() bool {
+					return tc.neverMatchesState(c.fakeCentral.GetAllMessages())
+				}, 3*time.Second, 100*time.Millisecond)
+			}
+		})
+	}
+}
+
+func deploymentIDSent(id string) func([]*central.MsgFromSensor) bool {
+	return func(messages []*central.MsgFromSensor) bool {
+		for _, m := range messages {
+			if dep := m.GetEvent().GetDeployment(); dep != nil {
+				if dep.GetId() == id {
+					return true
+				}
 			}
 		}
+		return false
 	}
+}
+
+func deploymentsSentCount(n int) func([]*central.MsgFromSensor) bool {
+	return func(messages []*central.MsgFromSensor) bool {
+		var count int
+		for _, m := range messages {
+			if m.GetEvent().GetDeployment() != nil {
+				count += 1
+			}
+		}
+		if count == n {
+			return true
+		}
+		return false
+	}
+}
+
+func anyDeploymentSent(messages []*central.MsgFromSensor) bool {
+	for _, m := range messages {
+		if m.GetEvent().GetDeployment() != nil {
+			return true
+		}
+	}
+	return false
+}
+func deploymentKey(id string) string {
+	return fmt.Sprintf("deployment:%s", id)
 }
 
 func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.SensorComponent {
@@ -157,7 +227,7 @@ func (c *centralCommunicationSuite) serverReconciliationFakeCentral() *centralDe
 
 func (c *centralCommunicationSuite) givenCentralCommunication() chan *message.ExpiringMessage {
 	componentMessages := make(chan *message.ExpiringMessage, 10)
-	comms := NewCentralCommunication(false, NewFakeSensorComponent(componentMessages))
+	comms := NewCentralCommunication(true, false, NewFakeSensorComponent(componentMessages))
 
 	reachable := concurrency.Flag{}
 	// This implicitly starts a goroutine
