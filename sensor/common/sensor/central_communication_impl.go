@@ -44,6 +44,7 @@ type centralCommunicationImpl struct {
 
 	isReconnect          bool
 	clientReconciliation bool
+	initialDeduperState  map[string]uint64
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -176,7 +177,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.
@@ -243,7 +244,30 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialPolicySync(stream, detector)
+	if err := s.initialPolicySync(stream, detector); err != nil {
+		return err
+	}
+
+	if s.clientReconciliation {
+		// If client is reconciling, Sensor needs to wait for Central to send the hashes
+		return s.initialDeduperSync(stream)
+	}
+	return nil
+}
+
+func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
+	// TODO: stop waiting for initial deduper state if it takes too long
+	msg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving deduper state")
+	}
+
+	if deduperState := msg.GetDeduperState(); deduperState == nil {
+		return errors.Wrapf(err, "expected deduper state to be sent but received: %T", msg.Msg)
+	} else {
+		s.initialDeduperState = deduperState.GetResourceHashes()
+	}
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {

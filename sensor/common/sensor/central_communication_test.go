@@ -266,7 +266,7 @@ func anyDeploymentSent(messages []*central.MsgFromSensor) bool {
 	return false
 }
 func deploymentKey(id string) string {
-	return fmt.Sprintf("deployment:%s", id)
+	return fmt.Sprintf("Deployment:%s", id)
 }
 
 func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.SensorComponent {
