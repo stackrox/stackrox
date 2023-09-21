@@ -64,7 +64,7 @@ enum SearchCategory {
     REPORT_METADATA                = 52;
     REPORT_SNAPSHOT                = 53;
     COMPLIANCE_INTEGRATIONS        = 54;
-    COMPLIANCE_SCAN_SETTINGS       = 55;
+    COMPLIANCE_SCAN_CONFIG         = 55;
     COMPLIANCE_SCAN                = 56;
     COMPLIANCE_CHECK_RESULTS       = 57;
     BLOB                           = 58;

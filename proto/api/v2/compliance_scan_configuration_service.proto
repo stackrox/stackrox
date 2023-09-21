@@ -48,11 +48,6 @@ message ComplianceScanConfigurationStatus {
 }
 
 // Next available tag: 2
-message ComplianceScanConfigurationRequest {
-    string id = 1;
-}
-
-// Next available tag: 2
 message ListComplianceScanConfigurationResponse {
     repeated ComplianceScanConfigurationStatus configuration = 1;
 }

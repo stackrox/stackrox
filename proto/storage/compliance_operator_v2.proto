@@ -144,7 +144,7 @@ message ScanStatus {
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
     string                     id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                     scan_config_id     = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
+    string                     scan_config_id     = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
     string                     cluster_id         = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator"'];
     repeated string            errors             = 4;
     repeated ProfileShim       profile            = 5;
