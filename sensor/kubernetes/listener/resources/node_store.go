@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
@@ -48,6 +49,12 @@ var _ store.NodeStore = (*nodeStoreImpl)(nil)
 type nodeStoreImpl struct {
 	mutex sync.RWMutex
 	nodes map[string]*nodeWrap
+}
+
+func (s *nodeStoreImpl) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO implement me
+	panic("implement me")
 }
 
 func newNodeStore() *nodeStoreImpl {

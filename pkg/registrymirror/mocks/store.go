@@ -13,6 +13,7 @@ import (
 
 	v1 "github.com/openshift/api/config/v1"
 	v1alpha1 "github.com/openshift/api/operator/v1alpha1"
+	reconcile "github.com/stackrox/rox/pkg/reconcile"
 	gomock "go.uber.org/mock/gomock"
 	types "k8s.io/apimachinery/pkg/types"
 )
@@ -107,6 +108,21 @@ func (m *MockStore) PullSources(srcImage string) ([]string, error) {
 func (mr *MockStoreMockRecorder) PullSources(srcImage any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullSources", reflect.TypeOf((*MockStore)(nil).PullSources), srcImage)
+}
+
+// Reconcile mocks base method.
+func (m *MockStore) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reconcile", resType, resID, resHash)
+	ret0, _ := ret[0].(map[string]reconcile.SensorReconciliationEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Reconcile indicates an expected call of Reconcile.
+func (mr *MockStoreMockRecorder) Reconcile(resType, resID, resHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockStore)(nil).Reconcile), resType, resID, resHash)
 }
 
 // UpsertImageContentSourcePolicy mocks base method.

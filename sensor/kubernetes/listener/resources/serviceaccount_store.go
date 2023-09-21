@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,6 +14,14 @@ type serviceAccountKey struct {
 type ServiceAccountStore struct {
 	lock                        sync.RWMutex
 	serviceAccountToPullSecrets map[serviceAccountKey][]string
+}
+
+// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state.
+func (sas *ServiceAccountStore) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO implement me
+	panic("implement me")
 }
 
 func newServiceAccountStore() *ServiceAccountStore {

@@ -7,12 +7,16 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/reconcile"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -462,5 +466,120 @@ func stubService() corev1.ServicePort {
 			IntVal: 4321,
 		},
 		NodePort: 0,
+	}
+}
+
+func TestDeploymentStore_Reconcile(t *testing.T) {
+	const (
+		existingDeployID1 = "deployment-1"
+		missingDeployID1  = "not-existing-deployment"
+	)
+	depl1 := &deploymentWrap{
+		Deployment: &storage.Deployment{
+			Id:                            existingDeployID1,
+			Name:                          "depl1",
+			Hash:                          0,
+			Type:                          "",
+			Namespace:                     "ns",
+			NamespaceId:                   "",
+			OrchestratorComponent:         false,
+			Replicas:                      0,
+			Labels:                        nil,
+			PodLabels:                     nil,
+			LabelSelector:                 nil,
+			Created:                       nil,
+			ClusterId:                     "cluster1",
+			ClusterName:                   "",
+			Containers:                    nil,
+			Annotations:                   nil,
+			Priority:                      0,
+			Inactive:                      false,
+			ImagePullSecrets:              nil,
+			ServiceAccount:                "",
+			ServiceAccountPermissionLevel: 0,
+			AutomountServiceAccountToken:  false,
+			HostNetwork:                   false,
+			HostPid:                       false,
+			HostIpc:                       false,
+			RuntimeClass:                  "",
+			Tolerations:                   nil,
+			Ports:                         nil,
+			StateTimestamp:                0,
+			RiskScore:                     0,
+		},
+		registryOverride: "",
+		original:         nil,
+		portConfigs:      nil,
+		pods:             nil,
+		registryStore:    nil,
+		isBuilt:          false,
+		mutex:            sync.RWMutex{},
+	}
+	require.NoError(t, depl1.updateHash(), "failed updating the hash for test deployment")
+
+	storage1 := make(map[string]*deploymentWrap)
+	storage1[existingDeployID1] = depl1
+	t.Logf("Deployment hash: %d", depl1.GetHash())
+
+	type args struct {
+		resType string
+		resID   string
+		resHash uint64
+	}
+	tests := map[string]struct {
+		storage map[string]*deploymentWrap
+		args    args
+		want    map[string]reconcile.SensorReconciliationEvent
+		wantErr assert.ErrorAssertionFunc
+	}{
+		"Exisiting deployment with matching hash should yield no reconciliation events": {
+			storage: storage1,
+			args: args{
+				resType: "Deployment",
+				resID:   existingDeployID1,
+				resHash: depl1.GetHash(),
+			},
+			want: map[string]reconcile.SensorReconciliationEvent{existingDeployID1: reconcile.SensorReconciliationEventNoop},
+			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
+				return assert.Nil(t, err, args)
+			},
+		},
+		"Exisiting deployment with different hash should yield ResourceAction_UPDATE_RESOURCE": {
+			storage: storage1,
+			args: args{
+				resType: "Deployment",
+				resID:   existingDeployID1,
+				resHash: depl1.GetHash() + 1,
+			},
+			want: map[string]reconcile.SensorReconciliationEvent{existingDeployID1: reconcile.SensorReconciliationEventUpdate},
+			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
+				return assert.Nil(t, err, args)
+			},
+		},
+		"Deployment that cannot be found should yield ResourceAction_REMOVE_RESOURCE": {
+			storage: storage1,
+			args: args{
+				resType: "Deployment",
+				resID:   missingDeployID1,
+				resHash: depl1.GetHash(),
+			},
+			want: map[string]reconcile.SensorReconciliationEvent{missingDeployID1: reconcile.SensorReconciliationEventDelete},
+			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
+				return assert.Nil(t, err, args)
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ds := &DeploymentStore{
+				lock:        sync.RWMutex{},
+				deployments: tt.storage,
+			}
+			got, err := ds.Reconcile(tt.args.resType, tt.args.resID, tt.args.resHash)
+			if !tt.wantErr(t, err, fmt.Sprintf("Reconcile(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "Reconcile(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)
+		})
 	}
 }

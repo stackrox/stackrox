@@ -1,12 +1,19 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+)
+
+var (
+	errUnableToReconcile                        = errors.New("unable to reconcile resource")
+	_                    reconcile.Reconcilable = (*InMemoryStoreProvider)(nil)
 )
 
 // InMemoryStoreProvider holds all stores used in sensor and exposes a public interface for each that can be used outside of the listeners.
@@ -24,7 +31,8 @@ type InMemoryStoreProvider struct {
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
 
-	cleanableStores []CleanableStore
+	cleanableStores    []CleanableStore
+	reconcilableStores []reconcile.Reconcilable
 }
 
 // CleanableStore defines a store implementation that has a function for deleting all entries
@@ -56,6 +64,19 @@ func InitializeStore() *InMemoryStoreProvider {
 	}
 
 	p.cleanableStores = []CleanableStore{
+		p.deploymentStore,
+		p.podStore,
+		p.serviceStore,
+		p.nodeStore,
+		p.entityStore,
+		p.networkPolicyStore,
+		p.rbacStore,
+		p.serviceAccountStore,
+		p.orchestratorNamespaces,
+		p.registryStore,
+		p.registryMirrorStore,
+	}
+	p.reconcilableStores = []reconcile.Reconcilable{
 		p.deploymentStore,
 		p.podStore,
 		p.serviceStore,
@@ -132,4 +153,21 @@ func (p *InMemoryStoreProvider) Nodes() store.NodeStore {
 // RegistryMirrors returns the RegistryMirror store public interface.
 func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
+}
+
+// Reconcile updates the data in the stores based on the state of Central.
+// It returns true if the reconciliation was finished, or false if none of the stores was able to reconcile.
+// If the matching store was found but the reconciliation failed, a pair of "true, error" is returned.
+func (p *InMemoryStoreProvider) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	events := make(map[string]reconcile.SensorReconciliationEvent)
+	for _, r := range p.reconcilableStores {
+		ev, err := r.Reconcile(resType, resID, resHash)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range ev {
+			events[k] = v
+		}
+	}
+	return events, errUnableToReconcile
 }
