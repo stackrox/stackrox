@@ -146,17 +146,17 @@ func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
 }
 
-// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a map of events that
-// should be sent back to Central to ensure that the states in Sensor and Central are in sync.
-func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) map[string]reconcile.SensorReconciliationEvent {
-	events := make(map[string]reconcile.SensorReconciliationEvent)
+// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
+// should be deleted in Central to keep the state of Sensor and Central in sync.
+func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) []string {
+	events := make([]string, 0)
 	for typeWithID, hashValue := range h {
 		resType, resID := stringutils.Split2(typeWithID, ":")
 		if resID == "" {
 			log.Errorf("malformed hash key: %s", typeWithID)
 			continue
 		}
-		resEvents, err := p.Reconcile(resType, resID, hashValue)
+		resEvents, err := p.ReconcileDelete(resType, resID, hashValue)
 		if err != nil {
 			log.Errorf("reconciliation error: %s", err)
 		}
@@ -164,18 +164,17 @@ func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) map[string]re
 			log.Error("empty reconciliation result")
 			continue
 		}
-		for ek, ev := range resEvents {
-			events[ek] = ev
-		}
+		events = append(events, resEvents...)
 	}
 	return events
 }
 
-// Reconcile esures that Sensor and Central state regarding resources match after a reconnect.
-func (p *InMemoryStoreProvider) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (p *InMemoryStoreProvider) ReconcileDelete(resType, resID string, resHash uint64) ([]string, error) {
 	if resStore, found := p.reconcilableStores[resType]; found {
-		return resStore.Reconcile(resType, resID, resHash)
+		return resStore.ReconcileDelete(resType, resID, resHash)
 	}
-	return map[string]reconcile.SensorReconciliationEvent{},
-		errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
+	return []string{}, errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
 }

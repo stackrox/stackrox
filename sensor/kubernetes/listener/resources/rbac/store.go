@@ -2,7 +2,6 @@ package rbac
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	v1 "k8s.io/api/rbac/v1"
 )
@@ -29,7 +28,7 @@ type Store interface {
 	FindBindingForNamespacedRole(namespace, roleName string) []namespacedBindingID
 
 	Cleanup()
-	Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error)
+	ReconcileDelete(resType, resID string, resHash uint64) ([]string, error)
 }
 
 // NewStore creates a new instance of Store

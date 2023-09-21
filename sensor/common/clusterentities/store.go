@@ -5,7 +5,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -56,9 +55,10 @@ type Store struct {
 	mutex sync.RWMutex
 }
 
-// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state.
-func (e *Store) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (e *Store) ReconcileDelete(resType, resID string, resHash uint64) ([]string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
 	panic("implement me")

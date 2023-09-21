@@ -1,10 +1,8 @@
 package resources
 
 import (
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
@@ -22,26 +20,19 @@ type DeploymentStore struct {
 	deployments map[string]*deploymentWrap
 }
 
-// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state.
-func (ds *DeploymentStore) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) ([]string, error) {
 	if resType != "Deployment" {
-		return map[string]reconcile.SensorReconciliationEvent{}, nil
+		return []string{}, nil
 	}
 	depl := ds.Get(resID)
 	if depl == nil {
 		// found on Central, not found on Sensor - need to send a Delete message
-		return map[string]reconcile.SensorReconciliationEvent{resID: reconcile.SensorReconciliationEventDelete}, nil
+		return []string{resID}, nil
 	}
-	hashValue, err := hashstructure.Hash(depl, hashstructure.FormatV2, &hashstructure.HashOptions{})
-	if err != nil || hashValue != resHash {
-		// Any problems with hash calculation should trigger an update.
-		// Found deployment in Sensor, but hash is different - need to send an Update message
-		return map[string]reconcile.SensorReconciliationEvent{resID: reconcile.SensorReconciliationEventUpdate},
-			errors.Wrap(err, "calculating deployment hash")
-	}
-	// Deployment found and still up to date
-	return map[string]reconcile.SensorReconciliationEvent{resID: reconcile.SensorReconciliationEventNoop}, nil
+	return []string{}, nil
 }
 
 // newDeploymentStore creates and returns a new deployment store.

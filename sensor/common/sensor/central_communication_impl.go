@@ -243,19 +243,18 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	if err := s.initialPolicySync(stream, detector); err != nil {
-		return err
-	}
-	return s.handleReconciliationHashes(stream, s.hashReconciliator)
+	return s.initialPolicySync(stream, detector)
 }
 
+// TODO: Call this function
 func (s *centralCommunicationImpl) handleReconciliationHashes(stream central.SensorService_CommunicateClient, handler reconciliationHandler) error {
 	msg, err := stream.Recv()
 	if err != nil {
-		return errors.Wrap(err, "receiving reconciliation hashes")
+		return errors.Wrap(err, "receiving reconciliation hashes from central")
 	}
 	if msg.GetDeduperState() == nil {
-		return errors.Errorf("initial message received from Sensor was not a deduper state: %T", msg.Msg)
+		log.Errorf("initial message received from Sensor was not a deduper state: %T", msg.Msg)
+		return nil // Ignore this message
 	}
 	events := handler.ProcessHashes(msg.GetDeduperState().GetResourceHashes())
 	log.Infof("Hash processing result: %v", events)

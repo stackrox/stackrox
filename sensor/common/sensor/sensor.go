@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
@@ -79,7 +78,7 @@ type Sensor struct {
 }
 
 type reconciliationHandler interface {
-	ProcessHashes(map[string]uint64) map[string]reconcile.SensorReconciliationEvent
+	ProcessHashes(map[string]uint64) []string
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.

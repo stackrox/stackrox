@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -15,17 +14,17 @@ func NewInMemoryStoreReconciler(storeProvider *InMemoryStoreProvider) *InMemoryS
 	return &InMemoryStoreReconciler{storeProvider: storeProvider}
 }
 
-// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a map of events that
-// should be sent back to Central to ensure that the states in Sensor and Central are in sync.
-func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) map[string]reconcile.SensorReconciliationEvent {
-	events := make(map[string]reconcile.SensorReconciliationEvent)
+// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
+// should be deleted in Central to keep the state of Sensor and Central in sync.
+func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) []string {
+	events := make([]string, 0)
 	for typeWithID, hashValue := range h {
 		resType, resID := stringutils.Split2(typeWithID, ":")
 		if resID == "" {
 			log.Errorf("malformed hash key: %s", typeWithID)
 			continue
 		}
-		resEvents, err := hr.storeProvider.Reconcile(resType, resID, hashValue)
+		resEvents, err := hr.storeProvider.ReconcileDelete(resType, resID, hashValue)
 		if err != nil {
 			log.Errorf("reconciliation error: %s", err)
 		}
@@ -33,9 +32,7 @@ func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) map[string
 			log.Error("empty reconciliation result")
 			continue
 		}
-		for ek, ev := range resEvents {
-			events[ek] = ev
-		}
+		events = append(events, resEvents...)
 	}
 	return events
 }
