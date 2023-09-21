@@ -418,16 +418,16 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 // scanning expectations.
 func validateSourceImage(srcImage *storage.ContainerImage) error {
 	if srcImage == nil {
-		return pkgErrors.Errorf("missing image")
+		return pkgErrors.New("missing image")
 	}
 
 	if srcImage.GetName() == nil {
-		return pkgErrors.Errorf("missing image name")
+		return pkgErrors.New("missing image name")
 	}
 
 	// A fully qualified image is expected at this point.
 	if srcImage.GetName().GetRegistry() == "" {
-		return pkgErrors.Errorf("missing image registry")
+		return pkgErrors.New("missing image registry")
 	}
 
 	return nil
