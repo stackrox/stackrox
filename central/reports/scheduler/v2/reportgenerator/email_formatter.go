@@ -73,11 +73,11 @@ func formatEmailBody(emailTemplate string) (string, error) {
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func addReportConfigDetails(emailBody, configDetailsHtml string) string {
+func addReportConfigDetails(emailBody, configDetailsHTML string) string {
 	var writer strings.Builder
 	writer.WriteString(emailBody)
 	writer.WriteString("\n\n")
-	writer.WriteString(configDetailsHtml)
+	writer.WriteString(configDetailsHTML)
 
 	return writer.String()
 }

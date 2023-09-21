@@ -130,11 +130,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		}
 		// If it is an empty report, do not send an attachment in the final notification email and the email body
 		// will indicate that no vulns were found
-		templateStr := defaultEmailBodyTemplate_vulnsFound
+		templateStr := defaultEmailBodyTemplate
 		if zippedSCVResult.NumDeployedImageCVEs == 0 && zippedSCVResult.NumWatchedImageCVEs == 0 {
 			// If it is an empty report, the email body will indicate that no vulns were found
 			zippedCSVData = nil
-			templateStr = defaultEmailBodyTemplate_noVulnsFound
+			templateStr = defaultNoVulnsEmailBodyTemplate
 		}
 
 		defaultEmailBody, err := formatEmailBody(templateStr)
@@ -142,7 +142,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			return errors.Wrap(err, "Error generating email body")
 		}
 
-		configDetailsHtml, err := formatReportConfigDetails(req.ReportSnapshot, zippedSCVResult.NumDeployedImageCVEs,
+		configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, zippedSCVResult.NumDeployedImageCVEs,
 			zippedSCVResult.NumWatchedImageCVEs)
 		if err != nil {
 			return errors.Wrap(err, "Error adding report config details")
@@ -161,7 +161,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			if customBody != "" {
 				emailBody = customBody
 			}
-			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHtml)
+			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 				zippedCSVData, emailSubject, emailBodyWithConfigDetails)
 			if err != nil {

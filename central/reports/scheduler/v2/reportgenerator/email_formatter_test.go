@@ -53,44 +53,37 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 			expectedHtml: `<div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								Config name: 
-							</span>
+								Config name: </span>
 							<span>config-1</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								Number of CVEs found: 
-							</span>
+								Number of CVEs found: </span>
 							<span>50 in Deployed images, 30 in Watched images</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								CVE severity: 
-							</span>
+								CVE severity: </span>
 							<span>Critical, Important, Moderate, Low</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								CVE status: 
-							</span>
+								CVE status: </span>
 							<span>Fixable, Not fixable</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								Report scope: 
-							</span>
+								Report scope: </span>
 							<span>collection-1</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								Image type: 
-							</span>
+								Image type: </span>
 							<span>Deployed images, Watched images</span>
 						</div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
-								CVEs discovered since: 
-							</span>
+								CVEs discovered since: </span>
 							<span>Last successful scheduled report</span>
 						</div>
 					</div>`,
