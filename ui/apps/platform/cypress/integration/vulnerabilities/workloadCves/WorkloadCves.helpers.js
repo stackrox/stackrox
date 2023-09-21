@@ -69,6 +69,29 @@ export function selectEntityTab(entityType) {
     cy.get(selectors.entityTypeToggleItem(entityType)).click();
 }
 
+const allSeverities = ['Critical', 'Important', 'Moderate', 'Low'];
+const anySeverityRegExp = new RegExp(`(${allSeverities.join('|')})`, 'i');
+
+/**
+ * Given a severity count text from an element, extract the severity
+ * @param severityCountText - The aria-label of the severity count element
+ * @returns {[string, string[]]} - The first element is the severity, the second is the unused severities
+ */
+export function extractNonZeroSeverityFromCount(severityCountText) {
+    // Extract the severity from the text
+    const rawSeverity = severityCountText.match(anySeverityRegExp)[1];
+    const targetSeverity = allSeverities.find((s) => s.toUpperCase() === rawSeverity.toUpperCase());
+
+    if (!targetSeverity) {
+        throw new Error(`Could not find valid severity in text: ${severityCountText}`);
+    }
+
+    return [
+        targetSeverity,
+        allSeverities.filter((s) => s.toUpperCase() !== targetSeverity.toUpperCase()),
+    ];
+}
+
 /**
  * Clean up any existing watched images via API
  */

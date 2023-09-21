@@ -15,7 +15,7 @@ var (
 	ds DataStore
 )
 
-// Singleton returns a datastore instance to handle notifications.
+// Singleton returns a datastore instance to handle events.
 func Singleton() DataStore {
 	if !features.AdministrationEvents.Enabled() {
 		return nil

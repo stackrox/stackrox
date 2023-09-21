@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,28 +15,30 @@ import (
 )
 
 const (
-	// DefaultDeployAlertRetention is the number of days to retain resolved deployment alerts
+	// DefaultDeployAlertRetention is the number of days to retain resolved deployment alerts.
 	DefaultDeployAlertRetention = 7
-	// DefaultRuntimeAlertRetention is the number of days to retain all runtime alerts
+	// DefaultRuntimeAlertRetention is the number of days to retain all runtime alerts.
 	DefaultRuntimeAlertRetention = 30
-	// DefaultDeletedRuntimeAlertRetention is the number of days to retain runtime alerts for deleted deployments
+	// DefaultDeletedRuntimeAlertRetention is the number of days to retain runtime alerts for deleted deployments.
 	DefaultDeletedRuntimeAlertRetention = 7
-	// DefaultImageRetention is the number of days to retain images for
+	// DefaultImageRetention is the number of days to retain images for.
 	DefaultImageRetention = 7
-	// DefaultAttemptedDeployAlertRetention is the number of days to retain all attempted deploy-time alerts
+	// DefaultAttemptedDeployAlertRetention is the number of days to retain all attempted deploy-time alerts.
 	DefaultAttemptedDeployAlertRetention = 7
-	// DefaultAttemptedRuntimeAlertRetention is the number of days to retain all attempted run-time alerts
+	// DefaultAttemptedRuntimeAlertRetention is the number of days to retain all attempted run-time alerts.
 	DefaultAttemptedRuntimeAlertRetention = 7
 	// DefaultExpiredVulnReqRetention is the number of days to retain expired vulnerability requests.
 	DefaultExpiredVulnReqRetention = 90
 	// DefaultDecommissionedClusterRetentionDays is the number of days to retain a cluster that is unreachable.
 	DefaultDecommissionedClusterRetentionDays = 0
-	// DefaultReportHistoryRetentionWindow number of days to retain reports
+	// DefaultReportHistoryRetentionWindow number of days to retain reports.
 	DefaultReportHistoryRetentionWindow = 7
-	// DefaultDownloadableReportRetentionDays number of days to retain downloadable reports
+	// DefaultDownloadableReportRetentionDays number of days to retain downloadable reports.
 	DefaultDownloadableReportRetentionDays = 7
-	// DefaultDownloadableReportGlobalRetentionBytes is the maximum total upper limit in bytes for all downloadable reports
+	// DefaultDownloadableReportGlobalRetentionBytes is the maximum total upper limit in bytes for all downloadable reports.
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
+	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
+	DefaultAdministrationEventsRetention = 4
 )
 
 var (
@@ -128,6 +131,14 @@ func initialize() {
 		if privateConfig.GetVulnerabilityDeferralConfig() == nil {
 			privateConfig.VulnerabilityDeferralConfig = defaultVulnerabilityDeferralConfig
 		}
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		if privateConfig.GetAdministrationEventsConfig() == nil {
+			privateConfig.AdministrationEventsConfig = &storage.AdministrationEventsConfig{
+				RetentionDurationDays: DefaultAdministrationEventsRetention}
+		}
+		needsUpsert = true
 	}
 
 	if needsUpsert {

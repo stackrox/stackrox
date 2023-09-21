@@ -261,7 +261,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
 		return
 	}
 

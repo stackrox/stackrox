@@ -298,7 +298,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	if err = retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(req.Ctx, zippedCSVData,
-			rc.GetEmailConfig().GetMailingLists(), messageText)
+			rc.GetEmailConfig().GetMailingLists(), messageText, "")
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),

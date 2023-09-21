@@ -17,6 +17,12 @@ type HTTPError interface {
 	HTTPStatus
 }
 
+// TimeoutError is an interface for HTTP errors that specify whether a timeout occurred.
+type TimeoutError interface {
+	error
+	Timeout() bool
+}
+
 type httpError struct {
 	httpStatus
 }

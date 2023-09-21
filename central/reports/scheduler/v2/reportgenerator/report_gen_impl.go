@@ -134,13 +134,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			zippedCSVData = nil
 			templateStr = noVulnsFoundEmailTemplate
 		}
-
-		messageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportSnapshot.GetVulnReportFilters().GetImageTypes())
+		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
+		defaultMessageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportSnapshot.GetVulnReportFilters().GetImageTypes())
 		if err != nil {
 			return errors.Wrap(err, "error formatting the report email text")
 		}
-
-		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
@@ -148,8 +146,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
 				continue
 			}
-			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, messageText)
+			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
+			messageText := defaultMessageText
+			if customBody != "" {
+				messageText = customBody
+			}
+			err = rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
+				zippedCSVData, messageText, notifierSnap.GetEmailConfig().GetCustomSubject())
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
 					notifierSnap.GetEmailConfig().GetNotifierId(), err))
@@ -322,9 +325,9 @@ func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cve
 /* Utility Functions */
 
 func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, messageText string) error {
+	zippedCSVData *bytes.Buffer, messageText string, subject string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, messageText)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, messageText, subject)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),

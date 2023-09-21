@@ -581,15 +581,17 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		if err := getCentralDBData(ctx, zipWriter); err != nil {
 			log.Error(err)
 		}
+
+		log.Info("Finished writing Central data to diagnostic bundle")
 	}
 
 	if opts.logs == fullK8sIntrospectionData {
 		if err := s.getK8sDiagnostics(debugDumpCtx, zipWriter, opts); err != nil {
-			log.Errorf("could not get K8s diagnostics: %+q", err)
+			log.Errorf("Could not get K8s diagnostics: %+q", err)
 			opts.logs = localLogs // fallback to local logs
 		}
 		if err := s.pullSensorMetrics(debugDumpCtx, zipWriter, opts); err != nil {
-			log.Errorf("could not get sensor metrics: %+q", err)
+			log.Errorf("Could not get sensor metrics: %+q", err)
 		}
 	}
 
@@ -719,6 +721,7 @@ func (s *serviceImpl) getDiagnosticDumpWithCentral(w http.ResponseWriter, r *htt
 		fmt.Fprint(w, err.Error())
 		return
 	}
+	log.Infof("Started writing diagnostic bundle %q with options: %+v", filename, opts)
 
 	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }

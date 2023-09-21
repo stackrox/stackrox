@@ -16,12 +16,12 @@ import (
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager) error {
+func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
-			&source.Kind{Type: &platform.Central{}},
+			source.Kind(mgr.GetCache(), &platform.Central{}),
 			reconciler.HandleSiblings(platform.SecuredClusterGVK, mgr),
 			// Only appearance and disappearance of a Central resource can influence whether
 			// a local scanner should be deployed by the SecuredCluster controller.
@@ -31,6 +31,11 @@ func RegisterNewReconciler(mgr ctrl.Manager) error {
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient())),
+	}
+
+	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
+	if err != nil {
+		return err
 	}
 
 	opts = commonExtensions.AddMapKubeAPIsExtensionIfMapFileExists(opts)

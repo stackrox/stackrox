@@ -88,7 +88,7 @@ function WorkloadTableToolbar({
                     <CVESeverityDropdown searchFilter={searchFilter} onSelect={onSelect} />
                     {/* CVEStatusDropdown is disabled until fixability filters are fixed */}
                 </ToolbarGroup>
-                <ToolbarGroup className="pf-u-w-100">
+                <ToolbarGroup aria-label="applied search filters" className="pf-u-w-100">
                     <SearchFilterChips
                         onFilterChange={onFilterChange}
                         filterChipGroupDescriptors={[

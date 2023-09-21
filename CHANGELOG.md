@@ -18,6 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Fatures
 
 ### Technical Changes
+- Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
 
 ## [4.2.0]
 
