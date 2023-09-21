@@ -126,7 +126,7 @@ func validateDistribution(_ *v4.Distribution) error {
 
 func validatePackage(pkg *v4.Package) error {
 	if pkg.GetSource().GetSource() != nil {
-		return fmt.Errorf("source package also has a source package")
+		return fmt.Errorf("package ID=%q has a source with a source", pkg.GetId())
 	}
 	return nil
 }
