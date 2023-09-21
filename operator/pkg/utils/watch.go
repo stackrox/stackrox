@@ -13,10 +13,10 @@ import (
 
 // ListSiblings populates "list" with objects in the same namespace as "object", using "client".
 // Panics on error.
-func ListSiblings(list ctrlClient.ObjectList, object ctrlClient.Object, client ctrlClient.Client) {
-	// Unfortunately the EventHandler API does not provide a context, so we do our best
-	// not to hang indefinitely. Hopefully an informer-backed client does not block anyway.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+func ListSiblings(ctx context.Context, list ctrlClient.ObjectList, object ctrlClient.Object, client ctrlClient.Client) {
+	// We specify a timeout as an attempt to not hang indefinitely, in case the upstream context has no deadline.
+	// Hopefully an informer-backed client does not block anyway.
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel() // free resources if List returns ok
 	if err := client.List(ctx, list, ctrlClient.InNamespace(object.GetNamespace())); err != nil {
 		// This should restart the controller process and force a reconciliation.

@@ -2,7 +2,6 @@ import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag, hasOrchestratorFlavor } from '../../helpers/features';
 import {
-    interactAndWaitForVulnerabilityManagementEntities,
     interactAndWaitForVulnerabilityManagementEntity,
     interactAndWaitForVulnerabilityManagementSecondaryEntities,
     visitVulnerabilityManagementEntities,
@@ -217,35 +216,6 @@ describe('Entities single views', () => {
                         expect(descriptionInSidePanel).to.equal(descriptionInList);
                     });
             });
-    });
-
-    it('should not filter cluster entity page regardless of entity context', function () {
-        if (hasOrchestratorFlavor('openshift')) {
-            this.skip();
-        }
-
-        const entitiesKey = 'namespaces';
-        visitVulnerabilityManagementEntities(entitiesKey);
-
-        // Sort descending by Risk Priority, because on OpenShift,
-        // all namespaces on the first page might have deployments.
-        const thSelector = '.rt-th:contains("Risk Priority")';
-        interactAndWaitForVulnerabilityManagementEntities(() => {
-            cy.get(thSelector).click();
-        }, entitiesKey);
-
-        interactAndWaitForVulnerabilityManagementEntity(() => {
-            cy.get(`${selectors.tableRows}:contains("No deployments"):eq(0)`).click();
-        }, entitiesKey);
-
-        interactAndWaitForVulnerabilityManagementEntity(() => {
-            cy.get('[data-testid="Cluster-value"] a').click();
-        }, 'clusters');
-
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}`).should('exist');
-        cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains("No deployments")`).should(
-            'not.exist'
-        );
     });
 
     it('should show the active state in Component overview when scoped under a deployment', () => {

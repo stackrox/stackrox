@@ -13,7 +13,7 @@ type searcherImpl struct {
 	indexer index.Indexer
 }
 
-// Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) {
-	return ds.indexer.Count(ctx, query)
+// Count returns the number of search results from the query.
+func (s *searcherImpl) Count(ctx context.Context, query *v1.Query) (int, error) {
+	return s.indexer.Count(ctx, query)
 }

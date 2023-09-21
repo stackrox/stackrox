@@ -3,13 +3,13 @@ package debug
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
@@ -74,6 +74,8 @@ To specify timeout, run  'roxctl' command:
 }
 
 func isTimeoutError(err error) bool {
-	var netErr net.Error
-	return (errors.As(err, &netErr) && netErr.Timeout()) || errors.Is(err, context.DeadlineExceeded)
+	var timeoutErr httputil.TimeoutError
+
+	return errors.As(err, &timeoutErr) && timeoutErr.Timeout() ||
+		errors.Is(err, context.DeadlineExceeded)
 }

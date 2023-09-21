@@ -7,7 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
-// Searcher provides search functionality on existing notifications.
+// Searcher provides search functionality on existing events.
 //
 //go:generate mockgen-wrapper
 type Searcher interface {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-
 import { Button, Flex, FlexItem, SelectOption, TextInput } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
 import isEqual from 'lodash/isEqual';
+import resolvePath from 'object-resolve-path';
 
 import SelectSingle from 'Components/SelectSingle';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -65,7 +65,9 @@ function NotifierSelection({
         const notifierObject = notifiers.find((notifier) => notifier.id === selectionId);
         if (notifierObject) {
             const notifierMailingLists = notifierObject.labelDefault.split(',');
+            const prevDeliveryDestination = resolvePath(formik.values, prefixId);
             formik.setFieldValue(prefixId, {
+                ...prevDeliveryDestination,
                 notifier: notifierObject,
                 mailingLists: mailingLists.length === 0 ? notifierMailingLists : mailingLists,
             });
@@ -114,7 +116,6 @@ function NotifierSelection({
                             value={selectedNotifier?.id || ''}
                             handleSelect={onNotifierChange}
                             placeholderText="Select a notifier"
-                            isDisabled={notifiers.length === 0}
                             footer={
                                 allowCreate && (
                                     <Button

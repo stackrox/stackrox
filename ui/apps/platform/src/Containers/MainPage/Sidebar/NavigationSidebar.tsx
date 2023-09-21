@@ -15,6 +15,7 @@ import {
     complianceEnhancedStatusPath,
     configManagementPath,
     dashboardPath,
+    deferralConfigurationPath,
     integrationsPath,
     isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
@@ -238,6 +239,12 @@ const navDescriptions: NavDescription[] = [
                 content: 'Integrations',
                 path: integrationsPath,
                 routeKey: 'integrations',
+            },
+            {
+                type: 'child',
+                content: 'Deferral Configuration',
+                path: deferralConfigurationPath,
+                routeKey: 'deferral-configuration',
             },
             {
                 type: 'child',
