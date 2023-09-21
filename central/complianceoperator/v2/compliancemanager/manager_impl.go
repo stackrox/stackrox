@@ -94,6 +94,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	}
 
 	// Convert and validate schedule
+	// TODO(ROX-19818):  remove default schedule
 	// For MVP a schedule is required.  If one is not present use daily at midnight.  As it evolves
 	// it may be as simple as no schedule means a one time scan.
 	cron := defaultScanSchedule
