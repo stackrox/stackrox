@@ -52,8 +52,8 @@ import (
 )
 
 const (
-	keyCentralLabelSelector            = "CENTRAL_LABEL_SELECTOR"
-	keySecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
+	envCentralLabelSelector            = "CENTRAL_LABEL_SELECTOR"
+	envSecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
 	envDisableCentralReconciler        = "DISABLE_CENTRAL_RECONCILER"
 	envDisableSecuredClusterReconciler = "DISABLE_SECURED_CLUSTER_RECONCILER"
 )
@@ -75,11 +75,11 @@ var (
 	// centralLabelSelector is a kubernetes label selector that is used to filter out Central instances
 	// to be managed by this operator. If the selector is empty, all Central instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-	centralLabelSelector = env.RegisterSetting(keyCentralLabelSelector, env.WithDefault(""))
+	centralLabelSelector = env.RegisterSetting(envCentralLabelSelector, env.WithDefault(""))
 	// securedClusterLabelSelector is a kubernetes label selector that is used to filter out Secured Cluster
 	// instances to be managed by this operator. If the selector is empty, all instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-	securedClusterLabelSelector = env.RegisterSetting(keySecuredClusterLabelSelector, env.WithDefault(""))
+	securedClusterLabelSelector = env.RegisterSetting(envSecuredClusterLabelSelector, env.WithDefault(""))
 	// disableCentralReconciler skips registering central reconciler if set to true
 	disableCentralReconciler = env.RegisterBooleanSetting(envDisableCentralReconciler, false)
 	// disableSecuredClusterReconciler skips registering secured cluster reconciler if set to true
@@ -162,12 +162,12 @@ func run() error {
 
 	centralLabelSelector := centralLabelSelector.Setting()
 	if len(centralLabelSelector) > 0 {
-		setupLog.Info("using Central label selector from environment variable "+keyCentralLabelSelector, "selector", centralLabelSelector)
+		setupLog.Info("using Central label selector from environment variable "+envCentralLabelSelector, "selector", centralLabelSelector)
 	}
 
 	securedClusterLabelSelector := securedClusterLabelSelector.Setting()
 	if len(securedClusterLabelSelector) > 0 {
-		setupLog.Info("using Secured Cluster label selector from environment variable "+keySecuredClusterLabelSelector, "selector", securedClusterLabelSelector)
+		setupLog.Info("using Secured Cluster label selector from environment variable "+envSecuredClusterLabelSelector, "selector", securedClusterLabelSelector)
 	}
 
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
