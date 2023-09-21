@@ -179,6 +179,12 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 	}
 }
 
+func (suite *scanTestSuite) TestScanImage() {
+	client := emptyScannerClientSingleton()
+	_, err := scanImage(context.Background(), &storage.Image{}, nil, client)
+	suite.ErrorContains(err, "cannot scan image with nil registry")
+}
+
 func (suite *scanTestSuite) TestMetadataBeingSet() {
 	fakeRegStore := &fakeRegistryStore{}
 	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))

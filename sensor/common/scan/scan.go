@@ -363,6 +363,9 @@ func (s *LocalScan) fetchSignatures(ctx context.Context, errorList *errorhelpers
 // scanImage will scan the given image and return its components.
 func scanImage(ctx context.Context, image *storage.Image,
 	registry registryTypes.ImageRegistry, scannerClient scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
+	if registry == nil {
+		return nil, fmt.Errorf("cannot scan image with nil registry")
+	}
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config())
 	if err != nil {
