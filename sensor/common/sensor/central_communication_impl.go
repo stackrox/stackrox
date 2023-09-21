@@ -45,6 +45,7 @@ type centralCommunicationImpl struct {
 
 	isReconnect          bool
 	clientReconciliation bool
+	initialDeduperState  map[string]uint64
 }
 
 var (
@@ -187,7 +188,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.
@@ -283,6 +284,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	}
 
 	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
+	s.initialDeduperState = msg.GetDeduperState().GetResourceHashes()
 	return nil
 }
 
