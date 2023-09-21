@@ -262,9 +262,7 @@ function AuthProviderForm({
 
     const ruleAttributes = getRuleAttributes(selectedAuthProvider.type, availableProviderTypes);
 
-    function isDisabled() {
-        return isViewing || values.active || getIsAuthProviderImmutable(values);
-    }
+    const isDisabled = isViewing || values.active || getIsAuthProviderImmutable(values);
 
     return (
         <Form>
@@ -409,7 +407,7 @@ function AuthProviderForm({
                                     id="name"
                                     value={values.name}
                                     onChange={onChange}
-                                    isDisabled={isDisabled()}
+                                    isDisabled={isDisabled}
                                     isRequired
                                     onBlur={handleBlur}
                                     validated={
@@ -472,11 +470,12 @@ function AuthProviderForm({
                         </SelectSingle>
                     </FormGroup>
                     <div id="minimum-access-role-description">
-                        <Alert isInline variant="info" title="">
-                            <p>
-                                The minimum access role is granted to all users who sign in with
-                                this authentication provider.
-                            </p>
+                        <Alert
+                            isInline
+                            variant="info"
+                            title="Note: the minimum access role is granted to all users who sign in with
+                                this authentication provider."
+                        >
                             <p>
                                 To give users different roles, add rules. Users are granted all
                                 matching roles.
@@ -492,20 +491,20 @@ function AuthProviderForm({
                             title="Required attributes for the authentication provider"
                             titleElement="h3"
                         >
-                            <div id="required-attributes-description">
-                                <Alert isInline variant="info" title="">
-                                    <p>
-                                        The required attributes are used to require attributes being
-                                        returned from the authentication provider.
-                                    </p>
-                                    <p>
-                                        In case a required attribute is not returned from the
-                                        authentication provider, the login attempt will fail and no
-                                        role will be assigned to the user.
-                                    </p>
-                                </Alert>
-                            </div>
-                            {values.requiredAttributes.length === 0 && (
+                            <Alert
+                                isInline
+                                variant="info"
+                                title="Note: the required attributes are used to require attributes being
+                                    returned from the authentication provider."
+                            >
+                                <p>
+                                    In case a required attribute is not returned from the
+                                    authentication provider, the login attempt will fail and no role
+                                    will be assigned to the user.
+                                </p>
+                            </Alert>
+                            {(!values.requiredAttributes ||
+                                values.requiredAttributes.length === 0) && (
                                 <p>No required attributes defined</p>
                             )}
                             <FieldArray
@@ -525,7 +524,7 @@ function AuthProviderForm({
                                                                 id={`requiredAttributes[${index}].attributeKey`}
                                                                 value={attribute.attributeKey}
                                                                 onChange={onChange}
-                                                                isDisabled={isDisabled()}
+                                                                isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
                                                         <FormGroup
@@ -537,10 +536,10 @@ function AuthProviderForm({
                                                                 id={`requiredAttributes[${index}].attributeValue`}
                                                                 value={attribute.attributeValue}
                                                                 onChange={onChange}
-                                                                isDisabled={isDisabled()}
+                                                                isDisabled={isDisabled}
                                                             />
                                                         </FormGroup>
-                                                        {!isDisabled() && (
+                                                        {!isDisabled && (
                                                             <FlexItem>
                                                                 <Button
                                                                     variant="plain"
@@ -578,7 +577,7 @@ function AuthProviderForm({
                                                     </Flex>
                                                 )
                                             )}
-                                        {!isDisabled() && (
+                                        {!isDisabled && (
                                             <Flex>
                                                 <FlexItem>
                                                     <Button
