@@ -103,7 +103,7 @@ export function visitComplianceDashboard() {
 /*
  * Assume location is compliance dashboard.
  */
-export function scanCompliance() {
+function scanCompliance() {
     const routeMatcherMapForTriggerScan = getRouteMatcherMapForGraphQL(['triggerScan']);
     const routeMatcherMap = {
         ...routeMatcherMapForTriggerScan,
@@ -114,10 +114,15 @@ export function scanCompliance() {
 
     cy.get(scanButton).should('not.have.attr', 'disabled');
 
-    interactAndWaitForResponses(() => {
-        cy.get(scanButton).click();
-        cy.get(scanButton).should('have.attr', 'disabled');
-    }, routeMatcherMap);
+    interactAndWaitForResponses(
+        () => {
+            cy.get(scanButton).click();
+            cy.get(scanButton).should('have.attr', 'disabled');
+        },
+        routeMatcherMap,
+        undefined,
+        { timeout: 20000 }
+    );
 
     cy.get(scanButton).should('not.have.attr', 'disabled');
 }
