@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registrymirror"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -32,7 +33,7 @@ type InMemoryStoreProvider struct {
 	registryMirrorStore    registrymirror.Store
 
 	cleanableStores    []CleanableStore
-	reconcilableStores []reconcile.Reconcilable
+	reconcilableStores map[string]reconcile.Reconcilable
 }
 
 // CleanableStore defines a store implementation that has a function for deleting all entries
@@ -76,18 +77,8 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.registryStore,
 		p.registryMirrorStore,
 	}
-	p.reconcilableStores = []reconcile.Reconcilable{
-		p.deploymentStore,
-		p.podStore,
-		p.serviceStore,
-		p.nodeStore,
-		p.entityStore,
-		p.networkPolicyStore,
-		p.rbacStore,
-		p.serviceAccountStore,
-		p.orchestratorNamespaces,
-		p.registryStore,
-		p.registryMirrorStore,
+	p.reconcilableStores = map[string]reconcile.Reconcilable{
+		"Deployment": p.deploymentStore,
 	}
 
 	return p
@@ -155,19 +146,36 @@ func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
 }
 
-// Reconcile updates the data in the stores based on the state of Central.
-// It returns true if the reconciliation was finished, or false if none of the stores was able to reconcile.
-// If the matching store was found but the reconciliation failed, a pair of "true, error" is returned.
-func (p *InMemoryStoreProvider) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a map of events that
+// should be sent back to Central to ensure that the states in Sensor and Central are in sync.
+func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) map[string]reconcile.SensorReconciliationEvent {
 	events := make(map[string]reconcile.SensorReconciliationEvent)
-	for _, r := range p.reconcilableStores {
-		ev, err := r.Reconcile(resType, resID, resHash)
-		if err != nil {
-			return nil, err
+	for typeWithID, hashValue := range h {
+		resType, resID := stringutils.Split2(typeWithID, ":")
+		if resID == "" {
+			log.Errorf("malformed hash key: %s", typeWithID)
+			continue
 		}
-		for k, v := range ev {
-			events[k] = v
+		resEvents, err := p.Reconcile(resType, resID, hashValue)
+		if err != nil {
+			log.Errorf("reconciliation error: %s", err)
+		}
+		if resEvents == nil {
+			log.Error("empty reconciliation result")
+			continue
+		}
+		for ek, ev := range resEvents {
+			events[ek] = ev
 		}
 	}
-	return events, errUnableToReconcile
+	return events
+}
+
+// Reconcile esures that Sensor and Central state regarding resources match after a reconnect.
+func (p *InMemoryStoreProvider) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	if resStore, found := p.reconcilableStores[resType]; found {
+		return resStore.Reconcile(resType, resID, resHash)
+	}
+	return map[string]reconcile.SensorReconciliationEvent{},
+		errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
 }
