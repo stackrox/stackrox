@@ -9,7 +9,7 @@ import (
 
 // CentralSender handles sending from sensor to central.
 type CentralSender interface {
-	Start(stream central.SensorService_CommunicateClient, onStops ...func(error))
+	Start(stream central.SensorService_CommunicateClient, initialDeduperState map[string]uint64, onStops ...func(error))
 	Stop(err error)
 	Stopped() concurrency.ReadOnlyErrorSignal
 }

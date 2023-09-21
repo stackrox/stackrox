@@ -47,4 +47,7 @@ var (
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+
+	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
+	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", false)
 )
