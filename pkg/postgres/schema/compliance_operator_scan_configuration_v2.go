@@ -42,10 +42,10 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, "complianceoperatorscanconfigurationv2", (*storage.ComplianceOperatorScanConfigurationV2)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, "complianceoperatorscanconfigurationv2", (*storage.ComplianceOperatorScanConfigurationV2)(nil)))
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorScanConfigurationV2Stmt, features.ComplianceEnhancements.Enabled)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG, schema)
 		return schema
 	}()
 )
