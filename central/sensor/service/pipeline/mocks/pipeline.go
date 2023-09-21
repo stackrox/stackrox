@@ -117,7 +117,7 @@ func (mr *MockClusterPipelineMockRecorder) OnFinish(clusterID interface{}) *gomo
 // Reconcile mocks base method.
 func (m *MockClusterPipeline) Reconcile(ctx context.Context, reconciliationStore *reconciliation.StoreMap) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReconcileDelete", ctx, reconciliationStore)
+	ret := m.ctrl.Call(m, "Reconcile", ctx, reconciliationStore)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -125,7 +125,7 @@ func (m *MockClusterPipeline) Reconcile(ctx context.Context, reconciliationStore
 // Reconcile indicates an expected call of Reconcile.
 func (mr *MockClusterPipelineMockRecorder) Reconcile(ctx, reconciliationStore interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDelete", reflect.TypeOf((*MockClusterPipeline)(nil).Reconcile), ctx, reconciliationStore)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockClusterPipeline)(nil).Reconcile), ctx, reconciliationStore)
 }
 
 // Run mocks base method.
@@ -246,7 +246,7 @@ func (mr *MockFragmentMockRecorder) OnFinish(clusterID interface{}) *gomock.Call
 // Reconcile mocks base method.
 func (m *MockFragment) Reconcile(ctx context.Context, clusterID string, reconciliationStore *reconciliation.StoreMap) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReconcileDelete", ctx, clusterID, reconciliationStore)
+	ret := m.ctrl.Call(m, "Reconcile", ctx, clusterID, reconciliationStore)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
@@ -254,7 +254,7 @@ func (m *MockFragment) Reconcile(ctx context.Context, clusterID string, reconcil
 // Reconcile indicates an expected call of Reconcile.
 func (mr *MockFragmentMockRecorder) Reconcile(ctx, clusterID, reconciliationStore interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDelete", reflect.TypeOf((*MockFragment)(nil).Reconcile), ctx, clusterID, reconciliationStore)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), ctx, clusterID, reconciliationStore)
 }
 
 // Run mocks base method.
