@@ -17,6 +17,8 @@ export const authorizeRoxctlPath = '/authorize-roxctl';
 // Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 export const accessControlBasePath = `${mainPath}/access-control`;
 export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const administrationEventsBasePath = `${mainPath}/administration-events`;
+export const administrationEventsPathWithParam = `${administrationEventsBasePath}/:id?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
@@ -120,6 +122,7 @@ type RouteRequirements = {
 // prettier-ignore
 export type RouteKey =
     | 'access-control'
+    | 'administration-events'
     | 'apidocs'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
@@ -155,6 +158,10 @@ export type RouteKey =
 const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'access-control': {
         resourceAccessRequirements: everyResource(['Access']),
+    },
+    'administration-events': {
+        featureFlagDependency: ['ROX_ADMINISTRATION_EVENTS'],
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     apidocs: {
         resourceAccessRequirements: everyResource([]),
