@@ -72,7 +72,7 @@ ifneq ($(UNAME_M),x86_64)
 endif
 
 CENTRAL_DB_DOCKER_ARGS :=
-ifeq ($(UNAME_M),s390x)
+ifeq ($(GOARCH),s390x)
 	CENTRAL_DB_DOCKER_ARGS := \
 		--build-arg="BASE_IMAGE=ubi9-minimal" \
 		--build-arg="BASE_TAG=9.2" \
