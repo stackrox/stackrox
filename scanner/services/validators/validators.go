@@ -114,12 +114,12 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 	return nil
 }
 
-func validateRepository(repo *v4.Repository) error {
+func validateRepository(_ *v4.Repository) error {
 	// Placeholder, currently no additional validation for distribution repository.
 	return nil
 }
 
-func validateDistribution(dist *v4.Distribution) error {
+func validateDistribution(_ *v4.Distribution) error {
 	// Placeholder, currently no additional validation for distribution.
 	return nil
 }

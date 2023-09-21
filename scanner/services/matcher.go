@@ -77,8 +77,8 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 }
 
 // retrieveIndexReport will pull an index report from the Indexer backend.
-func (s *matcherService) retrieveIndexReport(ctx context.Context, hashId string) (*claircore.IndexReport, error) {
-	manifestDigest, err := createManifestDigest(hashId)
+func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, error) {
+	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}

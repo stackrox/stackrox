@@ -61,7 +61,7 @@ func main() {
 			Username: username,
 			Password: password,
 		})
-		*imageDigest, err = getHashIdFromRegistry(imageURL, auth)
+		*imageDigest, err = getImageDigestFromRegistry(imageURL, auth)
 		if err != nil {
 			log.Fatalf("failed to retrieve image hash id: %v", err)
 		}
@@ -105,14 +105,17 @@ func main() {
 		HashId:   hashId,
 		Contents: nil,
 	})
-	vulnJson, err := json.MarshalIndent(vulnResp, "", "  ")
+	if err != nil {
+		log.Fatalf("failed to get vulnerabilities: %s", err)
+	}
+	vulnJSON, err := json.MarshalIndent(vulnResp, "", "  ")
 	if err != nil {
 		log.Fatalf("could not marshal vulnerability report: %s", err)
 	}
-	fmt.Println(string(vulnJson))
+	fmt.Println(string(vulnJSON))
 }
 
-func getHashIdFromRegistry(imageURL string, auth authn.Authenticator) (string, error) {
+func getImageDigestFromRegistry(imageURL string, auth authn.Authenticator) (string, error) {
 	u, err := url.Parse(imageURL)
 	if err != nil {
 		return "", err
