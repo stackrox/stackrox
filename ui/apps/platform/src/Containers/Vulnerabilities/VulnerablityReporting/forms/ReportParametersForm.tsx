@@ -217,6 +217,8 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                                 const newDeliveryDestination: DeliveryDestination = {
                                     notifier: null,
                                     mailingLists: [],
+                                    customSubject: '',
+                                    customBody: '',
                                 };
                                 modifiedFormValues.deliveryDestinations.push(
                                     newDeliveryDestination

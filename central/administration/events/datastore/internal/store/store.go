@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Store is the interface to the notifications data layer.
+// Store is the interface to the events data layer.
 //
 //go:generate mockgen-wrapper
 type Store interface {

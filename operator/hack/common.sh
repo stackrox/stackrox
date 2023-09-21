@@ -2,6 +2,7 @@
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
 declare -r pull_secret="operator-pull-secret"
+declare -r USE_MIDSTREAM_IMAGES=${USE_MIDSTREAM_IMAGES:-false}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
@@ -53,11 +54,21 @@ function apply_operator_manifests() {
       disable_security_context_config=""
   fi
 
+  if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+    # Get Operator channel from json for midstream
+    operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
+  env -i PATH="${PATH}" \
+    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
+    IMAGE_TAG_BASE="${image_tag_base}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
+    | kubectl -n "${operator_ns}" apply -f -
+  else
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
     IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | kubectl -n "${operator_ns}" apply -f -
+  fi
 }
 
 function retry() {

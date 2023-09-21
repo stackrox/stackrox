@@ -254,6 +254,12 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
 	KUTTL=$(KUTTL) $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_LABELS_ARGS) tests/upgrade
 
+.PHONY: test-bundle-helpers
+test-bundle-helpers: ## Run Python unit tests against helper scripts.
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	pytest -v bundle_helpers
+
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
 # Create stackrox namespace if not exists.
@@ -351,6 +357,10 @@ deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
 
+.PHONY: deploy-via-olm-midstream
+deploy-via-olm-midstream: ## Deploy operator image to the cluster using OLM and midstream index images.
+	KUTTL=$(KUTTL) ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $(OPERATOR_VERSION)
+
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
 # This target ignores filter for dirty tagged images.
@@ -408,7 +418,7 @@ bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metada
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 # Copy the original bundle to build/ directory.
 	mkdir -p build/
 	rm -rf build/bundle

@@ -84,6 +84,8 @@ export function getReportConfigurationFromFormValues(
             emailConfig: {
                 notifierId: deliveryDestination.notifier?.id || '',
                 mailingLists: deliveryDestination.mailingLists,
+                customSubject: deliveryDestination.customSubject,
+                customBody: deliveryDestination.customBody,
             },
             notifierName: deliveryDestination.notifier?.name || '',
         };
@@ -164,6 +166,8 @@ export function getReportFormValuesFromConfiguration(
                 name: notifier.notifierName,
             },
             mailingLists: notifier.emailConfig.mailingLists,
+            customSubject: notifier.emailConfig.customSubject,
+            customBody: notifier.emailConfig.customBody,
         };
         return deliveryDestination;
     });

@@ -1,4 +1,4 @@
-package reconciler
+package extensions
 
 import (
 	"testing"
@@ -30,11 +30,16 @@ func TestAddSelectorOptionIfNeeded(t *testing.T) {
 			selector: "!",
 			wantLen:  0,
 			wantErr:  true,
+		}, {
+			name:     "too long selector",
+			selector: "labelSelector=really_really_long_label_selector_which_exceeds_maximum_threshold",
+			wantLen:  0,
+			wantErr:  true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := addSelectorOptionIfNeeded(tt.selector, []pkgReconciler.Option{})
+			got, err := AddSelectorOptionIfNeeded(tt.selector, []pkgReconciler.Option{})
 			if tt.wantErr {
 				assert.Error(t, err)
 				return

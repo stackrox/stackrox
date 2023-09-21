@@ -64,6 +64,8 @@ beforeEach(() => {
 });
 
 function setup() {
+    // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
+    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -119,7 +121,7 @@ describe('Violations by policy severity widget', () => {
         expect(history.location.search).toContain('[Severity]=CRITICAL_SEVERITY');
 
         // Test links from the 'most recent violations' section
-        await user.click(await screen.findByText(/ubuntu package manager/gi));
+        await user.click(await screen.findByText(/ubuntu package manager/i));
         expect(history.location.pathname).toBe(`${violationsBasePath}/${mockAlerts[0].id}`);
     });
 });

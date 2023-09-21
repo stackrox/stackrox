@@ -6,7 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
-// Indexer is the notifications indexer.
+// Indexer is the events indexer.
 //
 //go:generate mockgen-wrapper
 type Indexer interface {

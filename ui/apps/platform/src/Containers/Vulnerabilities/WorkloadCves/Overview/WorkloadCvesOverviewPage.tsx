@@ -41,14 +41,12 @@ function WorkloadCvesOverviewPage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
 
-    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
-        entityTypeCountsQuery,
-        {
+    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 }, loading } =
+        useQuery(entityTypeCountsQuery, {
             variables: {
                 query: getCveStatusScopedQueryString(querySearchFilter),
             },
-        }
-    );
+        });
 
     const pagination = useURLPagination(20);
 
@@ -89,7 +87,11 @@ function WorkloadCvesOverviewPage() {
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
-                        <CardBody>
+                        <CardBody
+                            role="region"
+                            aria-live="polite"
+                            aria-busy={loading ? 'true' : 'false'}
+                        >
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
                                     defaultFilters={emptyStorage.preferences.defaultFilters}

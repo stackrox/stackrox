@@ -62,7 +62,7 @@ message ReportRetentionConfig {
     uint32 downloadable_report_global_retention_bytes  = 3;
 }
 
-// next available tag:8
+// next available tag:9
 message PrivateConfig {
     oneof alert_retention {
         // will be deprecated after migration is ready
@@ -75,6 +75,8 @@ message PrivateConfig {
     ReportRetentionConfig                   report_retention_config                     = 6;
 
     VulnerabilityDeferralConfig             vulnerability_deferral_config               = 7;
+
+    AdministrationEventsConfig              administration_events_config                = 8;
 }
 
 message Config {
@@ -95,6 +97,10 @@ message VulnerabilityDeferralConfig {
     }
 
     ExpiryOptions expiry_options = 1;
+}
+
+message AdministrationEventsConfig {
+    uint32 retention_duration_days = 1;
 }
 
 message DayOption {

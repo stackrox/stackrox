@@ -67,7 +67,7 @@ func TestScannerUploadDbCommand(t *testing.T) {
 	t.Run("server error", func(t *testing.T) {
 		expectedErrorStr := "test-server-error"
 		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-			rw.WriteHeader(http.StatusInternalServerError)
+			rw.WriteHeader(http.StatusBadRequest)
 			_, _ = rw.Write([]byte(expectedErrorStr))
 		}))
 		defer server.Close()
