@@ -11,13 +11,15 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
-	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	_   pipeline.Fragment = (*pipelineImpl)(nil)
+	log                   = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -41,6 +43,7 @@ func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+	log.Info("SHREWS -- Reconcile results")
 	existingIDs := set.NewStringSet()
 	walkFn := func() error {
 		existingIDs.Clear()
@@ -69,9 +72,13 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ComplianceOperatorCheckResult)
 
+	log.Info("SHREWS -- Run results")
+
 	event := msg.GetEvent()
 	checkResult := event.GetComplianceOperatorResult()
 	checkResult.ClusterId = clusterID
+
+	log.Infof("SHREWS -- Run results %q", checkResult.GetCheckName())
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
