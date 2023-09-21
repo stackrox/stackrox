@@ -1,49 +1,101 @@
-import useModal from 'hooks/useModal';
 import { useState } from 'react';
+
+import useModal from 'hooks/useModal';
 import { deleteReportConfiguration } from 'services/ReportsService';
-import { getErrorMessage } from '../errorUtils';
+import { Empty } from 'services/types';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+type SuccessDeleteResult = {
+    success: true;
+    id: string;
+    result: Empty;
+};
+
+type ErrorDeleteResult = {
+    success: false;
+    id: string;
+    error: string;
+};
+
+type DeleteResult = SuccessDeleteResult | ErrorDeleteResult;
 
 export type UseDeleteModalProps = {
     onCompleted: () => void;
 };
 
 export type UseDeleteModalResult = {
-    openDeleteModal: (reportId: string) => void;
+    openDeleteModal: (reportIds: string[]) => void;
     isDeleteModalOpen: boolean;
     closeDeleteModal: () => void;
     isDeleting: boolean;
     onDelete: () => void;
-    deleteError: string | null;
+    deleteResults: DeleteResult[] | null;
+    reportIdsToDelete: string[];
 };
+
+export function isSuccessDeleteResult(
+    deleteResult: DeleteResult
+): deleteResult is SuccessDeleteResult {
+    return deleteResult.success === true;
+}
+
+export function isErrorDeleteResult(deleteResult: DeleteResult): deleteResult is ErrorDeleteResult {
+    return deleteResult.success === false;
+}
 
 function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalResult {
     const { isModalOpen: isDeleteModalOpen, openModal, closeModal } = useModal();
-    const [reportIdToDelete, setReportIdToDelete] = useState<string>('');
+    const [reportIdsToDelete, setReportIdsToDelete] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [deleteResults, setDeleteResults] = useState<DeleteResult[] | null>(null);
 
-    function openDeleteModal(reportId: string) {
+    function openDeleteModal(reportIds: string[]) {
         openModal();
-        setReportIdToDelete(reportId);
+        setReportIdsToDelete(reportIds);
     }
 
     function closeDeleteModal() {
         closeModal();
-        setReportIdToDelete('');
+        setReportIdsToDelete([]);
         setIsDeleting(false);
-        setDeleteError(null);
+        setDeleteResults(null);
+    }
+
+    // This function removes a report configuration and then returns
+    // a result object that captures the outcome, including any
+    // potential errors.
+    async function onSafeDelete(id: string): Promise<DeleteResult> {
+        try {
+            const result = await deleteReportConfiguration(id);
+            return { success: true, id, result };
+        } catch (error) {
+            return {
+                success: false,
+                id,
+                error: getAxiosErrorMessage(error),
+            };
+        }
     }
 
     async function onDelete() {
         setIsDeleting(true);
-        try {
-            await deleteReportConfiguration(reportIdToDelete);
-            setIsDeleting(false);
+        const results = await Promise.all(reportIdsToDelete.map((id) => onSafeDelete(id)));
+        const hasSuccessfulDeletes = results.some((result) => result.success);
+        const hasErrors = results.some((result) => !result.success);
+        setIsDeleting(false);
+        if (!hasErrors) {
             closeDeleteModal();
+        } else {
+            // Continue monitoring the report configurations that failed to delete.
+            const newReportIdsToDelete = results
+                .filter((result) => !result.success)
+                .map((result) => result.id);
+            setReportIdsToDelete(newReportIdsToDelete);
+            setDeleteResults(results);
+        }
+        if (hasSuccessfulDeletes) {
+            // We need to ensure the list is refreshed to reflect the report configurations that were successfully deleted.
             onCompleted();
-        } catch (err) {
-            setIsDeleting(false);
-            setDeleteError(getErrorMessage(err));
         }
     }
 
@@ -53,7 +105,8 @@ function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalRes
         closeDeleteModal,
         isDeleting,
         onDelete,
-        deleteError,
+        deleteResults,
+        reportIdsToDelete,
     };
 }
 
