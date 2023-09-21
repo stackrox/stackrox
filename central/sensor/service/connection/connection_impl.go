@@ -66,6 +66,8 @@ type sensorConnection struct {
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
+
+	hashDeduper hashManager.Deduper
 }
 
 func newConnection(ctx context.Context,
@@ -107,6 +109,7 @@ func newConnection(ctx context.Context,
 	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
 	deduper.StartSync()
 
+	conn.hashDeduper = deduper
 	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
@@ -576,6 +579,28 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 			log.Infof("Sent %d image integrations to cluster %q", len(msg.GetImageIntegrations().GetUpdatedIntegrations()), c.clusterID)
 		}
+	}
+
+	// TODO: Temporary block from https://github.com/stackrox/stackrox/pull/7755
+	// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
+	// Central should only attempt to do that if sensor is reconnecting, otherwise Central should
+	// do the reconciliation itself, since events might have been missed.
+	if c.sensorHello.GetSensorState() == central.SensorHello_RECONNECT {
+		log.Info("Sensor reconnecting: Reconciliation will be done in Sensor")
+		// Send hashes to sensor
+		c.sensorEventHandler.disableReconciliation()
+		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+		log.Infof("Sending hashes to Sensor: %v", successfulHashes)
+		err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
+			DeduperState: &central.DeduperState{
+				ResourceHashes: successfulHashes,
+			},
+		}})
+		if err != nil {
+			log.Errorf("Sending deduper state to Sensor: %s", err)
+		}
+	} else {
+		log.Info("Sensor restarted: Reconciliation will be done in Central")
 	}
 
 	go c.runSend(server)
