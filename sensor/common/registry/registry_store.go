@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -55,6 +56,14 @@ type Store struct {
 
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
+}
+
+// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state.
+func (rs *Store) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO implement me
+	panic("implement me")
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.

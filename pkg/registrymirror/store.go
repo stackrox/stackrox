@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
@@ -42,6 +43,7 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	Cleanup()
+	Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error)
 
 	UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error
 	DeleteImageContentSourcePolicy(uid types.UID) error
@@ -106,6 +108,14 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 		SystemRegistriesConfPath: s.configPath,
 	}
 	return s
+}
+
+// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state.
+func (s *FileStore) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO implement me
+	panic("implement me")
 }
 
 // Cleanup resets the store which includes in-memory and disk resources.
