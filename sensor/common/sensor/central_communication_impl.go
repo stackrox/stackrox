@@ -33,9 +33,10 @@ import (
 // sensor implements the Sensor interface by sending inputs to central,
 // and providing the output from central asynchronously.
 type centralCommunicationImpl struct {
-	receiver   CentralReceiver
-	sender     CentralSender
-	components []common.SensorComponent
+	receiver          CentralReceiver
+	sender            CentralSender
+	components        []common.SensorComponent
+	hashReconciliator reconciliationHandler
 
 	stopper concurrency.Stopper
 
@@ -242,7 +243,23 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialPolicySync(stream, detector)
+	if err := s.initialPolicySync(stream, detector); err != nil {
+		return err
+	}
+	return s.handleReconciliationHashes(stream, s.hashReconciliator)
+}
+
+func (s *centralCommunicationImpl) handleReconciliationHashes(stream central.SensorService_CommunicateClient, handler reconciliationHandler) error {
+	msg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving reconciliation hashes")
+	}
+	if msg.GetDeduperState() == nil {
+		return errors.Errorf("initial message received from Sensor was not a deduper state: %T", msg.Msg)
+	}
+	events := handler.ProcessHashes(msg.GetDeduperState().GetResourceHashes())
+	log.Infof("Hash processing result: %v", events)
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {

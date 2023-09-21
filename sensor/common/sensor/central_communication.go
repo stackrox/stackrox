@@ -17,13 +17,14 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(reconnect bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(reconnect bool, hashReconciliator reconciliationHandler, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
-		allFinished: &finished,
-		receiver:    NewCentralReceiver(&finished, components...),
-		sender:      NewCentralSender(&finished, components...),
-		components:  components,
+		allFinished:       &finished,
+		receiver:          NewCentralReceiver(&finished, components...),
+		sender:            NewCentralSender(&finished, components...),
+		components:        components,
+		hashReconciliator: hashReconciliator,
 
 		stopper:     concurrency.NewStopper(),
 		isReconnect: reconnect,
