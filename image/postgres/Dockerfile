@@ -3,6 +3,7 @@ ARG RPMS_BASE_IMAGE=ubi8
 ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
