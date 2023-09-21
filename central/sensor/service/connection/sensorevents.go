@@ -68,6 +68,10 @@ func stripTypePrefix(s string) string {
 	return s
 }
 
+func (s *sensorEventHandler) disableReconciliation() {
+	s.reconciliationMap.Close()
+}
+
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	event := msg.GetEvent()
 	if event == nil {
@@ -81,6 +85,12 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	// of the initial synchronization process.
 	case *central.SensorEvent_Synced:
 		// Call the reconcile functions
+		// TODO: Temporary copy from https://github.com/stackrox/stackrox/pull/7755
+		log.Info("Receiving reconciliation event")
+		if s.reconciliationMap.IsClosed() {
+			log.Info("Ignoring SYNC since reconciliationMap is already closed")
+			return
+		}
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
