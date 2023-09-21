@@ -71,7 +71,7 @@ ifneq ($(UNAME_M),x86_64)
 	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
 endif
 
-CENTRAL_DB_DOCKER_ARGS := 
+CENTRAL_DB_DOCKER_ARGS :=
 ifeq ($(UNAME_M),s390x)
 	CENTRAL_DB_DOCKER_ARGS := \
 		--build-arg="BASE_IMAGE=ubi9-minimal" \
