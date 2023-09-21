@@ -134,6 +134,10 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 	// Enrich image with metadata from one of registries.
 	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
+	if pullSourceImage == nil {
+		// A null pullSourceImage indicates that srcImage was not a valid image
+		return nil, errors.Join(errorList.ToError(), ErrEnrichNotStarted)
+	}
 
 	// Perform partial scan (image analysis / identify components) via local scanner.
 	scannerResp := s.fetchImageAnalysis(ctx, errorList, reg, pullSourceImage)
@@ -173,6 +177,10 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, namespace string, sourceImage *storage.ContainerImage) (registryTypes.ImageRegistry, *storage.Image) {
 	// Obtain the pull sources, which will include mirrors.
 	pullSources := s.getPullSources(sourceImage)
+	if len(pullSources) == 0 {
+		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", sourceImage.GetName().GetFullName()))
+		return nil, nil
+	}
 
 	// errs are only added to errorList when attempts from all pull sources + all registries fail.
 	errs := errorhelpers.NewErrorList("")
@@ -289,7 +297,7 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 		cImages = append(cImages, img)
 	}
 
-	log.Debugf("Using %d pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), pullSources)
+	log.Debugf("Using %d pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), cImages)
 	return cImages
 }
 

@@ -522,6 +522,36 @@ func (suite *scanTestSuite) TestNotes() {
 	})
 }
 
+func (suite *scanTestSuite) TestEnrichWithBadSrcImage() {
+	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+
+	containerImg := &storage.ContainerImage{
+		Name: &storage.ImageName{
+			FullName: "   is an invalid image",
+		},
+	}
+	mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{"   is an invalid image"}, nil)
+
+	imageServiceClient := &echoImageServiceClient{}
+
+	scan := LocalScan{
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
+		mirrorStore:                       mirrorStore,
+		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
+		scanImg:                           scanImage,
+	}
+
+	suite.Run("enrich error on bad source image", func() {
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().Error(err)
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+	})
+}
+
 func successfulScan(_ context.Context, _ *storage.Image,
 	reg registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 
