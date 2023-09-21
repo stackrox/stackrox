@@ -98,11 +98,11 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetScanName(),
-		obj.GetCreatedBy().GetName(),
+		obj.GetModifiedBy().GetName(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanName, CreatedBy_Name, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanName = EXCLUDED.ScanName, CreatedBy_Name = EXCLUDED.CreatedBy_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanName, ModifiedBy_Name, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanName = EXCLUDED.ScanName, ModifiedBy_Name = EXCLUDED.ModifiedBy_Name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -143,7 +143,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 	copyCols := []string{
 		"id",
 		"scanname",
-		"createdby_name",
+		"modifiedby_name",
 		"serialized",
 	}
 
@@ -161,7 +161,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetScanName(),
-			obj.GetCreatedBy().GetName(),
+			obj.GetModifiedBy().GetName(),
 			serialized,
 		})
 

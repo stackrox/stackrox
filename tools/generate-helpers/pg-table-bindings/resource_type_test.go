@@ -44,6 +44,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ComplianceIntegration{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorCheckResult{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorCheckResultV2{}, resourceType: globallyScoped},
+		{typ: &storage.ComplianceOperatorClusterScanConfigStatus{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorProfile{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorProfileV2{}, resourceType: globallyScoped},
 		{typ: &storage.ComplianceOperatorRule{}, resourceType: globallyScoped},

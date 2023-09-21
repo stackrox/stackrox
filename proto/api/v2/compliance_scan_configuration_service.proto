@@ -44,7 +44,7 @@ message ComplianceScanConfigurationStatus {
     google.protobuf.Timestamp                  created_time         = 5;
     google.protobuf.Timestamp                  last_updated_time    = 6;
     // Most recent user to update the scan settings
-    SlimUser                                   created_by           = 7;
+    SlimUser                                   modified_by           = 7;
 }
 
 // Next available tag: 2
