@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -469,7 +468,7 @@ func stubService() corev1.ServicePort {
 	}
 }
 
-func TestDeploymentStore_Reconcile(t *testing.T) {
+func TestDeploymentStore_ReconcileDelete(t *testing.T) {
 	const (
 		existingDeployID1 = "deployment-1"
 		missingDeployID1  = "not-existing-deployment"
@@ -529,7 +528,7 @@ func TestDeploymentStore_Reconcile(t *testing.T) {
 	tests := map[string]struct {
 		storage map[string]*deploymentWrap
 		args    args
-		want    map[string]reconcile.SensorReconciliationEvent
+		want    []string
 		wantErr assert.ErrorAssertionFunc
 	}{
 		"Exisiting deployment with matching hash should yield no reconciliation events": {
@@ -539,31 +538,19 @@ func TestDeploymentStore_Reconcile(t *testing.T) {
 				resID:   existingDeployID1,
 				resHash: depl1.GetHash(),
 			},
-			want: map[string]reconcile.SensorReconciliationEvent{existingDeployID1: reconcile.SensorReconciliationEventNoop},
+			want: []string{},
 			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
 				return assert.Nil(t, err, args)
 			},
 		},
-		"Exisiting deployment with different hash should yield ResourceAction_UPDATE_RESOURCE": {
-			storage: storage1,
-			args: args{
-				resType: "Deployment",
-				resID:   existingDeployID1,
-				resHash: depl1.GetHash() + 1,
-			},
-			want: map[string]reconcile.SensorReconciliationEvent{existingDeployID1: reconcile.SensorReconciliationEventUpdate},
-			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
-				return assert.Nil(t, err, args)
-			},
-		},
-		"Deployment that cannot be found should yield ResourceAction_REMOVE_RESOURCE": {
+		"Deployment that cannot be found should be deleted from Central": {
 			storage: storage1,
 			args: args{
 				resType: "Deployment",
 				resID:   missingDeployID1,
 				resHash: depl1.GetHash(),
 			},
-			want: map[string]reconcile.SensorReconciliationEvent{missingDeployID1: reconcile.SensorReconciliationEventDelete},
+			want: []string{missingDeployID1},
 			wantErr: func(t assert.TestingT, err error, args ...interface{}) bool {
 				return assert.Nil(t, err, args)
 			},
@@ -575,11 +562,11 @@ func TestDeploymentStore_Reconcile(t *testing.T) {
 				lock:        sync.RWMutex{},
 				deployments: tt.storage,
 			}
-			got, err := ds.Reconcile(tt.args.resType, tt.args.resID, tt.args.resHash)
-			if !tt.wantErr(t, err, fmt.Sprintf("Reconcile(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)) {
+			got, err := ds.ReconcileDelete(tt.args.resType, tt.args.resID, tt.args.resHash)
+			if !tt.wantErr(t, err, fmt.Sprintf("ReconcileDelete(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)) {
 				return
 			}
-			assert.Equalf(t, tt.want, got, "Reconcile(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)
+			assert.Equalf(t, tt.want, got, "ReconcileDelete(%v, %v, %v)", tt.args.resType, tt.args.resID, tt.args.resHash)
 		})
 	}
 }

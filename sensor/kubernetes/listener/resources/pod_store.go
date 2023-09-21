@@ -1,10 +1,7 @@
 package resources
 
 import (
-	"github.com/mitchellh/hashstructure/v2"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -15,11 +12,12 @@ type PodStore struct {
 	pods map[string]map[string]map[string]*storage.Pod
 }
 
-// Reconcile is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state.
-func (ps *PodStore) Reconcile(resType, resID string, resHash uint64) (map[string]reconcile.SensorReconciliationEvent, error) {
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) ([]string, error) {
 	if resType != "Pod" {
-		return map[string]reconcile.SensorReconciliationEvent{}, nil
+		return []string{}, nil
 	}
 	var pod *storage.Pod
 	for _, p := range ps.GetAll() {
@@ -29,17 +27,9 @@ func (ps *PodStore) Reconcile(resType, resID string, resHash uint64) (map[string
 		}
 	}
 	if pod == nil {
-		// found on Central, not found on Sensor - need to send a Delete message
-		return map[string]reconcile.SensorReconciliationEvent{resID: reconcile.SensorReconciliationEventDelete}, nil
+		return []string{resID}, nil
 	}
-	hashValue, err := hashstructure.Hash(pod, hashstructure.FormatV2, &hashstructure.HashOptions{})
-	if err != nil || hashValue != resHash {
-		// Any problems with hash calculation should trigger an update.
-		// Found pod in Sensor, but hash is different - need to send an Update message
-		return map[string]reconcile.SensorReconciliationEvent{}, errors.Wrap(err, "calculating pod hash")
-	}
-	// Pod found and still up to date
-	return map[string]reconcile.SensorReconciliationEvent{resID: reconcile.SensorReconciliationEventNoop}, nil
+	return []string{}, nil
 }
 
 // Cleanup deletes all entries from store
