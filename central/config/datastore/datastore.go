@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // DataStore is the entry point for modifying Config data.
@@ -22,8 +23,7 @@ import (
 type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)
 	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
-	GetPublicConfig(context.Context) (*storage.PublicConfig, error)
-	GetCachedPublicConfig(context.Context) (*storage.PublicConfig, error)
+	GetPublicConfig() (*storage.PublicConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
 }
 
@@ -32,16 +32,40 @@ const (
 	publicConfigKey       = "public configuration"
 )
 
+var (
+	// Notes on configuration caching:
+	// - The public part of the configuration can be accessed from
+	// an unauthenticated endpoint. In order to shield the database from
+	// impacts of possible high traffic on that endpoint, the public
+	// configuration data is served from cache.
+	// - Currently, the cache is populated / refreshed at backend start,
+	// on update, and on cache miss.
+	// - In the future, considering multiple central instances will serve
+	// traffic from the same database instance, the cache content is
+	// expected to be eventually consistent. The instance receiving
+	// config updates will be the first one to have a consistent cache,
+	// other instances will be consistent after cached item expiration and
+	// reload on cache miss.
+	publicConfigCache *expirable.LRU[string, *storage.PublicConfig]
+
+	cacheInitOnce sync.Once
+)
+
+func getPublicConfigCache() *expirable.LRU[string, *storage.PublicConfig] {
+	cacheInitOnce.Do(func() {
+		publicConfigCache = expirable.NewLRU[string, *storage.PublicConfig](
+			publicConfigCacheSize,
+			nil,
+			1*time.Minute,
+		)
+	})
+	return publicConfigCache
+}
+
 // New returns an instance of DataStore.
 func New(store store.Store) DataStore {
-	cache := expirable.NewLRU[string, *storage.PublicConfig](
-		publicConfigCacheSize,
-		nil,
-		1*time.Second,
-	)
 	return &datastoreImpl{
-		store:             store,
-		publicConfigCache: cache,
+		store: store,
 	}
 }
 
@@ -56,34 +80,37 @@ var (
 
 type datastoreImpl struct {
 	store store.Store
-
-	publicConfigCache *expirable.LRU[string, *storage.PublicConfig]
 }
 
-// GetCachedPublicConfig returns the public part of the Central config.
+// GetPublicConfig returns the public part of the Central config.
 // The primary data source will be the cache and the secondary the database.
-func (d *datastoreImpl) GetCachedPublicConfig(ctx context.Context) (*storage.PublicConfig, error) {
+func (d *datastoreImpl) GetPublicConfig() (*storage.PublicConfig, error) {
 	var err error
-	publicConfig, found := d.publicConfigCache.Get(publicConfigKey)
+	publicConfig, found := getPublicConfigCache().Get(publicConfigKey)
 	if found && publicConfig != nil {
 		return publicConfig, nil
 	}
 
-	publicConfig, err = d.GetPublicConfig(ctx)
+	publicConfig, err = d.getPublicConfigFromDB()
 	if err != nil {
 		return publicConfig, err
 	}
-	// The result of the cache addition is ignored as the information
-	// whether the cache did evict anything is irrelevant.
-	_ = d.publicConfigCache.Add(publicConfigKey, publicConfig)
+
+	cachePublicConfig(publicConfig)
 
 	return publicConfig, err
 }
 
-// GetPublicConfig returns the public part of the Central config
-func (d *datastoreImpl) GetPublicConfig(ctx context.Context) (*storage.PublicConfig, error) {
+func cachePublicConfig(publicConfig *storage.PublicConfig) {
+	// The result of the cache addition is ignored as the information
+	// whether the cache did evict anything is irrelevant.
+	_ = getPublicConfigCache().Add(publicConfigKey, publicConfig)
+}
+
+// getPublicConfigFroDB returns the public part of the Central config
+func (d *datastoreImpl) getPublicConfigFromDB() (*storage.PublicConfig, error) {
 	elevatedCtx := sac.WithGlobalAccessScopeChecker(
-		ctx,
+		context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration),
@@ -148,7 +175,7 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		return upsertErr
 	}
 
-	_ = d.publicConfigCache.Add(publicConfigKey, config.GetPublicConfig())
+	cachePublicConfig(config.GetPublicConfig())
 	return nil
 }
 

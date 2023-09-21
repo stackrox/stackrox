@@ -78,8 +78,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetPublicConfig returns the publicly available config
-func (s *serviceImpl) GetPublicConfig(ctx context.Context, _ *v1.Empty) (*storage.PublicConfig, error) {
-	publicConfig, err := s.datastore.GetCachedPublicConfig(ctx)
+func (s *serviceImpl) GetPublicConfig(_ context.Context, _ *v1.Empty) (*storage.PublicConfig, error) {
+	publicConfig, err := s.datastore.GetPublicConfig()
 	if err != nil {
 		return nil, err
 	}

@@ -35,21 +35,6 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// GetCachedPublicConfig mocks base method.
-func (m *MockDataStore) GetCachedPublicConfig(arg0 context.Context) (*storage.PublicConfig, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCachedPublicConfig", arg0)
-	ret0, _ := ret[0].(*storage.PublicConfig)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCachedPublicConfig indicates an expected call of GetCachedPublicConfig.
-func (mr *MockDataStoreMockRecorder) GetCachedPublicConfig(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCachedPublicConfig", reflect.TypeOf((*MockDataStore)(nil).GetCachedPublicConfig), arg0)
-}
-
 // GetConfig mocks base method.
 func (m *MockDataStore) GetConfig(arg0 context.Context) (*storage.Config, error) {
 	m.ctrl.T.Helper()
@@ -81,18 +66,18 @@ func (mr *MockDataStoreMockRecorder) GetPrivateConfig(arg0 interface{}) *gomock.
 }
 
 // GetPublicConfig mocks base method.
-func (m *MockDataStore) GetPublicConfig(arg0 context.Context) (*storage.PublicConfig, error) {
+func (m *MockDataStore) GetPublicConfig() (*storage.PublicConfig, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPublicConfig", arg0)
+	ret := m.ctrl.Call(m, "GetPublicConfig")
 	ret0, _ := ret[0].(*storage.PublicConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPublicConfig indicates an expected call of GetPublicConfig.
-func (mr *MockDataStoreMockRecorder) GetPublicConfig(arg0 interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetPublicConfig() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicConfig", reflect.TypeOf((*MockDataStore)(nil).GetPublicConfig), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublicConfig", reflect.TypeOf((*MockDataStore)(nil).GetPublicConfig))
 }
 
 // UpsertConfig mocks base method.

@@ -104,6 +104,8 @@ func initialize() {
 		panic(err)
 	}
 
+	cachePublicConfig(config.GetPublicConfig())
+
 	privateConfig := config.GetPrivateConfig()
 	needsUpsert := false
 	if privateConfig == nil {

@@ -90,21 +90,9 @@ var (
 func (s *configDataStoreTestSuite) TestAllowsGetPublic() {
 	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
 
-	publicCfgNone, err := s.dataStore.GetPublicConfig(s.hasNoneCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.NotNil(publicCfgNone)
-
-	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
-
-	publicCfgRead, err := s.dataStore.GetPublicConfig(s.hasReadCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.NotNil(publicCfgRead)
-
-	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
-
-	publicCfgWrite, err := s.dataStore.GetPublicConfig(s.hasWriteCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.NotNil(publicCfgWrite)
+	publicCfg, err := s.dataStore.GetPublicConfig()
+	s.NoError(err, "expected no error trying to read")
+	s.NotNil(publicCfg)
 }
 
 func (s *configDataStoreTestSuite) TestEnforcesGetPrivate() {
@@ -163,8 +151,23 @@ func (s *configDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (s *configDataStoreTestSuite) TestAllowsUpdate() {
+	getPublicConfigCache().Purge()
+
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	err := s.dataStore.UpsertConfig(s.hasWriteCtx, &storage.Config{})
 	s.NoError(err, "expected no error trying to write with permissions")
+
+	publicConfig, found := getPublicConfigCache().Get(publicConfigKey)
+	s.True(found)
+	s.Nil(publicConfig)
+
+	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	newUpdateErr := s.dataStore.UpsertConfig(s.hasWriteCtx, sampleConfig)
+	s.NoError(newUpdateErr, "expected no error trying to rewrite with permissions")
+
+	updatedPublicConfig, updatedFound := getPublicConfigCache().Get(publicConfigKey)
+	s.True(updatedFound)
+	s.NotNil(updatedPublicConfig)
 }
