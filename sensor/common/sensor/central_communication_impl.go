@@ -43,7 +43,8 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect bool
+	isReconnect          bool
+	clientReconciliation bool
 }
 
 var (

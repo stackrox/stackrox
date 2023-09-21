@@ -380,7 +380,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		s.centralCommunication = NewCentralCommunication(s.reconcile.Load(), s.reconnect.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 		// Reset the exponential back-off if the connection successes
 		exponential.Reset()
