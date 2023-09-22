@@ -600,7 +600,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 	if connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
 		log.Info("Sensor (ClusterID:%s) can do client reconciliation: sending deduper state", c.ClusterID())
-		c.sensorEventHandler.disableReconciliation()
+
 		// Send hashes to sensor
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
 		err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
@@ -609,7 +609,10 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			},
 		}})
 		if err != nil {
-			log.Errorf("Sending deduper state to Sensor: %s", err)
+			log.Errorf("Central wasn't able to send deduper state to sensor (ClusterID:%s): %s", c.ClusterID(), err)
+			log.Info("Central will perform the reconciliation for sensor (ClusterID:%s) due to previous errors.", c.ClusterID())
+		} else {
+			c.sensorEventHandler.disableReconciliation()
 		}
 	} else {
 		log.Info("Sensor (ClusterID:%s) cannot do client reconciliation: central will reconcile on SYNC events", c.ClusterID())
@@ -617,7 +620,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	go c.runSend(server)
 
-	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the the feature is enabled.
+	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the feature is enabled.
 	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
 		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
 			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)
