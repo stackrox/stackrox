@@ -38,10 +38,15 @@ func (s *testSuite) SetupTest() {
 type mockServer struct {
 	grpc.ServerStream
 	sentList []*central.MsgToSensor
+
+	errOnDeduperState error
 }
 
 func (c *mockServer) Send(msg *central.MsgToSensor) error {
 	c.sentList = append(c.sentList, msg)
+	if msg.GetDeduperState() != nil {
+		return c.errOnDeduperState
+	}
 	return nil
 }
 
@@ -70,6 +75,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 	cases := map[string]struct {
 		givenSensorCapabilities       []centralsensor.SensorCapability
 		givenSensorState              central.SensorHello_SensorState
+		givenSendError                error
 		expectReconciliationMapClosed bool
 		expectDeduperStateSent        bool
 		expectDeduperStateContents    map[string]uint64
@@ -120,6 +126,13 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			expectReconciliationMapClosed: false,
 			expectDeduperStateSent:        false,
 		},
+		"Central reconciles: failed to send message": {
+			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:              central.SensorHello_RECONNECT,
+			givenSendError:                errors.New("gRPC error"),
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        true,
+		},
 	}
 
 	for name, tc := range cases {
@@ -147,7 +160,8 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			}
 
 			server := &mockServer{
-				sentList: make([]*central.MsgToSensor, 0),
+				sentList:          make([]*central.MsgToSensor, 0),
+				errOnDeduperState: tc.givenSendError,
 			}
 
 			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
