@@ -206,7 +206,7 @@ defaults:
           memory: "4Gi"
         requests:
           cpu: "200m"
-          memory: "200Mi"     
+          memory: "200Mi"
       image:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]

@@ -55,5 +55,5 @@ scannerV4:
     resources: true
     postgresConfig: true
     hbaConfig: true
-    password: 
+    password:
       value: true
