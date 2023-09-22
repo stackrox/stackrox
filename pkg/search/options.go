@@ -294,6 +294,7 @@ var (
 	ResourceType = newFieldLabel("Resource Type")
 
 	// Vulnerability Watch Request fields
+	RequestName                 = newFieldLabel("Request Name")
 	RequestStatus               = newFieldLabel("Request Status")
 	ExpiredRequest              = newFieldLabel("Expired Request")
 	ExpiryType                  = newFieldLabel("Expiry Type")
