@@ -70,46 +70,46 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 	cases := map[string]struct {
 		givenSensorCapabilities       []centralsensor.SensorCapability
 		givenSensorState              central.SensorHello_SensorState
-		assertReconciliationMapClosed bool
-		assertDeduperState            map[string]uint64
-		assertDeduperStateSent        bool
+		expectReconciliationMapClosed bool
+		expectDeduperStateSent        bool
+		expectDeduperStateContents    map[string]uint64
 	}{
 		"Sensor reconciles: sensor has capability and status is reconnect": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
 			givenSensorState:              central.SensorHello_RECONNECT,
-			assertReconciliationMapClosed: true,
-			assertDeduperStateSent:        true,
-			assertDeduperState:            map[string]uint64{"deployment:1": 0},
+			expectReconciliationMapClosed: true,
+			expectDeduperStateSent:        true,
+			expectDeduperStateContents:    map[string]uint64{"deployment:1": 0},
 		},
 		"Central reconciles: sensor has capability and status is startup": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
 			givenSensorState:              central.SensorHello_STARTUP,
-			assertReconciliationMapClosed: false,
-			assertDeduperStateSent:        false,
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: sensor has capability and status is unknown": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
 			givenSensorState:              central.SensorHello_UNKNOWN,
-			assertReconciliationMapClosed: false,
-			assertDeduperStateSent:        false,
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: sensor doesn't have capability status is reconnect": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{},
 			givenSensorState:              central.SensorHello_RECONNECT,
-			assertReconciliationMapClosed: false,
-			assertDeduperStateSent:        false,
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: sensor doesn't have capability status is startup": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{},
 			givenSensorState:              central.SensorHello_STARTUP,
-			assertReconciliationMapClosed: false,
-			assertDeduperStateSent:        false,
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: sensor doesn't have capability status is unknown": {
 			givenSensorCapabilities:       []centralsensor.SensorCapability{},
 			givenSensorState:              central.SensorHello_UNKNOWN,
-			assertReconciliationMapClosed: false,
-			assertDeduperStateSent:        false,
+			expectReconciliationMapClosed: false,
+			expectDeduperStateSent:        false,
 		},
 	}
 
@@ -144,8 +144,8 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			caps := set.NewSet[centralsensor.SensorCapability](tc.givenSensorCapabilities...)
 
 			mgrMock.EXPECT().GetCluster(ctx, gomock.Any()).Return(&storage.Cluster{}, true, nil).AnyTimes()
-			if tc.assertDeduperStateSent {
-				deduper.EXPECT().GetSuccessfulHashes().Return(tc.assertDeduperState).Times(1)
+			if tc.expectDeduperStateSent {
+				deduper.EXPECT().GetSuccessfulHashes().Return(tc.expectDeduperStateContents).Times(1)
 			} else {
 				deduper.EXPECT().GetSuccessfulHashes().Times(0)
 			}
@@ -159,14 +159,14 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				}
 			}
 
-			if tc.assertDeduperStateSent {
+			if tc.expectDeduperStateSent {
 				s.NotNil(deduperState)
-				s.Equal(tc.assertDeduperState, deduperState.ResourceHashes)
+				s.Equal(tc.expectDeduperStateContents, deduperState.ResourceHashes)
 			} else {
 				s.Nil(deduperState)
 			}
 
-			s.Equal(tc.assertReconciliationMapClosed, eventHandler.reconciliationMap.IsClosed())
+			s.Equal(tc.expectReconciliationMapClosed, eventHandler.reconciliationMap.IsClosed())
 		})
 	}
 
