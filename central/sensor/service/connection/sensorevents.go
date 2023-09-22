@@ -87,7 +87,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		// Call the reconcile functions
 		log.Info("Receiving reconciliation event")
 		if s.reconciliationMap.IsClosed() {
-			log.Info("Ignoring SYNC since reconciliationMap is already closed")
+			log.Infof("Ignoring SYNC from cluster %s (ClusterID:%s) since reconciliationMap is already closed", s.cluster.GetName(), s.cluster.GetId())
 			return
 		}
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
