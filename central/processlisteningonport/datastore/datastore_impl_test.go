@@ -128,7 +128,7 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         "nginx-7db9fccd9b-92hfs",
+			PodId:         fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -167,7 +167,7 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               "nginx-7db9fccd9b-92hfs",
+			PodId:               fixtureconsts.PodUID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -181,7 +181,7 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               "nginx-7db9fccd9b-92hfs",
+			PodId:               fixtureconsts.PodUID2,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -202,8 +202,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	log.Infof("Read returned %+v plops", fixtures.GetPod())
 	// Prepare pod
-	suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod())
-	//suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+	//suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod())
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(

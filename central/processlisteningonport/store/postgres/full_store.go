@@ -38,7 +38,8 @@ const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
-const getPodsStmt = "SELECT pods_id from pods_live_instances"
+const getPodsStmt = "SELECT id from pods"
+//const getPodsStmt = "SELECT pods_id from pods_live_instances"
 
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
@@ -103,9 +104,10 @@ func (s *fullStoreImpl) retryableGetPLOP(
 
 func (s *fullStoreImpl) readPodRows(rows pgx.Rows) (map[string]bool, error) {
 	podMap := make(map[string]bool)
+	log.Infof("In readPdRows")
 	for rows.Next() {
 		var podID string
-
+		log.Infof("Reading pod row")
 		if err := rows.Scan(&podID); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
@@ -172,6 +174,10 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		_, podExists := podMap[podID]
+		log.Infof("podMap= %+v", podMap)
+		log.Infof("podID= %+v", podID)
+		log.Infof("podMap[podID]= %+v", podMap[podID])
+		log.Infof("podExists= %+v", podExists)
 
 		// If the pod of the listening endpoint is not active, don't report the endpoint
 		if !podExists {

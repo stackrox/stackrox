@@ -3,15 +3,17 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 )
 
 // GetPod returns a mock Pod
 func GetPod() *storage.Pod {
 	return &storage.Pod{
-		Id:           "nginx-7db9fccd9b-92hfs",
+		Id:           fixtureconsts.PodUID1,
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
+		Name:         "qwerty",
 		Started: &types.Timestamp{
 			Seconds: 0,
 		},
@@ -20,6 +22,7 @@ func GetPod() *storage.Pod {
 				InstanceId: &storage.ContainerInstanceID{
 					Id: "containerid",
 				},
+				ContainingPodId: "asdf",
 				ContainerName: "containername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 				Started: &types.Timestamp{
@@ -30,6 +33,7 @@ func GetPod() *storage.Pod {
 				InstanceId: &storage.ContainerInstanceID{
 					Id: "othercontainerid",
 				},
+				ContainingPodId: "asdf",
 				ContainerName: "othercontainername",
 				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 				Started: &types.Timestamp{
@@ -44,6 +48,7 @@ func GetPod() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containeridfirst",
 						},
+						ContainingPodId: "asdf",
 						ContainerName: "containername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 						Started: &types.Timestamp{
@@ -61,6 +66,7 @@ func GetPod() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "othercontainerid",
 						},
+						ContainingPodId: "asdf",
 						ContainerName: "othercontainername",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 						Started: &types.Timestamp{
@@ -78,6 +84,7 @@ func GetPod() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containeridinitfirst",
 						},
+						ContainingPodId: "asdf",
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 						Started: &types.Timestamp{
@@ -93,6 +100,7 @@ func GetPod() *storage.Pod {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containeridinitsecond",
 						},
+						ContainingPodId: "asdf",
 						ContainerName: "containerinitname",
 						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 						Started: &types.Timestamp{
