@@ -254,6 +254,7 @@ func (s *servicePostgresTestSuite) eventsEqual(event *events.AdministrationEvent
 		toV1TypeEnum(event.GetType()) == apiEvent.GetType() &&
 		event.GetHint() == apiEvent.GetHint() &&
 		event.GetDomain() == apiEvent.GetDomain() &&
-		event.GetResourceID() == apiEvent.GetResourceId() &&
-		event.GetResourceType() == apiEvent.GetResourceType()
+		event.GetResourceID() == apiEvent.GetResource().GetId() &&
+		event.GetResourceType() == apiEvent.GetResource().GetType() &&
+		event.GetResourceName() == apiEvent.GetResource().GetName()
 }

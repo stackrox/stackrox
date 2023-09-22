@@ -17,7 +17,7 @@ func GenerateEventID(event *AdministrationEvent) string {
 	dedupKey := strings.Join([]string{
 		event.GetDomain(),
 		event.GetMessage(),
-		event.GetResourceID(),
+		stringutils.FirstNonEmpty(event.GetResourceID(), event.GetResourceName()),
 		event.GetResourceType(),
 		event.GetType().String(),
 	}, ",")
@@ -35,6 +35,7 @@ type AdministrationEvent struct {
 	Message      string
 	ResourceID   string
 	ResourceType string
+	ResourceName string
 	Type         storage.AdministrationEventType
 }
 
@@ -86,6 +87,14 @@ func (m *AdministrationEvent) GetResourceType() string {
 	return ""
 }
 
+// GetResourceName returns the event resource name.
+func (m *AdministrationEvent) GetResourceName() string {
+	if m != nil {
+		return m.ResourceName
+	}
+	return ""
+}
+
 // GetType returns the event type.
 func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 	if m != nil {
@@ -98,14 +107,17 @@ func (m *AdministrationEvent) GetType() storage.AdministrationEventType {
 func (m *AdministrationEvent) ToStorageEvent() *storage.AdministrationEvent {
 	tsNow := gogoTimestamp.TimestampNow()
 	return &storage.AdministrationEvent{
-		Id:             GenerateEventID(m),
-		Type:           m.GetType(),
-		Level:          m.GetLevel(),
-		Message:        m.GetMessage(),
-		Hint:           m.GetHint(),
-		Domain:         m.GetDomain(),
-		ResourceId:     m.GetResourceID(),
-		ResourceType:   m.GetResourceType(),
+		Id:      GenerateEventID(m),
+		Type:    m.GetType(),
+		Level:   m.GetLevel(),
+		Message: m.GetMessage(),
+		Hint:    m.GetHint(),
+		Domain:  m.GetDomain(),
+		Resource: &storage.AdministrationEvent_Resource{
+			Type: m.GetResourceType(),
+			Id:   m.GetResourceID(),
+			Name: m.GetResourceName(),
+		},
 		NumOccurrences: 1,
 		CreatedAt:      tsNow,
 		LastOccurredAt: tsNow,
@@ -122,7 +134,7 @@ func (m *AdministrationEvent) Validate() error {
 	// This needs to be kept in-line with the fields used for generating the event ID (see GenerateEventID).
 	if stringutils.AtLeastOneEmpty(m.GetDomain(),
 		m.GetMessage(),
-		m.GetResourceID(),
+		stringutils.FirstNonEmpty(m.GetResourceID(), m.GetResourceName()),
 		m.GetResourceType(),
 		m.GetType().String()) {
 		return errox.InvalidArgs.CausedBy("all required fields must be set")
