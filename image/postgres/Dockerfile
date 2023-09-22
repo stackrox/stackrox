@@ -27,13 +27,13 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/init-entrypoint.sh /usr/local/bin/
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-RUN microdnf upgrade --nobest && \
+RUN microdnf upgrade -y --nobest && \
     # groupadd is in shadow-utils package that is not installed by default.
-    microdnf --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
+    microdnf -y --setopt=install_weak_deps=0 --nodocs install shadow-utils && \
     groupadd -g 70 postgres && \
     adduser postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh && \
     rpm --import RPM-GPG-KEY-PGDG-13 && \
-    microdnf --setopt=install_weak_deps=0 --nodocs install \
+    microdnf -y --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
         perl-libs libxslt python3 uuid && \
@@ -41,7 +41,7 @@ RUN microdnf upgrade --nobest && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
     microdnf -y --setopt=install_weak_deps=0 --nodocs reinstall tzdata && \
-    microdnf clean all && \
+    microdnf clean all -y && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     localedef -f UTF-8 -i en_US en_US.UTF-8 && \
