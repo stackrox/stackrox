@@ -181,7 +181,7 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID2,
+			PodId:               fixtureconsts.PodUID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -200,9 +200,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
-	log.Infof("Read returned %+v plops", fixtures.GetPod())
 	// Prepare pod
-	//suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod())
 	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
@@ -267,6 +265,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -314,6 +315,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -377,6 +381,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -427,6 +434,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -496,6 +506,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -548,6 +561,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject, &closedPlopObject}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -591,6 +607,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -650,6 +669,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	indicatorsFromDB := suite.getProcessIndicatorsFromDB()
 	suite.Len(indicatorsFromDB, 0)
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjects...))
@@ -700,6 +722,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 // as it is closed it will not be returned by the API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
 	// Add PLOP referencing non existing indicators
@@ -736,6 +761,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 // TestPLOPAddOpenNoIndicatorThenClose Adds an open PLOP object with no matching
 // indicator. Adds an indicator and then closes the PLOP
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
@@ -787,6 +815,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 // database to contain one PLOP and the database to return nothing, because
 // it is closed.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 	closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
@@ -866,6 +898,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	}
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -928,6 +963,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		&openPlopObject,
 	}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -979,6 +1017,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		&openPlopObject,
 		&closedPlopObject,
 	}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1078,6 +1119,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		&closedPlopObject2,
 		&openPlopObject,
 	}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1179,6 +1223,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		&openPlopObject,
 	}
 
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -1243,6 +1290,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	id.SetIndicatorID(initialIndicators[0])
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1396,6 +1446,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
 	}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// It is not possible to add a PLOP from sensor with no process info
 	// so upsert directly to the database. In the tests when a process indicator
