@@ -14,7 +14,7 @@ import (
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	podStorage "github.com/stackrox/rox/central/pod/store/postgres"
-	"github.com/stackrox/rox/central/pod/datastore/internal/search"
+	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -83,7 +83,7 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
         //        return nil, err
         //}
         //searcher := search.New(store, pgStore.NewIndexer(db))
-        pdSearcher := search.New(pdStorage, pdIndexer)
+        pdSearcher := podSearch.New(pdStorage, pdIndexer)
 
 
 	suite.podDataStore, _ = newDatastoreImpl(pdStorage, pdSearcher, suite.indicatorDataStore, processFilter)
