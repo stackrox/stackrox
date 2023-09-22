@@ -80,11 +80,6 @@ func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, b
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")
 
-	log.Infof("")
-	log.Infof("pod= %+v", pod)
-	log.Infof("")
-	log.Infof("pod.GetId()= %+v", pod.GetId())
-
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -92,11 +87,6 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	}
 
 	ds.processFilter.UpdateByPod(pod)
-
-	log.Infof("")
-	log.Infof("pod= %+v", pod)
-	log.Infof("")
-	log.Infof("pod.GetId()= %+v", pod.GetId())
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
 		oldPod, found, err := ds.podStore.Get(ctx, pod.GetId())
@@ -106,10 +96,6 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		if found {
 			mergeContainerInstances(pod, oldPod)
 		}
-		log.Infof("")
-		log.Infof("pod= %+v", pod)
-		log.Infof("")
-		log.Infof("pod.GetId()= %+v", pod.GetId())
 
 		if err := ds.podStore.Upsert(ctx, pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
