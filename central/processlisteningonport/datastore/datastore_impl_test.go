@@ -7,14 +7,19 @@ import (
 	"testing"
 	"time"
 
+	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	podStorage "github.com/stackrox/rox/central/pod/store/postgres"
+	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,12 +36,15 @@ type PLOPDataStoreTestSuite struct {
 	datastore          DataStore
 	store              plopStore.Store
 	indicatorDataStore processIndicatorDataStore.DataStore
+	podDataStore	   podDataStore.DataStore
 
 	postgres *pgtest.TestPostgres
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
+	allCtx	    context.Context
+	filter      filter.Filter
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
@@ -49,7 +57,9 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
-}
+	suite.allCtx     = sac.WithAllAccess(context.Background())
+
+        suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})}
 
 func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.postgres = pgtest.ForT(suite.T())
@@ -62,6 +72,21 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorSearcher, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
+	//suite.podDataStore, _ = podDataStore.NewPostgresDB(suite.postgres.DB, suite.indicatorDataStore, suite.filter)
+	//suite.podDataStore, _ = newDatastoreImpl(store, searcher, indicators, processFilter)
+
+	pdStorage := podStorage.New(suite.postgres.DB)
+	pdIndexer := podStorage.NewIndexer(suite.postgres.DB)
+	//pdSearcher := podSearch.New(pdStorage, pdIndexer)
+	//store, err := cache.NewCachedStore(pgStore.New(db))
+        //if err != nil {
+        //        return nil, err
+        //}
+        //searcher := search.New(store, pgStore.NewIndexer(db))
+        pdSearcher := search.New(pdStorage, pdIndexer)
+
+
+	suite.podDataStore, _ = newDatastoreImpl(pdStorage, pdSearcher, suite.indicatorDataStore, processFilter)
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
@@ -172,6 +197,9 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare pod
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
