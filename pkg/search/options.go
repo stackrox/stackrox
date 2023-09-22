@@ -210,6 +210,7 @@ var (
 	ComplianceOperatorRuleName    = newFieldLabel("Compliance Rule Name")
 	ComplianceOperatorProfileName = newFieldLabel("Compliance Profile Name")
 	ComplianceOperatorStandard    = newFieldLabel("Compliance Standard")
+	ComplianceOperatorScanConfig  = newFieldLabel("Compliance Scan Config ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
