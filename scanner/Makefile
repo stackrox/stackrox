@@ -138,6 +138,7 @@ copy-db-scripts: ../image/postgres/download.sh
 	$(SILENT)echo "+ $@"
 	$(SILENT)cp $^ image/db
 
+.PHONY: copy-db-image-scripts
 copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
 	$(SILENT)echo "+ $@"
 	$(SILENT)cp $^ image/db/scripts
