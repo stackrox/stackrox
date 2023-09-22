@@ -15,8 +15,9 @@ package v2;
 // was successfully applied to some clusters but not others.
 // Next available tag: 3
 message ClusterScanStatus {
-    string                    cluster_id = 1;
-    repeated string           errors     = 2;
+    string                    cluster_id   = 1;
+    repeated string           errors       = 2;
+    string                    cluster_name = 3;
 }
 
 // Next available tag: 4
@@ -28,25 +29,22 @@ message BaseComplianceScanConfigurationSettings {
 
 // Next available tag: 4
 message ComplianceScanConfiguration {
-    string                                     scan_name   = 1;
-    BaseComplianceScanConfigurationSettings    scan_config = 2;
-    repeated string                            clusters    = 3;
+    string                                     id             = 1;
+    string                                     scan_name      = 2;
+    BaseComplianceScanConfigurationSettings    scan_config    = 3;
+    repeated string                            clusters       = 4;
 }
 
-// Next available tag: 7
+// Next available tag: 8
 message ComplianceScanConfigurationStatus {
-    string                                     scan_name            = 1;
-    BaseComplianceScanConfigurationSettings    scan_config          = 2;
-    repeated ClusterScanStatus                 cluster_status       = 3;
-    google.protobuf.Timestamp                  created_time         = 4;
-    google.protobuf.Timestamp                  last_updated_time    = 5;
+    string                                     id                   = 1;
+    string                                     scan_name            = 2;
+    BaseComplianceScanConfigurationSettings    scan_config          = 3;
+    repeated ClusterScanStatus                 cluster_status       = 4;
+    google.protobuf.Timestamp                  created_time         = 5;
+    google.protobuf.Timestamp                  last_updated_time    = 6;
     // Most recent user to update the scan settings
-    SlimUser                                   created_by           = 6;
-}
-
-// Next available tag: 2
-message ComplianceScanConfigurationRequest {
-    string scan_name = 1;
+    SlimUser                                   modified_by           = 7;
 }
 
 // Next available tag: 2
@@ -63,9 +61,9 @@ service ComplianceScanConfigurationService {
     }
 
     // GetComplianceScanConfiguration retrieves the specified compliance scan configurations
-    rpc GetComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (ComplianceScanConfigurationStatus) {
+    rpc GetComplianceScanConfiguration (ResourceByID) returns (ComplianceScanConfigurationStatus) {
         option (google.api.http) = {
-            get: "/v2/compliance/scan/configurations/{scan_name}"
+            get: "/v2/compliance/scan/configurations/{id}"
         };
     }
 
@@ -80,22 +78,22 @@ service ComplianceScanConfigurationService {
     // UpdateComplianceScanConfiguration updates a compliance scan configuration
     rpc UpdateComplianceScanConfiguration (ComplianceScanConfiguration) returns (Empty) {
         option (google.api.http) = {
-            put: "/v2/compliance/scan/configurations/{scan_name}"
+            put: "/v2/compliance/scan/configurations/{id}"
             body: "*"
         };
     }
 
     // DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
-    rpc DeleteComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (Empty) {
+    rpc DeleteComplianceScanConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            delete: "/v2/compliance/scan/configurations/{scan_name}"
+            delete: "/v2/compliance/scan/configurations/{id}"
         };
     }
 
     // RunComplianceScanConfiguration launches scan for the specified scan configuration
-    rpc RunComplianceScanConfiguration (ComplianceScanConfigurationRequest) returns (Empty) {
+    rpc RunComplianceScanConfiguration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
-            get: "/v2/compliance/scan/configurations/execute/{scan_name}"
+            get: "/v2/compliance/scan/configurations/execute/{id}"
         };
     }
 }

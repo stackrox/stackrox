@@ -60,7 +60,11 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 
 	if resourceType != "" {
 		event.ResourceType = resourceType
-		event.ResourceID = enc.m[resourceTypeKey]
+		if isIDField(resourceTypeKey) {
+			event.ResourceID = enc.m[resourceTypeKey]
+		} else {
+			event.ResourceName = enc.m[resourceTypeKey]
+		}
 	}
 
 	event.Domain = events.GetDomainFromModule(module)

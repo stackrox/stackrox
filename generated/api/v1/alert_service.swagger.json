@@ -674,30 +674,6 @@
         }
       }
     },
-    "AlertResource": {
-      "type": "object",
-      "properties": {
-        "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
-        },
-        "name": {
-          "type": "string"
-        },
-        "clusterId": {
-          "type": "string"
-        },
-        "clusterName": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "namespaceId": {
-          "type": "string"
-        }
-      },
-      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
-    },
     "AlertResourceResourceType": {
       "type": "string",
       "enum": [
@@ -985,7 +961,7 @@
           "title": "Represents an alert on a container image.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "resource": {
-          "$ref": "#/definitions/AlertResource",
+          "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
@@ -1069,6 +1045,30 @@
           "type": "boolean"
         }
       }
+    },
+    "storageAlertResource": {
+      "type": "object",
+      "properties": {
+        "resourceType": {
+          "$ref": "#/definitions/AlertResourceResourceType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "namespaceId": {
+          "type": "string"
+        }
+      },
+      "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
     },
     "storageBooleanOperator": {
       "type": "string",

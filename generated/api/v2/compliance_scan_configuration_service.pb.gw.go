@@ -70,7 +70,7 @@ func local_request_ComplianceScanConfigurationService_ListComplianceScanConfigur
 }
 
 func request_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceScanConfigurationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -80,15 +80,15 @@ func request_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.GetComplianceScanConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -97,7 +97,7 @@ func request_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0
 }
 
 func local_request_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceScanConfigurationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -107,15 +107,15 @@ func local_request_ComplianceScanConfigurationService_GetComplianceScanConfigura
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := server.GetComplianceScanConfiguration(ctx, &protoReq)
@@ -176,15 +176,15 @@ func request_ComplianceScanConfigurationService_UpdateComplianceScanConfiguratio
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.UpdateComplianceScanConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -211,15 +211,15 @@ func local_request_ComplianceScanConfigurationService_UpdateComplianceScanConfig
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := server.UpdateComplianceScanConfiguration(ctx, &protoReq)
@@ -228,7 +228,7 @@ func local_request_ComplianceScanConfigurationService_UpdateComplianceScanConfig
 }
 
 func request_ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceScanConfigurationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -238,15 +238,15 @@ func request_ComplianceScanConfigurationService_DeleteComplianceScanConfiguratio
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.DeleteComplianceScanConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -255,7 +255,7 @@ func request_ComplianceScanConfigurationService_DeleteComplianceScanConfiguratio
 }
 
 func local_request_ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceScanConfigurationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -265,15 +265,15 @@ func local_request_ComplianceScanConfigurationService_DeleteComplianceScanConfig
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := server.DeleteComplianceScanConfiguration(ctx, &protoReq)
@@ -282,7 +282,7 @@ func local_request_ComplianceScanConfigurationService_DeleteComplianceScanConfig
 }
 
 func request_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceScanConfigurationServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -292,15 +292,15 @@ func request_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := client.RunComplianceScanConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -309,7 +309,7 @@ func request_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0
 }
 
 func local_request_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceScanConfigurationServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanConfigurationRequest
+	var protoReq ResourceByID
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -319,15 +319,15 @@ func local_request_ComplianceScanConfigurationService_RunComplianceScanConfigura
 		_   = err
 	)
 
-	val, ok = pathParams["scan_name"]
+	val, ok = pathParams["id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_name")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
 
-	protoReq.ScanName, err = runtime.String(val)
+	protoReq.Id, err = runtime.String(val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_name", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
 	msg, err := server.RunComplianceScanConfiguration(ctx, &protoReq)
@@ -646,15 +646,15 @@ func RegisterComplianceScanConfigurationServiceHandlerClient(ctx context.Context
 var (
 	pattern_ComplianceScanConfigurationService_ListComplianceScanConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "compliance", "scan", "configurations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "scan_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_GetComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_ComplianceScanConfigurationService_PostComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "compliance", "scan", "configurations"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "scan_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "scan_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "configurations", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "configurations", "execute", "scan_name"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_ComplianceScanConfigurationService_RunComplianceScanConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "configurations", "execute", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

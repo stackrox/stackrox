@@ -35,7 +35,8 @@ enum RuleSeverity {
 }
 
 message ProfileShim {
-    string                    profile_id               = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
+    string profile_id     = 1 [(gogoproto.moretags) = 'search:"-" sql:"fk(ComplianceOperatorProfileV2:id),no-fk-constraint"'];
+    string profile_name   = 2;
 }
 
 // Next Tag: 13
@@ -73,31 +74,33 @@ message ComplianceOperatorRuleV2 {
 }
 
 // Next Tag: 15
-message ComplianceOperatorScanSettingV2 {
-    string                        scan_name                = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    bool                          auto_apply_remediations  = 2;
-    bool                          auto_update_remediations = 3;
-    bool                          one_time_scan            = 4;
-    map<string, string>           labels                   = 5;
-    map<string, string>           annotations              = 6;
-    repeated ProfileShim          profiles                 = 7;
-
-    // Cluster and an error if necessary to handle cases where the scan setting is
-    // unable to be applied to a cluster for whatever reason.
-    message ClusterScanStatus {
-        string                    cluster_id = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-        repeated string           errors     = 2;
-    }
-    repeated ClusterScanStatus    clusters          = 8;
-    repeated NodeRole             node_roles        = 9;
+message ComplianceOperatorScanConfigurationV2 {
+    string                        id                       = 1 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"pk,type(uuid)"'];
+    string                        scan_name                = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name,store" sql:"unique"'];
+    bool                          auto_apply_remediations  = 3;
+    bool                          auto_update_remediations = 4;
+    bool                          one_time_scan            = 5;
+    map<string, string>           labels                   = 6;
+    map<string, string>           annotations              = 7;
+    repeated ProfileShim          profiles                 = 8;
+    repeated NodeRole             node_roles               = 9;
     // Will be configurable via env var
-    bool                          strict_node_scan  = 10;
+    bool                          strict_node_scan         = 10;
     // Starting point for schedule will probably have to build upon it
-    storage.Schedule              schedule          = 11;
-    google.protobuf.Timestamp     created_time      = 12;
-    google.protobuf.Timestamp     last_updated_time = 13;
-    // Most recent user to update the scan settings
-    SlimUser                      created_by = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    storage.Schedule              schedule                 = 11;
+    google.protobuf.Timestamp     created_time             = 12;
+    google.protobuf.Timestamp     last_updated_time        = 13;
+    // Most recent user to update the scan configurations
+    SlimUser                      modified_by               = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+}
+
+// Cluster and an error if necessary to handle cases where the scan configuration is
+// unable to be applied to a cluster for whatever reason.
+message ComplianceOperatorClusterScanConfigStatus {
+    string                        cluster_id          = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"'];
+    string                        scan_id             = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint"'];
+    repeated string               errors              = 3;
+    google.protobuf.Timestamp     last_updated_time   = 4;
 }
 
 // Next Tag: 15
@@ -141,7 +144,7 @@ message ScanStatus {
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
     string                     id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                     scan_name          = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Name,hidden,store" sql:"fk(ComplianceOperatorScanSettingV2:scan_name),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
+    string                     scan_config_id     = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
     string                     cluster_id         = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator"'];
     repeated string            errors             = 4;
     repeated ProfileShim       profile            = 5;

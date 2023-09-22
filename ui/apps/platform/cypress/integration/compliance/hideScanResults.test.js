@@ -1,7 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import { getInputByLabel } from '../../helpers/formHelpers';
 
-import { scanCompliance, visitComplianceDashboard } from './Compliance.helpers';
+import { triggerScan, visitComplianceDashboard } from './Compliance.helpers';
 import {
     clickSaveAndWaitForPatchComplianceStandards,
     openModal,
@@ -58,8 +58,7 @@ describe('Compliance hideScanResults', () => {
     withAuth();
 
     it('should open modal and then cancel', () => {
-        visitComplianceDashboard();
-        scanCompliance(); // in case complianceDashboard.test.js is skipped
+        triggerScan(); // in case complianceDashboard.test.js is skipped
         openModal();
 
         cy.get(selectorInModal('button:contains("Save")')).should('be.disabled');

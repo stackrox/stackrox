@@ -246,6 +246,87 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
     * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
 
+### Routes
+
+#### Add a route
+
+Read and obey comments to add strings or properties **in alphabetical order to minimize merge conflicts**.
+
+1. Edit ui/apps/platform/src/routePaths.ts file.
+
+    * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
+
+        * Use a **plural** noun for something like **clusters**.
+        * Use a **singular** noun for something like **compliance**.
+
+        ```ts
+        export const whateversBasePath = `${mainPath}/whatevers`;
+        export const whateversPathWithParam = `${whateversBasePath}/:id?`;
+        ```
+
+    * Add a string to `RouteKey` type.
+
+        ```ts
+        | 'whatevers'
+        ```
+
+    * Add a property to `routeRequirementsMap` object.
+
+        Specify a feature flag during development of a new route.
+
+        Specify minimum resource requirements. Component files might have conditional rendering for additional resources.
+
+        ```ts
+        'whatevers': {
+            featureFlagDependency: ['ROX_WHATEVERS'],
+            resourceAccessRequirements: everyResource(['Whichever']),
+        },
+        ```
+
+2. Edit ui/apps/platform/src/Containers/MainPage/Body.tsx file.
+
+    * Import the path for the `Route` element.
+
+        ```ts
+        whateversPathWithParam,
+        ```
+
+    * Add a property to `routeComponentMap` object.
+
+        Specify the path to the root component of the asynchronously-loaded bundle file for the route (see step 4).
+
+        ```ts
+        'whatevers': {
+            component: asyncComponent(
+                () => import('Containers/Whatevers/WhateversRoute')
+            ),
+            path: whateversPathWithParam,
+        },
+        ```
+
+3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link.
+
+    * Import a path **without params**.
+
+    ```ts
+    whateversBasePath,
+    ```
+
+    * Add a child item for the link in the `navDescriptions` array.
+
+    ```ts
+    {
+        type: 'child',
+        content: 'Whatevers',
+        path: whateversBasePath,
+        routeKey: 'whatevers',
+    },
+    ```
+
+4. Add a folder and root component file (see step 2).
+
+    For example: ui/apps/platform/src/Containers/Whatevers/WhateversRoute.tsx
+
 ### API
 
 #### Frontend request and response types

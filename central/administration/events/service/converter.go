@@ -7,14 +7,17 @@ import (
 
 func toV1Proto(event *storage.AdministrationEvent) *v1.AdministrationEvent {
 	return &v1.AdministrationEvent{
-		Id:             event.GetId(),
-		Type:           toV1TypeEnum(event.GetType()),
-		Level:          toV1LevelEnum(event.GetLevel()),
-		Message:        event.GetMessage(),
-		Hint:           event.GetHint(),
-		Domain:         event.GetDomain(),
-		ResourceType:   event.GetResourceType(),
-		ResourceId:     event.GetResourceId(),
+		Id:      event.GetId(),
+		Type:    toV1TypeEnum(event.GetType()),
+		Level:   toV1LevelEnum(event.GetLevel()),
+		Message: event.GetMessage(),
+		Hint:    event.GetHint(),
+		Domain:  event.GetDomain(),
+		Resource: &v1.AdministrationEvent_Resource{
+			Type: event.GetResource().GetType(),
+			Id:   event.GetResource().GetId(),
+			Name: event.GetResource().GetName(),
+		},
 		NumOccurrences: event.GetNumOccurrences(),
 		LastOccurredAt: event.GetLastOccurredAt(),
 		CreatedAt:      event.GetCreatedAt(),
