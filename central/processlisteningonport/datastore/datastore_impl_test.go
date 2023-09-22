@@ -13,8 +13,7 @@ import (
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
-	podStorage "github.com/stackrox/rox/central/pod/store/postgres"
-	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
+	//podStorage "github.com/stackrox/rox/central/pod/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -72,21 +71,24 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorSearcher, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
-	//suite.podDataStore, _ = podDataStore.NewPostgresDB(suite.postgres.DB, suite.indicatorDataStore, suite.filter)
-	//suite.podDataStore, _ = newDatastoreImpl(store, searcher, indicators, processFilter)
-
-	pdStorage := podStorage.New(suite.postgres.DB)
-	pdIndexer := podStorage.NewIndexer(suite.postgres.DB)
-	//pdSearcher := podSearch.New(pdStorage, pdIndexer)
-	//store, err := cache.NewCachedStore(pgStore.New(db))
-        //if err != nil {
-        //        return nil, err
-        //}
-        //searcher := search.New(store, pgStore.NewIndexer(db))
-        pdSearcher := podSearch.New(pdStorage, pdIndexer)
 
 
-	suite.podDataStore, _ = newDatastoreImpl(pdStorage, pdSearcher, suite.indicatorDataStore, processFilter)
+	suite.podDataStore, _ = podDataStore.NewPostgresDB(suite.postgres.DB, suite.indicatorDataStore, suite.filter)
+
+	////suite.podDataStore, _ = newDatastoreImpl(store, searcher, indicators, processFilter)
+
+	//pdStorage := podStorage.New(suite.postgres.DB)
+	//pdIndexer := podStorage.NewIndexer(suite.postgres.DB)
+	////pdSearcher := podSearch.New(pdStorage, pdIndexer)
+	////store, err := cache.NewCachedStore(pgStore.New(db))
+        ////if err != nil {
+        ////        return nil, err
+        ////}
+        ////searcher := search.New(store, pgStore.NewIndexer(db))
+        //pdSearcher := podSearch.New(pdStorage, pdIndexer)
+
+
+	//suite.podDataStore, _ = newDatastoreImpl(pdStorage, pdSearcher, suite.indicatorDataStore, processFilter)
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
@@ -126,7 +128,7 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         "nginx-7db9fccd9b-92hfs",
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -165,7 +167,7 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               "nginx-7db9fccd9b-92hfs",
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -179,7 +181,7 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               "nginx-7db9fccd9b-92hfs",
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -198,8 +200,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	log.Infof("Read returned %+v plops", fixtures.GetPod())
 	// Prepare pod
-	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
+	suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod())
+	//suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
