@@ -38,8 +38,8 @@ const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
-const getPodsStmt = "SELECT id from pods"
-//const getPodsStmt = "SELECT pods_id from pods_live_instances"
+//const getPodsStmt = "SELECT id from pods"
+const getPodsStmt = "SELECT name from pods where deploymentid = $1"
 
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
@@ -78,7 +78,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	}
 	defer rows.Close()
 
-	podRows, podErr = s.db.Query(ctx, getPodsStmt)
+	podRows, podErr = s.db.Query(ctx, getPodsStmt, deploymentID)
 	if podErr != nil {
 		// Do not be alarmed if the error is simply NoRows
 		podErr = pgutils.ErrNilIfNoRows(podErr)

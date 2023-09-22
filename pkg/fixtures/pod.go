@@ -117,6 +117,7 @@ func GetPod() *storage.Pod {
 func GetPod1() *storage.Pod {
 	return &storage.Pod{
 		Id:	      fixtureconsts.PodUID1,
+		Name:         "nginx",
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
@@ -224,6 +225,7 @@ func GetPod1() *storage.Pod {
 func GetPod2() *storage.Pod {
 	return &storage.Pod{
 		Id:	      fixtureconsts.PodUID2,
+		Name:         "visa-processor",
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
