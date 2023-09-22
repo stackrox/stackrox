@@ -54,8 +54,8 @@ import (
 const (
 	envCentralLabelSelector            = "CENTRAL_LABEL_SELECTOR"
 	envSecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
-	envDisableCentralReconciler        = "DISABLE_CENTRAL_RECONCILER"
-	envDisableSecuredClusterReconciler = "DISABLE_SECURED_CLUSTER_RECONCILER"
+	envCentralReconcilerEnabled        = "CENTRAL_RECONCILER_ENABLED"
+	envSecuredClusterReconcilerEnabled = "SECURED_CLUSTER_RECONCILER_ENABLED"
 )
 
 var (
@@ -80,10 +80,10 @@ var (
 	// instances to be managed by this operator. If the selector is empty, all instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
 	securedClusterLabelSelector = env.RegisterSetting(envSecuredClusterLabelSelector, env.WithDefault(""))
-	// disableCentralReconciler skips registering central reconciler if set to true
-	disableCentralReconciler = env.RegisterBooleanSetting(envDisableCentralReconciler, false)
-	// disableSecuredClusterReconciler skips registering secured cluster reconciler if set to true
-	disableSecuredClusterReconciler = env.RegisterBooleanSetting(envDisableSecuredClusterReconciler, false)
+	// centralReconcilerEnabled enables registering central reconciler if set to true otherwise skips it
+	centralReconcilerEnabled = env.RegisterBooleanSetting(envCentralReconcilerEnabled, true)
+	// securedClusterReconcilerEnabled enables registering secured cluster reconciler if set to true otherwise skips it
+	securedClusterReconcilerEnabled = env.RegisterBooleanSetting(envSecuredClusterReconcilerEnabled, true)
 )
 
 func init() {
@@ -173,20 +173,20 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	if disableCentralReconciler.BooleanSetting() {
-		setupLog.Info("skip registering central reconciler because " + envDisableCentralReconciler + "==true")
-	} else {
+	if centralReconcilerEnabled.BooleanSetting() {
 		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
+	} else {
+		setupLog.Info("skip registering central reconciler because " + envCentralReconcilerEnabled + "==false")
 	}
 
-	if disableSecuredClusterReconciler.BooleanSetting() {
-		setupLog.Info("skip registering secured cluster reconciler because " + envDisableSecuredClusterReconciler + "==true")
-	} else {
+	if securedClusterReconcilerEnabled.BooleanSetting() {
 		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 		}
+	} else {
+		setupLog.Info("skip registering secured cluster reconciler because " + envSecuredClusterReconcilerEnabled + "==false")
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
