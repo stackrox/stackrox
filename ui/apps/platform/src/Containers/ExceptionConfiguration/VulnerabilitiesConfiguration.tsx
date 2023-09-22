@@ -135,6 +135,7 @@ function getDefaultConfig(): VulnerabilitiesExceptionConfig {
                 anyFixable: false,
             },
             customDate: false,
+            indefinite: false,
         },
     };
 }
@@ -189,8 +190,8 @@ const validationSchema = yup.object({
                 anyFixable: yup.boolean().required(),
             })
             .required(),
-        // TODO Need 'Indefinitely' added to validation once it is available in the API
         customDate: yup.boolean().required(),
+        indefinite: yup.boolean().required(),
     }),
 });
 
@@ -246,7 +247,7 @@ function VulnerabilitiesConfiguration() {
     const isConfigDirty = !isEqual(exceptionConfig, values);
     const hasFormError = Object.keys(errors).length > 0;
 
-    const { dayOptions, fixableCveOptions, customDate } = values.expiryOptions;
+    const { dayOptions, fixableCveOptions, customDate, indefinite } = values.expiryOptions;
 
     return (
         <>
@@ -312,11 +313,10 @@ function VulnerabilitiesConfiguration() {
                                     />
                                 );
                             })}
-                            {/* TODO Need 'Indefinitely' added to the API */}
                             <BooleanSetting
-                                fieldId="TODO"
-                                label="Indefinitely (TODO)"
-                                isSettingEnabled={false}
+                                fieldId="expiryOptions.indefinite"
+                                label="Indefinitely"
+                                isSettingEnabled={indefinite}
                                 isDisabled={!hasWriteAccessForPage}
                                 handleChange={handleChange}
                             />
