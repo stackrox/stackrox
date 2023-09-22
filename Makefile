@@ -71,6 +71,16 @@ ifneq ($(UNAME_M),x86_64)
 	BUILD_IMAGE = docker.io/library/golang:$(shell cat EXPECTED_GO_VERSION | cut -c 3-)
 endif
 
+CENTRAL_DB_DOCKER_ARGS :=
+ifeq ($(GOARCH),s390x)
+	CENTRAL_DB_DOCKER_ARGS := \
+		--build-arg="BASE_IMAGE=ubi9-minimal" \
+		--build-arg="BASE_TAG=9.2" \
+		--build-arg="RPMS_REGISTRY=quay.io" \
+		--build-arg="RPMS_BASE_IMAGE=centos/centos" \
+		--build-arg="RPMS_BASE_TAG=stream9"
+endif
+
 ifeq ($(UNAME_S),Darwin)
 BIND_GOCACHE ?= 0
 BIND_GOPATH ?= 0
@@ -567,6 +577,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		--build-arg LABEL_VERSION=$(TAG) \
 		--build-arg LABEL_RELEASE=$(TAG) \
 		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
+		$(CENTRAL_DB_DOCKER_ARGS) \
 		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
@@ -665,6 +676,7 @@ central-db-image:
 	$(DOCKERBUILD) \
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
+		$(CENTRAL_DB_DOCKER_ARGS) \
 		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
