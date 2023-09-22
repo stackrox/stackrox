@@ -161,7 +161,7 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		log.Errorf("Scan request failed for image %s: %s", req.containerImage.GetName().GetFullName(), err)
+		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
 		c.image = types.ToImage(req.containerImage)
 		return
 	}
