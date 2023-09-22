@@ -136,7 +136,7 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	// Enrich image with metadata from one of registries.
 	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
 	if pullSourceImage == nil {
-		// A null pullSourceImage indicates that the source image and all
+		// A nil pullSourceImage indicates that the source image and all
 		// mirrors were invalid images.
 		return nil, errors.Join(errorList.ToError(), ErrEnrichNotStarted)
 	}
@@ -299,7 +299,7 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 		cImages = append(cImages, img)
 	}
 
-	log.Debugf("Using %d pull sources for enriching %q: %v", len(cImages), srcImage.GetName().GetFullName(), cImages)
+	log.Debugf("Using %d pull sources for enriching %q: %+v", len(cImages), srcImage.GetName().GetFullName(), cImages)
 	return cImages
 }
 
