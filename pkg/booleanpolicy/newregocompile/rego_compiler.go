@@ -1,4 +1,4 @@
-package regocompile
+package newregocompile
 
 import (
 	"context"
@@ -211,6 +211,9 @@ func (r *regoCompilerForType) compileRego(query *query.Query) (string, error) {
 // [1, 0, 0]
 // [1, 1, 0]
 // [1, 2, 0]
+// Further notes: Because we have move inner or logic back to inner space, this function is not likely
+// used. But we will still keep this function here in case there is outer OR operation needed. Do we have it?
+// I (cdu) am not sure.
 func runForEachCrossProduct(arrayLengths []int, f func([]int) error) error {
 	for _, l := range arrayLengths {
 		if l == 0 {

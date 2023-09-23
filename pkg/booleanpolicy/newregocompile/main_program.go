@@ -1,4 +1,4 @@
-package regocompile
+package newregocompile
 
 import (
 	"strings"
@@ -9,7 +9,19 @@ var (
 	mainProgramTemplate = template.Must(template.New("").Parse(`
 package policy.main
 
-{{ $root := . }}
+import future.keywords.in
+
+negate(val) {
+	some m in [val]
+	not m
+}
+
+or(vals) {
+	some m in vals
+	m
+}
+
+{{- $root := . }}
 
 {{- range .Functions }}
 {{.}}

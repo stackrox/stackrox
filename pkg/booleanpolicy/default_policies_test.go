@@ -95,9 +95,9 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
 
-	suite.envIsolator = envisolator.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.VulnRiskManagement.EnvVar(), "true")
-	suite.envIsolator.Setenv(features.OPABasedEvaluator.EnvVar(), "true")
+	suite.T().Setenv(features.OPABasedEvaluator.EnvVar(), "true")
+	suite.T().Setenv(features.JmesPathBasedEvaluator.EnvVar(), "true")
+	suite.T().Setenv(features.CelBasedEvaluator.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}

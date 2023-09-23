@@ -1,4 +1,4 @@
-package regocompile
+package newregocompile
 
 import (
 	"testing"
@@ -317,6 +317,39 @@ func TestLinked(t *testing.T) {
 				Matches: []map[string][]string{
 					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B1"}},
 					{"TopLevelA": {"TopLevelValA"}, "A": {"A2"}, "B": {"B2"}},
+				},
+			},
+		},
+		{
+			desc: "linked, multilevel, should match optimization evaluation",
+			obj: &TopLevel{
+				ValA: "TopLevelValA",
+				NestedSlice: []Nested{
+					{NestedValA: "A0", NestedValB: "B0"},  // not match
+					{NestedValA: "A1", NestedValB: "B1"},  // match
+					{NestedValA: "A2", NestedValB: "B2"},  // match
+					{NestedValA: "A1", NestedValB: "B2"},  // match
+					{NestedValA: "A2", NestedValB: "B1"},  // match
+					{NestedValA: "A1", NestedValB: "B0"},  // NestedValB not matched
+					{NestedValA: "A0", NestedValB: "B1"},  // NestedValA not matched
+					{NestedValA: "A1", NestedValB: "B11"}, // match
+					{NestedValA: "A01", NestedValB: "B1"}, // NestedValA not matched
+				},
+			},
+			q: &query.Query{
+				FieldQueries: []*query.FieldQuery{
+					{Field: "TopLevelA", Values: []string{"TopLevelValA"}},
+					{Field: "A", Values: []string{"A1", "A2"}, Operator: query.Or},
+					{Field: "B", Values: []string{"B1", "B2"}, Operator: query.Or},
+				},
+			},
+			expectedResult: &evaluator.Result{
+				Matches: []map[string][]string{
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B1"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A2"}, "B": {"B2"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B2"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A2"}, "B": {"B1"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B11"}},
 				},
 			},
 		},

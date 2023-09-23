@@ -64,6 +64,7 @@ require (
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joshdk/go-junit v1.0.0
+	github.com/kyverno/go-jmespath v0.4.1-0.20230705123211-d067dc3d6613
 	github.com/lib/pq v1.10.9
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.7
@@ -152,6 +153,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/klauspost/compress v1.16.7
 )
 
@@ -274,7 +276,6 @@ require (
 	github.com/jedisct1/go-minisign v0.0.0-20211028175153-1c139d1cc84b // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/jonboulle/clockwork v0.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

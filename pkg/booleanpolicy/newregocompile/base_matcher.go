@@ -1,4 +1,4 @@
-package regocompile
+package newregocompile
 
 import (
 	"errors"
@@ -42,8 +42,8 @@ func sanitizeFuncName(name string) string {
 
 // getRegoFunctionName returns a rego function name for matching the field to the given value.
 // The idx is also required, and is used to ensure the function name is unique.
-func getRegoFunctionName(field, value string, idx int) string {
-	return sanitizeFuncName(fmt.Sprintf("match%sTo%d%s", field, idx, value))
+func getRegoFunctionName(field string) string {
+	return sanitizeFuncName(fmt.Sprintf("match%s", field))
 }
 
 func (s *simpleMatchFuncGenerator) GenerateRego() (string, error) {
@@ -84,6 +84,24 @@ func generateStringMatchCode(value string) (string, error) {
 	return matchCode, nil
 }
 
+func generateMultiMatchCode(values []string, matchFunc func(string) (string, error)) (string, error) {
+	if len(values) == 0 {
+		return "", errors.New("expect at least one value")
+	}
+	multiMatch, err := matchFunc(values[0])
+	if len(values) == 1 {
+		return multiMatch, err
+	}
+	for _, value := range values[1:] {
+		if matchCode, err := matchFunc(value); err != nil {
+			return "", fmt.Errorf("failed to compile for value %s in values %v", value, values)
+		} else {
+			multiMatch = fmt.Sprintf("%s, %s", multiMatch, matchCode)
+		}
+	}
+	return fmt.Sprintf("or([%s])", multiMatch), nil
+}
+
 func generateBoolMatchCode(value string) (string, error) {
 	boolValue, err := parse.FriendlyParseBool(value)
 	if err != nil {
@@ -100,18 +118,15 @@ func getSimpleMatchFuncGenerators(query *query.FieldQuery, matchCodeGenerator fu
 		return nil, fmt.Errorf("no value for field %s", query.Field)
 	}
 	var generators []regoMatchFuncGenerator
-	for i, val := range query.Values {
-		matchCode, err := matchCodeGenerator(val)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't generate match code for val %s from field %s: %w", val, query.Field, err)
-		}
-		generators = append(generators, &simpleMatchFuncGenerator{
-			Name:      getRegoFunctionName(query.Field, val, i),
-			MatchCode: matchCode,
-		})
+	matchCode, err := generateMultiMatchCode(query.Values, matchCodeGenerator)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate match code for field %s: %w", query.Field, err)
 	}
+	generators = append(generators, &simpleMatchFuncGenerator{
+		Name:      getRegoFunctionName(query.Field),
+		MatchCode: matchCode,
+	})
 	return generators, nil
-
 }
 
 func getStringMatchFuncGenerators(query *query.FieldQuery) ([]regoMatchFuncGenerator, error) {

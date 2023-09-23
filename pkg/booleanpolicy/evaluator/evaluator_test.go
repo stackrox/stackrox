@@ -733,6 +733,30 @@ func TestLinked(t *testing.T) {
 			},
 		},
 		{
+			desc: "linked, multilevel, complex, should match",
+			obj: &TopLevel{
+				ValA: "TopLevelValA",
+				NestedSlice: []Nested{
+					{NestedValA: "A0", NestedValB: "B0"},
+					{NestedValA: "A1", NestedValB: "B1"},
+					{NestedValA: "A2", NestedValB: "B2"},
+				},
+			},
+			q: &query.Query{
+				FieldQueries: []*query.FieldQuery{
+					{Field: "TopLevelA", Values: []string{"TopLevelValA"}},
+					{Field: "A", Values: []string{"A1", "A2"}, Operator: query.Or},
+					{Field: "B", Values: []string{"B1", "B2"}, Operator: query.Or},
+				},
+			},
+			expectedResult: &Result{
+				Matches: []map[string][]string{
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A1"}, "B": {"B1"}},
+					{"TopLevelA": {"TopLevelValA"}, "A": {"A2"}, "B": {"B2"}},
+				},
+			},
+		},
+		{
 			desc: "linked, multilevel, bottom doesn't match",
 			obj: &TopLevel{
 				ValA: "TopLevelValA",
