@@ -170,6 +170,7 @@ func (s *fullStoreImpl) readRows(
 		// processes listening on ports side, the process indicator has been deleted and the
 		// port has been closed. Central just hasn't gotten the message yet.
 		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
+			log.Infof("Unable to get podID")
 			continue
 		}
 

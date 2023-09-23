@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
@@ -20,6 +21,8 @@ var (
 			"/v1.ListeningEndpointsService/GetListeningEndpoints",
 		},
 	})
+
+	log     = logging.LoggerForModule()
 )
 
 type serviceImpl struct {
@@ -49,9 +52,14 @@ func (s *serviceImpl) GetListeningEndpoints(
 	deployment := req.GetDeploymentId()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
 
+	log.Infof("In GetListeningEndpoints")
+	log.Infof("len(processesListeningOnPorts)= %+v", len(processesListeningOnPorts))
+
 	if err != nil {
 		return nil, err
 	}
+
+	log.Infof("Not nil")
 
 	return &v1.GetProcessesListeningOnPortsResponse{
 		ListeningEndpoints: processesListeningOnPorts,
