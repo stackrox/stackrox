@@ -30,11 +30,24 @@ func AtLeastOneEmpty(strs ...string) bool {
 	return false
 }
 
-// FirstNonEmpty returns the first string that is non empty in the variadic or returns an empty string
+// FirstNonEmpty returns the first string that is non-empty in the variadic or returns an empty string
 func FirstNonEmpty(strs ...string) string {
 	for _, s := range strs {
 		if s != "" {
 			return s
+		}
+	}
+	return ""
+}
+
+// LastNonEmpty returns the last string that is non-empty in the variadic or returns an empty string
+func LastNonEmpty(strs ...string) string {
+	if len(strs) == 0 {
+		return ""
+	}
+	for i := len(strs) - 1; i >= 0; i-- {
+		if strs[i] != "" {
+			return strs[i]
 		}
 	}
 	return ""
