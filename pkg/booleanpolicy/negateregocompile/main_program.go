@@ -1,4 +1,4 @@
-package newregocompile
+package negateregocompile
 
 import (
 	"strings"
@@ -11,12 +11,11 @@ package policy.main
 
 import future.keywords.in
 
-or(vals) {
-	some m in vals
-	m
+negate(val) {
+	some m in [val]
+	not m
 }
-
-{{- $root := . }}
+{{ $root := . }}
 
 {{- range .Functions }}
 {{.}}

@@ -2,21 +2,25 @@ package booleanpolicy
 
 import (
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
+	"github.com/stackrox/rox/pkg/booleanpolicy/negateregocompile"
 	"github.com/stackrox/rox/pkg/booleanpolicy/newregocompile"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/booleanpolicy/regocompile"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/maputil"
 )
 
 type factoryWrapper struct {
-	legacyFactory     evaluator.Factory
-	opaBasedFactory   regocompile.RegoCompiler
-	opaOrBasedFactory newregocompile.RegoCompiler
+	legacyFactory         evaluator.Factory
+	opaBasedFactory       regocompile.RegoCompiler
+	opaOrBasedFactory     newregocompile.RegoCompiler
+	opaNegateBasedFactory negateregocompile.RegoCompiler
 	// jmespathFactory jmespathcompile.JMESPathCompiler
 }
 
@@ -45,13 +49,17 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	legacyDuration := time.Now().Sub(start)
 	log.Infof("legacy took %s", legacyDuration)
 
-	for name, evaluator := range e.otherEvaluators {
+	keys := maputil.Keys(e.otherEvaluators)
+	sort.Strings(keys)
+
+	for _, name := range keys {
+		evaluator := e.otherEvaluators[name]
 		start = time.Now()
 		result, matched := evaluator.Evaluate(obj)
 		duration := time.Now().Sub(start)
 		log.Infof("%s took %s", name, duration)
 
-		if duration > 10*time.Millisecond || matched != legacyMatched {
+		if duration > 1*time.Millisecond || matched != legacyMatched {
 			objValue, _ := obj.GetFullValue()
 			log.Errorf("%s matched: %v\n; legacy matched: %v\n;"+
 				" %s result %+v\n\n; legacy result: %+v\n\n; query was %s\n\n, obj name is %v",
@@ -80,6 +88,14 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 		} else {
 			e.otherEvaluators[regoOrBased] = regoOrEvaluator
 		}
+		regoNegateEvaluator, err := f.opaNegateBasedFactory.CompileRegoBasedEvaluator(q)
+		if err != nil {
+			if !errors.Is(err, negateregocompile.ErrRegoNotYetSupported) {
+				return nil, err
+			}
+		} else {
+			e.otherEvaluators[regoNegateOrBased] = regoNegateEvaluator
+		}
 	}
 
 	if features.JmesPathBasedEvaluator.Enabled() {
@@ -104,9 +120,10 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 // This is temporary code until the OPA feature flag is removed.
 func MustCreateFactoryWrapper(objMeta *pathutil.AugmentedObjMeta) evaluator.Factory {
 	return &factoryWrapper{
-		legacyFactory:     evaluator.MustCreateNewFactory(objMeta),
-		opaBasedFactory:   regocompile.MustCreateRegoCompiler(objMeta),
-		opaOrBasedFactory: newregocompile.MustCreateRegoCompiler(objMeta),
+		legacyFactory:         evaluator.MustCreateNewFactory(objMeta),
+		opaBasedFactory:       regocompile.MustCreateRegoCompiler(objMeta),
+		opaOrBasedFactory:     newregocompile.MustCreateRegoCompiler(objMeta),
+		opaNegateBasedFactory: negateregocompile.MustCreateRegoCompiler(objMeta),
 		// jmespathFactory: jmespathcompile.MustCreateJMESPathCompiler(objMeta),
 	}
 }
