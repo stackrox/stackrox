@@ -107,8 +107,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		return sac.ErrResourceAccessDenied
 	}
 
-	log.Infof("portPorcesses= %+v", portProcesses)
-
 	normalizedPLOPs, completedInBatch := normalizePLOPs(portProcesses)
 	allPLOPs := append(normalizedPLOPs, completedInBatch...)
 	indicatorIds := getIndicatorIdsForPlops(allPLOPs)
@@ -234,7 +232,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Now save actual PLOP objects
-	log.Infof("UpsertMany plopObjects= %+v", plopObjects)
 	return ds.storage.UpsertMany(ctx, plopObjects)
 }
 

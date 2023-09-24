@@ -104,10 +104,8 @@ func (s *fullStoreImpl) retryableGetPLOP(
 
 func (s *fullStoreImpl) readPodRows(rows pgx.Rows) (map[string]bool, error) {
 	podMap := make(map[string]bool)
-	log.Infof("In readPdRows")
 	for rows.Next() {
 		var podID string
-		log.Infof("Reading pod row")
 		if err := rows.Scan(&podID); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
@@ -170,15 +168,10 @@ func (s *fullStoreImpl) readRows(
 		// processes listening on ports side, the process indicator has been deleted and the
 		// port has been closed. Central just hasn't gotten the message yet.
 		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
-			log.Infof("Unable to get podID")
 			continue
 		}
 
 		_, podExists := podMap[podID]
-		log.Infof("podMap= %+v", podMap)
-		log.Infof("podID= %+v", podID)
-		log.Infof("podMap[podID]= %+v", podMap[podID])
-		log.Infof("podExists= %+v", podExists)
 
 		// If the pod of the listening endpoint is not active, don't report the endpoint
 		if !podExists {
