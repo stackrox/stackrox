@@ -116,7 +116,7 @@ func GetPod() *storage.Pod {
 // GetPod1 returns a more realistic mock Pod than GetPod
 func GetPod1() *storage.Pod {
 	return &storage.Pod{
-		Id:	      fixtureconsts.PodUID1,
+		Id:           fixtureconsts.PodUID1,
 		Name:         "nginx",
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
@@ -224,7 +224,7 @@ func GetPod1() *storage.Pod {
 // GetPod2 returns a pod with a different id than GetPod1
 func GetPod2() *storage.Pod {
 	return &storage.Pod{
-		Id:	      fixtureconsts.PodUID2,
+		Id:           fixtureconsts.PodUID2,
 		Name:         "visa-processor",
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",

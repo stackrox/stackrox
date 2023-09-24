@@ -34,14 +34,14 @@ type PLOPDataStoreTestSuite struct {
 	datastore          DataStore
 	store              plopStore.Store
 	indicatorDataStore processIndicatorDataStore.DataStore
-	podDataStore	   podDataStore.DataStore
+	podDataStore       podDataStore.DataStore
 
 	postgres *pgtest.TestPostgres
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
-	allCtx	    context.Context
+	allCtx      context.Context
 	filter      filter.Filter
 }
 
@@ -55,9 +55,10 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
-	suite.allCtx     = sac.WithAllAccess(context.Background())
+	suite.allCtx = sac.WithAllAccess(context.Background())
 
-        suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})}
+	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
+}
 
 func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.postgres = pgtest.ForT(suite.T())
@@ -70,7 +71,6 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorSearcher, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
-
 
 	suite.podDataStore, _ = podDataStore.NewPostgresDB(suite.postgres.DB, suite.indicatorDataStore, suite.filter)
 }
@@ -106,8 +106,8 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 }
 
 var (
-	podID1 string = "nginx"
-	podID2 string = "visa-processor"
+	podID1 = "nginx"
+	podID2 = "visa-processor"
 
 	openPlopObject = storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
@@ -1508,7 +1508,6 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddWithoutPod() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(

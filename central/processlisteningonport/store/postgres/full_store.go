@@ -38,7 +38,6 @@ const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
-//const getPodsStmt = "SELECT id from pods"
 const getPodsStmt = "SELECT name from pods where deploymentid = $1"
 
 // Manually written function to get PLOP joined with ProcessIndicators
@@ -82,7 +81,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	if podErr != nil {
 		// Do not be alarmed if the error is simply NoRows
 		podErr = pgutils.ErrNilIfNoRows(podErr)
-		if err != nil {
+		if podErr != nil {
 			log.Warnf("%s: %s", getPodsStmt, podErr)
 		}
 		return nil, podErr
@@ -90,7 +89,7 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	defer podRows.Close()
 
 	podMap, podErr := s.readPodRows(podRows)
-	if err != nil {
+	if podErr != nil {
 		return nil, podErr
 	}
 
