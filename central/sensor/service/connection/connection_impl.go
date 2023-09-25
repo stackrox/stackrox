@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -32,10 +33,13 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	ridiculousPayload = env.RegisterIntegerSetting("FAKE_DEDUPER_PAYLOAD", 0)
 )
 
 type sensorConnection struct {
@@ -602,11 +606,23 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 		// Send hashes to sensor
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
-		err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
+		if ridiculousPayload.IntegerSetting() > 0 {
+			log.Infof("Increasing deduper payload artificially to load test communication: increased by %d\n", ridiculousPayload.IntegerSetting())
+			for i := 0; i < ridiculousPayload.IntegerSetting(); i++ {
+				newUUID := uuid.NewV4()
+				successfulHashes[fmt.Sprintf("Deployment:%s", newUUID)] = 10101010101010101010
+			}
+		}
+
+		deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
 			DeduperState: &central.DeduperState{
 				ResourceHashes: successfulHashes,
 			},
-		}})
+		}}
+
+		log.Infof("Sending %d hashes (Size=%d)", len(successfulHashes), deduperMessage.Size())
+
+		err := server.Send(deduperMessage)
 		if err != nil {
 			log.Errorf("Central wasn't able to send deduper state to sensor (%q): %s", c.clusterID, err)
 			log.Infof("Central will perform the reconciliation for sensor (%q) due to previous errors.", c.clusterID)
@@ -614,7 +630,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 			c.sensorEventHandler.disableReconciliation()
 		}
 	} else {
-		log.Info("Sensor (%q) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
+		log.Infof("Sensor (%q) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
 	}
 
 	go c.runSend(server)
