@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package reportgenerator
 
 import (
@@ -74,10 +76,11 @@ func (s *EnhancedReportingSQFTestSuite) SetupSuite() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
 	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, s.mockCtrl)
+	imageCVEDatastore := resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB)
 	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
 		imageDataStore,
 		resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, s.mockCtrl),
-		resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
+		imageCVEDatastore,
 		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 		resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
 		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, s.mockCtrl, imageDataStore),
@@ -95,8 +98,8 @@ func (s *EnhancedReportingSQFTestSuite) SetupSuite() {
 
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
-		s.watchedImageDatastore, s.collectionQueryResolver,
-		nil, s.blobStore, s.clusterDatastore, s.namespaceDatastore, s.schema)
+		s.watchedImageDatastore, s.collectionQueryResolver, nil, s.blobStore, s.clusterDatastore,
+		s.namespaceDatastore, imageCVEDatastore, s.schema)
 }
 
 func (s *EnhancedReportingSQFTestSuite) TearDownSuite() {
@@ -125,7 +128,7 @@ func (s *EnhancedReportingSQFTestSuite) TestGetReportData() {
 
 	watchedImages := testWatchedImages(2)
 	s.upsertManyImages(watchedImages)
-	// s.upsertManyWatchedImages(watchedImages)
+	s.upsertManyWatchedImages(watchedImages)
 
 	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
 		Return(clusters, nil).AnyTimes()
@@ -198,69 +201,69 @@ func (s *EnhancedReportingSQFTestSuite) TestGetReportData() {
 				},
 			},
 		},
-		//{
-		//	name:       "Include all deployments + watched images; CVEs with both fixabilities and all severities; Nil scope rules",
-		//	collection: testCollection("col4", "", "", ""),
-		//	fixability: storage.VulnerabilityReportFilters_BOTH,
-		//	severities: allSeverities(),
-		//	imageTypes: []storage.VulnerabilityReportFilters_ImageType{
-		//		storage.VulnerabilityReportFilters_DEPLOYED,
-		//		storage.VulnerabilityReportFilters_WATCHED,
-		//	},
-		//	expected: &vulnReportData{
-		//		deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0", "", ""},
-		//		imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
-		//		componentNames: []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp",
-		//			"w0_img_comp", "w1_img_comp"},
-		//		cveNames: []string{
-		//			"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
-		//			"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
-		//			"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
-		//			"CVE-fixable_critical-c2_ns2_dep0_img_comp", "CVE-nonFixable_low-c2_ns2_dep0_img_comp",
-		//			"CVE-fixable_critical-w0_img_comp", "CVE-nonFixable_low-w0_img_comp",
-		//			"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
-		//		},
-		//	},
-		//},
-		//{
-		//	name:       "Include watched images only; Fixable CVEs with CRITICAL severity; Nil scope rules",
-		//	collection: testCollection("col5", "", "", ""),
-		//	fixability: storage.VulnerabilityReportFilters_FIXABLE,
-		//	severities: []storage.VulnerabilitySeverity{
-		//		storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-		//	},
-		//	imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_WATCHED},
-		//	scopeRules: nil,
-		//	expected: &vulnReportData{
-		//		deploymentNames: []string{"", ""},
-		//		imageNames:      []string{"w0_img", "w1_img"},
-		//		componentNames:  []string{"w0_img_comp", "w1_img_comp"},
-		//		cveNames: []string{
-		//			"CVE-fixable_critical-w0_img_comp",
-		//			"CVE-fixable_critical-w1_img_comp",
-		//		},
-		//	},
-		//},
-		//{
-		//	name:       "Include all deployments + all CVEs; Empty scope rules",
-		//	collection: testCollection("col6", "", "", ""),
-		//	fixability: storage.VulnerabilityReportFilters_BOTH,
-		//	severities: allSeverities(),
-		//	imageTypes: []storage.VulnerabilityReportFilters_ImageType{
-		//		storage.VulnerabilityReportFilters_DEPLOYED,
-		//		storage.VulnerabilityReportFilters_WATCHED,
-		//	},
-		//	scopeRules: make([]*storage.SimpleAccessScope_Rules, 0),
-		//	expected: &vulnReportData{
-		//		deploymentNames: []string{"", ""},
-		//		imageNames:      []string{"w0_img", "w1_img"},
-		//		componentNames:  []string{"w0_img_comp", "w1_img_comp"},
-		//		cveNames: []string{
-		//			"CVE-fixable_critical-w0_img_comp", "CVE-nonFixable_low-w0_img_comp",
-		//			"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
-		//		},
-		//	},
-		//},
+		{
+			name:       "Include all deployments + watched images; CVEs with both fixabilities and all severities; Nil scope rules",
+			collection: testCollection("col4", "", "", ""),
+			fixability: storage.VulnerabilityReportFilters_BOTH,
+			severities: allSeverities(),
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
+				storage.VulnerabilityReportFilters_DEPLOYED,
+				storage.VulnerabilityReportFilters_WATCHED,
+			},
+			expected: &vulnReportData{
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0", "c2_ns2_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img", "c2_ns2_dep0_img", "w0_img", "w1_img"},
+				componentNames: []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp", "c2_ns2_dep0_img_comp",
+					"w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp", "CVE-nonFixable_low-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp", "CVE-nonFixable_low-c1_ns2_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns1_dep0_img_comp", "CVE-nonFixable_low-c2_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns2_dep0_img_comp", "CVE-nonFixable_low-c2_ns2_dep0_img_comp",
+					"CVE-fixable_critical-w0_img_comp", "CVE-nonFixable_low-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
+				},
+			},
+		},
+		{
+			name:       "Include watched images only; Fixable CVEs with CRITICAL severity; Nil scope rules",
+			collection: testCollection("col5", "", "", ""),
+			fixability: storage.VulnerabilityReportFilters_FIXABLE,
+			severities: []storage.VulnerabilitySeverity{
+				storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			},
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_WATCHED},
+			scopeRules: nil,
+			expected: &vulnReportData{
+				deploymentNames: []string{},
+				imageNames:      []string{"w0_img", "w1_img"},
+				componentNames:  []string{"w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp",
+				},
+			},
+		},
+		{
+			name:       "Include all deployments + all CVEs; Empty scope rules",
+			collection: testCollection("col6", "", "", ""),
+			fixability: storage.VulnerabilityReportFilters_BOTH,
+			severities: allSeverities(),
+			imageTypes: []storage.VulnerabilityReportFilters_ImageType{
+				storage.VulnerabilityReportFilters_DEPLOYED,
+				storage.VulnerabilityReportFilters_WATCHED,
+			},
+			scopeRules: make([]*storage.SimpleAccessScope_Rules, 0),
+			expected: &vulnReportData{
+				deploymentNames: []string{},
+				imageNames:      []string{"w0_img", "w1_img"},
+				componentNames:  []string{"w0_img_comp", "w1_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-w0_img_comp", "CVE-nonFixable_low-w0_img_comp",
+					"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
+				},
+			},
+		},
 		{
 			name:       "Include all deployments + all CVEs; Non-empty scope rules",
 			collection: testCollection("col7", "", "", ""),
@@ -339,10 +342,10 @@ func (s *EnhancedReportingSQFTestSuite) TestGetReportData() {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes, tc.scopeRules)
 			startTime := time.Now()
-			deployedImgResponses, watchedImgResults, err := s.reportGenerator.getReportDataSQF(reportSnap, tc.collection, nil)
+			cveResponses, err := s.reportGenerator.getReportDataSQF(reportSnap, tc.collection, nil)
 			sqfDelta := time.Since(startTime).Milliseconds()
 			s.NoError(err)
-			reportData := extractVulnReportDataSQF(deployedImgResponses, watchedImgResults)
+			reportData := extractVulnReportDataSQF(cveResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, reportData.deploymentNames)
 			s.ElementsMatch(tc.expected.imageNames, reportData.imageNames)
 			s.ElementsMatch(tc.expected.componentNames, reportData.componentNames)
@@ -581,15 +584,17 @@ func testReportSnapshot(collectionID string,
 	return snap
 }
 
-func extractVulnReportDataSQF(deployedImageResponses []*DeployedImageResponse, _ []common.WatchedImagesResult) *vulnReportData {
+func extractVulnReportDataSQF(cveResponses []*ImageCVEQueryResponse) *vulnReportData {
 	deploymentNames := set.NewStringSet()
 	imageNames := set.NewStringSet()
 	componentNames := set.NewStringSet()
 	cveNames := make([]string, 0)
 	cvss := make([]float64, 0)
 
-	for _, res := range deployedImageResponses {
-		deploymentNames.Add(res.Deployment)
+	for _, res := range cveResponses {
+		if res.Deployment != "" {
+			deploymentNames.Add(res.Deployment)
+		}
 		imageNames.Add(res.Image)
 		componentNames.Add(res.Component)
 		cveNames = append(cveNames, res.CVE)
@@ -628,7 +633,6 @@ func extractVulnReportData(deployedImgResults []common.DeployedImagesResult, wat
 	}
 	for _, res := range watchedImgResults {
 		for _, img := range res.Images {
-			deploymentNames = append(deploymentNames, "")
 			imageNames = append(imageNames, img.Name.FullName)
 			for _, comp := range img.ImageComponents {
 				componentNames = append(componentNames, comp.Name)
