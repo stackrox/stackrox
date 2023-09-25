@@ -18,11 +18,9 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		allow.Anonymous(): {
 			// This endpoint is used by the UI to populate framework
-			// information. The population of this part of framework
-			// information is done at UI start, where there is usually
-			// no authenticated user, nor associated information to provide.
-			// It should stay anonymous / public as long as the UI needs it
-			// at startup time.
+			// information which is done at UI start when there is no
+			// authenticated user yet. It should stay anonymous / public
+			// as long as the UI needs it at startup time.
 			"/v1.FeatureFlagService/GetFeatureFlags",
 		},
 	})

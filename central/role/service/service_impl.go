@@ -58,9 +58,9 @@ var (
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 		allow.Anonymous(): {
-			// This endpoint is used by the UI in order to populate the resource
-			// list when displaying or editing permission sets.
-			// TODO(ROX-19814): move this service to either user.Authenticated()
+			// This endpoint is used by the UI to populate the resource list
+			// when displaying or editing permission sets.
+			// TODO(ROX-19814): move this handler to either user.Authenticated()
 			// or user.With(permissions.View(resource.Access)) group.
 			"/v1.RoleService/GetResources",
 		},
