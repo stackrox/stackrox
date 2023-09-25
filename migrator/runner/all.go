@@ -28,4 +28,5 @@ import (
 =======
 	_ "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_plop_add_closed_time_column"
 >>>>>>> 212eaf7b3e (X-Smart-Squash: Squashed 6 commits:)
+	_ "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column"
 )

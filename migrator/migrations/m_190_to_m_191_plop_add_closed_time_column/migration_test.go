@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package m189tom190
+package m190tom191
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_plop_add_closed_time_column/schema"
-	oldSchema "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_plop_add_closed_time_column/test/schema"
+	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/test/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -47,16 +47,16 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	// Create the old schema for testing
-	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableListeningEndpointsStmt)
+	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, schema.CreateTableListeningEndpointsStmt)
 
 	// Add some plops
 	numPlop := 2000
-	var convertedPlops []oldSchema.ListeningEndpoints
+	var convertedPlops []schema.ListeningEndpoints
 	for i := 0; i < numPlop; i++ {
 		plop := &storage.ProcessListeningOnPortStorage{}
 		s.NoError(testutils.FullInit(plop, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		plop.CloseTimestamp = timestamp.Now().GogoProtobuf()
-		converted, err := oldSchema.ConvertProcessListeningOnPortStorageFromProto(plop)
+		converted, err := schema.ConvertProcessListeningOnPortStorageFromProto(plop)
 		s.Require().NoError(err)
 		convertedPlops = append(convertedPlops, *converted)
 	}
