@@ -47,3 +47,10 @@ type ImageIntegrationManager interface {
 type NetworkEntityManager interface {
 	GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error)
 }
+
+// ComplianceOperatorManager implements an interface to process scan request responses
+//
+//go:generate mockgen-wrapper
+type ComplianceOperatorManager interface {
+	HandleScanRequestResponse(ctx context.Context, requestID string, clusterID string, responsePayload string) error
+}

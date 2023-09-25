@@ -91,7 +91,7 @@ message ComplianceOperatorScanConfigurationV2 {
     google.protobuf.Timestamp     created_time             = 12;
     google.protobuf.Timestamp     last_updated_time        = 13;
     // Most recent user to update the scan configurations
-    SlimUser                      modified_by               = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
 // Cluster and an error if necessary to handle cases where the scan configuration is
