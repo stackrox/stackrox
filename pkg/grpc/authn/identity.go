@@ -28,4 +28,6 @@ type Identity interface {
 	ValidityPeriod() (time.Time, time.Time)
 
 	ExternalAuthProvider() authproviders.Provider
+
+	TenantID() string
 }

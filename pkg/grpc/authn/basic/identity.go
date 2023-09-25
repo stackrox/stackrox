@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -49,6 +50,12 @@ func (i identity) Roles() []permissions.ResolvedRole {
 
 func (i identity) Service() *storage.ServiceIdentity {
 	return nil
+}
+
+func (i identity) TenantID() string {
+	// Assume username is in correct format
+	tenant, _, _ := strings.Cut(i.username, "-")
+	return tenant
 }
 
 func (i identity) User() *storage.UserInfo {
