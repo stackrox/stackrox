@@ -15,7 +15,7 @@ import (
 type configDetailsTestCase struct {
 	desc         string
 	snapshot     *storage.ReportSnapshot
-	expectedHtml string
+	expectedHTML string
 }
 
 func TestEmailFormatter(t *testing.T) {
@@ -37,11 +37,11 @@ func (s *EmailFormatterTestSuite) SetupSuite() {
 func (s *EmailFormatterTestSuite) TestFormatReportConfigDetails() {
 	for _, tc := range s.configDetailsTestCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			configHtml, err := formatReportConfigDetails(tc.snapshot, 50, 30)
+			configHTML, err := formatReportConfigDetails(tc.snapshot, 50, 30)
 			s.Require().NoError(err)
-			expectedHtml := strings.ReplaceAll(tc.expectedHtml, "\n", "")
-			expectedHtml = strings.ReplaceAll(expectedHtml, "\t", "")
-			s.Require().Equal(expectedHtml, configHtml)
+			expectedHTML := strings.ReplaceAll(tc.expectedHTML, "\n", "")
+			expectedHTML = strings.ReplaceAll(expectedHTML, "\t", "")
+			s.Require().Equal(expectedHTML, configHTML)
 		})
 	}
 }
@@ -57,7 +57,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<div>
+			expectedHTML: `<div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
 								Config name: </span>
@@ -98,7 +98,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 		{
 			desc:     "All severities, image types, fixabilities; Cves since All time",
 			snapshot: fixtures.GetReportSnapshot(),
-			expectedHtml: `<div>
+			expectedHTML: `<div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
 								Config name: </span>
@@ -154,7 +154,7 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 				}
 				return snap
 			}(),
-			expectedHtml: `<div>
+			expectedHTML: `<div>
 						<div style="padding: 0 0 10px 0">
 							<span style="font-weight: bold; margin-right: 10px">
 								Config name: </span>
