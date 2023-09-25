@@ -27,12 +27,12 @@ violations[result] {
 	some idx{{.}}
 	{{- end }}
 	{{- range .Fields }}
-	{{.FuncName}}Result := {{ .FuncName }}(input.{{ .JSONPath }}) 
+	{{.FuncName}}Result := {{ .FuncName }}(input.{{ .JSONPath }})
 	{{.FuncName}}Result["match"]
 	{{- end }}
 	result := {
 		{{- range $index, $field := .Fields }}
-			{{- if $index }},{{end }} 
+			{{- if $index }},{{ end }}
 			"{{ $field.Name }}": {{ $field.FuncName }}Result["values"]
 		{{- end }}
 	}
