@@ -81,6 +81,9 @@ func isNonStructuredLogFunction(fn *types.Func) (bool, string, string) {
 		return false, "", ""
 	}
 
+	if fn.Pkg() == nil {
+		return false, "", ""
+	}
 	logReplacements, isLogFunction := replacements[fn.Pkg().Path()]
 	if !isLogFunction {
 		return false, "", ""

@@ -31,7 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -261,7 +260,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 	}
 	ids, err := getIDsFunc()
 	if err != nil {
-		log.Errorw("Failed to retrieve active IDs for entity", zap.String("entity", entityType),
+		log.Errorw("Failed to retrieve active IDs for entity", logging.String("entity", entityType),
 			logging.Err(err))
 		return
 	}
@@ -428,7 +427,7 @@ func (l *loopImpl) reprocessNode(id string) bool {
 
 	err = l.nodeEnricher.EnrichNode(node)
 	if err != nil {
-		log.Errorw("Error enriching node", zap.String("node", nodeDatastore.NodeString(node)), logging.Err(err))
+		log.Errorw("Error enriching node", logging.String("node", nodeDatastore.NodeString(node)), logging.Err(err))
 		return false
 	}
 	if err := l.risk.CalculateRiskAndUpsertNode(node); err != nil {

@@ -264,7 +264,6 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 	resp, err := s.client.Do(req.WithContext(ctx))
 	if err != nil {
-		log.Errorf("Error posting to slack: %v", err)
 		log.Errorw("Error posting message to Slack", logging.Err(err),
 			logging.ErrCode(codes.SlackGeneric), logging.NotifierName(s.GetName()))
 		return errors.Wrap(err, "Error posting to slack")

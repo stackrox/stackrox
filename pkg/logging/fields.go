@@ -79,6 +79,18 @@ func Any(field string, value interface{}) zap.Field {
 	return zap.Any(field, value)
 }
 
+// Strings provides a wrapper around zap.Strings and adds the key-value pair as structured log field.
+// This should be _always_ preferred over direct calls to zap to minimize dependency to it.
+func Strings(field string, values []string) zap.Field {
+	return zap.Strings(field, values)
+}
+
+// Int provides a wrapper around zap.Int and adds the key-value pair as structured log field.
+// This should be _always_ preferred over direct calls to zap to minimize dependency to it.
+func Int(field string, value int) zap.Field {
+	return zap.Int(field, value)
+}
+
 // getResourceTypeField returns whether the given zap.Field is related to a resource.
 // If it is, it will return true and the name of the resource.
 func getResourceTypeField(field zap.Field) (string, bool) {

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 const (
@@ -198,7 +199,7 @@ func (s *tcpSender) SendSyslog(syslogBytes []byte) error {
 	_, err := conn.conn.Write(syslogFrame)
 	if err != nil {
 		conn.failed.Signal()
-		log.Errorf("failed to write syslog with error %v", err)
+		log.Errorw("Failed to write to Syslog", logging.Err(err))
 	}
 	return err
 }

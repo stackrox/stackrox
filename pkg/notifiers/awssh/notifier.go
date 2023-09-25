@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 )
 
@@ -318,7 +317,7 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 	// Note that randomized iteration of map will shuffle failures.
 	if result.FailedCount != nil && *result.FailedCount > 0 {
 		log.Warnw("failed to upload some or all alerts in batch",
-			zap.Any("failures", result.FailedFindings),
+			logging.Any("failures", result.FailedFindings),
 			logging.ErrCode(codes.AWSSHBatchUpload),
 			logging.NotifierName(n.descriptor.GetName()))
 
@@ -331,7 +330,8 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 
 	// Remove alerts that successfully uploaded from the cache.
 	if len(alertIds) > 0 {
-		log.Debug("successfully uploaded some or all alerts in batch", zap.Int("successes", len(alertIds)))
+		log.Debug("successfully uploaded some or all alerts in batch",
+			logging.Int("successes", len(alertIds)))
 		for id := range alertIds {
 			delete(n.cache, id)
 		}
@@ -339,7 +339,7 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 
 	if len(n.cache) >= 5*n.maxBatchSize {
 		log.Warnw("alert backlog is too large; throttling might need adjusting",
-			zap.Int("cacheSize", len(n.cache)),
+			logging.Int("cacheSize", len(n.cache)),
 			logging.ErrCode(codes.AWSSHCacheExhausted),
 			logging.NotifierName(n.descriptor.GetName()))
 	}

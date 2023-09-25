@@ -54,6 +54,14 @@ func TestConvert(t *testing.T) {
 				ErrCode("awssh-cache-exhausted"),
 			},
 		},
+		{
+			msg:    "Error: something went wrong",
+			level:  "error",
+			module: "pkg/random/something",
+			fields: []interface{}{
+				String("response", "some api response"),
+			},
+		},
 	}
 
 	for i, tc := range cases {
@@ -67,7 +75,9 @@ func TestConvert(t *testing.T) {
 			assert.Equal(t, tc.event.GetResourceName(), event.GetResourceName())
 			assert.Equal(t, tc.event.GetResourceType(), event.GetResourceType())
 			assert.Equal(t, tc.event.GetType(), event.GetType())
-			assert.NoError(t, event.Validate())
+			if tc.event != nil {
+				assert.NoError(t, event.Validate())
+			}
 		})
 	}
 }

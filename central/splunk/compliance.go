@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
@@ -25,8 +24,6 @@ var (
 		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: "Fail",
 		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   "Error",
 	}
-
-	log = logging.LoggerForModule()
 )
 
 type splunkComplianceResult struct {

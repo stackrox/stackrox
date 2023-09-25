@@ -50,6 +50,15 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 		}
 	}
 
+	// If no resource can be determined, we will silently skip creating an administration event for the log message.
+	// This will enable usage of structured logs without requiring _every_ statement to be converted to an administration
+	// event.
+	if resourceType == "" {
+		thisModuleLogger.Debugw("Skipping creation of administration event since no resource is specified",
+			String("message", msg), String("level", level), Any("fields", fields))
+		return nil
+	}
+
 	event := &events.AdministrationEvent{
 		Type:  storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
 		Level: logLevelToEventLevel(level),
@@ -59,16 +68,13 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	if err != nil {
 		should(err)
 	}
-
 	event.Message = msgWithContext
 
-	if resourceType != "" {
-		event.ResourceType = resourceType
-		if isIDField(resourceTypeKey) {
-			event.ResourceID = enc.m[resourceTypeKey]
-		} else {
-			event.ResourceName = enc.m[resourceTypeKey]
-		}
+	event.ResourceType = resourceType
+	if isIDField(resourceTypeKey) {
+		event.ResourceID = enc.m[resourceTypeKey]
+	} else {
+		event.ResourceName = enc.m[resourceTypeKey]
 	}
 
 	event.Domain = events.GetDomainFromModule(module)

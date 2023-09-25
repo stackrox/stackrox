@@ -41,7 +41,7 @@ var (
 func AlertLink(endpoint string, alert *storage.Alert) string {
 	base, err := url.Parse(endpoint)
 	if err != nil {
-		log.Errorf("Invalid endpoint %s: %v", endpoint, err)
+		log.Errorw("Invalid endpoint", logging.String("endpoint", endpoint), logging.Err(err))
 		return ""
 	}
 	var alertPath string
@@ -53,7 +53,7 @@ func AlertLink(endpoint string, alert *storage.Alert) string {
 	}
 	u, err := url.Parse(alertPath)
 	if err != nil {
-		log.Errorf("Invalid alert path %s: %v", alertPath, err)
+		log.Errorw("Invalid alert path found", logging.String("alert_path", alertPath), logging.Err(err))
 		return ""
 	}
 	return base.ResolveReference(u).String()
