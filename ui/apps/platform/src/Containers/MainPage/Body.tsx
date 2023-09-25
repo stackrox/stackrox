@@ -41,7 +41,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
-import ErrorBoundary from 'Containers/ErrorBoundary';
+import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
