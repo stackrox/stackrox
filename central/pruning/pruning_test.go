@@ -36,7 +36,7 @@ import (
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
-	plopDatastoreMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -67,7 +67,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	versionUtils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -541,9 +540,9 @@ func (s *PruningTestSuite) TestImagePruning() {
 			nodes := s.generateNodeDataStructures()
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
-				nil, nil, nil, nil, config, nil, nil,
-				nil, nil, nil, nil, nil, nil,
-				nil).(*garbageCollectorImpl)
+				nil, nil, nil, config, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
@@ -801,11 +800,9 @@ func (s *PruningTestSuite) TestClusterPruning() {
 				lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 			}
 
-			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS,
+			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil,
-				nil, nil, nil,
-				nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -928,10 +925,10 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			// Run GC
 			lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
+
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1104,11 +1101,9 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			alerts, config, images, deployments := s.generateAlertDataStructures(ctx)
 			nodes := s.generateNodeDataStructures()
 
-			gc := newGarbageCollector(alerts, nodes, images, nil,
-				deployments, nil, nil, nil,
-				nil, nil, config, nil, nil, nil,
-				nil, nil, nil, nil,
-				nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
+				nil, nil, nil, config, nil, nil,
+				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1302,7 +1297,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
-	plopID1 := "asdf"
+	plopID1 := uuid.NewV4().String()
 
 	cases := []struct {
 		name              string
@@ -1376,21 +1371,31 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			plops := plopDatastoreMocks.NewMockDataStore(ctrl)
+			db := pgtest.ForT(t)
+			plopDBstore := plopStore.NewFullStore(db)
 			gci := &garbageCollectorImpl{
-				plops: plops,
+				postgres: db,
 			}
 
-			plops.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
-				func(ctx context.Context, fn func(pi *storage.ProcessListeningOnPortStorage) error) error {
-					for _, a := range c.initialPlops {
-						assert.NoError(t, fn(a))
-					}
-					return nil
-				})
-			plops.EXPECT().RemoveProcessListeningOnPort(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
+			err := plopDBstore.UpsertMany(pruningCtx, c.initialPlops)
+			s.Require().NoError(err)
+
+			// Make sure it is there
+			plopIDs, err := plopDBstore.GetIDs(pruningCtx)
+			log.Infof("SHREWS -- ids -- %v", plopIDs)
+			s.Require().NoError(err)
+			s.Require().NotEqual(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+
 			gci.removeOrphanedPLOP()
+
+			// Fetch the IDs again after the prune
+			plopIDs, err = plopDBstore.GetIDs(pruningCtx)
+			s.Require().NoError(err)
+			if len(c.expectedDeletions) == 0 {
+				s.Require().NotEqual(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+			} else {
+				s.Require().Equal(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+			}
 		})
 	}
 }
