@@ -52,7 +52,7 @@ def make_qa_e2e_test_runner_midstream(cluster):
         sets=[
             {
                 "name": "QA tests part I",
-                "pre_test": PreSystemTests(run_poll_for_system_test_images=False),
+                "pre_test": PreSystemTests(),
                 "test": QaE2eTestPart1(),
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
@@ -89,7 +89,7 @@ def make_qa_e2e_test_runner_custom(cluster):
         sets=[
             {
                 "name": "Custom set of tests for p/z",
-                "pre_test": PreSystemTests(run_poll_for_system_test_images=False),
+                "pre_test": PreSystemTests(),
                 "test": CustomSetTest(),
                 "post_test": PostClusterTest(
                     check_stackrox_logs=True,
