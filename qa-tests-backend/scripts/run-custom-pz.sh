@@ -105,14 +105,16 @@ test_custom() {
     #Change directory into qa-tests-backend
     cd qa-tests-backend
     #fetch list of tests
-   for testName in "${STACKROX_TESTNAMES[@]}";
-   do
+    for testName in "${STACKROX_TESTNAMES[@]}";
+    do
     #execute test
       ./gradlew test --tests "$testName" || true
 
     #allow previous test data to cleanup
       sleep $interval_sec
     done
+
+    store_qa_test_results "custom-pz-tests"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
