@@ -116,16 +116,19 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 			protoconv.ConvertTimestampToTimeOrDefault(filter.GetUntil(), time.Now().Add(time.Second)),
 		)
 	if domains := filter.GetDomain(); len(domains) != 0 {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, domains...)
+		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, sliceutils.Unique(domains)...)
 	}
 	if levels := filter.GetLevel(); len(levels) != 0 {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel, sliceutils.StringSlice(levels...)...)
+
+		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel,
+			sliceutils.Unique(sliceutils.StringSlice(levels...))...)
 	}
 	if eventTypes := filter.GetType(); len(eventTypes) != 0 {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventType, sliceutils.StringSlice(eventTypes...)...)
+		queryBuilder = queryBuilder.AddExactMatches(search.EventType,
+			sliceutils.Unique(sliceutils.StringSlice(eventTypes...))...)
 	}
 	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
-		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, resourceTypes...)
+		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, sliceutils.Unique(resourceTypes)...)
 	}
 	return queryBuilder
 }

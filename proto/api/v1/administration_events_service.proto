@@ -84,10 +84,10 @@ enum AdministrationEventLevel {
 
 message AdministrationEventsFilter {
     // Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
-    google.protobuf.Timestamp from  = 1;
+    google.protobuf.Timestamp from           = 1;
 
     // Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
-    google.protobuf.Timestamp until = 2;
+    google.protobuf.Timestamp until          = 2;
 
     // Matches events from a specific domain.
     repeated string domain                   = 3;
