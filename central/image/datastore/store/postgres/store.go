@@ -7,6 +7,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
@@ -79,6 +80,7 @@ type storeImpl struct {
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
+	previousHash *uint64,
 	metadataUpdated, scanUpdated bool,
 	iTime *protoTypes.Timestamp,
 ) error {
@@ -123,6 +125,16 @@ func (s *storeImpl) insertIntoImages(
 	if err != nil {
 		return err
 	}
+
+	// Check hash value here after initial insert because we need the updated scan time and the updated at time to be changed as these
+	// are used for pruning and also to indicate how up-to-date the scan is
+	if previousHash != nil {
+		if *previousHash == cloned.GetHash() {
+			sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
+			return nil
+		}
+	}
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	var query string
 
@@ -647,17 +659,13 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx *postgres.Tx, orphanedE
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
-	if err != nil {
-		return false, false, err
-	}
-	if !found {
+func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error) {
+	if oldImage == nil {
 		return true, true, nil
 	}
-
 	metadataUpdated := false
 	scanUpdated := false
+
 	if oldImage.GetMetadata().GetV1().GetCreated().Compare(image.GetMetadata().GetV1().GetCreated()) > 0 {
 		image.Metadata = oldImage.GetMetadata()
 	} else {
@@ -688,7 +696,17 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+
+	var hash *uint64
+	oldImage, exists, err := s.GetImageMetadata(ctx, obj.GetId())
+	if err != nil {
+		return errors.Wrapf(err, "retrieving existing image: %q", obj.GetId())
+	}
+	if exists && oldImage.GetHashoneof() != nil {
+		oldHash := oldImage.GetHash()
+		hash = &oldHash
+	}
+	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)
 	if err != nil {
 		return err
 	}
@@ -711,7 +729,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 			return err
 		}
 
-		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
+		if err := s.insertIntoImages(ctx, tx, imageParts, hash, metadataUpdated, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}

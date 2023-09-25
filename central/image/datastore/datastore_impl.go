@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/search"
@@ -215,6 +216,17 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 	return imgs, nil
 }
 
+func populateImageHash(img *storage.Image) error {
+	hash, err := hashstructure.Hash(img, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	if err != nil {
+		return errors.Wrapf(err, "calculating hash for image %q", img.GetId())
+	}
+	img.Hashoneof = &storage.Image_Hash{
+		Hash: hash,
+	}
+	return nil
+}
+
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "UpsertImage")
@@ -234,6 +246,9 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 
 	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)
+	if err := populateImageHash(image); err != nil {
+		return err
+	}
 
 	if err := ds.storage.Upsert(ctx, image); err != nil {
 		return err

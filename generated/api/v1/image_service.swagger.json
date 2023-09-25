@@ -1169,6 +1169,10 @@
           "items": {
             "$ref": "#/definitions/storageImageNote"
           }
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
         }
       },
       "title": "Next Tag: 19"
