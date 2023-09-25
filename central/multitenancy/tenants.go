@@ -2,11 +2,13 @@ package multitenancy
 
 import "github.com/stackrox/rox/pkg/logging"
 
+var log = logging.CreateLogger(logging.CurrentModule(), 0)
+
 var user string
 
 func SetUser(u string) {
 	user = u
-	logging.Logger().Infof("USER %s, TENANTID: %d", u, GetTenantID())
+	log.Infof("USER %s, TENANTID: %d", u, GetTenantID())
 }
 
 func GetTenantID() int {

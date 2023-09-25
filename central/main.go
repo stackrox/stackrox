@@ -244,6 +244,12 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+	log.Infof("BLAAAAA")
+	log.Infof("BLAAAAA")
+	log.Infof("BLAAAAA")
+	log.Infof("BLAAAAA")
+	log.Infof("BLAAAAA")
+	log.Infof("BLAAAAA")
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
