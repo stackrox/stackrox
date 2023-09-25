@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
@@ -33,7 +34,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(logging.EnableAdministrationEvents(stream.Singleton()))
 )
 
 // AlertLink is the link URL for this alert
@@ -77,20 +78,24 @@ func SeverityString(s storage.Severity) string {
 }
 
 // CreateError formats a returned HTTP response's status into an error, or nil.
-func CreateError(notifier string, resp *http.Response) error {
+func CreateError(notifier string, resp *http.Response, errCode string) error {
 	if resp.StatusCode == 503 { // Error codes we want to retry go here.
-		return retry.MakeRetryable(wrapError(notifier, resp))
+		return retry.MakeRetryable(wrapError(notifier, resp, errCode))
 	}
-	return wrapError(notifier, resp)
+	return wrapError(notifier, resp, errCode)
 }
 
-func wrapError(notifier string, resp *http.Response) error {
+func wrapError(notifier string, resp *http.Response, errCode string) error {
 	if !httputil.Is2xxStatusCode(resp.StatusCode) {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrapf(err, "Error reading %s response body", notifier)
 		}
-		log.Errorf("Received error response from %s: %d %s", notifier, resp.StatusCode, string(body))
+		log.Errorw("Received an error response for notifier",
+			logging.Err(err),
+			logging.ErrCode(errCode),
+			logging.NotifierName(notifier),
+			logging.String("response", string(body)))
 		return errors.Errorf("Received error response from %s: %d. Check central logs for full error.", notifier, resp.StatusCode)
 	}
 	return nil

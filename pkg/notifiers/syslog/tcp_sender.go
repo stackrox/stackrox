@@ -14,16 +14,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 const (
-	// Dial timeout.  Otherwise we'll wait TCPs default 30 second timeout for things like waiting for a TLS handshake.
-	timeout = 5 * time.Second
-
 	initialBackoff             = 1 * time.Second
 	maxBackoff                 = 5 * time.Minute
 	backoffRandomizationFactor = .8
+)
+
+var (
+	// Dial timeout.  Otherwise we'll wait TCPs default 30 second timeout for things like waiting for a TLS handshake.
+	timeout = env.SyslogUploadTimeout.DurationSetting()
 )
 
 type connWrapper struct {

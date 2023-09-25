@@ -28,6 +28,7 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	// shall be a strongly-typed zap.Field.
 	var resourceType string
 	var resourceTypeKey string
+	var errCode string
 	for _, c := range context {
 		// Currently silently drop the given context of the log entry if it's not a zap.Field.
 		if field, ok := c.(zap.Field); ok {
@@ -42,6 +43,9 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 					resourceType = resource
 					resourceTypeKey = field.Key
 				}
+			}
+			if field.Key == errCodeField {
+				errCode = field.String
 			}
 		}
 	}
@@ -68,7 +72,7 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	}
 
 	event.Domain = events.GetDomainFromModule(module)
-	event.Hint = events.GetHint(event.GetDomain(), resourceType)
+	event.Hint = events.GetHint(event.GetDomain(), resourceType, errCode)
 
 	return event
 }

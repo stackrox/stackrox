@@ -15,7 +15,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/set"
@@ -29,11 +32,13 @@ const (
 )
 
 var (
-	errAlreadyRunning    = errors.New("already running")
-	errNotRunning        = errors.New("not running")
-	log                  = logging.CurrentModule().Logger()
+	errAlreadyRunning = errors.New("already running")
+	errNotRunning     = errors.New("not running")
+	// TODO(dhaus): Probably would be good to have some syntactic sugar for this one, encapsulating the logging + singleton call.
+	log                  = logging.CurrentModule().Logger(logging.EnableAdministrationEvents(stream.Singleton()))
 	defaultConfiguration = configuration{
-		upstreamTimeout: 2 * time.Second,
+		// TODO(dhaus): We mention below that this has to be adjusted in some cases. But, currently not possible for users...
+		upstreamTimeout: env.AWSSHUploadTimeout.DurationSetting(),
 		// From https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchimportfindings.html
 		// It is not clear whether they use Decimal or Binary, so we assume 1 KB = 1000 bytes.
 		// The maximum finding size is 240 KB, the maximum batch size is 6 MB. We assume each
@@ -43,7 +48,7 @@ var (
 		// Forgetting the burst, we allow ourselves up to 10 uploads per second.
 		minUploadDelay: 100 * time.Millisecond,
 		// We set a maximum upload delay to ensure our data stays fresh.
-		maxUploadDelay: 15 * time.Second,
+		maxUploadDelay: env.AWSSHUploadInterval.DurationSetting(),
 	}
 	product = struct {
 		arnFormatter func(string) string
@@ -78,7 +83,10 @@ func init() {
 			case nil, context.Canceled, context.DeadlineExceeded:
 				log.Debug("ceasing notifier operation", logging.Err(err))
 			default:
-				log.Error("encountered unexpected error", logging.Err(err))
+				log.Errorw("encountered unexpected error",
+					logging.Err(err),
+					logging.NotifierName(notifier.descriptor.GetName()),
+					logging.ErrCode(codes.AWSSHGeneric))
 			}
 		}()
 
@@ -211,7 +219,9 @@ func (n *notifier) sendHeartbeat() {
 		},
 	})
 	if err != nil {
-		log.Errorf("unable to send heartbeat to AWS SecurityHub: %v", err)
+		log.Errorw("unable to send heartbeat to AWS SecurityHub",
+			logging.Err(err), logging.NotifierName(n.descriptor.GetName()),
+			logging.ErrCode(codes.AWSSHHeartBeat))
 	}
 }
 
@@ -264,7 +274,11 @@ func (n *notifier) processAlert(alert *storage.Alert) {
 		case tsCachedErr != nil || tsCached.Before(tsAlert):
 			n.cache[alert.GetId()] = alert
 		case tsAlertErr != nil:
-			log.Warn("dropping incoming alert with invalid timestamp", logging.Err(tsAlertErr))
+			log.Warnw("dropping incoming alert with invalid timestamp",
+				logging.Err(tsAlertErr),
+				logging.NotifierName(n.descriptor.GetName()),
+				logging.ErrCode(codes.AWSSHInvalidTimestamp),
+				logging.AlertID(alert.GetId()))
 		}
 	} else {
 		n.cache[alert.GetId()] = alert
@@ -295,14 +309,20 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 
 	result, err := n.securityHub.BatchImportFindingsWithContext(ctx, batch)
 	if err != nil {
-		log.Warn("failed to upload batch", logging.Err(err))
+		log.Warnw("failed to upload batch",
+			logging.Err(err),
+			logging.NotifierName(n.descriptor.GetName()),
+			logging.ErrCode(codes.AWSSHBatchUpload))
 		return
 	}
 
 	// Keep alerts that failed to upload in the cache so they'll retry.
 	// Note that randomized iteration of map will shuffle failures.
 	if result.FailedCount != nil && *result.FailedCount > 0 {
-		log.Warn("failed to upload some or all alerts in batch", zap.Any("failures", result.FailedFindings))
+		log.Warnw("failed to upload some or all alerts in batch",
+			zap.Any("failures", result.FailedFindings),
+			logging.ErrCode(codes.AWSSHBatchUpload),
+			logging.NotifierName(n.descriptor.GetName()))
 
 		for _, finding := range result.FailedFindings {
 			if id := finding.Id; id != nil {
@@ -320,8 +340,10 @@ func (n *notifier) uploadBatch(ctx context.Context) {
 	}
 
 	if len(n.cache) >= 5*n.maxBatchSize {
-		log.Warn("alert backlog is too large; check for failures above, throttling might need adjusting",
-			zap.Int("cacheSize", len(n.cache)))
+		log.Warnw("alert backlog is too large; throttling might need adjusting",
+			zap.Int("cacheSize", len(n.cache)),
+			logging.ErrCode(codes.AWSSHCacheExhausted),
+			logging.NotifierName(n.descriptor.GetName()))
 	}
 }
 
@@ -361,7 +383,7 @@ func (n *notifier) Test(ctx context.Context) error {
 		MaxResults: aws.Int64(1),
 	})
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err)
+		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
 	}
 
 	testAlert := &storage.Alert{
@@ -402,7 +424,7 @@ func (n *notifier) Test(ctx context.Context) error {
 	})
 
 	if err != nil {
-		return createError("error testing AWS Security Hub integration", err)
+		return createError("error testing AWS Security Hub integration", err, n.descriptor.GetName())
 	}
 	return nil
 }
@@ -434,7 +456,7 @@ func (n *notifier) ResolveAlert(ctx context.Context, alert *storage.Alert) error
 	return n.AlertNotify(ctx, alert)
 }
 
-func createError(msg string, err error) error {
+func createError(msg string, err error, notifierName string) error {
 	if awsErr, _ := err.(awserr.Error); awsErr != nil {
 		if awsErr.Message() != "" {
 			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
@@ -442,6 +464,8 @@ func createError(msg string, err error) error {
 			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
 		}
 	}
-	log.Errorf("AWS Security hub error: %v", err)
+	log.Error("AWS Security hub error",
+		logging.Err(err),
+		logging.NotifierName(notifierName))
 	return errors.New(msg)
 }
