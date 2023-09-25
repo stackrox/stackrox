@@ -76,7 +76,7 @@ func formatEmailBody(emailTemplate string) (string, error) {
 func addReportConfigDetails(emailBody, configDetailsHTML string) string {
 	var writer strings.Builder
 	writer.WriteString(emailBody)
-	writer.WriteString("\n\n")
+	writer.WriteString("<br><br>")
 	writer.WriteString(configDetailsHTML)
 
 	return writer.String()
