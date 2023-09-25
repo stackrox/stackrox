@@ -23,10 +23,6 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_186_to_m_187_add_blob_search"
 	_ "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections"
 	_ "github.com/stackrox/rox/migrator/migrations/m_188_to_m_189_logimbues_add_time_column"
-<<<<<<< HEAD
 	_ "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_vulnerability_requests_add_name"
-=======
-	_ "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_plop_add_closed_time_column"
->>>>>>> 212eaf7b3e (X-Smart-Squash: Squashed 6 commits:)
 	_ "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column"
 )
