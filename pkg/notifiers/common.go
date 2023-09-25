@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule(logging.EnableAdministrationEvents(stream.Singleton()))
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 // AlertLink is the link URL for this alert

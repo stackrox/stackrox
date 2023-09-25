@@ -87,6 +87,5 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 }
 
 func isIDField(fieldName string) bool {
-	// TODO(dhaus): Notifier field here.
-	return fieldName != imageField
+	return fieldName != imageField && fieldName != notifierField
 }

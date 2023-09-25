@@ -19,7 +19,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule(logging.EnableAdministrationEvents(stream.Singleton()))
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 const (

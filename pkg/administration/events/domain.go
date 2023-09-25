@@ -1,5 +1,7 @@
 package events
 
+import "regexp"
+
 const (
 	defaultDomain       = "General"
 	imageScanningDomain = "Image Scanning"
@@ -7,30 +9,19 @@ const (
 )
 
 var (
-	// TODO(dhaus): Possibly switch to regexp for associating modules to domains.
-	moduleToDomain = map[string]string{
-		"reprocessor":   imageScanningDomain,
-		"image/service": imageScanningDomain,
-		// Notifiers.
-		"pkg/notifiers/awssh":     integrationDomain,
-		"pkg/notifiers/email":     integrationDomain,
-		"pkg/notifiers/generic":   integrationDomain,
-		"pkg/notifiers/jira":      integrationDomain,
-		"pkg/notifiers/pagerduty": integrationDomain,
-		"pkg/notifiers/slack":     integrationDomain,
-		"pkg/notifiers/splunk":    integrationDomain,
-		"pkg/notifiers/sumologic": integrationDomain,
-		"pkg/notifiers/syslog":    integrationDomain,
-		"pkg/notifiers/teams":     integrationDomain,
+	moduleToDomain = map[*regexp.Regexp]string{
+		regexp.MustCompile(`^reprocessor|image/service`): imageScanningDomain,
+		regexp.MustCompile(`^pkg/notifiers(/|$)`):        integrationDomain,
 	}
 )
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be
 // used for administration events.
 func GetDomainFromModule(module string) string {
-	domain := moduleToDomain[module]
-	if domain == "" {
-		return defaultDomain
+	for regex, domain := range moduleToDomain {
+		if regex.MatchString(module) {
+			return domain
+		}
 	}
-	return domain
+	return defaultDomain
 }

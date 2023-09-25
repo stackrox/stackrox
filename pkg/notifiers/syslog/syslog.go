@@ -14,7 +14,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -51,7 +51,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule(logging.EnableAdministrationEvents(stream.Singleton()))
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	// We could instead do abs(severity - 4) + 2 but I feel this is high maintenance and obfuscates the meaning
 	alertToSyslogSeverityMap = map[storage.Severity]int{

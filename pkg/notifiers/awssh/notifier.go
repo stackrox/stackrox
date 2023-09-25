@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -32,12 +32,10 @@ const (
 )
 
 var (
-	errAlreadyRunning = errors.New("already running")
-	errNotRunning     = errors.New("not running")
-	// TODO(dhaus): Probably would be good to have some syntactic sugar for this one, encapsulating the logging + singleton call.
-	log                  = logging.CurrentModule().Logger(logging.EnableAdministrationEvents(stream.Singleton()))
+	errAlreadyRunning    = errors.New("already running")
+	errNotRunning        = errors.New("not running")
+	log                  = logging.LoggerForModule(option.EnableAdministrationEvents())
 	defaultConfiguration = configuration{
-		// TODO(dhaus): We mention below that this has to be adjusted in some cases. But, currently not possible for users...
 		upstreamTimeout: env.AWSSHUploadTimeout.DurationSetting(),
 		// From https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchimportfindings.html
 		// It is not clear whether they use Decimal or Binary, so we assume 1 KB = 1000 bytes.

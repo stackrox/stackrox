@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/administration/events/stream"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
@@ -30,7 +30,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule(logging.EnableAdministrationEvents(stream.Singleton()))
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 // slack notifier plugin
