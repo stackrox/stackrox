@@ -1,7 +1,7 @@
 {{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end -}}
 //go:build sql_integration
 
-package {{.packageName}}
+package migration
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func (s *migrationTestSuite) TestMigration() {
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
 		PostgresDB: s.db.DB,
-		DBCtx:      s.ctx,
+		DBCtx: s.ctx,
 	}
 
 	s.Require().NoError(migration.Run(dbs))

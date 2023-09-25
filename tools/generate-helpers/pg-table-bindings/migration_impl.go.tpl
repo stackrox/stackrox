@@ -1,0 +1,45 @@
+{{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end -}}
+
+package migration
+
+import (
+	"github.com/stackrox/rox/migrator/types"
+)
+
+// {{template "TODO"}}: generate/write and import any store required for the migration (skip any unnecessary step):
+//  - create a schema subdirectory
+//  - create a schema/old subdirectory
+//  - create a schema/new subdirectory
+//  - create a stores subdirectory
+//  - create a stores/previous subdirectory
+//  - create a stores/updated subdirectory
+//  - copy the old schemas from pkg/postgres/schema to schema/old
+//  - generate the new schemas in pkg/postgres/schema and the new stores where they belong
+//  - copy the newly generated schemas from pkg/postgres/schema to schema/new
+//  - remove the calls to GetSchemaForTable and to RegisterTable from the copied schema files
+//  - remove the xxxTableName constant from the copied schema files
+//  - remove the gen.go file generated in ../{OBJECT}/store
+
+// {{template "TODO"}}: Determine if this change breaks a previous releases database.
+// If so increment the `MinimumSupportedDBVersionSeqNum` to the `CurrentDBVersionSeqNum` of the release immediately
+// following the release that cannot tolerate the change in pkg/migrations/internal/fallback_seq_num.go.
+//
+// For example, in 4.2 a column `column_v2` is added to replace the `column_v1` column in 4.1.
+// All the code from 4.2 onward will not reference `column_v1`. At some point in the future a rollback to 4.1
+// will not longer be supported and we want to remove `column_v1`. To do so, we will upgrade the schema to remove
+// the column and update the `MinimumSupportedDBVersionSeqNum` to be the value of `CurrentDBVersionSeqNum` in 4.2
+// as 4.1 will no longer be supported. The migration process will inform the user of an error when trying to migrate
+// to a software version that can no longer be supported by the database.
+
+func migrate(database *types.Databases) error {
+	db := database.GormDB
+	pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTable{{.Table|upperCamelCase}}Stmt)
+
+	// {{template "TODO"}}: Migration code comes here
+
+	return nil
+}
+
+// {{template "TODO"}}: Write the additional code to support the migration
+
+// {{template "TODO"}}: remove any pending TODO

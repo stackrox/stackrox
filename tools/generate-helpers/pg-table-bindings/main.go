@@ -47,11 +47,8 @@ var storeTestFile string
 //go:embed index.go.tpl
 var indexFile string
 
-//go:embed migration.go.tpl
+//go:embed migration_impl.go.tpl
 var migrationFile string
-
-//go:embed migration_test.go.tpl
-var migrationTestFile string
 
 //go:embed migration_tool.go.tpl
 var migrationToolFile string
@@ -67,7 +64,6 @@ var (
 	storeTestTemplate         = newTemplate(storeTestFile)
 	indexTemplate             = newTemplate(indexFile)
 	migrationTemplate         = newTemplate(migrationFile)
-	migrationTestTemplate     = newTemplate(migrationTestFile)
 	migrationToolTemplate     = newTemplate(migrationToolFile)
 	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
 )
@@ -133,6 +129,9 @@ type properties struct {
 
 	// The feature flag that specifies if the schema should be registered
 	FeatureFlag string
+
+	// Indicates a migration store is to be generated
+	MigrationFlag bool
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -204,17 +203,9 @@ func main() {
 	c.Flags().StringVar(&props.SchemaDirectory, "schema-directory", "", "the directory in which to generate the schema")
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
-	utils.Must(c.MarkFlagRequired("schema-directory"))
+	c.Flags().BoolVar(&props.MigrationFlag, "migration", false, "if true, generates a migration store")
 
-	/**
-	 * Disable migration codes generations.
-	 * We will remove generator codes later in case we need to make massive code changes in migrations.
-	 * TODO(ROX-13549): Remove migration code generation
-	 * c.Flags().StringVar(&props.MigrateRoot, "migration-root", "", "Root for migrations")
-	 * c.Flags().StringVar(&props.MigrateFrom, "migrate-from", "", "where the data are migrated from, including \"rocksdb\", \"dackbox\" and \"boltdb\"")
-	 * c.Flags().IntVar(&props.MigrateSeq, "migration-seq", 0, "the unique sequence number to migrate to Postgres")
-	 * c.Flags().IntVar(&props.MigrationBatchSize, "migration-batch", 10000, "the batch size for data migration")
-	 */
+	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
@@ -318,64 +309,54 @@ func main() {
 			"SearchScope":    searchScope,
 			"RegisterSchema": !props.ConversionFuncs,
 			"FeatureFlag":    props.FeatureFlag,
+			"Migration":      props.MigrationFlag,
 		}
 
-		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
-			return err
-		}
-
-		if props.ConversionFuncs {
-			if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+		if !props.MigrationFlag {
+			if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 				return err
 			}
-		}
-		if !props.SchemaOnly {
-			if props.SingletonStore {
-				if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
-					return err
-				}
-				if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
-					return err
-				}
-			} else {
-				if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
-					return err
-				}
-				if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
-					return err
-				}
 
-				if props.SearchCategory != "" {
-					if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+			if props.ConversionFuncs {
+				if err := generateConverstionFuncs(schema, props.SchemaDirectory); err != nil {
+					return err
+				}
+			}
+			if !props.SchemaOnly {
+				if props.SingletonStore {
+					if err := renderFile(templateMap, singletonTemplate, "store.go"); err != nil {
 						return err
+					}
+					if err := renderFile(templateMap, singletonTestTemplate, "store_test.go"); err != nil {
+						return err
+					}
+				} else {
+					if err := renderFile(templateMap, storeTemplate, "store.go"); err != nil {
+						return err
+					}
+					if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+						return err
+					}
+
+					if props.SearchCategory != "" {
+						if err := renderFile(templateMap, indexTemplate, "index.go"); err != nil {
+							return err
+						}
 					}
 				}
 			}
-		}
-
-		if props.MigrateSeq != 0 {
-			postgresPluginTemplate := storeTemplate
-			if props.SingletonStore {
-				postgresPluginTemplate = singletonTemplate
-			}
-			migrationDir := fmt.Sprintf("n_%02d_to_n_%02d_postgres_%s", props.MigrateSeq, props.MigrateSeq+1, props.Table)
-			root := filepath.Join(props.MigrateRoot, migrationDir)
-			templateMap["Migration"] = MigrationOptions{
-				MigrateFromDB:   props.MigrateFrom,
-				MigrateSequence: props.MigrateSeq,
-				Dir:             migrationDir,
-				SingletonStore:  props.SingletonStore,
-				BatchSize:       props.MigrationBatchSize,
-			}
-
-			if err := renderFile(templateMap, migrationTemplate, filepath.Join(root, "migration.go")); err != nil {
+		} else {
+			// TODO: Path
+			if err := renderFile(templateMap, migrationTemplate, "migration_impl.go"); err != nil {
 				return err
 			}
-			if err := renderFile(templateMap, migrationTestTemplate, filepath.Join(root, "migration_test.go")); err != nil {
+			if err := renderFile(templateMap, schemaTemplate, getSchemaFileName("", schema.Table)); err != nil {
 				return err
 			}
-			if err := renderFile(templateMap, postgresPluginTemplate, filepath.Join(root, "postgres/postgres_plugin.go")); err != nil {
-				return err
+			if props.ConversionFuncs {
+				if err := generateConverstionFuncs(schema, "."); err != nil {
+					return err
+				}
 			}
 		}
 
