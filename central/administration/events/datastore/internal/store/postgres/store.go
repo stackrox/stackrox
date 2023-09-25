@@ -100,12 +100,13 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 		obj.GetLevel(),
 		obj.GetDomain(),
 		obj.GetResource().GetType(),
+		obj.GetNumOccurrences(),
 		pgutils.NilOrTime(obj.GetLastOccurredAt()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, NumOccurrences, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, NumOccurrences = EXCLUDED.NumOccurrences, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -124,6 +125,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		"level",
 		"domain",
 		"resource_type",
+		"numoccurrences",
 		"lastoccurredat",
 		"createdat",
 		"serialized",
@@ -146,6 +148,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetLevel(),
 			obj.GetDomain(),
 			obj.GetResource().GetType(),
+			obj.GetNumOccurrences(),
 			pgutils.NilOrTime(obj.GetLastOccurredAt()),
 			pgutils.NilOrTime(obj.GetCreatedAt()),
 			serialized,

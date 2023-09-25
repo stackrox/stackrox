@@ -180,10 +180,10 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 	filter := &v1.AdministrationEventsFilter{
 		From:         protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		Until:        protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
-		Domain:       "domain",
-		ResourceType: "resourceType",
-		Type:         v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC,
-		Level:        v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+		Domain:       []string{"domain"},
+		ResourceType: []string{"resourceType"},
+		Type:         []v1.AdministrationEventType{v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC},
+		Level:        []v1.AdministrationEventLevel{v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR},
 	}
 	queryBuilder := getQueryBuilderFromFilter(filter)
 

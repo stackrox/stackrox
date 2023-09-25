@@ -90,16 +90,16 @@ message AdministrationEventsFilter {
     google.protobuf.Timestamp until = 2;
 
     // Matches events from a specific domain.
-    string domain                   = 3;
+    repeated string domain                   = 3;
 
     // Matches events associated with a specific resource type.
-    string resource_type            = 4;
+    repeated string resource_type            = 4;
 
     // Matches events based on their type.
-    AdministrationEventType type    = 5;
+    repeated AdministrationEventType type    = 5;
 
     // Matches events based on their level.
-    AdministrationEventLevel level  = 6;
+    repeated AdministrationEventLevel level  = 6;
 }
 
 message CountAdministrationEventsRequest {
@@ -109,7 +109,7 @@ message CountAdministrationEventsRequest {
 
 message CountAdministrationEventsResponse {
     // The total number of events after filtering and deduplication.
-    int64 count = 1;
+    int32 count = 1;
 }
 
 message GetAdministrationEventResponse {

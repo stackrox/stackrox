@@ -49,6 +49,7 @@ type AdministrationEvents struct {
 	Level          storage.AdministrationEventLevel `gorm:"column:level;type:integer"`
 	Domain         string                           `gorm:"column:domain;type:varchar"`
 	ResourceType   string                           `gorm:"column:resource_type;type:varchar"`
+	NumOccurrences int64                            `gorm:"column:numoccurrences;type:bigint"`
 	LastOccurredAt *time.Time                       `gorm:"column:lastoccurredat;type:timestamp"`
 	CreatedAt      *time.Time                       `gorm:"column:createdat;type:timestamp"`
 	Serialized     []byte                           `gorm:"column:serialized;type:bytea"`

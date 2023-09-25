@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 )
 
@@ -63,7 +64,7 @@ func (s *serviceImpl) CountAdministrationEvents(ctx context.Context, request *v1
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to count administration events")
 	}
-	return &v1.CountAdministrationEventsResponse{Count: int64(count)}, nil
+	return &v1.CountAdministrationEventsResponse{Count: int32(count)}, nil
 }
 
 // GetAdministrationEvent returns a specific administration event based on its ID.
@@ -114,17 +115,17 @@ func getQueryBuilderFromFilter(filter *v1.AdministrationEventsFilter) *search.Qu
 			// events to listing them is relatively short.
 			protoconv.ConvertTimestampToTimeOrDefault(filter.GetUntil(), time.Now().Add(time.Second)),
 		)
-	if domain := filter.GetDomain(); domain != "" {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, domain)
+	if domains := filter.GetDomain(); len(domains) != 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.EventDomain, domains...)
 	}
-	if level := filter.GetLevel(); level != v1.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel, level.String())
+	if levels := filter.GetLevel(); len(levels) != 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.EventLevel, sliceutils.StringSlice(levels...)...)
 	}
-	if eventType := filter.GetType(); eventType != v1.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN {
-		queryBuilder = queryBuilder.AddExactMatches(search.EventType, eventType.String())
+	if eventTypes := filter.GetType(); len(eventTypes) != 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.EventType, sliceutils.StringSlice(eventTypes...)...)
 	}
-	if resourceType := filter.GetResourceType(); resourceType != "" {
-		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, resourceType)
+	if resourceTypes := filter.GetResourceType(); len(resourceTypes) != 0 {
+		queryBuilder = queryBuilder.AddExactMatches(search.ResourceType, resourceTypes...)
 	}
 	return queryBuilder
 }
