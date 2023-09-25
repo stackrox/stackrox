@@ -12,9 +12,13 @@ type ReportRequest struct {
 	DataStartTime  *types.Timestamp
 }
 
-type reportEmailFormat struct {
-	BrandedProductName string
-	WhichVulns         string
-	DateStr            string
-	ImageTypes         string
+type reportEmailBodyFormat struct {
+	BrandedProductName      string
+	BrandedProductNameShort string
+}
+
+type reportEmailSubjectFormat struct {
+	BrandedProductNameShort string
+	ReportConfigName        string
+	CollectionName          string
 }

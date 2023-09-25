@@ -51,13 +51,13 @@ const (
 		cveFieldsFragment
 	watchedImagesReportQueryOpName = "getWatchedImagesReportData"
 
-	vulnReportEmailTemplate = `
-	{{.BrandedProductName}} has found vulnerabilities associated with the {{.ImageTypes}} images owned by your organization. Please review the attached vulnerability report {{.WhichVulns}} for {{.DateStr}}.
+	defaultEmailSubjectTemplate = "({{.BrandedProductNameShort}}) Workload CVE Report for {{.ReportConfigName}}; Scope: {{.CollectionName}}"
 
-	To address these findings, please review the impacted software packages in the images you are responsible for and update them to a version containing the fix, if one is available.`
+	defaultEmailBodyTemplate = "{{.BrandedProductName}} ({{.BrandedProductNameShort}}) for Kubernetes has identified workload CVEs in the images matched by the following report configuration parameters. " +
+		"The attached Vulnerability report lists those workload CVEs and associated details to help with remediation. " +
+		"Please review the vulnerable software packages/ components from the impacted images and update them to a version containing the fix, if one is available.\n"
 
-	noVulnsFoundEmailTemplate = `
-	{{.BrandedProductName}} has found zero vulnerabilities associated with the {{.ImageTypes}} images owned by your organization.`
+	defaultNoVulnsEmailBodyTemplate = "{{.BrandedProductName}} ({{.BrandedProductNameShort}}) for Kubernetes has found no workload CVEs in the images matched by the following report configuration parameters.\n"
 
 	paginatedQueryStartOffset = 0
 )
