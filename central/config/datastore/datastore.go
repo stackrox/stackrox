@@ -86,6 +86,8 @@ type datastoreImpl struct {
 // The primary data source will be the cache and the secondary the database.
 func (d *datastoreImpl) GetPublicConfig() (*storage.PublicConfig, error) {
 	var err error
+	// See the note next to the publicConfigCache variable for
+	// more information on public config caching.
 	publicConfig, found := getPublicConfigCache().Get(publicConfigKey)
 	if found && publicConfig != nil {
 		return publicConfig, nil
@@ -96,6 +98,8 @@ func (d *datastoreImpl) GetPublicConfig() (*storage.PublicConfig, error) {
 		return publicConfig, err
 	}
 
+	// See the note next to the publicConfigCache variable for
+	// more information on public config caching.
 	cachePublicConfig(publicConfig)
 
 	return publicConfig, err
@@ -175,6 +179,8 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 		return upsertErr
 	}
 
+	// See the note next to the publicConfigCache variable for
+	// more information on public config caching.
 	cachePublicConfig(config.GetPublicConfig())
 	return nil
 }
