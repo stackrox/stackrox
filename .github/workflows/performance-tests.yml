@@ -170,10 +170,13 @@ jobs:
           "${{ github.workspace }}"/scale/dev/run-many.sh default 1
           sleep 120
 
-      - name: Create port-forward
-        run: |
-          kubectl -n stackrox port-forward svc/central 8000:443 > /dev/null 2>&1 &
-          sleep 20
+      - name: Setup Kubernetes port-forward
+        uses: vbem/k8s-port-forward@v1
+        with:
+          workload: 'svc/central'
+          mappings: '8000:443'
+          options: '--namespace=stackrox'
+          sleep: 20
 
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
