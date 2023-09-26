@@ -24,8 +24,8 @@ const (
 
 type TokenMetadata struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
-	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
+	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"API Token Name" sql:"index=category:unique:name:api_tokens_unique_name"` // @gotags: search:"API Token Name" sql:"index=category:unique:name:api_tokens_unique_name"
 	Roles      []string               `protobuf:"bytes,7,rep,name=roles,proto3" json:"roles,omitempty"`
 	IssuedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
 	Expiration *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expiration,proto3" json:"expiration,omitempty" search:"Expiration"` // @gotags: search:"Expiration"
