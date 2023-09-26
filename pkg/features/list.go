@@ -47,4 +47,10 @@ var (
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
 	AdministrationEvents = registerUnchangeableFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+
+	// PostgresDatastore defines if PostgresSQL should be used
+	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)
+
+	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
+	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT", false)
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -157,7 +157,7 @@ func convertFeature(feature clairV1.Feature, os string) *storage.EmbeddedImageSc
 			component.Vulns = append(component.Vulns, convertedVuln)
 		}
 	}
-	if env.ActiveVulnMgmt.BooleanSetting() {
+	if features.ActiveVulnMgmt.Enabled() {
 		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.Executables))
 		for _, executable := range feature.Executables {
 			imageComponentIds := make([]string, 0, len(executable.RequiredFeatures))

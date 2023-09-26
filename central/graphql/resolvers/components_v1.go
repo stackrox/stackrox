@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/image/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -241,7 +241,7 @@ func (eicr *EmbeddedImageScanComponentResolver) DeploymentCount(ctx context.Cont
 
 // ActiveState shows the activeness of a component in a deployment context.
 func (eicr *EmbeddedImageScanComponentResolver) ActiveState(ctx context.Context, _ PaginatedQuery) (*activeStateResolver, error) {
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return &activeStateResolver{}, nil
 	}
 	deploymentID := deploymentctx.FromContext(ctx)
