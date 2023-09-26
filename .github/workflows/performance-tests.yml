@@ -149,6 +149,10 @@ jobs:
       # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
         env:
+          MAIN_IMAGE_REPO: "quay.io/rhacs-eng/main"
+          MAIN_IMAGE_TAG: "4.2.0"
+          ROX_POSTGRES_DATASTORE: "true"
+          MONITORING_SUPPORT: "false"
           API_ENDPOINT: 'localhost:8000'
         run: |
           source "${{ github.workspace }}"/workflow/env.sh
