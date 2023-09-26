@@ -87,8 +87,8 @@ jobs:
         with:
           message-id: performance-evaluation
           message-path: |
-            report.html
-          preformatted: false
+            report.txt
+          preformatted: true
 
       - uses: actions/upload-artifact@v3
         with:
