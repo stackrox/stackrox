@@ -84,22 +84,22 @@ enum AdministrationEventLevel {
 
 message AdministrationEventsFilter {
     // Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.
-    google.protobuf.Timestamp from  = 1;
+    google.protobuf.Timestamp from           = 1;
 
     // Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
-    google.protobuf.Timestamp until = 2;
+    google.protobuf.Timestamp until          = 2;
 
     // Matches events from a specific domain.
-    string domain                   = 3;
+    repeated string domain                   = 3;
 
     // Matches events associated with a specific resource type.
-    string resource_type            = 4;
+    repeated string resource_type            = 4;
 
     // Matches events based on their type.
-    AdministrationEventType type    = 5;
+    repeated AdministrationEventType type    = 5;
 
     // Matches events based on their level.
-    AdministrationEventLevel level  = 6;
+    repeated AdministrationEventLevel level  = 6;
 }
 
 message CountAdministrationEventsRequest {
@@ -109,7 +109,7 @@ message CountAdministrationEventsRequest {
 
 message CountAdministrationEventsResponse {
     // The total number of events after filtering and deduplication.
-    int64 count = 1;
+    int32 count = 1;
 }
 
 message GetAdministrationEventResponse {

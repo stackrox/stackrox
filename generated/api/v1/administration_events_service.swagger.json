@@ -96,42 +96,56 @@
             "description": "Matches events from a specific domain.",
             "in": "query",
             "required": false,
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.resourceType",
             "description": "Matches events associated with a specific resource type.",
             "in": "query",
             "required": false,
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.type",
             "description": "Matches events based on their type.",
             "in": "query",
             "required": false,
-            "type": "string",
-            "enum": [
-              "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
-              "ADMINISTRATION_EVENT_TYPE_GENERIC",
-              "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
-            ],
-            "default": "ADMINISTRATION_EVENT_TYPE_UNKNOWN"
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+                "ADMINISTRATION_EVENT_TYPE_GENERIC",
+                "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
+              ]
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.level",
             "description": "Matches events based on their level.",
             "in": "query",
             "required": false,
-            "type": "string",
-            "enum": [
-              "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
-              "ADMINISTRATION_EVENT_LEVEL_INFO",
-              "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
-              "ADMINISTRATION_EVENT_LEVEL_WARNING",
-              "ADMINISTRATION_EVENT_LEVEL_ERROR"
-            ],
-            "default": "ADMINISTRATION_EVENT_LEVEL_UNKNOWN"
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+                "ADMINISTRATION_EVENT_LEVEL_INFO",
+                "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+                "ADMINISTRATION_EVENT_LEVEL_WARNING",
+                "ADMINISTRATION_EVENT_LEVEL_ERROR"
+              ]
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -210,42 +224,56 @@
             "description": "Matches events from a specific domain.",
             "in": "query",
             "required": false,
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.resourceType",
             "description": "Matches events associated with a specific resource type.",
             "in": "query",
             "required": false,
-            "type": "string"
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.type",
             "description": "Matches events based on their type.",
             "in": "query",
             "required": false,
-            "type": "string",
-            "enum": [
-              "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
-              "ADMINISTRATION_EVENT_TYPE_GENERIC",
-              "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
-            ],
-            "default": "ADMINISTRATION_EVENT_TYPE_UNKNOWN"
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+                "ADMINISTRATION_EVENT_TYPE_GENERIC",
+                "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
+              ]
+            },
+            "collectionFormat": "multi"
           },
           {
             "name": "filter.level",
             "description": "Matches events based on their level.",
             "in": "query",
             "required": false,
-            "type": "string",
-            "enum": [
-              "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
-              "ADMINISTRATION_EVENT_LEVEL_INFO",
-              "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
-              "ADMINISTRATION_EVENT_LEVEL_WARNING",
-              "ADMINISTRATION_EVENT_LEVEL_ERROR"
-            ],
-            "default": "ADMINISTRATION_EVENT_LEVEL_UNKNOWN"
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+                "ADMINISTRATION_EVENT_LEVEL_INFO",
+                "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+                "ADMINISTRATION_EVENT_LEVEL_WARNING",
+                "ADMINISTRATION_EVENT_LEVEL_ERROR"
+              ]
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -393,19 +421,31 @@
           "description": "Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary."
         },
         "domain": {
-          "type": "string",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "description": "Matches events from a specific domain."
         },
         "resourceType": {
-          "type": "string",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "description": "Matches events associated with a specific resource type."
         },
         "type": {
-          "$ref": "#/definitions/v1AdministrationEventType",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AdministrationEventType"
+          },
           "description": "Matches events based on their type."
         },
         "level": {
-          "$ref": "#/definitions/v1AdministrationEventLevel",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AdministrationEventLevel"
+          },
           "description": "Matches events based on their level."
         }
       }
@@ -435,8 +475,8 @@
       "type": "object",
       "properties": {
         "count": {
-          "type": "string",
-          "format": "int64",
+          "type": "integer",
+          "format": "int32",
           "description": "The total number of events after filtering and deduplication."
         }
       }
