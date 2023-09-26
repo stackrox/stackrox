@@ -24,8 +24,10 @@ type roleBasedIdentity struct {
 }
 
 func (i *roleBasedIdentity) TenantID() string {
-	//TODO implement me
-	panic("implement me")
+	if tenant, exists := i.attributes["tenant_id"]; exists {
+		return tenant[0]
+	}
+	panic("No tenant available")
 }
 
 func (i *roleBasedIdentity) UID() string {

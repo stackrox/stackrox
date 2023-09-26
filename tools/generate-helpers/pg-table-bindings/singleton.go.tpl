@@ -78,10 +78,17 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgr
         return marshalErr
     }
 
+    ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+    if ctxIdentity == nil {
+        return nil
+    }
+
     values := []interface{} {
         // parent primary keys start
         {{- range $field := $schema.DBColumnFields -}}
-        {{- if eq $field.DataType "datetime" }}
+        {{- if eq $field.ColumnName "tenant_id" }}
+        ctxIdentity.TenantID(),
+        {{- else if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
         {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),

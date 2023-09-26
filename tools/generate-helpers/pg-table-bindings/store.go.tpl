@@ -262,6 +262,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
     {{- end }}
     }
 
+    ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+    if ctxIdentity == nil {
+        return nil
+    }
+
     for idx, obj := range objs {
         // Todo: ROX-9499 Figure out how to more cleanly template around this issue.
         log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+

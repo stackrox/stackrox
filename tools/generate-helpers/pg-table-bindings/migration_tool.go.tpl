@@ -25,7 +25,9 @@
         {{- end}}
         model := &{{$schema.Table|upperCamelCase}}{
         {{- range $index, $field := $schema.DBColumnFields }}
+            {{- if ne $field.ColumnName "tenant_id" }}
             {{$field.ColumnName|upperCamelCase}}: {{- template "convertField" $field}}
+            {{- end}}
         {{- end}}
         }
         return model, nil

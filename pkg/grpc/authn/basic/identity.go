@@ -87,8 +87,9 @@ func (i identity) AsExternalUser() *tokens.ExternalUserClaim {
 
 func (i identity) Attributes() map[string][]string {
 	return map[string][]string{
-		"username": {i.username},
-		"role":     utils.RoleNames(i.resolvedRoles),
+		"username":  {i.username},
+		"role":      utils.RoleNames(i.resolvedRoles),
+		"tenant_id": {i.TenantID()},
 	}
 }
 

@@ -323,12 +323,12 @@ func main() {
 		schema.Fields = append(schema.Fields, walker.Field{
 			ColumnName: "tenant_id",
 			DataType:   "varchar",
-			Name:       "TenantId",
+			Name:       "TenantID",
 			Type:       "string",
 			SQLType:    "varchar",
 			ModelType:  "string",
 		})
-		schema.DBColumnFields()
+
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
 		}
