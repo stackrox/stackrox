@@ -136,7 +136,7 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 	var query string
 
 	for childIndex, child := range obj.GetFiles() {
-		if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoSecretsFiles(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -167,7 +167,7 @@ func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetImagePullSecret().GetRegistries() {
-		if err := insertIntoSecretsFilesRegistries(batch, child, secretID, idx, childIndex); err != nil {
+		if err := insertIntoSecretsFilesRegistries(ctx, batch, child, secretID, idx, childIndex); err != nil {
 			return err
 		}
 	}

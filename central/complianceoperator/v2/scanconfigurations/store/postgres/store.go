@@ -114,7 +114,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(ctx context.Context, batch 
 	var query string
 
 	for childIndex, child := range obj.GetProfiles() {
-		if err := insertIntoComplianceOperatorScanConfigurationV2Profiles(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorScanConfigurationV2Profiles(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

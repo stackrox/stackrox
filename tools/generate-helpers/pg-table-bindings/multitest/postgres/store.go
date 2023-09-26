@@ -124,7 +124,7 @@ func insertIntoTestStructs(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	var query string
 
 	for childIndex, child := range obj.GetNested() {
-		if err := insertIntoTestStructsNesteds(batch, child, obj.GetKey1(), childIndex); err != nil {
+		if err := insertIntoTestStructsNesteds(ctx, batch, child, obj.GetKey1(), childIndex); err != nil {
 			return err
 		}
 	}

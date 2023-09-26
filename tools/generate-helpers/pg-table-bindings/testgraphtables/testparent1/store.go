@@ -113,7 +113,7 @@ func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.T
 	var query string
 
 	for childIndex, child := range obj.GetChildren() {
-		if err := insertIntoTestParent1Childrens(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoTestParent1Childrens(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

@@ -113,7 +113,7 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 	var query string
 
 	for childIndex, child := range obj.GetActiveContextsSlice() {
-		if err := insertIntoActiveComponentsActiveContextsSlices(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoActiveComponentsActiveContextsSlices(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

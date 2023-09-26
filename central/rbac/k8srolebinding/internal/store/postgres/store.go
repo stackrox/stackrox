@@ -139,7 +139,7 @@ func insertIntoRoleBindings(ctx context.Context, batch *pgx.Batch, obj *storage.
 	var query string
 
 	for childIndex, child := range obj.GetSubjects() {
-		if err := insertIntoRoleBindingsSubjects(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoRoleBindingsSubjects(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

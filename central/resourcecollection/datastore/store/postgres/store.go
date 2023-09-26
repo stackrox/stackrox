@@ -113,7 +113,7 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 	var query string
 
 	for childIndex, child := range obj.GetEmbeddedCollections() {
-		if err := insertIntoCollectionsEmbeddedCollections(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoCollectionsEmbeddedCollections(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

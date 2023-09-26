@@ -225,7 +225,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx
 
     {{range $index, $child := $schema.Children }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
-        if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
+        if err := {{ template "insertFunctionName" $child }}(ctx, batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
         }
     }

@@ -115,7 +115,7 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 	var query string
 
 	for childIndex, child := range obj.GetNotifiers() {
-		if err := insertIntoReportConfigurationsNotifiers(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoReportConfigurationsNotifiers(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}

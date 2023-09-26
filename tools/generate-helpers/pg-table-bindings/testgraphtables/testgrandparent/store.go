@@ -113,7 +113,7 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 	var query string
 
 	for childIndex, child := range obj.GetEmbedded() {
-		if err := insertIntoTestGrandparentsEmbeddeds(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddeds(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -143,7 +143,7 @@ func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, 
 	var query string
 
 	for childIndex, child := range obj.GetEmbedded2() {
-		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(batch, child, testGrandparentID, idx, childIndex); err != nil {
+		if err := insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx, batch, child, testGrandparentID, idx, childIndex); err != nil {
 			return err
 		}
 	}

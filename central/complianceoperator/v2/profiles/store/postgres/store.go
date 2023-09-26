@@ -115,7 +115,7 @@ func insertIntoComplianceOperatorProfileV2(ctx context.Context, batch *pgx.Batch
 	var query string
 
 	for childIndex, child := range obj.GetRules() {
-		if err := insertIntoComplianceOperatorProfileV2Rules(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoComplianceOperatorProfileV2Rules(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
