@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
