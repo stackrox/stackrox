@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stackrox/rox/pkg/booleanpolicy/celcompile"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/negateregocompile"
@@ -21,6 +22,7 @@ type factoryWrapper struct {
 	opaBasedFactory       regocompile.RegoCompiler
 	opaOrBasedFactory     newregocompile.RegoCompiler
 	opaNegateBasedFactory negateregocompile.RegoCompiler
+	celNegateBasedFactory celcompile.CelCompiler
 	// jmespathFactory jmespathcompile.JMESPathCompiler
 }
 
@@ -95,6 +97,14 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 			}
 		} else {
 			e.otherEvaluators[regoNegateOrBased] = regoNegateEvaluator
+		}
+		celEvaluator, err := f.celNegateBasedFactory.CompileCelBasedEvaluator(q)
+		if err != nil {
+			if !errors.Is(err, celcompile.ErrCelNotYetSupported) {
+				return nil, err
+			}
+		} else {
+			e.otherEvaluators[celBased] = celEvaluator
 		}
 	}
 
