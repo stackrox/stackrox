@@ -80,7 +80,7 @@ type storeImpl struct {
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
-	previousHash *uint64,
+	previousHash uint64,
 	metadataUpdated, scanUpdated bool,
 	iTime *protoTypes.Timestamp,
 ) error {
@@ -128,8 +128,8 @@ func (s *storeImpl) insertIntoImages(
 
 	// Check hash value here after initial insert because we need the updated scan time and the updated at time to be changed as these
 	// are used for pruning and also to indicate how up-to-date the scan is
-	if previousHash != nil && *previousHash == cloned.GetHash() {
-		log.Infof("Deduped %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), *previousHash, cloned.GetHash())
+	if previousHash == cloned.GetHash() {
+		log.Infof("Deduped %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), previousHash, cloned.GetHash())
 		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
@@ -697,14 +697,13 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		obj.LastUpdated = iTime
 	}
 
-	var hash *uint64
+	var hash uint64
 	oldImage, exists, err := s.GetImageMetadata(ctx, obj.GetId())
 	if err != nil {
 		return errors.Wrapf(err, "retrieving existing image: %q", obj.GetId())
 	}
 	if exists && oldImage.GetHashoneof() != nil {
-		oldHash := oldImage.GetHash()
-		hash = &oldHash
+		hash = oldImage.GetHash()
 	}
 	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)
 	if err != nil {
