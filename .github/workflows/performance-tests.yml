@@ -76,15 +76,23 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=results.json
+          # TODO: flag output
 
-      - name: Output results
-        run: |
-          cat results.json
 
-      - name: Add PR comment
+
+      - name: Publish test report in job summary
+        uses: test-summary/action@v2
+        with:
+          paths: report.xml
+
+      - name: Publish test report as markdown
+        uses: test-summary/action@v2
+        with:
+          paths: report.xml
+          output: report.md
+
+      - name: Add report as PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message-id: performance-evaluation
-          message: |
-            **Hello MAIN**
+          message-path: report.md
