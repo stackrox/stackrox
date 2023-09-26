@@ -94,4 +94,5 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-id: performance-evaluation
-          message-path: report.md
+          message-path: report.json
+          preformatted: true
