@@ -62,7 +62,7 @@ jobs:
       - name: Download artifacts
         id: artifacts
         run: |
-          infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+          infractl artifacts "${NAME//./-}" --download-dir artifacts > /dev/null
 
           # Debug if we can access cluster and if central is running.
           kubectl get pods --namespace stackrox
@@ -70,6 +70,7 @@ jobs:
           # Required for k6 tests to run.
           echo "HOST=$(cat artifacts/url)" >> "$GITHUB_ENV"
           echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
+          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
 
       # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
       - name: Run local k6 test
