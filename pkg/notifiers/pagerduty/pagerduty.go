@@ -128,7 +128,6 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	resp, err := p.pdClient.ManageEvent(&pagerDutyEvent)
 
 	if err != nil {
-		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 		log.Errorw("Error sending alert to PagerDuty",
 			logging.Any("response", resp), logging.Err(err), logging.ErrCode(codes.PagerDutyGeneric),
 			logging.NotifierName(p.GetName()))

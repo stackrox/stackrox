@@ -237,7 +237,8 @@ func makeExtensionPair(key, value string) string {
 func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	value, err := json.Marshal(valueObject)
 	if err != nil {
-		log.Warnf("unable to json marshal audit log field %s due to %v", key, err)
+		log.Warnw("Unable to JSON marshal audit log field",
+			logging.String("audit_log_field", key), logging.Err(err))
 		return makeExtensionPair(key, "missing")
 	}
 	return makeExtensionPair(key, string(value))
