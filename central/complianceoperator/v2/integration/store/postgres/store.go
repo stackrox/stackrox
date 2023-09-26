@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -87,11 +88,16 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceIntegrations(batch *pgx.Batch, obj *storage.ComplianceIntegration) error {
+func insertIntoComplianceIntegrations(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceIntegration) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{

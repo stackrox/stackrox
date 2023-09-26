@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -9,10 +10,12 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
 var _ authn.Identity = (*identity)(nil)
+var log = logging.LoggerForModule()
 
 // IsBasicIdentity returns whether or not the input Identity is a basic identity.
 func IsBasicIdentity(id authn.Identity) bool {
@@ -49,6 +52,12 @@ func (i identity) Roles() []permissions.ResolvedRole {
 
 func (i identity) Service() *storage.ServiceIdentity {
 	return nil
+}
+
+func (i identity) TenantID() string {
+	// Assume username is in correct format
+	tenant, _, _ := strings.Cut(i.username, "-")
+	return tenant
 }
 
 func (i identity) User() *storage.UserInfo {

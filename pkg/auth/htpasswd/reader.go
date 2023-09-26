@@ -3,6 +3,7 @@ package htpasswd
 import (
 	"encoding/csv"
 	"io"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/crypto/bcrypt"
@@ -56,6 +57,14 @@ func ReadHashFile(r io.Reader) (*HashFile, error) {
 		}
 
 		user := username(entry[0])
+
+		tenant, uname, found := strings.Cut(entry[0], "-")
+
+		if !found || len(tenant) == 0 || len(uname) == 0 {
+			log.Warnf("Invalid username: %s", user)
+			continue
+		}
+
 		userHash := hash(entry[1])
 
 		// Check validity of the hash by verifying it can be parsed.

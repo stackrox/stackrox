@@ -15,7 +15,7 @@ import (
 	// Embed is used to import the template files
 	_ "embed"
 
-	"github.com/Masterminds/sprig/v3"
+	sprig "github.com/go-task/slim-sprig"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -320,6 +320,14 @@ func main() {
 			"FeatureFlag":    props.FeatureFlag,
 		}
 
+		schema.Fields = append(schema.Fields, walker.Field{
+			ColumnName: "tenant_id",
+			DataType:   "varchar",
+			Name:       "TenantId",
+			Type:       "string",
+			SQLType:    "varchar",
+			ModelType:  "string",
+		})
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
 		}

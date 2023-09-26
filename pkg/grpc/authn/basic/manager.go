@@ -41,6 +41,7 @@ func (m *Manager) IdentityForCreds(ctx context.Context, username, password strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to load roles for user %q", username)
 	}
+
 	return identity{
 		username:      username,
 		resolvedRoles: resolvedRoles,

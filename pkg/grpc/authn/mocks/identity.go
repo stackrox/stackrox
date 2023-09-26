@@ -135,6 +135,20 @@ func (mr *MockIdentityMockRecorder) Service() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Service", reflect.TypeOf((*MockIdentity)(nil).Service))
 }
 
+// TenantID mocks base method.
+func (m *MockIdentity) TenantID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TenantID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// TenantID indicates an expected call of TenantID.
+func (mr *MockIdentityMockRecorder) TenantID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TenantID", reflect.TypeOf((*MockIdentity)(nil).TenantID))
+}
+
 // UID mocks base method.
 func (m *MockIdentity) UID() string {
 	m.ctrl.T.Helper()

@@ -8,7 +8,9 @@ BASE_DIR=$(CURDIR)
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
-DOCKER_USER=--user "$(shell id -u)"
+DOCKER_OPTS=--user "$(shell id -u)"
+else
+DOCKER_OPTS=--security-opt label=disable
 endif
 
 # Set to empty string to echo some command lines which are hidden by default.
@@ -197,7 +199,7 @@ central-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	docker run $(DOCKER_OPTS) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -215,7 +217,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	docker run $(DOCKER_OPTS) --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -390,10 +392,6 @@ build-volumes:
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
-ifneq ($(DOCKER_USER),)
-	@echo "Restoring user's ownership of linux-gocache and go directories after previous runs which could set it to root..."
-	$(SILENT)docker run --rm $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) chown -R "$(shell id -u)" /linux-gocache /go
-endif
 
 .PHONY: main-builder-image
 main-builder-image: build-volumes
@@ -409,12 +407,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -428,7 +426,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: main-builder-image
 	@echo "+ $@"
-	docker run $(DOCKER_USER) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps
@@ -582,6 +580,12 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+ifeq ("$(CLUSTER_TYPE)","kind")
+	@echo "Loading image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) into kind"
+	kind load docker-image $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG)
+	@echo "Loading image stackrox/main:$(TAG) into kind"
+	kind load docker-image stackrox/main:$(TAG)
+endif
 
 .PHONY: docker-build-roxctl-image
 docker-build-roxctl-image:
@@ -680,7 +684,12 @@ central-db-image:
 		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
-
+ifeq ("$(CLUSTER_TYPE)","kind")
+	@echo "Loading image stackrox/central-db:$(TAG) into kind"
+	kind load docker-image stackrox/central-db:$(TAG)
+	@echo "Loading image $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG)into kind"
+	kind load docker-image $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG)
+endif
 ###########
 ## Clean ##
 ###########

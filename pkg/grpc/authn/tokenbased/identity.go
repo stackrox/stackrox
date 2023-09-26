@@ -23,6 +23,11 @@ type roleBasedIdentity struct {
 	authProvider  authproviders.Provider
 }
 
+func (i *roleBasedIdentity) TenantID() string {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (i *roleBasedIdentity) UID() string {
 	return i.uid
 }

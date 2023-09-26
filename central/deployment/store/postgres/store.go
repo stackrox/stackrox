@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -106,11 +107,16 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
+func insertIntoDeployments(ctx context.Context, batch *pgx.Batch, obj *storage.Deployment) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{
@@ -141,7 +147,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 	var query string
 
 	for childIndex, child := range obj.GetContainers() {
-		if err := insertIntoDeploymentsContainers(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoDeploymentsContainers(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -149,7 +155,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
 	for childIndex, child := range obj.GetPorts() {
-		if err := insertIntoDeploymentsPorts(batch, child, obj.GetId(), childIndex); err != nil {
+		if err := insertIntoDeploymentsPorts(ctx, batch, child, obj.GetId(), childIndex); err != nil {
 			return err
 		}
 	}
@@ -159,7 +165,12 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 	return nil
 }
 
-func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
+func insertIntoDeploymentsContainers(ctx context.Context, batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -186,7 +197,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 	var query string
 
 	for childIndex, child := range obj.GetConfig().GetEnv() {
-		if err := insertIntoDeploymentsContainersEnvs(batch, child, deploymentID, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersEnvs(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -194,7 +205,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 	for childIndex, child := range obj.GetVolumes() {
-		if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersVolumes(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -202,7 +213,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
 	for childIndex, child := range obj.GetSecrets() {
-		if err := insertIntoDeploymentsContainersSecrets(batch, child, deploymentID, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsContainersSecrets(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -212,7 +223,12 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 	return nil
 }
 
-func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersEnvs(ctx context.Context, batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -230,7 +246,12 @@ func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, obj *storage.Containe
 	return nil
 }
 
-func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersVolumes(ctx context.Context, batch *pgx.Batch, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -250,7 +271,12 @@ func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, obj *storage.Volum
 	return nil
 }
 
-func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
+func insertIntoDeploymentsContainersSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -267,7 +293,12 @@ func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, obj *storage.Embed
 	return nil
 }
 
-func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deploymentID string, idx int) error {
+func insertIntoDeploymentsPorts(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig, deploymentID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -284,7 +315,7 @@ func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deplo
 	var query string
 
 	for childIndex, child := range obj.GetExposureInfos() {
-		if err := insertIntoDeploymentsPortsExposureInfos(batch, child, deploymentID, idx, childIndex); err != nil {
+		if err := insertIntoDeploymentsPortsExposureInfos(ctx, batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
 		}
 	}
@@ -294,7 +325,12 @@ func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deplo
 	return nil
 }
 
-func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
+func insertIntoDeploymentsPortsExposureInfos(ctx context.Context, batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
