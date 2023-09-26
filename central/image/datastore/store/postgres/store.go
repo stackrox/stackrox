@@ -129,9 +129,11 @@ func (s *storeImpl) insertIntoImages(
 	// Check hash value here after initial insert because we need the updated scan time and the updated at time to be changed as these
 	// are used for pruning and also to indicate how up-to-date the scan is
 	if previousHash != nil && *previousHash == cloned.GetHash() {
+		log.Infof("Deduped %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), *previousHash, cloned.GetHash())
 		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
+	log.Infof("Passed %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), previousHash, cloned.GetHash())
 	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	var query string
