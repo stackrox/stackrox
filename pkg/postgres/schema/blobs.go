@@ -48,4 +48,5 @@ type Blobs struct {
 	Length       int64      `gorm:"column:length;type:bigint"`
 	ModifiedTime *time.Time `gorm:"column:modifiedtime;type:timestamp"`
 	Serialized   []byte     `gorm:"column:serialized;type:bytea"`
+	TenantId     string     `gorm:"column:tenant_id;type:varchar"`
 }

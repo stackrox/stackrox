@@ -17,6 +17,11 @@ type identity struct {
 	id mtls.Identity
 }
 
+func (i identity) TenantID() string {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (i identity) Service() *storage.ServiceIdentity {
 	return i.id.V1()
 }

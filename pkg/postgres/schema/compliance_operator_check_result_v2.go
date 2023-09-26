@@ -60,4 +60,5 @@ type ComplianceOperatorCheckResultV2 struct {
 	Standard   string                                              `gorm:"column:standard;type:varchar"`
 	ScanID     string                                              `gorm:"column:scanid;type:varchar"`
 	Serialized []byte                                              `gorm:"column:serialized;type:bytea"`
+	TenantId   string                                              `gorm:"column:tenant_id;type:varchar"`
 }

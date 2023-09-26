@@ -20,6 +20,11 @@ type identity struct {
 	attributes    map[string][]string
 }
 
+func (i *identity) TenantID() string {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (i *identity) Attributes() map[string][]string {
 	return i.attributes
 }

@@ -117,6 +117,7 @@ var (
         constraint:OnDelete:{{ if $rel.RestrictDelete }}RESTRICT{{ else }}CASCADE{{ end }}{{- /**/ -}}
         "`
     {{- end}}
+    TenantId string `gorm:"column:tenant_id;type:varchar"`
     }
     {{- range $index, $child := $schema.Children }}
         {{- template "createGormModel"  dict "Schema" $child "Obj" $obj }}

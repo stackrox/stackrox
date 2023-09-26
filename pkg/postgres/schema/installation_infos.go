@@ -39,4 +39,5 @@ const (
 // InstallationInfos holds the Gorm model for Postgres table `installation_infos`.
 type InstallationInfos struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

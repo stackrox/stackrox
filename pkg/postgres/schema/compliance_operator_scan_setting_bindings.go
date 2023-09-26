@@ -40,4 +40,5 @@ const (
 type ComplianceOperatorScanSettingBindings struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

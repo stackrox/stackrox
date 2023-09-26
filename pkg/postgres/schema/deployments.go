@@ -123,6 +123,7 @@ type Deployments struct {
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+	TenantId                      string                  `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.
@@ -143,6 +144,7 @@ type DeploymentsContainers struct {
 	ResourcesMemoryMbRequest              float32         `gorm:"column:resources_memorymbrequest;type:numeric"`
 	ResourcesMemoryMbLimit                float32         `gorm:"column:resources_memorymblimit;type:numeric"`
 	DeploymentsRef                        Deployments     `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                              string          `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.
@@ -154,6 +156,7 @@ type DeploymentsContainersEnvs struct {
 	Value                    string                                                 `gorm:"column:value;type:varchar"`
 	EnvVarSource             storage.ContainerConfig_EnvironmentConfig_EnvVarSource `gorm:"column:envvarsource;type:integer"`
 	DeploymentsContainersRef DeploymentsContainers                                  `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                 string                                                 `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsContainersVolumes holds the Gorm model for Postgres table `deployments_containers_volumes`.
@@ -167,6 +170,7 @@ type DeploymentsContainersVolumes struct {
 	ReadOnly                 bool                  `gorm:"column:readonly;type:bool"`
 	Type                     string                `gorm:"column:type;type:varchar"`
 	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                 string                `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsContainersSecrets holds the Gorm model for Postgres table `deployments_containers_secrets`.
@@ -177,6 +181,7 @@ type DeploymentsContainersSecrets struct {
 	Name                     string                `gorm:"column:name;type:varchar"`
 	Path                     string                `gorm:"column:path;type:varchar"`
 	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                 string                `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsPorts holds the Gorm model for Postgres table `deployments_ports`.
@@ -187,6 +192,7 @@ type DeploymentsPorts struct {
 	Protocol       string                           `gorm:"column:protocol;type:varchar"`
 	Exposure       storage.PortConfig_ExposureLevel `gorm:"column:exposure;type:integer"`
 	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId       string                           `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsPortsExposureInfos holds the Gorm model for Postgres table `deployments_ports_exposure_infos`.
@@ -201,4 +207,5 @@ type DeploymentsPortsExposureInfos struct {
 	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
 	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
 	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId            string                           `gorm:"column:tenant_id;type:varchar"`
 }

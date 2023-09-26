@@ -63,6 +63,7 @@ type ActiveComponents struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;index:activecomponents_deploymentid,type:hash"`
 	ComponentID  string `gorm:"column:componentid;type:varchar"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	TenantId     string `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ActiveComponentsActiveContextsSlices holds the Gorm model for Postgres table `active_components_active_contexts_slices`.
@@ -72,4 +73,5 @@ type ActiveComponentsActiveContextsSlices struct {
 	ContainerName       string           `gorm:"column:containername;type:varchar"`
 	ImageID             string           `gorm:"column:imageid;type:varchar"`
 	ActiveComponentsRef ActiveComponents `gorm:"foreignKey:active_components_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId            string           `gorm:"column:tenant_id;type:varchar"`
 }

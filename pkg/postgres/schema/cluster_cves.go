@@ -60,4 +60,5 @@ type ClusterCves struct {
 	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
 	Type                   storage.CVE_CVEType           `gorm:"column:type;type:integer"`
 	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
+	TenantId               string                        `gorm:"column:tenant_id;type:varchar"`
 }

@@ -47,4 +47,5 @@ type ImageIntegrations struct {
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:imageintegrations_sac_filter,type:btree"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

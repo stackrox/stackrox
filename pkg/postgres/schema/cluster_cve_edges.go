@@ -64,4 +64,5 @@ type ClusterCveEdges struct {
 	CveID       string   `gorm:"column:cveid;type:varchar;index:clustercveedges_cveid,type:hash"`
 	Serialized  []byte   `gorm:"column:serialized;type:bytea"`
 	ClustersRef Clusters `gorm:"foreignKey:clusterid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId    string   `gorm:"column:tenant_id;type:varchar"`
 }

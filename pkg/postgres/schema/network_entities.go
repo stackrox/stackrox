@@ -47,4 +47,5 @@ type NetworkEntities struct {
 	InfoID                    string `gorm:"column:info_id;type:varchar;primaryKey"`
 	InfoExternalSourceDefault bool   `gorm:"column:info_externalsource_default;type:bool"`
 	Serialized                []byte `gorm:"column:serialized;type:bytea"`
+	TenantId                  string `gorm:"column:tenant_id;type:varchar"`
 }

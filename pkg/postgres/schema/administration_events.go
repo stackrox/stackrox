@@ -52,4 +52,5 @@ type AdministrationEvents struct {
 	LastOccurredAt *time.Time                       `gorm:"column:lastoccurredat;type:timestamp"`
 	CreatedAt      *time.Time                       `gorm:"column:createdat;type:timestamp"`
 	Serialized     []byte                           `gorm:"column:serialized;type:bytea"`
+	TenantId       string                           `gorm:"column:tenant_id;type:varchar"`
 }

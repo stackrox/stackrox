@@ -62,4 +62,5 @@ type ComplianceIntegrations struct {
 	Namespace   string `gorm:"column:namespace;type:varchar;index:complianceintegrations_sac_filter,type:btree"`
 	NamespaceID string `gorm:"column:namespaceid;type:uuid"`
 	Serialized  []byte `gorm:"column:serialized;type:bytea"`
+	TenantId    string `gorm:"column:tenant_id;type:varchar"`
 }

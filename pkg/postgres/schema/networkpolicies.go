@@ -47,4 +47,5 @@ type Networkpolicies struct {
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:networkpolicies_sac_filter,type:btree"`
 	Namespace  string `gorm:"column:namespace;type:varchar;index:networkpolicies_sac_filter,type:btree"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

@@ -62,6 +62,7 @@ type ComplianceOperatorProfileV2 struct {
 	Standard    string          `gorm:"column:standard;type:varchar"`
 	Product     string          `gorm:"column:product;type:varchar"`
 	Serialized  []byte          `gorm:"column:serialized;type:bytea"`
+	TenantId    string          `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.
@@ -70,4 +71,5 @@ type ComplianceOperatorProfileV2Rules struct {
 	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorprofilev2rules_idx,type:btree"`
 	RuleName                       string                      `gorm:"column:rulename;type:varchar"`
 	ComplianceOperatorProfileV2Ref ComplianceOperatorProfileV2 `gorm:"foreignKey:compliance_operator_profile_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                       string                      `gorm:"column:tenant_id;type:varchar"`
 }

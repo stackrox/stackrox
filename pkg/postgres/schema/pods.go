@@ -64,6 +64,7 @@ type Pods struct {
 	Namespace    string `gorm:"column:namespace;type:varchar;index:pods_sac_filter,type:btree"`
 	ClusterID    string `gorm:"column:clusterid;type:uuid;index:pods_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	TenantId     string `gorm:"column:tenant_id;type:varchar"`
 }
 
 // PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
@@ -72,4 +73,5 @@ type PodsLiveInstances struct {
 	Idx         int    `gorm:"column:idx;type:integer;primaryKey;index:podsliveinstances_idx,type:btree"`
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
 	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId    string `gorm:"column:tenant_id;type:varchar"`
 }

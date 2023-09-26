@@ -65,6 +65,7 @@ type ComplianceOperatorScanV2 struct {
 	ScanConfigID string `gorm:"column:scanconfigid;type:varchar;uniqueIndex:scan_unique_indicator"`
 	ClusterID    string `gorm:"column:clusterid;type:uuid;uniqueIndex:scan_unique_indicator;index:complianceoperatorscanv2_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	TenantId     string `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ComplianceOperatorScanV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_v2_profiles`.
@@ -73,4 +74,5 @@ type ComplianceOperatorScanV2Profiles struct {
 	Idx                         int                      `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanv2profiles_idx,type:btree"`
 	ProfileID                   string                   `gorm:"column:profileid;type:varchar"`
 	ComplianceOperatorScanV2Ref ComplianceOperatorScanV2 `gorm:"foreignKey:compliance_operator_scan_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	TenantId                    string                   `gorm:"column:tenant_id;type:varchar"`
 }

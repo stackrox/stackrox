@@ -40,4 +40,5 @@ const (
 type Networkpoliciesundodeployments struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	TenantId     string `gorm:"column:tenant_id;type:varchar"`
 }
