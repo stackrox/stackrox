@@ -9,6 +9,7 @@ import { Dropdown, DropdownItem, DropdownSeparator, DropdownToggle } from '@patt
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import { actions as inviteActions } from 'reducers/invite';
 import { userBasePath } from 'routePaths';
 import User from 'utils/User';
 
@@ -17,7 +18,7 @@ const userMenuStyleConstant = {
     pointerEvents: 'none',
 } as CSSProperties;
 
-function UserMenu({ logout, userData }) {
+function UserMenu({ logout, setInviteModalVisibility, userData }) {
     const [isOpen, setIsOpen] = useState(false);
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
@@ -26,15 +27,16 @@ function UserMenu({ logout, userData }) {
         setIsOpen(false);
     }
 
+    function onClickInviteUsers() {
+        setInviteModalVisibility(true);
+    }
+
     const user = new User(userData);
     const { email, name, roles } = user;
 
     const displayName = email ? `${name as string} (${email})` : name;
     const displayRoles = Array.isArray(roles) ? roles.map((role) => role.name).join(',') : '';
 
-    function testInviteClick() {
-        console.log('Invite users clicked');
-    }
     const startOfUserMenu = [
         <DropdownItem
             key="user"
@@ -58,7 +60,8 @@ function UserMenu({ logout, userData }) {
     ];
 
     const inviteMenuItem = (
-        <DropdownItem key="open-invite" onClick={testInviteClick}>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        <DropdownItem key="open-invite" onClick={onClickInviteUsers}>
             Invite users
         </DropdownItem>
     );
@@ -89,6 +92,7 @@ function UserMenu({ logout, userData }) {
 
 UserMenu.propTypes = {
     logout: PropTypes.func.isRequired,
+    setInviteModalVisibility: PropTypes.func.isRequired,
     userData: PropTypes.shape({
         userInfo: PropTypes.shape({
             username: PropTypes.string,
@@ -108,6 +112,8 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = (dispatch) => ({
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    setInviteModalVisibility: (show) => dispatch(inviteActions.setInviteModalVisibility(show)),
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     logout: () => dispatch(authActions.logout()),
 });
