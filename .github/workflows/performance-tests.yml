@@ -133,11 +133,12 @@ jobs:
         run: |
           docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
 
-      - name: Install Central
+      - name: Fetch infra artifacts
         run: |
           infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
 
-      # TODO: make tag to get image tag
+      # TODO: wait for PR image to be created
+      # action: stackrox/actions/release/wait-for-image@main
 
       - name: Launch central services
         env:
@@ -162,9 +163,11 @@ jobs:
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
           API_ENDPOINT: 'localhost:8000'
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/run-many.sh default 3
+          "${{ github.workspace }}"/scale/dev/run-many.sh default 1
           sleep 120
 
       - name: Run local k6 test

@@ -131,7 +131,7 @@ function get_cluster_zip {
     TMP=$(mktemp)
     STATUS=$(curl_central -X POST \
         -d "$CLUSTER_JSON" \
-        --verbose \
+        -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
         "https://$LOCAL_API_ENDPOINT/v1/clusters")
