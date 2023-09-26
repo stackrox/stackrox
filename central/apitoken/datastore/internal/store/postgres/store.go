@@ -96,12 +96,13 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
+		obj.GetName(),
 		pgutils.NilOrTime(obj.GetExpiration()),
 		obj.GetRevoked(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO api_tokens (Id, Name, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,6 +117,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 
 	copyCols := []string{
 		"id",
+		"name",
 		"expiration",
 		"revoked",
 		"serialized",
@@ -134,6 +136,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
+			obj.GetName(),
 			pgutils.NilOrTime(obj.GetExpiration()),
 			obj.GetRevoked(),
 			serialized,
