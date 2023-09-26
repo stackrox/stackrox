@@ -82,7 +82,9 @@ func main() {
 			"nextSeqNum":          startVersion + 1,
 			"packageName":         getPackageName(startVersion),
 			"startSequenceNumber": startVersion,
-			"storeObject":         storeObjects,
+			"storeObject":         "",
+			"tableName":           "",
+			"migrationDir":        migrationDirName,
 		}
 
 		var err error
@@ -99,21 +101,8 @@ func main() {
 			return err
 		}
 
-		// Create schema directory
-		migrationMigrationDirPath := path.Join(fullMigrationDirPath, "migration")
-		err = os.MkdirAll(migrationMigrationDirPath, 0755)
-		if err != nil {
-			return err
-		}
-
-		// Write migration impl file
-		//migrationImplFilePath := path.Join(fullMigrationDirPath, "migration_impl.go")
-		//err = renderFile(templateMap, migrationImplTemplate, migrationImplFilePath)
-		//if err != nil {
-		//	return err
-		//}
 		// Write migration test file
-		migrationTestFilePath := path.Join(fullMigrationDirPath, "migration", "migration_test.go")
+		migrationTestFilePath := path.Join(fullMigrationDirPath, "migration_test.go")
 		err = renderFile(templateMap, migrationTestTemplate, migrationTestFilePath)
 		if err != nil {
 			return err
@@ -130,13 +119,24 @@ func main() {
 			// Parse the store objects and create the necessary paths
 			stores := strings.Split(storeObjects, ",")
 			for _, store := range stores {
-				templateMap["storeObject"] = store
+				storeTable := strings.Split(store, "=")
+				if len(storeTable) > 2 {
+					return errors.New("Store objects improperly formatted.")
+				}
+				templateMap["storeObject"] = storeTable[0]
 
 				// Strip off the storage part of the object for the directories
-				rawObjects := strings.Split(store, ".")
+				rawObjects := strings.Split(storeTable[0], ".")
 				if len(rawObjects) != 2 {
 					return errors.New("Store objects improperly formatted.")
 				}
+
+				if len(storeTable) == 2 {
+					templateMap["tableName"] = storeTable[1]
+				} else {
+					templateMap["tableName"] = strings.ToLower(rawObjects[1])
+				}
+
 				// Create store directory
 				storeMigrationDirPath := path.Join(fullMigrationDirPath, strings.ToLower(rawObjects[1]), "store")
 				err = os.MkdirAll(storeMigrationDirPath, 0755)

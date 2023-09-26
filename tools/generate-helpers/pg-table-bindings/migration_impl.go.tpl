@@ -1,23 +1,22 @@
-{{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end -}}
+{{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{- end}}
 
-package migration
+package {{.packageName}}
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/migrator/migrations/{{.migrationDir}}/schema"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"gorm.io/gorm/clause"
 )
 
-// {{template "TODO"}}: generate/write and import any store required for the migration (skip any unnecessary step):
-//  - create a schema subdirectory
-//  - create a schema/old subdirectory
-//  - create a schema/new subdirectory
-//  - create a stores subdirectory
-//  - create a stores/previous subdirectory
-//  - create a stores/updated subdirectory
-//  - copy the old schemas from pkg/postgres/schema to schema/old
-//  - generate the new schemas in pkg/postgres/schema and the new stores where they belong
-//  - copy the newly generated schemas from pkg/postgres/schema to schema/new
-//  - remove the calls to GetSchemaForTable and to RegisterTable from the copied schema files
-//  - remove the xxxTableName constant from the copied schema files
+var (
+	batchSize = 2000
+	log       = logging.LoggerForModule()
+)
+
+// {{template "TODO"}}:
 //  - remove the gen.go file generated in ../{OBJECT}/store
 
 // {{template "TODO"}}: Determine if this change breaks a previous releases database.
@@ -32,10 +31,59 @@ import (
 // to a software version that can no longer be supported by the database.
 
 func migrate(database *types.Databases) error {
+	// {{template "TODO"}}: Update migration code as required
+	// The generated migration handles the simple case of promoting a field to a column on the top level table.  This
+	// provides the base.  Enhance and build out to suit the needs of your specific migration case.
+
 	db := database.GormDB
 	pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTable{{.Table|upperCamelCase}}Stmt)
+	db = db.WithContext(database.DBCtx).Table(schema.{{.Table|upperCamelCase}}TableName)
 
-	// {{template "TODO"}}: Migration code comes here
+	rows, err := db.Rows()
+	if err != nil {
+		return errors.Wrapf(err, "failed to iterate table %s", schema.{{.Table|upperCamelCase}}TableName)
+	}
+	defer func() { _ = rows.Close() }()
+
+	var convertedRecords []*schema.{{.Table|upperCamelCase}}
+	var count int
+	for rows.Next() {
+		var record *schema.{{.Table|upperCamelCase}}
+		if err = db.ScanRows(rows, &record); err != nil {
+			return errors.Wrap(err, "failed to scan rows")
+		}
+
+		recordProto, err := schema.Convert{{.TrimmedType}}ToProto(record)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert %+v to proto", record)
+		}
+
+		converted, err := schema.Convert{{.TrimmedType}}FromProto(recordProto)
+		if err != nil {
+			return errors.Wrapf(err, "failed to convert from proto %+v", recordProto)
+		}
+		convertedRecords = append(convertedRecords, converted)
+		count++
+
+		if len(convertedRecords) == batchSize {
+			// Upsert converted blobs
+			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTable{{.Table|upperCamelCase}}Stmt.GormModel).Create(&convertedRecords).Error; err != nil {
+				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedRecords), count-len(convertedRecords))
+			}
+		convertedRecords = convertedRecords[:0]
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrapf(err, "failed to get rows for %s", schema.{{.Table|upperCamelCase}}TableName)
+	}
+
+	if len(convertedRecords) > 0 {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTable{{.Table|upperCamelCase}}Stmt.GormModel).Create(&convertedRecords).Error; err != nil {
+			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedRecords))
+		}
+	}
+	log.Infof("Converted %d records", count)
 
 	return nil
 }

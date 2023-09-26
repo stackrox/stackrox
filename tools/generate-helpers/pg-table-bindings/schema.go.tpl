@@ -39,6 +39,7 @@ var (
     // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
     {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
 
+    {{- if not .Migration }}
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
         {{- if .RegisterSchema }}
@@ -87,6 +88,7 @@ var (
         {{- end}}
         return schema
     }()
+    {{- end}}
 )
 
 {{- define "createGormModel" }}

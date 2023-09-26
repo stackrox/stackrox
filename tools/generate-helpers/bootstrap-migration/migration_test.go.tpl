@@ -1,7 +1,7 @@
 {{- define "TODO"}}TODO(do{{- /**/ -}}nt-merge){{end -}}
 //go:build sql_integration
 
-package migration
+package {{.packageName}}
 
 import (
 	"context"

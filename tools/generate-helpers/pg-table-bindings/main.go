@@ -132,6 +132,12 @@ type properties struct {
 
 	// Indicates a migration store is to be generated
 	MigrationFlag bool
+
+	// Indicates package for a migration that is generated
+	PackageName string
+
+	// Directory of the migration
+	MigrationDir string
 }
 
 func renderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
@@ -173,6 +179,19 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 	return nil
 }
 
+func simpleRenderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, templateFileName string) error {
+	buf := bytes.NewBuffer(nil)
+	if err := temp(templateFileName).Execute(buf, templateMap); err != nil {
+		return err
+	}
+	file := buf.Bytes()
+
+	if err := os.WriteFile(templateFileName, file, 0644); err != nil {
+		return err
+	}
+	return nil
+}
+
 type parsedReference struct {
 	TypeName string
 	Table    string
@@ -204,6 +223,8 @@ func main() {
 	c.Flags().BoolVar(&props.SingletonStore, "singleton", false, "indicates that we should just generate the singleton store")
 	c.Flags().StringSliceVar(&props.SearchScope, "search-scope", []string{}, "if set, the search is scoped to specified search categories. comma seperated of search categories")
 	c.Flags().BoolVar(&props.MigrationFlag, "migration", false, "if true, generates a migration store")
+	c.Flags().StringVar(&props.PackageName, "package", "", "the package in which to generate the migration")
+	c.Flags().StringVar(&props.MigrationDir, "migration-dir", "", "the directory in which to generate the migration")
 
 	utils.Must(c.MarkFlagRequired("schema-directory"))
 
@@ -235,56 +256,63 @@ func main() {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
 
-		parsedReferences := parseReferencesAndInjectPeerSchemas(schema, props.Refs)
-		if len(schema.PrimaryKeys()) > 1 {
-			for _, pk := range schema.PrimaryKeys() {
-				// We need all primary keys to be searchable unless they are ID fields, or if they are a foreign key.
-				if pk.Search.FieldName == "" && !pk.Options.ID {
-					var isValid bool
-					if ref := pk.Options.Reference; ref != nil {
-						referencedField, err := ref.FieldInOtherSchema()
-						if err != nil {
-							log.Fatalf("Error getting referenced field for pk %+v in schema %s: %v", pk, schema.Table, err)
+		var parsedReferences []parsedReference
+		var embeddedFK string
+		var searchCategory string
+		var permissionCheckerEnabled bool
+		var filteredReferences []parsedReference
+		var searchScope []string
+		if !props.MigrationFlag {
+			parsedReferences = parseReferencesAndInjectPeerSchemas(schema, props.Refs)
+			if len(schema.PrimaryKeys()) > 1 {
+				for _, pk := range schema.PrimaryKeys() {
+					// We need all primary keys to be searchable unless they are ID fields, or if they are a foreign key.
+					if pk.Search.FieldName == "" && !pk.Options.ID {
+						var isValid bool
+						if ref := pk.Options.Reference; ref != nil {
+							referencedField, err := ref.FieldInOtherSchema()
+							if err != nil {
+								log.Fatalf("Error getting referenced field for pk %+v in schema %s: %v", pk, schema.Table, err)
+							}
+							// If the referenced field is searchable, then this field is searchable, so we don't need to enforce anything.
+							if referencedField.Search.FieldName != "" {
+								isValid = true
+							}
 						}
-						// If the referenced field is searchable, then this field is searchable, so we don't need to enforce anything.
-						if referencedField.Search.FieldName != "" {
-							isValid = true
+						if !isValid {
+							log.Fatalf("%s:%s is not searchable and is a primary key that is not a foreign key reference", props.Type, pk.Name)
 						}
-					}
-					if !isValid {
-						log.Fatalf("%s:%s is not searchable and is a primary key that is not a foreign key reference", props.Type, pk.Name)
 					}
 				}
 			}
-		}
 
-		permissionCheckerEnabled := props.PermissionChecker != ""
-		var searchCategory string
-		if props.SearchCategory != "" {
-			if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
-				searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
-			} else {
-				searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+			permissionCheckerEnabled = props.PermissionChecker != ""
+
+			if props.SearchCategory != "" {
+				if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
+					searchCategory = fmt.Sprintf("SearchCategory(%d)", asInt)
+				} else {
+					searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
+				}
 			}
-		}
 
-		searchScope := make([]string, 0, len(props.SearchScope))
-		if len(props.SearchScope) > 0 {
-			for _, category := range props.SearchScope {
-				searchScope = append(searchScope, v1SearchCategoryString(category))
+			searchScope = make([]string, 0, len(props.SearchScope))
+			if len(props.SearchScope) > 0 {
+				for _, category := range props.SearchScope {
+					searchScope = append(searchScope, v1SearchCategoryString(category))
+				}
 			}
-		}
 
-		var embeddedFK string
-		if props.Cycle != "" {
-			embeddedFK = props.Cycle
-		}
+			if props.Cycle != "" {
+				embeddedFK = props.Cycle
+			}
 
-		// remove any self references
-		filteredReferences := make([]parsedReference, 0, len(parsedReferences))
-		for _, ref := range parsedReferences {
-			if ref.Table != props.Table {
-				filteredReferences = append(filteredReferences, ref)
+			// remove any self references
+			filteredReferences = make([]parsedReference, 0, len(parsedReferences))
+			for _, ref := range parsedReferences {
+				if ref.Table != props.Table {
+					filteredReferences = append(filteredReferences, ref)
+				}
 			}
 		}
 
@@ -346,17 +374,19 @@ func main() {
 				}
 			}
 		} else {
+			templateMap["packageName"] = props.PackageName
+			templateMap["migrationDir"] = props.MigrationDir
 			// TODO: Path
-			if err := renderFile(templateMap, migrationTemplate, "migration_impl.go"); err != nil {
-				return err
-			}
-			if err := renderFile(templateMap, schemaTemplate, getSchemaFileName("", schema.Table)); err != nil {
+			if err := renderFile(templateMap, schemaTemplate, getSchemaFileName("../../schema", schema.Table)); err != nil {
 				return err
 			}
 			if props.ConversionFuncs {
-				if err := generateConverstionFuncs(schema, "."); err != nil {
+				if err := generateConverstionFuncs(schema, "../../schema"); err != nil {
 					return err
 				}
+			}
+			if err := simpleRenderFile(templateMap, migrationTemplate, "../../migration_impl.go"); err != nil {
+				return err
 			}
 		}
 
@@ -396,7 +426,7 @@ func getConversionTestFileName(dir, table string) string {
 
 func newTemplate(tpl string) func(name string) *template.Template {
 	return func(name string) *template.Template {
-		return template.Must(template.New(name).Option("missingkey=error").Funcs(funcMap).Funcs(sprig.TxtFuncMap()).Parse(autogenerated + tpl))
+		return template.Must(template.New(name).Option("missingkey=error").Funcs(funcMap).Funcs(sprig.TxtFuncMap()).Parse(autogenerated + "\n" + tpl))
 	}
 }
 
