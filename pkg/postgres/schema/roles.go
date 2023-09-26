@@ -40,5 +40,4 @@ const (
 type Roles struct {
 	Name       string `gorm:"column:name;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

@@ -66,5 +66,4 @@ type ImageCves struct {
 	Snoozed                bool                          `gorm:"column:snoozed;type:bool"`
 	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
 	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
-	TenantId               string                        `gorm:"column:tenant_id;type:varchar"`
 }

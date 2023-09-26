@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -85,11 +86,16 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
+func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{
@@ -117,7 +123,12 @@ func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 	return nil
 }
 
-func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
+func insertIntoTestParent1Childrens(ctx context.Context, batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start

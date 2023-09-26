@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -85,11 +86,16 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2) error {
+func insertIntoComplianceOperatorProfileV2(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{
@@ -119,7 +125,12 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 	return nil
 }
 
-func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2_Rule, complianceOperatorProfileV2ID string, idx int) error {
+func insertIntoComplianceOperatorProfileV2Rules(ctx context.Context, batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2_Rule, complianceOperatorProfileV2ID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start

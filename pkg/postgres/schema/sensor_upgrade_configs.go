@@ -39,5 +39,4 @@ const (
 // SensorUpgradeConfigs holds the Gorm model for Postgres table `sensor_upgrade_configs`.
 type SensorUpgradeConfigs struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

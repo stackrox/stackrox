@@ -39,5 +39,4 @@ const (
 // DelegatedRegistryConfigs holds the Gorm model for Postgres table `delegated_registry_configs`.
 type DelegatedRegistryConfigs struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

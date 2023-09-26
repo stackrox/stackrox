@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -106,11 +107,16 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 	return nil
 }
 
-func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
+func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secret) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{
@@ -140,7 +146,12 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 	return nil
 }
 
-func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
+func insertIntoSecretsFiles(ctx context.Context, batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -166,7 +177,12 @@ func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secre
 	return nil
 }
 
-func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
+func insertIntoSecretsFilesRegistries(ctx context.Context, batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start

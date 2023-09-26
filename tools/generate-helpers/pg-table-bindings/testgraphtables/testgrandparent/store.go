@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -85,11 +86,16 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) error {
+func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent) error {
 
 	serialized, marshalErr := obj.Marshal()
 	if marshalErr != nil {
 		return marshalErr
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	values := []interface{}{
@@ -117,7 +123,12 @@ func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) 
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
+func insertIntoTestGrandparentsEmbeddeds(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start
@@ -142,7 +153,12 @@ func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGran
 	return nil
 }
 
-func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
+func insertIntoTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
 
 	values := []interface{}{
 		// parent primary keys start

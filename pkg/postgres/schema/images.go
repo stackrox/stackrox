@@ -85,7 +85,6 @@ type Images struct {
 	RiskScore            float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss              float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized           []byte            `gorm:"column:serialized;type:bytea"`
-	TenantId             string            `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ImagesLayers holds the Gorm model for Postgres table `images_layers`.
@@ -95,5 +94,4 @@ type ImagesLayers struct {
 	Instruction string `gorm:"column:instruction;type:varchar"`
 	Value       string `gorm:"column:value;type:varchar"`
 	ImagesRef   Images `gorm:"foreignKey:images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId    string `gorm:"column:tenant_id;type:varchar"`
 }

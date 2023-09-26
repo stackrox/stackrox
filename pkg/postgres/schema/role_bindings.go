@@ -60,7 +60,6 @@ type RoleBindings struct {
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	RoleID      string            `gorm:"column:roleid;type:uuid"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
-	TenantId    string            `gorm:"column:tenant_id;type:varchar"`
 }
 
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
@@ -70,5 +69,4 @@ type RoleBindingsSubjects struct {
 	Kind            storage.SubjectKind `gorm:"column:kind;type:integer"`
 	Name            string              `gorm:"column:name;type:varchar"`
 	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId        string              `gorm:"column:tenant_id;type:varchar"`
 }

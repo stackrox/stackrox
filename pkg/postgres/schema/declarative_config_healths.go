@@ -40,5 +40,4 @@ const (
 type DeclarativeConfigHealths struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

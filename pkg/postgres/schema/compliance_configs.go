@@ -40,5 +40,4 @@ const (
 type ComplianceConfigs struct {
 	StandardID string `gorm:"column:standardid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

@@ -65,7 +65,6 @@ type Secrets struct {
 	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
-	TenantId    string     `gorm:"column:tenant_id;type:varchar"`
 }
 
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
@@ -75,7 +74,6 @@ type SecretsFiles struct {
 	Type        storage.SecretType `gorm:"column:type;type:integer"`
 	CertEndDate *time.Time         `gorm:"column:cert_enddate;type:timestamp"`
 	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId    string             `gorm:"column:tenant_id;type:varchar"`
 }
 
 // SecretsFilesRegistries holds the Gorm model for Postgres table `secrets_files_registries`.
@@ -85,5 +83,4 @@ type SecretsFilesRegistries struct {
 	Idx             int          `gorm:"column:idx;type:integer;primaryKey;index:secretsfilesregistries_idx,type:btree"`
 	Name            string       `gorm:"column:name;type:varchar"`
 	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId        string       `gorm:"column:tenant_id;type:varchar"`
 }

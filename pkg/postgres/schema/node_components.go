@@ -59,5 +59,4 @@ type NodeComponents struct {
 	TopCvss         float32 `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string  `gorm:"column:operatingsystem;type:varchar"`
 	Serialized      []byte  `gorm:"column:serialized;type:bytea"`
-	TenantId        string  `gorm:"column:tenant_id;type:varchar"`
 }

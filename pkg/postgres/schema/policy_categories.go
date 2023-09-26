@@ -46,5 +46,4 @@ type PolicyCategories struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

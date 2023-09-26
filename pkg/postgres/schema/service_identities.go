@@ -40,5 +40,4 @@ const (
 type ServiceIdentities struct {
 	SerialStr  string `gorm:"column:serialstr;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-	TenantId   string `gorm:"column:tenant_id;type:varchar"`
 }

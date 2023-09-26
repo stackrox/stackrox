@@ -65,5 +65,4 @@ type NodeComponentEdges struct {
 	NodeComponentID string `gorm:"column:nodecomponentid;type:varchar;index:nodecomponentedges_nodecomponentid,type:hash"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
 	NodesRef        Nodes  `gorm:"foreignKey:nodeid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId        string `gorm:"column:tenant_id;type:varchar"`
 }

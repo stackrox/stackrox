@@ -68,7 +68,6 @@ type ReportConfigurations struct {
 	ResourceScopeCollectionID string                                 `gorm:"column:resourcescope_collectionid;type:varchar"`
 	CreatorName               string                                 `gorm:"column:creator_name;type:varchar"`
 	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
-	TenantId                  string                                 `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.
@@ -78,5 +77,4 @@ type ReportConfigurationsNotifiers struct {
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	NotifiersRef            Notifiers            `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
-	TenantId                string               `gorm:"column:tenant_id;type:varchar"`
 }

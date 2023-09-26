@@ -62,5 +62,4 @@ type PolicyCategoryEdges struct {
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	PoliciesRef         Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-	TenantId            string           `gorm:"column:tenant_id;type:varchar"`
 }

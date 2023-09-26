@@ -60,5 +60,4 @@ type ClusterHealthStatuses struct {
 	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
 	LastContact                  *time.Time                                    `gorm:"column:lastcontact;type:timestamp"`
 	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
-	TenantId                     string                                        `gorm:"column:tenant_id;type:varchar"`
 }

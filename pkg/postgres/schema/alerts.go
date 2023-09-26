@@ -76,5 +76,4 @@ type Alerts struct {
 	Time                     *time.Time                          `gorm:"column:time;type:timestamp"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
-	TenantId                 string                              `gorm:"column:tenant_id;type:varchar"`
 }

@@ -48,5 +48,4 @@ type ProcessBaselines struct {
 	KeyClusterID    string `gorm:"column:key_clusterid;type:uuid;index:processbaselines_sac_filter,type:btree"`
 	KeyNamespace    string `gorm:"column:key_namespace;type:varchar;index:processbaselines_sac_filter,type:btree"`
 	Serialized      []byte `gorm:"column:serialized;type:bytea"`
-	TenantId        string `gorm:"column:tenant_id;type:varchar"`
 }

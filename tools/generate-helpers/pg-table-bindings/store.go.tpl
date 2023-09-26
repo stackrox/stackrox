@@ -43,6 +43,7 @@ import (
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
+    "github.com/stackrox/rox/pkg/grpc/authn"
     "github.com/stackrox/rox/pkg/logging"
     ops "github.com/stackrox/rox/pkg/metrics"
     "github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -182,7 +183,9 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertValues"}}{{- $schema := . -}}
 {{- range $field := $schema.DBColumnFields -}}
-    {{- if eq $field.DataType "datetime" }}
+    {{- if eq $field.ColumnName "tenant_id" -}}
+        ctxIdentity.TenantID()
+    {{- else if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
@@ -195,13 +198,18 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertObject"}}
 {{- $schema := .schema }}
-func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
+func {{ template "insertFunctionName" $schema }}(ctx context.Context, batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
     serialized, marshalErr := obj.Marshal()
     if marshalErr != nil {
         return marshalErr
     }
     {{end}}
+
+    ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+    if ctxIdentity == nil {
+        return nil
+    }
 
     values := []interface{} {
         // parent primary keys start

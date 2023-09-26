@@ -69,5 +69,4 @@ type Namespaces struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
-	TenantId    string            `gorm:"column:tenant_id;type:varchar"`
 }
