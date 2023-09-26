@@ -2,7 +2,7 @@ package aggregator
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -65,7 +65,7 @@ type aggregatorImpl struct {
 
 // Add adds indicators to the cache if applicable
 func (a *aggregatorImpl) Add(indicators []*storage.ProcessIndicator) {
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return
 	}
 	a.lock.Lock()
@@ -109,7 +109,7 @@ func (a *aggregatorImpl) Add(indicators []*storage.ProcessIndicator) {
 
 // GetAndPrune gets the deployments and their updates to process.
 func (a *aggregatorImpl) GetAndPrune(imageScanned func(string) bool, deploymentsSet set.StringSet) map[string][]*ProcessUpdate {
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return nil
 	}
 	a.lock.Lock()
@@ -154,7 +154,7 @@ func (a *aggregatorImpl) GetAndPrune(imageScanned func(string) bool, deployments
 
 // RefreshDeployment maintains cache with current deployment
 func (a *aggregatorImpl) RefreshDeployment(deployment *storage.Deployment) {
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return
 	}
 	a.lock.Lock()

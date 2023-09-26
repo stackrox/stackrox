@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -266,7 +266,7 @@ func convertFeature(feature *v1.Feature, os string) *storage.EmbeddedImageScanCo
 		component.Source = source
 	}
 	component.Vulns = convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
-	if env.ActiveVulnMgmt.BooleanSetting() {
+	if features.ActiveVulnMgmt.Enabled() {
 		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.GetProvidedExecutables()))
 		for _, executable := range feature.GetProvidedExecutables() {
 			imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))
