@@ -126,6 +126,13 @@ jobs:
           repository: "stackrox/workflow"
           path: workflow
 
+      - name: Docker login
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+
       - name: Install Central
         run: |
           infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
