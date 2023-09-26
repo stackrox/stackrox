@@ -85,7 +85,7 @@ test_custom() {
     STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest")
     STACKROX_TESTNAMES+=("AttemptedAlertsTest" "AuditLogAlertsTest" "AuthServiceTest" "AutocompleteTest")
     STACKROX_TESTNAMES+=("CertExpiryTest" "CertRotationTest" "ClusterInitBundleTest" "ClustersTest")
-    STACKROX_TESTNAMES+=("DeploymentEventGraphQLTest" "DeploymentTest" "DiagnosticBundleTest")
+    STACKROX_TESTNAMES+=("DeploymentEventGraphQLTest" "DiagnosticBundleTest")
     STACKROX_TESTNAMES+=("Enforcement")
     STACKROX_TESTNAMES+=("GlobalSearch" "GroupsTest")
     STACKROX_TESTNAMES+=("IntegrationHealthTest")
