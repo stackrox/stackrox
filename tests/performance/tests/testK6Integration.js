@@ -1,3 +1,5 @@
+import { jUnit, textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+
 import { getHeaderWithAdminPass } from '../src/utils.js';
 import { mainDashboard } from '../groups/mainDashboard.js';
 
@@ -15,3 +17,11 @@ export default function main() {
     console.log('Running tests for admin scope');
     runAllGroups(getHeaderWithAdminPass(__ENV.ROX_ADMIN_PASSWORD), { sac_user: 'admin' });
 }
+
+export function handleSummary(data) {
+    return {
+      'stdout': textSummary(data, { indent: '  ', enableColors: true }), // the default stdout output
+      'report.xml': jUnit(data), // JUnit output to a file
+      'report.json': JSON.stringify(data), // JSON output to a file
+    };
+  }

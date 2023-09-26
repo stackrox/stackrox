@@ -78,8 +78,6 @@ jobs:
           filename: tests/performance/tests/testK6Integration.js
           # TODO: flag output
 
-
-
       - name: Publish test report in job summary
         uses: test-summary/action@v2
         with:
