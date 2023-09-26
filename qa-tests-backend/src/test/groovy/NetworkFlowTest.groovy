@@ -91,8 +91,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
-                    .setCreateLoadBalancer(false)
-                    .setCreateRoute(true),
+                    .setCreateLoadBalancer(!(Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
+                    .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT),
         ]
     }
 
