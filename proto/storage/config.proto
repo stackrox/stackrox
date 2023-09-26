@@ -77,6 +77,8 @@ message PrivateConfig {
     VulnerabilityDeferralConfig             vulnerability_deferral_config               = 7;
 
     AdministrationEventsConfig              administration_events_config                = 8;
+
+    int32                                   expired_api_token_retention_duration_days   = 9;
 }
 
 message Config {

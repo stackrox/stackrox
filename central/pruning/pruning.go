@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	apiTokenDatastore "github.com/stackrox/rox/central/apitoken/datastore"
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
@@ -55,6 +56,8 @@ const (
 	alertQueryTimeout = 10 * time.Minute
 
 	flowsSemaphoreWeight = 5
+
+	apiTokenBatchSize = 1000
 )
 
 var (
@@ -71,6 +74,7 @@ type GarbageCollector interface {
 }
 
 func newGarbageCollector(alerts alertDatastore.DataStore,
+	apiTokens apiTokenDatastore.DataStore,
 	nodes nodeDatastore.DataStore,
 	images imageDatastore.DataStore,
 	clusters clusterDatastore.DataStore,
@@ -91,6 +95,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	blobStore blobDatastore.Datastore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
+		apiTokens:       apiTokens,
 		clusters:        clusters,
 		nodes:           nodes,
 		images:          images,
@@ -118,6 +123,7 @@ type garbageCollectorImpl struct {
 	postgres pgPkg.DB
 
 	alerts          alertDatastore.DataStore
+	apiTokens       apiTokenDatastore.DataStore
 	clusters        clusterDatastore.DataStore
 	nodes           nodeDatastore.DataStore
 	images          imageDatastore.DataStore
@@ -171,6 +177,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()
+	g.removeExpiredAPITokens(pvtConfig)
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -910,6 +917,31 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 	}()
 
 	postgres.PruneLogImbues(pruningCtx, g.postgres, logImbueWindow)
+}
+
+func (g *garbageCollectorImpl) removeExpiredAPITokens(config *storage.PrivateConfig) {
+	tokenRetentionDays := time.Duration(int64(config.GetExpiredApiTokenRetentionDurationDays()))
+	expirationThreshold := time.Now().Add(-tokenRetentionDays * 24 * time.Hour)
+	batch := make([]string, 0, apiTokenBatchSize)
+	g.apiTokens.Walk(pruningCtx, func(obj *storage.TokenMetadata) error {
+		tokenExpiration := pgutils.NilOrTime(obj.Expiration)
+		if tokenExpiration == nil {
+			return nil
+		}
+		if expirationThreshold.Before(*tokenExpiration) {
+			// The token has not yet expired or not expired long enough yet
+			return nil
+		}
+		batch = append(batch, obj.GetId())
+		if len(batch) >= apiTokenBatchSize {
+			removalErr := g.apiTokens.DeleteTokens(pruningCtx, batch)
+			if removalErr != nil {
+				return removalErr
+			}
+			batch = batch[:0]
+		}
+		return nil
+	})
 }
 
 func (g *garbageCollectorImpl) Stop() {
