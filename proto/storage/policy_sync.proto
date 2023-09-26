@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "gogoproto/gogo.proto";
+
+package storage;
+
+message PolicySync {
+    string name                  = 1;
+    message Registry {
+        string hostname          = 1;
+        string repository        = 2;
+    }
+    repeated Registry registries = 2;
+}

@@ -76,6 +76,7 @@ func init() {
 		&storage.Policy{}:                                       resources.WorkflowAdministration,
 		&storage.PolicyCategory{}:                               resources.WorkflowAdministration,
 		&storage.PolicyCategoryEdge{}:                           resources.WorkflowAdministration,
+		&storage.PolicySync{}:                                   resources.WorkflowAdministration,
 		&storage.ProcessBaselineResults{}:                       resources.DeploymentExtension,
 		&storage.ProcessBaseline{}:                              resources.DeploymentExtension,
 		&storage.ProcessIndicator{}:                             resources.DeploymentExtension,

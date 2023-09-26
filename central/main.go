@@ -102,6 +102,8 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
+	policySyncService "github.com/stackrox/rox/central/policysync/service"
+	policySyncer "github.com/stackrox/rox/central/policysync/sync"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
@@ -417,6 +419,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		collectionService.Singleton(),
 		policyCategoryService.Singleton(),
 		processListeningOnPorts.Singleton(),
+		policySyncService.Singleton(),
 	}
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
@@ -858,6 +861,7 @@ func waitForTerminationSignal() {
 		{productUsageInjector.Singleton(), "product usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
+		{policySyncer.Singleton(), "policy syncer"},
 	}
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
