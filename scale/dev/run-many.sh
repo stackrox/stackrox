@@ -8,12 +8,12 @@ if [[ -z "$1" ]]; then
 fi
 
 if ! kubectl -n stackrox get deploy/central; then
-  $DIR/launch_central.sh
+  "$DIR"/launch_central.sh
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
 else
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
   killpf 8000
-  ./port-forward.sh 8000
+  "$DIR"/port-forward.sh 8000
   sleep 5 # Allow port-forwards to initialize
 fi
 echo "Set retention settings"
@@ -23,5 +23,5 @@ for i in $(seq 1 $2); do
   namespace="stackrox$i"
   kubectl get ns $namespace && kubectl delete ns $namespace
   kubectl create ns $namespace
-  ./launch_sensor.sh $1 $namespace
+  "$DIR"/launch_sensor.sh $1 $namespace
 done
