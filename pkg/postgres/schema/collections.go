@@ -55,6 +55,7 @@ type Collections struct {
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	UpdatedByName string `gorm:"column:updatedby_name;type:varchar"`
 	Serialized    []byte `gorm:"column:serialized;type:bytea"`
+	TenantId      string `gorm:"column:tenant_id;type:varchar"`
 }
 
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
@@ -64,4 +65,5 @@ type CollectionsEmbeddedCollections struct {
 	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
+	TenantId            string      `gorm:"column:tenant_id;type:varchar"`
 }

@@ -49,4 +49,5 @@ type SecuredUnits struct {
 	NumNodes    int64      `gorm:"column:numnodes;type:bigint"`
 	NumCPUUnits int64      `gorm:"column:numcpuunits;type:bigint"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+	TenantId    string     `gorm:"column:tenant_id;type:varchar"`
 }

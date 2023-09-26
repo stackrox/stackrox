@@ -49,4 +49,5 @@ type Risks struct {
 	SubjectType      storage.RiskSubjectType `gorm:"column:subject_type;type:integer"`
 	Score            float32                 `gorm:"column:score;type:numeric"`
 	Serialized       []byte                  `gorm:"column:serialized;type:bytea"`
+	TenantId         string                  `gorm:"column:tenant_id;type:varchar"`
 }

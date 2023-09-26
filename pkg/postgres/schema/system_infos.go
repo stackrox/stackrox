@@ -40,4 +40,5 @@ const (
 type SystemInfos struct {
 	BackupInfoRequestorName string `gorm:"column:backupinfo_requestor_name;type:varchar"`
 	Serialized              []byte `gorm:"column:serialized;type:bytea"`
+	TenantId                string `gorm:"column:tenant_id;type:varchar"`
 }

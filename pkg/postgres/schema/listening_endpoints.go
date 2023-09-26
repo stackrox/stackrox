@@ -59,4 +59,5 @@ type ListeningEndpoints struct {
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
 	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
+	TenantId           string             `gorm:"column:tenant_id;type:varchar"`
 }
