@@ -503,7 +503,7 @@ var (
 
 	pattern_APITokenService_RevokeToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "apitokens", "revoke", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_APITokenService_GetAllowedTokenRoles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "apitokens", "allowed-roles"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_APITokenService_GetAllowedTokenRoles_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "apitokens", "generate", "allowed-roles"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (

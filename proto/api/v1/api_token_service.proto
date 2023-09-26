@@ -72,7 +72,7 @@ service APITokenService {
     // GetAllowedTokenRoles return roles that user is allowed to request for API token.
     rpc GetAllowedTokenRoles (Empty) returns (GetAllowedTokenRolesResponse) {
         option (google.api.http) = {
-            get: "/v1/apitokens/allowed-roles"
+            get: "/v1/apitokens/generate/allowed-roles"
         };
     }
 }

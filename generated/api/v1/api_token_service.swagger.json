@@ -42,29 +42,6 @@
         ]
       }
     },
-    "/v1/apitokens/allowed-roles": {
-      "get": {
-        "summary": "GetAllowedTokenRoles return roles that user is allowed to request for API token.",
-        "operationId": "APITokenService_GetAllowedTokenRoles",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetAllowedTokenRolesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "tags": [
-          "APITokenService"
-        ]
-      }
-    },
     "/v1/apitokens/generate": {
       "post": {
         "summary": "GenerateToken generates API token for a given user and role.",
@@ -93,6 +70,29 @@
             }
           }
         ],
+        "tags": [
+          "APITokenService"
+        ]
+      }
+    },
+    "/v1/apitokens/generate/allowed-roles": {
+      "get": {
+        "summary": "GetAllowedTokenRoles return roles that user is allowed to request for API token.",
+        "operationId": "APITokenService_GetAllowedTokenRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAllowedTokenRolesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
         "tags": [
           "APITokenService"
         ]
