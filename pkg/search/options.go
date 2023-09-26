@@ -341,9 +341,10 @@ var (
 	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Event fields.
-	EventDomain = newFieldLabel("Event Domain")
-	EventType   = newFieldLabel("Event Type")
-	EventLevel  = newFieldLabel("Event Level")
+	EventDomain     = newFieldLabel("Event Domain")
+	EventType       = newFieldLabel("Event Type")
+	EventLevel      = newFieldLabel("Event Level")
+	EventOccurrence = newFieldLabel("Event Occurrence")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
