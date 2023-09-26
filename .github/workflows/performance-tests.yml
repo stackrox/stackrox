@@ -1,7 +1,9 @@
 name: Performance tests
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+    - hack2023/k6-ci-pipeline-tests
 jobs:
   run-parameters:
     name: Run parameters
