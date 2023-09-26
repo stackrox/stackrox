@@ -95,6 +95,11 @@ jobs:
           name: html-report
           path: report.html
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: json-report
+          path: report.json
+
       # #######################################
       # # Scale cluster with generic workload #
       # #######################################
