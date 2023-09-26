@@ -53,9 +53,9 @@ class BuiltinPoliciesTest extends BaseSpecification {
                     .addVolume(new Volume(name: "crio-sock",
                             hostPath: "/run/crio/crio.sock",
                             mountPath: "/run/crio/crio.sock")),
-            //new Deployment()
-            //        .setName(TRIGGER_UNSCANNED)
-            //        .setImage("non-existent:image"),
+            new Deployment()
+                   .setName(TRIGGER_UNSCANNED)
+                   .setImage("non-existent:image"),
     ]
 
     @Shared
@@ -132,7 +132,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Curl in Image"                                              | TRIGGER_MOST
         "Emergency Deployment Annotation"                            | TRIGGER_MOST
         "Fixable CVSS >= 6 and Privileged"                           | TRIGGER_MOST
-        // "Images with no scans"                                       | TRIGGER_UNSCANNED
+        "Images with no scans"                                       | TRIGGER_UNSCANNED
         // "Improper Usage of Orchestrator Secrets Volume"          | TRIGGER_MOST  // ROX-5098 does not trigger
         "Insecure specified in CMD"                                  | TRIGGER_MOST
         "iptables Execution"                                         | TRIGGER_MOST
