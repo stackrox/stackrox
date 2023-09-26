@@ -12,6 +12,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/detection/alertmanager"
+	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/lifecycle/metrics"
 	"github.com/stackrox/rox/central/detection/runtime"
@@ -55,10 +56,13 @@ type processBaselineKey struct {
 }
 
 type managerImpl struct {
-	reprocessor        reprocessor.Loop
+	reprocessor reprocessor.Loop
+
+	buildTimeDetector  buildtime.Detector
 	runtimeDetector    runtime.Detector
-	deploytimeDetector deploytime.Detector
-	alertManager       alertmanager.AlertManager
+	deployTimeDetector deploytime.Detector
+
+	alertManager alertmanager.AlertManager
 
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
@@ -384,12 +388,20 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
 	// Add policy to set.
+	if policies.AppliesAtBuildTime(policy) {
+		if err := m.buildTimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
+			return errors.Wrapf(err, "adding policy %s to build time detector", policy.GetName())
+		}
+	} else {
+		m.buildTimeDetector.PolicySet().RemovePolicy(policy.GetId())
+	}
+
 	if policies.AppliesAtDeployTime(policy) {
-		if err := m.deploytimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
+		if err := m.deployTimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
 			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
 	} else {
-		m.deploytimeDetector.PolicySet().RemovePolicy(policy.GetId())
+		m.deployTimeDetector.PolicySet().RemovePolicy(policy.GetId())
 	}
 
 	if policies.AppliesAtRunTime(policy) {
@@ -433,7 +445,9 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()
 
-	m.deploytimeDetector.PolicySet().RemovePolicy(policyID)
+	m.buildTimeDetector.PolicySet().RemovePolicy(policyID)
+
+	m.deployTimeDetector.PolicySet().RemovePolicy(policyID)
 
 	numRuntimePolicies := len(m.runtimeDetector.PolicySet().GetCompiledPolicies())
 	m.runtimeDetector.PolicySet().RemovePolicy(policyID)
