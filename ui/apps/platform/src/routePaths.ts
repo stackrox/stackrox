@@ -173,16 +173,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
         featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
-        resourceAccessRequirements: everyResource(['Administration', 'Integration']),
+        resourceAccessRequirements: someResource(['Administration', 'Integration']),
     },
     clusters: {
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     collections: {
-        resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
+        resourceAccessRequirements: someResource(['Deployment', 'WorkflowAdministration']),
     },
     compliance: {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'Alert', // for Deployment
             'Cluster',
             'Compliance',
@@ -203,7 +203,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'Alert',
             'Cluster',
             'Compliance',
@@ -230,13 +230,13 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Integration']),
     },
     'listening-endpoints': {
-        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
+        resourceAccessRequirements: someResource(['Deployment', 'DeploymentExtension']),
     },
     'network-graph': {
-        resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
+        resourceAccessRequirements: someResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'policy-management': {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'Deployment',
             'Image',
             'Integration',
@@ -244,10 +244,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     risk: {
-        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
+        resourceAccessRequirements: someResource(['Deployment', 'DeploymentExtension']),
     },
     search: {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'Alert', // ALERTS
             'Cluster', // CLUSTERS
             'Deployment', // DEPLOYMENTS
@@ -285,13 +285,13 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/risk-acceptance': {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'VulnerabilityManagementApprovals',
             'VulnerabilityManagementRequests',
         ]),
     },
     'vulnerability-management': {
-        resourceAccessRequirements: everyResource([
+        resourceAccessRequirements: someResource([
             'Alert', // for Cluster and Deployment and Namespace
             'Cluster',
             'Deployment',
@@ -304,7 +304,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'workload-cves': {
         featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
-        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
+        resourceAccessRequirements: someResource(['Deployment', 'Image', 'WatchedImage']),
     },
 };
 
