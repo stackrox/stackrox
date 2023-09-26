@@ -39,6 +39,7 @@ type DataStore interface {
 	UpsertAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) error
 	RemoveAccessScope(ctx context.Context, id string) error
 
+	GetAllResolvedRoles(ctx context.Context) ([]permissions.ResolvedRole, error)
 	GetAndResolveRole(ctx context.Context, name string) (permissions.ResolvedRole, error)
 	UpsertRole(ctx context.Context, role *storage.Role) error
 }

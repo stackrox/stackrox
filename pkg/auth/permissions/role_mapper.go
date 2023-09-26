@@ -19,6 +19,7 @@ type UserDescriptor struct {
 // RoleStore defines an object that provides looking up roles.
 type RoleStore interface {
 	GetAndResolveRole(ctx context.Context, name string) (ResolvedRole, error)
+	GetAllResolvedRoles(ctx context.Context) ([]ResolvedRole, error)
 }
 
 // RoleMapperFactory provides an interface for generating a role mapper for an auth provider.

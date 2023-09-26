@@ -664,6 +664,42 @@ func (ds *dataStoreImpl) GetAndResolveRole(ctx context.Context, name string) (pe
 	return resolvedRole, nil
 }
 
+func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions.ResolvedRole, error) {
+	roles, err := ds.GetAllRoles(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list all roles")
+	}
+	permissionSets, err := ds.GetAllPermissionSets(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list all permission sets")
+	}
+	accessScopes, err := ds.GetAllAccessScopes(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list all access scopes")
+	}
+	result := make([]permissions.ResolvedRole, len(roles))
+	for _, role := range roles {
+		resolvedRole := &resolvedRoleImpl{
+			role: role,
+		}
+		for _, ps := range permissionSets {
+			if ps.GetId() == role.GetPermissionSetId() {
+				resolvedRole.permissionSet = ps
+			}
+		}
+		for _, as := range accessScopes {
+			if as.GetId() == role.GetAccessScopeId() {
+				resolvedRole.accessScope = as
+			}
+		}
+		if resolvedRole.accessScope == nil || resolvedRole.permissionSet == nil {
+			return nil, errors.Wrapf(errox.InvariantViolation, "no access scope or permission set found for role %s", role.GetName())
+		}
+		result = append(result, resolvedRole)
+	}
+	return result, nil
+}
+
 func verifyAccessScopeOrigin(ctx context.Context, as *storage.SimpleAccessScope) error {
 	if !declarativeconfig.CanModifyResource(ctx, as) {
 		return errors.Wrapf(errox.NotAuthorized, "access scope %q's origin is %s, cannot be modified or deleted with the current permission",

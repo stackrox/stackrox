@@ -117,6 +117,26 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}, nil
 }
 
+func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.GetAllowedTokenRolesResponse, error) {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	allRoles, err := s.roles.GetAllResolvedRoles(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch all roles")
+	}
+	var result []string
+	for _, role := range allRoles {
+		if err := verifyNoPrivilegeEscalation(id.Roles(), []permissions.ResolvedRole{role}); err == nil {
+			result = append(result, role.GetRoleName())
+		}
+	}
+	return &v1.GetAllowedTokenRolesResponse{
+		Roles: result,
+	}, nil
+}
+
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterAPITokenServiceServer(grpcServer, s)
 }
