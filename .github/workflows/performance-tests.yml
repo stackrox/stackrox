@@ -29,6 +29,9 @@ jobs:
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       # TODO: Wait for image built in PR!
 
       # Create cluster
@@ -63,12 +66,7 @@ jobs:
           echo "HOST=$(cat artifacts/url)" >> "$GITHUB_ENV"
           echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
 
-          echo "Host env is ${HOST}"
-
       # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
         with:
