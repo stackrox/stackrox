@@ -151,7 +151,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require oras.land/oras-go/v2 v2.3.0
+require (
+	github.com/opencontainers/image-spec v1.1.0-rc4
+	oras.land/oras-go/v2 v2.3.0
+)
 
 require (
 	cloud.google.com/go v0.110.6 // indirect
@@ -316,7 +319,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc4 // indirect
 	github.com/opencontainers/runc v1.1.5 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0-rc.1 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
