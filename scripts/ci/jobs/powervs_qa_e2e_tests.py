@@ -5,6 +5,7 @@ Run qa-tests-backend in a IBM CLOUD POWERVS Openshift cluster provided via autom
 """
 import os
 from base_qa_e2e_test import make_qa_e2e_test_runner_custom
+from base_qa_e2e_test import make_qa_e2e_test_runner_midstream
 from clusters import AutomationFlavorsCluster
 
 # set required test parameters
