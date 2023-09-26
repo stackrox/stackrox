@@ -29,6 +29,8 @@ jobs:
       KUBECONFIG: artifacts/kubeconfig
       INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+      TERM: xterm
+      DEFAULT_IMAGE_REGISTRY: "quay.io/rhacs-eng"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -133,7 +135,6 @@ jobs:
       - name: Launch central services
         env:
           # TODO: use PR tag!
-          MAIN_IMAGE_REPO: "quay.io/rhacs-eng/main"
           MAIN_IMAGE_TAG: "4.2.0"
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
@@ -145,11 +146,11 @@ jobs:
 
           # Required for k6 tests to run.
           echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
       # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
         env:
-          MAIN_IMAGE_REPO: "quay.io/rhacs-eng/main"
           MAIN_IMAGE_TAG: "4.2.0"
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
