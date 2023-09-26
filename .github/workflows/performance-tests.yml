@@ -1,0 +1,78 @@
+name: Performance tests
+on:
+  workflow_dispatch:
+
+jobs:
+  run-parameters:
+    name: Run parameters
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          {
+            echo "Event: ${{ github.event_name }}"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo '```'
+              echo "${{ toJSON(inputs) }}"
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  run-k6-performance-tests:
+    name: Run k6 performance tests
+    runs-on: ubuntu-latest
+    env:
+      # TODO: dynamic name should be used
+      NAME: k6-test
+      KUBECONFIG: artifacts/kubeconfig
+      INFRA_TOKEN: ${{secrets.INFRA_TOKEN}}
+      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+    steps:
+      # TODO: Wait for image built in PR!
+
+      # Create cluster
+      - uses: stackrox/actions/infra/create-cluster@main
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: demo
+          name: k6-test
+          lifespan: 24h
+#          args: main-image=quay.io/rhacs-eng/main:4.2.0
+          wait: "true"
+
+      # Fetch artifacts
+      - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: "google-github-actions/auth@v1"
+        with:
+          # TODO: Add new service account
+          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+      - name: Download artifacts
+        id: artifacts
+        run: |
+          infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+
+          # Debug if we can access cluster and if central is running.
+          kubectl get pods --namespace stackrox
+
+          # Required for k6 tests to run.
+          echo "HOST=$(cat artifacts/url)" >> "$GITHUB_ENV"
+          echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
+
+          echo "Host env is ${HOST}"
+
+      # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run local k6 test
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: tests/performance/tests/testK6Integration.js
+          flags: --out json=results.json
+
+      - name: Output results
+        run: |
+          cat results.json
