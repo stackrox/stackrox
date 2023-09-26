@@ -15,7 +15,7 @@ var (
 )
 
 // Queue provides a queue for type T.
-// The queue will allow to push, pull, and pull blocking of items.
+// The queue allows to push, pull, and blocking pull.
 // Additionally, it exposes safety guards such as a max size as well as metrics to track the queue growth and size.
 type Queue[T comparable] struct {
 	maxSize        int
