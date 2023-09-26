@@ -14,7 +14,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Queue provides a queue for type T.
+// Queue provides a thread-safe queue for type T.
 // The queue allows to push, pull, and blocking pull.
 // Additionally, it exposes safety guards such as a max size as well as metrics to track the queue growth and size.
 type Queue[T comparable] struct {
