@@ -148,6 +148,8 @@ jobs:
 
       # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
+        env:
+          API_ENDPOINT: 'localhost:8000'
         run: |
           source "${{ github.workspace }}"/workflow/env.sh
           "${{ github.workspace }}"/scale/dev/run-many.sh default 3
