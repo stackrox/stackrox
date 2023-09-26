@@ -105,9 +105,10 @@ func insertIntoTestGrandparents(ctx context.Context, batch *pgx.Batch, obj *stor
 		obj.GetPriority(),
 		obj.GetRiskScore(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO test_grandparents (Id, Val, Priority, RiskScore, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_grandparents (Id, Val, Priority, RiskScore, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -187,6 +188,12 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"priority",
 		"riskscore",
 		"serialized",
+		"tenant_id",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -206,6 +213,7 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 			obj.GetPriority(),
 			obj.GetRiskScore(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.
@@ -248,6 +256,11 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 		"test_grandparents_id",
 		"idx",
 		"val",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -294,6 +307,11 @@ func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.
 		"test_grandparents_embeddeds_idx",
 		"idx",
 		"val",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {

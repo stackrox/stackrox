@@ -160,6 +160,11 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		"tenant_id",
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
@@ -219,6 +224,11 @@ func copyFromComplianceOperatorScanV2Profiles(ctx context.Context, s pgSearch.De
 		"compliance_operator_scan_v2_id",
 		"idx",
 		"profileid",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {

@@ -105,9 +105,10 @@ func insertIntoTestParent1(ctx context.Context, batch *pgx.Batch, obj *storage.T
 		obj.GetVal(),
 		obj.GetStringSlice(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO test_parent1 (Id, ParentId, Val, StringSlice, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, StringSlice = EXCLUDED.StringSlice, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_parent1 (Id, ParentId, Val, StringSlice, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, Val = EXCLUDED.Val, StringSlice = EXCLUDED.StringSlice, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -156,6 +157,12 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"val",
 		"stringslice",
 		"serialized",
+		"tenant_id",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -175,6 +182,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetVal(),
 			obj.GetStringSlice(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.
@@ -217,6 +225,11 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 		"test_parent1_id",
 		"idx",
 		"childid",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {

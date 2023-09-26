@@ -104,9 +104,10 @@ func insertIntoTestShortCircuits(ctx context.Context, batch *pgx.Batch, obj *sto
 		obj.GetChildId(),
 		obj.GetG2GrandchildId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO test_short_circuits (Id, ChildId, G2GrandchildId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ChildId = EXCLUDED.ChildId, G2GrandchildId = EXCLUDED.G2GrandchildId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_short_circuits (Id, ChildId, G2GrandchildId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ChildId = EXCLUDED.ChildId, G2GrandchildId = EXCLUDED.G2GrandchildId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -124,6 +125,12 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 		"childid",
 		"g2grandchildid",
 		"serialized",
+		"tenant_id",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -142,6 +149,7 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetChildId(),
 			obj.GetG2GrandchildId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

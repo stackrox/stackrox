@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -55,12 +56,18 @@ func insertIntoDelegatedRegistryConfigs(ctx context.Context, tx *postgres.Tx, ob
 		return marshalErr
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	values := []interface{}{
 		// parent primary keys start
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO delegated_registry_configs (serialized) VALUES($1)"
+	finalStr := "INSERT INTO delegated_registry_configs (serialized, tenant_id) VALUES($1, $2)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err

@@ -50,5 +50,6 @@ type TestG2GrandChild1 struct {
 	ChildID             string           `gorm:"column:childid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	TenantID            string           `gorm:"column:tenant_id;type:varchar"`
 	TestGGrandChild1Ref TestGGrandChild1 `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -381,6 +381,11 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"tenant_id",
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
@@ -471,6 +476,11 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		"resources_memorymblimit",
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
@@ -537,6 +547,11 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 		"envvarsource",
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
@@ -580,6 +595,11 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 		"destination",
 		"readonly",
 		"type",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -626,6 +646,11 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 		"path",
 	}
 
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
+	}
+
 	for idx, obj := range objs {
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
@@ -665,6 +690,11 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"containerport",
 		"protocol",
 		"exposure",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -718,6 +748,11 @@ func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Delet
 		"nodeport",
 		"externalips",
 		"externalhostnames",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {

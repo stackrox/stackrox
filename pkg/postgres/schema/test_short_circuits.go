@@ -56,4 +56,5 @@ type TestShortCircuits struct {
 	ChildID        string `gorm:"column:childid;type:varchar"`
 	G2GrandchildID string `gorm:"column:g2grandchildid;type:varchar"`
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
+	TenantID       string `gorm:"column:tenant_id;type:varchar"`
 }

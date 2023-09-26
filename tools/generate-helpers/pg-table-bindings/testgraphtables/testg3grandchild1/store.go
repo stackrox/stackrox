@@ -103,9 +103,10 @@ func insertIntoTestG3GrandChild1(ctx context.Context, batch *pgx.Batch, obj *sto
 		obj.GetId(),
 		obj.GetVal(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO test_g3_grand_child1 (Id, Val, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_g3_grand_child1 (Id, Val, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -122,6 +123,12 @@ func copyFromTestG3GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *post
 		"id",
 		"val",
 		"serialized",
+		"tenant_id",
+	}
+
+	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
+	if ctxIdentity == nil {
+		return nil
 	}
 
 	for idx, obj := range objs {
@@ -139,6 +146,7 @@ func copyFromTestG3GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetId(),
 			obj.GetVal(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

@@ -46,4 +46,5 @@ type TestGGrandChild1 struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantID   string `gorm:"column:tenant_id;type:varchar"`
 }
