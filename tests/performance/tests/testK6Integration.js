@@ -1,4 +1,5 @@
 import { jUnit, textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 
 import { getHeaderWithAdminPass } from '../src/utils.js';
 import { mainDashboard } from '../groups/mainDashboard.js';
@@ -24,5 +25,6 @@ export function handleSummary(data) {
       'report.txt': textSummary(data, { indent: '  ', enableColors: false }), // the default text output to a file
       'report.xml': jUnit(data), // JUnit output to a file
       'report.json': JSON.stringify(data), // JSON output to a file
+      'report.html': htmlReport(data), // HTML report
     };
   }
