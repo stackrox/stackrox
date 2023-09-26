@@ -534,6 +534,15 @@ func (c *aPITokenServiceClient) ListAllowedTokenRoles(ctx context.Context, in *E
 	return out, nil
 }
 
+func (c *aPITokenServiceClient) GetAllowedTokenRoles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetAllowedTokenRolesResponse, error) {
+	out := new(GetAllowedTokenRolesResponse)
+	err := c.cc.Invoke(ctx, "/v1.APITokenService/GetAllowedTokenRoles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // APITokenServiceServer is the server API for APITokenService service.
 type APITokenServiceServer interface {
 	// GetAPIToken returns API token metadata for a given id.
@@ -681,10 +690,6 @@ var _APITokenService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeToken",
 			Handler:    _APITokenService_RevokeToken_Handler,
-		},
-		{
-			MethodName: "ListAllowedTokenRoles",
-			Handler:    _APITokenService_ListAllowedTokenRoles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
