@@ -11,7 +11,7 @@ message TokenMetadata {
   // Next available tag: 8
 
   string id = 1; // @gotags: sql:"pk"
-  string name = 2;
+  string name = 2; // @gotags: search:"API Token Name" sql:"index=category:unique:name:api_tokens_unique_name"
   repeated string roles = 7;
   google.protobuf.Timestamp issued_at = 4;
   google.protobuf.Timestamp expiration = 5; // @gotags: search:"Expiration"
