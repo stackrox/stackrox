@@ -360,6 +360,11 @@ spec:
                     description: If you want this component to only run on specific
                       nodes, you can configure a node selector here.
                     type: object
+                  notifierSecretsEncryptionEnabled:
+                    description: Enables the encryption of notifier secrets stored
+                      in the Central DB. An encryption key must be provided in a secret
+                      called `central-encryption-key` in the Central namespace.
+                    type: boolean
                   persistence:
                     description: Configures how Central should store its persistent
                       data. You can choose between using a persistent volume claim

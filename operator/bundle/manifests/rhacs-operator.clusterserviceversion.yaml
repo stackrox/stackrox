@@ -130,6 +130,13 @@ spec:
         path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Enables the encryption of notifier secrets stored in the Central
+          DB. An encryption key must be provided in a secret called `central-encryption-key`
+          in the Central namespace.
+        displayName: Notifier Secrets Encryption
+        path: central.notifierSecretsEncryptionEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
           Please consult the documentation for an overview of default resource requirements
           and a sizing guide.

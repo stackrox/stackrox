@@ -105,6 +105,10 @@ spec:
             fieldRef:
               fieldPath: metadata.labels['rhacs.redhat.com/tenant']
         {{- end }}
+        {{- if ._rox.central.encryptNotifierSecrets }}
+        - name: ROX_ENCRYPT_NOTIFIER_SECRETS
+          value: "true"
+        {{- end }}
         {{- if ._rox.monitoring.openshift.enabled }}
         - name: ROX_ENABLE_SECURE_METRICS
           value: "true"
@@ -153,6 +157,10 @@ spec:
           mountPath: /run/secrets/stackrox.io/db-password
         - name: central-external-db-volume
           mountPath: /etc/ext-db
+        {{- if ._rox.central.encryptNotifierSecrets }}
+        - name: central-encryption-key
+          mountPath: /run/secrets/stackrox.io/central-encryption-key
+        {{- end }}
         {{- if ._rox.monitoring.openshift.enabled }}
         - name: monitoring-tls
           mountPath: /run/secrets/stackrox.io/monitoring-tls
@@ -225,6 +233,11 @@ spec:
         configMap:
           name: central-external-db
           optional: true
+      {{- if ._rox.central.encryptNotifierSecrets }}
+      - name: central-encryption-key
+        secret:
+          secretName: central-encryption-key
+      {{- end }}
       - name: stackrox-db
         {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
       {{- if ._rox.monitoring.openshift.enabled }}
