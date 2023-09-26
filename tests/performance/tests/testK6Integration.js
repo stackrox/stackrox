@@ -20,7 +20,8 @@ export default function main() {
 
 export function handleSummary(data) {
     return {
-      'stdout': textSummary(data, { indent: '  ', enableColors: true }), // the default stdout output
+      'stdout': textSummary(data, { indent: '  ', enableColors: true }), // the default text output to stdout
+      'report.txt': textSummary(data, { indent: '  ', enableColors: true }), // the default text output to a file
       'report.xml': jUnit(data), // JUnit output to a file
       'report.json': JSON.stringify(data), // JSON output to a file
     };

@@ -70,7 +70,7 @@ jobs:
           # Required for k6 tests to run.
           echo "HOST=$(cat artifacts/url)" >> "$GITHUB_ENV"
           echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
-          echo "::add-mask::${ROX_ADMIN_PASSWORD}"
+          echo "::add-mask::$(cat artifacts/admin-password)"
 
       # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
       - name: Run local k6 test
@@ -84,15 +84,10 @@ jobs:
         with:
           paths: report.xml
 
-      - name: Publish test report as markdown
-        uses: test-summary/action@v2
-        with:
-          paths: report.xml
-          output: report.md
-
       - name: Add report as PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message-id: performance-evaluation
-          message-path: report.json
+          message-path: |
+            report.txt
           preformatted: true
