@@ -684,7 +684,12 @@ central-db-image:
 		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
-
+ifeq ("$(CLUSTER_TYPE)","kind")
+	@echo "Loading image stackrox/central-db:$(TAG) into kind"
+	kind load docker-image stackrox/central-db:$(TAG)
+	@echo "Loading image $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG)into kind"
+	kind load docker-image $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG)
+endif
 ###########
 ## Clean ##
 ###########
