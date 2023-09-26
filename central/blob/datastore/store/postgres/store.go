@@ -105,9 +105,10 @@ func insertIntoBlobs(ctx context.Context, batch *pgx.Batch, obj *storage.Blob) e
 		obj.GetLength(),
 		pgutils.NilOrTime(obj.GetModifiedTime()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO blobs (Name, Length, ModifiedTime, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Length = EXCLUDED.Length, ModifiedTime = EXCLUDED.ModifiedTime, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO blobs (Name, Length, ModifiedTime, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Length = EXCLUDED.Length, ModifiedTime = EXCLUDED.ModifiedTime, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,7 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		"length",
 		"modifiedtime",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -143,6 +145,7 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 			obj.GetLength(),
 			pgutils.NilOrTime(obj.GetModifiedTime()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

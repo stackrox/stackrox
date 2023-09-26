@@ -105,9 +105,10 @@ func insertIntoComplianceOperatorRuleV2(ctx context.Context, batch *pgx.Batch, o
 		obj.GetRuleType(),
 		obj.GetSeverity(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, Version, RuleVersion, RuleType, Severity, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Version = EXCLUDED.Version, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_rule_v2 (Name, Version, RuleVersion, RuleType, Severity, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, Version = EXCLUDED.Version, RuleVersion = EXCLUDED.RuleVersion, RuleType = EXCLUDED.RuleType, Severity = EXCLUDED.Severity, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -127,6 +128,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 		"ruletype",
 		"severity",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -147,6 +149,7 @@ func copyFromComplianceOperatorRuleV2(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetRuleType(),
 			obj.GetSeverity(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

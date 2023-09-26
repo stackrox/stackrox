@@ -109,9 +109,10 @@ func insertIntoClusterHealthStatuses(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetScannerHealthStatus(),
 		pgutils.NilOrTime(obj.GetLastContact()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_health_statuses (Id, SensorHealthStatus, CollectorHealthStatus, OverallHealthStatus, AdmissionControlHealthStatus, ScannerHealthStatus, LastContact, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, SensorHealthStatus = EXCLUDED.SensorHealthStatus, CollectorHealthStatus = EXCLUDED.CollectorHealthStatus, OverallHealthStatus = EXCLUDED.OverallHealthStatus, AdmissionControlHealthStatus = EXCLUDED.AdmissionControlHealthStatus, ScannerHealthStatus = EXCLUDED.ScannerHealthStatus, LastContact = EXCLUDED.LastContact, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -133,6 +134,7 @@ func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *
 		"scannerhealthstatus",
 		"lastcontact",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -155,6 +157,7 @@ func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetScannerHealthStatus(),
 			pgutils.NilOrTime(obj.GetLastContact()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

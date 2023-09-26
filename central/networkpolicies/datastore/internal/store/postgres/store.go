@@ -125,9 +125,10 @@ func insertIntoNetworkpolicies(ctx context.Context, batch *pgx.Batch, obj *stora
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO networkpolicies (Id, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkpolicies (Id, ClusterId, Namespace, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -145,6 +146,7 @@ func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"clusterid",
 		"namespace",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -163,6 +165,7 @@ func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetNamespace(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

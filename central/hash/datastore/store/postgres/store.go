@@ -101,9 +101,10 @@ func insertIntoHashes(ctx context.Context, batch *pgx.Batch, obj *storage.Hash) 
 		// parent primary keys start
 		obj.GetClusterId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO hashes (ClusterId, serialized) VALUES($1, $2) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO hashes (ClusterId, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -119,6 +120,7 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 	copyCols := []string{
 		"clusterid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -135,6 +137,7 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		inputRows = append(inputRows, []interface{}{
 			obj.GetClusterId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

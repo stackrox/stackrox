@@ -106,9 +106,10 @@ func insertIntoGroups(ctx context.Context, batch *pgx.Batch, obj *storage.Group)
 		obj.GetProps().GetValue(),
 		obj.GetRoleName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO groups (Props_Id, Props_AuthProviderId, Props_Key, Props_Value, RoleName, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Props_Id) DO UPDATE SET Props_Id = EXCLUDED.Props_Id, Props_AuthProviderId = EXCLUDED.Props_AuthProviderId, Props_Key = EXCLUDED.Props_Key, Props_Value = EXCLUDED.Props_Value, RoleName = EXCLUDED.RoleName, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO groups (Props_Id, Props_AuthProviderId, Props_Key, Props_Value, RoleName, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Props_Id) DO UPDATE SET Props_Id = EXCLUDED.Props_Id, Props_AuthProviderId = EXCLUDED.Props_AuthProviderId, Props_Key = EXCLUDED.Props_Key, Props_Value = EXCLUDED.Props_Value, RoleName = EXCLUDED.RoleName, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -128,6 +129,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 		"props_value",
 		"rolename",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -148,6 +150,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			obj.GetProps().GetValue(),
 			obj.GetRoleName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

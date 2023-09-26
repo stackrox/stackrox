@@ -102,9 +102,10 @@ func insertIntoNetworkpoliciesundodeployments(ctx context.Context, batch *pgx.Ba
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized) VALUES($1, $2) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO networkpoliciesundodeployments (DeploymentId, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,6 +121,7 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 	copyCols := []string{
 		"deploymentid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -136,6 +138,7 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

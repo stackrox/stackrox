@@ -69,5 +69,6 @@ type ImageComponentCveEdges struct {
 	ImageComponentID   string          `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedges_imagecomponentid,type:hash"`
 	ImageCveID         string          `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedges_imagecveid,type:hash"`
 	Serialized         []byte          `gorm:"column:serialized;type:bytea"`
+	TenantID           string          `gorm:"column:tenant_id;type:varchar"`
 	ImageComponentsRef ImageComponents `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

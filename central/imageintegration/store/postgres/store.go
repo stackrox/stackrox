@@ -106,9 +106,10 @@ func insertIntoImageIntegrations(ctx context.Context, batch *pgx.Batch, obj *sto
 		obj.GetName(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO image_integrations (Id, Name, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_integrations (Id, Name, ClusterId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -126,6 +127,7 @@ func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *post
 		"name",
 		"clusterid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -144,6 +146,7 @@ func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *post
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

@@ -108,9 +108,10 @@ func insertIntoListeningEndpoints(ctx context.Context, batch *pgx.Batch, obj *st
 		obj.GetClosed(),
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, ProcessIndicatorId, Closed, DeploymentId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO listening_endpoints (Id, Port, Protocol, ProcessIndicatorId, Closed, DeploymentId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Port = EXCLUDED.Port, Protocol = EXCLUDED.Protocol, ProcessIndicatorId = EXCLUDED.ProcessIndicatorId, Closed = EXCLUDED.Closed, DeploymentId = EXCLUDED.DeploymentId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -131,6 +132,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 		"closed",
 		"deploymentid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -152,6 +154,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 			obj.GetClosed(),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

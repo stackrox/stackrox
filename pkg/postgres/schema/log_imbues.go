@@ -42,4 +42,5 @@ type LogImbues struct {
 	ID         string     `gorm:"column:id;type:varchar;primaryKey"`
 	Timestamp  *time.Time `gorm:"column:timestamp;type:timestamp"`
 	Serialized []byte     `gorm:"column:serialized;type:bytea"`
+	TenantID   string     `gorm:"column:tenant_id;type:varchar"`
 }

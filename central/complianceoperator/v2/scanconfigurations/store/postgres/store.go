@@ -106,9 +106,10 @@ func insertIntoComplianceOperatorScanConfigurationV2(ctx context.Context, batch 
 		obj.GetScanName(),
 		obj.GetModifiedBy().GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanName, ModifiedBy_Name, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanName = EXCLUDED.ScanName, ModifiedBy_Name = EXCLUDED.ModifiedBy_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanName, ModifiedBy_Name, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanName = EXCLUDED.ScanName, ModifiedBy_Name = EXCLUDED.ModifiedBy_Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -156,6 +157,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 		"scanname",
 		"modifiedby_name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -174,6 +176,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 			obj.GetScanName(),
 			obj.GetModifiedBy().GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

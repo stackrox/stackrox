@@ -106,9 +106,10 @@ func insertIntoTestChild2(ctx context.Context, batch *pgx.Batch, obj *storage.Te
 		obj.GetGrandparentId(),
 		obj.GetVal(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO test_child2 (Id, ParentId, GrandparentId, Val, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, GrandparentId = EXCLUDED.GrandparentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO test_child2 (Id, ParentId, GrandparentId, Val, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ParentId = EXCLUDED.ParentId, GrandparentId = EXCLUDED.GrandparentId, Val = EXCLUDED.Val, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -127,6 +128,7 @@ func copyFromTestChild2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		"grandparentid",
 		"val",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -146,6 +148,7 @@ func copyFromTestChild2(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 			obj.GetGrandparentId(),
 			obj.GetVal(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

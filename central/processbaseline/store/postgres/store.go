@@ -126,9 +126,10 @@ func insertIntoProcessBaselines(ctx context.Context, batch *pgx.Batch, obj *stor
 		pgutils.NilOrUUID(obj.GetKey().GetClusterId()),
 		obj.GetKey().GetNamespace(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO process_baselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_baselines (Id, Key_DeploymentId, Key_ClusterId, Key_Namespace, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Key_DeploymentId = EXCLUDED.Key_DeploymentId, Key_ClusterId = EXCLUDED.Key_ClusterId, Key_Namespace = EXCLUDED.Key_Namespace, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -147,6 +148,7 @@ func copyFromProcessBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"key_clusterid",
 		"key_namespace",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -166,6 +168,7 @@ func copyFromProcessBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 			pgutils.NilOrUUID(obj.GetKey().GetClusterId()),
 			obj.GetKey().GetNamespace(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

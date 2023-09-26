@@ -104,9 +104,10 @@ func insertIntoLogImbues(ctx context.Context, batch *pgx.Batch, obj *storage.Log
 		obj.GetId(),
 		pgutils.NilOrTime(obj.GetTimestamp()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO log_imbues (Id, Timestamp, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO log_imbues (Id, Timestamp, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -123,6 +124,7 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		"id",
 		"timestamp",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -140,6 +142,7 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 			obj.GetId(),
 			pgutils.NilOrTime(obj.GetTimestamp()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

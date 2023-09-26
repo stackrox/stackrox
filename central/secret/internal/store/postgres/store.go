@@ -128,9 +128,10 @@ func insertIntoSecrets(ctx context.Context, batch *pgx.Batch, obj *storage.Secre
 		obj.GetNamespace(),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO secrets (Id, Name, ClusterId, ClusterName, Namespace, CreatedAt, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Namespace = EXCLUDED.Namespace, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -213,6 +214,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 		"namespace",
 		"createdat",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -234,6 +236,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 			obj.GetNamespace(),
 			pgutils.NilOrTime(obj.GetCreatedAt()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

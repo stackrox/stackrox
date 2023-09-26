@@ -102,9 +102,10 @@ func insertIntoSignatureIntegrations(ctx context.Context, batch *pgx.Batch, obj 
 		obj.GetId(),
 		obj.GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO signature_integrations (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO signature_integrations (Id, Name, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -121,6 +122,7 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 		"id",
 		"name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -138,6 +140,7 @@ func copyFromSignatureIntegrations(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetId(),
 			obj.GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

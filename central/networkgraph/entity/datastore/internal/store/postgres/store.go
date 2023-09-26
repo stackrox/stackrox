@@ -102,9 +102,10 @@ func insertIntoNetworkEntities(ctx context.Context, batch *pgx.Batch, obj *stora
 		obj.GetInfo().GetId(),
 		obj.GetInfo().GetExternalSource().GetDefault(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -121,6 +122,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"info_id",
 		"info_externalsource_default",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -138,6 +140,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetInfo().GetId(),
 			obj.GetInfo().GetExternalSource().GetDefault(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

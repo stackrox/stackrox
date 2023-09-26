@@ -126,9 +126,10 @@ func insertIntoComplianceRunResults(ctx context.Context, batch *pgx.Batch, obj *
 		pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
 		pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_run_results (RunMetadata_RunId, RunMetadata_StandardId, RunMetadata_ClusterId, RunMetadata_FinishTimestamp, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(RunMetadata_RunId) DO UPDATE SET RunMetadata_RunId = EXCLUDED.RunMetadata_RunId, RunMetadata_StandardId = EXCLUDED.RunMetadata_StandardId, RunMetadata_ClusterId = EXCLUDED.RunMetadata_ClusterId, RunMetadata_FinishTimestamp = EXCLUDED.RunMetadata_FinishTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_run_results (RunMetadata_RunId, RunMetadata_StandardId, RunMetadata_ClusterId, RunMetadata_FinishTimestamp, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(RunMetadata_RunId) DO UPDATE SET RunMetadata_RunId = EXCLUDED.RunMetadata_RunId, RunMetadata_StandardId = EXCLUDED.RunMetadata_StandardId, RunMetadata_ClusterId = EXCLUDED.RunMetadata_ClusterId, RunMetadata_FinishTimestamp = EXCLUDED.RunMetadata_FinishTimestamp, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -147,6 +148,7 @@ func copyFromComplianceRunResults(ctx context.Context, s pgSearch.Deleter, tx *p
 		"runmetadata_clusterid",
 		"runmetadata_finishtimestamp",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -166,6 +168,7 @@ func copyFromComplianceRunResults(ctx context.Context, s pgSearch.Deleter, tx *p
 			pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),
 			pgutils.NilOrTime(obj.GetRunMetadata().GetFinishTimestamp()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

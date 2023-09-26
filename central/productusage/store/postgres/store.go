@@ -106,9 +106,10 @@ func insertIntoSecuredUnits(ctx context.Context, batch *pgx.Batch, obj *storage.
 		obj.GetNumNodes(),
 		obj.GetNumCpuUnits(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO secured_units (Id, Timestamp, NumNodes, NumCpuUnits, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, NumNodes = EXCLUDED.NumNodes, NumCpuUnits = EXCLUDED.NumCpuUnits, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO secured_units (Id, Timestamp, NumNodes, NumCpuUnits, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Timestamp = EXCLUDED.Timestamp, NumNodes = EXCLUDED.NumNodes, NumCpuUnits = EXCLUDED.NumCpuUnits, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -127,6 +128,7 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		"numnodes",
 		"numcpuunits",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -146,6 +148,7 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			obj.GetNumNodes(),
 			obj.GetNumCpuUnits(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

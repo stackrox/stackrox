@@ -127,9 +127,10 @@ func insertIntoPods(ctx context.Context, batch *pgx.Batch, obj *storage.Pod) err
 		obj.GetNamespace(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO pods (Id, Name, DeploymentId, Namespace, ClusterId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, DeploymentId = EXCLUDED.DeploymentId, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -179,6 +180,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 		"namespace",
 		"clusterid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -199,6 +201,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 			obj.GetNamespace(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

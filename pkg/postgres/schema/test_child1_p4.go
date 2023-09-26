@@ -58,5 +58,6 @@ type TestChild1P4 struct {
 	ParentID       string      `gorm:"column:parentid;type:uuid"`
 	Val            string      `gorm:"column:val;type:varchar"`
 	Serialized     []byte      `gorm:"column:serialized;type:bytea"`
+	TenantID       string      `gorm:"column:tenant_id;type:varchar"`
 	TestParent4Ref TestParent4 `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

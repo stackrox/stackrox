@@ -56,4 +56,5 @@ type ComplianceOperatorClusterScanConfigStatuses struct {
 	ClusterID  string `gorm:"column:clusterid;type:uuid;primaryKey"`
 	ScanID     string `gorm:"column:scanid;type:varchar"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantID   string `gorm:"column:tenant_id;type:varchar"`
 }

@@ -103,9 +103,10 @@ func insertIntoNotifiers(ctx context.Context, batch *pgx.Batch, obj *storage.Not
 		obj.GetId(),
 		obj.GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO notifiers (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO notifiers (Id, Name, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -122,6 +123,7 @@ func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		"id",
 		"name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -139,6 +141,7 @@ func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 			obj.GetId(),
 			obj.GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

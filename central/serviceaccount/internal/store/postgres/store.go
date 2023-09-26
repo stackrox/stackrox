@@ -129,9 +129,10 @@ func insertIntoServiceAccounts(ctx context.Context, batch *pgx.Batch, obj *stora
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO service_accounts (Id, Name, Namespace, ClusterName, ClusterId, Labels, Annotations, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterName = EXCLUDED.ClusterName, ClusterId = EXCLUDED.ClusterId, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -153,6 +154,7 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"labels",
 		"annotations",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -175,6 +177,7 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

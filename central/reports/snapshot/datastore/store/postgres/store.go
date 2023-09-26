@@ -112,9 +112,10 @@ func insertIntoReportSnapshots(ctx context.Context, batch *pgx.Batch, obj *stora
 		obj.GetRequester().GetId(),
 		obj.GetRequester().GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -139,6 +140,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"requester_id",
 		"requester_name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -164,6 +166,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetRequester().GetId(),
 			obj.GetRequester().GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

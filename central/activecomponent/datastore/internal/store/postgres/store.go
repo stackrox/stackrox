@@ -105,9 +105,10 @@ func insertIntoActiveComponents(ctx context.Context, batch *pgx.Batch, obj *stor
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		obj.GetComponentId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO active_components (Id, DeploymentId, ComponentId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ComponentId = EXCLUDED.ComponentId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO active_components (Id, DeploymentId, ComponentId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, DeploymentId = EXCLUDED.DeploymentId, ComponentId = EXCLUDED.ComponentId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -156,6 +157,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"deploymentid",
 		"componentid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -174,6 +176,7 @@ func copyFromActiveComponents(ctx context.Context, s pgSearch.Deleter, tx *postg
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			obj.GetComponentId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

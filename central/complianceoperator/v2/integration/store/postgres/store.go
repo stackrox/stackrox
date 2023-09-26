@@ -108,9 +108,10 @@ func insertIntoComplianceIntegrations(ctx context.Context, batch *pgx.Batch, obj
 		obj.GetNamespace(),
 		pgutils.NilOrUUID(obj.GetNamespaceId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, Namespace, NamespaceId, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_integrations (Id, Version, ClusterId, Namespace, NamespaceId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Version = EXCLUDED.Version, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -130,6 +131,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 		"namespace",
 		"namespaceid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -150,6 +152,7 @@ func copyFromComplianceIntegrations(ctx context.Context, s pgSearch.Deleter, tx 
 			obj.GetNamespace(),
 			pgutils.NilOrUUID(obj.GetNamespaceId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

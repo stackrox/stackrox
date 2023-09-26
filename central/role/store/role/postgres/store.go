@@ -101,9 +101,10 @@ func insertIntoRoles(ctx context.Context, batch *pgx.Batch, obj *storage.Role) e
 		// parent primary keys start
 		obj.GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO roles (Name, serialized) VALUES($1, $2) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO roles (Name, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(Name) DO UPDATE SET Name = EXCLUDED.Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -119,6 +120,7 @@ func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 	copyCols := []string{
 		"name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -135,6 +137,7 @@ func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		inputRows = append(inputRows, []interface{}{
 			obj.GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

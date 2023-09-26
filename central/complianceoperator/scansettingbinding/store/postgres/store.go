@@ -101,9 +101,10 @@ func insertIntoComplianceOperatorScanSettingBindings(ctx context.Context, batch 
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_setting_bindings (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_setting_bindings (Id, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -119,6 +120,7 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 	copyCols := []string{
 		"id",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -135,6 +137,7 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

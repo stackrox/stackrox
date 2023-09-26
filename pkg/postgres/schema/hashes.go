@@ -41,4 +41,5 @@ const (
 type Hashes struct {
 	ClusterID  string `gorm:"column:clusterid;type:varchar;primaryKey"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantID   string `gorm:"column:tenant_id;type:varchar"`
 }

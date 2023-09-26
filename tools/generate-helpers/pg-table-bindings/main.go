@@ -328,6 +328,7 @@ func main() {
 			SQLType:    "varchar",
 			ModelType:  "string",
 		})
+		schema.DBColumnFields()
 		if err := renderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
 			return err
 		}

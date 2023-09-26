@@ -183,8 +183,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 {{- define "insertValues"}}{{- $schema := . -}}
 {{- range $field := $schema.DBColumnFields -}}
-    {{- if eq $field.ColumnName "tenant_id" -}}
-        ctxIdentity.TenantID()
+    {{- if eq $field.ColumnName "tenant_id" }}
+        ctxIdentity.TenantID(),
     {{- else if eq $field.DataType "datetime" }}
         pgutils.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}

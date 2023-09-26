@@ -106,9 +106,10 @@ func insertIntoComplianceOperatorScanV2(ctx context.Context, batch *pgx.Batch, o
 		obj.GetScanConfigId(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigId, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigId = EXCLUDED.ScanConfigId, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigId, ClusterId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigId = EXCLUDED.ScanConfigId, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -156,6 +157,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		"scanconfigid",
 		"clusterid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -174,6 +176,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 			obj.GetScanConfigId(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

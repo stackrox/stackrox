@@ -62,6 +62,7 @@ type ComplianceOperatorProfileV2 struct {
 	Standard    string          `gorm:"column:standard;type:varchar"`
 	Product     string          `gorm:"column:product;type:varchar"`
 	Serialized  []byte          `gorm:"column:serialized;type:bytea"`
+	TenantID    string          `gorm:"column:tenant_id;type:varchar"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.

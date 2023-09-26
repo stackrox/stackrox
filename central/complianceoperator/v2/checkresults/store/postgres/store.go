@@ -109,9 +109,10 @@ func insertIntoComplianceOperatorCheckResultV2(ctx context.Context, batch *pgx.B
 		obj.GetStandard(),
 		obj.GetScanId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, ClusterId, Status, Severity, Standard, ScanId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, ClusterId, Status, Severity, Standard, ScanId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -132,6 +133,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"standard",
 		"scanid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -153,6 +155,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetStandard(),
 			obj.GetScanId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

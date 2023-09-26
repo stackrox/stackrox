@@ -125,9 +125,10 @@ func insertIntoClusters(ctx context.Context, batch *pgx.Batch, obj *storage.Clus
 		obj.GetName(),
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO clusters (Id, Name, Labels, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Labels = EXCLUDED.Labels, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil

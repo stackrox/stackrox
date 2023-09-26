@@ -108,9 +108,10 @@ func insertIntoNodeComponents(ctx context.Context, batch *pgx.Batch, obj *storag
 		obj.GetTopCvss(),
 		obj.GetOperatingSystem(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, OperatingSystem, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_components (Id, Name, Version, Priority, RiskScore, TopCvss, OperatingSystem, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -132,6 +133,7 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		"topcvss",
 		"operatingsystem",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -154,6 +156,7 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 			obj.GetTopCvss(),
 			obj.GetOperatingSystem(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

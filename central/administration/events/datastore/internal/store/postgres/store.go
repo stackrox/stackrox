@@ -109,9 +109,10 @@ func insertIntoAdministrationEvents(ctx context.Context, batch *pgx.Batch, obj *
 		pgutils.NilOrTime(obj.GetLastOccurredAt()),
 		pgutils.NilOrTime(obj.GetCreatedAt()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, LastOccurredAt, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO administration_events (Id, Type, Level, Domain, Resource_Type, LastOccurredAt, CreatedAt, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Type = EXCLUDED.Type, Level = EXCLUDED.Level, Domain = EXCLUDED.Domain, Resource_Type = EXCLUDED.Resource_Type, LastOccurredAt = EXCLUDED.LastOccurredAt, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -133,6 +134,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		"lastoccurredat",
 		"createdat",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -155,6 +157,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 			pgutils.NilOrTime(obj.GetLastOccurredAt()),
 			pgutils.NilOrTime(obj.GetCreatedAt()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

@@ -45,4 +45,5 @@ type ComplianceOperatorRuleV2 struct {
 	RuleType    string               `gorm:"column:ruletype;type:varchar"`
 	Severity    storage.RuleSeverity `gorm:"column:severity;type:integer"`
 	Serialized  []byte               `gorm:"column:serialized;type:bytea"`
+	TenantID    string               `gorm:"column:tenant_id;type:varchar"`
 }

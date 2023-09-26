@@ -127,9 +127,10 @@ func insertIntoRisks(ctx context.Context, batch *pgx.Batch, obj *storage.Risk) e
 		obj.GetSubject().GetType(),
 		obj.GetScore(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO risks (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO risks (Id, Subject_Namespace, Subject_ClusterId, Subject_Type, Score, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Subject_Namespace = EXCLUDED.Subject_Namespace, Subject_ClusterId = EXCLUDED.Subject_ClusterId, Subject_Type = EXCLUDED.Subject_Type, Score = EXCLUDED.Score, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -149,6 +150,7 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		"subject_type",
 		"score",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -169,6 +171,7 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 			obj.GetSubject().GetType(),
 			obj.GetScore(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

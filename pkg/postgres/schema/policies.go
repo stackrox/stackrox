@@ -58,4 +58,5 @@ type Policies struct {
 	SORTLifecycleStage string           `gorm:"column:sortlifecyclestage;type:varchar"`
 	SORTEnforcement    bool             `gorm:"column:sortenforcement;type:bool"`
 	Serialized         []byte           `gorm:"column:serialized;type:bytea"`
+	TenantID           string           `gorm:"column:tenant_id;type:varchar"`
 }

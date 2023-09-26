@@ -103,9 +103,10 @@ func insertIntoPermissionSets(ctx context.Context, batch *pgx.Batch, obj *storag
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO permission_sets (Id, Name, serialized) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO permission_sets (Id, Name, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -122,6 +123,7 @@ func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		"id",
 		"name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -139,6 +141,7 @@ func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgre
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

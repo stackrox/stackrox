@@ -123,6 +123,7 @@ type Deployments struct {
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
+	TenantID                      string                  `gorm:"column:tenant_id;type:varchar"`
 }
 
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.

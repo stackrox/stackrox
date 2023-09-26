@@ -528,5 +528,5 @@ func (f Field) Getter(prefix string) string {
 
 // Include returns if the field should be included in the schema
 func (f Field) Include() bool {
-	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil
+	return f.Options.PrimaryKey || f.Options.Unique || f.Search.Enabled || f.ColumnName == "serialized" || f.Options.Reference != nil || f.ColumnName == "tenant_id"
 }

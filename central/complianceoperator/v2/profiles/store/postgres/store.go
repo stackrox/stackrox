@@ -107,9 +107,10 @@ func insertIntoComplianceOperatorProfileV2(ctx context.Context, batch *pgx.Batch
 		obj.GetStandard(),
 		obj.GetProduct(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, Version, ProductType, Standard, Product, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, Name, Version, ProductType, Standard, Product, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, Product = EXCLUDED.Product, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -160,6 +161,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 		"standard",
 		"product",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -181,6 +183,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 			obj.GetStandard(),
 			obj.GetProduct(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

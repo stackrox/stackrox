@@ -107,9 +107,10 @@ func insertIntoReportConfigurations(ctx context.Context, batch *pgx.Batch, obj *
 		obj.GetResourceScope().GetCollectionId(),
 		obj.GetCreator().GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, Creator_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, Creator_Name = EXCLUDED.Creator_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_configurations (Id, Name, Type, ScopeId, ResourceScope_CollectionId, Creator_Name, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, ScopeId = EXCLUDED.ScopeId, ResourceScope_CollectionId = EXCLUDED.ResourceScope_CollectionId, Creator_Name = EXCLUDED.Creator_Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -160,6 +161,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		"resourcescope_collectionid",
 		"creator_name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -181,6 +183,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 			obj.GetResourceScope().GetCollectionId(),
 			obj.GetCreator().GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

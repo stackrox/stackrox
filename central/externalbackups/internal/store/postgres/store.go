@@ -102,9 +102,10 @@ func insertIntoExternalBackups(ctx context.Context, batch *pgx.Batch, obj *stora
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO external_backups (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO external_backups (Id, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,6 +121,7 @@ func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	copyCols := []string{
 		"id",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -136,6 +138,7 @@ func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

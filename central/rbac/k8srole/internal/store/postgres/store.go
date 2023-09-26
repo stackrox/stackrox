@@ -130,9 +130,10 @@ func insertIntoK8sRoles(ctx context.Context, batch *pgx.Batch, obj *storage.K8SR
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO k8s_roles (Id, Name, Namespace, ClusterId, ClusterName, ClusterRole, Labels, Annotations, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, ClusterRole = EXCLUDED.ClusterRole, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -155,6 +156,7 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		"labels",
 		"annotations",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -178,6 +180,7 @@ func copyFromK8sRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

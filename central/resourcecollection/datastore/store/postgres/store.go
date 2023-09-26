@@ -105,9 +105,10 @@ func insertIntoCollections(ctx context.Context, batch *pgx.Batch, obj *storage.R
 		obj.GetCreatedBy().GetName(),
 		obj.GetUpdatedBy().GetName(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO collections (Id, Name, CreatedBy_Name, UpdatedBy_Name, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedBy_Name = EXCLUDED.CreatedBy_Name, UpdatedBy_Name = EXCLUDED.UpdatedBy_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO collections (Id, Name, CreatedBy_Name, UpdatedBy_Name, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, CreatedBy_Name = EXCLUDED.CreatedBy_Name, UpdatedBy_Name = EXCLUDED.UpdatedBy_Name, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -156,6 +157,7 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"createdby_name",
 		"updatedby_name",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -175,6 +177,7 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetCreatedBy().GetName(),
 			obj.GetUpdatedBy().GetName(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

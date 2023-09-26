@@ -101,9 +101,10 @@ func insertIntoComplianceConfigs(ctx context.Context, batch *pgx.Batch, obj *sto
 		// parent primary keys start
 		obj.GetStandardId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_configs (StandardId, serialized) VALUES($1, $2) ON CONFLICT(StandardId) DO UPDATE SET StandardId = EXCLUDED.StandardId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_configs (StandardId, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(StandardId) DO UPDATE SET StandardId = EXCLUDED.StandardId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -119,6 +120,7 @@ func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *post
 	copyCols := []string{
 		"standardid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -135,6 +137,7 @@ func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *post
 		inputRows = append(inputRows, []interface{}{
 			obj.GetStandardId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

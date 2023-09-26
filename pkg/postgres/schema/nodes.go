@@ -85,6 +85,7 @@ type Nodes struct {
 	RiskScore               float32           `gorm:"column:riskscore;type:numeric"`
 	TopCvss                 float32           `gorm:"column:topcvss;type:numeric"`
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`
+	TenantID                string            `gorm:"column:tenant_id;type:varchar"`
 }
 
 // NodesTaints holds the Gorm model for Postgres table `nodes_taints`.

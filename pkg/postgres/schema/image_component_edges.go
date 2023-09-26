@@ -68,5 +68,6 @@ type ImageComponentEdges struct {
 	ImageID          string `gorm:"column:imageid;type:varchar;index:imagecomponentedges_imageid,type:hash"`
 	ImageComponentID string `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentedges_imagecomponentid,type:hash"`
 	Serialized       []byte `gorm:"column:serialized;type:bytea"`
+	TenantID         string `gorm:"column:tenant_id;type:varchar"`
 	ImagesRef        Images `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

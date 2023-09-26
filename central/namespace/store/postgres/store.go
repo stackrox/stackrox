@@ -128,9 +128,10 @@ func insertIntoNamespaces(ctx context.Context, batch *pgx.Batch, obj *storage.Na
 		pgutils.EmptyOrMap(obj.GetLabels()),
 		pgutils.EmptyOrMap(obj.GetAnnotations()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO namespaces (Id, Name, ClusterId, ClusterName, Labels, Annotations, serialized, tenant_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Labels = EXCLUDED.Labels, Annotations = EXCLUDED.Annotations, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -151,6 +152,7 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		"labels",
 		"annotations",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -172,6 +174,7 @@ func copyFromNamespaces(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 			pgutils.EmptyOrMap(obj.GetLabels()),
 			pgutils.EmptyOrMap(obj.GetAnnotations()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

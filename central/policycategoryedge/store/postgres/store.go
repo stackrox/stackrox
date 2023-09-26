@@ -105,9 +105,10 @@ func insertIntoPolicyCategoryEdges(ctx context.Context, batch *pgx.Batch, obj *s
 		obj.GetPolicyId(),
 		obj.GetCategoryId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO policy_category_edges (Id, PolicyId, CategoryId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, PolicyId = EXCLUDED.PolicyId, CategoryId = EXCLUDED.CategoryId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO policy_category_edges (Id, PolicyId, CategoryId, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, PolicyId = EXCLUDED.PolicyId, CategoryId = EXCLUDED.CategoryId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,7 @@ func copyFromPolicyCategoryEdges(ctx context.Context, s pgSearch.Deleter, tx *po
 		"policyid",
 		"categoryid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -143,6 +145,7 @@ func copyFromPolicyCategoryEdges(ctx context.Context, s pgSearch.Deleter, tx *po
 			obj.GetPolicyId(),
 			obj.GetCategoryId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

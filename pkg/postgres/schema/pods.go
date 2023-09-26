@@ -64,6 +64,7 @@ type Pods struct {
 	Namespace    string `gorm:"column:namespace;type:varchar;index:pods_sac_filter,type:btree"`
 	ClusterID    string `gorm:"column:clusterid;type:uuid;index:pods_sac_filter,type:btree"`
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	TenantID     string `gorm:"column:tenant_id;type:varchar"`
 }
 
 // PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.

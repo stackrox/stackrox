@@ -39,4 +39,5 @@ const (
 // NotificationSchedules holds the Gorm model for Postgres table `notification_schedules`.
 type NotificationSchedules struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantID   string `gorm:"column:tenant_id;type:varchar"`
 }

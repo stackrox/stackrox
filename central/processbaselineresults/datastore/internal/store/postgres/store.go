@@ -125,9 +125,10 @@ func insertIntoProcessBaselineResults(ctx context.Context, batch *pgx.Batch, obj
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetNamespace(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO process_baseline_results (DeploymentId, ClusterId, Namespace, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO process_baseline_results (DeploymentId, ClusterId, Namespace, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(DeploymentId) DO UPDATE SET DeploymentId = EXCLUDED.DeploymentId, ClusterId = EXCLUDED.ClusterId, Namespace = EXCLUDED.Namespace, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -145,6 +146,7 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 		"clusterid",
 		"namespace",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -163,6 +165,7 @@ func copyFromProcessBaselineResults(ctx context.Context, s pgSearch.Deleter, tx 
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetNamespace(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

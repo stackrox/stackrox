@@ -102,9 +102,10 @@ func insertIntoServiceIdentities(ctx context.Context, batch *pgx.Batch, obj *sto
 		// parent primary keys start
 		obj.GetSerialStr(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO service_identities (SerialStr, serialized) VALUES($1, $2) ON CONFLICT(SerialStr) DO UPDATE SET SerialStr = EXCLUDED.SerialStr, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO service_identities (SerialStr, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(SerialStr) DO UPDATE SET SerialStr = EXCLUDED.SerialStr, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,6 +121,7 @@ func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *post
 	copyCols := []string{
 		"serialstr",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -136,6 +138,7 @@ func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *post
 		inputRows = append(inputRows, []interface{}{
 			obj.GetSerialStr(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

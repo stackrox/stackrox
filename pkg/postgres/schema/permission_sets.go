@@ -41,4 +41,5 @@ type PermissionSets struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Name       string `gorm:"column:name;type:varchar;unique"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	TenantID   string `gorm:"column:tenant_id;type:varchar"`
 }

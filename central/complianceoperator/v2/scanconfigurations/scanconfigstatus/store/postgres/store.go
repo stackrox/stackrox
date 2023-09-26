@@ -105,9 +105,10 @@ func insertIntoComplianceOperatorClusterScanConfigStatuses(ctx context.Context, 
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		obj.GetScanId(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (ClusterId, ScanId, serialized) VALUES($1, $2, $3) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, ScanId = EXCLUDED.ScanId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_cluster_scan_config_statuses (ClusterId, ScanId, serialized, tenant_id) VALUES($1, $2, $3, $4) ON CONFLICT(ClusterId) DO UPDATE SET ClusterId = EXCLUDED.ClusterId, ScanId = EXCLUDED.ScanId, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -124,6 +125,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		"clusterid",
 		"scanid",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -141,6 +143,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetScanId(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

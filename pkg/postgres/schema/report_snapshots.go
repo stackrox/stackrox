@@ -63,5 +63,6 @@ type ReportSnapshots struct {
 	RequesterID                          string                                  `gorm:"column:requester_id;type:varchar"`
 	RequesterName                        string                                  `gorm:"column:requester_name;type:varchar"`
 	Serialized                           []byte                                  `gorm:"column:serialized;type:bytea"`
+	TenantID                             string                                  `gorm:"column:tenant_id;type:varchar"`
 	ReportConfigurationsRef              ReportConfigurations                    `gorm:"foreignKey:reportconfigurationid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

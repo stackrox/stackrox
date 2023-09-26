@@ -102,9 +102,10 @@ func insertIntoDeclarativeConfigHealths(ctx context.Context, batch *pgx.Batch, o
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO declarative_config_healths (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO declarative_config_healths (Id, serialized, tenant_id) VALUES($1, $2, $3) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -120,6 +121,7 @@ func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, t
 	copyCols := []string{
 		"id",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -136,6 +138,7 @@ func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, t
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetId()),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

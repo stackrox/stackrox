@@ -105,9 +105,10 @@ func insertIntoAPITokens(ctx context.Context, batch *pgx.Batch, obj *storage.Tok
 		pgutils.NilOrTime(obj.GetExpiration()),
 		obj.GetRevoked(),
 		serialized,
+		ctxIdentity.TenantID(),
 	}
 
-	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO api_tokens (Id, Expiration, Revoked, serialized, tenant_id) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Expiration = EXCLUDED.Expiration, Revoked = EXCLUDED.Revoked, serialized = EXCLUDED.serialized, tenant_id = EXCLUDED.tenant_id"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		"expiration",
 		"revoked",
 		"serialized",
+		"tenant_id",
 	}
 
 	for idx, obj := range objs {
@@ -143,6 +145,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 			pgutils.NilOrTime(obj.GetExpiration()),
 			obj.GetRevoked(),
 			serialized,
+			ctxIdentity.TenantID(),
 		})
 
 		// Add the ID to be deleted.

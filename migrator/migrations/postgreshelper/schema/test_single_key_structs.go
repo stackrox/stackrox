@@ -50,4 +50,5 @@ type TestSingleKeyStructs struct {
 	Enum        storage.TestSingleKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums       *pq.Int32Array                   `gorm:"column:enums;type:int[]"`
 	Serialized  []byte                           `gorm:"column:serialized;type:bytea"`
+	TenantID    string                           `gorm:"column:tenant_id;type:varchar"`
 }

@@ -60,6 +60,7 @@ type PolicyCategoryEdges struct {
 	PolicyID            string           `gorm:"column:policyid;type:varchar"`
 	CategoryID          string           `gorm:"column:categoryid;type:varchar"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	TenantID            string           `gorm:"column:tenant_id;type:varchar"`
 	PoliciesRef         Policies         `gorm:"foreignKey:policyid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	PolicyCategoriesRef PolicyCategories `gorm:"foreignKey:categoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
