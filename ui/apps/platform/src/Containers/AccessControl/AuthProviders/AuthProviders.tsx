@@ -6,6 +6,7 @@ import { selectors } from 'reducers';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
     Bullseye,
+    Button,
     Dropdown,
     DropdownItem,
     DropdownPosition,
@@ -21,6 +22,7 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { actions as authActions, types as authActionTypes } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
+import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
 import { AuthProvider } from 'services/AuthService';
 
@@ -92,6 +94,10 @@ function AuthProviders(): ReactElement {
         setIsCreateMenuOpen(isOpen);
     }
 
+    function onClickInviteUsers() {
+        dispatch(inviteActions.setInviteModalVisibility(true));
+    }
+
     function onClickCreate(event) {
         setIsCreateMenuOpen(false);
 
@@ -148,10 +154,17 @@ function AuthProviders(): ReactElement {
                                 users
                             </AccessControlDescription>
                         }
+                        inviteComponent={
+                            hasWriteAccessForPage && (
+                                <Button variant="secondary" onClick={onClickInviteUsers}>
+                                    Invite users
+                                </Button>
+                            )
+                        }
                         actionComponent={
                             hasWriteAccessForPage && (
                                 <Dropdown
-                                    className="auth-provider-dropdown"
+                                    className="auth-provider-dropdown pf-u-ml-md"
                                     onSelect={onClickCreate}
                                     position={DropdownPosition.right}
                                     toggle={

@@ -34,13 +34,20 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     const user = new User(userData);
     const { email, name, roles } = user;
 
-    const displayName = email ? `${name as string} (${email})` : name;
+    const displayName = email ? (
+        <span>
+            <span data-testid="menu-user-name">{name}</span> (
+            <span data-testid="menu-user-email">{email}</span>)
+        </span>
+    ) : (
+        <span data-testid="menu-user-name">{name}</span>
+    );
     const displayRoles = Array.isArray(roles) ? roles.map((role) => role.name).join(',') : '';
 
     const startOfUserMenu = [
         <DropdownItem
             key="user"
-            description={displayRoles}
+            description={<span data-testid="menu-user-roles">{displayRoles}</span>}
             className="pf-u-min-width"
             style={userMenuStyleConstant}
         >

@@ -411,3 +411,20 @@ describe('Access Control Auth providers', () => {
         assertAccessControlEntityDoesNotExist(entitiesKey);
     });
 });
+
+describe('Invite users', () => {
+    withAuth();
+
+    it('should have a trigger for opening the Invite users modal in the Auth Providers table header', () => {
+        visitAccessControlEntities(entitiesKey);
+
+        cy.get('button:contains("Invite users")').click();
+
+        // check that the modal opened
+        cy.get(`${accessModalSelectors.title}:contains("Invite users")`);
+        cy.get(`${accessModalSelectors.button}:contains("Invite users")`);
+
+        // test closing the modal
+        cy.get(`${accessModalSelectors.button}:contains("Cancel")`).click();
+    });
+});
