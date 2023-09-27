@@ -45,6 +45,7 @@ type Subject struct {
 	ServiceType  storage.ServiceType
 	Identifier   string
 	InitBundleID string
+	TenantID     string
 }
 
 // CertificateOptions define options which are available at cert generation
@@ -61,11 +62,12 @@ func NewSubject(id string, serviceType storage.ServiceType) Subject {
 }
 
 // NewInitSubject returns a new subject from the passed ID and service type
-func NewInitSubject(id string, serviceType storage.ServiceType, initBundleID uuid.UUID) Subject {
+func NewInitSubject(id string, serviceType storage.ServiceType, initBundleID uuid.UUID, tenantID string) Subject {
 	return Subject{
 		Identifier:   id,
 		ServiceType:  serviceType,
 		InitBundleID: initBundleID.String(),
+		TenantID:     tenantID,
 	}
 }
 
@@ -121,11 +123,17 @@ func (s Subject) O() string {
 	return s.InitBundleID
 }
 
+// State returns the State for the Subject.
+func (s Subject) State() string {
+	return s.TenantID
+}
+
 // Name generates a cfssl Name for the subject, as a convenience.
 func (s Subject) Name() cfcsr.Name {
 	return cfcsr.Name{
 		OU: s.OU(),
 		O:  s.O(),
+		ST: s.State(),
 	}
 }
 

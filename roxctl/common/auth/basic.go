@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -28,5 +31,11 @@ func (b basicMethod) GetCredentials(_ string) (credentials.PerRPCCredentials, er
 	if password == "" {
 		return nil, errox.InvalidArgs.New("no password specified either via flag or environment variable")
 	}
-	return basic.PerRPCCredentials(basic.DefaultUsername, password), nil
+	username := os.Getenv("ROX_USERNAME")
+	if username == "" {
+		username = basic.DefaultUsername
+	}
+	fmt.Printf("Connecting as user %s\n", username)
+
+	return basic.PerRPCCredentials(username, password), nil
 }

@@ -35,10 +35,10 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 	return allBundleMetas, nil
 }
 
-func extractUserIdentity(ctx context.Context) *storage.User {
+func extractUserIdentity(ctx context.Context) (*storage.User, string) {
 	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
 	if ctxIdentity == nil {
-		return nil
+		return nil, ""
 	}
 
 	var providerID string
@@ -58,7 +58,7 @@ func extractUserIdentity(ctx context.Context) *storage.User {
 		Id:             ctxIdentity.UID(),
 		AuthProviderId: providerID,
 		Attributes:     attributes,
-	}
+	}, ctxIdentity.TenantID()
 }
 
 func extractExpiryDate(certBundle clusters.CertBundle) (*types.Timestamp, error) {
@@ -87,8 +87,8 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		return nil, errors.Wrap(err, "retrieving CA certificate")
 	}
 
-	user := extractUserIdentity(ctx)
-	certBundle, id, err := b.certProvider.GetBundle()
+	user, tenantID := extractUserIdentity(ctx)
+	certBundle, id, err := b.certProvider.GetBundle(tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "generating certificates for init bundle")
 	}

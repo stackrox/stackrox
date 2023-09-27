@@ -18,8 +18,7 @@ type identity struct {
 }
 
 func (i identity) TenantID() string {
-	//TODO implement me
-	panic("implement me")
+	return i.id.Subject.State()
 }
 
 func (i identity) Service() *storage.ServiceIdentity {

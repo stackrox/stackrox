@@ -12,7 +12,7 @@ import (
 //go:generate mockgen-wrapper
 type Provider interface {
 	GetCA() (string, error)
-	GetBundle() (clusters.CertBundle, uuid.UUID, error)
+	GetBundle(tenantID string) (clusters.CertBundle, uuid.UUID, error)
 }
 
 type certProviderImpl struct{}
@@ -26,8 +26,8 @@ func (c *certProviderImpl) GetCA() (string, error) {
 	return string(caCert), nil
 }
 
-func (c *certProviderImpl) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
-	certBundle, id, err := clusters.IssueSecuredClusterInitCertificates()
+func (c *certProviderImpl) GetBundle(tenantID string) (clusters.CertBundle, uuid.UUID, error) {
+	certBundle, id, err := clusters.IssueSecuredClusterInitCertificates(tenantID)
 	if err != nil {
 		return nil, uuid.Nil, errors.Wrap(err, "generating certificates for init bundle")
 	}
