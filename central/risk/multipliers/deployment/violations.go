@@ -119,7 +119,10 @@ func policyFactors(pfs []policyFactor) (factors []*storage.Risk_Result_Factor) {
 	factors = make([]*storage.Risk_Result_Factor, 0, len(pfs))
 	for _, pf := range pfs {
 		factors = append(factors,
-			&storage.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s, score: %v, explicit: %v)", pf.name, severityString(pf.severity), pf.score, pf.explicit)})
+			&storage.Risk_Result_Factor{
+				Message: fmt.Sprintf("%s (severity: %s, score: %.2f, explicit: %v)",
+					pf.name, severityString(pf.severity), pf.score, pf.explicit),
+			})
 	}
 	return
 }
