@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -339,6 +340,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	if err != nil {
 		return nil, err
 	}
+	//queryEntry.Where
 	// If a non-empty query was passed, but we couldn't find a query, that means that the query is invalid
 	// for this category. (For example, searching secrets by "Policy:"). In this case, we return a query that matches nothing.
 	// This behaviour is helpful, for example, in Global Search, where a query that is invalid for a
@@ -361,6 +363,20 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 			parsedQuery.Having = queryEntry.Having.Query
 			parsedQuery.Data = append(parsedQuery.Data, queryEntry.Having.Values...)
 		}
+	}
+
+	identity, err := authn.IdentityFromContext(ctx)
+	if identity != nil {
+		log.Infof("QUERY: %+v", parsedQuery)
+		if parsedQuery.Where != "" {
+			parsedQuery.Where = fmt.Sprintf("%s and ", parsedQuery.Where)
+		}
+		parsedQuery.Where = fmt.Sprintf("%s %s.tenant_id = $$", parsedQuery.Where, parsedQuery.Schema.Table)
+		parsedQuery.Data = append(parsedQuery.Data, identity.TenantID())
+		log.Infof("QUERY AFTER: %+v", parsedQuery)
+	}
+	if err != nil && err.Error() != "credentials not found" {
+		return nil, fmt.Errorf("could not receive identiy %w", err)
 	}
 
 	if err := populateGroupBy(parsedQuery, q.GetGroupBy(), schema, dbFields); err != nil {
