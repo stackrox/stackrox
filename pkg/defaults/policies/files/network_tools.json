@@ -1,0 +1,38 @@
+{
+  "id": "9d8ba5a8-5d77-11ee-8c99-589c128910b3",
+  "name": "Network Tools in Image",
+  "description": "Alert on deployments with network tools present.",
+  "rationale": "Leaving network tools like netcat, nmap, telnet in an image makes it easier for attackers to use compromised containers.",
+  "remediation": "Use your package manager's \"remove\", \"purge\" or \"erase\" command to remove network tools from the image build for production containers.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "netcat|nmap|telnet="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true,
+  "risk": {
+    "baseScore": 0.5,
+    "maxScore": 2,
+    "cumulative": true
+  }
+}

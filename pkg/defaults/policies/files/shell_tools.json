@@ -1,0 +1,38 @@
+{
+  "id": "6f15574c-5d76-11ee-8c99-0242ac120002",
+  "name": "Shell Tools in Image",
+  "description": "Alert on deployments with shells (interpreters) present.",
+  "rationale": "Leaving interpreters like bash, sh, tcsh in an image makes it easier for attackers to use compromised containers.",
+  "remediation": "Use your package manager's \"remove\", \"purge\" or \"erase\" command to remove interpreters from the image build for production containers.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "bash|sh|tcsh="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true,
+  "risk": {
+    "baseScore": 0.5,
+    "maxScore": 2,
+    "cumulative": true
+  }
+}
