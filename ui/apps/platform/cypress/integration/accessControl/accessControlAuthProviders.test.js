@@ -4,6 +4,7 @@ import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAcc
 
 import withAuth from '../../helpers/basicAuth';
 import { assertCannotFindThePage } from '../../helpers/visit';
+import { checkInviteUsersModal } from '../../helpers/inviteUsers';
 
 import {
     assertAccessControlEntitiesPage,
@@ -420,11 +421,6 @@ describe('Invite users', () => {
 
         cy.get('button:contains("Invite users")').click();
 
-        // check that the modal opened
-        cy.get(`${accessModalSelectors.title}:contains("Invite users")`);
-        cy.get(`${accessModalSelectors.button}:contains("Invite users")`);
-
-        // test closing the modal
-        cy.get(`${accessModalSelectors.button}:contains("Cancel")`).click();
+        checkInviteUsersModal();
     });
 });
