@@ -128,10 +128,10 @@ jobs:
 
       - name: Docker login
         env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          docker login -u "${QUAY_RHACS_ENG_RO_USERNAME}" --password-stdin quay.io <<<"${QUAY_RHACS_ENG_RO_PASSWORD}"
+          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: Fetch infra artifacts
         run: |
@@ -144,6 +144,7 @@ jobs:
         env:
           # TODO: use PR tag!
           MAIN_IMAGE_TAG: "4.2.0"
+          LOAD_BALANCER: lb
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -156,13 +157,17 @@ jobs:
           echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
           echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
+          LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
+          echo "API_ENDPOINT="${LB_IP}:443"" >> "$GITHUB_ENV"
+
       # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
         env:
           MAIN_IMAGE_TAG: "4.2.0"
+          LOAD_BALANCER: lb
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
-          API_ENDPOINT: 'localhost:8000'
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
@@ -170,18 +175,8 @@ jobs:
           "${{ github.workspace }}"/scale/dev/run-many.sh default 1
           sleep 120
 
-      - name: Setup Kubernetes port-forward
-        uses: vbem/k8s-port-forward@v1
-        with:
-          workload: 'svc/central'
-          mappings: '8000:443'
-          options: '--namespace=stackrox'
-          sleep: 20
-
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
-        env:
-          HOST: "https://localhost:8000"
         with:
           filename: tests/performance/tests/testK6Integration.js
           flags: --out json=results.json --iterations 10 --duration 20m
