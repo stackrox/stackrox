@@ -37,5 +37,10 @@
   ],
   "criteriaLocked": true,
   "mitreVectorsLocked": true,
-  "isDefault": true
+  "isDefault": true,
+  "risk": {
+    "baseScore": 0.5,
+    "maxScore": 0.5,
+    "cumulative": false
+  }
 }
