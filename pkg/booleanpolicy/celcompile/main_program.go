@@ -33,8 +33,6 @@ var tplate2 = `
 var (
 	mainProgramTemplate = template.Must(template.New("").Parse(
 		/*` IndexesToDeclare, Functions, Conditions
-		{{ $root := . }}
-
 		violations[result] {
 			{{- range $root.IndexesToDeclare }}
 			some idx{{.}}

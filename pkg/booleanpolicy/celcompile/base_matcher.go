@@ -38,6 +38,13 @@ var (
     {{ end }}
 }
 `))
+	filterCodeTemplate = template.Must(template.New("").Parse(`
+		obj.{{.FieldName}}.startsWith("TopLevelValA")
+
+`))
+	mapCodeTemplate = template.Must(template.New("").Parse(`
+result.map(t, t.with({"TopLevelA": [obj.ValA]}))
+`))
 )
 
 type simpleMatchFuncGenerator struct {
@@ -105,7 +112,7 @@ func generateStringMatchCode(value string) (string, error) {
 	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
 		matchCode = fmt.Sprintf(`val == "%s"`, value[1:len(value)-1])
 	} else {
-		matchCode = fmt.Sprintf(`startswith(val, "%s")`, value)
+		matchCode = fmt.Sprintf(`startsWith("%s")`, value)
 	}
 	if negated {
 		matchCode = fmt.Sprintf(`(%s) == false`, matchCode)
@@ -197,8 +204,10 @@ func generateBaseMatcherHelper(query *query.FieldQuery, typ reflect.Type) ([]reg
 }
 
 type regoMatchFunc struct {
-	functionCode string
-	functionName string
+	filterCode   string
+	mapCode      string
+	functionName string // not in use
+	functionCode string // not in use
 }
 
 func generateMatchersForField(fieldQuery *query.FieldQuery, typ reflect.Type) ([]regoMatchFunc, error) {

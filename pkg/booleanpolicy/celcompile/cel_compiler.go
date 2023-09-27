@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type matchValueType []interface{}
@@ -60,15 +62,36 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 }
 
 func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
-	resultSet, err := evaluate(r.q, map[string]interface{}{"obj": obj})
+	val, err := evaluate(r.q, map[string]interface{}{"obj": obj})
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
 	if err != nil {
 		utils.Should(err)
 		return nil, false
 	}
-	fmt.Println(resultSet)
 
-	return nil, true
+	result, err := val.ConvertToNative(reflect.TypeOf([]map[string][]any{}))
+	res := &evaluator.Result{}
+	if result == nil {
+		err = fmt.Errorf("invalid result: %+v", result)
+		utils.Should(err)
+		return nil, false
+	}
+	for _, binding := range result.([]map[string][]interface{}) {
+		match, err := convertBindingToResult(binding)
+		if err != nil {
+			err = fmt.Errorf("invalid result: %+v", result)
+			utils.Should(err)
+			return nil, false
+		}
+		res.Matches = append(res.Matches, match)
+	}
+
+	jsonData, err := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
+	utils.Should(err)
+
+	out := protojson.Format(jsonData.(*structpb.Value))
+	fmt.Println(out)
+	return res, len(res.Matches) != 0
 }
 
 // MustCreateCompiler is a wrapper around CreateRegoCompiler that panics if there's an error.
@@ -90,7 +113,7 @@ func CreateCelCompiler(objMeta *pathutil.AugmentedObjMeta) (CelCompiler, error) 
 var tplate2 = `
 [] +
 [[{}]]
-   .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelValA": [obj.ValA]})))
+   .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelA": [obj.ValA]})))
    .map(
       result,
       obj.NestedSlice
@@ -117,7 +140,7 @@ func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evalu
 		return nil, fmt.Errorf("failed to compile cel: %w", err)
 	}
 
-	prg, err := compile(tplate2)
+	prg, err := compile(module)
 	if err != nil {
 		return nil, err
 	}
@@ -143,6 +166,7 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 			return "", fmt.Errorf("field %v not in object", field)
 		}
 		var constructedPath strings.Builder
+		constructedPath.WriteString("obj.")
 		for i, elem := range metaPathToField {
 			constructedPath.WriteString(elem.FieldName)
 			if i == len(metaPathToField)-1 {
