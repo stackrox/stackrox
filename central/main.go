@@ -421,7 +421,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 	}
@@ -802,7 +802,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		// Append report custom routes
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/jobs/download",
@@ -859,7 +859,7 @@ func waitForTerminationSignal() {
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 	}
 

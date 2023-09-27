@@ -53,4 +53,7 @@ var (
 
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT", false)
+
+	// VulnReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
+	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", true)
 )
