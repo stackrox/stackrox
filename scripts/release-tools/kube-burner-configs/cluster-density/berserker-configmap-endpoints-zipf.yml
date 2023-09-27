@@ -1,0 +1,13 @@
+apiVersion: v1
+￼kind: ConfigMap
+￼metadata:
+￼  name: berserker-config
+￼data:
+￼  workload.toml: |
+￼    restart_interval = 10
+￼
+￼    [workload]
+￼    type = "endpoints"
+￼    distribution = "zipf"
+￼    n_ports = 200
+￼    exponent = 1.4
