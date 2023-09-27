@@ -127,148 +127,148 @@ jobs:
       # Scale cluster with generic workload #
       #######################################
 
-      # Create scale cluster with larger nodes.
-      - uses: stackrox/actions/infra/create-cluster@main
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: gke-default
-          name: ${{ env.SCALE_CLUSTER_NAME }}
-          lifespan: 12h
-          args: nodes=3,machine-type=e2-standard-32
-          wait: true
+      # # Create scale cluster with larger nodes.
+      # - uses: stackrox/actions/infra/create-cluster@main
+      #   with:
+      #     token: ${{ secrets.INFRA_TOKEN }}
+      #     flavor: gke-default
+      #     name: ${{ env.SCALE_CLUSTER_NAME }}
+      #     lifespan: 12h
+      #     args: nodes=3,machine-type=e2-standard-32
+      #     wait: true
 
-      # Fetch artifacts
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - name: Test cluster readiness
-        run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            exit 1
-          fi
-      - uses: "google-github-actions/auth@v1"
-        with:
-          # TODO: Add new service account
-          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
-        with:
-          install_components: "gke-gcloud-auth-plugin"
-      - name: Download artifacts
-        run: |
-          infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+      # # Fetch artifacts
+      # - uses: stackrox/actions/infra/install-infractl@v1
+      # - name: Test cluster readiness
+      #   run: |
+      #     STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
+      #     if [ "$STATUS" != "READY" ]; then
+      #       exit 1
+      #     fi
+      # - uses: "google-github-actions/auth@v1"
+      #   with:
+      #     # TODO: Add new service account
+      #     credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+      # - name: "Set up Cloud SDK"
+      #   uses: "google-github-actions/setup-gcloud@v1"
+      #   with:
+      #     install_components: "gke-gcloud-auth-plugin"
+      # - name: Download artifacts
+      #   run: |
+      #     infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Add Docker login for Quay.io
-        env:
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+      # - name: Add Docker login for Quay.io
+      #   env:
+      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      #   run: |
+      #     docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-      - name: Fetch infra artifacts
-        run: |
-          infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+      # - name: Fetch infra artifacts
+      #   run: |
+      #     infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Checkout workflow scripts
-        uses: actions/checkout@v4
-        with:
-          repository: "stackrox/workflow"
-          path: workflow
+      # - name: Checkout workflow scripts
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: "stackrox/workflow"
+      #     path: workflow
 
-      - name: Clean previous installation
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scripts/k8s/cleanup.sh stackrox
+      # - name: Clean previous installation
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scripts/k8s/cleanup.sh stackrox
 
-          # Delete all namespaces created by scale script.
-          for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
-            "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
-          done
+      #     # Delete all namespaces created by scale script.
+      #     for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
+      #       "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
+      #     done
 
-      # Wait for PR image
-      - name: Get PR image tag
-        run: |
-          MAIN_IMAGE_TAG="$(make tag)"
-          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+      # # Wait for PR image
+      # - name: Get PR image tag
+      #   run: |
+      #     MAIN_IMAGE_TAG="$(make tag)"
+      #     echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
 
-      # Install Central + CentralDB
-      - name: Wait for PR image (main)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
-          image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
+      # # Install Central + CentralDB
+      # - name: Wait for PR image (main)
+      #   uses: stackrox/actions/release/wait-for-image@main
+      #   with:
+      #     token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+      #     image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
 
-      - name: Wait for PR image (central-db)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
-          image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
+      # - name: Wait for PR image (central-db)
+      #   uses: stackrox/actions/release/wait-for-image@main
+      #   with:
+      #     token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+      #     image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
 
-      - name: Wait for PR image (roxctl)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
-          image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
+      # - name: Wait for PR image (roxctl)
+      #   uses: stackrox/actions/release/wait-for-image@main
+      #   with:
+      #     token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+      #     image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
 
-      - name: Wait for PR image (sensor)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
-          image: rhacs-eng/sensor:${{ env.MAIN_IMAGE_TAG }}
+      # - name: Wait for PR image (sensor)
+      #   uses: stackrox/actions/release/wait-for-image@main
+      #   with:
+      #     token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+      #     image: rhacs-eng/sensor:${{ env.MAIN_IMAGE_TAG }}
 
-      - name: Launch central services
-        env:
-          LOAD_BALANCER: lb
-          ROX_POSTGRES_DATASTORE: "true"
-          MONITORING_SUPPORT: "false"
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/launch_central.sh
+      # - name: Launch central services
+      #   env:
+      #     LOAD_BALANCER: lb
+      #     ROX_POSTGRES_DATASTORE: "true"
+      #     MONITORING_SUPPORT: "false"
+      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scale/dev/launch_central.sh
 
-          # Required for k6 tests to run.
-          echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+      #     # Required for k6 tests to run.
+      #     echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+      #     echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
-          LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
-          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
-          echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
+      #     LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
+      #     echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
+      #     echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
 
-      # TODO: Find better way to wait for finished workload generation.
-      - name: Generate workload
-        env:
-          LOAD_BALANCER: lb
-          ROX_POSTGRES_DATASTORE: "true"
-          MONITORING_SUPPORT: "false"
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
-          sleep 120
+      # # TODO: Find better way to wait for finished workload generation.
+      # - name: Generate workload
+      #   env:
+      #     LOAD_BALANCER: lb
+      #     ROX_POSTGRES_DATASTORE: "true"
+      #     MONITORING_SUPPORT: "false"
+      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
+      #     sleep 120
 
-      - name: Run local k6 test
-        uses: grafana/k6-action@v0.3.0
-        with:
-          filename: ${{ github.workspace }}/tests/performance/tests/testK6Integration.js
-          flags: --out csv=results.csv --iterations 10 --duration 20m
+      # - name: Run local k6 test
+      #   uses: grafana/k6-action@v0.3.0
+      #   with:
+      #     filename: ${{ github.workspace }}/tests/performance/tests/testK6Integration.js
+      #     flags: --out csv=results.csv --iterations 10 --duration 20m
 
-      # TODO: Find better way to wait for finished workload generation.
-      - name: Generate workload
-        run: |
-          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-          sleep 20
-          "${{ github.workspace }}"/scale/dev/run-many.sh default 3
-          sleep 120
+      # # TODO: Find better way to wait for finished workload generation.
+      # - name: Generate workload
+      #   run: |
+      #     kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+      #     sleep 20
+      #     "${{ github.workspace }}"/scale/dev/run-many.sh default 3
+      #     sleep 120
 
-      - name: Run local k6 test
-        uses: grafana/k6-action@v0.3.0
-        env:
-          HOST: "https://localhost:8000"
-        with:
-          filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=results.json --iterations 10 --duration 20m
+      # - name: Run local k6 test
+      #   uses: grafana/k6-action@v0.3.0
+      #   env:
+      #     HOST: "https://localhost:8000"
+      #   with:
+      #     filename: tests/performance/tests/testK6Integration.js
+      #     flags: --out json=results.json --iterations 10 --duration 20m
 
-      - name: Output full results
-        run: |
-          cat results.csv
+      # - name: Output full results
+      #   run: |
+      #     cat results.csv
