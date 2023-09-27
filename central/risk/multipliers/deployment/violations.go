@@ -18,7 +18,7 @@ const (
 	PolicyViolationsHeading = "Policy Violations"
 
 	policySaturation = 50
-	policyMaxValue   = 4
+	policyMaxValue   = 100
 )
 
 var (
@@ -56,8 +56,21 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	var count int
 	var factors []policyFactor
 	for _, alert := range alerts {
+		// Some alerts have explicit risk set and some do not.
+		if alert.GetPolicy().GetRisk() != nil && alert.GetPolicy().GetRisk().GetBaseScore() != 0 {
+			score := alert.GetPolicy().GetRisk().GetBaseScore()
+			if alert.GetPolicy().GetRisk().GetCumulative() {
+				score *= float32(alert.GetViolationCount())
+			}
+			if score > alert.GetPolicy().GetRisk().GetMaxScore() {
+				score = alert.GetPolicy().GetRisk().GetMaxScore()
+			}
+			severitySum += score
+		} else {
+			severitySum += severityImpact(alert.GetPolicy().GetSeverity())
+		}
+
 		count++
-		severitySum += severityImpact(alert.GetPolicy().GetSeverity())
 		factors = append(factors, policyFactor{
 			name:     alert.GetPolicy().GetName(),
 			severity: alert.GetPolicy().GetSeverity(),
