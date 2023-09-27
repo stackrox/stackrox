@@ -56,4 +56,7 @@ var (
 
 	// VulnReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
 	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", true)
+
+	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
+	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", false)
 )
