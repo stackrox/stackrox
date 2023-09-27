@@ -11,7 +11,7 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,8 +35,8 @@ type ReportConfigurationDatastoreV2Tests struct {
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
-	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
+	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
+	if !features.VulnReportingEnhancements.Enabled() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}

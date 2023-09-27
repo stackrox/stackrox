@@ -7,7 +7,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
@@ -32,7 +32,7 @@ type Searcher interface {
 
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(storage pgStore.Store, indexer index.Indexer) Searcher {
-	if !env.VulnReportingEnhancements.BooleanSetting() {
+	if !features.VulnReportingEnhancements.Enabled() {
 		return nil
 	}
 	return &searcherImpl{
