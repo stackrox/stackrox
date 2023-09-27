@@ -6,9 +6,6 @@ on:
     types:
       - labeled
       - synchronize
-  push:
-    branches:
-      - hack2023/k6-ci-pipeline-tests
 jobs:
   run-k6-performance-tests:
     name: Run k6 performance tests
