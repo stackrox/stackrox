@@ -40,6 +40,10 @@
         "react-feather": "^2.0.9",
         "tippy.js": "^6.3.7"
     },
+    "overrides": {
+        "@types/react": "17.0.34",
+        "@types/react-dom": "17.0.11"
+    },
     "devDependencies": {
         "@stackrox/tailwind-config": "^0.2.0",
         "@testing-library/jest-dom": "^5.15.0",
