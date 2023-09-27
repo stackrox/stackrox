@@ -72,7 +72,7 @@ jobs:
           filename: tests/performance/tests/testK6Integration.js
           flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10
 
-      - name: Publish test report in job summary
+      - name: Publish JUnit test report in job summary
         uses: test-summary/action@v2
         with:
           paths: performance-results/report.xml
@@ -86,7 +86,7 @@ jobs:
           gzip: false
           process_gcloudignore: false
 
-      - name: Generate PR comment
+      - name: Render PR comment from text report and links
         run: |
           report_txt=$(cat performance-results/report.txt)
           cat <<EOF > pr-comment.md
@@ -104,7 +104,7 @@ jobs:
 
           cat pr-comment.md
 
-      - name: Add report as PR comment
+      - name: Add text report and links as PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message-id: performance-evaluation
