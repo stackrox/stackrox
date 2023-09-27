@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var defaultScopeID = role.AccessScopeIncludeAll.Id
@@ -26,6 +27,7 @@ func verifyNoPrivilegeEscalation(userRoles, requestedRoles []permissions.Resolve
 	// Verify that for each tuple (access scope, resource, accessLevel) we have enough permissions.
 	var multiErr error
 	for _, requestedRole := range requestedRoles {
+		logging.GetRateLimitedLogger().Warnf("Working on a role %s", requestedRole.GetRoleName())
 		scopeID := requestedRole.GetAccessScope().GetId()
 		applicablePermissions := utils.NewUnionPermissions(append(userRolesByScope[scopeID], userRolesByScope[defaultScopeID]...))
 		err := comparePermissions(requestedRole, applicablePermissions)
