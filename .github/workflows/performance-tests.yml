@@ -17,12 +17,11 @@ jobs:
     steps:
       - run: |
           {
-            echo "Event: ${{ github.event_name }}"
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              echo '```'
-              echo "${{ toJSON(inputs) }}"
-              echo '```'
-            fi
+            echo "Event Type: ${{ github.event_name }}"
+            echo "Event:"
+            echo '```'
+            echo "${{ toJSON(github.event) }}"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
   run-k6-performance-tests:
@@ -86,6 +85,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv
 
       - name: Publish test report in job summary
         uses: test-summary/action@v2
@@ -107,7 +107,8 @@ jobs:
           cat <<EOF > pr-comment.md
           $report_txt
 
-          [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [Raw JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)
+          Summary: [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html)
+          Raw Data: [CSV](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.csv) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.json)
           EOF
 
           cat pr-comment.md
