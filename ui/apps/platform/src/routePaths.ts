@@ -107,9 +107,9 @@ export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
 // If the route ever requires global resources, spread them in resourceAccessRequirements property.
 export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
     'Deployment',
-    'DeploymentExtension',
+    // 'DeploymentExtension',
     'NetworkGraph',
-    'NetworkPolicy',
+    // 'NetworkPolicy',
 ];
 
 type RouteRequirements = {
@@ -182,20 +182,21 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
     compliance: {
+        // Same resources as compliance-enhanced although lack of commented-out resources affects entire list or entity pages.
         resourceAccessRequirements: everyResource([
-            'Alert', // for Deployment
-            'Cluster',
+            // 'Alert', // for Deployment
+            // 'Cluster',
             'Compliance',
-            'Deployment',
-            'Image', // for Deployment and Namespace
-            'K8sRole', // for Cluster
-            'K8sRoleBinding', // for Cluster
-            'K8sSubject', // for Cluster
-            'Namespace',
-            'NetworkPolicy', // for Namespace
-            'Node',
-            'Secret', // for Deployment and Namespace
-            'ServiceAccount', // for Cluster and Deployment
+            // 'Deployment',
+            // 'Image', // for Deployment and Namespace
+            // 'K8sRole', // for Cluster
+            // 'K8sRoleBinding', // for Cluster
+            // 'K8sSubject', // for Cluster
+            // 'Namespace',
+            // 'NetworkPolicy', // for Namespace
+            // 'Node',
+            // 'Secret', // for Deployment and Namespace
+            // 'ServiceAccount', // for Cluster and Deployment
         ]),
     },
     'compliance-enhanced': {
@@ -203,20 +204,21 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
-        resourceAccessRequirements: everyResource([
+        // Require at least one resource for a dashboard widget.
+        resourceAccessRequirements: someResource([
             'Alert',
-            'Cluster',
+            // 'Cluster',
             'Compliance',
-            'Deployment',
-            'Image',
-            'K8sRole',
-            'K8sRoleBinding',
+            // 'Deployment',
+            // 'Image',
+            // 'K8sRole',
+            // 'K8sRoleBinding',
             'K8sSubject',
-            'Namespace',
-            'Node',
+            // 'Namespace',
+            // 'Node',
             'Secret',
-            'ServiceAccount',
-            'WorkflowAdministration',
+            // 'ServiceAccount',
+            // 'WorkflowAdministration',
         ]),
     },
     dashboard: {
@@ -236,15 +238,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'policy-management': {
+        // The resources that are optional to view policies might become required to clone/create/edit a policy.
         resourceAccessRequirements: everyResource([
-            'Deployment',
-            'Image',
-            'Integration',
+            // 'Deployment',
+            // 'Image',
+            // 'Integration',
             'WorkflowAdministration',
         ]),
     },
     risk: {
-        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
+        resourceAccessRequirements: everyResource(['Deployment']),
     },
     search: {
         resourceAccessRequirements: everyResource([
@@ -291,15 +294,15 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'vulnerability-management': {
+        // Same resources as workload-cves although lack of commented-out resources affects entire list or entity pages.
         resourceAccessRequirements: everyResource([
-            'Alert', // for Cluster and Deployment and Namespace
-            'Cluster',
+            // 'Alert', // for Cluster and Deployment and Namespace
+            // 'Cluster',
             'Deployment',
             'Image',
-            'Namespace',
-            'Node',
+            // 'Namespace',
+            // 'Node',
             'WatchedImage', // for Image
-            'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
         ]),
     },
     'workload-cves': {
