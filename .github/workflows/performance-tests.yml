@@ -1,27 +1,19 @@
 name: Performance tests
 on:
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - hack2023/k6-ci-pipeline-tests
+    types:
+      - labeled
+      - synchronize
   push:
     branches:
       - hack2023/k6-ci-pipeline-tests
 jobs:
-  run-parameters:
-    name: Run parameters
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          {
-            echo "Event: ${{ github.event_name }}"
-            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-              echo '```'
-              echo "${{ toJSON(inputs) }}"
-              echo '```'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
   run-k6-performance-tests:
     name: Run k6 performance tests
     runs-on: ubuntu-latest
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     env:
       # TODO: dynamic name should be used
       NAME: k6-test
@@ -52,15 +44,15 @@ jobs:
       - uses: stackrox/actions/infra/install-infractl@v1
       - uses: "google-github-actions/auth@v1"
         with:
-          # TODO: Add new service account
-          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
+          credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v1"
         with:
           install_components: "gke-gcloud-auth-plugin"
-      - name: Download artifacts
+
+      - name: Prepare test environment
         run: |
-          infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+          infractl artifacts "${NAME//./-}" --download-dir artifacts > /dev/null
 
           # Debug if we can access cluster and if central is running.
           kubectl get pods --namespace stackrox
@@ -70,16 +62,54 @@ jobs:
           echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
           echo "::add-mask::$(cat artifacts/admin-password)"
 
+          # Create result directory
+          mkdir -p performance-results
+
       # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=results.json
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --duration 20m
 
-      - name: Output results
+      - name: Publish JUnit test report in job summary
+        uses: test-summary/action@v2
+        with:
+          paths: performance-results/report.xml
+
+      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
+      - name: Upload results to GCS
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          path: performance-results
+          destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}
+          gzip: false
+          process_gcloudignore: false
+
+      - name: Render PR comment from text report and links
         run: |
-          cat results.json
+          report_txt=$(cat performance-results/report.txt)
+          cat <<EOF > pr-comment.md
+          # Performance test results
+
+          ## Summary
+
+          $report_txt
+
+          ## Sources
+
+          - Summary: [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)
+          - Raw Data: [CSV](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.csv) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.json)
+          EOF
+
+          cat pr-comment.md
+
+      - name: Add text report and links as PR comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: performance-evaluation
+          message-path: |
+            pr-comment.md
 
       #######################################
       # Scale cluster with generic workload #
