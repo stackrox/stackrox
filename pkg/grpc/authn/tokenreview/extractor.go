@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	v1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	authenticationV1 "k8s.io/client-go/kubernetes/typed/authentication/v1"
@@ -30,7 +31,7 @@ type extractor struct {
 func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	rawToken := authn.ExtractToken(ri.Metadata, "K8sToken")
 	if rawToken == "" {
-		logging.GetRateLimitedLogger().Warn("No K8sToken header")
+		//logging.GetRateLimitedLogger().Warn("No K8sToken header")
 		return nil, nil
 	}
 	config, err := k8sutil.GetK8sInClusterConfig()
@@ -60,9 +61,10 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		logging.GetRateLimitedLogger().Warnf("Is not authenticated")
 		return nil, nil
 	}
+	allAccessCtx := sac.WithAllAccess(ctx)
 	roles := make([]permissions.ResolvedRole, 0)
 	if hasClusterAdminsGroup(reviewResult) {
-		adminRole, err := e.roleStore.GetAndResolveRole(ctx, "Admin")
+		adminRole, err := e.roleStore.GetAndResolveRole(allAccessCtx, "Admin")
 		if err != nil {
 			logging.GetRateLimitedLogger().Warnf("Error getting admin role: %w", err)
 			return nil, err
@@ -70,7 +72,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		roles = append(roles, adminRole)
 	}
 	if isServiceAccount(reviewResult) {
-		analystRole, err := e.roleStore.GetAndResolveRole(ctx, "Analyst")
+		analystRole, err := e.roleStore.GetAndResolveRole(allAccessCtx, "Analyst")
 		if err != nil {
 			logging.GetRateLimitedLogger().Warnf("Error getting analyst role: %w", err)
 			return nil, err
