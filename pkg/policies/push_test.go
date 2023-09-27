@@ -2,6 +2,7 @@ package policies
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -49,7 +50,8 @@ func TestPush(t *testing.T) {
 	}
 
 	registryConfig := &types.Config{
-		// TODO(dhaus): For local testing, add creds here.
+		Username:         os.Getenv("DOCKER_USERNAME"),
+		Password:         os.Getenv("DOCKER_PASSWORD"),
 		RegistryHostname: "registry-1.docker.io",
 	}
 

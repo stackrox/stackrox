@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"
-	"oras.land/oras-go/v2/content/memory"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/retry"
@@ -46,7 +45,7 @@ type pusherImpl struct {
 
 func (p *pusherImpl) Push(ctx context.Context, policy *storage.Policy,
 	registryConfig *types.Config, repository string) (string, error) {
-	log.Infof("Received policy %+v to push to registry %+v", policy, registryConfig)
+	log.Infof("Received policy %+v to push to registry %s", policy, registryConfig.RegistryHostname)
 
 	m := jsonpb.Marshaler{
 		Indent: "    ",
@@ -64,12 +63,11 @@ func (p *pusherImpl) Push(ctx context.Context, policy *storage.Policy,
 		return "", errors.Wrap(err, "writing temp file with policy")
 	}
 
-	// DAG stores holding the layer contents and manifest contents (file store = layer contents, memory store = manifest contents).
-	fs, err := file.New("")
+	// DAG stores holding the layer contents and manifest contents.
+	fs, err := file.New(dir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create file store")
 	}
-	memoryStore := memory.New()
 
 	// Add the file to the file store and create digest for the layer.
 	desc, err := fs.Add(ctx, policy.GetId(), mediaType, policyFilePath)
@@ -97,19 +95,19 @@ func (p *pusherImpl) Push(ctx context.Context, policy *storage.Policy,
 		}),
 	}
 
-	// Pack manifest creates a OCI manifest with the appropriate artifact type as well as the file content
+	// Pack manifest creates an OCI manifest with the appropriate artifact type as well as the file content
 	// as layer.
-	root, err := oras.PackManifest(ctx, memoryStore, oras.PackManifestVersion1_1_RC4, artifactType, packOpts)
+	root, err := oras.PackManifest(ctx, fs, oras.PackManifestVersion1_1_RC4, artifactType, packOpts)
 	if err != nil {
 		return "", errors.Wrap(err, "packing manifest")
 	}
-	// Tag the manifest in the memory store, so copying can just copy the local manifest remotely including the tag.
-	if err := memoryStore.Tag(ctx, root, root.Digest.String()); err != nil {
+	// Tag the manifest in the DAG, so copying can just copy the local manifest remotely including the tag.
+	if err := fs.Tag(ctx, root, policy.GetId()); err != nil {
 		return "", errors.Wrap(err, "tagging manifest")
 	}
 
 	// Copy the contents from local to remote.
-	if _, err := oras.Copy(ctx, memoryStore, root.Digest.String(), repo, policy.GetId(), oras.DefaultCopyOptions); err != nil {
+	if _, err := oras.Copy(ctx, fs, policy.GetId(), repo, policy.GetId(), oras.DefaultCopyOptions); err != nil {
 		return "", errors.Wrap(err, "copying manifest to remote")
 	}
 
