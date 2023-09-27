@@ -27,6 +27,7 @@ var (
 		user.With(permissions.View(resources.Integration)): {
 			"/v1.APITokenService/GetAPIToken",
 			"/v1.APITokenService/GetAPITokens",
+			"/v1.APITokenService/GetAllowedTokenRoles",
 		},
 		user.With(permissions.Modify(resources.Integration)): {
 			"/v1.APITokenService/GenerateToken",
