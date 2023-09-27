@@ -39,8 +39,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # TODO: Wait for image built in PR!
-
       # Create cluster
       - uses: stackrox/actions/infra/create-cluster@main
         with:
@@ -116,20 +114,7 @@ jobs:
         run: |
           infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
 
-      # Install Central + CentralDB
-      # TODO: wait for PR image to be created
-      # - uses: stackrox/actions/release/wait-for-image@main
-      #   with:
-      #     token: ${{ secrets.QUAY_BEARER_TOKEN }}
-      #     image: rhacs-eng/main:4.2.0
-
-      - name: Checkout workflow scripts
-        uses: actions/checkout@v4
-        with:
-          repository: "stackrox/workflow"
-          path: workflow
-
-      - name: Docker login
+      - name: Add Docker login for Quay.io
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -139,6 +124,12 @@ jobs:
       - name: Fetch infra artifacts
         run: |
           infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: "stackrox/workflow"
+          path: workflow
 
       - name: Clean previous installation
         run: |
@@ -150,10 +141,39 @@ jobs:
             "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
           done
 
+      # Wait for PR image
+      - name: Get PR image tag
+        run: |
+          MAIN_IMAGE_TAG="$(make tag)"
+          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+
+      # Install Central + CentralDB
+      - name: Wait for PR image (main)
+        uses: stackrox/actions/release/wait-for-image@main
+        with:
+          token: ${{ secrets.QUAY_BEARER_TOKEN }}
+          image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
+
+      - name: Wait for PR image (central-db)
+        uses: stackrox/actions/release/wait-for-image@main
+        with:
+          token: ${{ secrets.QUAY_BEARER_TOKEN }}
+          image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
+
+      - name: Wait for PR image (roxctl)
+        uses: stackrox/actions/release/wait-for-image@main
+        with:
+          token: ${{ secrets.QUAY_BEARER_TOKEN }}
+          image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
+
+      - name: Wait for PR image (sensor)
+        uses: stackrox/actions/release/wait-for-image@main
+        with:
+          token: ${{ secrets.QUAY_BEARER_TOKEN }}
+          image: rhacs-eng/sensor:${{ env.MAIN_IMAGE_TAG }}
+
       - name: Launch central services
         env:
-          # TODO: use PR tag!
-          MAIN_IMAGE_TAG: "4.2.0"
           LOAD_BALANCER: lb
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
@@ -174,7 +194,6 @@ jobs:
       # TODO: Find better way to wait for finished workload generation.
       - name: Generate workload
         env:
-          MAIN_IMAGE_TAG: "4.2.0"
           LOAD_BALANCER: lb
           ROX_POSTGRES_DATASTORE: "true"
           MONITORING_SUPPORT: "false"
@@ -189,8 +208,8 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: ${{ github.workspace }}/tests/performance/tests/testK6Integration.js
-          flags: --out json=results.json --iterations 10 --duration 20m
+          flags: --out csv=results.csv --iterations 10 --duration 20m
 
-      - name: Output full results
+      - name: Output full CSV results
         run: |
-          cat results.json
+          cat results.csv
