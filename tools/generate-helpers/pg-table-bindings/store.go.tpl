@@ -38,18 +38,26 @@ import (
     "github.com/hashicorp/go-multierror"
     "github.com/jackc/pgx/v4"
     "github.com/pkg/errors"
+{{- if not .Migration }}
     "github.com/stackrox/rox/central/metrics"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+{{- else }}
+    pkgSchema "github.com/stackrox/rox/migrator/migrations/{{.migrationDir}}/schema"
+{{- end }}
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
     "github.com/stackrox/rox/pkg/auth/permissions"
     "github.com/stackrox/rox/pkg/logging"
+{{- if not .Migration }}
     ops "github.com/stackrox/rox/pkg/metrics"
+{{- end }}
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/postgres"
+{{- if not .Migration }}
     "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
+{{- end }}
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/utils"
     "github.com/stackrox/rox/pkg/uuid"
@@ -69,8 +77,10 @@ const (
 var (
     log = logging.LoggerForModule()
     schema = {{ template "schemaVar" .Schema}}
+    {{- if not .Migration }}
     {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
         targetResource = resources.{{.Type | storageToResource}}
+    {{- end }}
     {{- end }}
 )
 
@@ -127,14 +137,23 @@ func New(db postgres.DB) Store {
             nil,
             nil,
             {{- end }}
+            {{- if not .Migration }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
+            {{- else }}
+            nil,
+            nil,
+            {{- end }}
             {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
             pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
             {{- else if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
+            {{- if not .Migration }}
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            {{- else }}
+                permissions.ResourceMetadata{},
+            {{- end }}
     )
 }
 
@@ -143,6 +162,8 @@ func New(db postgres.DB) Store {
 func pkGetter(obj *storeType) {{$singlePK.Type}} {
     return {{ $singlePK.Getter "obj" }}
 }
+
+{{- if not .Migration }}
 
 func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
     metrics.SetPostgresOperationDurationTime(start, op, storeName)
@@ -174,6 +195,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
     }
     return nil
 }
+{{- end }}
+
+{{- else }}
+    func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
+        return nil
+    }
 {{- end }}
 
 

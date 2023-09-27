@@ -39,7 +39,6 @@ var (
     // {{template "createTableStmtVar" .Schema }} holds the create statement for table `{{.Schema.Table|lowerCase}}`.
     {{template "createTableStmtVar" .Schema }} = {{template "createTableStmt" .Schema }}
 
-    {{- if not .Migration }}
     // {{template "schemaVar" .Schema.Table}} is the go schema for table `{{.Schema.Table|lowerCase}}`.
     {{template "schemaVar" .Schema.Table}} = func() *walker.Schema {
         {{- if .RegisterSchema }}
@@ -52,6 +51,7 @@ var (
         schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
         {{- end}}
 
+        {{- if not .Migration }}
         {{- if gt (len .References) 0 }}
 		referencedSchemas := map[string]*walker.Schema{
 		{{- range $ref := .References }}
@@ -86,9 +86,9 @@ var (
                 mapping.RegisterCategoryToTable(v1.{{.SearchCategory}}, schema)
             {{- end}}
         {{- end}}
+        {{- end}}
         return schema
     }()
-    {{- end}}
 )
 
 {{- define "createGormModel" }}
