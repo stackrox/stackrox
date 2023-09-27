@@ -115,99 +115,99 @@ jobs:
             pr-comment.md
           preformatted: true
 
-      # #######################################
-      # # Scale cluster with generic workload #
-      # #######################################
+      #######################################
+      # Scale cluster with generic workload #
+      #######################################
 
-      # # Create scale cluster with larger nodes.
-      # - uses: stackrox/actions/infra/create-cluster@main
-      #   with:
-      #     token: ${{ secrets.INFRA_TOKEN }}
-      #     flavor: gke-default
-      #     name: ${{ env.SCALE_CLUSTER_NAME }}
-      #     lifespan: 12h
-      #     args: nodes=3,machine-type=e2-standard-32
-      #     wait: true
+      # Create scale cluster with larger nodes.
+      - uses: stackrox/actions/infra/create-cluster@main
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: ${{ env.SCALE_CLUSTER_NAME }}
+          lifespan: 12h
+          args: nodes=3,machine-type=e2-standard-32
+          wait: true
 
-      # - name: Checkout workflow scripts
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: "stackrox/workflow"
-      #     path: workflow
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
+        with:
+          repository: "stackrox/workflow"
+          path: workflow
 
-      # - name: Docker login
-      #   env:
-      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      #   run: |
-      #     docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+      - name: Docker login
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-      # - name: Fetch infra artifacts
-      #   run: |
-      #     infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+      - name: Fetch infra artifacts
+        run: |
+          infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
 
-      # # TODO: wait for PR image to be created
-      # # action: stackrox/actions/release/wait-for-image@main
+      # TODO: wait for PR image to be created
+      # action: stackrox/actions/release/wait-for-image@main
 
-      # - name: Launch central services
-      #   env:
-      #     # TODO: use PR tag!
-      #     MAIN_IMAGE_TAG: "4.2.0"
-      #     LOAD_BALANCER: lb
-      #     ROX_POSTGRES_DATASTORE: "true"
-      #     MONITORING_SUPPORT: "false"
-      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      #   run: |
-      #     source "${{ github.workspace }}"/workflow/env.sh
-      #     "${{ github.workspace }}"/scale/dev/launch_central.sh
+      - name: Launch central services
+        env:
+          # TODO: use PR tag!
+          MAIN_IMAGE_TAG: "4.2.0"
+          LOAD_BALANCER: lb
+          ROX_POSTGRES_DATASTORE: "true"
+          MONITORING_SUPPORT: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source "${{ github.workspace }}"/workflow/env.sh
+          "${{ github.workspace }}"/scale/dev/launch_central.sh
 
-      #     # Required for k6 tests to run.
-      #     echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-      #     echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          # Required for k6 tests to run.
+          echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
-      #     LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
-      #     echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
-      #     echo "API_ENDPOINT="${LB_IP}:443"" >> "$GITHUB_ENV"
+          LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')
+          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
+          echo "API_ENDPOINT="${LB_IP}:443"" >> "$GITHUB_ENV"
 
-      # # TODO: Find better way to wait for finished workload generation.
-      # - name: Generate workload
-      #   env:
-      #     MAIN_IMAGE_TAG: "4.2.0"
-      #     LOAD_BALANCER: lb
-      #     ROX_POSTGRES_DATASTORE: "true"
-      #     MONITORING_SUPPORT: "false"
-      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      #   run: |
-      #     source "${{ github.workspace }}"/workflow/env.sh
-      #     "${{ github.workspace }}"/scale/dev/run-many.sh default 1
-      #     sleep 120
+      # TODO: Find better way to wait for finished workload generation.
+      - name: Generate workload
+        env:
+          MAIN_IMAGE_TAG: "4.2.0"
+          LOAD_BALANCER: lb
+          ROX_POSTGRES_DATASTORE: "true"
+          MONITORING_SUPPORT: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          source "${{ github.workspace }}"/workflow/env.sh
+          "${{ github.workspace }}"/scale/dev/run-many.sh default 1
+          sleep 120
 
-      # - name: Run local k6 test
-      #   uses: grafana/k6-action@v0.3.0
-      #   with:
-      #     filename: tests/performance/tests/testK6Integration.js
-      #     flags: --out json=results.json --iterations 10 --duration 20m
+      - name: Run local k6 test
+        uses: grafana/k6-action@v0.3.0
+        with:
+          filename: tests/performance/tests/testK6Integration.js
+          flags: --out json=results.json --iterations 10 --duration 20m
 
-      # # TODO: Find better way to wait for finished workload generation.
-      # - name: Generate workload
-      #   run: |
-      #     kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
-      #     sleep 20
-      #     "${{ github.workspace }}"/scale/dev/run-many.sh default 3
-      #     sleep 120
+      # TODO: Find better way to wait for finished workload generation.
+      - name: Generate workload
+        run: |
+          kubectl -n stackrox port-forward deploy/central 8000:8443 > /dev/null 2>&1 &
+          sleep 20
+          "${{ github.workspace }}"/scale/dev/run-many.sh default 3
+          sleep 120
 
-      # - name: Run local k6 test
-      #   uses: grafana/k6-action@v0.3.0
-      #   env:
-      #     HOST: "https://localhost:8000"
-      #   with:
-      #     filename: tests/performance/tests/testK6Integration.js
-      #     flags: --out json=results.json --iterations 10 --duration 20m
+      - name: Run local k6 test
+        uses: grafana/k6-action@v0.3.0
+        env:
+          HOST: "https://localhost:8000"
+        with:
+          filename: tests/performance/tests/testK6Integration.js
+          flags: --out json=results.json --iterations 10 --duration 20m
 
-      # - name: Output full results
-      #   run: |
-      #     cat results.json
+      - name: Output full results
+        run: |
+          cat results.json
 
-      # # TODO: with generic clusters add step to cleanup cluster after run!!!
+      # TODO: with generic clusters add step to cleanup cluster after run!!!
