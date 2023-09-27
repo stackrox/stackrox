@@ -2,7 +2,7 @@ name: Performance tests
 on:
   pull_request:
     branches:
-      - hack2023/k6-ci-pipeline-tests
+      - master
     types:
       - labeled
       - synchronize
