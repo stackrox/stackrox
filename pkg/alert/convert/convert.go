@@ -20,8 +20,14 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			Severity:    alert.GetPolicy().GetSeverity(),
 			Description: alert.GetPolicy().GetDescription(),
 			Categories:  alert.GetPolicy().GetCategories(),
+			Risk: &storage.ListAlertPolicy_Risk{
+				BaseScore:  alert.GetPolicy().GetRisk().GetBaseScore(),
+				Cumulative: alert.GetPolicy().GetRisk().GetCumulative(),
+				MaxScore:   alert.GetPolicy().GetRisk().GetMaxScore(),
+			},
 		},
 		EnforcementAction: alert.GetEnforcement().GetAction(),
+		ViolationCount:    int32(len(alert.GetViolations()) + len(alert.GetProcessViolation().GetProcesses())),
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {
 		listAlert.EnforcementCount = enforcementCount(alert)
