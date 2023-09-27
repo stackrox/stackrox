@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
 )
@@ -38,7 +37,7 @@ type roxctlClientImpl struct {
 }
 
 func getURL(path string) (string, error) {
-	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
+	endpoint, _, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return "", errors.Wrap(err, "could not get endpoint")
 	}

@@ -60,6 +60,12 @@ func ConnectNames() (string, string, bool, error) {
 	if err != nil {
 		return "", "", false, errors.Wrap(err, "could not get server name")
 	}
+	if flags.KubeContext() {
+		endpoint, err = GetForwardingEndpoint()
+		if err != nil {
+			return "", "", false, errors.Wrap(err, "could not get endpoint")
+		}
+	}
 	return endpoint, serverName, usePlaintext, nil
 }
 

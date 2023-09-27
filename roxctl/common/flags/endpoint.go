@@ -31,6 +31,8 @@ var (
 
 	caCertFile    string
 	caCertFileSet *bool
+
+	kubeContext bool
 )
 
 const (
@@ -41,6 +43,8 @@ const (
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
 	plaintextFlagName             = "plaintext"
 	serverNameFlagName            = "server-name"
+
+	kubeContextFlagName = "kubecontext"
 )
 
 // AddConnectionFlags adds connection-related flags to roxctl.
@@ -72,6 +76,8 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().StringVar(&caCertFile, caCertFileFlagName, "", "Path to a custom CA certificate to use (PEM format). "+
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
 	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
+
+	c.PersistentFlags().BoolVar(&kubeContext, kubeContextFlagName, false, "Use kubecontext to connect to central")
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
@@ -166,4 +172,9 @@ func CentralURL() (*url.URL, error) {
 		return nil, errors.Wrapf(err, "parsing central URL %s", rawURL)
 	}
 	return baseURL, nil
+}
+
+// KubeContext tells whether the connections should go through port forwarding.
+func KubeContext() bool {
+	return kubeContext
 }
