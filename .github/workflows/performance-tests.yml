@@ -103,12 +103,12 @@ jobs:
 
       - name: Generate PR comment
         run: |
-          {
-            echo "```\n"
-            cat performance-results/report.txt
-            echo "\n```\n"
-            echo "[HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [Raw JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)"
-          } > pr-comment.md
+          report_txt=$(cat performance-results/report.txt)
+          cat <<EOF > pr-comment.md
+          $report_txt
+
+          [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [Raw JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)
+          EOF
 
           cat pr-comment.md
 
