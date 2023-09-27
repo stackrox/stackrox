@@ -677,7 +677,7 @@ func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list all access scopes")
 	}
-	result := make([]permissions.ResolvedRole, len(roles))
+	result := make([]permissions.ResolvedRole, 0, len(roles))
 	for _, role := range roles {
 		resolvedRole := &resolvedRoleImpl{
 			role: role,

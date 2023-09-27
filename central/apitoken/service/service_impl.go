@@ -128,8 +128,13 @@ func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch all roles")
 	}
-	for _, role := range allRoles {
-		logging.GetRateLimitedLogger().Warn("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
+	for idx, role := range allRoles {
+		if role == nil {
+			logging.GetRateLimitedLogger().Warn("Role is nil at %d", role.GetRoleName(), idx)
+
+		} else {
+			logging.GetRateLimitedLogger().Warn("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
+		}
 	}
 	var result []string
 	for _, role := range allRoles {
