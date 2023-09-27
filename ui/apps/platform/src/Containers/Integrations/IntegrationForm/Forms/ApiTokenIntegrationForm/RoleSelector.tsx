@@ -46,7 +46,7 @@ function RoleSelector({
                 return (
                     <MenuItem
                         key={role.name}
-                        hasCheck
+                        hasCheck={true}
                         itemId={role.name}
                         isSelected={selectedRoles.includes(role.name)}
                     >
@@ -124,3 +124,4 @@ function RoleSelector({
 }
 
 export default RoleSelector;
+
