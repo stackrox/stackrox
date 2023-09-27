@@ -70,7 +70,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --duration 20m
 
       - name: Publish JUnit test report in job summary
         uses: test-summary/action@v2
