@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +37,7 @@ var (
 	}
 )
 
-func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultValue bool) {
+func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultValue, unchangeableFeature bool) {
 	t.Run(fmt.Sprintf("%s/%s", feature.Name(), test.env), func(t *testing.T) {
 		oldValue, exists := os.LookupEnv(feature.EnvVar())
 
@@ -57,7 +56,7 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultVal
 		}
 
 		got := feature.Enabled()
-		if buildinfo.ReleaseBuild {
+		if unchangeableFeature {
 			assert.Equal(t, got, defaultValue)
 		} else {
 			assert.Equal(t, got, test.expected)
@@ -65,16 +64,30 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultVal
 	})
 }
 
-func TestFlags(t *testing.T) {
+func TestFeatureFlags(t *testing.T) {
 	assert.Panics(t, func() {
 		registerFeature("blah", "NOT_ROX_WHATEVER", false)
 	})
 	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", true)
 	for _, test := range defaultTrueCases {
-		testFlagEnabled(t, defaultTrueFeature, test, true)
+		testFlagEnabled(t, defaultTrueFeature, test, true, false)
 	}
 	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE", false)
 	for _, test := range defaultFalseCases {
-		testFlagEnabled(t, defaultFalseFeature, test, false)
+		testFlagEnabled(t, defaultFalseFeature, test, false, false)
+	}
+}
+
+func TestUnchangeableFeatureFlags(t *testing.T) {
+	assert.Panics(t, func() {
+		registerUnchangeableFeature("blah", "NOT_ROX_WHATEVER", false)
+	})
+	defaultTrueFeature := registerUnchangeableFeature("default_true", "ROX_DEFAULT_TRUE", true)
+	for _, test := range defaultTrueCases {
+		testFlagEnabled(t, defaultTrueFeature, test, true, true)
+	}
+	defaultFalseFeature := registerUnchangeableFeature("default_false", "ROX_DEFAULT_FALSE", false)
+	for _, test := range defaultFalseCases {
+		testFlagEnabled(t, defaultFalseFeature, test, false, true)
 	}
 }
