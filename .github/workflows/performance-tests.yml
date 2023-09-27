@@ -17,7 +17,7 @@ jobs:
       KUBECONFIG: artifacts/kubeconfig
       TERM: xterm
       DEFAULT_IMAGE_REGISTRY: "quay.io/rhacs-eng"
-      SCALE_CLUSTER_NAME: k6-test-${{ github.event.pull_request.id }}
+      SCALE_CLUSTER_NAME: k6-test-${{ github.event.pull_request.number }}
       SCALE_WORKLOAD_TYPE: default
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
@@ -63,7 +63,7 @@ jobs:
           install_components: "gke-gcloud-auth-plugin"
       - name: Test cluster readiness
         run: |
-          STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
+          STATUS=$(infractl get "${SCALE_CLUSTER_NAME//./-}" --json | jq -r .Status)
           if [ "$STATUS" != "READY" ]; then
             exit 1
           fi
