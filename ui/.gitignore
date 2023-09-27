@@ -4,6 +4,8 @@ node_modules/
 /monorepo.lock.sha256
 
 # build
+deps-bun
+build-bun
 lint
 /build
 test-results
