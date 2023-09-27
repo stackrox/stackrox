@@ -5,7 +5,6 @@ on:
       - hack2023/k6-ci-pipeline-tests
     types:
       - synchronize
-  workflow_dispatch:
   push:
     branches:
       - hack2023/k6-ci-pipeline-tests
