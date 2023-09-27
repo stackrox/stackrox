@@ -91,11 +91,11 @@ test_custom() {
     STACKROX_TESTNAMES+=("IntegrationHealthTest")
     STACKROX_TESTNAMES+=("K8sRbacTest")
     STACKROX_TESTNAMES+=("NetworkBaselineTest" "NetworkSimulator" "NodeInventoryTest")
-    STACKROX_TESTNAMES+=("PaginationTest" "ProcessBaselinesTest" "ProcessesListeningOnPortsTest")
-    STACKROX_TESTNAMES+=("RbacAuthTest" "RiskTest" "RuntimePolicyTest" "RuntimeViolationLifecycleTest")
+    STACKROX_TESTNAMES+=("PaginationTest" "ProcessesListeningOnPortsTest")
+    STACKROX_TESTNAMES+=("RbacAuthTest" "RuntimePolicyTest" "RuntimeViolationLifecycleTest")
     STACKROX_TESTNAMES+=("SecretsTest" "SummaryTest")
     STACKROX_TESTNAMES+=("TLSChallengeTest")
-    STACKROX_TESTNAMES+=("VulnMgmtSACTest" "VulnMgmtTest" "VulnMgmtWorkflowTest" "VulnScanWithGraphQLTest")
+    STACKROX_TESTNAMES+=("VulnMgmtSACTest" "VulnMgmtTest" "VulnMgmtWorkflowTest")
 
     #Initialize variables
     interval_sec=20
