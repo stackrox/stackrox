@@ -1232,6 +1232,10 @@
         "resource": {
           "$ref": "#/definitions/ListAlertResourceEntity",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "violationCount": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },
@@ -1289,8 +1293,28 @@
         "developerInternalFields": {
           "$ref": "#/definitions/ListAlertPolicyDevFields",
           "description": "For internal use only."
+        },
+        "risk": {
+          "$ref": "#/definitions/storageListAlertPolicyRisk"
         }
       }
+    },
+    "storageListAlertPolicyRisk": {
+      "type": "object",
+      "properties": {
+        "baseScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "maxScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "cumulative": {
+          "type": "boolean"
+        }
+      },
+      "description": "Describes how risky is a violation emitted by this policy."
     },
     "storageListAlertResourceType": {
       "type": "string",
@@ -1305,7 +1329,7 @@
         "EGRESS_FIREWALLS"
       ],
       "default": "DEPLOYMENT",
-      "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"
+      "description": "A special ListAlert-only enumeration of all resource types. Unlike\nAlert.Resource.ResourceType this also includes deployment as a type.\nThis must be kept in sync with Alert.Resource.ResourceType (excluding\nthe deployment value)."
     },
     "storageNetworkEntityInfoType": {
       "type": "string",
@@ -1424,6 +1448,9 @@
         "isDefault": {
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
+        },
+        "risk": {
+          "$ref": "#/definitions/storagePolicyRisk"
         }
       }
     },
@@ -1446,6 +1473,23 @@
           }
         }
       }
+    },
+    "storagePolicyRisk": {
+      "type": "object",
+      "properties": {
+        "baseScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "maxScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "cumulative": {
+          "type": "boolean"
+        }
+      },
+      "description": "Describes how risky is a violation emitted by this policy."
     },
     "storagePolicySection": {
       "type": "object",

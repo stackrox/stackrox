@@ -60,6 +60,14 @@ message Policy {
     bool                        mitre_vectors_locked    = 25;
     // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
     bool                        is_default              = 26;
+
+    // Describes how risky is a violation emitted by this policy.
+    message Risk {
+        float base_score = 1;
+        float max_score  = 2;
+        bool  cumulative = 3;
+    }
+    Risk                        risk                    = 27;
 }
 
 enum EventSource {

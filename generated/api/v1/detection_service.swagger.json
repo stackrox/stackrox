@@ -1130,6 +1130,9 @@
         "isDefault": {
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
+        },
+        "risk": {
+          "$ref": "#/definitions/storagePolicyRisk"
         }
       }
     },
@@ -1152,6 +1155,23 @@
           }
         }
       }
+    },
+    "storagePolicyRisk": {
+      "type": "object",
+      "properties": {
+        "baseScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "maxScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "cumulative": {
+          "type": "boolean"
+        }
+      },
+      "description": "Describes how risky is a violation emitted by this policy."
     },
     "storagePolicySection": {
       "type": "object",
