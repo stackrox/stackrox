@@ -209,6 +209,23 @@ class SensorIntegration(BaseTest):
             post_start_hook=set_dirs_after_start,
         )
 
+class SensorProfilingOCP(BaseTest):
+    TEST_TIMEOUT = 90 * 60
+    PPROF_ZIP_OUTPUT = "/tmp/sensor-profiling/pprof.zip"
+
+    def run(self):
+        print("Executing sensor profiling")
+
+        def set_dirs_after_start():
+            # let post test know where results are
+            self.test_outputs = [ScaleTest.PPROF_ZIP_OUTPUT]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-sensor-profile.sh", SensorIntegrationOCP.PPROF_ZIP_OUTPUT],
+            SensorIntegrationOCP.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
 
 class SensorIntegrationOCP(SensorIntegration):
     def run(self):
