@@ -31,6 +31,7 @@ var (
 		user.With(permissions.View(resources.Integration)): {
 			v1.APITokenService_GetAPIToken_FullMethodName,
 			v1.APITokenService_GetAPITokens_FullMethodName,
+			v1.APITokenService_ListAllowedTokenRoles_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
 			v1.APITokenService_RevokeToken_FullMethodName,
