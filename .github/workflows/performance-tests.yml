@@ -10,31 +10,10 @@ on:
     branches:
       - hack2023/k6-ci-pipeline-tests
 jobs:
-  debug-labels:
-    name: Debug labels
-    runs-on: ubuntu-latest
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
-    steps:
-      - run: |
-          echo "labeled correctly"
-
-  run-parameters:
-    name: Run parameters
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          {
-            echo "Event Type: ${{ github.event_name }}"
-            echo "Event:"
-            echo '```'
-            echo "${{ toJSON(github.event) }}"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
   run-k6-performance-tests:
     name: Run k6 performance tests
     runs-on: ubuntu-latest
-    if: false
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     env:
       # TODO: dynamic name should be used
       NAME: k6-test
@@ -91,7 +70,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --vus 10
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10
 
       - name: Publish test report in job summary
         uses: test-summary/action@v2
