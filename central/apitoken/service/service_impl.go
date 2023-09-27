@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
@@ -139,6 +140,9 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 	allRoles, err := s.roles.GetAllResolvedRoles(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch all roles")
+	}
+	for _, role := range allRoles {
+		logging.GetRateLimitedLogger().Warn("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
 	}
 	var result []string
 	for _, role := range allRoles {
