@@ -4,7 +4,6 @@ on:
     branches:
       - hack2023/k6-ci-pipeline-tests
     types:
-      - opened
       - synchronize
   workflow_dispatch:
   push:
@@ -85,7 +84,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10
 
       - name: Publish test report in job summary
         uses: test-summary/action@v2
@@ -99,7 +98,7 @@ jobs:
           path: performance-results
           destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}
           gzip: false
-          .gcloudignore: false
+          process_gcloudignore: false
 
       - name: Generate PR comment
         run: |
