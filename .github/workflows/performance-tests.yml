@@ -92,19 +92,22 @@ jobs:
         with:
           paths: performance-results/report.xml
 
+      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
       - name: Upload results to GCS
         uses: google-github-actions/upload-cloud-storage@v1
         with:
           path: performance-results
           destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}
           gzip: false
+          .gcloudignore: false
 
       - name: Generate PR comment
         run: |
           {
+            echo "```\n"
             cat performance-results/report.txt
-            echo "[HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html)"
-            echo "[Raw JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)"
+            echo "\n```\n"
+            echo "[HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [Raw JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)"
           } > pr-comment.md
 
           cat pr-comment.md
@@ -115,7 +118,6 @@ jobs:
           message-id: performance-evaluation
           message-path: |
             pr-comment.md
-          preformatted: true
 
       #######################################
       # Scale cluster with generic workload #
