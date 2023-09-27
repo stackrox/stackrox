@@ -53,6 +53,8 @@ func migrate(database *types.Databases) error {
 			return errors.Wrap(err, "failed to scan rows")
 		}
 
+		// {{template "TODO"}}: Make any necessary updates to the record
+
 		recordProto, err := schema.Convert{{.TrimmedType}}ToProto(record)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert %+v to proto", record)
