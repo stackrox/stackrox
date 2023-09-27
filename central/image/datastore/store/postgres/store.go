@@ -2,11 +2,9 @@ package postgres
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -692,17 +690,6 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 	return metadataUpdated, scanUpdated, nil
 }
 
-func normalizeImage(image *storage.Image) {
-	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		return image.GetScan().GetComponents()[i].GetName() < image.GetScan().GetComponents()[j].GetName()
-	})
-	for _, comp := range image.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
-		})
-	}
-}
-
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
 
@@ -717,25 +704,6 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	}
 	if exists && oldImage.GetHashoneof() != nil {
 		hash = oldImage.GetHash()
-	}
-
-	if oldImage.GetHash() != 0 && oldImage.GetHash() != obj.GetHash() {
-		// Print values
-		normalizeImage(oldImage)
-		normalizeImage(obj)
-
-		marshaler := jsonpb.Marshaler{}
-		data, err := marshaler.MarshalToString(oldImage)
-		if err != nil {
-			panic(err)
-		}
-		log.Info(data)
-
-		data, err = marshaler.MarshalToString(obj)
-		if err != nil {
-			panic(err)
-		}
-		log.Info(data)
 	}
 
 	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)

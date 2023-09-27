@@ -125,7 +125,7 @@ message EmbeddedImageScanComponent {
     oneof has_layer_index {
         int32 layer_index                      = 5;
     }
-    int64                          priority    = 6;
+    int64                          priority    = 6 [(gogoproto.moretags) = 'hash:"ignore"'];
     SourceType                     source      = 7;
     string                         location    = 8;
     oneof set_top_cvss {
