@@ -3,8 +3,13 @@ package celcompile
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/google/cel-go/common/types"
+	"github.com/google/cel-go/common/types/ref"
+	"github.com/google/cel-go/interpreter"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stretchr/testify/assert"
@@ -104,7 +109,8 @@ var tplatetxt = `
    .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelValA": [obj.ValA]})))
 `
 
-var tplate2 = `
+var (
+	tplate44 = `
 [] +
 [[{}]]
    .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelValA": [obj.ValA]})))
@@ -127,6 +133,7 @@ var tplate2 = `
    .filter(result, result.size() != 0)
    .flatten()
 `
+)
 
 func TestBasicXX(t *testing.T) {
 	prog, err := compile(tplate2)
@@ -155,6 +162,59 @@ func TestBasicYY(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(jsonStr, &data))
 	input := map[string]interface{}{"obj": data}
 	out, err := evaluate(prog, input)
+	assert.NoError(t, err)
+	fmt.Print(out)
+}
+
+type test struct {
+	a, b int
+}
+
+func (t test) ConvertToNative(typeDesc reflect.Type) (interface{}, error) {
+	panic("not required")
+}
+
+func (t test) ConvertToType(typeVal ref.Type) ref.Val {
+	panic("not required")
+}
+
+func (t test) Equal(other ref.Val) ref.Val {
+
+	o, ok := other.Value().(test)
+	if ok {
+		if o == t {
+			return types.Bool(true)
+		} else {
+			return types.Bool(false)
+		}
+	} else {
+		return types.ValOrErr(other, "%v is not of type Test", other)
+	}
+}
+
+func (t test) Type() ref.Type {
+	return TestType
+}
+
+func (t test) Receive(function string, overload string, args []ref.Val) ref.Val {
+
+	return types.ValOrErr(TestType, "no such function - %s", function)
+}
+
+func TestBasicXE(t *testing.T) {
+	var tplat = `
+obj
+`
+	prog, err := compile(tplat)
+	assert.NoError(t, err)
+	jsonStr, err := json.Marshal(xyz.obj)
+	assert.NoError(t, err)
+
+	var data interface{}
+	assert.NoError(t, json.Unmarshal(jsonStr, &data))
+	in, err := interpreter.NewActivation(map[string]interface{}{"obj": storage.TestChild1{Id: "xx"}})
+	assert.NoError(t, err)
+	out, _, err := prog.Eval(in)
 	assert.NoError(t, err)
 	fmt.Print(out)
 }

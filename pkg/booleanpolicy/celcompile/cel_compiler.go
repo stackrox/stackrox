@@ -1,18 +1,20 @@
 package celcompile
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/open-policy-agent/opa/rego"
-	"github.com/pkg/errors"
+	"github.com/google/cel-go/cel"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+type matchValueType []interface{}
+type matchType map[string]matchValueType
+type resultType []matchType
 
 type celCompilerForType struct {
 	fieldToMetaPathMap *pathutil.FieldToMetaPathMap
@@ -24,7 +26,7 @@ type CelCompiler interface {
 }
 
 type celBasedEvaluator struct {
-	q      rego.PreparedEvalQuery
+	q      cel.Program
 	module string // For debug
 }
 
@@ -33,7 +35,7 @@ type celBasedEvaluator struct {
 // We know that our rego programs are constructed to return map[string][]interface{},
 // so this takes advantage of that to traverse them. It also converts each returned value
 // into a string.
-func convertBindingToResult(binding interface{}) (m map[string][]string, err error) {
+func convertBindingToResult(binding map[string][]interface{}) (m map[string][]string, err error) {
 	panicked := true
 	defer func() {
 		if r := recover(); r != nil || panicked {
@@ -41,8 +43,8 @@ func convertBindingToResult(binding interface{}) (m map[string][]string, err err
 		}
 	}()
 	m = make(map[string][]string)
-	for k, v := range binding.(map[string]interface{}) {
-		vAsInterfaceSlice := v.([]interface{})
+	for k, v := range binding {
+		vAsInterfaceSlice := v
 		vAsString := make([]string, 0, len(vAsInterfaceSlice))
 		for _, val := range vAsInterfaceSlice {
 			vAsString = append(vAsString, fmt.Sprintf("%v", val))
@@ -54,45 +56,19 @@ func convertBindingToResult(binding interface{}) (m map[string][]string, err err
 }
 
 func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
-	parsedInput, err := obj.ParsedRegoValue()
+	return nil, true
+}
+
+func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
+	resultSet, err := evaluate(r.q, map[string]interface{}{"obj": obj})
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
 	if err != nil {
 		utils.Should(err)
 		return nil, false
 	}
+	fmt.Println(resultSet)
 
-	resultSet, err := r.q.Eval(context.Background(), rego.EvalParsedInput(parsedInput))
-	// If there is an error here, it is a programming error. Let's not panic in prod over it.
-	if err != nil {
-		utils.Should(err)
-		return nil, false
-	}
-	if len(resultSet) != 1 {
-		utils.Should(fmt.Errorf("invalid resultSet: %+v", resultSet))
-		return nil, false
-	}
-	result := resultSet[0]
-	outBindings, found := result.Bindings["out"].([]interface{})
-	if !found {
-		utils.Should(errors.New("resultSet didn't contain the expected bindings"))
-		return nil, false
-	}
-
-	// This means it didn't match.
-	if len(outBindings) == 0 {
-		return nil, false
-	}
-
-	res := &evaluator.Result{}
-	for _, binding := range outBindings {
-		match, err := convertBindingToResult(binding)
-		if err != nil {
-			utils.Should(fmt.Errorf("failed to convert binding %+v: %w", binding, err))
-			return nil, false
-		}
-		res.Matches = append(res.Matches, match)
-	}
-	return res, true
+	return nil, true
 }
 
 // MustCreateCompiler is a wrapper around CreateRegoCompiler that panics if there's an error.
@@ -111,19 +87,41 @@ func CreateCelCompiler(objMeta *pathutil.AugmentedObjMeta) (CelCompiler, error) 
 	return &celCompilerForType{fieldToMetaPathMap: fieldToMetaPathMap}, nil
 }
 
+var tplate2 = `
+[] +
+[[{}]]
+   .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelValA": [obj.ValA]})))
+   .map(
+      result,
+      obj.NestedSlice
+        .filter(
+          k,
+          k.NestedValB.startsWith("B1") || k.NestedValB.startsWith("B2")
+        )
+        .filter(
+          k,
+          k.NestedValA.startsWith("A1") || k.NestedValA.startsWith("A2")
+        )
+        .map(
+          k,
+          result.map(entry, entry.with({"B": [k.NestedValB], "A": [k.NestedValA]}))
+        ).flatten()
+   )
+   .filter(result, result.size() != 0)
+   .flatten()
+`
+
 func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evaluator.Evaluator, error) {
-	regoModule, err := r.compileCel(query)
+	module, err := r.compileCel(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile cel: %w", err)
 	}
-	q, err := rego.New(
-		rego.Query("out = data.policy.main.violations"),
-		rego.Module("main.policy", regoModule),
-	).PrepareForEval(context.Background())
+
+	prg, err := compile(tplate2)
 	if err != nil {
 		return nil, err
 	}
-	return &celBasedEvaluator{q: q, module: regoModule}, nil
+	return &celBasedEvaluator{q: prg, module: module}, nil
 }
 
 type fieldMatchData struct {

@@ -21,6 +21,8 @@ import (
 	mito "github.com/elastic/mito/lib"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/ext"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 	k8s "k8s.io/apiserver/pkg/cel/library"
@@ -67,6 +69,23 @@ func evaluate(prog cel.Program, input map[string]any) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to evaluate: %w", err)
 	}
+	result, err := val.ConvertToNative(reflect.TypeOf([]map[string][]any{}))
+	res := &evaluator.Result{}
+	if result == nil {
+		err = fmt.Errorf("invalid result: %+v", result)
+		utils.Should(err)
+		return "", err
+	}
+	for _, binding := range result.([]map[string][]interface{}) {
+		match, err := convertBindingToResult(binding)
+		if err != nil {
+			err = fmt.Errorf("invalid result: %+v", result)
+			utils.Should(err)
+			return "", err
+		}
+		res.Matches = append(res.Matches, match)
+	}
+
 	jsonData, err := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal the output: %w", err)

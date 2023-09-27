@@ -1,6 +1,7 @@
 package celcompile
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -108,7 +109,13 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				require.NoError(t, err)
 				t.Log("--- evaluator ---")
 				t.Log(evaluator.(*celBasedEvaluator).module)
-				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
+				jsonStr, err := json.Marshal(c.obj)
+				assert.NoError(t, err)
+
+				var data interface{}
+				assert.NoError(t, json.Unmarshal(jsonStr, &data))
+
+				res, matched := evaluator.(*celBasedEvaluator).EvaluateX(data)
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
