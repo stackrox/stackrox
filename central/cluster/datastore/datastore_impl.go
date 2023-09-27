@@ -800,7 +800,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, err
 	}
 	log.Infof("CLUSTERID: %s", clusterID)
-	log.Infof("HELLO: %+v", clusterID)
+	log.Infof("HELLO: %+v", hello)
 
 	helmConfig := hello.GetHelmManagedConfigInit()
 	manager := helmConfig.GetManagedBy()
