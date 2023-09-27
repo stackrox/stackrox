@@ -104,11 +104,11 @@ jobs:
       #   with:
       #     token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
       #     image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
-      # - name: Wait for PR image (roxctl)
-      #   uses: stackrox/actions/release/wait-for-image@main
-      #   with:
-      #     token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      #     image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
+      - name: Wait for PR image (roxctl)
+        uses: stackrox/actions/release/wait-for-image@main
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
 
       # Install Central + CentralDB
       - name: Launch central services
