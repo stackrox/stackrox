@@ -15,108 +15,38 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     env:
-      # TODO: dynamic name should be used
-      NAME: k6-test
-      SCALE_CLUSTER_NAME: k6-test-gke
-      KUBECONFIG: artifacts/kubeconfig
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      KUBECONFIG: artifacts/kubeconfig
       TERM: xterm
       DEFAULT_IMAGE_REGISTRY: "quay.io/rhacs-eng"
+      SCALE_CLUSTER_NAME: k6-test-${{ github.event.pull_request.id }}
       SCALE_WORKLOAD_TYPE: default
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Create cluster
-      - uses: stackrox/actions/infra/create-cluster@main
+      - name: Checkout workflow scripts
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: demo
-          name: k6-test
-          lifespan: 24h
-          wait: "true"
+          repository: "stackrox/workflow"
+          path: workflow
 
-      # Fetch artifacts
-      - uses: stackrox/actions/infra/install-infractl@v1
-      - uses: "google-github-actions/auth@v1"
-        with:
-          credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
-        with:
-          install_components: "gke-gcloud-auth-plugin"
-
-      - name: Prepare test environment
-        run: |
-          infractl artifacts "${NAME//./-}" --download-dir artifacts > /dev/null
-
-          # Debug if we can access cluster and if central is running.
-          kubectl get pods --namespace stackrox
-
-          # Required for k6 tests to run.
-          echo "HOST=$(cat artifacts/url)" >> "$GITHUB_ENV"
-          echo "ROX_ADMIN_PASSWORD=$(cat artifacts/admin-password)" >> "$GITHUB_ENV"
-          echo "::add-mask::$(cat artifacts/admin-password)"
-
-          # Create result directory
-          mkdir -p performance-results
-
-      # -- checkpoint - cluster is running and ACS is running, we have artifacts downloaded
-      - name: Run local k6 test
-        uses: grafana/k6-action@v0.3.0
-        with:
-          filename: tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --duration 20m
-
-      - name: Publish JUnit test report in job summary
-        uses: test-summary/action@v2
-        with:
-          paths: performance-results/report.xml
-
-      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
-      - name: Upload results to GCS
-        uses: google-github-actions/upload-cloud-storage@v1
-        with:
-          path: performance-results
-          destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}
-          gzip: false
-          process_gcloudignore: false
-
-      - name: Render PR comment from text report and links
-        run: |
-          report_txt=$(cat performance-results/report.txt)
-          cat <<EOF > pr-comment.md
-          # Performance test results
-
-          ## Summary
-
-          $report_txt
-
-          ## Sources
-
-          - Summary: [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)
-          - Raw Data: [CSV](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.csv) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.json)
-          EOF
-
-          cat pr-comment.md
-
-      - name: Add text report and links as PR comment
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: performance-evaluation
-          message-path: |
-            pr-comment.md
-
-      #######################################
-      # Scale cluster with generic workload #
-      #######################################
+      # # Create cluster
+      # - uses: stackrox/actions/infra/create-cluster@main
+      #   with:
+      #     token: ${{ secrets.INFRA_TOKEN }}
+      #     flavor: demo
+      #     name: k6-test
+      #     lifespan: 24h
+      #     wait: "true"
 
       # Create scale cluster with larger nodes.
-      - uses: stackrox/actions/infra/create-cluster@main
+      - name: Create testing cluster
+        uses: stackrox/actions/infra/create-cluster@main
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
@@ -125,25 +55,24 @@ jobs:
           args: nodes=3,machine-type=e2-standard-32
           wait: true
 
-      # Fetch artifacts
+      # Fetch infractl artifacts
       - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          install_components: "gke-gcloud-auth-plugin"
       - name: Test cluster readiness
         run: |
           STATUS=$(infractl get "${NAME//./-}" --json | jq -r .Status)
           if [ "$STATUS" != "READY" ]; then
             exit 1
           fi
-      - uses: "google-github-actions/auth@v1"
-        with:
-          # TODO: Add new service account
-          credentials_json: "${{ secrets.GCP_RELEASE_AUTOMATION_SA }}"
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
-        with:
-          install_components: "gke-gcloud-auth-plugin"
-      - name: Download artifacts
+      - name: Fetch infra artifacts
         run: |
-          infractl artifacts "${NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
+          infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts > /dev/null
 
       - name: Add Docker login for Quay.io
         env:
@@ -151,16 +80,6 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
-
-      - name: Fetch infra artifacts
-        run: |
-          infractl artifacts "${SCALE_CLUSTER_NAME//./-}" --download-dir artifacts >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Checkout workflow scripts
-        uses: actions/checkout@v4
-        with:
-          repository: "stackrox/workflow"
-          path: workflow
 
       - name: Clean previous installation
         run: |
@@ -172,31 +91,28 @@ jobs:
             "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
           done
 
-      # Wait for PR image
+      # Wait for PR images
       - name: Get PR image tag
         run: |
           MAIN_IMAGE_TAG="$(make tag)"
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
-
-      # Install Central + CentralDB
       - name: Wait for PR image (main)
         uses: stackrox/actions/release/wait-for-image@main
         with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
-
       - name: Wait for PR image (central-db)
         uses: stackrox/actions/release/wait-for-image@main
         with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
-
       - name: Wait for PR image (roxctl)
         uses: stackrox/actions/release/wait-for-image@main
         with:
-          token: ${{ secrets.QUAY_RHACS_ENG_VULNERABILITY_BEARER_TOKEN }}
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
 
+      # Install Central + CentralDB
       - name: Launch central services
         env:
           LOAD_BALANCER: lb
@@ -231,12 +147,51 @@ jobs:
           "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
           sleep 120
 
+      - name: Create result directory
+        run: |
+          mkdir -p performance-results
+
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
         with:
           filename: ${{ github.workspace }}/tests/performance/tests/testK6Integration.js
-          flags: --out csv=results.csv --iterations 10 --duration 20m
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --duration 20m
 
-      - name: Output full CSV results
+      - name: Publish JUnit test report in job summary
+        uses: test-summary/action@v2
+        with:
+          paths: performance-results/report.xml
+
+      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
+      - name: Upload results to GCS
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          path: performance-results
+          destination: acs-performance-test-results/${{ github.ref }}/${{ github.sha }}
+          gzip: false
+          process_gcloudignore: false
+
+      - name: Render PR comment from text report and links
         run: |
-          cat results.csv
+          report_txt=$(cat performance-results/report.txt)
+          cat <<EOF > pr-comment.md
+          # Performance test results
+
+          ## Summary
+
+          $report_txt
+
+          ## Sources
+
+          - Summary: [HTML Report](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.html) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/report.json)
+          - Raw Data: [CSV](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.csv) | [JSON](https://storage.cloud.google.com/acs-performance-test-results/${{ github.ref }}/${{ github.sha }}/performance-results/raw.json)
+          EOF
+
+          cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Add text report and links as PR comment
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: performance-evaluation
+          message-path: |
+            pr-comment.md
