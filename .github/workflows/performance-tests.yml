@@ -80,25 +80,22 @@ jobs:
       - name: Publish test report in job summary
         uses: test-summary/action@v2
         with:
-          paths: report.xml
+          paths: performance-results/report.xml
 
       - name: Add report as PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message-id: performance-evaluation
           message-path: |
-            report.txt
+            performance-results/report.txt
           preformatted: true
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload results to GCS
+        id: upload-gcs
+        uses: google-github-actions/upload-cloud-storage@v1
         with:
-          name: html-report
-          path: report.html
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: json-report
-          path: report.json
+          path: performance-results
+          destination: acs-performance-test-results/pr/7890
 
       # #######################################
       # # Scale cluster with generic workload #
