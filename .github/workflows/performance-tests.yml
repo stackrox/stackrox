@@ -67,7 +67,7 @@ jobs:
           name: ${{ env.SCALE_CLUSTER_NAME }}
           lifespan: 12h
           args: nodes=3,machine-type=e2-standard-32
-          wait: "true"
+          wait: true
 
       # Fetch infractl artifacts
       - uses: stackrox/actions/infra/install-infractl@v1
