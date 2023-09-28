@@ -7,8 +7,32 @@ on:
     types:
       - labeled
       - synchronize
+concurrency: performance-tests-${{ github.ref }}
 jobs:
+  wait-for-images:
+    name: Wait for images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [main, roxctl]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Get PR image tag
+        run: |
+          MAIN_IMAGE_TAG="$(make tag)"
+          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+      - name: Wait for the ${{ matrix.image }}
+        uses: stackrox/actions/release/wait-for-image@v1
+        with:
+          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          image: rhacs-eng/${{ matrix.image }}:${{ env.MAIN_IMAGE_TAG }}
+
   run-k6-performance-tests:
+    needs: [wait-for-images]
     name: Run k6 performance tests
     runs-on: ubuntu-latest
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
@@ -36,7 +60,7 @@ jobs:
 
       # Create scale cluster with larger nodes.
       - name: Create testing cluster
-        uses: stackrox/actions/infra/create-cluster@main
+        uses: stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
@@ -147,7 +171,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: ./tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_job_id=${{ github.job }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tag github_run_id=${{ github.run_id }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
 
       - name: Publish JUnit test report in job summary
         uses: test-summary/action@v2
