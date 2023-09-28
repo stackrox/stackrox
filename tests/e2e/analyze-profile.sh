@@ -27,14 +27,14 @@ function main() {
 
   # Read command to array
   IFS=$'\n' read -r -d '' -a topFile < <( getTopEntries "$FILE" && printf '\0' )
-  printSummary "$FILE" "Top $NUM_TOP memory consumers in this PR:" "${topFile[@]}"
+  printSummary "$FILE" "Top $NUM_TOP memory consumers in this PR (file: '$FILE'):" "${topFile[@]}"
 
   if [[ -n "$BASE" ]]; then
     IFS=$'\n' read -r -d '' -a topBase < <( getTopEntries "$BASE" && printf '\0' )
     echo
-    printSummary "$BASE" "Top $NUM_TOP memory consumers in master:" "${topBase[@]}"
+    printSummary "$BASE" "Top $NUM_TOP memory consumers in the reference branch (file: '$BASE'):" "${topBase[@]}"
     echo
-    printDiff "$FILE" "$BASE" "Diff of Top $NUM_TOP memory consumers between master and current PR:"
+    printDiff "$FILE" "$BASE" "Diff of top $NUM_TOP memory consumers between the reference branch (file: '$BASE') and the current PR (file: '$FILE'). Negative value means lower memory usage for current PR:"
   fi
 }
 
