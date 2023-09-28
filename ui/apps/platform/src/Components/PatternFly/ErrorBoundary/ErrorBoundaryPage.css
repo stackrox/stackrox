@@ -1,0 +1,33 @@
+#error-boundary-page,
+#error-boundary-page .error-boundary-page-column,
+#error-boundary-page .error-boundary-stacks-row,
+#error-boundary-page .error-boundary-stack,
+#error-boundary-page .error-boundary-stack-column,
+#error-boundary-page .error-boundary-stack .pf-c-code-block {
+    height: 100%;
+}
+
+#error-boundary-page .error-boundary-stacks-row {
+    width: 100%;
+}
+
+#error-boundary-page .error-boundary-stacks-row,
+#error-boundary-page .error-boundary-stack,
+#error-boundary-page .error-boundary-stack-column,
+#error-boundary-page .error-boundary-stack-item {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+#error-boundary-page .error-boundary-stack .pf-c-code-block,
+#error-boundary-page .error-boundary-stack .pf-c-code-block__content {
+    display: flex;
+    flex-direction: column;
+}
+
+#error-boundary-page .error-boundary-stack .pf-c-code-block__content {
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+}

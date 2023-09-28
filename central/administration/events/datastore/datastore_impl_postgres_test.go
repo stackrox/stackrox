@@ -71,8 +71,9 @@ func (s *datastorePostgresTestSuite) assertEventsEqual(
 	s.Equal(event.GetType(), storageEvent.GetType())
 	s.Equal(event.GetHint(), storageEvent.GetHint())
 	s.Equal(event.GetDomain(), storageEvent.GetDomain())
-	s.Equal(event.GetResourceID(), storageEvent.GetResourceId())
-	s.Equal(event.GetResourceType(), storageEvent.GetResourceType())
+	s.Equal(event.GetResourceID(), storageEvent.GetResource().GetId())
+	s.Equal(event.GetResourceType(), storageEvent.GetResource().GetType())
+	s.Equal(event.GetResourceName(), storageEvent.GetResource().GetName())
 }
 
 func (s *datastorePostgresTestSuite) TestUpsertEvent_Success() {

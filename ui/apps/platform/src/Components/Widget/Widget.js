@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import ErrorBoundary from 'Containers/ErrorBoundary'; // @TODO Move ErrorBoundary to Components directory
 import { PagerButtonGroup } from 'Components/PagerControls';
 
 function Widget({
@@ -83,7 +82,7 @@ function Widget({
                 </div>
             </div>
             <div className={`flex h-full ${bodyClassName}`} data-testid="widget-body">
-                <ErrorBoundary>{childrenWithPageProp}</ErrorBoundary>
+                {childrenWithPageProp}
             </div>
         </div>
     );

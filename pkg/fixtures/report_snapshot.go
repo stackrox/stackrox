@@ -24,6 +24,24 @@ func GetReportSnapshot() *storage.ReportSnapshot {
 				},
 			},
 		},
+		Filter: &storage.ReportSnapshot_VulnReportFilters{
+			VulnReportFilters: &storage.VulnerabilityReportFilters{
+				Fixability: storage.VulnerabilityReportFilters_BOTH,
+				Severities: []storage.VulnerabilitySeverity{
+					storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+					storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+					storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+					storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+				},
+				ImageTypes: []storage.VulnerabilityReportFilters_ImageType{
+					storage.VulnerabilityReportFilters_DEPLOYED,
+					storage.VulnerabilityReportFilters_WATCHED,
+				},
+				CvesSince: &storage.VulnerabilityReportFilters_AllVuln{
+					AllVuln: true,
+				},
+			},
+		},
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_PREPARING,
 			QueuedAt:                 timestamp.TimestampNow(),

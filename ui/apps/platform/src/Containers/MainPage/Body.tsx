@@ -6,6 +6,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     RouteKey,
     accessControlPath,
+    administrationEventsPathWithParam,
     apidocsPath,
     clustersDelegatedScanningPath,
     clustersInitBundlesPathWithParam,
@@ -40,7 +41,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
-import ErrorBoundary from 'Containers/ErrorBoundary';
+import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
@@ -67,6 +68,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
         path: accessControlPath,
+    },
+    'administration-events': {
+        component: asyncComponent(
+            () => import('Containers/Administration/Events/AdministrationEventsRoute')
+        ),
+        path: administrationEventsPathWithParam,
     },
     apidocs: {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),

@@ -271,7 +271,8 @@ func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 		scannerClientSingleton: func() scannerclient.ScannerClient { return nil },
 	}
 
-	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, &storage.ContainerImage{}, "", "", false)
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, img, "", "", false)
 	suite.Require().ErrorIs(err, ErrNoLocalScanner)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
@@ -288,13 +289,64 @@ func (suite *scanTestSuite) TestEnrichErrorNoImage() {
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
+func (suite *scanTestSuite) TestEnrichErrorBadImage() {
+	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+	imageServiceClient := &echoImageServiceClient{}
+	scan := LocalScan{
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
+		mirrorStore:                       mirrorStore,
+		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
+		scanImg:                           scanImage,
+	}
+
+	imgNameStr := "   is an invalid image"
+
+	suite.Run("enrich error on nil image name", func() {
+		containerImg := &storage.ContainerImage{}
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "missing image name")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+
+	})
+
+	suite.Run("enrich error missing image registry", func() {
+		containerImg := &storage.ContainerImage{
+			Name: &storage.ImageName{},
+		}
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "missing image registry")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+
+	})
+
+	suite.Run("enrich error on bad full image name", func() {
+		containerImg := &storage.ContainerImage{
+			Name: &storage.ImageName{
+				Registry: "fake",
+				FullName: imgNameStr,
+			},
+		}
+		mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{imgNameStr}, nil)
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "zero valid pull sources")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+	})
+}
+
 func (suite *scanTestSuite) TestEnrichThrottle() {
 	scan := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(0),
 	}
 
-	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, &storage.ContainerImage{}, "", "", false)
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, img, "", "", false)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }

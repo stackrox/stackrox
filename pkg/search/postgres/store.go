@@ -41,6 +41,8 @@ type inserter[T any, PT unmarshaler[T]] func(batch *pgx.Batch, obj PT) error
 type copier[T any, PT unmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
 type upsertChecker[T any, PT unmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
+func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
+
 // GenericStore implements subset of Store interface for resources with single ID.
 type GenericStore[T any, PT unmarshaler[T]] struct {
 	mutex                            sync.RWMutex
@@ -95,14 +97,24 @@ func NewGenericStoreWithPermissionChecker[T any, PT unmarshaler[T]](
 	checker walker.PermissionChecker,
 ) *GenericStore[T, PT] {
 	return &GenericStore[T, PT]{
-		db:                               db,
-		schema:                           schema,
-		pkGetter:                         pkGetter,
-		copyFromObj:                      copyFromObj,
-		insertInto:                       insertInto,
-		setAcquireDBConnDuration:         setAcquireDBConnDuration,
-		setPostgresOperationDurationTime: setPostgresOperationDurationTime,
-		permissionChecker:                checker,
+		db:          db,
+		schema:      schema,
+		pkGetter:    pkGetter,
+		copyFromObj: copyFromObj,
+		insertInto:  insertInto,
+		setAcquireDBConnDuration: func() durationTimeSetter {
+			if setAcquireDBConnDuration == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setAcquireDBConnDuration
+		}(),
+		setPostgresOperationDurationTime: func() durationTimeSetter {
+			if setPostgresOperationDurationTime == nil {
+				return doNothingDurationTimeSetter
+			}
+			return setPostgresOperationDurationTime
+		}(),
+		permissionChecker: checker,
 	}
 }
 

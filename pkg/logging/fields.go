@@ -52,3 +52,7 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 	resource, exists := resourceTypeFields[field.Key]
 	return resource, exists
 }
+
+func isIDField(fieldName string) bool {
+	return fieldName != imageField
+}
