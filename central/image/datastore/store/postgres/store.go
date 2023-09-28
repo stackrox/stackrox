@@ -162,7 +162,7 @@ func (s *storeImpl) insertIntoImages(
 	lock.Lock()
 	numTimesWritten, ok := imageMap[cloned.GetId()]
 	if !ok {
-		if err := os.Mkdir("/tmp/"+cloned.GetId(), 0777); err != nil {
+		if err := os.Mkdir("/tmp/"+cloned.GetId(), 0777); !os.IsExist(err) && err != nil {
 			panic(err)
 		}
 	}
