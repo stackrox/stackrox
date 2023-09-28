@@ -24,6 +24,8 @@ fetch_kube_burner() {
 }
 
 function add_profiler_comment() {
+    local text
+    text="${1}"
     info "Adding a comment with profiler output to PR"
 
     local pr_details
@@ -47,13 +49,14 @@ function add_profiler_comment() {
     export _SHA="$sha"
 
     local tag
-    tag=$(make tag)
+    tag="$(make tag)"
     export _TAG="$tag"
 
     local tmpfile
-    tmpfile=$(mktemp)
+    tmpfile="$(mktemp)"
     cat >"$tmpfile" <<-EOT
-Hello, this is where the profiler message will be.
+## Profile analysis results
+${text}
 EOT
 
     hub-comment -type build -template-file "$tmpfile"
@@ -87,12 +90,23 @@ profile_test() {
     "$ROOT/scale/profiler/pprof.sh" "${pprof_dir}" "${API_ENDPOINT}" 1
     zip -r "${pprof_zip_output}" "${pprof_dir}"
 
+    ls -l "${pprof_dir}"
+
+    local ftext
+    ftext="$(mktemp)"
+    "${ROOT}/tests/e2e/analyze-profile.sh" \
+        "${pprof_dir}/heap*.prof" \
+        'https://codevv.com/heap-4.0-1.prof' \
+        2>/dev/null > "$ftext"
+
+    echo "Preview analysis results: $ftext"
+
     # 1. Get heap profile from ${pprof_dir}
     # 2. Get heap profile to compare (maybe from a static bucket or somewhere else publicly available)
     # 3. Feed both pprofs to compare script
     # 4. Call a script to comment on the PR smilar to what `add_build_comment_to_pr` is doing
 
-    add_profiler_comment
+    add_profiler_comment "$(cat "$ftext")"
 }
 
 profile_test "$@"
