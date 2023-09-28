@@ -1,5 +1,3 @@
-import { useCallback } from 'react';
-
 import useRestMutation, { UseRestMutationReturn } from 'hooks/useRestMutation';
 import useRestQuery from 'hooks/useRestQuery';
 import {
@@ -20,8 +18,7 @@ export type UseVulnerabilitiesDeferralConfigReturn = {
 };
 
 export function useVulnerabilitiesDeferralConfig(): UseVulnerabilitiesDeferralConfigReturn {
-    const fetchConfigFn = useCallback(fetchVulnerabilitiesDeferralConfig, []);
-    const getConfigRequest = useRestQuery(fetchConfigFn);
+    const getConfigRequest = useRestQuery(fetchVulnerabilitiesDeferralConfig);
     const updateConfigMutation = useRestMutation(updateVulnerabilitiesDeferralConfig, {
         onSuccess: getConfigRequest.refetch,
     });
