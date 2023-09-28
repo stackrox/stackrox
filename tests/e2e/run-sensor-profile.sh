@@ -23,6 +23,42 @@ fetch_kube_burner() {
     tar xvf ./kube-burner-V1.7.8-linux-x86_64.tar.gz
 }
 
+function add_profiler_comment() {
+    info "Adding a comment with profiler output to PR"
+
+    local pr_details
+    local exitstatus=0
+    pr_details="$(get_pr_details)" || exitstatus="$?"
+    if [[ "$exitstatus" != "0" ]]; then
+        echo "DEBUG: Unable to get the PR details from GitHub: $exitstatus"
+        echo "DEBUG: PR details: ${pr_details}"
+        info "Will continue without commenting on the PR"
+        return
+    fi
+
+    # hub-comment is tied to Circle CI env
+    local url
+    url=$(jq -r '.html_url' <<<"$pr_details")
+    export CIRCLE_PULL_REQUEST="$url"
+
+    local sha
+    sha=$(jq -r '.head.sha' <<<"$pr_details")
+    sha=${sha:0:7}
+    export _SHA="$sha"
+
+    local tag
+    tag=$(make tag)
+    export _TAG="$tag"
+
+    local tmpfile
+    tmpfile=$(mktemp)
+    cat >"$tmpfile" <<-EOT
+Hello, this is where the profiler message will be.
+EOT
+
+    hub-comment -type build -template-file "$tmpfile"
+}
+
 profile_test() {
     local pprof_zip_output="$1"
 
@@ -55,6 +91,8 @@ profile_test() {
     # 2. Get heap profile to compare (maybe from a static bucket or somewhere else publicly available)
     # 3. Feed both pprofs to compare script
     # 4. Call a script to comment on the PR smilar to what `add_build_comment_to_pr` is doing
+
+    add_profiler_comment
 }
 
 profile_test "$@"
