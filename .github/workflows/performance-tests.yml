@@ -147,7 +147,7 @@ jobs:
         uses: grafana/k6-action@v0.3.0
         with:
           filename: ./tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m --tags github_job_id=${{ github.job }} --tag github_ref=${{ github.ref }} --tag github_sha=${{ github.sha }}
 
       - name: Publish JUnit test report in job summary
         uses: test-summary/action@v2
