@@ -9,6 +9,7 @@ import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/datastore/store/postgres"
 	"github.com/stackrox/rox/central/metrics"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -18,6 +19,7 @@ import (
 	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
 	nodeScorer "github.com/stackrox/rox/central/risk/scorer/node"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -40,7 +42,7 @@ var (
 //go:generate mockgen-wrapper
 type Manager interface {
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
-	CalculateRiskAndUpsertImage(image *storage.Image) error
+	CalculateRiskAndUpsertImage(ctx context.Context, image *storage.Image) error
 	CalculateRiskAndUpsertNode(node *storage.Node) error
 }
 
@@ -212,13 +214,21 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 }
 
 // CalculateRiskAndUpsertImage will reprocess risk of the passed image and save the results.
-func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
+func (e *managerImpl) CalculateRiskAndUpsertImage(ctx context.Context, image *storage.Image) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
 	if err := e.calculateAndUpsertImageRisk(image); err != nil {
 		return errors.Wrapf(err, "calculating risk for image %s", image.GetName().GetFullName())
 	}
 
+	identity, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		log.Errorf("error reading identity from context, running in reprocess loop: %s", err.Error())
+	}
+
+	if identity != nil {
+		postgres.TenantID = identity.TenantID()
+	}
 	if err := e.imageStorage.UpsertImage(riskReprocessorCtx, image); err != nil {
 		return errors.Wrapf(err, "upserting image %s", image.GetName().GetFullName())
 	}

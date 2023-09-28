@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"github.com/pkg/errors"
@@ -217,6 +218,8 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*
 
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
+	debug.PrintStack()
+
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "UpsertImage")
 
 	if image.GetId() == "" {

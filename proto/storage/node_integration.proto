@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
+import "gogoproto/gogo.proto";
 
 import "storage/image_integration.proto";
 

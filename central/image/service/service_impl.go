@@ -201,8 +201,8 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 	}
 }
 
-func (s *serviceImpl) saveImage(img *storage.Image) error {
-	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
+func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) error {
+	if err := s.riskManager.CalculateRiskAndUpsertImage(ctx, img); err != nil {
 		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
 		return err
 	}
@@ -266,7 +266,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest.
 	if imgID != "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	return internalScanRespFromImage(img), nil
@@ -327,7 +327,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	// Save the image
 	img.Id = utils.GetSHA(img)
 	if img.GetId() != "" {
-		if err := s.saveImage(img); err != nil {
+		if err := s.saveImage(ctx, img); err != nil {
 			return nil, err
 		}
 	}
@@ -379,7 +379,7 @@ func (s *serviceImpl) GetImageVulnerabilitiesInternal(ctx context.Context, reque
 	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
 	// contained a digest
 	if imgID != "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	return internalScanRespFromImage(img), nil
@@ -491,7 +491,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	// Also do not upsert if there is a request id, this enables the caller to determine how to handle
 	// the results (and also prevents multiple upserts for the same image).
 	if imgID != "" && !(hasErrors && imgExists) && request.GetRequestId() == "" {
-		_ = s.saveImage(img)
+		_ = s.saveImage(ctx, img)
 	}
 
 	if hasErrors && request.GetRequestId() != "" {
@@ -641,7 +641,7 @@ func (s *serviceImpl) WatchImage(ctx context.Context, request *v1.WatchImageRequ
 		}, nil
 	}
 
-	if err := s.saveImage(img); err != nil {
+	if err := s.saveImage(ctx, img); err != nil {
 		return nil, errors.Errorf("failed to store image: %v", err)
 	}
 

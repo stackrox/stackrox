@@ -79,7 +79,7 @@ func (s *serviceImpl) ReplicateImage(ctx context.Context, req *central.Replicate
 		if err != nil {
 			return nil, err
 		}
-		if err := s.riskManager.CalculateRiskAndUpsertImage(image); err != nil {
+		if err := s.riskManager.CalculateRiskAndUpsertImage(ctx, image); err != nil {
 			return nil, err
 		}
 	}

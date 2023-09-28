@@ -314,7 +314,7 @@ func (l *loopImpl) reprocessImage(id string, fetchOpt imageEnricher.FetchOption,
 		return nil, false
 	}
 	if result.ImageUpdated {
-		if err := l.risk.CalculateRiskAndUpsertImage(image); err != nil {
+		if err := l.risk.CalculateRiskAndUpsertImage(context.Background(), image); err != nil {
 			log.Errorw("Error upserting image into datastore",
 				logging.ImageName(image.GetName().GetFullName()), logging.Err(err))
 			return nil, false
@@ -462,7 +462,7 @@ func (l *loopImpl) reprocessWatchedImage(name string) bool {
 	if img.GetId() == "" {
 		return false
 	}
-	if err := l.risk.CalculateRiskAndUpsertImage(img); err != nil {
+	if err := l.risk.CalculateRiskAndUpsertImage(context.Background(), img); err != nil {
 		log.Errorw("Error upserting watched image after enriching", logging.ImageName(name), logging.Err(err))
 		return false
 	}
