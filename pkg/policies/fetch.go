@@ -38,7 +38,9 @@ type fetcherImpl struct {
 }
 
 func (f *fetcherImpl) Fetch(ctx context.Context, registryConfig *types.Config, repository string) ([]*storage.Policy, error) {
-	fs, err := file.New("")
+	dir := path.Join(os.TempDir(), "policy-sync")
+
+	fs, err := file.New(dir)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating ORAS file store")
 	}
@@ -96,7 +98,7 @@ func (f *fetcherImpl) Fetch(ctx context.Context, registryConfig *types.Config, r
 	}
 
 	// Make sure we delete previously fetched files.
-	defer deleteFiles(tags)
+	defer deleteFiles(dir, tags)
 
 	if err := fetchErrors.ErrorOrNil(); err != nil {
 		log.Errorw("Some errors during fetching of policies, might not be related but some might be missing ¯\\_(ツ)_/¯",
@@ -121,10 +123,10 @@ func (f *fetcherImpl) Fetch(ctx context.Context, registryConfig *types.Config, r
 	return policies, nil
 }
 
-func deleteFiles(names []string) {
+func deleteFiles(dir string, names []string) {
 	for _, name := range names {
-		if err := os.Remove(name); err != nil {
-			log.Errorf("Failed deleting downloaded manifest contents %s", name)
+		if err := os.Remove(path.Join(dir, name)); err != nil {
+			log.Errorf("Failed deleting downloaded manifest contents %s: %v", name, err)
 		}
 	}
 }
