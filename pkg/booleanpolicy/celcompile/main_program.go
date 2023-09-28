@@ -75,7 +75,8 @@ var (
   {{- $desc := . }}
 		   .map(
 		      prevResults,
-              {{$desc.VarName}} != null,
+              has({{$desc.VarName}}) && {{$desc.VarName}} != null,
+              //{{$desc.CheckCode}},
               {{$desc.VarName}}
 		        .map(
 		          k,
@@ -128,6 +129,7 @@ type MatchField struct {
 	MatchCode  string // Only for non-array
 	IsLeaf     bool
 	Path       string // Not in use now
+	CheckCode  string
 
 	Children []*MatchField
 }

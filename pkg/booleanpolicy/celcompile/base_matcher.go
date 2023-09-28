@@ -85,9 +85,27 @@ func getNegateFuncName(field string) string {
 func (s *simpleMatchFuncGenerator) Generate(v string) string {
 	orClauses := []string{}
 	for _, mc := range s.MatchCodes {
-		orClauses = append(orClauses, fmt.Sprintf(mc, v))
+		if strings.Contains(mc, `%s`) {
+			orClauses = append(orClauses, fmt.Sprintf(mc, v))
+		} else {
+			orClauses = append(orClauses, mc)
+		}
 	}
-	return strings.Join(orClauses, " || ")
+	code := strings.Join(orClauses, " || ")
+	return code
+}
+
+func generateCheckCode(v string) string {
+	parts := strings.Split(v, ".")
+	code := ""
+	for i, _ := range parts[2:] {
+		if code == "" {
+			code = fmt.Sprintf(" has(%s)", strings.Join(parts[:i+2], "."))
+		} else {
+			code = fmt.Sprintf(" has(%s) && %s", strings.Join(parts[:i+2], "."), code)
+		}
+	}
+	return code
 }
 
 func (s *simpleMatchFuncGenerator) FuncName() string {
@@ -143,9 +161,9 @@ func generateBoolMatchCode(value string) (string, error) {
 		return "", err
 	}
 	if boolValue {
-		return "val", nil
+		return "%s", nil
 	}
-	return "val == false", nil
+	return "%s == false", nil
 }
 
 func getSimpleMatchFuncGenerators(query *query.FieldQuery, matchCodeGenerator func(string) (string, error)) ([]matchFuncGenerator, error) {

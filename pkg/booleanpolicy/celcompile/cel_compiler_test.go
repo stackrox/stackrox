@@ -1,7 +1,6 @@
 package celcompile
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -109,40 +108,33 @@ func runTestCases(t *testing.T, testCases []testCase) {
 				require.NoError(t, err)
 				t.Log("--- evaluator ---")
 				t.Log(evaluator.(*celBasedEvaluator).module)
-				jsonStr, err := json.Marshal(c.obj)
-				assert.NoError(t, err)
-
-				var data interface{}
-				assert.NoError(t, json.Unmarshal(jsonStr, &data))
-
-				res, matched := evaluator.(*celBasedEvaluator).EvaluateX(data)
+				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
-			/*
-				t.Run("on augmented object", func(t *testing.T) {
-					evaluator, err := augmentedCompilerInstance.CompileCelBasedEvaluator(c.q)
-					require.NoError(t, err)
-					t.Log("--- evaluator ---")
-					t.Log(evaluator.(*celBasedEvaluator).module)
-					topLevelBare := &TopLevelBare{
-						ValA: c.obj.ValA,
-					}
-					base := c.obj.Base
-					nestedBare := make([]NestedBare, 0, len(c.obj.NestedSlice))
-					for _, elem := range c.obj.NestedSlice {
-						nestedBare = append(nestedBare, NestedBare{NestedValA: elem.NestedValA, NestedValB: elem.NestedValB})
-					}
+			t.Run("on augmented object", func(t *testing.T) {
+				evaluator, err := augmentedCompilerInstance.CompileCelBasedEvaluator(c.q)
+				require.NoError(t, err)
+				t.Log("--- evaluator ---")
+				t.Log(evaluator.(*celBasedEvaluator).module)
+				topLevelBare := &TopLevelBare{
+					ValA: c.obj.ValA,
+				}
+				base := c.obj.Base
+				nestedBare := make([]NestedBare, 0, len(c.obj.NestedSlice))
+				for _, elem := range c.obj.NestedSlice {
+					nestedBare = append(nestedBare, NestedBare{NestedValA: elem.NestedValA, NestedValB: elem.NestedValB})
+				}
 
-					nestedAugmentedObj := pathutil.NewAugmentedObj(nestedBare)
-					for i, elem := range c.obj.NestedSlice {
-						require.NoError(t, nestedAugmentedObj.AddPlainObjAt(elem.SecondNestedSlice, pathutil.IndexStep(i), pathutil.FieldStep("SecondNestedSlice")))
-					}
-					topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
-					require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
-					require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
-					res, matched := evaluator.(*celBasedEvaluator).EvaluateX(topLevelAugmentedObj)
-					assertResultsAsExpected(t, c, res, matched)
-				})*/
+				nestedAugmentedObj := pathutil.NewAugmentedObj(nestedBare)
+				for i, elem := range c.obj.NestedSlice {
+					require.NoError(t, nestedAugmentedObj.AddPlainObjAt(elem.SecondNestedSlice, pathutil.IndexStep(i), pathutil.FieldStep("SecondNestedSlice")))
+				}
+				topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
+				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
+				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
+				res, matched := evaluator.(*celBasedEvaluator).Evaluate(topLevelAugmentedObj)
+				assertResultsAsExpected(t, c, res, matched)
+			})
 		})
 	}
 }

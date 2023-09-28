@@ -2,6 +2,7 @@ package celcompile
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
@@ -58,13 +59,16 @@ func convertBindingToResult(binding map[string][]interface{}) (m map[string][]st
 }
 
 func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
-	return nil, true
-}
-
-func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
-	val, err := evaluate(r.q, map[string]interface{}{"obj": obj})
+	value, err := obj.GetFullValue()
 	if err != nil {
 		utils.Should(err)
+		return nil, false
+	}
+	val, err := evaluate(r.q, map[string]interface{}{"obj": value})
+	if err != nil {
+		//utils.Should(err)
+		log.Print(r.module)
+		log.Print(err)
 		return nil, false
 	}
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
@@ -157,8 +161,9 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 
 	args := &mainProgramArgs{}
 	args.Root = MatchField{
-		VarName: "obj",
-		Path:    "obj",
+		VarName:   "obj",
+		Path:      "obj",
+		CheckCode: "true",
 	}
 	pathsToAccessVariable := map[string]*MatchField{"obj": &args.Root}
 
@@ -184,9 +189,14 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 				pathKey := constructedPath.String()
 				mf, ok := pathsToAccessVariable[pathKey]
 				if !ok {
+					checkCode := generateCheckCode(currentPath.String())
+					if checkCode == "" {
+						checkCode = "true"
+					}
 					mf = &MatchField{
-						VarName: currentPath.String(),
-						Path:    constructedPath.String(),
+						VarName:   currentPath.String(),
+						Path:      constructedPath.String(),
+						CheckCode: generateCheckCode(currentPath.String()),
 					}
 					parent.Children = append(parent.Children, mf)
 					pathsToAccessVariable[pathKey] = mf
@@ -201,12 +211,19 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("generating matchers for field query %+v: %w", fieldQuery, err)
 		}
+		checkCode := generateCheckCode(currentPath.String())
+		if checkCode != "" {
+			code = fmt.Sprintf("%s && (%s)", checkCode, code)
+		} else {
+			checkCode = "true"
+		}
 		mf := &MatchField{
 			VarName:    currentPath.String(),
 			SearchName: fieldQuery.Field,
 			MatchCode:  code,
 			IsLeaf:     true,
 			Path:       constructedPath.String(),
+			CheckCode:  checkCode,
 		}
 		parent.Children = append(parent.Children, mf)
 	}

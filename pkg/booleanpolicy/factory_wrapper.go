@@ -98,6 +98,7 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 		} else {
 			e.otherEvaluators[regoNegateOrBased] = regoNegateEvaluator
 		}
+
 		celEvaluator, err := f.celNegateBasedFactory.CompileCelBasedEvaluator(q)
 		if err != nil {
 			if !errors.Is(err, celcompile.ErrCelNotYetSupported) {
@@ -106,14 +107,6 @@ func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator,
 		} else {
 			e.otherEvaluators[celBased] = celEvaluator
 		}
-	}
-
-	if features.JmesPathBasedEvaluator.Enabled() {
-
-	}
-
-	if features.CelBasedEvaluator.Enabled() {
-
 	}
 
 	legacyEvaluator, err := f.legacyFactory.GenerateEvaluator(q)
@@ -134,6 +127,7 @@ func MustCreateFactoryWrapper(objMeta *pathutil.AugmentedObjMeta) evaluator.Fact
 		opaBasedFactory:       regocompile.MustCreateRegoCompiler(objMeta),
 		opaOrBasedFactory:     newregocompile.MustCreateRegoCompiler(objMeta),
 		opaNegateBasedFactory: negateregocompile.MustCreateRegoCompiler(objMeta),
+		celNegateBasedFactory: celcompile.MustCreateCompiler(objMeta),
 		// jmespathFactory: jmespathcompile.MustCreateJMESPathCompiler(objMeta),
 	}
 }
