@@ -138,6 +138,9 @@ func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v
 	}
 	var result []string
 	for _, role := range allRoles {
+		if role.GetRoleName() == "None" {
+			continue
+		}
 		if err := verifyNoPrivilegeEscalation(id.Roles(), []permissions.ResolvedRole{role}); err == nil {
 			result = append(result, role.GetRoleName())
 		}

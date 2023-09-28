@@ -1,9 +1,10 @@
 // We can move this out to a higher level if more components need it
 import { useEffect, useState } from 'react';
 import { Role, fetchRolesAsArray } from 'services/RolesService';
+import {fetchAllowedRoles} from "../../../../../services/APITokensService";
 
 export type UseRolesResult = {
-    roles: Role[];
+    roles: string[];
     error: string | null;
     isLoading: boolean;
 };
@@ -19,9 +20,9 @@ const useRoles = (): UseRolesResult => {
 
     useEffect(() => {
         setResult((prevResult) => ({ ...prevResult, isLoading: true }));
-        fetchRolesAsArray()
+        fetchAllowedRoles()
             .then((roles) => {
-                setResult({ roles, error: null, isLoading: false });
+                setResult({ roles: roles.response.roles, error: null, isLoading: false });
             })
             .catch((error) => {
                 setResult({ roles: [], error, isLoading: false });

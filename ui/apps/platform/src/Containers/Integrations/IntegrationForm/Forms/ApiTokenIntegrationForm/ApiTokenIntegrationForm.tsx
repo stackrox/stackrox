@@ -168,8 +168,8 @@ function ApiTokenIntegrationForm({
                             >
                                 {roles.map((role) => {
                                     return (
-                                        <SelectOption key={role.name} value={role.name}>
-                                            {role.name}
+                                        <SelectOption key={role} value={role}>
+                                            {role}
                                         </SelectOption>
                                     );
                                 })}
