@@ -43,8 +43,7 @@ const (
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
 	plaintextFlagName             = "plaintext"
 	serverNameFlagName            = "server-name"
-
-	kubeContextFlagName = "kubecontext"
+	kubeContextFlagName           = "kubecontext"
 )
 
 // AddConnectionFlags adds connection-related flags to roxctl.
