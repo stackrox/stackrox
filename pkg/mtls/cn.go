@@ -9,7 +9,12 @@ import (
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Identity identifies a particular certificate.
@@ -142,6 +147,11 @@ func convertCertSubject(subject pkix.Name) Subject {
 
 	if len(subject.Organization) != 0 && subject.Organization[0] != "" {
 		s.InitBundleID = uuid.FromStringOrNil(subject.Organization[0]).String()
+	}
+	if len(subject.Province) != 0 && subject.Province[0] != "" {
+		s.TenantID = subject.Province[0]
+	} else {
+		log.Errorf("No tenant ID found for init-bundle id: %s", s.InitBundleID)
 	}
 	return s
 }

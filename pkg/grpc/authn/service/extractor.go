@@ -42,7 +42,8 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	}
 
 	leaf := ri.VerifiedChains[0][0]
-	return WrapMTLSIdentity(mtls.IdentityFromCert(leaf)), nil
+	identity := WrapMTLSIdentity(mtls.IdentityFromCert(leaf))
+	return identity, nil
 }
 
 // NewExtractorWithCertValidation returns a new identity extractor which allows to configure a cert chain validation function

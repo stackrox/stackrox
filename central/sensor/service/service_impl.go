@@ -81,6 +81,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
 		return errox.NotAuthorized.CausedBy("only sensor may access this API")
 	}
+	log.Infof("TENANT ID::: %s", identity.TenantID())
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
 	if err != nil {
@@ -90,6 +91,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// Fetch the cluster metadata, then process the stream.
 	cluster, err := s.getClusterForConnection(server.Context(), sensorHello, svc)
 	if err != nil {
+		log.Infof("getClusterForConnectoin Error: %s", err.Error())
 		return err
 	}
 
@@ -190,9 +192,9 @@ func (s *serviceImpl) getClusterForConnection(ctx context.Context, sensorHello *
 		}
 	}
 
-	log.Info("KYLE about to call LookupOrCreateClusterFromConfig")
+	log.Info("KYLE about to call LookupOrCreateClusterFromConfig with clusterID: %s", clusterID)
 	i, _ := authn.IdentityFromContext(sac.WithAllAccess(ctx))
-	log.Info("KYLE identity from context going in: %v", i)
+	log.Info("KYLE identity from context going in: %+v", i)
 	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(sac.WithAllAccess(ctx), clusterID, serviceID.InitBundleId, sensorHello)
 	if err != nil {
 		return nil, errors.Errorf("could not fetch cluster for sensor: %v", err)
