@@ -2,9 +2,13 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"sort"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -75,6 +80,22 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
+}
+
+var (
+	lock     sync.Mutex
+	imageMap map[string]int
+)
+
+func normalizeImage(img *storage.Image) {
+	sort.SliceStable(img.GetScan().GetComponents(), func(i, j int) bool {
+		return img.GetScan().GetComponents()[i].GetName() < img.GetScan().GetComponents()[j].GetName()
+	})
+	for _, comp := range img.GetScan().GetComponents() {
+		sort.SliceStable(comp.Vulns, func(i, j int) bool {
+			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
+		})
+	}
 }
 
 func (s *storeImpl) insertIntoImages(
@@ -129,12 +150,34 @@ func (s *storeImpl) insertIntoImages(
 	// Check hash value here after initial insert because we need the updated scan time and the updated at time to be changed as these
 	// are used for pruning and also to indicate how up-to-date the scan is
 	if previousHash == cloned.GetHash() {
-		log.Infof("Deduped %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), previousHash, cloned.GetHash())
 		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
-	log.Infof("Passed %s: Previous hash: %d vs hash: %d", cloned.GetName().GetFullName(), previousHash, cloned.GetHash())
 	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
+
+	marshaler := jsonpb.Marshaler{}
+
+	dir := "/tmp/" + cloned.GetId()
+
+	lock.Lock()
+	numTimesWritten, ok := imageMap[cloned.GetId()]
+	if !ok {
+		if err := os.Mkdir("/tmp/"+cloned.GetId(), 0777); err != nil {
+			panic(err)
+		}
+	}
+
+	data, err := marshaler.MarshalToString(cloned)
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(fmt.Sprintf("%s/%d", dir, numTimesWritten+1), []byte(data), 0777)
+	if err != nil {
+		panic(err)
+	}
+	imageMap[cloned.GetId()] = numTimesWritten + 1
+
+	lock.Unlock()
 
 	var query string
 
