@@ -35,13 +35,13 @@ message Image {
         int32 fixable_cves                                      = 9 [(gogoproto.moretags) = 'search:"Fixable CVE Count,store,hidden"'];
     }
 
-    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = 'search:"Last Updated,hidden" hash:"ignore"'];
+    google.protobuf.Timestamp last_updated                      = 5 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
 
     bool                            not_pullable                = 10;
     bool                            is_cluster_local            = 17;
 
     reserved 6;  // was map<string,string> clusterns_scopes
-    int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden" hash:"ignore"'];
+    int64                           priority                    = 11 [(gogoproto.moretags) = 'search:"Image Risk Priority,hidden"'];
     float                           risk_score                  = 12 [(gogoproto.moretags) = 'search:"Image Risk Score,hidden"'];
     oneof set_top_cvss {
         float                       top_cvss                    = 13 [(gogoproto.moretags) = 'search:"Image Top CVSS,store"'];
@@ -54,9 +54,6 @@ message Image {
         MISSING_SIGNATURE_VERIFICATION_DATA = 3;
     }
     repeated Note                   notes                       = 14;
-    oneof hashoneof {
-        uint64                          hash                        = 19 [(gogoproto.moretags) = 'hash:"ignore"'];
-    }
 }
 
 message DataSource {
@@ -65,11 +62,11 @@ message DataSource {
     string mirror = 3;
 }
 
-// Next tag: 7
+// Next tag: 8
 message ImageScan {
     string                              scanner_version  = 6;
-    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = 'search:"Image Scan Time,store" hash:"ignore"'];
-    repeated EmbeddedImageScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-" hash:"set"'];
+    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = 'search:"Image Scan Time,store"'];
+    repeated EmbeddedImageScanComponent components       = 2 [(gogoproto.moretags) = 'sql:"-"'];
     string                              operating_system = 4 [(gogoproto.moretags) = 'search:"Image OS,store"'];
     // DataSource contains information about which integration was used to scan the image
     DataSource                          data_source      = 3;
@@ -83,6 +80,9 @@ message ImageScan {
         CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
     }
     repeated Note                       notes            = 5;
+    oneof hashoneof {
+        uint64                          hash             = 7;
+    }
 }
 
 message ImageSignatureVerificationData {

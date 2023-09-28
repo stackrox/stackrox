@@ -10,6 +10,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgx/v4"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
@@ -101,7 +102,6 @@ func normalizeImage(img *storage.Image) {
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
-	previousHash uint64,
 	metadataUpdated, scanUpdated bool,
 	iTime *protoTypes.Timestamp,
 ) error {
@@ -147,41 +147,7 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	// Check hash value here after initial insert because we need the updated scan time and the updated at time to be changed as these
-	// are used for pruning and also to indicate how up-to-date the scan is
-	if previousHash == cloned.GetHash() {
-		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
-		return nil
-	}
-	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
-
-	marshaler := jsonpb.Marshaler{}
-
-	dir := "/tmp/" + cloned.GetId()
-
-	lock.Lock()
-	numTimesWritten, ok := imageMap[cloned.GetId()]
-	if !ok {
-		if err := os.Mkdir("/tmp/"+cloned.GetId(), 0777); !os.IsExist(err) && err != nil {
-			panic(err)
-		}
-	}
-
-	normalizeImage(cloned)
-	data, err := marshaler.MarshalToString(cloned)
-	if err != nil {
-		panic(err)
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/%d", dir, numTimesWritten+1), []byte(data), 0777)
-	if err != nil {
-		panic(err)
-	}
-	imageMap[cloned.GetId()] = numTimesWritten + 1
-
-	lock.Unlock()
-
 	var query string
-
 	if metadataUpdated {
 		for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
 			if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
@@ -197,8 +163,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
+		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	// DO NOT CHANGE THE ORDER.
 	if err := copyFromImageComponentEdges(ctx, tx, cloned.GetId(), parts.imageComponentEdges...); err != nil {
@@ -734,6 +702,47 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error
 	return metadataUpdated, scanUpdated, nil
 }
 
+type hashWrapper struct {
+	Components []*storage.EmbeddedImageScanComponent `hash:"set"`
+}
+
+func populateImageScanHash(scan *storage.ImageScan) error {
+	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	if err != nil {
+		return errors.Wrap(err, "calculating hash for image scan")
+	}
+	scan.Hashoneof = &storage.ImageScan_Hash{
+		Hash: hash,
+	}
+	return nil
+}
+
+func writeDebug(obj *storage.Image) {
+	if obj.GetScan() == nil {
+		return
+	}
+	marshaler := jsonpb.Marshaler{}
+	dir := "/tmp/" + obj.GetId()
+	lock.Lock()
+	numTimesWritten, ok := imageMap[obj.GetId()]
+	if !ok {
+		if err := os.Mkdir("/tmp/"+obj.GetId(), 0777); !os.IsExist(err) && err != nil {
+			panic(err)
+		}
+	}
+	normalizeImage(obj)
+	data, err := marshaler.MarshalToString(obj.GetScan())
+	if err != nil {
+		panic(err)
+	}
+	err = os.WriteFile(fmt.Sprintf("%s/%d", dir, numTimesWritten+1), []byte(data), 0777)
+	if err != nil {
+		panic(err)
+	}
+	imageMap[obj.GetId()] = numTimesWritten + 1
+	lock.Unlock()
+}
+
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
 
@@ -741,13 +750,9 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		obj.LastUpdated = iTime
 	}
 
-	var hash uint64
-	oldImage, exists, err := s.GetImageMetadata(ctx, obj.GetId())
+	oldImage, _, err := s.GetImageMetadata(ctx, obj.GetId())
 	if err != nil {
 		return errors.Wrapf(err, "retrieving existing image: %q", obj.GetId())
-	}
-	if exists && oldImage.GetHashoneof() != nil {
-		hash = oldImage.GetHash()
 	}
 
 	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)
@@ -757,6 +762,15 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	if !metadataUpdated && !scanUpdated {
 		return nil
 	}
+
+	if obj.GetScan() != nil && oldImage.GetScan().GetHashoneof() != nil {
+		if err := populateImageScanHash(obj.GetScan()); err != nil {
+			log.Error("unable to populate image scan hash for %q", obj.GetId())
+		} else if obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
+			scanUpdated = false
+		}
+	}
+	writeDebug(obj)
 
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(imageParts)
@@ -773,7 +787,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 			return err
 		}
 
-		if err := s.insertIntoImages(ctx, tx, imageParts, hash, metadataUpdated, scanUpdated, iTime); err != nil {
+		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
 			if err := tx.Rollback(ctx); err != nil {
 				return err
 			}
