@@ -18,7 +18,7 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Role } from 'services/RolesService';
 
 type RoleSelectorProps = {
-    roles?: Role[];
+    roles?: string[];
     selectedRoles?: string[];
     isEditable: boolean;
     isGenerated: boolean;
@@ -43,18 +43,18 @@ function RoleSelector({
 
     const filteredRoleSelectMenuItems = useMemo(() => {
         const roleSelectMenuItems = roles
-            .filter((role) => role.name.toLowerCase().includes(input.toString().toLowerCase()))
-            .map((role) => {
+            .filter((roleName) => roleName.toLowerCase().includes(input.toString().toLowerCase()))
+            .map((roleName) => {
                 return (
                     <MenuItem
-                        key={role.name}
+                        key={roleName}
                         hasCheck
-                        itemId={role.name}
-                        isSelected={selectedRoles.includes(role.name)}
+                        itemId={roleName}
+                        isSelected={selectedRoles.includes(roleName)}
                         isDisabled={!isEditable || isGenerated}
                     >
                         <span className="pf-u-mx-xs" data-testid="namespace-name">
-                            {role.name}
+                            {roleName}
                         </span>
                     </MenuItem>
                 );
