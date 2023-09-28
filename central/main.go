@@ -345,6 +345,7 @@ func startServices() {
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
 	productUsageInjector.Singleton().Start()
+	policySyncer.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
