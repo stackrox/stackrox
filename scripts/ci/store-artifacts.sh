@@ -173,7 +173,7 @@ make_artifacts_help() {
 
         <h2>Option 2: Browse using the Google cloud UI</h2>
 
-        <p>Make sure to use the URL where <code>authuser</code> corresponds to your @stackrox.com account.<br>
+        <p>Make sure to use the URL where <code>authuser</code> corresponds to your @redhat.com account.<br>
         You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
         after following the link.</p>
 

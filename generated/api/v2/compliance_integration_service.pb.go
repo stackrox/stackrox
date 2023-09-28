@@ -33,7 +33,7 @@ type ComplianceIntegration struct {
 	ClusterId   string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	ClusterName string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	Namespace   string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	// Collection of errors that occurred while trying to obtain comliance operator health info.
+	// Collection of errors that occurred while trying to obtain compliance operator health info.
 	StatusErrors         []string `protobuf:"bytes,6,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

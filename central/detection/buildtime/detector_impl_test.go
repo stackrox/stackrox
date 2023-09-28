@@ -1,7 +1,6 @@
 package buildtime
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/gogo/protobuf/proto"
@@ -73,11 +72,7 @@ func TestDetector(t *testing.T) {
 			filter, getUnusedCategories := detection.MakeCategoryFilter(testCase.allowedCategories)
 			alerts, err := detector.Detect(testCase.image, filter)
 			require.NoError(t, err)
-			lowercaseCategories := make([]string, len(testCase.expectedUnusedCategories))
-			for i, category := range testCase.expectedUnusedCategories {
-				lowercaseCategories[i] = strings.ToLower(category)
-			}
-			require.ElementsMatch(t, lowercaseCategories, getUnusedCategories())
+			require.ElementsMatch(t, testCase.expectedUnusedCategories, getUnusedCategories())
 			assert.Len(t, alerts, testCase.expectedAlerts)
 		})
 

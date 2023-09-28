@@ -357,7 +357,12 @@ create_log_explorer_links() {
         </style>
     </head>
     <body>
-    <p>(These links require a 'right-click -> open in new tab'. The authUser is the number for your @stackrox.com account.)</p>
+
+    <p>These links require a 'right-click -> open in new tab'.
+    The authUser is the number for your @redhat.com account.
+    You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+    after following the link.</p>
+
     <ul style="padding-bottom: 28px; padding-left: 30px; font-family: Roboto,Helvetica,Arial,sans-serif;">
 HEAD
 

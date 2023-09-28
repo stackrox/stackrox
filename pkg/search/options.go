@@ -210,6 +210,7 @@ var (
 	ComplianceOperatorRuleName    = newFieldLabel("Compliance Rule Name")
 	ComplianceOperatorProfileName = newFieldLabel("Compliance Profile Name")
 	ComplianceOperatorStandard    = newFieldLabel("Compliance Standard")
+	ComplianceOperatorScanConfig  = newFieldLabel("Compliance Scan Config ID")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -293,6 +294,7 @@ var (
 	ResourceType = newFieldLabel("Resource Type")
 
 	// Vulnerability Watch Request fields
+	RequestName                 = newFieldLabel("Request Name")
 	RequestStatus               = newFieldLabel("Request Status")
 	ExpiredRequest              = newFieldLabel("Expired Request")
 	ExpiryType                  = newFieldLabel("Expiry Type")
@@ -339,9 +341,10 @@ var (
 	ReportNotificationMethod = newFieldLabel("Report Notification Method")
 
 	// Event fields.
-	EventDomain = newFieldLabel("Event Domain")
-	EventType   = newFieldLabel("Event Type")
-	EventLevel  = newFieldLabel("Event Level")
+	EventDomain     = newFieldLabel("Event Domain")
+	EventType       = newFieldLabel("Event Type")
+	EventLevel      = newFieldLabel("Event Level")
+	EventOccurrence = newFieldLabel("Event Occurrence")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

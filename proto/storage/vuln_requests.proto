@@ -59,7 +59,7 @@ message DeferralRequest {
 
 message FalsePositiveRequest { }
 
-// Next available tag: 21
+// Next available tag: 23
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
@@ -84,6 +84,7 @@ message VulnerabilityRequest {
         }
     }
     string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
+    string                           name               = 22 [(gogoproto.moretags) = 'search:"Request Name" sql:"unique"'];
     // Indicates the state the vulnerabilities will move to once the request is complete.
     VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = 'search:"Requested Vulnerability State"'];
     // Indicates the status of a request.

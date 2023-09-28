@@ -40,7 +40,7 @@ export const selectors = {
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
     nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
     nonZeroImageSeverityCounts:
-        '*[aria-label*="images with"i][aria-label$="severity"i]:not([aria-label^="0"])',
+        'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
         `span[aria-label*="${severity.toLowerCase()} severity CVEs across this"]`,
     nonZeroImageSeverityCount: (severity) =>

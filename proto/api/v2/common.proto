@@ -19,7 +19,7 @@ message Schedule {
         MONTHLY         = 2;
     }
 
-    // Sunday = 1, Monday = 2, .... Saturday =  7
+    // Sunday = 0, Monday = 1, .... Saturday =  6
     message DaysOfWeek {
         repeated int32 days = 1;
     }

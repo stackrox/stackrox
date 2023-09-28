@@ -65,35 +65,38 @@ func (s *servicePostgresTestSuite) TestCount() {
 	// 1. Count events without providing a query filter.
 	resp, err := s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{})
 	s.NoError(err)
-	s.Equal(int64(50), resp.GetCount())
+	s.Equal(int32(50), resp.GetCount())
 
 	// 2. Filter events based on the resource type.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
-		ResourceType: "Image",
+		ResourceType: []string{"Image"},
 	}})
 	s.NoError(err)
-	s.Equal(int64(25), resp.GetCount())
+	s.Equal(int32(25), resp.GetCount())
 
 	// 3. Filter events based on the type.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
-		Type: toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE),
+		Type: []v1.AdministrationEventType{
+			toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE)},
 	}})
 	s.NoError(err)
-	s.Equal(int64(25), resp.GetCount())
+	s.Equal(int32(25), resp.GetCount())
 
 	// 4. Filter events based on the level.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
-		Level: toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING),
-	}})
+		Level: []v1.AdministrationEventLevel{
+			toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING)},
+	},
+	})
 	s.NoError(err)
-	s.Equal(int64(25), resp.GetCount())
+	s.Equal(int32(25), resp.GetCount())
 
 	// 5. Filter events based on the domain.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
-		Domain: "sample domain 2",
+		Domain: []string{"sample domain 2"},
 	}})
 	s.NoError(err)
-	s.Equal(int64(1), resp.GetCount())
+	s.Equal(int32(1), resp.GetCount())
 
 	// 6. Filter events based on the time they were created.
 
@@ -102,28 +105,28 @@ func (s *servicePostgresTestSuite) TestCount() {
 		From: fromBeforeNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(50), resp.GetCount())
+	s.Equal(int32(50), resp.GetCount())
 
 	// 6.2. Filter all events created in one hour.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
 		From: fromAfterNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(0), resp.GetCount())
+	s.Equal(int32(0), resp.GetCount())
 
 	// 6.3. Filter all events created up until in one hour.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
 		Until: untilAfterNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(50), resp.GetCount())
+	s.Equal(int32(50), resp.GetCount())
 
 	// 6.4. Filter all events created up until one hour ago.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
 		Until: untilBeforeNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(0), resp.GetCount())
+	s.Equal(int32(0), resp.GetCount())
 
 	// 6.5. Filter all events from one hour ago until in one hour.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
@@ -131,7 +134,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 		From:  fromBeforeNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(50), resp.GetCount())
+	s.Equal(int32(50), resp.GetCount())
 
 	// 6.6. Filter all events from in one hour until one hour ago.
 	resp, err = s.service.CountAdministrationEvents(s.ctx, &v1.CountAdministrationEventsRequest{Filter: &v1.AdministrationEventsFilter{
@@ -139,7 +142,7 @@ func (s *servicePostgresTestSuite) TestCount() {
 		From:  fromAfterNow,
 	}})
 	s.NoError(err)
-	s.Equal(int64(0), resp.GetCount())
+	s.Equal(int32(0), resp.GetCount())
 }
 
 func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
@@ -151,7 +154,7 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Domain: "Image Scanning",
+			Domain: []string{"Image Scanning"},
 		},
 	})
 	s.NoError(err)
@@ -159,7 +162,7 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Domain: "General",
+			Domain: []string{"General"},
 		},
 	})
 	s.NoError(err)
@@ -167,7 +170,7 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			ResourceType: "Image",
+			ResourceType: []string{"Image"},
 		},
 	})
 	s.NoError(err)
@@ -175,7 +178,7 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			ResourceType: "Node",
+			ResourceType: []string{"Node"},
 		},
 	})
 	s.NoError(err)
@@ -183,7 +186,8 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Type: toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE),
+			Type: []v1.AdministrationEventType{
+				toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE)},
 		},
 	})
 	s.NoError(err)
@@ -191,7 +195,8 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Type: toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC),
+			Type: []v1.AdministrationEventType{
+				toV1TypeEnum(storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_GENERIC)},
 		},
 	})
 	s.NoError(err)
@@ -199,7 +204,9 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Level: toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING),
+			Level: []v1.AdministrationEventLevel{
+				toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING),
+			},
 		},
 	})
 	s.NoError(err)
@@ -207,12 +214,40 @@ func (s *servicePostgresTestSuite) TestListAdministrationEvents() {
 
 	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
 		Filter: &v1.AdministrationEventsFilter{
-			Level: toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR),
+			Level: []v1.AdministrationEventLevel{
+				toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR),
+			},
 		},
 	})
 	s.NoError(err)
 	s.assertMatchEvents([]*events.AdministrationEvent{listEvents[0], listEvents[1], listEvents[4]}, resp.GetEvents())
 
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{
+			Domain: []string{"Image Scanning", "General"},
+		},
+	})
+	s.NoError(err)
+	s.assertMatchEvents(listEvents, resp.GetEvents())
+
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{
+			ResourceType: []string{"Image", "Node"},
+		},
+	})
+	s.NoError(err)
+	s.assertMatchEvents(listEvents, resp.GetEvents())
+
+	resp, err = s.service.ListAdministrationEvents(s.ctx, &v1.ListAdministrationEventsRequest{
+		Filter: &v1.AdministrationEventsFilter{
+			Level: []v1.AdministrationEventLevel{
+				toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR),
+				toV1LevelEnum(storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING),
+			},
+		},
+	})
+	s.NoError(err)
+	s.assertMatchEvents(listEvents, resp.GetEvents())
 }
 
 func (s *servicePostgresTestSuite) addListEvents() []*events.AdministrationEvent {
@@ -254,6 +289,7 @@ func (s *servicePostgresTestSuite) eventsEqual(event *events.AdministrationEvent
 		toV1TypeEnum(event.GetType()) == apiEvent.GetType() &&
 		event.GetHint() == apiEvent.GetHint() &&
 		event.GetDomain() == apiEvent.GetDomain() &&
-		event.GetResourceID() == apiEvent.GetResourceId() &&
-		event.GetResourceType() == apiEvent.GetResourceType()
+		event.GetResourceID() == apiEvent.GetResource().GetId() &&
+		event.GetResourceType() == apiEvent.GetResource().GetType() &&
+		event.GetResourceName() == apiEvent.GetResource().GetName()
 }
