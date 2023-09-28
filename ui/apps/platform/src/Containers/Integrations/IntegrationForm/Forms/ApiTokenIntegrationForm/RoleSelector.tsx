@@ -90,7 +90,7 @@ function RoleSelector({
                     variant="link"
                     isInline
                     onClick={onRoleSelectionClear}
-                    isDisabled={selectedRoles.length === 0}
+                    isDisabled={selectedRoles.length === 0 || !isEditable || isGenerated}
                 >
                     Clear selections
                 </Button>
