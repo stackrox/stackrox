@@ -81,12 +81,12 @@ jobs:
 
       - name: Clean previous installation
         run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scripts/k8s/cleanup.sh stackrox
+          source ./workflow/env.sh
+          ./scripts/k8s/cleanup.sh stackrox
 
           # Delete all namespaces created by scale script.
           for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
-            "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
+            ./scripts/k8s/cleanup.sh "stackrox${i}"
           done
 
       # Wait for PR images
@@ -119,13 +119,13 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/launch_central.sh
+          source ./workflow/env.sh
+          ./scale/dev/launch_central.sh
 
           # Required for k6 tests to run.
-          echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "::add-mask::$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)"
+          echo "ROX_ADMIN_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "ROX_PASSWORD=$(cat ./deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+          echo "::add-mask::$(cat ./deploy/k8s/central-deploy/password)"
 
           LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
           echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
@@ -141,8 +141,10 @@ jobs:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
+          source ./workflow/env.sh
+          ./scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
+
+          # Wait for workload generation
           sleep 120
 
       - name: Create result directory
@@ -152,8 +154,8 @@ jobs:
       - name: Run local k6 test
         uses: grafana/k6-action@v0.3.0
         with:
-          filename: ${{ github.workspace }}/tests/performance/tests/testK6Integration.js
-          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 10 --duration 20m
+          filename: ./tests/performance/tests/testK6Integration.js
+          flags: --out json=performance-results/raw.json --out csv=performance-results/raw.csv --iterations 50 --duration 20m
 
       - name: Publish JUnit test report in job summary
         uses: test-summary/action@v2
