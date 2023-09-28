@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/policysync/datastore/store"
 	pgStore "github.com/stackrox/rox/central/policysync/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -15,6 +16,8 @@ var (
 
 	once sync.Once
 	d    DataStore
+
+	log = logging.LoggerForModule()
 )
 
 // DataStore is the datastore for policy sync.
@@ -46,5 +49,6 @@ func (d *datastoreImpl) GetPolicySync(ctx context.Context) (*storage.PolicySync,
 }
 
 func (d *datastoreImpl) UpsertPolicySync(ctx context.Context, sync *storage.PolicySync) error {
+	log.Infof("Upserting policy sync %+v", sync)
 	return d.store.Upsert(ctx, sync)
 }

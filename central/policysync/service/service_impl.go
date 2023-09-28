@@ -71,5 +71,5 @@ func (s *serviceImpl) PostPolicyRequest(ctx context.Context, request *v1.PostPol
 		return nil, errors.Wrap(err, "upserting policy sync")
 	}
 
-	return nil, nil
+	return &v1.Empty{}, nil
 }
