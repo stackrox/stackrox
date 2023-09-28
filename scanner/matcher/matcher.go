@@ -16,11 +16,14 @@ import (
 )
 
 // Matcher represents a vulnerability matcher.
+//
+//go:generate mockgen-wrapper
 type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	Close(ctx context.Context) error
 }
 
+// matcherImpl implements Matcher on top of a local instance of libvuln.
 type matcherImpl struct {
 	libVuln *libvuln.Libvuln
 }
