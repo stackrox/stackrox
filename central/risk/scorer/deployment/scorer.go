@@ -34,7 +34,7 @@ func NewDeploymentScorer(alertSearcher getters.AlertSearcher, allowlistEvaluator
 			deployment.NewImageMultiplier(image.VulnerabilitiesHeading),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),
-			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
+			//deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
 			deployment.NewImageMultiplier(image.ComponentCountHeading),
 			deployment.NewImageMultiplier(image.ImageAgeHeading),
 		},
