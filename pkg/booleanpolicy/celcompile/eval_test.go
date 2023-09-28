@@ -201,34 +201,34 @@ func TestBasicXX(t *testing.T) {
 	tmpx = `
         []
         +[[{}]]
-        		   .map(
-        		      prevResults,
-                      obj.NestedSlice
-        		        .map(
-        		          k,
-        		          [[{}]]
-        		   .map(
-        		      prevResults,
-                      k.SecondNestedSlice
-        		        .map(
-        		          k,
-        		          [[{}]]
-          .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), [rs].flatten().map(r, r.with({"SecondA": [k.SecondNestedValA]})))
-        		           .filter(r, [r].flatten().size() != 0)
-        		           .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
-                            .flatten()
-                		         .filter(r, [r].flatten().size() != 0)
-        		        )
-        		   )
-        		   .filter(r, [r].flatten().size() != 0)
-        		           .filter(r, [r].flatten().size() != 0)
-        		           .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
-                            .flatten()
-                		         .filter(r, [r].flatten().size() != 0)
-        		        )
-        		   )
-        		   .filter(r, [r].flatten().size() != 0)
-        .flatten()
+           .map(
+              prevResults,
+              obj.NestedSlice
+              .map(
+        	    k,
+        	    [[{}]]
+        	    .map(
+        	      prevResults,
+                  k.SecondNestedSlice
+                  .map(
+        		    k,
+        		    [[{}]]
+                    .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), [rs].flatten().map(r, r.with({"SecondA": [k.SecondNestedValA]})))
+        		    .filter(r, [r].flatten().size() != 0)
+        		    .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
+                    .flatten()
+                    .filter(r, [r].flatten().size() != 0)
+        		  )
+        		)
+        		.filter(r, [r].flatten().size() != 0)
+        		.filter(r, [r].flatten().size() != 0)
+        		.map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
+                .flatten()
+                .filter(r, [r].flatten().size() != 0)
+        	 )
+           )
+           .filter(r, [r].flatten().size() != 0)
+           .flatten()
 `
 
 	obj := &TopLevel{
