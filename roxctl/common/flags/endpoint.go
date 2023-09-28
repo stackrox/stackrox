@@ -32,7 +32,7 @@ var (
 	caCertFile    string
 	caCertFileSet *bool
 
-	kubeContext bool
+	useKubeContext bool
 )
 
 const (
@@ -43,7 +43,7 @@ const (
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
 	plaintextFlagName             = "plaintext"
 	serverNameFlagName            = "server-name"
-	kubeContextFlagName           = "kubecontext"
+	useKubeContextFlagName        = "use-current-k8s-context"
 )
 
 // AddConnectionFlags adds connection-related flags to roxctl.
@@ -76,7 +76,10 @@ func AddConnectionFlags(c *cobra.Command) {
 		"Alternatively pass the file path using the ROX_CA_CERT_FILE environment variable")
 	caCertFileSet = &c.PersistentFlags().Lookup(caCertFileFlagName).Changed
 
-	c.PersistentFlags().BoolVar(&kubeContext, kubeContextFlagName, false, "Use kubecontext to connect to central")
+	c.PersistentFlags().BoolVarP(&useKubeContext, useKubeContextFlagName, "k", false,
+		"Use the current kubeconfig context to connect to central via port-forwarding. "+
+			"Alternatively, set "+env.UseCurrentKubeContext.EnvVar()+" environment variable to true")
+	c.MarkFlagsMutuallyExclusive(useKubeContextFlagName, "endpoint")
 }
 
 // EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
@@ -173,7 +176,7 @@ func CentralURL() (*url.URL, error) {
 	return baseURL, nil
 }
 
-// KubeContext tells whether the connections should go through port forwarding.
-func KubeContext() bool {
-	return kubeContext
+// UseKubeContext tells whether the connections should go through k8s port forwarding.
+func UseKubeContext() bool {
+	return useKubeContext || env.UseCurrentKubeContext.BooleanSetting()
 }

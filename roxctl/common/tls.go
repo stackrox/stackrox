@@ -56,7 +56,7 @@ func ConnectNames() (string, string, bool, error) {
 	if err != nil {
 		return "", "", false, errors.Wrap(err, "could not get endpoint")
 	}
-	if flags.KubeContext() {
+	if flags.UseKubeContext() {
 		endpoint, err = GetForwardingEndpoint()
 		if err != nil {
 			return "", "", false, errors.Wrap(err, "could not get endpoint")
