@@ -137,8 +137,8 @@ type CentralComponentSpec struct {
 
 	// Enables the encryption of notifier secrets stored in the Central DB. An encryption key must be
 	// provided in a secret called `central-encryption-key` in the Central namespace.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	NotifierSecretsEncryptionEnabled *bool `json:"notifierSecretsEncryptionEnabled,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Encrypt Notifier Secrets",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	EncryptNotifierSecrets *bool `json:"encryptNotifierSecrets,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
@@ -181,12 +181,12 @@ func (c *CentralComponentSpec) IsExternalDB() bool {
 	return c != nil && c.DB.IsExternal()
 }
 
-// GetNotifierSecretsEncryptionEnabled provides a way to retrieve the NotifierSecretsEncryptionEnabled setting that is safe to use on a nil receiver object.
-func (c *CentralComponentSpec) GetNotifierSecretsEncryptionEnabled() bool {
+// GetEncryptNotifierSecrets provides a way to retrieve the EncryptNotifierSecrets setting that is safe to use on a nil receiver object.
+func (c *CentralComponentSpec) GetEncryptNotifierSecrets() bool {
 	if c == nil {
 		return false
 	}
-	return pointer.BoolDeref(c.NotifierSecretsEncryptionEnabled, false)
+	return pointer.BoolDeref(c.EncryptNotifierSecrets, false)
 }
 
 // DeclarativeConfiguration defines settings for adding resources in a declarative manner.

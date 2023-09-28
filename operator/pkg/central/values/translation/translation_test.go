@@ -265,7 +265,7 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							NotifierSecretsEncryptionEnabled: pointer.Bool(true),
+							EncryptNotifierSecrets: pointer.Bool(true),
 						},
 						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,

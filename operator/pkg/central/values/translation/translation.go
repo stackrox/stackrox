@@ -250,7 +250,7 @@ func getCentralComponentValues(c *platform.CentralComponentSpec, checker *pvcSta
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
 
-	if c.GetNotifierSecretsEncryptionEnabled() {
+	if c.GetEncryptNotifierSecrets() {
 		cv.SetBoolValue("encryptNotifierSecrets", true)
 	}
 

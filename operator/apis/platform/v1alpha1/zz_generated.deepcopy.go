@@ -207,8 +207,8 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(DeclarativeConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.NotifierSecretsEncryptionEnabled != nil {
-		in, out := &in.NotifierSecretsEncryptionEnabled, &out.NotifierSecretsEncryptionEnabled
+	if in.EncryptNotifierSecrets != nil {
+		in, out := &in.EncryptNotifierSecrets, &out.EncryptNotifierSecrets
 		*out = new(bool)
 		**out = **in
 	}

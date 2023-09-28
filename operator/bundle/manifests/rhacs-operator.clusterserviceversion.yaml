@@ -133,8 +133,8 @@ spec:
       - description: Enables the encryption of notifier secrets stored in the Central
           DB. An encryption key must be provided in a secret called `central-encryption-key`
           in the Central namespace.
-        displayName: Notifier Secrets Encryption
-        path: central.notifierSecretsEncryptionEnabled
+        displayName: Encrypt Notifier Secrets
+        path: central.encryptNotifierSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Allows overriding the default resource settings for this component.
