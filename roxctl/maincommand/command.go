@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/roxctl/declarativeconfig"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/generate"
+	"github.com/stackrox/rox/roxctl/generated/get"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/logconvert"
@@ -83,6 +84,7 @@ func Command() *cobra.Command {
 		completion.Command(cliEnvironment),
 		connectivitymapDeprecated.Command(cliEnvironment),
 		netpol.Command(cliEnvironment),
+		get.Command(cliEnvironment),
 	)
 	if features.RoxctlNetpolGenerate.Enabled() {
 		c.AddCommand(generate.Command(cliEnvironment))

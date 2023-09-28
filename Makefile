@@ -798,3 +798,7 @@ mitre:
 .PHONY: bootstrap_migration
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
+
+.PHONY: generate-roxctl
+generate-roxctl:
+	$(SILENT)if [[ "x${PROTO_FILE}" == "x" ]]; then echo "Please set a .proto file path for the service"; else go run tools/generate-helpers/roxctl/main.go --proto-file "${PROTO_FILE}";fi
