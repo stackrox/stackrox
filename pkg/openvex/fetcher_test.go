@@ -69,5 +69,5 @@ func TestFetch(t *testing.T) {
 
 	vex, err := f.Fetch(context.Background(), img, r)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, vex.GetOpenVexReport())
+	assert.NotEmpty(t, vex)
 }

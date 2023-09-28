@@ -13,16 +13,15 @@ import (
 // When any vulnerability will be filtered, returns true.
 func Filter(img *storage.Image) (bool, error) {
 	// Nothing to filter.
-	if len(img.GetOpenVexReport().GetOpenVexReport()) == 0 {
+	if len(img.GetOpenVexReport()) == 0 {
 		return false, nil
 	}
-
 	var vexReports []*vex.VEX
 	var unmarshalErrors *multierror.Error
 
-	for _, rawReport := range img.GetOpenVexReport().GetOpenVexReport() {
+	for _, storageReport := range img.GetOpenVexReport() {
 		var report *vex.VEX
-		if err := json.Unmarshal(rawReport, report); err != nil {
+		if err := json.Unmarshal(storageReport.GetOpenVexReport(), report); err != nil {
 			unmarshalErrors = multierror.Append(unmarshalErrors, err)
 			continue
 		}

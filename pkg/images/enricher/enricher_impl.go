@@ -729,27 +729,30 @@ func (e *enricherImpl) enrichWithOpenVex(ctx context.Context, enrichmentContext 
 			" to be fetched", imgName)
 	}
 
-	var openVexReport *storage.OpenVex
+	var openVexReports []*storage.OpenVex
 	for _, registry := range matchingImageIntegrations {
 		// We don't need retries, it surely will work at the first attempt...right?
 		reports, err := e.openVexFetcher.Fetch(ctx, img, registry)
 		if err == nil {
-			openVexReport = reports
+			openVexReports = reports
 			break
 		}
 	}
 
-	if openVexReport != nil {
-		// Update unconditionally if new open vex report was there.
-		log.Infof("Found OpenVEX report for image %q: %+v", imgName, openVexReport)
-		img.OpenVexReport = openVexReport
+	// Update unconditionally if new open vex report was there.
+	if len(openVexReports) != 0 {
+		log.Infof("Found OpenVEX report for image %q: %+v", imgName, openVexReports)
+		img.OpenVexReport = openVexReports
 		return true, nil
-	} else if img.GetOpenVexReport() != nil {
-		// Update if previous open vex report was there but not anymore.
+	}
+
+	// Update if previous open vex report was there but not anymore.
+	if len(img.GetOpenVexReport()) != 0 {
 		img.OpenVexReport = nil
 		log.Infof("Setting OpenVEX report for image %q to nil", imgName)
 		return true, nil
 	}
+
 	// By default don't signal updates.
 	return false, nil
 }

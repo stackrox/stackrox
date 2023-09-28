@@ -33,7 +33,7 @@ var (
 
 // Fetcher fetches OpenVEX reports associated with an image.
 type Fetcher interface {
-	Fetch(ctx context.Context, img *storage.Image, registry registryTypes.Registry) (*storage.OpenVex, error)
+	Fetch(ctx context.Context, img *storage.Image, registry registryTypes.Registry) ([]*storage.OpenVex, error)
 }
 
 // NewFetcher creates a new fetcher for OpenVEX reports.
@@ -48,7 +48,7 @@ type openVexFetcher struct {
 }
 
 // Fetch an OpenVEX report.
-func (o *openVexFetcher) Fetch(ctx context.Context, img *storage.Image, registry registryTypes.Registry) (*storage.OpenVex, error) {
+func (o *openVexFetcher) Fetch(ctx context.Context, img *storage.Image, registry registryTypes.Registry) ([]*storage.OpenVex, error) {
 	if img.GetMetadata().GetV2() == nil {
 		return nil, nil
 	}
@@ -89,19 +89,13 @@ func (o *openVexFetcher) Fetch(ctx context.Context, img *storage.Image, registry
 	}
 
 	// Marshal the vex reports to raw bytes again for storage within the proto.
-	storageReports := &storage.OpenVex{}
-	var unmarshalErrors *multierror.Error
-	for _, vexReport := range vexReports {
-		raw, err := json.Marshal(vexReport)
+	var storageReports []*storage.OpenVex
+	if vexReports != nil {
+		raw, err := json.Marshal(vexReports)
 		if err != nil {
-			unmarshalErrors = multierror.Append(unmarshalErrors, err)
-			continue
+			log.Errorf("Unmarshalling OpenVEX report: %v", err)
 		}
-		storageReports.OpenVexReport = append(storageReports.OpenVexReport, raw)
-	}
-
-	if err := unmarshalErrors.ErrorOrNil(); err != nil {
-		log.Errorf("Some OpenVEX reports couldn't be unmarshalled: %v", err)
+		storageReports = append(storageReports, &storage.OpenVex{OpenVexReport: raw})
 	}
 
 	return storageReports, nil
