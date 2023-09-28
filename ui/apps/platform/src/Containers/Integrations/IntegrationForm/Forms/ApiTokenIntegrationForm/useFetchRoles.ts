@@ -1,7 +1,6 @@
 // We can move this out to a higher level if more components need it
 import { useEffect, useState } from 'react';
-import { Role, fetchRolesAsArray } from 'services/RolesService';
-import {fetchAllowedRoles} from "../../../../../services/APITokensService";
+import { fetchAllowedRoles } from 'services/APITokensService';
 
 export type UseRolesResult = {
     roles: string[];
