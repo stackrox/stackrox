@@ -50,6 +50,11 @@ profile_test() {
     # Once kube-burner is done, fetch the pprof
     "$ROOT/scale/profiler/pprof.sh" "${pprof_dir}" "${API_ENDPOINT}" 1
     zip -r "${pprof_zip_output}" "${pprof_dir}"
+
+    # 1. Get heap profile from ${pprof_dir}
+    # 2. Get heap profile to compare (maybe from a static bucket or somewhere else publicly available)
+    # 3. Feed both pprofs to compare script
+    # 4. Call a script to comment on the PR smilar to what `add_build_comment_to_pr` is doing
 }
 
 profile_test "$@"
