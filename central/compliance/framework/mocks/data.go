@@ -145,6 +145,20 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
 }
 
+// HasProcessIndicators mocks base method.
+func (m *MockComplianceDataRepository) HasProcessIndicators() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasProcessIndicators")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasProcessIndicators indicates an expected call of HasProcessIndicators.
+func (mr *MockComplianceDataRepositoryMockRecorder) HasProcessIndicators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasProcessIndicators", reflect.TypeOf((*MockComplianceDataRepository)(nil).HasProcessIndicators))
+}
+
 // HostScraped mocks base method.
 func (m *MockComplianceDataRepository) HostScraped(node *storage.Node) *compliance.ComplianceReturn {
 	m.ctrl.T.Helper()
@@ -327,20 +341,6 @@ func (mr *MockComplianceDataRepositoryMockRecorder) PolicyCategories() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PolicyCategories", reflect.TypeOf((*MockComplianceDataRepository)(nil).PolicyCategories))
 }
 
-// ProcessIndicators mocks base method.
-func (m *MockComplianceDataRepository) ProcessIndicators() []*storage.ProcessIndicator {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessIndicators")
-	ret0, _ := ret[0].([]*storage.ProcessIndicator)
-	return ret0
-}
-
-// ProcessIndicators indicates an expected call of ProcessIndicators.
-func (mr *MockComplianceDataRepositoryMockRecorder) ProcessIndicators() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicators", reflect.TypeOf((*MockComplianceDataRepository)(nil).ProcessIndicators))
-}
-
 // RegistryIntegrations mocks base method.
 func (m *MockComplianceDataRepository) RegistryIntegrations() []framework.ImageMatcher {
 	m.ctrl.T.Helper()
@@ -353,6 +353,20 @@ func (m *MockComplianceDataRepository) RegistryIntegrations() []framework.ImageM
 func (mr *MockComplianceDataRepositoryMockRecorder) RegistryIntegrations() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegistryIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).RegistryIntegrations))
+}
+
+// SSHProcessIndicators mocks base method.
+func (m *MockComplianceDataRepository) SSHProcessIndicators() []*storage.ProcessIndicator {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SSHProcessIndicators")
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
+	return ret0
+}
+
+// SSHProcessIndicators indicates an expected call of SSHProcessIndicators.
+func (mr *MockComplianceDataRepositoryMockRecorder) SSHProcessIndicators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SSHProcessIndicators", reflect.TypeOf((*MockComplianceDataRepository)(nil).SSHProcessIndicators))
 }
 
 // ScannerIntegrations mocks base method.
