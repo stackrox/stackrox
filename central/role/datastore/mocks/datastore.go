@@ -199,6 +199,21 @@ func (mr *MockDataStoreMockRecorder) GetAllPermissionSets(ctx interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPermissionSets", reflect.TypeOf((*MockDataStore)(nil).GetAllPermissionSets), ctx)
 }
 
+// GetAllResolvedRoles mocks base method.
+func (m *MockDataStore) GetAllResolvedRoles(ctx context.Context) ([]permissions.ResolvedRole, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllResolvedRoles", ctx)
+	ret0, _ := ret[0].([]permissions.ResolvedRole)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllResolvedRoles indicates an expected call of GetAllResolvedRoles.
+func (mr *MockDataStoreMockRecorder) GetAllResolvedRoles(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllResolvedRoles", reflect.TypeOf((*MockDataStore)(nil).GetAllResolvedRoles), ctx)
+}
+
 // GetAllRoles mocks base method.
 func (m *MockDataStore) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
 	m.ctrl.T.Helper()
