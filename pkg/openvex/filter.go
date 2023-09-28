@@ -14,19 +14,26 @@ import (
 func Filter(img *storage.Image) (bool, error) {
 	// Nothing to filter.
 	if len(img.GetOpenVexReport()) == 0 {
+		log.Infof("No OpenVEX report associated with image %q", img.GetName().GetFullName())
 		return false, nil
 	}
 	var vexReports []*vex.VEX
 	var unmarshalErrors *multierror.Error
 
 	for _, storageReport := range img.GetOpenVexReport() {
-		var report *vex.VEX
-		if err := json.Unmarshal(storageReport.GetOpenVexReport(), report); err != nil {
+		var report vex.VEX
+		if err := json.Unmarshal(storageReport.GetOpenVexReport(), &report); err != nil {
 			unmarshalErrors = multierror.Append(unmarshalErrors, err)
 			continue
 		}
-		vexReports = append(vexReports, report)
+		vexReports = append(vexReports, &report)
 	}
+
+	if err := unmarshalErrors.ErrorOrNil(); err != nil {
+		log.Errorf("Failed to unmarshall OpenVEX reports: %v", err)
+		return false, err
+	}
+
 	var filtered bool
 	for _, component := range img.GetScan().GetComponents() {
 		for _, report := range vexReports {
