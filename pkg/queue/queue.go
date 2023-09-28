@@ -87,6 +87,8 @@ func (q *Queue[T]) Pull() T {
 // In case the waitable signals done, the default value of T will be returned.
 func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 	var item T
+	// In case multiple go routines are pull blocking, we have to ensure that the result of pull
+	// is non-zero, hence the additional for loop here.
 	for item == *new(T) {
 		select {
 		case <-waitable.Done():
