@@ -18,7 +18,7 @@ jobs:
       KUBECONFIG: artifacts/kubeconfig
       TERM: xterm
       DEFAULT_IMAGE_REGISTRY: "quay.io/rhacs-eng"
-      SCALE_CLUSTER_NAME: k6-test-${{ github.event.pull_request.number }}
+      SCALE_CLUSTER_NAME: k6-test
       SCALE_WORKLOAD_TYPE: default
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
@@ -34,25 +34,16 @@ jobs:
           repository: "stackrox/workflow"
           path: workflow
 
-      # # Create cluster
-      # - uses: stackrox/actions/infra/create-cluster@main
+      # # Create scale cluster with larger nodes.
+      # - name: Create testing cluster
+      #   uses: stackrox/actions/infra/create-cluster@main
       #   with:
       #     token: ${{ secrets.INFRA_TOKEN }}
-      #     flavor: demo
-      #     name: k6-test
-      #     lifespan: 24h
-      #     wait: "true"
-
-      # Create scale cluster with larger nodes.
-      - name: Create testing cluster
-        uses: stackrox/actions/infra/create-cluster@main
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: gke-default
-          name: ${{ env.SCALE_CLUSTER_NAME }}
-          lifespan: 12h
-          args: nodes=3,machine-type=e2-standard-32
-          wait: true
+      #     flavor: gke-default
+      #     name: ${{ env.SCALE_CLUSTER_NAME }}
+      #     lifespan: 12h
+      #     args: nodes=3,machine-type=e2-standard-32
+      #     wait: true
 
       # Fetch infractl artifacts
       - uses: stackrox/actions/infra/install-infractl@v1
@@ -80,71 +71,71 @@ jobs:
         run: |
           docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-      - name: Clean previous installation
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scripts/k8s/cleanup.sh stackrox
+      # - name: Clean previous installation
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scripts/k8s/cleanup.sh stackrox
 
-          # Delete all namespaces created by scale script.
-          for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
-            "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
-          done
+      #     # Delete all namespaces created by scale script.
+      #     for i in $(seq 1 "${SCALE_WORKLOAD_CLUSTERS}"); do
+      #       "${{ github.workspace }}"/scripts/k8s/cleanup.sh "stackrox${i}"
+      #     done
 
-      # Wait for PR images
-      - name: Get PR image tag
-        run: |
-          MAIN_IMAGE_TAG="$(make tag)"
-          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
-      - name: Wait for PR image (main)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
-      # - name: Wait for PR image (central-db)
+      # # Wait for PR images
+      # - name: Get PR image tag
+      #   run: |
+      #     MAIN_IMAGE_TAG="$(make tag)"
+      #     echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
+      # - name: Wait for PR image (main)
       #   uses: stackrox/actions/release/wait-for-image@main
       #   with:
       #     token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      #     image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
-      - name: Wait for PR image (roxctl)
-        uses: stackrox/actions/release/wait-for-image@main
-        with:
-          token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
+      #     image: rhacs-eng/main:${{ env.MAIN_IMAGE_TAG }}
+      # # - name: Wait for PR image (central-db)
+      # #   uses: stackrox/actions/release/wait-for-image@main
+      # #   with:
+      # #     token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      # #     image: rhacs-eng/central-db:${{ env.MAIN_IMAGE_TAG }}
+      # - name: Wait for PR image (roxctl)
+      #   uses: stackrox/actions/release/wait-for-image@main
+      #   with:
+      #     token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      #     image: rhacs-eng/roxctl:${{ env.MAIN_IMAGE_TAG }}
 
-      # Install Central + CentralDB
-      - name: Launch central services
-        env:
-          LOAD_BALANCER: lb
-          ROX_POSTGRES_DATASTORE: "true"
-          MONITORING_SUPPORT: "false"
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/launch_central.sh
+      # # Install Central + CentralDB
+      # - name: Launch central services
+      #   env:
+      #     LOAD_BALANCER: lb
+      #     ROX_POSTGRES_DATASTORE: "true"
+      #     MONITORING_SUPPORT: "false"
+      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scale/dev/launch_central.sh
 
-          # Required for k6 tests to run.
-          echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
-          echo "::add-mask::$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)"
+      #     # Required for k6 tests to run.
+      #     echo "ROX_ADMIN_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+      #     echo "ROX_PASSWORD=$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
+      #     echo "::add-mask::$(cat ${{ github.workspace }}/deploy/k8s/central-deploy/password)"
 
-          LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
-          echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
-          echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
-          echo "::add-mask::${LB_IP}"
+      #     LB_IP="$(kubectl -n stackrox get svc/central-loadbalancer -o json | jq -r '.status.loadBalancer.ingress[0] | .ip // .hostname')"
+      #     echo "HOST=https://${LB_IP}:443" >> "$GITHUB_ENV"
+      #     echo "API_ENDPOINT=${LB_IP}:443" >> "$GITHUB_ENV"
+      #     echo "::add-mask::${LB_IP}"
 
-      # TODO: Find better way to wait for finished workload generation.
-      - name: Generate workload
-        env:
-          LOAD_BALANCER: lb
-          ROX_POSTGRES_DATASTORE: "true"
-          MONITORING_SUPPORT: "false"
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          source "${{ github.workspace }}"/workflow/env.sh
-          "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
-          sleep 120
+      # # TODO: Find better way to wait for finished workload generation.
+      # - name: Generate workload
+      #   env:
+      #     LOAD_BALANCER: lb
+      #     ROX_POSTGRES_DATASTORE: "true"
+      #     MONITORING_SUPPORT: "false"
+      #     REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      #     REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      #   run: |
+      #     source "${{ github.workspace }}"/workflow/env.sh
+      #     "${{ github.workspace }}"/scale/dev/run-many.sh "${SCALE_WORKLOAD_TYPE}" "${SCALE_WORKLOAD_CLUSTERS}"
+      #     sleep 120
 
       - name: Create result directory
         run: |
