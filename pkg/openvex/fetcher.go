@@ -90,8 +90,8 @@ func (o *openVexFetcher) Fetch(ctx context.Context, img *storage.Image, registry
 
 	// Marshal the vex reports to raw bytes again for storage within the proto.
 	var storageReports []*storage.OpenVex
-	if vexReports != nil {
-		raw, err := json.Marshal(vexReports)
+	for _, vexReport := range vexReports {
+		raw, err := json.Marshal(vexReport)
 		if err != nil {
 			log.Errorf("Unmarshalling OpenVEX report: %v", err)
 		}
