@@ -25,4 +25,6 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_187_to_m_188_remove_reports_without_migrated_collections"
 	_ "github.com/stackrox/rox/migrator/migrations/m_188_to_m_189_logimbues_add_time_column"
 	_ "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_vulnerability_requests_add_name"
+	_ "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_policy_with_gorm"
+	_ "github.com/stackrox/rox/migrator/migrations/m_191_to_m_192_cluster_with_store"
 )

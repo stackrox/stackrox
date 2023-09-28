@@ -118,7 +118,7 @@ message SensorDeploymentIdentification {
 message Cluster {
     string                    id                               = 1 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"'];
     string                    name                             = 2 [(gogoproto.moretags) = 'search:"Cluster,store" sql:"unique"'];
-    ClusterType               type                             = 3;
+    ClusterType               type                             = 3 [(gogoproto.moretags) = 'search:"Cluster Type,hidden,store"'];
     map<string, string>       labels                           = 27 [(gogoproto.moretags) = 'search:"Cluster Label"'];
     string                    main_image                       = 4;
     string                    collector_image                  = 16;

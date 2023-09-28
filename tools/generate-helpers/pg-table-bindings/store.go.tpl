@@ -351,6 +351,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 
 // region Used for testing
 {{- if not .Migration }}
+
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)

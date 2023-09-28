@@ -44,7 +44,7 @@ message Policy {
     // For internal use only.
     bool                        SORT_enforcement        = 18 [(gogoproto.moretags) = 'search:"SORT_Enforcement,hidden"'];
 
-    string                      policy_version          = 19;
+    string                      policy_version          = 19 [(gogoproto.moretags) = 'search:"Policy Version,hidden"'];
     repeated PolicySection      policy_sections         = 20;
 
     message MitreAttackVectors {
@@ -59,7 +59,7 @@ message Policy {
     // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
     bool                        mitre_vectors_locked    = 25;
     // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-    bool                        is_default              = 26;
+    bool                        is_default              = 26 [(gogoproto.moretags) = 'search:"Policy Default,hidden"'];
 }
 
 enum EventSource {

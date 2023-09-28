@@ -24,6 +24,7 @@ var (
 	ClusterID    = newFieldLabel("Cluster ID")
 	ClusterLabel = newFieldLabel("Cluster Label")
 	ClusterScope = newFieldLabel("Cluster Scope")
+	ClusterType  = newFieldLabel("Cluster Type")
 
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
@@ -265,6 +266,8 @@ var (
 	SORTPolicyName     = newFieldLabel("SORT_Policy")
 	SORTLifecycleStage = newFieldLabel("SORT_Lifecycle Stage")
 	SORTEnforcement    = newFieldLabel("SORT_Enforcement")
+	PolicyVersion      = newFieldLabel("Policy Version")
+	PolicyDefault      = newFieldLabel("Policy Default")
 
 	// Following are derived fields
 	// Count-based derived fields. These fields are supported only in pagination.
