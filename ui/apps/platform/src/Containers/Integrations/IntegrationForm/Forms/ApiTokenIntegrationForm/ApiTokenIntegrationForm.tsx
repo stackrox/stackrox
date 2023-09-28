@@ -96,7 +96,6 @@ function ApiTokenIntegrationForm({
     }
 
     function onRoleChange(id, selection) {
-        console.log(`Here is the id:${id}`);
         return setFieldValue(id, [selection]);
     }
 
