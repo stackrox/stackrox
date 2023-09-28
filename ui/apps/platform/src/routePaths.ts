@@ -302,7 +302,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             'Image',
             // 'Namespace',
             // 'Node',
-            'WatchedImage', // for Image
+            // 'WatchedImage', // for Image
         ]),
     },
     'workload-cves': {
