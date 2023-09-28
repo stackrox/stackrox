@@ -12,8 +12,10 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/observability/tracing"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -25,8 +27,7 @@ var (
 	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
 )
 
-type logger struct {
-}
+type logger struct{}
 
 func (*logger) LogPanic(ctx context.Context, value interface{}) {
 	const size = 64 << 10
@@ -94,6 +95,9 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // Handler returns an HTTP handler for the graphql api endpoint
 func Handler() http.Handler {
 	opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
+	if features.Tracing.Enabled() {
+		opts = append(opts, graphql.Tracer(tracing.GraphQLTracer()))
+	}
 	s := resolvers.Schema()
 	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
 	if err != nil {

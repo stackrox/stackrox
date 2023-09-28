@@ -8,21 +8,21 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/observability/tracing"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 func main() {
 	premain.StartMain()
@@ -34,6 +34,10 @@ func main() {
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
+
+	if features.Tracing.Enabled() {
+		tracing.Singleton().Start(tracing.SensorResource())
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, os.Interrupt, unix.SIGTERM)

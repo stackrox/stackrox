@@ -99,4 +99,7 @@ var (
 
 	// CloudCredentials enables support for short-lived cloud credentials.
 	CloudCredentials = registerFeature("Enable support for short-lived cloud credentials", "ROX_CLOUD_CREDENTIALS", false)
+
+	// Tracing enables OpenTelemetry distributed tracing.
+	Tracing = registerFeature("Enable OpenTelemetry tracing", "ROX_TRACING", true)
 )
