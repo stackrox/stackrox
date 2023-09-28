@@ -19,13 +19,15 @@ var (
 	xyz = testCase{
 		desc: "linked, multilevel, should match (group test)",
 		obj: &TopLevel{
-			ValA: "TopLevelValA",
+			ValA: "happy",
 			NestedSlice: []Nested{
-				{NestedValA: "A0", NestedValB: "B0"},
-				{NestedValA: "A0", NestedValB: "B1"},
-				{NestedValA: "A1", NestedValB: "B0"},
-				{NestedValA: "A1", NestedValB: "B1"},
-				{NestedValA: "A2", NestedValB: "B2"},
+				{NestedValA: "happy", SecondNestedSlice: []*SecondNested{
+					{SecondNestedValA: "blah"},
+					{SecondNestedValA: "blaappy"},
+				}},
+				{NestedValA: "something else", SecondNestedSlice: []*SecondNested{
+					{SecondNestedValA: "happy"},
+				}},
 			},
 		},
 		q: &query.Query{
@@ -136,7 +138,64 @@ var (
 )
 
 func TestBasicXX(t *testing.T) {
-	prog, err := compile(tplate2)
+	tmpx := `
+        []
+        +[[{}]]
+        		   .map(
+        		      prevResults,
+                      obj.NestedSlice
+        		        .map(
+        		          k,
+        		          [[{}]]
+        		   .map(
+        		      prevResults,
+                      k.SecondNestedSlice
+        		        .map(
+        		          k,
+        		          [[{}]]
+          .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), rs.map(r, r.with({"SecondA": [k.SecondNestedValA]})))
+        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+        		        )
+        		   )
+        		   .filter(r, r.size() != 0)
+        		   .flatten()
+        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+        		        )
+        		   )
+        		   .filter(r, r.size() != 0)
+        		   .flatten()
+        .flatten()
+`
+	tmpx = `
+        []
+        +[[{}]]
+        		   .map(
+        		      prevResults,
+                      obj.NestedSlice
+        		        .map(
+        		          k,
+        		          [[{}]]
+        		   .map(
+        		      prevResults,
+                      k.SecondNestedSlice
+        		        .map(
+        		          k,
+        		          [[{}]]
+          .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), rs.map(r, r.with({"SecondA": [k.SecondNestedValA]})))
+        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+        		        )
+        		   )
+        		   .filter(r, r.size() != 0)
+        		   .flatten()
+        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+        		        )
+        		   )
+        		   .filter(r, r.size() != 0)
+        		   .flatten()
+        .flatten()
+`
+
+	prog, err := compile(tmpx)
 	assert.NoError(t, err)
 	jsonStr, err := json.Marshal(xyz.obj)
 	assert.NoError(t, err)

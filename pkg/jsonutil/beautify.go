@@ -27,4 +27,5 @@ func LogAndBeautify(t *testing.T, v any, heading string) {
 	assert.NoError(t, err)
 	t.Log(heading)
 	t.Log(str)
+	t.Log(heading + "end")
 }

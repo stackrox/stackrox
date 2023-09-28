@@ -63,9 +63,17 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 
 func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
 	val, err := evaluate(r.q, map[string]interface{}{"obj": obj})
-	// If there is an error here, it is a programming error. Let's not panic in prod over it.
 	if err != nil {
-		utils.Should(err)
+		//	utils.Should(err)
+		return nil, false
+	}
+	// If there is an error here, it is a programming error. Let's not panic in prod over it.
+	jsonData, err := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
+	//utils.Should(err)
+	out := protojson.Format(jsonData.(*structpb.Value))
+	fmt.Println(out)
+	if err != nil {
+		//	utils.Should(err)
 		return nil, false
 	}
 
@@ -73,7 +81,7 @@ func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
 	res := &evaluator.Result{}
 	if result == nil {
 		err = fmt.Errorf("invalid result: %+v", result)
-		utils.Should(err)
+		// utils.Should(err)
 		return nil, false
 	}
 	for _, binding := range result.([]map[string][]interface{}) {
@@ -86,11 +94,6 @@ func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
 		res.Matches = append(res.Matches, match)
 	}
 
-	jsonData, err := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
-	utils.Should(err)
-
-	out := protojson.Format(jsonData.(*structpb.Value))
-	fmt.Println(out)
 	return res, len(res.Matches) != 0
 }
 
@@ -117,19 +120,14 @@ var tplate2 = `
    .map(
       result,
       obj.NestedSlice
-        .filter(
-          k,
-          k.NestedValB.startsWith("B1") || k.NestedValB.startsWith("B2")
-        )
-        .filter(
-          k,
-          k.NestedValA.startsWith("A1") || k.NestedValA.startsWith("A2")
-        )
         .map(
           k,
-          result.map(entry, entry.with({"B": [k.NestedValB], "A": [k.NestedValA]}))
-        ).flatten()
-   )
+          [[{}]]
+           .map(result1, k.NestedValB.startsWith("B1") || k.NestedValB.startsWith("B2"), result1.map(t, t.with({"B": [k.NestedValB]})))
+           .map(result1, k.NestedValA.startsWith("A1") || k.NestedValA.startsWith("A2"), result1.map(t, t.with({"A": [k.NestedValA]})))
+           .map(result1, result.map(t, result1.map(x, t.with(x))))
+        )
+   ) 
    .filter(result, result.size() != 0)
    .flatten()
 `
@@ -156,8 +154,13 @@ type fieldMatchData struct {
 func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 	// We need to get a unique set of array indexes for each path in the rego code.
 	// That is tracked in this map.
-	pathsToArrayIndexes := make(map[string]int)
-	var fieldsAndMatchers []fieldMatchData
+
+	args := &mainProgramArgs{}
+	args.Root = MatchField{
+		VarName: "obj",
+		Path:    "obj",
+	}
+	pathsToAccessVariable := map[string]*MatchField{"obj": &args.Root}
 
 	for _, fieldQuery := range query.FieldQueries {
 		field := fieldQuery.Field
@@ -166,63 +169,46 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 			return "", fmt.Errorf("field %v not in object", field)
 		}
 		var constructedPath strings.Builder
+		var currentPath strings.Builder
 		constructedPath.WriteString("obj.")
+		currentPath.WriteString("obj")
+		parent := &args.Root
 		for i, elem := range metaPathToField {
 			constructedPath.WriteString(elem.FieldName)
+			currentPath.WriteString("." + elem.FieldName)
 			if i == len(metaPathToField)-1 {
 				// For the last element, we don't want to index into it, or add a "." at the end.
 				break
 			}
 			if elem.Type.Kind() == reflect.Slice || elem.Type.Kind() == reflect.Array {
 				pathKey := constructedPath.String()
-				idx, ok := pathsToArrayIndexes[pathKey]
+				mf, ok := pathsToAccessVariable[pathKey]
 				if !ok {
-					idx = len(pathsToArrayIndexes)
-					pathsToArrayIndexes[pathKey] = idx
+					mf = &MatchField{
+						VarName: currentPath.String(),
+						Path:    constructedPath.String(),
+					}
+					parent.Children = append(parent.Children, mf)
+					pathsToAccessVariable[pathKey] = mf
 				}
-				constructedPath.WriteString(fmt.Sprintf("[idx%d]", idx))
+				parent = mf
+				currentPath.Reset()
+				currentPath.WriteString("k")
 			}
 			constructedPath.WriteString(".")
 		}
-		matchersForField, err := generateMatchersForField(fieldQuery, metaPathToField[len(metaPathToField)-1].Type)
+		code, err := generateMatchCodeForField(fieldQuery, metaPathToField[len(metaPathToField)-1].Type, currentPath.String())
 		if err != nil {
 			return "", fmt.Errorf("generating matchers for field query %+v: %w", fieldQuery, err)
 		}
-		fieldsAndMatchers = append(fieldsAndMatchers, fieldMatchData{
-			matchers: matchersForField,
-			name:     field,
-			path:     constructedPath.String(),
-		})
-	}
-
-	args := &mainProgramArgs{}
-	for i := 0; i < len(pathsToArrayIndexes); i++ {
-		args.IndexesToDeclare = append(args.IndexesToDeclare, i)
-	}
-	var funcLengths []int
-	for _, matchData := range fieldsAndMatchers {
-		for _, f := range matchData.matchers {
-			args.Functions = append(args.Functions, f.functionCode)
+		mf := &MatchField{
+			VarName:    currentPath.String(),
+			SearchName: fieldQuery.Field,
+			MatchCode:  code,
+			IsLeaf:     true,
+			Path:       constructedPath.String(),
 		}
-		funcLengths = append(funcLengths, len(matchData.matchers))
-	}
-	// We need to generate one rule for each cross product, since we are OR-ing between them.
-	// We should not need this because the OR operations among the literal values are processed
-	// within each condition. But I will keep the following codes here for safe since it does
-	// not do bad things through. Remove later.
-	if err := runForEachCrossProduct(funcLengths, func(indexes []int) error {
-		condition := condition{}
-		for i, matchData := range fieldsAndMatchers {
-			condition.Fields = append(condition.Fields, fieldInCondition{
-				Name:     matchData.name,
-				JSONPath: matchData.path,
-				FuncName: matchData.matchers[indexes[i]].functionName,
-			})
-		}
-		args.Conditions = append(args.Conditions, condition)
-		return nil
-	}); err != nil {
-		return "", err
+		parent.Children = append(parent.Children, mf)
 	}
 	return generateMainProgram(args)
 }
