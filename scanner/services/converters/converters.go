@@ -22,7 +22,7 @@ var (
 	}
 )
 
-// ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport
+// ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
 func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
 	if r == nil {
 		return nil
@@ -35,7 +35,7 @@ func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
 	}
 }
 
-// ToProtoV4VulnerabilityReport maps claircore.VulnerabilityReport to v4.VulnerabilityReport
+// ToProtoV4VulnerabilityReport maps claircore.VulnerabilityReport to v4.VulnerabilityReport.
 func ToProtoV4VulnerabilityReport(r *claircore.VulnerabilityReport) (*v4.VulnerabilityReport, error) {
 	if r == nil {
 		return nil, nil
@@ -51,20 +51,20 @@ func ToProtoV4VulnerabilityReport(r *claircore.VulnerabilityReport) (*v4.Vulnera
 	}, nil
 }
 
-// ToClairCoreIndexReport converts v4.Contents to a claircore.IndexReport, with the fields
+// ToClairCoreIndexReport converts v4.Contents to a claircore.IndexReport.
 func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
 	if contents == nil {
 		return nil, errors.New("internal error: empty contents")
 	}
-	pkgs, err := convertToClairCoreMap(contents.GetPackages(), toClairCorePackage)
+	pkgs, err := convertSliceToMap(contents.GetPackages(), toClairCorePackage)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	dists, err := convertToClairCoreMap(contents.GetDistributions(), toClairCoreDistributions)
+	dists, err := convertSliceToMap(contents.GetDistributions(), toClairCoreDistribution)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
-	repos, err := convertToClairCoreMap(contents.GetRepositories(), toClairCoreRepository)
+	repos, err := convertSliceToMap(contents.GetRepositories(), toClairCoreRepository)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -100,12 +100,12 @@ func toProtoV4Contents(
 		environments = make(map[string]*v4.Environment_List, len(envs))
 	}
 	for k, v := range envs {
+		l, ok := environments[k]
+		if !ok {
+			l = &v4.Environment_List{}
+			environments[k] = l
+		}
 		for _, e := range v {
-			l, ok := environments[k]
-			if !ok {
-				l = &v4.Environment_List{}
-				environments[k] = l
-			}
 			l.Environments = append(l.Environments, toProtoV4Environment(e))
 		}
 	}
@@ -128,13 +128,13 @@ func toProtoV4Package(p *claircore.Package) *v4.Package {
 			V:    version.V[:],
 		}
 	}
-	toSourcePackage := func(p *claircore.Package) (source *v4.Package) {
-		if p == nil {
+	toSourcePackage := func(src *claircore.Package) *v4.Package {
+		if src == nil {
 			return nil
 		}
 		// Sanitize and avoid recursion.
-		p.Source = nil
-		return toProtoV4Package(p.Source)
+		src.Source = nil
+		return toProtoV4Package(src)
 	}
 	return &v4.Package{
 		Id:                p.ID,
@@ -206,7 +206,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 			continue
 		}
 		pkgVulns[k] = &v4.StringList{
-			Values: v,
+			Values: append([]string(nil), v...),
 		}
 	}
 	return pkgVulns
@@ -240,15 +240,15 @@ func toProtoV4VulnerabilitiesMap(vulns map[string]*claircore.Vulnerability) (map
 		if v.Repo != nil {
 			repoID = v.Repo.ID
 		}
-		severity := toProtoV4VulnerabilitySeverity(v.NormalizedSeverity)
+		normalizedSeverity := toProtoV4VulnerabilitySeverity(v.NormalizedSeverity)
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               v.Name,
 			Description:        v.Description,
 			Issued:             issued,
 			Link:               v.Links,
-			Severity:           severity.String(),
-			NormalizedSeverity: severity,
+			Severity:           v.Severity,
+			NormalizedSeverity: normalizedSeverity,
 			PackageId:          pkgID,
 			DistributionId:     distID,
 			RepositoryId:       repoID,
@@ -297,15 +297,15 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 		copy(ccV.V[:], v.GetV())
 		return
 	}
-	toSourcePackage := func(p *v4.Package) (*claircore.Package, error) {
-		if p == nil {
+	toSourcePackage := func(src *v4.Package) (*claircore.Package, error) {
+		if src == nil {
 			return nil, nil
 		}
 		// Prevent deeper recursion.
-		if p.GetSource() != nil {
-			p.Source = nil
+		if src.GetSource() != nil {
+			src.Source = nil
 		}
-		_, ccP, err := toClairCorePackage(p)
+		_, ccP, err := toClairCorePackage(src)
 		return ccP, err
 	}
 	// Fields that might fail.
@@ -332,7 +332,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 	}, nil
 }
 
-func toClairCoreDistributions(d *v4.Distribution) (string, *claircore.Distribution, error) {
+func toClairCoreDistribution(d *v4.Distribution) (string, *claircore.Distribution, error) {
 	ccCPE, err := toClairCoreCPE(d.GetCpe())
 	if err != nil {
 		return "", nil, fmt.Errorf("distribution %q: %w", d.GetId(), err)
@@ -377,11 +377,11 @@ func toClairCoreEnvironment(env *v4.Environment) (*claircore.Environment, error)
 	}, nil
 }
 
-// convertToClairCoreMap converts a slice of pointers of a generic type to a map
+// convertSliceToMap converts a slice of pointers of a generic type to a map
 // based on the returned value of a conversion function that returns a string
 // key, the pointer to the converted value, or error if the conversion failed.
 // Nils in the slice are ignored.
-func convertToClairCoreMap[IN any, OUT any](in []*IN, convF func(*IN) (string, *OUT, error)) (map[string]*OUT, error) {
+func convertSliceToMap[IN any, OUT any](in []*IN, convF func(*IN) (string, *OUT, error)) (map[string]*OUT, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}

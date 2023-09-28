@@ -11,6 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	emptyNormalizedVersion = v4.NormalizedVersion{
+		Kind: "",
+		V:    []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	}
+	emptyCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
+)
+
 func Test_ToProtoV4IndexReport(t *testing.T) {
 	tests := []struct {
 		name string
@@ -369,7 +377,27 @@ func Test_toProtoV4Package(t *testing.T) {
 				RepositoryHint: "sample hint",
 				Module:         "sample module",
 				Arch:           "sample arch",
-				Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+				Cpe:            emptyCPE,
+			},
+		},
+		{
+			name: "when source with source then input is sanitized and no error",
+			arg: &claircore.Package{
+				Name: "Sample name",
+				Source: &claircore.Package{
+					Name: "sample source",
+					Source: &claircore.Package{
+						Name: "should be removed",
+					},
+				},
+			},
+			want: &v4.Package{
+				Name: "Sample name",
+				Source: &v4.Package{
+					Name: "sample source",
+				},
+				NormalizedVersion: &emptyNormalizedVersion,
+				Cpe:               emptyCPE,
 			},
 		},
 	}
@@ -380,7 +408,7 @@ func Test_toProtoV4Package(t *testing.T) {
 		})
 	}
 	// Test source with another source (prevents recursion).
-	t.Run("when source has source no convertion", func(t *testing.T) {
+	t.Run("when source has source no conversion", func(t *testing.T) {
 		arg := &claircore.Package{
 			Name: "Package",
 			Source: &claircore.Package{
@@ -408,7 +436,7 @@ func Test_toProtoV4Distribution(t *testing.T) {
 		{
 			name: "when default then no errors",
 			arg:  &claircore.Distribution{},
-			want: &v4.Distribution{Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"},
+			want: &v4.Distribution{Cpe: emptyCPE},
 		},
 		{
 			name: "when default then no errors",
@@ -543,17 +571,17 @@ func Test_toProtoV4Contents(t *testing.T) {
 			},
 			want: &v4.Contents{
 				Packages: []*v4.Package{{
-					Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					Cpe: emptyCPE,
 					NormalizedVersion: &v4.NormalizedVersion{
 						Kind: "",
 						V:    make([]int32, 10),
 					},
 				}},
 				Distributions: []*v4.Distribution{{
-					Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					Cpe: emptyCPE,
 				}},
 				Repositories: []*v4.Repository{{
-					Cpe: "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+					Cpe: emptyCPE,
 				}},
 				Environments: map[string]*v4.Environment_List{
 					"sample env": {
