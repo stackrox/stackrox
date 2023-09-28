@@ -62,6 +62,7 @@ export const validationSchema = yup.object().shape({
 export const defaultValues: ApiTokenIntegrationFormValues = {
     name: '',
     roles: [],
+    expiration: '',
 };
 
 function ApiTokenIntegrationForm({
@@ -95,6 +96,7 @@ function ApiTokenIntegrationForm({
     }
 
     function onRoleChange(id, selection) {
+        console.log(`Here is the id:${id}`);
         return setFieldValue(id, [selection]);
     }
 
