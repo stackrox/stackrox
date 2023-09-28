@@ -49,6 +49,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
+// GetClusterCommand holds the metadata about the command to get cluster.
 type GetClusterCommand struct {
 	id                 string
 	retryDelay         int
@@ -59,7 +60,7 @@ type GetClusterCommand struct {
 	standardizedFormat bool
 }
 
-func (cmd *GetClusterCommand) construct(c *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
+func (cmd *GetClusterCommand) construct(_ *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
 	cmd.id = args[0]
 	p, err := f.CreatePrinter()
 	if err != nil {
