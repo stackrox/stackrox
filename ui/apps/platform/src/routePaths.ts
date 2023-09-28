@@ -294,7 +294,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'vulnerability-management': {
-        // Same resources as workload-cves although lack of commented-out resources affects entire list or entity pages.
         resourceAccessRequirements: everyResource([
             // 'Alert', // for Cluster and Deployment and Namespace
             // 'Cluster',
