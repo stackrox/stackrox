@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React, { ReactElement, useState } from 'react';
 import {
     TextInput,
     PageSection,
@@ -8,6 +8,10 @@ import {
     DescriptionListGroup,
     DescriptionListDescription,
     SelectOption,
+    Title,
+    DatePicker,
+    yyyyMMddFormat,
+    FlexItem,
 } from '@patternfly/react-core';
 
 import * as yup from 'yup';
@@ -20,6 +24,7 @@ import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import dateFns from 'date-fns';
 import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
@@ -29,6 +34,7 @@ import useAllowedRoles from './useFetchRoles';
 export type ApiTokenIntegrationFormValues = {
     name: string;
     roles: string[];
+    expiration: string;
 };
 
 export type ApiTokenIntegrationFormProps = {
@@ -48,6 +54,7 @@ export const validationSchema = yup.object().shape({
 export const defaultValues: ApiTokenIntegrationFormValues = {
     name: '',
     roles: [],
+    expiration: '',
 };
 
 function ApiTokenIntegrationForm({
@@ -81,6 +88,7 @@ function ApiTokenIntegrationForm({
     }
 
     function onRoleChange(id, selection) {
+        console.log(`Here is the id:${id}`);
         return setFieldValue(id, [selection]);
     }
 
@@ -175,6 +183,31 @@ function ApiTokenIntegrationForm({
                                 })}
                             </SelectSingle>
                         </FormLabelGroup>
+                        {isEditable && !isGenerated && (
+                            <FormLabelGroup
+                                isRequired
+                                label="Expiration date"
+                                fieldId="expiration"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <DatePicker
+                                    id="expiration"
+                                    value={
+                                        values.expiration
+                                            ? yyyyMMddFormat(new Date(values.expiration))
+                                            : ''
+                                    }
+                                    onChange={(event, value, date) => {
+                                        console.log(`Here's the value:${value}`);
+                                        console.log(`Here's the date${date}`);
+                                        if (date) {
+                                            setFieldValue('expiration', date.toISOString());
+                                        }
+                                    }}
+                                />
+                            </FormLabelGroup>
+                        )}
                     </Form>
                 )}
             </PageSection>

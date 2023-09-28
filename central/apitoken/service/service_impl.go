@@ -114,7 +114,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, errox.NotAuthorized.CausedBy(err)
 	}
 
-	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles))
+	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), utils.RoleNames(roles), req.GetExpiration())
 	if err != nil {
 		return nil, err
 	}
