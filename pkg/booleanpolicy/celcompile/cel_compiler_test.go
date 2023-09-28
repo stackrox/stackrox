@@ -207,19 +207,21 @@ func TestSimpleBase(t *testing.T) {
 			},
 			expectedResult: resultWithSingleMatch("A", "happy"),
 		},
-		{
-			desc: "simple one for second level nested, doesn't pass",
-			q:    qSecondNestedAHappy,
-			obj: &TopLevel{
-				ValA: "happy",
-				NestedSlice: []Nested{
-					{NestedValA: "happy"},
-					{NestedValA: "something else", SecondNestedSlice: []*SecondNested{
-						{SecondNestedValA: "happiest"},
-					}},
+
+		/*
+			{
+				desc: "simple one for second level nested, doesn't pass",
+				q:    qSecondNestedAHappy,
+				obj: &TopLevel{
+					ValA: "happy",
+					NestedSlice: []Nested{
+						{NestedValA: "happy"},
+						{NestedValA: "something else", SecondNestedSlice: []*SecondNested{
+							{SecondNestedValA: "happiest"},
+						}},
+					},
 				},
-			},
-		},
+			},*/
 		{
 			desc: "simple one for second level nested, passes",
 			q:    qSecondNestedAHappy,

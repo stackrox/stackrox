@@ -169,6 +169,38 @@ func TestBasicXX(t *testing.T) {
 	tmpx = `
         []
         +[[{}]]
+        	.map(
+        	   prevResults,
+               obj.NestedSlice
+        	   .map(
+        		   k,
+                   [[{}]]
+        		   .map(
+        		      prevResults,
+                      k.SecondNestedSlice
+        		      .map(
+        		         k,
+        		         [[{}]]
+                         .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), rs.map(r, r.with({"SecondA": [k.SecondNestedValA]})))
+                         .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+                         .flatten()
+        		         .filter(r, r.size() != 0)
+        		        )
+        		         .filter(r, r.size() != 0)
+                        
+        		   )
+        		   .filter(r, r.size() != 0)
+        		   .map(rs, prevResults.map(p, rs.flatten().map(r, p.with(r))))
+        		   //.map(rs, [1, 2, rs])
+        	   )
+            )
+           .filter(r, r.size() != 0)
+           .flatten()
+           //.flatten()
+`
+	tmpx = `
+        []
+        +[[{}]]
         		   .map(
         		      prevResults,
                       obj.NestedSlice
@@ -181,23 +213,36 @@ func TestBasicXX(t *testing.T) {
         		        .map(
         		          k,
         		          [[{}]]
-          .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), rs.map(r, r.with({"SecondA": [k.SecondNestedValA]})))
-        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+          .map(rs, k.SecondNestedValA.matches('^(?i:.*ppy)$'), [rs].flatten().map(r, r.with({"SecondA": [k.SecondNestedValA]})))
+        		           .filter(r, [r].flatten().size() != 0)
+        		           .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
+                            .flatten()
+                		         .filter(r, [r].flatten().size() != 0)
         		        )
         		   )
-        		   .filter(r, r.size() != 0)
-        		   .flatten()
-        		           .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
+        		   .filter(r, [r].flatten().size() != 0)
+        		           .filter(r, [r].flatten().size() != 0)
+        		           .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
+                            .flatten()
+                		         .filter(r, [r].flatten().size() != 0)
         		        )
         		   )
-        		   .filter(r, r.size() != 0)
-        		   .flatten()
+        		   .filter(r, [r].flatten().size() != 0)
         .flatten()
 `
 
+	obj := &TopLevel{
+		ValA: "happy",
+		NestedSlice: []Nested{
+			{NestedValA: "happy"},
+			{NestedValA: "something else", SecondNestedSlice: []*SecondNested{
+				{SecondNestedValA: "happiest"},
+			}},
+		},
+	}
 	prog, err := compile(tmpx)
 	assert.NoError(t, err)
-	jsonStr, err := json.Marshal(xyz.obj)
+	jsonStr, err := json.Marshal(obj)
 	assert.NoError(t, err)
 
 	var data interface{}

@@ -64,7 +64,7 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 func (r *celBasedEvaluator) EvaluateX(obj any) (*evaluator.Result, bool) {
 	val, err := evaluate(r.q, map[string]interface{}{"obj": obj})
 	if err != nil {
-		//	utils.Should(err)
+		utils.Should(err)
 		return nil, false
 	}
 	// If there is an error here, it is a programming error. Let's not panic in prod over it.
