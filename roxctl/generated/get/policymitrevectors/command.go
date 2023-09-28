@@ -49,6 +49,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
+// GetPolicyMitreVectorsCommand holds the metadata about the command to get policymitrevectors.
 type GetPolicyMitreVectorsCommand struct {
 	id                 string
 	retryDelay         int
@@ -59,7 +60,7 @@ type GetPolicyMitreVectorsCommand struct {
 	standardizedFormat bool
 }
 
-func (cmd *GetPolicyMitreVectorsCommand) construct(c *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
+func (cmd *GetPolicyMitreVectorsCommand) construct(_ *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
 	cmd.id = args[0]
 	p, err := f.CreatePrinter()
 	if err != nil {
