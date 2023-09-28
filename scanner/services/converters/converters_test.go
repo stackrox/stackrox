@@ -100,7 +100,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 						Description:        "sample vuln description",
 						Issued:             protoNow,
 						Link:               "sample vuln links",
-						Severity:           v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL.String(),
+						Severity:           "Critical",
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 						PackageId:          "sample vuln package id",
 						DistributionId:     "sample vuln distribution id",
@@ -394,7 +394,9 @@ func Test_toProtoV4Package(t *testing.T) {
 			want: &v4.Package{
 				Name: "Sample name",
 				Source: &v4.Package{
-					Name: "sample source",
+					Name:              "sample source",
+					NormalizedVersion: &emptyNormalizedVersion,
+					Cpe:               emptyCPE,
 				},
 				NormalizedVersion: &emptyNormalizedVersion,
 				Cpe:               emptyCPE,
@@ -625,12 +627,12 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:             protoNow,
-					Severity:           v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL.String(),
+					Severity:           "Critical",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
 				},
 				"bar": {
 					Issued:             protoNow,
-					Severity:           v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT.String(),
+					Severity:           "High",
 					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 				},
 			},
