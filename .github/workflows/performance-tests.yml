@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - master
+      - hack2023/k6-ci-pipeline-tests
     types:
       - labeled
       - synchronize
@@ -32,15 +33,6 @@ jobs:
         with:
           repository: "stackrox/workflow"
           path: workflow
-
-      # # Create cluster
-      # - uses: stackrox/actions/infra/create-cluster@main
-      #   with:
-      #     token: ${{ secrets.INFRA_TOKEN }}
-      #     flavor: demo
-      #     name: k6-test
-      #     lifespan: 24h
-      #     wait: "true"
 
       # Create scale cluster with larger nodes.
       - name: Create testing cluster
@@ -162,7 +154,6 @@ jobs:
         with:
           paths: performance-results/report.xml
 
-      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
       - name: Upload results to GCS
         uses: google-github-actions/upload-cloud-storage@v1
         with:
