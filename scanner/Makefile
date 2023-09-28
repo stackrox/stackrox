@@ -1,13 +1,12 @@
+include $(CURDIR)/../make/env.mk
+
 # Store tooling in a location that does not affect the system.
 GOBIN := $(CURDIR)/.gobin
-export GOBIN
 PATH := $(GOBIN):"$(PATH)"
 export PATH
 
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
-
-SHELL = /bin/bash
 
 TAG := # make sure tag is never injectable as an env var
 
@@ -26,15 +25,10 @@ endif
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
-GOOS := linux
+GOOS := $(DEFAULT_GOOS)
 HOST_OS := linux
 ifeq ($(UNAME_S),Darwin)
 	HOST_OS := darwin
-endif
-
-GOARCH := amd64
-ifeq ($(UNAME_M),arm64)
-	GOARCH := arm64
 endif
 
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
@@ -96,7 +90,7 @@ scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
 	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
-db-image: copy-db-scripts copy-db-sigs
+db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 	$(SILENT)echo "+ $@"
 	$(SILENT)echo "Building scanner-db:$(TAG)"
 	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4-db:$(TAG) -f image/db/Dockerfile image/db
@@ -143,6 +137,11 @@ copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
 copy-db-scripts: ../image/postgres/download.sh
 	$(SILENT)echo "+ $@"
 	$(SILENT)cp $^ image/db
+
+.PHONY: copy-db-image-scripts
+copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
+	$(SILENT)echo "+ $@"
+	$(SILENT)cp $^ image/db/scripts
 
 .PHONY: copy-db-sigs
 copy-db-sigs: ../image/postgres/signatures
