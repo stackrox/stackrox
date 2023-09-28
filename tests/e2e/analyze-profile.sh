@@ -15,7 +15,6 @@ if ! test -f "$FILE"; then
 fi
 
 NUM_TOP=5
-CMD="go tool pprof"
 
 if ! command -v go > /dev/null; then
   echo "Cannot work without 'go' binary"
@@ -43,7 +42,7 @@ function getTopEntries() {
   local file
   file="$1"
   ARGS=("-sample_index=alloc_space" "-top" "-flat" "-nodecount" "$NUM_TOP")
-  $CMD "${ARGS[@]}" "$file" | grep -v 'flat%' | grep -v 'Showing nodes' | grep '%' | awk '{print $6}'
+  go tool pprof "${ARGS[@]}" "$file" | grep -v 'flat%' | grep -v 'Showing nodes' | grep '%' | awk '{print $6}'
 }
 
 function getFlatValue() {
@@ -51,7 +50,7 @@ function getFlatValue() {
   file="$1"
   local entry
   entry="$2"
-  $CMD "-sample_index=alloc_space" "-top" "-flat" "-show=$entry" "$file" | grep -v 'flat%' | grep -v 'Showing nodes' | grep '%' | awk '{print $1 " " $5}'
+  go tool pprof "-sample_index=alloc_space" "-top" "-flat" "-show=$entry" "$file" | grep -v 'flat%' | grep -v 'Showing nodes' | grep '%' | awk '{print $1 " " $5}'
 }
 
 function printSummary() {
@@ -86,7 +85,7 @@ function printDiff() {
 
   f1="$(mktemp)"
   echo "Max-mem-allocation-diff Max-diff-% Cumulative-allocations-diff Cumulative-diff-% pkg" >> "$f1"
-  $CMD "-sample_index=alloc_space" "-top" "-flat" "-nodecount" "$NUM_TOP" "-diff_base=$ref" "$file" | grep -v 'Showing nodes' | grep -v 'flat%' | grep '%' >> "$f1"
+  go tool pprof "-sample_index=alloc_space" "-top" "-flat" "-nodecount" "$NUM_TOP" "-diff_base=$ref" "$file" | grep -v 'Showing nodes' | grep -v 'flat%' | grep '%' >> "$f1"
   echo "$heading"
   echo '```'
   column -t "$f1"
