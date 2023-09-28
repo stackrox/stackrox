@@ -60,7 +60,7 @@ jobs:
 
       # Create scale cluster with larger nodes.
       - name: Create testing cluster
-        uses: stackrox/actions/infra/create-cluster@main
+        uses: stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
