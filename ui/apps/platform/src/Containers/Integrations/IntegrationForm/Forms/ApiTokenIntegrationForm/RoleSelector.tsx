@@ -14,12 +14,14 @@ import {
     SearchInput,
     Select,
 } from '@patternfly/react-core';
-import useSelectToggle from "hooks/patternfly/useSelectToggle";
+import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { Role } from 'services/RolesService';
 
 type RoleSelectorProps = {
     roles?: Role[];
     selectedRoles?: string[];
+    isEditable: boolean;
+    isGenerated: boolean;
     onRoleSelect: (id, value) => void;
     onRoleSelectionClear: () => void;
 };
@@ -27,10 +29,12 @@ type RoleSelectorProps = {
 function RoleSelector({
     roles = [],
     selectedRoles = [],
+    isEditable,
+    isGenerated,
     onRoleSelect,
     onRoleSelectionClear,
 }: RoleSelectorProps) {
-    const {isOpen: isRoleOpen, toggleSelect: toggleIsRoleOpen} = useSelectToggle();
+    const { isOpen: isRoleOpen, toggleSelect: toggleIsRoleOpen } = useSelectToggle();
     const [input, setInput] = React.useState('');
 
     const handleTextInputChange = (value: string) => {
@@ -39,27 +43,25 @@ function RoleSelector({
 
     const filteredRoleSelectMenuItems = useMemo(() => {
         const roleSelectMenuItems = roles
-            .filter((role) =>
-                role.name.toLowerCase().includes(input.toString().toLowerCase())
-            )
+            .filter((role) => role.name.toLowerCase().includes(input.toString().toLowerCase()))
             .map((role) => {
                 return (
                     <MenuItem
                         key={role.name}
-                        hasCheck={true}
+                        hasCheck
                         itemId={role.name}
                         isSelected={selectedRoles.includes(role.name)}
+                        isDisabled={!isEditable || isGenerated}
                     >
                         <span className="pf-u-mx-xs" data-testid="namespace-name">
-                                {role.name}
+                            {role.name}
                         </span>
                     </MenuItem>
                 );
             });
 
         return roleSelectMenuItems;
-    }, [roles, input, selectedRoles]);
-
+    }, [roles, input, isEditable, isGenerated, selectedRoles]);
 
     const roleSelectMenu = (
         <Menu onSelect={onRoleSelect} selected={selectedRoles} isScrollable>
@@ -124,4 +126,3 @@ function RoleSelector({
 }
 
 export default RoleSelector;
-
