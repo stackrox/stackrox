@@ -7,7 +7,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stackrox/rox/central/observability/tracing"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // New creates a new DB wrapper
@@ -30,6 +32,9 @@ func ParseConfig(source string) (*Config, error) {
 	config, err := pgxpool.ParseConfig(source)
 	if err != nil {
 		return nil, err
+	}
+	if features.Tracing.Enabled() {
+		config.ConnConfig.Tracer = tracing.PostgresTracer()
 	}
 	return &Config{Config: config}, nil
 }

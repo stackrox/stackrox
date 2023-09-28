@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/servicecerttoken"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/observability/tracing"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"golang.org/x/net/http2"
@@ -366,7 +368,7 @@ func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransp
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.
 func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint string, clientConnOpts Options, dialOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+3)
+	allDialOpts := make([]grpc.DialOption, 0, len(dialOpts)+5)
 
 	clientConnOpts.TLS.GRPCOnly = true
 
@@ -389,6 +391,10 @@ func GRPCConnection(dialCtx context.Context, server mtls.Subject, endpoint strin
 	}
 	allDialOpts = append(allDialOpts, dialOpts...)
 	allDialOpts = append(allDialOpts, grpc.WithUserAgent(GetUserAgent()))
+	if features.Tracing.Enabled() {
+		allDialOpts = append(allDialOpts, grpc.WithUnaryInterceptor(tracing.UnaryClientInterceptor()))
+		allDialOpts = append(allDialOpts, grpc.WithStreamInterceptor(tracing.StreamClientInterceptor()))
+	}
 	return clientConnOpts.dialTLSFunc()(dialCtx, endpoint, tlsConf, allDialOpts...)
 }
 

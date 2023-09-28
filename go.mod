@@ -61,6 +61,7 @@ require (
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v5 v5.4.2
 	github.com/joshdk/go-junit v1.0.0
+	github.com/klauspost/compress v1.16.7
 	github.com/lib/pq v1.10.9
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.7
@@ -106,6 +107,8 @@ require (
 	github.com/travelaudience/go-promhttp v1.0.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.etcd.io/bbolt v1.3.7
+	go.opentelemetry.io/otel v1.18.0
+	go.opentelemetry.io/otel/sdk v1.18.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.2.1
 	go.uber.org/mock v0.2.0
@@ -146,7 +149,13 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/klauspost/compress v1.16.7
+require (
+	github.com/exaring/otelpgx v0.5.1
+	github.com/uptrace/opentelemetry-go-extra/otelgraphql v0.2.2
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.44.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.44.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.18.0
+)
 
 require (
 	cloud.google.com/go v0.110.6 // indirect
@@ -171,6 +180,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
@@ -204,6 +214,7 @@ require (
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/facebookincubator/flog v0.0.0-20190930132826-d2511d0ce33c // indirect
 	github.com/fatih/structs v1.1.0 // indirect
+	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
@@ -247,6 +258,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
@@ -363,6 +375,7 @@ require (
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
+	github.com/uptrace/opentelemetry-go-extra/otelutil v0.2.2 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
@@ -375,10 +388,13 @@ require (
 	github.com/zmap/zlint/v3 v3.4.0 // indirect
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	go.opentelemetry.io/contrib v1.17.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.18.0 // indirect
+	go.opentelemetry.io/otel/metric v1.18.0 // indirect
+	go.opentelemetry.io/otel/trace v1.18.0 // indirect
+	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.starlark.net v0.0.0-20221010140840-6bf6f0955179 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/term v0.12.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect

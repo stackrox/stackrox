@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
@@ -33,7 +34,9 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
+	"github.com/stackrox/rox/pkg/observability/tracing"
 	promhttp "github.com/travelaudience/go-promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -212,6 +215,10 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	if enableRequestTracing.BooleanSetting() {
 		u = append(u, grpc_logging.UnaryServerInterceptor(log))
 	}
+
+	if features.Tracing.Enabled() {
+		u = append(u, tracing.UnaryServerInterceptor())
+	}
 	return u
 }
 
@@ -237,6 +244,10 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s = append(s, a.config.StreamInterceptors...)
 
 	s = append(s, a.streamRecovery())
+
+	if features.Tracing.Enabled() {
+		s = append(s, tracing.StreamServerInterceptor())
+	}
 	return s
 }
 
@@ -304,7 +315,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	// - Any other specified interceptors (with authz tracing sink if on)
 	postAuthHTTPInterceptors := httputil.ChainInterceptors(
 		append([]httputil.HTTPInterceptor{
-			contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)},
+			contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...),
+		},
 			a.config.HTTPInterceptors...)...,
 	)
 
@@ -330,11 +342,19 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		if a.config.HTTPMetrics != nil {
 			handler = a.config.HTTPMetrics.WrapHandler(handler, route.Route)
 		}
+		if features.Tracing.Enabled() && route.Route != "/" {
+			handler = otelhttp.NewHandler(handler, route.Route)
+		}
 		mux.Handle(route.Route, handler)
 	}
 
 	if a.config.AuthProviders != nil {
-		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptors(a.config.AuthProviders))
+		handler := preAuthHTTPInterceptors(a.config.AuthProviders)
+		path := a.config.AuthProviders.URLPathPrefix()
+		if features.Tracing.Enabled() && path != "/" {
+			handler = otelhttp.NewHandler(handler, path)
+		}
+		mux.Handle(path, handler)
 	}
 
 	gwMux := runtime.NewServeMux(
@@ -446,6 +466,5 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 			}
 		}
-
 	}
 }

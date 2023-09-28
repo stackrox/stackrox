@@ -95,6 +95,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
+	"github.com/stackrox/rox/central/observability/tracing"
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -289,6 +290,10 @@ func main() {
 	// Start the prometheus metrics server
 	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
 	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
+
+	if features.Tracing.Enabled() {
+		tracing.Singleton().Start(tracing.CentralResource())
+	}
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -852,6 +857,10 @@ func waitForTerminationSignal() {
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	}
+
+	if features.Tracing.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{tracing.Singleton(), "OpenTelemetry tracing"})
 	}
 
 	var wg sync.WaitGroup

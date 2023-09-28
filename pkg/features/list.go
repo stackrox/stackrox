@@ -44,4 +44,7 @@ var (
 
 	// CentralEvents enables APIs (including collection) and UI pages for Central events.
 	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
+
+	// Tracing enables OpenTelemetry distributed tracing.
+	Tracing = registerFeature("Enable OpenTelemetry tracing", "ROX_TRACING", true)
 )
