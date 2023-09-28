@@ -1,3 +1,8 @@
 .json-input {
     min-height: 20ex;
 }
+
+.pf-c-check__input {
+    height: 16px;
+    width: 16px;
+}
