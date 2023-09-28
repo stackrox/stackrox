@@ -28,4 +28,4 @@ export function handleSummary(data) {
       'performance-results/report.json': JSON.stringify(data), // JSON output to a file
       'performance-results/report.html': htmlReport(data), // HTML report
     };
-  }
+}
