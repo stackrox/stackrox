@@ -140,19 +140,17 @@ func New(db postgres.DB) Store {
             {{- if not .Migration }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
-            {{- else }}
-            nil,
-            nil,
-            {{- end }}
             {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
             pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
             {{- else if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
-            {{- if not .Migration }}
             {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
             {{- else }}
-                permissions.ResourceMetadata{},
+            nil,
+            nil,
+            isUpsertAllowed,
+            permissions.ResourceMetadata{},
             {{- end }}
     )
 }
@@ -352,20 +350,22 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 // endregion Helper functions
 
 // region Used for testing
-
+{{- if not .Migration }}
 // CreateTableAndNewStore returns a new Store instance for testing.
 func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB) Store {
 	pkgSchema.ApplySchemaForTable(ctx, gormDB, baseTable)
 	return New(db)
 }
+{{- end }}
 
 {{- define "dropTableFunctionName"}}dropTable{{.Table | upperCamelCase}}{{end}}
 
-
+{{- if not .Migration }}
 // Destroy drops the tables associated with the target object type.
 func Destroy(ctx context.Context, db postgres.DB) {
     {{template "dropTableFunctionName" .Schema}}(ctx, db)
 }
+{{- end }}
 
 {{- define "dropTable"}}
 {{- $schema := . }}

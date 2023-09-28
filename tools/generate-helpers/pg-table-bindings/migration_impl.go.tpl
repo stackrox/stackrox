@@ -4,6 +4,7 @@ package {{.packageName}}
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/{{.migrationDir}}/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"

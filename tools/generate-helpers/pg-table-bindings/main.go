@@ -56,16 +56,20 @@ var migrationToolFile string
 //go:embed migration_tool_test.go.tpl
 var migrationToolTestFile string
 
+//go:embed migration_impl_stores.go.tpl
+var migrationStoreBasedFile string
+
 var (
-	schemaTemplate            = newTemplate(schemaFile)
-	singletonTemplate         = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
-	singletonTestTemplate     = newTemplate(singletonTestFile)
-	storeTemplate             = newTemplate(storeFile)
-	storeTestTemplate         = newTemplate(storeTestFile)
-	indexTemplate             = newTemplate(indexFile)
-	migrationTemplate         = newTemplate(migrationFile)
-	migrationToolTemplate     = newTemplate(migrationToolFile)
-	migrationToolTestTemplate = newTemplate(migrationToolTestFile)
+	schemaTemplate              = newTemplate(schemaFile)
+	singletonTemplate           = newTemplate(strings.Join([]string{"\npackage postgres", singletonFile}, "\n"))
+	singletonTestTemplate       = newTemplate(singletonTestFile)
+	storeTemplate               = newTemplate(storeFile)
+	storeTestTemplate           = newTemplate(storeTestFile)
+	indexTemplate               = newTemplate(indexFile)
+	migrationTemplate           = newTemplate(migrationFile)
+	migrationStoreBasedTemplate = newTemplate(migrationStoreBasedFile)
+	migrationToolTemplate       = newTemplate(migrationToolFile)
+	migrationToolTestTemplate   = newTemplate(migrationToolTestFile)
 )
 
 type properties struct {
@@ -399,6 +403,9 @@ func main() {
 					return err
 				}
 				if err := renderFile(templateMap, storeTestTemplate, "store_test.go"); err != nil {
+					return err
+				}
+				if err := simpleRenderFile(templateMap, migrationStoreBasedTemplate, "../../migration_impl.go"); err != nil {
 					return err
 				}
 			}

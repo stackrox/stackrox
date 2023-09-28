@@ -4,11 +4,12 @@ package {{.packageName}}
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	migStore "github.com/stackrox/rox/migrator/migrations/{{.migrationDir}}/{{.TrimmedType|lowerCase}}/postgres"
 	"github.com/stackrox/rox/migrator/migrations/{{.migrationDir}}/schema"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"gorm.io/gorm/clause"
 )
 
 var (
@@ -34,58 +35,38 @@ func migrate(database *types.Databases) error {
 	// {{template "TODO"}}: Update migration code as required
 	// The generated migration handles the simple case of promoting a field to a column on the top level table.  This
 	// provides the base.  Enhance and build out to suit the needs of your specific migration case.
-
+	ctx := database.DBCtx
 	db := database.GormDB
 	pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTable{{.Table|upperCamelCase}}Stmt)
-	db = db.WithContext(database.DBCtx).Table(schema.{{.Table|upperCamelCase}}TableName)
 
-	rows, err := db.Rows()
-	if err != nil {
-		return errors.Wrapf(err, "failed to iterate table %s", schema.{{.Table|upperCamelCase}}TableName)
-	}
-	defer func() { _ = rows.Close() }()
-
-	var convertedRecords []*schema.{{.Table|upperCamelCase}}
+	store := migStore.New(database.PostgresDB)
+	var convertedRecords []*storage.{{.TrimmedType}}
 	var count int
-	for rows.Next() {
-		var record *schema.{{.Table|upperCamelCase}}
-		if err = db.ScanRows(rows, &record); err != nil {
-			return errors.Wrap(err, "failed to scan rows")
-		}
 
-		// {{template "TODO"}}: Make any necessary updates to the record
-
-		recordProto, err := schema.Convert{{.TrimmedType}}ToProto(record)
-		if err != nil {
-			return errors.Wrapf(err, "failed to convert %+v to proto", record)
-		}
-
-		converted, err := schema.Convert{{.TrimmedType}}FromProto(recordProto)
-		if err != nil {
-			return errors.Wrapf(err, "failed to convert from proto %+v", recordProto)
-		}
-		convertedRecords = append(convertedRecords, converted)
+	err := store.Walk(ctx, func(obj *storage.{{.TrimmedType}}) error {
+		convertedRecords = append(convertedRecords, obj)
 		count++
 
 		if len(convertedRecords) == batchSize {
-			// Upsert converted blobs
-			if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTable{{.Table|upperCamelCase}}Stmt.GormModel).Create(&convertedRecords).Error; err != nil {
+			err := store.UpsertMany(ctx, convertedRecords)
+			if err != nil {
 				return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedRecords), count-len(convertedRecords))
 			}
-		convertedRecords = convertedRecords[:0]
+			convertedRecords = convertedRecords[:0]
 		}
-	}
+		return nil
+	})
 
-	if err := rows.Err(); err != nil {
-		return errors.Wrapf(err, "failed to get rows for %s", schema.{{.Table|upperCamelCase}}TableName)
+	if err != nil {
+		return errors.Wrap(err, "failed to upsert converted objects")
 	}
 
 	if len(convertedRecords) > 0 {
-		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTable{{.Table|upperCamelCase}}Stmt.GormModel).Create(&convertedRecords).Error; err != nil {
-			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedRecords))
+		err := store.UpsertMany(ctx, convertedRecords)
+		if err != nil {
+			return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedRecords), count-len(convertedRecords))
 		}
 	}
-	log.Infof("Converted %d records", count)
 
 	return nil
 }
