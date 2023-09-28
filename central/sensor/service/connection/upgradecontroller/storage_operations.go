@@ -39,6 +39,7 @@ func (u *upgradeController) flushUpgradeStatus() error {
 	if !u.upgradeStatusChanged {
 		return nil
 	}
+
 	if err := u.storage.UpdateClusterUpgradeStatus(upgradeControllerCtx, u.clusterID, u.upgradeStatus); err != nil {
 		return err
 	}

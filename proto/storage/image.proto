@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 19
+// Next Tag: 20
 message Image {
     string                          id                          = 4 [(gogoproto.moretags) = 'search:"Image Sha,store,hidden" sql:"pk"'];
     ImageName                       name                        = 1;
@@ -54,6 +54,7 @@ message Image {
         MISSING_SIGNATURE_VERIFICATION_DATA = 3;
     }
     repeated Note                   notes                       = 14;
+    string tenant_id                                            = 19 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message DataSource {

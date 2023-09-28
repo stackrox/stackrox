@@ -22,6 +22,7 @@ message Risk {
         float score                 = 3;
     }
     repeated Result results         = 4;
+    string tenant_id                = 5 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message RiskSubject {

@@ -91,4 +91,5 @@ message AuthProvider {
     // invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
     // login attempt).
     google.protobuf.Timestamp last_updated = 14;
+    string tenant_id                       = 15 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

@@ -22,4 +22,5 @@ message ImageComponent {
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by         = 9;
     string                         operating_system = 10 [(gogoproto.moretags) = 'search:"Operating System"'];
+    string tenant_id                                = 11 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

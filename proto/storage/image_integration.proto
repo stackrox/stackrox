@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 package storage;
 
-// Next Tag: 23
+// Next Tag: 24
 message ImageIntegration {
     string id                                    = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     string name                                  = 2 [(gogoproto.moretags) = 'sql:"unique"'];
@@ -42,7 +42,8 @@ message ImageIntegration {
         string namespace              = 2;
         string image_pull_secret_name = 3;
     }
-    Source source = 21;
+    Source source    = 21;
+    string tenant_id = 23 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message IBMRegistryConfig {

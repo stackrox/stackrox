@@ -17,4 +17,5 @@ message ComplianceIntegration {
     string namespace_id           = 6 [(gogoproto.moretags) = 'search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"'];
     // Collection of errors that occurred while trying to obtain collector health info.
     repeated string status_errors = 5;
+    string tenant_id              = 7 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

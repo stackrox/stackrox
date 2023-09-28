@@ -67,6 +67,7 @@ message Node {
         MISSING_SCAN_DATA = 0;
     }
     repeated Note notes                    = 27;
+    string tenant_id                       = 28 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 // Next tag: 5

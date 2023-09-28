@@ -34,6 +34,7 @@ message ProcessIndicator {
     google.protobuf.Timestamp container_start_time = 9;
 
     string image_id                                = 12;
+    string tenant_id                               = 13 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 // This is the unique key we store process indicators under in Bolt.

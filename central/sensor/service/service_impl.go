@@ -88,10 +88,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	// Fetch the cluster metadata, then process the stream.
-	cluster, err := s.getClusterForConnection(sensorHello, svc)
+	cluster, err := s.getClusterForConnection(server.Context(), sensorHello, svc)
 	if err != nil {
 		return err
 	}
+
+	log.Infof("Got this cluster: %v", cluster)
 
 	// Generate a pipeline for the cluster to use.
 	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
@@ -131,7 +133,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
 			notBefore, notAfter, cluster.GetId(), err)
 	} else if expiryStatus != nil {
-		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
+		if err := s.clusters.UpdateClusterCertExpiryStatus(sac.WithAllAccess(server.Context()), cluster.GetId(), expiryStatus); err != nil {
 			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
 		}
 	}
@@ -171,7 +173,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 	return expiryStatus, multiErr
 }
 
-func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
+func (s *serviceImpl) getClusterForConnection(ctx context.Context, sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
 	helmConfigInit := sensorHello.GetHelmManagedConfigInit()
 
 	clusterIDFromCert := serviceID.GetId()
@@ -188,10 +190,15 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 		}
 	}
 
-	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(clusterDSSAC, clusterID, serviceID.InitBundleId, sensorHello)
+	log.Info("KYLE about to call LookupOrCreateClusterFromConfig")
+	i, _ := authn.IdentityFromContext(sac.WithAllAccess(ctx))
+	log.Info("KYLE identity from context going in: %v", i)
+	cluster, err := s.clusters.LookupOrCreateClusterFromConfig(sac.WithAllAccess(ctx), clusterID, serviceID.InitBundleId, sensorHello)
 	if err != nil {
 		return nil, errors.Errorf("could not fetch cluster for sensor: %v", err)
 	}
+
+	log.Infof("Cluster lookup/creation error: %v", err)
 
 	return cluster, nil
 }

@@ -151,6 +151,7 @@ message Cluster {
 
     string                    init_bundle_id                   = 29;
     ManagerType               managed_by                       = 30;
+    string tenant_id                                           = 31 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 enum ManagerType {

@@ -3,5 +3,5 @@ kind: Cluster
 nodes:
 - role: control-plane
   extraMounts:
-  - hostPath: /home/sbaumer/go/src/github.com/stackrox/stackrox
+  - hostPath: /home/klape/src/acs/rhacs-kind/stackrox
     containerPath: /stackrox-local

@@ -319,6 +319,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	}
 
 	cluster.Id = uuid.NewV4().String()
+	log.Infof("Just generated new cluster ID %s", cluster.Id)
 	if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 		return "", err
 	}
@@ -787,9 +788,11 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 		return err
 	}
 
+	log.Info("KYLE calling upsert!!!")
 	if err := ds.clusterStorage.Upsert(ctx, cluster); err != nil {
 		return err
 	}
+	log.Info("KYLE upsert returned with no error!!!")
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
 	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
 	return nil
@@ -824,6 +827,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	isExisting := false
 	var cluster *storage.Cluster
 	if clusterID != "" {
+		log.Info("KYLE cluster id is not empty")
 		clusterByID, exist, err := ds.GetCluster(ctx, clusterID)
 		if err != nil {
 			return nil, err
@@ -840,6 +844,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		cluster = clusterByID
 	} else if clusterName != "" {
+		log.Info("KYLE In code block to create cluster")
 		// A this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
@@ -858,6 +863,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
 			return nil, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
 		}
+		log.Info("KYLE Successfully added cluster!")
 	} else {
 		return nil, errors.New("neither a cluster ID nor a cluster name was specified")
 	}

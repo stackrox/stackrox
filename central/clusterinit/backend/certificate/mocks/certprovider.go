@@ -36,9 +36,9 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 }
 
 // GetBundle mocks base method.
-func (m *MockProvider) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
+func (m *MockProvider) GetBundle(tenantID string) (clusters.CertBundle, uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBundle")
+	ret := m.ctrl.Call(m, "GetBundle", tenantID)
 	ret0, _ := ret[0].(clusters.CertBundle)
 	ret1, _ := ret[1].(uuid.UUID)
 	ret2, _ := ret[2].(error)
@@ -46,9 +46,9 @@ func (m *MockProvider) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
 }
 
 // GetBundle indicates an expected call of GetBundle.
-func (mr *MockProviderMockRecorder) GetBundle() *gomock.Call {
+func (mr *MockProviderMockRecorder) GetBundle(tenantID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBundle", reflect.TypeOf((*MockProvider)(nil).GetBundle))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBundle", reflect.TypeOf((*MockProvider)(nil).GetBundle), tenantID)
 }
 
 // GetCA mocks base method.

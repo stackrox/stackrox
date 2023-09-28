@@ -12,6 +12,7 @@ message SignatureIntegration {
     string name = 2 [(gogoproto.moretags) = 'sql:"unique"'];
 
     CosignPublicKeyVerification cosign = 3;
+    string tenant_id                   = 4 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message CosignPublicKeyVerification {

@@ -62,6 +62,7 @@ message KubernetesEvent {
     string                    user_agent           = 18 [(gogoproto.moretags) = 'policy:"User Agent"'];
     ResponseStatus            response_status      = 19;
     string                    request_uri          = 20; // Field will not be used for policy detection
+    string tenant_id                               = 21 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 
     message PodExecArgs {
         string          container = 1;

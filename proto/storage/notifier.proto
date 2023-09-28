@@ -30,6 +30,7 @@ message Notifier {
         Syslog syslog                    = 18;
     }
     Traits traits = 50;
+    string tenant_id                     = 29 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 
     // These fields should be safe to un-reserve after a few releases. evan@
     // just isn't familiar enough yet to determine whether they can be deleted

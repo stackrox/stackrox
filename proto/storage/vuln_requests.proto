@@ -59,7 +59,7 @@ message DeferralRequest {
 
 message FalsePositiveRequest { }
 
-// Next available tag: 23
+// Next available tag: 24
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
@@ -115,4 +115,5 @@ message VulnerabilityRequest {
         DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = 'search:"-"'];
     }
 
+    string tenant_id                                     = 23 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

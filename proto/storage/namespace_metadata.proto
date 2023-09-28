@@ -18,4 +18,5 @@ message NamespaceMetadata {
     google.protobuf.Timestamp creation_time = 6;
     int64                     priority      = 7;
     map<string, string>       annotations   = 8 [(gogoproto.moretags) = 'search:"Namespace Annotation"'];
+    string tenant_id                        = 9 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

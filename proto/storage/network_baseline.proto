@@ -57,4 +57,5 @@ message NetworkBaseline {
     bool locked                                      = 7;
 
     string deployment_name                           = 8;
+    string tenant_id                                 = 9 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

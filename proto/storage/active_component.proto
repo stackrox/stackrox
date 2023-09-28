@@ -13,6 +13,7 @@ message ActiveComponent {
     string id            = 1 [(gogoproto.moretags) = 'search:"Image Sha,hidden" sql:"pk"'];
     string deployment_id = 3 [(gogoproto.moretags) = 'search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"'];
     string component_id  = 4 [(gogoproto.moretags) = 'search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"'];
+    string tenant_id     = 6 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 
     // Represent a context of the active edge.
     message ActiveContext {

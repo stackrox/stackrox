@@ -13,7 +13,7 @@ import "gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 35
+// Next available tag: 36
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = 'search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"'];
     string name                                = 2 [(gogoproto.moretags) = 'search:"Deployment,store"'];
@@ -50,6 +50,7 @@ message Deployment {
     float risk_score                           = 29 [(gogoproto.moretags) = 'search:"Deployment Risk Score,hidden" policy:",ignore"'];
 
     reserved 30; // was tags
+    string tenant_id                           = 35 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 // Next tag: 12

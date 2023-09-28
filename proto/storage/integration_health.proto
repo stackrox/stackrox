@@ -30,4 +30,5 @@ message IntegrationHealth {
 
     // Timestamp when the status was ascertained
     google.protobuf.Timestamp last_timestamp      = 6;
+    string tenant_id                              = 7 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

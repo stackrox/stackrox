@@ -16,4 +16,5 @@ message InitBundleMeta {
     User                      created_by  = 4;
     bool                      is_revoked  = 5;
     google.protobuf.Timestamp expires_at  = 6;
+    string tenant_id                      = 7 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

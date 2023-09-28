@@ -16,4 +16,5 @@ message NodeIntegration {
     oneof IntegrationConfig {
         ClairifyConfig clairify = 4;
     }
+    string tenant_id = 5 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

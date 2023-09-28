@@ -9,7 +9,7 @@ import "gogoproto/gogo.proto";
 package storage;
 
 message TokenMetadata {
-    // Next available tag: 8
+    // Next available tag: 9
 
     string id                            = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string name                          = 2;
@@ -17,7 +17,7 @@ message TokenMetadata {
     google.protobuf.Timestamp issued_at  = 4;
     google.protobuf.Timestamp expiration = 5 [(gogoproto.moretags) = 'search:"Expiration,store"'];
     bool revoked                         = 6 [(gogoproto.moretags) = 'search:"Revoked,store"'];
-
+    string tenant_id                     = 8 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 
     string role = 3 [deprecated = true];
 }

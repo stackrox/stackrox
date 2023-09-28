@@ -28,6 +28,7 @@ message ProcessListeningOnPort {
     google.protobuf.Timestamp container_start_time = 9;
 
     string image_id                                = 10;
+    string tenant_id                               = 11 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message ProcessListeningOnPortFromSensor {

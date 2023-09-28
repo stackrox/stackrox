@@ -23,6 +23,7 @@ message NetworkPolicy {
     string                    yaml          = 9;
     string                    api_version   = 10;
     google.protobuf.Timestamp created       = 11;
+    string tenant_id                        = 12 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message NetworkPolicySpec {

@@ -14,6 +14,7 @@ message BackupInfo {
     google.protobuf.Timestamp backup_last_run_at = 1;
     OperationStatus           status             = 2;
     SlimUser                  requestor          = 3 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    string tenant_id                             = 4 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message SystemInfo {

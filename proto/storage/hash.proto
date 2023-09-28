@@ -10,4 +10,5 @@ package storage;
 message Hash {
     string              cluster_id = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     map<string, uint64> hashes     = 2;
+    string tenant_id               = 3 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

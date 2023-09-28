@@ -17,4 +17,5 @@ message NodeComponent {
     float                        top_cvss         = 8 [(gogoproto.moretags) = 'search:"Component Top CVSS,store"'];
   }
   string                         operating_system = 9 [(gogoproto.moretags) = 'search:"Operating System"'];
+  string tenant_id                                = 10 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }

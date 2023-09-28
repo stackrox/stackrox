@@ -21,7 +21,7 @@ type identity struct {
 }
 
 func (i *identity) TenantID() string {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

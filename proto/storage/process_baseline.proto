@@ -32,6 +32,7 @@ message ProcessBaseline {
     google.protobuf.Timestamp user_locked_timestamp      = 5;
     google.protobuf.Timestamp stack_rox_locked_timestamp = 6;
     google.protobuf.Timestamp last_update                = 7;
+    string tenant_id                                     = 9 [(gogoproto.moretags) = 'search:"Tenant ID,hidden" sql:"pk"'];
 }
 
 message BaselineElement {
