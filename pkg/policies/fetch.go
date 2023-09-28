@@ -89,7 +89,7 @@ func (f *fetcherImpl) Fetch(ctx context.Context, registryConfig *types.Config, r
 		log.Infof("Manifest descriptor for tag %s: %+v", tag, md)
 
 		// Layers are stored locally from the file store. For us this means working dir + manifest tag.
-		contents, err := os.ReadFile(tag)
+		contents, err := os.ReadFile(path.Join(dir, tag))
 		if err != nil {
 			fetchErrors = multierror.Append(fetchErrors, err)
 			continue
