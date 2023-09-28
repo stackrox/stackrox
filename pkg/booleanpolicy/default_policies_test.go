@@ -2629,7 +2629,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 		suite.T().Run(c.CaseName, func(t *testing.T) {
 			dep := deployments[c.DeploymentName]
 			matcher, err := BuildDeploymentMatcher(c.Policy)
-			suite.NoError(err, "deployment matcher creation must succeed")
+			suite.Require().NoError(err, "deployment matcher creation must succeed")
 			violations, err := matcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
 			suite.NoError(err, "deployment matcher run must succeed")
 			suite.Empty(violations.ProcessViolation)

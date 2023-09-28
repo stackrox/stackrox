@@ -49,6 +49,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	start := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
 	legacyDuration := time.Now().Sub(start)
+	log.Info("-----------------")
 	log.Infof("legacy took %d ns", legacyDuration.Nanoseconds())
 
 	keys := maputil.Keys(e.otherEvaluators)
@@ -61,7 +62,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 		duration := time.Now().Sub(start)
 		log.Infof("%s took %d ns", name, duration.Nanoseconds())
 
-		if duration > 1*time.Millisecond || matched != legacyMatched {
+		if duration > 10*time.Millisecond || matched != legacyMatched {
 			objValue, _ := obj.GetFullValue()
 			log.Errorf("%s matched: %v\n; legacy matched: %v\n;"+
 				" %s result %+v\n\n; legacy result: %+v\n\n; query was %s\n\n, obj name is %v",

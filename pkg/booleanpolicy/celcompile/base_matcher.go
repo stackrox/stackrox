@@ -98,12 +98,17 @@ func (s *simpleMatchFuncGenerator) Generate(v string) string {
 func generateCheckCode(v string) string {
 	parts := strings.Split(v, ".")
 	code := ""
-	for i, _ := range parts[2:] {
+	p := parts[0]
+	for _, n := range parts[1:] {
+		p = fmt.Sprintf("%s.%s", p, n)
 		if code == "" {
-			code = fmt.Sprintf(" has(%s)", strings.Join(parts[:i+2], "."))
+			code = fmt.Sprintf("has(%s)", p)
 		} else {
-			code = fmt.Sprintf(" has(%s) && %s", strings.Join(parts[:i+2], "."), code)
+			code = fmt.Sprintf("%s && has(%s)", code, p)
 		}
+	}
+	if code == "" {
+		code = "true"
 	}
 	return code
 }
@@ -128,7 +133,10 @@ func generateStringMatchCode(value string) (string, error) {
 	}
 	var matchCode string
 	if strings.HasPrefix(value, search.RegexPrefix) {
-		matchCode = fmt.Sprintf("%s.matches('^(?i:%s)$')", strMatcher, strings.TrimPrefix(value, search.RegexPrefix))
+		// Cel does not process escape
+		m := strings.TrimPrefix(value, search.RegexPrefix)
+		m = strings.ReplaceAll(m, `\`, `\\`)
+		matchCode = fmt.Sprintf("%s.matches('^(?i:%s)$')", strMatcher, m)
 	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
 		matchCode = fmt.Sprintf(`%s == "%s"`, strMatcher, value[1:len(value)-1])
 	} else {

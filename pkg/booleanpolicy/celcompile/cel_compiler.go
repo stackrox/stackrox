@@ -196,7 +196,7 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 					mf = &MatchField{
 						VarName:   currentPath.String(),
 						Path:      constructedPath.String(),
-						CheckCode: generateCheckCode(currentPath.String()),
+						CheckCode: checkCode,
 					}
 					parent.Children = append(parent.Children, mf)
 					pathsToAccessVariable[pathKey] = mf

@@ -75,8 +75,8 @@ var (
   {{- $desc := . }}
 		   .map(
 		      prevResults,
-              has({{$desc.VarName}}) && {{$desc.VarName}} != null,
-              //{{$desc.CheckCode}},
+              // has({{$desc.VarName}}) && {{$desc.VarName}} != null,
+              {{$desc.CheckCode}},
               {{$desc.VarName}}
 		        .map(
 		          k,
