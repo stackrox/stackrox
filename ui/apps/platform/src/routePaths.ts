@@ -296,8 +296,8 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
             // 'Alert', // for Cluster and Deployment and Namespace
-            // 'Cluster',
-            'Deployment',
+            // 'Cluster', // on Dashboard for with most widget
+            'Deployment', // on Dashboard for Top Risky, Recently Detected, Most Common widgets
             'Image',
             // 'Namespace',
             // 'Node',
