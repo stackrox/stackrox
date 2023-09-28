@@ -81,7 +81,7 @@ const (
 	testRetentionResolvedDeploy   = 7
 	testRetentionAllRuntime       = 6
 	testRetentionDeletedRuntime   = 3
-	testRetentionApiToken         = 7
+	testRetentionAPIToken         = 7
 )
 
 var (

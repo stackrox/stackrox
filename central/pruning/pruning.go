@@ -923,7 +923,7 @@ func (g *garbageCollectorImpl) removeExpiredAPITokens(config *storage.PrivateCon
 	tokenRetentionDays := time.Duration(int64(config.GetExpiredApiTokenRetentionDurationDays()))
 	expirationThreshold := time.Now().Add(-tokenRetentionDays * 24 * time.Hour)
 	batch := make([]string, 0, apiTokenBatchSize)
-	g.apiTokens.Walk(pruningCtx, func(obj *storage.TokenMetadata) error {
+	_ = g.apiTokens.Walk(pruningCtx, func(obj *storage.TokenMetadata) error {
 		tokenExpiration := pgutils.NilOrTime(obj.Expiration)
 		if tokenExpiration == nil {
 			return nil
