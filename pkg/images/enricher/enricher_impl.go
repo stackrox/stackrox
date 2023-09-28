@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/integrationhealth"
+	"github.com/stackrox/rox/pkg/openvex"
 	"github.com/stackrox/rox/pkg/protoconv"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
@@ -60,6 +61,8 @@ type enricherImpl struct {
 	signatureIntegrationGetter SignatureIntegrationGetter
 	signatureVerifier          signatureVerifierForIntegrations
 	signatureFetcher           signatures.SignatureFetcher
+
+	openVexFetcher openvex.Fetcher
 
 	imageGetter ImageGetter
 
@@ -275,8 +278,15 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA)
 	}
-
 	updated = updated || didUpdateSigVerificationData
+
+	didUpdateOpenVex, err := e.enrichWithOpenVex(ctx, enrichContext, image)
+	errorList.AddError(err)
+	updated = updated || didUpdateOpenVex
+
+	didFilterVulns, err := e.filterOutVulnerabilitiesWithVexReport(enrichContext, image)
+	errorList.AddError(err)
+	updated = updated || didFilterVulns
 
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
@@ -468,6 +478,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 		// When re-fetched values should be used, reset the existing values for signature and signature verification data.
 		img.Signature = nil
 		img.SignatureVerificationData = nil
+		img.OpenVexReport = nil
 		return img, false
 	}
 	// See if the image exists in the DB with a scan, if it does, then use that instead of fetching
@@ -490,6 +501,7 @@ func (e *enricherImpl) fetchFromDatabase(ctx context.Context, img *storage.Image
 	if option == UseImageNamesRefetchCachedValues {
 		img.SignatureVerificationData = nil
 		img.Signature = nil
+		img.OpenVexReport = nil
 		img.Names = utils.UniqueImageNames(existingImage.GetNames(), img.GetNames())
 		return img, false
 	}
@@ -683,6 +695,71 @@ func (e *enricherImpl) enrichWithSignatureVerificationData(ctx context.Context, 
 		Results: res,
 	}
 	return true, nil
+}
+
+func (e *enricherImpl) enrichWithOpenVex(ctx context.Context, enrichmentContext EnrichmentContext,
+	img *storage.Image) (bool, error) {
+	if enrichmentContext.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	imgName := img.GetName().GetFullName()
+
+	// We just fetch it all the time for now.
+	if err := e.checkRegistryForImage(img); err != nil {
+		return false, errors.Wrapf(err, "checking registry for image %q", imgName)
+	}
+
+	registries, err := e.getRegistriesForContext(enrichmentContext)
+	if err != nil {
+		return false, errors.Wrap(err, "getting registries from enrichment context")
+	}
+
+	if err := checkForMatchingImageIntegrations(registries, img); err != nil {
+		if enrichmentContext.Internal {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "checking for matching registries for image %q", imgName)
+	}
+
+	// For now not dealing with multiple image names.
+	matchingImageIntegrations := integration.GetMatchingImageIntegrations(registries, img.GetName())
+	if len(matchingImageIntegrations) == 0 {
+		log.Infof("No matching image integration found for image %q, hence no signatures will be attempted"+
+			" to be fetched", imgName)
+	}
+
+	var openVexReport *storage.OpenVex
+	for _, registry := range matchingImageIntegrations {
+		// We don't need retries, it surely will work at the first attempt...right?
+		reports, err := e.openVexFetcher.Fetch(ctx, img, registry)
+		if err == nil {
+			openVexReport = reports
+			break
+		}
+	}
+
+	if openVexReport != nil {
+		// Update unconditionally if new open vex report was there.
+		log.Infof("Found OpenVEX report for image %q: %+v", imgName, openVexReport)
+		img.OpenVexReport = openVexReport
+		return true, nil
+	} else if img.GetOpenVexReport() != nil {
+		// Update if previous open vex report was there but not anymore.
+		img.OpenVexReport = nil
+		log.Infof("Setting OpenVEX report for image %q to nil", imgName)
+		return true, nil
+	}
+	// By default don't signal updates.
+	return false, nil
+}
+
+func (e *enricherImpl) filterOutVulnerabilitiesWithVexReport(enrichmentContext EnrichmentContext, img *storage.Image) (bool, error) {
+	if enrichmentContext.FetchOpt == NoExternalMetadata {
+		return false, nil
+	}
+
+	return openvex.Filter(img)
 }
 
 // enrichWithSignature enriches the image with a signature and returns a bool, indicating whether a signature has been

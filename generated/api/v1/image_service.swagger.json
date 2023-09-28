@@ -1130,6 +1130,9 @@
         "signature": {
           "$ref": "#/definitions/storageImageSignature"
         },
+        "openVexReport": {
+          "$ref": "#/definitions/storageOpenVex"
+        },
         "components": {
           "type": "integer",
           "format": "int32"
@@ -1409,6 +1412,18 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        }
+      }
+    },
+    "storageOpenVex": {
+      "type": "object",
+      "properties": {
+        "openVexReport": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "byte"
+          }
         }
       }
     },

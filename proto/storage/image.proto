@@ -25,6 +25,8 @@ message Image {
 
     ImageSignature                  signature                   = 16;
 
+    OpenVex                         open_vex_report             = 19;
+
     oneof set_components {
         int32 components                                        = 7 [(gogoproto.moretags) = 'search:"Component Count,store,hidden"'];
     }
@@ -54,6 +56,10 @@ message Image {
         MISSING_SIGNATURE_VERIFICATION_DATA = 3;
     }
     repeated Note                   notes                       = 14;
+}
+
+message OpenVex {
+    repeated bytes open_vex_report = 1;
 }
 
 message DataSource {
