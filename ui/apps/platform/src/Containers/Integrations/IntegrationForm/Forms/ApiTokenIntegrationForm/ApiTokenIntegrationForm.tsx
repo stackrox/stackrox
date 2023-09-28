@@ -96,16 +96,14 @@ function ApiTokenIntegrationForm({
     }
 
     const onRoleSelect = (_, selected) => {
-        if (!isEditable || isGenerated) { return }
         const newSelection = values.roles.find((roleFilter) => roleFilter === selected)
             ? values.roles.filter((roleFilter) => roleFilter !== selected)
             : values.roles.concat(selected);
 
-        return setFieldValue('roles', newSelection)
+        return setFieldValue('roles', newSelection);
     };
 
     const onClearRoleSelections = () => {
-        if (!isEditable || isGenerated) { return }
         return setFieldValue('roles', []);
     };
 

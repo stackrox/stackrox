@@ -15,7 +15,6 @@ import {
     Select,
 } from '@patternfly/react-core';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { Role } from 'services/RolesService';
 
 type RoleSelectorProps = {
     roles?: string[];
