@@ -84,7 +84,7 @@ type storeImpl struct {
 
 var (
 	lock     sync.Mutex
-	imageMap map[string]int
+	imageMap = make(map[string]int)
 )
 
 func normalizeImage(img *storage.Image) {
@@ -167,6 +167,7 @@ func (s *storeImpl) insertIntoImages(
 		}
 	}
 
+	normalizeImage(cloned)
 	data, err := marshaler.MarshalToString(cloned)
 	if err != nil {
 		panic(err)
