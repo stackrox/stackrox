@@ -3,7 +3,7 @@
 import os
 from runners import ClusterTestRunner
 from pre_tests import PreSystemTests
-from ci_tests import SensorIntegrationOCP
+from ci_tests import SensorProfilingOCP
 
 # set required test parameters
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
