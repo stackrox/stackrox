@@ -143,10 +143,10 @@ func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*
 	}
 	for idx, role := range allRoles {
 		if role == nil {
-			logging.GetRateLimitedLogger().Warn("Role is nil at %d", role.GetRoleName(), idx)
+			logging.GetRateLimitedLogger().Warnf("Role is nil at %d", idx)
 
 		} else {
-			logging.GetRateLimitedLogger().Warn("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
+			logging.GetRateLimitedLogger().Warnf("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
 		}
 	}
 	var result []string
