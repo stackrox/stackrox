@@ -30,7 +30,7 @@ import 'css/acs.css';
 // We need the following file, to smooth out rough edges, as we migrate to PatternFly
 import 'css/trumps.css';
 
-import ErrorBoundary from 'Containers/ErrorBoundary';
+import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
 import { ThemeProvider } from 'Containers/ThemeProvider';
 import configureStore from 'store/configureStore';

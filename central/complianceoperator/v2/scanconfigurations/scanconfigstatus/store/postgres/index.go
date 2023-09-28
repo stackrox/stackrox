@@ -13,7 +13,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
-// NewIndexer returns new indexer for `storage.ComplianceOperatorScanSettingV2`.
+// NewIndexer returns new indexer for `storage.ComplianceOperatorClusterScanConfigStatus`.
 func NewIndexer(db postgres.DB) *indexerImpl {
 	return &indexerImpl{
 		db: db,
@@ -25,13 +25,13 @@ type indexerImpl struct {
 }
 
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComplianceOperatorScanSettingV2")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "ComplianceOperatorClusterScanConfigStatus")
 
-	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, q, b.db)
+	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ComplianceOperatorScanSettingV2")
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ComplianceOperatorClusterScanConfigStatus")
 
-	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_COMPLIANCE_SCAN_SETTINGS, q, b.db)
+	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, q, b.db)
 }

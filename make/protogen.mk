@@ -42,7 +42,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 PROTOC_OS = osx
 endif
-PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (*) uname -m ;; esac)
+PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 

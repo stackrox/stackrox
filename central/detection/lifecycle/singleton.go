@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
+	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -24,6 +25,7 @@ var (
 
 func initialize() {
 	manager = newManager(
+		buildtime.SingletonDetector(),
 		deploytime.SingletonDetector(),
 		runtime.SingletonDetector(),
 		deploymentDatastore.Singleton(),

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -25,7 +24,6 @@ import (
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
@@ -35,7 +33,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -107,10 +104,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedCSVData, empty, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
+	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
 	if err != nil {
 		return err
 	}
+	zippedCSVData := zippedSCVResult.ZippedCsv
 
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
@@ -126,19 +124,31 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		}
 
 	case storage.ReportStatus_EMAIL:
+		emailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
+		if err != nil {
+			return errors.Wrap(err, "Error generating email subject")
+		}
 		// If it is an empty report, do not send an attachment in the final notification email and the email body
 		// will indicate that no vulns were found
-		templateStr := vulnReportEmailTemplate
-		if empty {
+		templateStr := defaultEmailBodyTemplate
+		if zippedSCVResult.NumDeployedImageCVEs == 0 && zippedSCVResult.NumWatchedImageCVEs == 0 {
 			// If it is an empty report, the email body will indicate that no vulns were found
 			zippedCSVData = nil
-			templateStr = noVulnsFoundEmailTemplate
+			templateStr = defaultNoVulnsEmailBodyTemplate
 		}
-		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
-		defaultMessageText, err := formatMessage(req.DataStartTime, templateStr, req.ReportSnapshot.GetVulnReportFilters().GetImageTypes())
+
+		defaultEmailBody, err := formatEmailBody(templateStr)
 		if err != nil {
-			return errors.Wrap(err, "error formatting the report email text")
+			return errors.Wrap(err, "Error generating email body")
 		}
+
+		configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, zippedSCVResult.NumDeployedImageCVEs,
+			zippedSCVResult.NumWatchedImageCVEs)
+		if err != nil {
+			return errors.Wrap(err, "Error adding report config details")
+		}
+
+		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
 		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
 			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
 			reportNotifier, ok := nf.(notifiers.ReportNotifier)
@@ -147,12 +157,13 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				continue
 			}
 			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
-			messageText := defaultMessageText
+			emailBody := defaultEmailBody
 			if customBody != "" {
-				messageText = customBody
+				emailBody = customBody
 			}
-			err = rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, messageText, notifierSnap.GetEmailConfig().GetCustomSubject())
+			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
+			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
+				zippedCSVData, emailSubject, emailBodyWithConfigDetails)
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
 					notifierSnap.GetEmailConfig().GetNotifierId(), err))
@@ -325,9 +336,9 @@ func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cve
 /* Utility Functions */
 
 func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, messageText string, subject string) error {
+	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, messageText, subject)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -411,36 +422,6 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 		}
 	}
 	return false
-}
-
-func formatMessage(dataStartTime *types.Timestamp, emailTemplate string,
-	imageTypes []storage.VulnerabilityReportFilters_ImageType) (string, error) {
-	var imageTypesStr string
-	includeDeployed := filterOnImageType(imageTypes, storage.VulnerabilityReportFilters_DEPLOYED)
-	includeWatched := filterOnImageType(imageTypes, storage.VulnerabilityReportFilters_WATCHED)
-	if includeDeployed && includeWatched {
-		imageTypesStr = "deployed and watched"
-	} else if includeDeployed {
-		imageTypesStr = "deployed"
-	} else {
-		imageTypesStr = "watched"
-	}
-
-	data := &reportEmailFormat{
-		BrandedProductName: branding.GetProductName(),
-		WhichVulns:         "for all vulnerabilities",
-		DateStr:            time.Now().Format("January 02, 2006"),
-		ImageTypes:         imageTypesStr,
-	}
-	if dataStartTime != nil {
-		data.WhichVulns = fmt.Sprintf("for new vulnerabilities since %s",
-			timestamp.FromProtobuf(dataStartTime).GoTime().Format("January 02, 2006"))
-	}
-	tmpl, err := template.New("emailBody").Parse(emailTemplate)
-	if err != nil {
-		return "", err
-	}
-	return templates.ExecuteToString(tmpl, data)
 }
 
 func orderByClusterAndNamespace(deployments []*common.Deployment) []*common.Deployment {

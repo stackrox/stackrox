@@ -512,6 +512,9 @@
         "id": {
           "type": "string"
         },
+        "name": {
+          "type": "string"
+        },
         "targetState": {
           "$ref": "#/definitions/storageVulnerabilityState",
           "description": "Indicates the state the vulnerabilities will move to once the request is complete."
@@ -563,7 +566,7 @@
           "$ref": "#/definitions/storageDeferralRequest"
         }
       },
-      "description": "Next available tag: 21\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
+      "description": "Next available tag: 23\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
     },
     "storageVulnerabilityRequestScope": {
       "type": "object",
