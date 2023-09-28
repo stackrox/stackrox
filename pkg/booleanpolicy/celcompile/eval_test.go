@@ -203,12 +203,14 @@ func TestBasicXX(t *testing.T) {
         +[[{}]]
            .map(
               prevResults,
+              obj.NestedSlice != null,
               obj.NestedSlice
               .map(
         	    k,
         	    [[{}]]
         	    .map(
         	      prevResults,
+                  k.SecondNestedSlice != null,
                   k.SecondNestedSlice
                   .map(
         		    k,

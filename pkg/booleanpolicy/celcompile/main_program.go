@@ -75,6 +75,7 @@ var (
   {{- $desc := . }}
 		   .map(
 		      prevResults,
+              {{$desc.VarName}} != null,
               {{$desc.VarName}}
 		        .map(
 		          k,
