@@ -160,7 +160,6 @@ jobs:
         with:
           paths: performance-results/report.xml
 
-      # TODO: If bucket is moved to acs-team-ci project, a new SA may be needed
       - name: Upload results to GCS
         uses: google-github-actions/upload-cloud-storage@v1
         with:
