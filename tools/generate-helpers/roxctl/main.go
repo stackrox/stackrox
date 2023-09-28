@@ -67,6 +67,7 @@ type methodProps struct {
 	HTTP *HTTPInfo
 }
 
+// GRPCMethodInfo holds metadata about gRPC method.
 type GRPCMethodInfo struct {
 	Name     string
 	Resource string
@@ -74,23 +75,27 @@ type GRPCMethodInfo struct {
 	Output   Field
 }
 
+// HTTPInfo holds metadata about HTTP URL.
 type HTTPInfo struct {
 	Method string
 	Path   string
 	Params []ParamInfo
 }
 
+// ParamInfo holds information about the URL params and their corresponding command flags.
 type ParamInfo struct {
 	Name string
 	// command flag name. e.g. flag name for "id" in /clusters/{id} is "cluster".
 	CmdFlagName string
 }
 
+// SubCmd holds info about directory where the sub-command is located.
 type SubCmd struct {
 	Name string
 	Dir  string
 }
 
+// Field holds info about a proto field.
 type Field struct {
 	// does not apply to method args and return args.
 	GoName string

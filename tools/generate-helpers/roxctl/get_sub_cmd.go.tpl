@@ -51,6 +51,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	return c
 }
 
+// {{.methodProps.GRPC.Name}}Command holds the metadata about the command to get {{.methodProps.GRPC.Resource}}.
 type {{.methodProps.GRPC.Name}}Command struct {
     id                 string
 	retryDelay         int
@@ -61,7 +62,7 @@ type {{.methodProps.GRPC.Name}}Command struct {
     standardizedFormat bool
 }
 
-func (cmd *{{.methodProps.GRPC.Name}}Command) construct(c *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
+func (cmd *{{.methodProps.GRPC.Name}}Command) construct(_ *cobra.Command, args []string, f *printer.ObjectPrinterFactory) error {
 	cmd.id = args[0]
 	p, err := f.CreatePrinter()
 	if err != nil {
