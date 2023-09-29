@@ -721,7 +721,9 @@ func writeDebug(obj *storage.Image) {
 	if obj.GetScan() == nil {
 		return
 	}
-	marshaler := jsonpb.Marshaler{}
+	marshaler := jsonpb.Marshaler{
+		Indent: "  ",
+	}
 	dir := "/tmp/" + obj.GetId()
 	lock.Lock()
 	numTimesWritten, ok := imageMap[obj.GetId()]

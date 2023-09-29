@@ -131,7 +131,7 @@ message EmbeddedImageScanComponent {
     oneof set_top_cvss {
         float                      top_cvss    = 9;
     }
-    float                          risk_score  = 10 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden" hash:"ignore"'];
+    float                          risk_score  = 10 [(gogoproto.moretags) = 'search:"Component Risk Score,hidden"'];
     // Component version that fixes all the fixable vulnerabilities in this component.
     string                         fixed_by    = 11;
     message Executable {
