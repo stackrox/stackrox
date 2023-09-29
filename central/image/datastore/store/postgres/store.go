@@ -776,7 +776,9 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 			scanUpdated = false
 		}
 	}
-	writeDebug(obj)
+	if scanUpdated {
+		writeDebug(obj)
+	}
 
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
 	keys := gatherKeys(imageParts)
