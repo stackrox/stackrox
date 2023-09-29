@@ -11,7 +11,7 @@ global:
 jobs:
   - name: cluster-density
     namespace: cluster-density
-    jobIterations: 10
+    jobIterations: 2
     jobPause: 1000h
     qps: 20
     burst: 20
@@ -48,6 +48,42 @@ jobs:
         replicas: 10
 
       - objectTemplate: configmap.yml
+        replicas: 10
+
+      - objectTemplate: berserker-configmap-endpoints-zipf.yml
+        replicas: 10
+
+  - name: endpoint-load
+    namespace: endpoint-load
+    jobIterations: 2
+    jobPause: 1000h
+    qps: 20
+    burst: 20
+    namespacedIterations: true
+    podWait: false
+    waitWhenFinished: true
+    preLoadImages: true
+    preLoadPeriod: 30s
+    churn: false
+    churnDuration: 1000h
+    churnDelay: 200h
+    churnPercent: 20
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+
+      - objectTemplate: endpoint-load-deployment.yml
+        replicas: 5
+        inputVars:
+          podReplicas: 2
+
+      - objectTemplate: service.yml
+        replicas: 5
+
+      - objectTemplate: secret.yml
         replicas: 10
 
       - objectTemplate: berserker-configmap-endpoints-zipf.yml
