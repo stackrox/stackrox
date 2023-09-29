@@ -21,10 +21,14 @@ var (
 	administrationEventsQueueCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "administration_events_queue",
+		Name:      "administration_events_queue_size_total",
 		Help:      "A counter that tracks the size of the administration events queue",
 	}, []string{"Operation"})
 )
+
+func init() {
+	prometheus.MustRegister(administrationEventsQueueCounter)
+}
 
 // newStream creates a new event stream.
 func newStream() *streamImpl {
