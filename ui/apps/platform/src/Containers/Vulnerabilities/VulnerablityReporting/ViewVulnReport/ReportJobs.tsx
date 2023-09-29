@@ -10,6 +10,9 @@ import {
     Tr,
 } from '@patternfly/react-table';
 import {
+    Alert,
+    AlertGroup,
+    AlertVariant,
     Bullseye,
     Button,
     Card,
@@ -348,10 +351,21 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 onClose={closeDeleteDownloadModal}
                 isDeleting={isDeletingDownload}
                 onDelete={onDeleteDownload}
-                error={deleteDownloadError}
             >
-                All data in this downloadable report will be deleted. Regenerating a downloadable
-                report will require the download process to start over.
+                <AlertGroup>
+                    {deleteDownloadError && (
+                        <Alert
+                            isInline
+                            variant={AlertVariant.danger}
+                            title={deleteDownloadError}
+                            className="pf-u-mb-sm"
+                        />
+                    )}
+                </AlertGroup>
+                <p>
+                    All data in this downloadable report will be deleted. Regenerating a
+                    downloadable report will require the download process to start over.
+                </p>
             </DeleteModal>
         </>
     );
