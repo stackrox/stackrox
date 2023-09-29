@@ -10,7 +10,7 @@ var (
 		`
 {{- define "valueMatch" }}
   {{- $desc := . }}
-.map(rs, {{$desc.MatchCode}}, [rs].flatten().map(r, r.with({"{{$desc.SearchName}}": [{{$desc.VarName}}]})))
+.map(rs, {{$desc.MatchCode}}, rs.map(r, r.with({"{{$desc.SearchName}}": [{{$desc.VarName}}]})))
 {{- end}}
 
 {{- define "arrayValueMatch" }}
@@ -29,13 +29,11 @@ var (
            {{- template "arrayValueMatch" $child }}
          {{- end}}
          {{- end}}
-	     .filter(r, [r].flatten().size() != 0)
 	     .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
          .flatten()
-         .filter(r, [r].flatten().size() != 0)
 	  )
   )
- .filter(r, [r].flatten().size() != 0)
+ .flatten()
 {{- end}}
 
 {{ $root := . }}
