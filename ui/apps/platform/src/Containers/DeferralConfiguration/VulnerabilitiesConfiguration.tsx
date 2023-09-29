@@ -141,14 +141,16 @@ function VulnerabilitiesConfiguration() {
     const { config, isConfigLoading, isUpdateInProgress, configLoadError } =
         useVulnerabilitiesDeferralConfig();
 
+    const deferralConfig = ensureMinimumDayOptions(config ?? getDefaultConfig());
+
     const { values, handleChange } = useFormik({
         enableReinitialize: true,
         // Ensure that there are at least 4 day options in case this array was set to zero via the API
-        initialValues: ensureMinimumDayOptions(config ?? getDefaultConfig()),
+        initialValues: deferralConfig,
         onSubmit: () => {},
     });
 
-    const isConfigDirty = !isEqual(ensureMinimumDayOptions(config ?? getDefaultConfig()), values);
+    const isConfigDirty = !isEqual(deferralConfig, values);
 
     const { dayOptions, fixableCveOptions, customDate } = values.expiryOptions;
 
@@ -190,7 +192,7 @@ function VulnerabilitiesConfiguration() {
                         </EmptyStateTemplate>
                     </Bullseye>
                 )}
-                {!isConfigLoading && (
+                {!isConfigLoading && !configLoadError && (
                     <Form className="pf-u-py-lg">
                         <Grid hasGutter>
                             {dayOptions.map(({ numDays, enabled }, index) => {
