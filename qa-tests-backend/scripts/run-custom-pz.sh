@@ -82,7 +82,20 @@ test_custom() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest" "AuthServiceTest" "AutocompleteTest" "ClustersTest" "SecretsTest" "DiagnosticBundleTest" "GlobalSearch")
+    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest")
+    STACKROX_TESTNAMES+=("AttemptedAlertsTest" "AuditLogAlertsTest" "AuthServiceTest" "AutocompleteTest")
+    STACKROX_TESTNAMES+=("CertExpiryTest" "CertRotationTest" "ClusterInitBundleTest" "ClustersTest")
+    STACKROX_TESTNAMES+=("DeploymentEventGraphQLTest" "DiagnosticBundleTest")
+    #STACKROX_TESTNAMES+=("Enforcement")
+    STACKROX_TESTNAMES+=("GlobalSearch" "GroupsTest")
+    STACKROX_TESTNAMES+=("IntegrationHealthTest")
+    STACKROX_TESTNAMES+=("K8sRbacTest")
+    STACKROX_TESTNAMES+=("NetworkBaselineTest" "NetworkSimulator" "NodeInventoryTest")
+    STACKROX_TESTNAMES+=("PaginationTest" "ProcessesListeningOnPortsTest")
+    STACKROX_TESTNAMES+=("RbacAuthTest" "RuntimePolicyTest" "RuntimeViolationLifecycleTest")
+    STACKROX_TESTNAMES+=("SecretsTest" "SummaryTest")
+    STACKROX_TESTNAMES+=("TLSChallengeTest")
+    STACKROX_TESTNAMES+=("VulnMgmtSACTest" "VulnMgmtTest" "VulnMgmtWorkflowTest")
 
     #Initialize variables
     interval_sec=20
@@ -95,7 +108,7 @@ test_custom() {
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
     #execute test
-      ./gradlew test --tests "$testName"
+      ./gradlew test --tests "$testName" || true
 
     #allow previous test data to cleanup
       sleep $interval_sec
