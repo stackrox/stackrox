@@ -53,8 +53,8 @@ type Config struct {
 }
 
 func (c *Config) validate() error {
-	err := c.MTLS.validate()
-	if err != nil {
+
+	if err := c.MTLS.validate(); err != nil {
 		return fmt.Errorf("mtls: %w", err)
 	}
 	if c.HTTPListenAddr == "" {
@@ -62,6 +62,12 @@ func (c *Config) validate() error {
 	}
 	if c.GRPCListenAddr == "" {
 		return errors.New("grpc_listen_addr is empty")
+	}
+	if err := c.Indexer.validate(); err != nil {
+		return fmt.Errorf("indexer: %w", err)
+	}
+	if err := c.Matcher.validate(); err != nil {
+		return fmt.Errorf("matcher: %w", err)
 	}
 	return nil
 }
@@ -81,7 +87,7 @@ func (c *IndexerConfig) validate() error {
 		return nil
 	}
 	if err := c.Database.validate(); err != nil {
-		return fmt.Errorf("databse: %w", err)
+		return fmt.Errorf("database: %w", err)
 	}
 	return nil
 }
@@ -99,7 +105,7 @@ func (c *MatcherConfig) validate() error {
 		return nil
 	}
 	if err := c.Database.validate(); err != nil {
-		return fmt.Errorf("databse: %w", err)
+		return fmt.Errorf("database: %w", err)
 	}
 	return nil
 }

@@ -91,6 +91,18 @@ func Test_validate(t *testing.T) {
 		err := c.validate()
 		assert.ErrorContains(t, err, "grpc_listen_addr is empty")
 	})
+	t.Run("when indexer is invalid then error", func(t *testing.T) {
+		c := defaultConfiguration
+		c.Indexer.Database.ConnString = "force indexer to fail validate"
+		err := c.validate()
+		assert.ErrorContains(t, err, "indexer:")
+	})
+	t.Run("when matcher is invalid then error", func(t *testing.T) {
+		c := defaultConfiguration
+		c.Matcher.Database.ConnString = "force matcher to fail validate"
+		err := c.validate()
+		assert.ErrorContains(t, err, "matcher:")
+	})
 }
 
 func Test_IndexerConfig_validate(t *testing.T) {
