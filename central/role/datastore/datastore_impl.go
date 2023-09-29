@@ -687,13 +687,16 @@ func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions
 				resolvedRole.permissionSet = ps
 			}
 		}
+		if resolvedRole.accessScope == nil {
+			return nil, errors.Wrapf(errox.InvariantViolation, "no access scope found for role %s", role.GetName())
+		}
 		for _, as := range accessScopes {
 			if as.GetId() == role.GetAccessScopeId() {
 				resolvedRole.accessScope = as
 			}
 		}
-		if resolvedRole.accessScope == nil || resolvedRole.permissionSet == nil {
-			return nil, errors.Wrapf(errox.InvariantViolation, "no access scope or permission set found for role %s", role.GetName())
+		if resolvedRole.permissionSet == nil {
+			return nil, errors.Wrapf(errox.InvariantViolation, "no permission set found for role %s", role.GetName())
 		}
 		result = append(result, resolvedRole)
 	}

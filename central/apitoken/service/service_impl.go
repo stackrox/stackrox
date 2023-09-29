@@ -12,12 +12,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
@@ -128,19 +128,13 @@ func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch all roles")
 	}
-	for idx, role := range allRoles {
-		if role == nil {
-			logging.GetRateLimitedLogger().Warnf("Role is nil at %d", idx)
-
-		} else {
-			logging.GetRateLimitedLogger().Warnf("Role %s %+v %+v", role.GetRoleName(), role.GetAccessScope(), role.GetPermissions())
-		}
-	}
 	var result []string
 	for _, role := range allRoles {
-		if role.GetRoleName() == "None" {
+		// Skip "None" role as there's no benefit in assigning it to the API token.
+		if role.GetRoleName() == accesscontrol.None {
 			continue
 		}
+		// We assume that error is returned only when there is a privilege escalation.
 		if err := verifyNoPrivilegeEscalation(id.Roles(), []permissions.ResolvedRole{role}); err == nil {
 			result = append(result, role.GetRoleName())
 		}
