@@ -4,86 +4,25 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
-	"text/template"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var (
-	simpleMatchFuncTemplate = template.Must(template.New("").Parse(`
-
-{{ if .NegateFuncName }}
-{{ .NegateFuncName }}(val) {
-    {{- range .MatchCodes }}
-    negate({{.}})
-	{{- end }}
-}
-{{ end }}
-
-{{ if and .MatchFuncName .NegateFuncName }}
-{{ .MatchFuncName }}(val) {
-	not {{ .NegateFuncName }}(val)
-}
-{{ end }}
-
-{{.Name}}(val) = result {
-	{{ if .MatchFuncName }}
-	result := { "match": {{ .MatchFuncName }}(val), "values": [val] }
-    {{ else }}
-	result := { "match": {{ index .MatchCodes 0 }}, "values": [val] }
-    {{ end }}
-}
-`))
-	filterCodeTemplate = template.Must(template.New("").Parse(`
-		obj.{{.FieldName}}.startsWith("TopLevelValA")
-
-`))
-	mapCodeTemplate = template.Must(template.New("").Parse(`
-result.map(t, t.with({"TopLevelA": [obj.ValA]}))
-`))
-)
-
-type simpleMatchFuncGenerator struct {
-	Name           string
-	MatchFuncName  string
-	NegateFuncName string
-	MatchCodes     []string
+type simpleMatchCodesGenerator struct {
+	MatchCodes []string
 }
 
 var (
-	invalidRegoFuncNameChars = regexp.MustCompile(`[^a-zA-Z0-9_]`)
-)
-
-var (
-	// ErrCelNotYetSupported is an error that indicates that a certain query is not yet supported by rego.
-	// It will be removed once rego is supported for all queries.
+	// ErrCelNotYetSupported is an error that indicates that a certain query is not yet supported.
+	// We will further look to support more
 	ErrCelNotYetSupported = errors.New("as-yet unsupported cel path")
 )
 
-func sanitizeFuncName(name string) string {
-	return invalidRegoFuncNameChars.ReplaceAllString(name, "_")
-}
-
-// getRegoFunctionName returns a rego function name for matching the field to the given value.
-// The idx is also required, and is used to ensure the function name is unique.
-func getRegoFunctionName(field string) string {
-	return sanitizeFuncName(fmt.Sprintf("matchAndGetResultFor%s", field))
-}
-
-func getMatchFuncName(field string) string {
-	return sanitizeFuncName(fmt.Sprintf("matchFor%s", field))
-}
-
-func getNegateFuncName(field string) string {
-	return sanitizeFuncName(fmt.Sprintf("negateMatches%s", field))
-}
-
-func (s *simpleMatchFuncGenerator) Generate(v string) string {
-	orClauses := []string{}
+func (s *simpleMatchCodesGenerator) Generate(v string) string {
+	var orClauses []string
 	for _, mc := range s.MatchCodes {
 		if strings.Contains(mc, `%s`) {
 			orClauses = append(orClauses, fmt.Sprintf(mc, v))
@@ -113,11 +52,7 @@ func generateCheckCode(v string) string {
 	return code
 }
 
-func (s *simpleMatchFuncGenerator) FuncName() string {
-	return s.Name
-}
-
-type matchFuncGenerator interface {
+type matchCodesGenerator interface {
 	Generate(v string) string
 }
 
@@ -171,43 +106,31 @@ func generateBoolMatchCode(value string) (string, error) {
 	if boolValue {
 		return "%s", nil
 	}
-	return "%s == false", nil
+	return "!%s", nil
 }
 
-func getSimpleMatchFuncGenerators(query *query.FieldQuery, matchCodeGenerator func(string) (string, error)) ([]matchFuncGenerator, error) {
+func getSimpleMatchFuncGenerators(query *query.FieldQuery, matchCodeGenerator func(string) (string, error)) ([]matchCodesGenerator, error) {
 	if len(query.Values) == 0 {
 		return nil, fmt.Errorf("no value for field %s", query.Field)
 	}
-	var generators []matchFuncGenerator
 	matchCodes, err := generateMultiMatchCode(query.Values, matchCodeGenerator)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate match code for field %s: %w", query.Field, err)
 	}
-	if len(matchCodes) == 1 {
-		generators = append(generators, &simpleMatchFuncGenerator{
-			Name:       getRegoFunctionName(query.Field),
-			MatchCodes: matchCodes,
-		})
-	} else {
-		generators = append(generators, &simpleMatchFuncGenerator{
-			Name:           getRegoFunctionName(query.Field),
-			MatchFuncName:  getMatchFuncName(query.Field),
-			NegateFuncName: getNegateFuncName(query.Field),
-			MatchCodes:     matchCodes,
-		})
-	}
-	return generators, nil
+	return []matchCodesGenerator{
+		&simpleMatchCodesGenerator{MatchCodes: matchCodes},
+	}, nil
 }
 
-func getStringMatchFuncGenerators(query *query.FieldQuery) ([]matchFuncGenerator, error) {
+func getStringMatchFuncGenerators(query *query.FieldQuery) ([]matchCodesGenerator, error) {
 	return getSimpleMatchFuncGenerators(query, generateStringMatchCode)
 }
 
-func getBoolMatchFuncGenerators(query *query.FieldQuery) ([]matchFuncGenerator, error) {
+func getBoolMatchFuncGenerators(query *query.FieldQuery) ([]matchCodesGenerator, error) {
 	return getSimpleMatchFuncGenerators(query, generateBoolMatchCode)
 }
 
-func generateBaseMatcherHelper(query *query.FieldQuery, typ reflect.Type) ([]matchFuncGenerator, error) {
+func generateBaseMatcherHelper(query *query.FieldQuery, typ reflect.Type) ([]matchCodesGenerator, error) {
 	switch kind := typ.Kind(); kind {
 	case reflect.String:
 		return getStringMatchFuncGenerators(query)
@@ -231,21 +154,14 @@ func generateBaseMatcherHelper(query *query.FieldQuery, typ reflect.Type) ([]mat
 	return nil, ErrCelNotYetSupported
 }
 
-type regoMatchFunc struct {
-	filterCode   string
-	mapCode      string
-	functionName string // not in use
-	functionCode string // not in use
-}
-
 func generateMatchCodeForField(fieldQuery *query.FieldQuery, typ reflect.Type, v string) (string, error) {
 	if fieldQuery.Operator == query.And || fieldQuery.Negate {
 		return "", ErrCelNotYetSupported
 	}
-	var generators []matchFuncGenerator
+	var generators []matchCodesGenerator
 	if fieldQuery.MatchAll {
-		generators = []matchFuncGenerator{
-			&simpleMatchFuncGenerator{Name: sanitizeFuncName(fmt.Sprintf("matchAll%s", fieldQuery.Field)), MatchCodes: []string{"true"}},
+		generators = []matchCodesGenerator{
+			&simpleMatchCodesGenerator{MatchCodes: []string{"true"}},
 		}
 	} else {
 		var err error

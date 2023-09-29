@@ -15,15 +15,11 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type matchValueType []interface{}
-type matchType map[string]matchValueType
-type resultType []matchType
-
 type celCompilerForType struct {
 	fieldToMetaPathMap *pathutil.FieldToMetaPathMap
 }
 
-// A CelCompiler compiles a rego-based evaluator for the given query.
+// A CelCompiler compiles a CEL-based evaluator for the given query.
 type CelCompiler interface {
 	CompileCelBasedEvaluator(query *query.Query) (evaluator.Evaluator, error)
 }
@@ -34,8 +30,8 @@ type celBasedEvaluator struct {
 }
 
 // convertBindingToResult converts a set of variable bindings to a result.
-// It has to do a bunch of type assertions, since rego can return arbitrary values.
-// We know that our rego programs are constructed to return map[string][]interface{},
+// It has to do a bunch of type assertions, since cel can return arbitrary values.
+// We know that our cel programs are constructed to return map[string][]interface{},
 // so this takes advantage of that to traverse them. It also converts each returned value
 // into a string.
 func convertBindingToResult(binding map[string][]interface{}) (m map[string][]string, err error) {
@@ -101,14 +97,14 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 	return res, len(res.Matches) != 0
 }
 
-// MustCreateCompiler is a wrapper around CreateRegoCompiler that panics if there's an error.
+// MustCreateCompiler is a wrapper around CreateCelCompiler that panics if there's an error.
 func MustCreateCompiler(objMeta *pathutil.AugmentedObjMeta) CelCompiler {
 	r, err := CreateCelCompiler(objMeta)
 	utils.Must(err)
 	return r
 }
 
-// CreateRegoCompiler creates a rego compiler for the given object meta.
+// CreateCelCompiler creates a CEL compiler for the given object meta.
 func CreateCelCompiler(objMeta *pathutil.AugmentedObjMeta) (CelCompiler, error) {
 	fieldToMetaPathMap, err := objMeta.MapSearchTagsToPaths()
 	if err != nil {
@@ -116,25 +112,6 @@ func CreateCelCompiler(objMeta *pathutil.AugmentedObjMeta) (CelCompiler, error) 
 	}
 	return &celCompilerForType{fieldToMetaPathMap: fieldToMetaPathMap}, nil
 }
-
-var tplate2 = `
-[] +
-[[{}]]
-   .map(result, obj.ValA.startsWith("TopLevelValA"), result.map(t, t.with({"TopLevelA": [obj.ValA]})))
-   .map(
-      result,
-      obj.NestedSlice
-        .map(
-          k,
-          [[{}]]
-           .map(result1, k.NestedValB.startsWith("B1") || k.NestedValB.startsWith("B2"), result1.map(t, t.with({"B": [k.NestedValB]})))
-           .map(result1, k.NestedValA.startsWith("A1") || k.NestedValA.startsWith("A2"), result1.map(t, t.with({"A": [k.NestedValA]})))
-           .map(result1, result.map(t, result1.map(x, t.with(x))))
-        )
-   ) 
-   .filter(result, result.size() != 0)
-   .flatten()
-`
 
 func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evaluator.Evaluator, error) {
 	module, err := r.compileCel(query)
@@ -149,16 +126,7 @@ func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evalu
 	return &celBasedEvaluator{q: prg, module: module}, nil
 }
 
-type fieldMatchData struct {
-	matchers []regoMatchFunc
-	name     string
-	path     string
-}
-
 func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
-	// We need to get a unique set of array indexes for each path in the rego code.
-	// That is tracked in this map.
-
 	args := &mainProgramArgs{}
 	args.Root = MatchField{
 		VarName:   "obj",
@@ -228,39 +196,4 @@ func (r *celCompilerForType) compileCel(query *query.Query) (string, error) {
 		parent.Children = append(parent.Children, mf)
 	}
 	return generateMainProgram(args)
-}
-
-// This takes a list of array lengths, and invokes the func for every combination of the array indexes.
-// For example, given array lengths [2, 3, 1],
-// f will be called with
-// [0, 0, 0]
-// [0, 1, 0]
-// [0, 2, 0]
-// [1, 0, 0]
-// [1, 1, 0]
-// [1, 2, 0]
-func runForEachCrossProduct(arrayLengths []int, f func([]int) error) error {
-	for _, l := range arrayLengths {
-		if l == 0 {
-			return nil
-		}
-	}
-	currentVal := make([]int, len(arrayLengths))
-	for {
-		if err := f(currentVal); err != nil {
-			return err
-		}
-		idxToIncrement := 0
-		for {
-			if currentVal[idxToIncrement] < arrayLengths[idxToIncrement]-1 {
-				currentVal[idxToIncrement]++
-				break
-			}
-			if idxToIncrement == len(currentVal)-1 {
-				return nil
-			}
-			currentVal[idxToIncrement] = 0
-			idxToIncrement++
-		}
-	}
 }

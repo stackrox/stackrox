@@ -54,16 +54,6 @@ var (
 	))
 )
 
-type fieldInCondition struct {
-	Name     string
-	FuncName string
-	JSONPath string
-}
-
-type condition struct {
-	Fields []fieldInCondition
-}
-
 type MatchField struct {
 	VarName    string
 	SearchName string // Only for non-array
