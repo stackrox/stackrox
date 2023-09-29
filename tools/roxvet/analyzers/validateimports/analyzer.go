@@ -328,6 +328,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/common", "sensor/kubernetes", "sensor/debugger", "sensor/testutils")
 	}
 
+	if validImportRoot == "sensor/common" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger") // Need this for unit tests
+	}
+
 	for _, imp := range imports {
 		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, validImportRoot, allowedPackages...)
 		if err != nil {
