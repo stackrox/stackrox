@@ -90,7 +90,11 @@ var (
 
 func normalizeImage(img *storage.Image) {
 	sort.SliceStable(img.GetScan().GetComponents(), func(i, j int) bool {
-		return img.GetScan().GetComponents()[i].GetName() < img.GetScan().GetComponents()[j].GetName()
+		compI, compJ := img.GetScan().GetComponents()[i], img.GetScan().GetComponents()[j]
+		if compI.GetName() != compJ.GetName() {
+			return compI.GetName() < compJ.GetName()
+		}
+		return compI.GetVersion() < compJ.GetVersion()
 	})
 	for _, comp := range img.GetScan().GetComponents() {
 		sort.SliceStable(comp.Vulns, func(i, j int) bool {
@@ -765,10 +769,10 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		return nil
 	}
 
-	if obj.GetScan() != nil && oldImage.GetScan().GetHashoneof() != nil {
+	if obj.GetScan() != nil {
 		if err := populateImageScanHash(obj.GetScan()); err != nil {
 			log.Error("unable to populate image scan hash for %q", obj.GetId())
-		} else if obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
+		} else if oldImage.GetScan().GetHashoneof() != nil && obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
 			scanUpdated = false
 		}
 	}
