@@ -28,7 +28,7 @@ process_arg() {
     if [[ "$key" == "ncommit" ]]; then
         ncommit="$value"
     elif [[ "$key" == "sha" ]]; then
-	sha="$value"
+        sha="$value"
     fi
 }
 
@@ -65,8 +65,8 @@ for sha in "${shas[@]}"; do
     gsutil -m cp -r "gs://roxci-artifacts/stackrox/$sha" "$temp_dir" || error_code=$?
     if (( error_code == 0 )); then
         "$DIR/get-info-about-osci-jobs.sh" "$temp_dir" >> "$output"
-	tail -n +2 "$output" >> "$temp_file"
-	header="$(head -1 "$output")"
+        tail -n +2 "$output" >> "$temp_file"
+        header="$(head -1 "$output")"
     else
         echo "WARNING: Unable to get artifacts for $sha"
     fi
