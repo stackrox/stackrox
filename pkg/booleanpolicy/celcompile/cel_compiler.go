@@ -2,7 +2,6 @@ package celcompile
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -60,18 +59,17 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 		utils.Should(err)
 		return nil, false
 	}
-	val, err := evaluate(r.q, map[string]interface{}{"obj": value})
+	val, _, err := r.q.Eval(map[string]interface{}{"obj": value})
 	if err != nil {
-		//utils.Should(err)
-		log.Print(r.module)
-		log.Print(err)
+		log.Infof(r.module)
+		log.Error(err)
+		jsonData, _ := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
+		out := protojson.Format(jsonData.(*structpb.Value))
+		log.Errorf("output:", out)
+		utils.Should(err)
 		return nil, false
 	}
-	// If there is an error here, it is a programming error. Let's not panic in prod over it.
-	jsonData, err := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
-	//utils.Should(err)
-	out := protojson.Format(jsonData.(*structpb.Value))
-	fmt.Println(out)
+
 	if err != nil {
 		//	utils.Should(err)
 		return nil, false
@@ -119,6 +117,7 @@ func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evalu
 		return nil, fmt.Errorf("failed to compile cel: %w", err)
 	}
 	module = CelPrettyPrint(module)
+	log.Infof("Compiled: \n%s", module)
 	prg, err := compile(module)
 	if err != nil {
 		return nil, err

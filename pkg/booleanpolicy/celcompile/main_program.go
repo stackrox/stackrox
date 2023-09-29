@@ -3,9 +3,12 @@ package celcompile
 import (
 	"strings"
 	"text/template"
+
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
+	log                 = logging.LoggerForModule()
 	mainProgramTemplate = template.Must(template.New("").Parse(
 		`
 {{- define "valueMatch" }}
@@ -29,11 +32,10 @@ var (
            {{- template "arrayValueMatch" $child }}
          {{- end}}
          {{- end}}
-	     .map(rs, [prevResults].flatten().map(p, [rs].flatten().map(r, p.with(r))))
-         .flatten()
+	     .map(rs, prevResults.map(p, rs.map(r, p.with(r))))
 	  )
+      .flatten()
   )
- .flatten()
 {{- end}}
 
 {{ $root := . }}

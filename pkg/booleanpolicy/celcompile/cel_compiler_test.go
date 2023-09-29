@@ -106,16 +106,12 @@ func runTestCases(t *testing.T, testCases []testCase) {
 			t.Run("on fully hydrated object", func(t *testing.T) {
 				evaluator, err := compilerInstance.CompileCelBasedEvaluator(c.q)
 				require.NoError(t, err)
-				t.Log("--- evaluator ---")
-				t.Log(evaluator.(*celBasedEvaluator).module)
 				res, matched := evaluator.Evaluate(pathutil.NewAugmentedObj(c.obj))
 				assertResultsAsExpected(t, c, res, matched)
 			})
 			t.Run("on augmented object", func(t *testing.T) {
 				evaluator, err := augmentedCompilerInstance.CompileCelBasedEvaluator(c.q)
 				require.NoError(t, err)
-				t.Log("--- evaluator ---")
-				t.Log(evaluator.(*celBasedEvaluator).module)
 				topLevelBare := &TopLevelBare{
 					ValA: c.obj.ValA,
 				}

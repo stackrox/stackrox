@@ -19,26 +19,24 @@ import (
 
 	mito "github.com/elastic/mito/lib"
 	"github.com/google/cel-go/cel"
-	"github.com/google/cel-go/common/types/ref"
-	"github.com/google/cel-go/ext"
-	k8s "k8s.io/apiserver/pkg/cel/library"
 )
 
 var celEnvOptions = []cel.EnvOption{
 	cel.EagerlyValidateDeclarations(true),
 	cel.DefaultUTCTimeZone(true),
-	ext.Strings(ext.StringsVersion(2)),
-	cel.CrossTypeNumericComparisons(true),
-	cel.OptionalTypes(),
-	k8s.URLs(),
-	k8s.Regex(),
-	//k8s.Lists(),
-	k8s.Quantity(),
+	// ext.Strings(ext.StringsVersion(2)),
+	// cel.CrossTypeNumericComparisons(true),
+	// cel.OptionalTypes(),
+	// k8s.URLs(),
+	// k8s.Regex(),
+	// k8s.Lists(),
+	// k8s.Quantity(),
 	mito.Collections(),
 }
 
 var celProgramOptions = []cel.ProgramOption{
-	cel.EvalOptions(cel.OptOptimize, cel.OptTrackCost),
+	cel.EvalOptions(cel.OptOptimize),
+	// cel.EvalOptions(cel.OptOptimize, cel.OptTrackCost),
 }
 
 // eval evaluates the cel expression against the given input
@@ -58,9 +56,4 @@ func compile(exp string) (cel.Program, error) {
 		return nil, fmt.Errorf("failed to instantiate CEL program: %w", err)
 	}
 	return prog, nil
-}
-
-func evaluate(prog cel.Program, input map[string]any) (ref.Val, error) {
-	val, _, err := prog.Eval(input)
-	return val, err
 }
