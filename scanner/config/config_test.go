@@ -133,17 +133,12 @@ func Test_Database_validate(t *testing.T) {
 	t.Run("when URL then valid", func(t *testing.T) {
 		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
 		err := c.validate()
-		assert.NoError(t, err)
+		assert.ErrorContains(t, err, "URLs are not supported")
 	})
 	t.Run("when empty conn string then error", func(t *testing.T) {
 		c := Database{ConnString: ""}
 		err := c.validate()
 		assert.ErrorContains(t, err, "empty is not allowed")
-	})
-	t.Run("when conn string is URL then error", func(t *testing.T) {
-		c := Database{ConnString: "postgresql://user@password"}
-		err := c.validate()
-		assert.ErrorContains(t, err, "URLs are not supported")
 	})
 	t.Run("when conn string is not parsable then error", func(t *testing.T) {
 		c := Database{ConnString: "this is nothing meaningful"}

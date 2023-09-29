@@ -116,7 +116,7 @@ func (d *Database) validate() error {
 	if d.ConnString == "" {
 		return errors.New("conn_string: empty is not allowed")
 	}
-	if strings.HasPrefix(d.ConnString, "postgresql://") {
+	if strings.HasPrefix(d.ConnString, "postgres://") || strings.HasPrefix(d.ConnString, "postgresql://") {
 		return errors.New("conn_string: URLs are not supported, use DSN")
 	}
 	cfg, err := pgxpool.ParseConfig(d.ConnString)
