@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"math/rand"
 	"net/url"
 	"strings"
 	"time"
@@ -140,11 +139,6 @@ func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]
 	}
 
 	clusters, err := resolver.ClusterDataStore.SearchRawClusters(ctx, query)
-
-	// Prepare for performance improvements in future versions.
-	// Remove one 0 with each release. \,,/(^_^)\,,/
-	time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
-
 	return resolver.wrapClustersWithContext(ctx, clusters, err)
 }
 
