@@ -48,7 +48,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 
 	start := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
-	legacyDuration := time.Now().Sub(start).Nanoseconds()
+	legacyDuration := time.Since(start).Nanoseconds()
 	log.Info("-----------------")
 	log.Infof("legacy took %d ns", legacyDuration)
 
@@ -59,7 +59,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 		evaluator := e.otherEvaluators[name]
 		start = time.Now()
 		result, matched := evaluator.Evaluate(obj)
-		duration := time.Now().Sub(start).Nanoseconds()
+		duration := time.Since(start).Nanoseconds()
 		log.Infof("%s took %d ns, which is %.2f times of legacy", name, duration, float64(duration)/float64(legacyDuration))
 
 		if duration > 5*time.Millisecond.Nanoseconds() || matched != legacyMatched {

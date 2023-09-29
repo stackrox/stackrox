@@ -23,10 +23,10 @@ func CelPrettyPrint(input string) string {
 
 		curr := indentation
 		if strings.HasPrefix(trimmedLine, ".") {
-			curr += 1
+			curr++
 		}
 		if strings.HasPrefix(trimmedLine, ")") {
-			curr -= 1
+			curr--
 		}
 		// Add the indented line to the output.
 		output.WriteString(strings.Repeat(indentationStr, 2*curr))

@@ -96,8 +96,6 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	}
 
 	suite.T().Setenv(features.PolicyEngineEvaluatorTest.EnvVar(), "true")
-	suite.T().Setenv(features.JmesPathBasedEvaluator.EnvVar(), "true")
-	suite.T().Setenv(features.CelBasedEvaluator.EnvVar(), "true")
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownSuite() {}

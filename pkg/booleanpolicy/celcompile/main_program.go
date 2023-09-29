@@ -54,12 +54,14 @@ var (
 	))
 )
 
+// MatchField represent a skeleton of the object. We only create a MatchField if the attribute
+// is a leaf attribute to be matched or an array with its members to be matched.
 type MatchField struct {
 	VarName    string
 	SearchName string // Only for non-array
 	MatchCode  string // Only for non-array
 	IsLeaf     bool
-	Path       string // Not in use now
+	Path       string // Not in use now but for debug
 	CheckCode  string
 
 	Children []*MatchField

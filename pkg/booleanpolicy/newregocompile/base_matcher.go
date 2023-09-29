@@ -93,11 +93,11 @@ func generateMultiMatchCode(values []string, matchFunc func(string) (string, err
 		return multiMatch, err
 	}
 	for _, value := range values[1:] {
-		if matchCode, err := matchFunc(value); err != nil {
+		matchCode, err := matchFunc(value)
+		if err != nil {
 			return "", fmt.Errorf("failed to compile for value %s in values %v", value, values)
-		} else {
-			multiMatch = fmt.Sprintf("%s, %s", multiMatch, matchCode)
 		}
+		multiMatch = fmt.Sprintf("%s, %s", multiMatch, matchCode)
 	}
 	return fmt.Sprintf("or([%s])", multiMatch), nil
 }

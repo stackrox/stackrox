@@ -89,11 +89,11 @@ func generateMultiMatchCode(values []string, matchFunc func(string) (string, err
 		return nil, errors.New("expect at least one value")
 	}
 	for _, value := range values {
-		if matchCode, err := matchFunc(value); err != nil {
+		matchCode, err := matchFunc(value)
+		if err != nil {
 			return nil, fmt.Errorf("failed to compile for value %s in values %v", value, values)
-		} else {
-			matchCodes = append(matchCodes, matchCode)
 		}
+		matchCodes = append(matchCodes, matchCode)
 	}
 	return matchCodes, nil
 }

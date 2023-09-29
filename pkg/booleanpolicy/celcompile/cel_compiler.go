@@ -61,27 +61,20 @@ func (r *celBasedEvaluator) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Res
 	}
 	val, _, err := r.q.Eval(map[string]interface{}{"obj": value})
 	if err != nil {
-		log.Infof(r.module)
-		log.Error(err)
 		jsonData, _ := val.ConvertToNative(reflect.TypeOf(&structpb.Value{}))
 		out := protojson.Format(jsonData.(*structpb.Value))
-		log.Errorf("output:", out)
+		log.Errorf("Compiled module %s\nOutput: %s\nerror: %s", r.module, out, err)
 		utils.Should(err)
 		return nil, false
 	}
 
-	if err != nil {
-		//	utils.Should(err)
-		return nil, false
-	}
-
 	result, err := val.ConvertToNative(reflect.TypeOf([]map[string][]any{}))
-	res := &evaluator.Result{}
-	if result == nil {
+	if err != nil {
 		err = fmt.Errorf("invalid result: %+v", result)
-		// utils.Should(err)
+		utils.Should(err)
 		return nil, false
 	}
+	res := &evaluator.Result{}
 	for _, binding := range result.([]map[string][]interface{}) {
 		match, err := convertBindingToResult(binding)
 		if err != nil {
