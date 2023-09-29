@@ -141,7 +141,7 @@ func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evalu
 	if err != nil {
 		return nil, fmt.Errorf("failed to compile cel: %w", err)
 	}
-
+	module = CelPrettyPrint(module)
 	prg, err := compile(module)
 	if err != nil {
 		return nil, err
