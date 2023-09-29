@@ -92,3 +92,91 @@ func Test_validate(t *testing.T) {
 		assert.ErrorContains(t, err, "grpc_listen_addr is empty")
 	})
 }
+
+func Test_IndexerConfig_validate(t *testing.T) {
+	t.Run("when disabled no error", func(t *testing.T) {
+		c := IndexerConfig{Enable: false, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when enabled then error", func(t *testing.T) {
+		c := IndexerConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.Error(t, err)
+	})
+}
+
+func Test_MatcherConfig_validate(t *testing.T) {
+	t.Run("when disabled no error", func(t *testing.T) {
+		c := MatcherConfig{Enable: false, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when enabled then error", func(t *testing.T) {
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.Error(t, err)
+	})
+}
+
+func Test_Database_validate(t *testing.T) {
+	//	# Example DSN
+	//	user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10
+	//
+	//	# Example URL
+	//	postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10
+	t.Run("when DNS then no error", func(t *testing.T) {
+		c := Database{ConnString: "user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10"}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when URL then valid", func(t *testing.T) {
+		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when empty conn string then error", func(t *testing.T) {
+		c := Database{ConnString: ""}
+		err := c.validate()
+		assert.ErrorContains(t, err, "empty is not allowed")
+	})
+	t.Run("when conn string is URL then error", func(t *testing.T) {
+		c := Database{ConnString: "postgresql://user@password"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "URLs are not supported")
+	})
+	t.Run("when conn string is not parsable then error", func(t *testing.T) {
+		c := Database{ConnString: "this is nothing meaningful"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "cannot parse")
+	})
+
+	tempDir, err := os.MkdirTemp("", "Test_Database_validate")
+	assert.NoError(t, err)
+	t.Cleanup(func() {
+		if err = os.RemoveAll(tempDir); err != nil {
+			fmt.Printf("failed to delete test directory: %q\n", tempDir)
+		}
+	})
+	pwdFile := filepath.Join(tempDir, "password_file")
+	pwdF, err := os.Create(pwdFile)
+	assert.NoError(t, err)
+	_, err = pwdF.WriteString("foobar-password")
+	assert.NoError(t, err)
+	t.Run("when password files exists then valid", func(t *testing.T) {
+		c := Database{ConnString: "host=foobar", PasswordFile: pwdFile}
+		err := c.validate()
+		assert.NoError(t, err)
+		assert.Equal(t, c.ConnString, "host=foobar password=foobar-password")
+	})
+	t.Run("when password files does not exist then error", func(t *testing.T) {
+		c := Database{ConnString: "host=foobar", PasswordFile: "something that does not exist"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "invalid password")
+	})
+	t.Run("when both password and file then error", func(t *testing.T) {
+		c := Database{ConnString: "host=foobar password=inline-pass", PasswordFile: pwdFile}
+		err := c.validate()
+		assert.ErrorContains(t, err, "specify either")
+	})
+}
