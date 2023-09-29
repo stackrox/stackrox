@@ -67,7 +67,6 @@ func newReportGeneratorImpl(
 		clusterDatastore:        clusterDatastore,
 		namespaceDatastore:      namespaceDatastore,
 		blobStore:               blobStore,
-
-		Schema: schema,
+		Schema:                  schema,
 	}
 }

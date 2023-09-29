@@ -116,7 +116,7 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 func (suite *scanTestSuite) TestEnrichImageFailures() {
 	type testCase struct {
 		scanImg func(ctx context.Context, image *storage.Image,
-			registry registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error)
+			registry registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
 		fetchSignaturesWithRetry func(ctx context.Context, fetcher signatures.SignatureFetcher, image *storage.Image,
 			fullImageName string, registry registryTypes.Registry) ([]*storage.Signature, error)
 		getRegistryForImageInNamespace func(image *storage.ImageName, ns string) (registryTypes.ImageRegistry, error)
@@ -268,10 +268,11 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 
 func (suite *scanTestSuite) TestEnrichErrorNoScanner() {
 	scan := LocalScan{
-		scannerClientSingleton: func() *scannerclient.Client { return nil },
+		scannerClientSingleton: func() scannerclient.ScannerClient { return nil },
 	}
 
-	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, &storage.ContainerImage{}, "", "", false)
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, img, "", "", false)
 	suite.Require().ErrorIs(err, ErrNoLocalScanner)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
@@ -288,13 +289,64 @@ func (suite *scanTestSuite) TestEnrichErrorNoImage() {
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
 
+func (suite *scanTestSuite) TestEnrichErrorBadImage() {
+	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+	imageServiceClient := &echoImageServiceClient{}
+	scan := LocalScan{
+		scannerClientSingleton:            emptyScannerClientSingleton,
+		scanSemaphore:                     semaphore.NewWeighted(10),
+		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
+		mirrorStore:                       mirrorStore,
+		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
+		scanImg:                           scanImage,
+	}
+
+	imgNameStr := "   is an invalid image"
+
+	suite.Run("enrich error on nil image name", func() {
+		containerImg := &storage.ContainerImage{}
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "missing image name")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+
+	})
+
+	suite.Run("enrich error missing image registry", func() {
+		containerImg := &storage.ContainerImage{
+			Name: &storage.ImageName{},
+		}
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "missing image registry")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+
+	})
+
+	suite.Run("enrich error on bad full image name", func() {
+		containerImg := &storage.ContainerImage{
+			Name: &storage.ImageName{
+				Registry: "fake",
+				FullName: imgNameStr,
+			},
+		}
+		mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{imgNameStr}, nil)
+		resultImg, err := scan.EnrichLocalImageInNamespace(context.Background(), imageServiceClient, containerImg, "", "", false)
+		suite.Require().ErrorContains(err, "zero valid pull sources")
+		suite.Require().ErrorIs(err, ErrEnrichNotStarted)
+		suite.Require().Nil(resultImg)
+	})
+}
+
 func (suite *scanTestSuite) TestEnrichThrottle() {
 	scan := LocalScan{
 		scannerClientSingleton: emptyScannerClientSingleton,
 		scanSemaphore:          semaphore.NewWeighted(0),
 	}
 
-	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, &storage.ContainerImage{}, "", "", false)
+	img := &storage.ContainerImage{Name: &storage.ImageName{Registry: "fake"}}
+	_, err := scan.EnrichLocalImageInNamespace(context.Background(), nil, img, "", "", false)
 	suite.Require().ErrorIs(err, ErrTooManyParallelScans)
 	suite.Require().ErrorIs(err, ErrEnrichNotStarted)
 }
@@ -436,7 +488,7 @@ func (suite *scanTestSuite) TestMultiplePullSources() {
 
 	var mirror2ScanTriggered bool
 	scan := LocalScan{
-		scanImg: func(ctx context.Context, i *storage.Image, ir registryTypes.ImageRegistry, c *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+		scanImg: func(ctx context.Context, i *storage.Image, ir registryTypes.ImageRegistry, c scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 			if i.GetName().GetFullName() == mirror2 {
 				mirror2ScanTriggered = true
 			}
@@ -523,15 +575,14 @@ func (suite *scanTestSuite) TestNotes() {
 }
 
 func successfulScan(_ context.Context, _ *storage.Image,
-	reg registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	reg registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 
 	if reg != nil {
 		reg.Config()
 	}
-	return &scannerV1.GetImageComponentsResponse{
-		ScannerVersion: "1",
-		Status:         scannerV1.ScanStatus_SUCCEEDED,
-		Components: &scannerV1.Components{
+	return &scannerclient.ImageAnalysis{
+		ScanStatus: scannerV1.ScanStatus_SUCCEEDED,
+		V1Components: &scannerV1.Components{
 			Namespace: "default",
 			LanguageComponents: []*scannerV1.LanguageComponent{{
 				Type:    scannerV1.SourceType_JAVA,
@@ -553,7 +604,7 @@ func successfulFetchSignatures(_ context.Context, _ signatures.SignatureFetcher,
 }
 
 func failingScan(_ context.Context, _ *storage.Image,
-	_ registryTypes.ImageRegistry, _ *scannerclient.Client) (*scannerV1.GetImageComponentsResponse, error) {
+	_ registryTypes.ImageRegistry, _ scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error) {
 	return nil, errors.New("failed scanning image")
 }
 
@@ -567,8 +618,19 @@ func failingFetchSignaturesUnauthorized(_ context.Context, _ signatures.Signatur
 	return nil, errox.NotAuthorized
 }
 
-func emptyScannerClientSingleton() *scannerclient.Client {
-	return &scannerclient.Client{}
+type emptyClient struct {
+}
+
+func (*emptyClient) Close() error {
+	return nil
+}
+
+func (*emptyClient) GetImageAnalysis(_ context.Context, _ *storage.Image, _ *registryTypes.Config) (*scannerclient.ImageAnalysis, error) {
+	return nil, nil
+}
+
+func emptyScannerClientSingleton() scannerclient.ScannerClient {
+	return &emptyClient{}
 }
 
 func emptyGetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error) {

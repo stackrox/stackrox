@@ -45,7 +45,7 @@ func AlertLink(endpoint string, alert *storage.Alert) string {
 	}
 	var alertPath string
 	switch entity := alert.GetEntity().(type) {
-	case *storage.Alert_Deployment_:
+	case *storage.Alert_Deployment_, *storage.Alert_Resource_:
 		alertPath = fmt.Sprintf(alertLinkPath, alert.GetId())
 	case *storage.Alert_Image:
 		alertPath = fmt.Sprintf(imageLinkPath, entity.Image.GetId())

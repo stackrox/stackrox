@@ -16,7 +16,7 @@
         ]
     },
     "engines": {
-        "node": ">=14.17.0"
+        "node": ">=18.0.0"
     },
     "scripts": {
         "postinstall": "./scripts/patch-deps.sh",
@@ -45,7 +45,8 @@
     },
     "resolutions": {
         "@typescript-eslint/parser": "^4.32.0",
-        "autoprefixer": "10.4.5"
+        "autoprefixer": "10.4.5",
+        "eslint-plugin-testing-library": "^6.0.1"
     },
     "devDependencies": {
         "chalk-cli": "^5.0.0",

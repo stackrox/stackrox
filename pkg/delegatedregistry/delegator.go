@@ -16,4 +16,8 @@ type Delegator interface {
 
 	// DelegateScanImage sends a scan request to the provided cluster.
 	DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error)
+
+	// ValidateCluster returns nil if a cluster is a valid target for delegation, returns an
+	// error otherwise.
+	ValidateCluster(clusterID string) error
 }

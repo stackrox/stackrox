@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
+	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
@@ -342,6 +344,10 @@ func startServices() {
 	apiTokenExpiration.Singleton().Start()
 	productUsageInjector.Singleton().Start()
 
+	if features.AdministrationEvents.Enabled() {
+		administrationEventHandler.Singleton().Start()
+	}
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
@@ -420,6 +426,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -852,6 +862,10 @@ func waitForTerminationSignal() {
 
 	if env.VulnReportingEnhancements.BooleanSetting() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	}
+
+	if features.AdministrationEvents.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{administrationEventHandler.Singleton(), "administration events handler"})
 	}
 
 	var wg sync.WaitGroup

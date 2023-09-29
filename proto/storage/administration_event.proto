@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "gogoproto/gogo.proto";
+
+package storage;
+
+// AdministrationEvent is the storage representation of administrative events in Central.
+//
+// Refer to v1.AdministrationEvent for a more detailed doc.
+message AdministrationEvent {
+    // The id is a UUIDv5 generated deterministically from the tuple (type, level, domain,
+    // resource_type, resource_id, message). It is used for deduplication of events.
+    string id                                  = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    AdministrationEventType type               = 2 [(gogoproto.moretags) = 'search:"Event Type,hidden"'];
+    AdministrationEventLevel level             = 3 [(gogoproto.moretags) = 'search:"Event Level,hidden"'];
+    string message                             = 4;
+    string hint                                = 5;
+    string domain                              = 6 [(gogoproto.moretags) = 'search:"Event Domain,hidden"'];
+    message Resource {
+        string type = 1 [(gogoproto.moretags) = 'search:"Resource Type,hidden"'];
+        string id   = 2;
+        string name = 3;
+    }
+    Resource resource                          = 7;
+    int64 num_occurrences                      = 8 [(gogoproto.moretags) = 'search:"Event Occurrence,hidden"'];
+    google.protobuf.Timestamp last_occurred_at = 9 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
+    google.protobuf.Timestamp created_at       = 10 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+}
+
+// AdministrationEventType is the storage representation of the event type.
+//
+// Refer to v1.AdministrationEventType for a more detailed doc.
+enum AdministrationEventType {
+    ADMINISTRATION_EVENT_TYPE_UNKNOWN     = 0;
+    ADMINISTRATION_EVENT_TYPE_GENERIC     = 1;
+    ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE = 2;
+}
+
+// AdministrationEventLevel is the storage representation of the event level.
+//
+// Refer to v1.AdministrationEventLevel for a more detailed doc.
+enum AdministrationEventLevel {
+    ADMINISTRATION_EVENT_LEVEL_UNKNOWN = 0;
+    ADMINISTRATION_EVENT_LEVEL_INFO    = 1;
+    ADMINISTRATION_EVENT_LEVEL_SUCCESS = 2;
+    ADMINISTRATION_EVENT_LEVEL_WARNING = 3;
+    ADMINISTRATION_EVENT_LEVEL_ERROR   = 4;
+}

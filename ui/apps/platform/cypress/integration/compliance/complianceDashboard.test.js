@@ -3,7 +3,7 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import {
     interactAndWaitForComplianceStandard,
-    scanCompliance,
+    triggerScan,
     verifyDashboardEntityLink,
     visitComplianceDashboard,
 } from './Compliance.helpers';
@@ -25,8 +25,7 @@ describe('Compliance Dashboard', () => {
     withAuth();
 
     it('should scan for compliance data', () => {
-        visitComplianceDashboard();
-        scanCompliance(); // prerequisite for the following tests
+        triggerScan(); // prerequisite for the following tests
     });
 
     it('should have title', () => {

@@ -8,6 +8,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
+	cluster "github.com/stackrox/rox/central/cluster/datastore"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -29,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -101,6 +104,8 @@ type serviceImpl struct {
 	internalScanSemaphore *semaphore.Weighted
 
 	scanWaiterManager waiter.Manager[*storage.Image]
+
+	clusterDataStore cluster.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -286,7 +291,7 @@ func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetch
 	}
 
 	if _, err := s.enricher.EnrichImage(ctx, enrichmentContext, img); err != nil {
-		log.Errorf("error enriching image %q: %v", img.GetName().GetFullName(), err)
+		log.Errorw("error enriching image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
 		// Purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it.
 		return err
@@ -303,6 +308,17 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if request.GetForce() {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
+
+	if request.GetCluster() != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterDataStore, request.GetCluster())
+		if err != nil {
+			return nil, err
+		}
+
+		enrichmentCtx.ClusterID = clusterID
+	}
+
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
 	if err != nil {
 		return nil, err

@@ -6,7 +6,6 @@ import { IntegrationSource, IntegrationType } from 'types/integration';
 import { ImageIntegrationCategory } from 'types/imageIntegration.proto';
 
 import { Traits } from 'types/traits.proto';
-import integrationsList from './integrationsList';
 
 export type { IntegrationSource, IntegrationType };
 
@@ -16,13 +15,6 @@ export type Integration = {
     name: string;
     traits?: Traits;
 };
-
-export function getIntegrationLabel(source: string, type: string): string {
-    const integrationTileLabel = integrationsList[source]?.find(
-        (integration) => integration.type === type
-    )?.label;
-    return typeof integrationTileLabel === 'string' ? integrationTileLabel : '';
-}
 
 export function getIsAPIToken(source: IntegrationSource, type: IntegrationType): boolean {
     return source === 'authProviders' && type === 'apitoken';

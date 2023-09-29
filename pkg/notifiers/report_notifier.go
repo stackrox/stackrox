@@ -11,5 +11,5 @@ import (
 type ReportNotifier interface {
 	Notifier
 	// ReportNotify triggers the plugins to send a notification about a report
-	ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, messageText string) error
+	ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error
 }

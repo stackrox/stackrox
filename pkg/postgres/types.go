@@ -1,5 +1,7 @@
 package postgres
 
+import "github.com/stackrox/rox/pkg/set"
+
 // DataType is the internal enum representation of the type
 type DataType string
 
@@ -18,6 +20,12 @@ const (
 	IntArray    DataType = "intarray"
 	BigInteger  DataType = "biginteger"
 	UUID        DataType = "uuid"
+)
+
+var (
+	// UnsupportedDerivedFieldDataTypes are the data types to which aggregation functions cannot be applied.
+	// Therefore, any base field having this type cannot be used for derived fields.
+	UnsupportedDerivedFieldDataTypes = set.NewFrozenSet(StringArray, EnumArray, IntArray, Map)
 )
 
 // DataTypeToSQLType converts the internal representation to SQL

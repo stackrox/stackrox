@@ -1,6 +1,9 @@
 package retry
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // WithRetry allows you to call an error returning function with a suite of retry options and modifiers.
 func WithRetry(f func() error, retriableOptions ...OptionsModifier) error {
@@ -65,9 +68,9 @@ func (t *retryOptions) do() (err error) {
 					t.between(i)
 				}
 				if t.withExponentialBackoff {
-					// Back off by 100 milliseconds after the first attempt,
-					// 400 milliseconds after the second, 900 milliseconds after the third, etc.
-					time.Sleep(time.Duration(100*(i+1)*(i+1)) * time.Millisecond)
+					// First retry after 100 milliseconds, second retry after 200 milliseconds,
+					// third retry after 400 milliseconds. Backoff time doubles after each attempt.
+					time.Sleep(time.Duration(100*math.Pow(2, float64(i))) * time.Millisecond)
 				}
 			} else {
 				// If we can't retry then return.

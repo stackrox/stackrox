@@ -39,21 +39,15 @@ var (
 	// SyslogNamespaceLabels enables sending namespace labels as part of the syslog alert notification.
 	SyslogNamespaceLabels = registerFeature("Send namespace labels as part of the syslog alert notification", "ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG", true)
 
+	// MoveInitBundlesUI is front-end only move from integrations to clusters route.
+	MoveInitBundlesUI = registerFeature("Move init-bundles UI", "ROX_MOVE_INIT_BUNDLES_UI", false)
+
 	// ComplianceEnhancements enables APIs and UI pages for Compliance 2.0
 	ComplianceEnhancements = registerFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
-	// CentralEvents enables APIs (including collection) and UI pages for Central events.
-	CentralEvents = registerFeature("Enable Central events", "ROX_CENTRAL_EVENTS", false)
+	// PolicyEngineEvaluatorTest enables the policy evaluator test.
+	PolicyEngineEvaluatorTest = registerFeature("Use OPA-based evaluator", "ROX_OPA_BASED_EVALUATOR", false)
 
-	// OPABasedEvaluator enables the OPA-based policy evaluator.
-	OPABasedEvaluator = registerFeature("Use OPA-based evaluator", "ROX_OPA_BASED_EVALUATOR", false)
-
-	// NewOPABasedEvaluator enables the OPA-based policy evaluator.
-	NewOPABasedEvaluator = registerFeature("Use new OPA-based evaluator", "ROX_New_OPA_BASED_EVALUATOR", false)
-
-	// JmesPathBasedEvaluator enables the Cel-based policy evaluator
-	JmesPathBasedEvaluator = registerFeature("Use JmesPath based evaluator", "ROX_JMESPATH_BASED_EVALUATOR", false)
-
-	// CelBasedEvaluator enables the Cel-based policy evaluator
-	CelBasedEvaluator = registerFeature("Use CEL evaluator", "ROX_CEL_BASED_EVALUATOR", false)
+	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
 )

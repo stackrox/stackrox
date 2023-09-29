@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from 'react';
 
 import { fetchBackupIntegrationsHealth } from 'services/IntegrationHealthService';
 import { fetchBackupIntegrations } from 'services/BackupIntegrationsService';
-import integrationsList from 'Containers/Integrations/utils/integrationsList';
+import { backupIntegrationsDescriptors } from 'Containers/Integrations/utils/integrationsList';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import IntegrationHealthWidgetVisual from './IntegrationHealthWidgetVisual';
 import { mergeIntegrationResponses, IntegrationMergedItem } from '../utils/integrations';
@@ -24,7 +24,7 @@ const BackupIntegrationHealthWidget = ({ pollingCount }: WidgetProps): ReactElem
                     mergeIntegrationResponses(
                         integrationsHealth,
                         externalBackups,
-                        integrationsList.backups
+                        backupIntegrationsDescriptors
                     )
                 );
                 setErrorMessageFetching('');

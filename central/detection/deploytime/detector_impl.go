@@ -5,11 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type detectorImpl struct {
@@ -17,12 +12,12 @@ type detectorImpl struct {
 	singleDetector deploytime.Detector
 }
 
-// UpsertPolicy adds or updates a policy in the set.
+// PolicySet retrieves the policy set.
 func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-// Detect runs detection on an deployment, returning any generated alerts.
+// Detect runs detection on a deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
 	alerts, err := d.singleDetector.Detect(ctx, enhancedDeployment, policyFilters...)
 	if err != nil {

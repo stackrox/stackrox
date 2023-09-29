@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import {
+    ActionsColumn,
+    ExpandableRowContent,
+    TableComposable,
+    Tbody,
+    Td,
+    Th,
+    Thead,
+    Tr,
+} from '@patternfly/react-table';
+import {
+    Alert,
+    AlertGroup,
+    AlertVariant,
     Bullseye,
     Button,
     Card,
@@ -167,16 +179,18 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     <Thead>
                         <Tr>
                             <Td>{/* Header for expanded column */}</Td>
-                            <Th sort={getSortParams('Report Completion Time')}>Completed</Th>
-                            <Th>Status</Th>
-                            <Th>Requestor</Th>
+                            <Th width={25} sort={getSortParams('Report Completion Time')}>
+                                Completed
+                            </Th>
+                            <Th width={25}>Status</Th>
+                            <Th width={50}>Requestor</Th>
                             <Td>{/* Header for table actions column */}</Td>
                         </Tr>
                     </Thead>
                     {reportSnapshots.length === 0 && (
                         <Tbody>
                             <Tr>
-                                <Td colSpan={4}>
+                                <Td colSpan={5}>
                                     <Bullseye>
                                         <EmptyStateTemplate
                                             title="No report jobs found"
@@ -230,8 +244,6 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         };
                         const formValues =
                             getReportFormValuesFromConfiguration(reportConfiguration);
-                        const hasDownloadableReport =
-                            isDownloadAvailable && reportStatus.runState === 'GENERATED';
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                         function onDownload() {
@@ -280,7 +292,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>
                                     <Td isActionCell>
-                                        {hasDownloadableReport && (
+                                        {isDownloadAvailable && (
                                             <ActionsColumn
                                                 items={rowActions}
                                                 isDisabled={areDownloadActionsDisabled}
@@ -289,30 +301,43 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
-                                    <Td colSpan={4}>
-                                        <Card className="pf-u-m-md pf-u-p-md" isFlat>
-                                            <Flex>
-                                                <FlexItem>
-                                                    <JobDetails reportSnapshot={reportSnapshot} />
-                                                </FlexItem>
-                                                <Divider component="div" className="pf-u-my-md" />
-                                                <FlexItem>
-                                                    <ReportParametersDetails
-                                                        formValues={formValues}
+                                    <Td colSpan={5}>
+                                        <ExpandableRowContent>
+                                            <Card className="pf-u-m-md pf-u-p-md" isFlat>
+                                                <Flex>
+                                                    <FlexItem>
+                                                        <JobDetails
+                                                            reportSnapshot={reportSnapshot}
+                                                        />
+                                                    </FlexItem>
+                                                    <Divider
+                                                        component="div"
+                                                        className="pf-u-my-md"
                                                     />
-                                                </FlexItem>
-                                                <Divider component="div" className="pf-u-my-md" />
-                                                <FlexItem>
-                                                    <DeliveryDestinationsDetails
-                                                        formValues={formValues}
+                                                    <FlexItem>
+                                                        <ReportParametersDetails
+                                                            formValues={formValues}
+                                                        />
+                                                    </FlexItem>
+                                                    <Divider
+                                                        component="div"
+                                                        className="pf-u-my-md"
                                                     />
-                                                </FlexItem>
-                                                <Divider component="div" className="pf-u-my-md" />
-                                                <FlexItem>
-                                                    <ScheduleDetails formValues={formValues} />
-                                                </FlexItem>
-                                            </Flex>
-                                        </Card>
+                                                    <FlexItem>
+                                                        <DeliveryDestinationsDetails
+                                                            formValues={formValues}
+                                                        />
+                                                    </FlexItem>
+                                                    <Divider
+                                                        component="div"
+                                                        className="pf-u-my-md"
+                                                    />
+                                                    <FlexItem>
+                                                        <ScheduleDetails formValues={formValues} />
+                                                    </FlexItem>
+                                                </Flex>
+                                            </Card>
+                                        </ExpandableRowContent>
                                     </Td>
                                 </Tr>
                             </Tbody>
@@ -326,10 +351,21 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 onClose={closeDeleteDownloadModal}
                 isDeleting={isDeletingDownload}
                 onDelete={onDeleteDownload}
-                error={deleteDownloadError}
             >
-                All data in this downloadable report will be deleted. Regenerating a downloadable
-                report will require the download process to start over.
+                <AlertGroup>
+                    {deleteDownloadError && (
+                        <Alert
+                            isInline
+                            variant={AlertVariant.danger}
+                            title={deleteDownloadError}
+                            className="pf-u-mb-sm"
+                        />
+                    )}
+                </AlertGroup>
+                <p>
+                    All data in this downloadable report will be deleted. Regenerating a
+                    downloadable report will require the download process to start over.
+                </p>
             </DeleteModal>
         </>
     );

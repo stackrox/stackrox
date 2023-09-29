@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -21,6 +22,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	_ pipeline.Fragment = (*pipelineImpl)(nil)
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -43,6 +46,10 @@ type pipelineImpl struct {
 	nodeDatastore nodeDatastore.DataStore
 	enricher      enricher.NodeEnricher
 	riskManager   riskManager.Manager
+}
+
+func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	return nil
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

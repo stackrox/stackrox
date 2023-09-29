@@ -30,7 +30,7 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: limits.cpu
-            - name: ROX_NAMESPACE
+            - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1

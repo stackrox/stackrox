@@ -119,6 +119,8 @@ export_test_environment() {
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
+    ci_export USE_MIDSTREAM_IMAGES "${USE_MIDSTREAM_IMAGES:-false}"
+    ci_export REMOTE_CLUSTER_ARCH "${REMOTE_CLUSTER_ARCH:-x86_64}"
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
@@ -129,8 +131,9 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG "${ROX_SEND_NAMESPACE_LABELS_IN_SYSLOG:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
+    ci_export ROX_MOVE_INIT_BUNDLES_UI "${ROX_MOVE_INIT_BUNDLES_UI:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
-    ci_export ROX_CENTRAL_EVENTS "${ROX_CENTRAL_EVENTS:-true}"
+    ci_export ROX_ADMINISTRATION_EVENTS "${ROX_ADMINISTRATION_EVENTS:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_OPA_BASED_EVALUATOR "${ROX_OPA_BASED_EVALUATOR:-true}"
 
@@ -144,12 +147,25 @@ deploy_stackrox_operator() {
         return
     fi
 
-    info "Deploying ACS operator"
-
     export REGISTRY_PASSWORD="${QUAY_RHACS_ENG_RO_PASSWORD}"
     export REGISTRY_USERNAME="${QUAY_RHACS_ENG_RO_USERNAME}"
 
-    ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        info "Deploying ACS operator via midstream images"
+        # Retrieving values from json map for operator and iib
+        ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
+        OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
+        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
+        #Exporting the above vars
+        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
+        export OPERATOR_VERSION
+        export VERSION
+
+        make -C operator kuttl deploy-via-olm-midstream
+    else
+        info "Deploying ACS operator"
+        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+    fi
 }
 
 deploy_central() {
@@ -192,6 +208,10 @@ deploy_central_via_operator() {
 
     central_exposure_loadBalancer_enabled="false"
     central_exposure_route_enabled="false"
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        # Load balancer not available for ppc64le/s390x
+        LOAD_BALANCER="route"
+    fi
     case "${LOAD_BALANCER}" in
     "lb") central_exposure_loadBalancer_enabled="true" ;;
     "route") central_exposure_route_enabled="true" ;;
@@ -219,6 +239,11 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_OPA_BASED_EVALUATOR'
     customize_envVars+=$'\n        value: "'"${ROX_OPA_BASED_EVALUATOR:-false}"'"'
 
+    CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
+    # Different yaml for midstream images
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr-midstream.envsubst.yaml"
+    fi
     env - \
       centralAdminPasswordBase64="$centralAdminPasswordBase64" \
       centralDefaultTlsSecretKeyBase64="$centralDefaultTlsSecretKeyBase64" \
@@ -227,7 +252,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < tests/e2e/yaml/central-cr.envsubst.yaml | kubectl apply -n stackrox -f -
+      < "${CENTRAL_YAML_PATH}" | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/central 300
 }
@@ -585,11 +610,14 @@ remove_existing_stackrox_resources() {
     info "Will remove any existing stackrox resources"
 
     (
+        # midstream ocp specific
+        kubectl -n stackrox-operator delete cm,deploy,ds,rs,rc,networkpolicy,secret,svc,serviceaccount,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app=rhacs-operator" --wait
         kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait
         # openshift specific:
         kubectl -n stackrox delete SecurityContextConstraints -l "app.kubernetes.io/name=stackrox" --wait
         kubectl delete -R -f scripts/ci/psp --wait
         kubectl delete ns stackrox --wait
+        kubectl delete ns stackrox-operator --wait
         helm uninstall monitoring
         helm uninstall central
         helm uninstall scanner
@@ -633,12 +661,18 @@ wait_for_api() {
 
     info "Central deployment is ready."
     info "Waiting for Central API endpoint"
-    API_HOSTNAME=localhost
-    API_PORT=8000
-    LOAD_BALANCER="${LOAD_BALANCER:-}"
-    if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-        API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+
+    if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
+        API_HOSTNAME=$(kubectl get routes/central -n stackrox -o json | jq -r '.spec.host')
         API_PORT=443
+    else
+        API_HOSTNAME=localhost
+        API_PORT=8000
+        LOAD_BALANCER="${LOAD_BALANCER:-}"
+        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+            API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+            API_PORT=443
+        fi
     fi
     API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
     PING_URL="https://${API_ENDPOINT}/v1/ping"

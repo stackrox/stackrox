@@ -2,8 +2,9 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#about-code-owners
 # This will automatically assign a team / people as reviewers for PRs based on the files changed within the PR.
 
-# Core Workflows team's main responsibilities include policies including default policies and policy management workflows,
-# detection and alerting, integrations and notifiers, risk, vulnerability management and reporting.
+# Core team's main responsibilities include policies including default policies and policy management workflows,
+# detection and alerting, integrations and notifiers, risk, vulnerability management and reporting, migrator and
+# interactions with Postgres.
 pkg/detection/**/*                  @stackrox/core-workflows
 pkg/booleanpolicy/**/*              @stackrox/core-workflows
 pkg/defaults/policies/**/*          @stackrox/core-workflows
@@ -16,6 +17,9 @@ proto/storage/image.proto           @stackrox/core-workflows
 proto/storage/cve.proto             @stackrox/core-workflows
 proto/storage/alert.proto           @stackrox/core-workflows
 proto/storage/risk.proto            @stackrox/core-workflows
+migrator/**/*                       @stackrox/core-workflows
+pkg/postgres/**/*                   @stackrox/core-workflows
+tests/upgrade/*                     @stackrox/core-workflows
 
 # Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC).
 roxctl/**/*     @stackrox/merlin
@@ -24,12 +28,9 @@ pkg/sac/**/*    @stackrox/merlin
 */declarativeconfig/**/* @stackrox/merlin
 tests/performance @stackrox/merlin
 
-pkg/images/defaults/**/* @stackrox/maple
+/ui/**/* @stackrox/ui
 
-# Data Shepherds team's responsibilities include migrator and interactions with Postgres
-migrator/**/*       @stackrox/data-shepherds
-pkg/postgres/**/*   @stackrox/data-shepherds
-tests/upgrade/*     @stackrox/data-shepherds
+pkg/images/defaults/**/* @stackrox/maple
 
 operator/**/* @stackrox/draco
 
@@ -47,5 +48,3 @@ operator/**/* @stackrox/draco
 /sensor/kubernetes/listener/resources/secrets.go      @stackrox/scanner
 /sensor/kubernetes/listener/resources/secrets_test.go @stackrox/scanner
 /SCANNER_VERSION                                      @stackrox/scanner
-
-ui/**/* @stackrox/ui

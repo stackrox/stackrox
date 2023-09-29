@@ -53,12 +53,16 @@ var (
 			"/v1.RoleService/DeleteSimpleAccessScope",
 		},
 		user.Authenticated(): {
+			"/v1.RoleService/GetMyPermissions",
 			"/v1.RoleService/GetClustersForPermissions",
 			"/v1.RoleService/GetNamespacesForClusterAndPermissions",
 		},
 		allow.Anonymous(): {
+			// This endpoint is used by the UI to populate the resource list
+			// when displaying or editing permission sets.
+			// TODO(ROX-19814): move this handler to either user.Authenticated()
+			// or user.With(permissions.View(resource.Access)) group.
 			"/v1.RoleService/GetResources",
-			"/v1.RoleService/GetMyPermissions",
 		},
 	})
 )
@@ -127,12 +131,6 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	}
 	role.Name = roleRequest.GetName()
 
-	// Empty access scope ID is deprecated. Fill the default during the adoption
-	// period.
-	// TODO(ROX-9510): remove this block.
-	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
-	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
 		return nil, err
@@ -141,12 +139,6 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 }
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
-	// Empty access scope ID is deprecated. Fill the default during the adoption
-	// period.
-	// TODO(ROX-9510): remove this block.
-	if role.GetAccessScopeId() == "" {
-		role.AccessScopeId = rolePkg.AccessScopeIncludeAll.GetId()
-	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
 		return nil, err

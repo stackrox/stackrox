@@ -9,7 +9,7 @@ import {
     CardBody,
     Button,
 } from '@patternfly/react-core';
-import { useQuery } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -21,7 +21,7 @@ import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../search
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
-import ImagesTableContainer from './ImagesTableContainer';
+import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 
 const emptyStorage: VulnMgmtLocalStorage = {
@@ -35,18 +35,18 @@ const emptyStorage: VulnMgmtLocalStorage = {
 };
 
 function WorkloadCvesOverviewPage() {
+    const apolloClient = useApolloClient();
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
 
-    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
-        entityTypeCountsQuery,
-        {
+    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 }, loading } =
+        useQuery(entityTypeCountsQuery, {
             variables: {
                 query: getCveStatusScopedQueryString(querySearchFilter),
             },
-        }
-    );
+        });
 
     const pagination = useURLPagination(20);
 
@@ -87,7 +87,11 @@ function WorkloadCvesOverviewPage() {
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
-                        <CardBody>
+                        <CardBody
+                            role="region"
+                            aria-live="polite"
+                            aria-busy={loading ? 'true' : 'false'}
+                        >
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
@@ -124,6 +128,9 @@ function WorkloadCvesOverviewPage() {
                     setDefaultWatchedImageName('');
                     watchedImagesModalToggle.closeSelect();
                 }}
+                onWatchedImagesChange={() =>
+                    apolloClient.refetchQueries({ include: [imageListQuery] })
+                }
             />
         </>
     );

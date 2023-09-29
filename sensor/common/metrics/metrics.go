@@ -20,6 +20,20 @@ var (
 		Help:      "Number of panic calls within Sensor.",
 	}, []string{"FunctionName"})
 
+	detectorDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_dedupe_cache_hits",
+		Help:      "A counter of the total number of times we've deduped deployments in the detector",
+	})
+
+	detectorDeploymentProcessed = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_processed",
+		Help:      "A counter of the total number of times we've processed deployments in the detector",
+	})
+
 	processDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -154,6 +168,17 @@ var (
 		"sensor_version": version.GetMainVersion(),
 	}
 
+	telemetryInfo = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace:   metrics.PrometheusNamespace,
+			Subsystem:   metrics.SensorSubsystem.String(),
+			Name:        "info",
+			Help:        "Telemetry information about Sensor",
+			ConstLabels: telemetryLabels,
+		},
+		[]string{"central_id", "hosting", "install_method", "sensor_id"},
+	)
+
 	telemetrySecuredNodes = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
@@ -169,13 +194,23 @@ var (
 		prometheus.GaugeOpts{
 			Namespace:   metrics.PrometheusNamespace,
 			Subsystem:   metrics.SensorSubsystem.String(),
-			Name:        "secured_vcpu",
+			Name:        "secured_vcpus",
 			Help:        "The number of vCPUs secured by Sensor",
 			ConstLabels: telemetryLabels,
 		},
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
+
+// IncrementDetectorCacheHit increments the number of deployments deduped by the detector
+func IncrementDetectorCacheHit() {
+	detectorDedupeCacheHits.Inc()
+}
+
+// IncrementDetectorDeploymentProcessed increments the number of deployments processed by the detector
+func IncrementDetectorDeploymentProcessed() {
+	detectorDeploymentProcessed.Inc()
+}
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
 func IncrementPanicCounter(functionName string) {
@@ -219,12 +254,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
 
 // IncrementTotalProcessesSentCounter increments the total number of endpoints sent
 func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
-	totalNetworkEndpointsSentCounter.Add(float64(numberOfProcesses))
+	totalProcessesSentCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
 func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfProcesses))
+	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
@@ -277,18 +312,19 @@ func DecOutputChannelSize() {
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
 func SetTelemetryMetrics(cm *central.ClusterMetrics) {
+	labels := []string{
+		centralid.Get(),
+		getHosting(),
+		installmethod.Get(),
+		clusterid.GetNoWait(),
+	}
+
+	telemetryInfo.Reset()
+	telemetryInfo.WithLabelValues(labels...).Set(1)
+
 	telemetrySecuredNodes.Reset()
-	telemetrySecuredNodes.WithLabelValues(
-		centralid.Get(),
-		getHosting(),
-		installmethod.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetNodeCount()))
+	telemetrySecuredNodes.WithLabelValues(labels...).Set(float64(cm.GetNodeCount()))
+
 	telemetrySecuredVCPU.Reset()
-	telemetrySecuredVCPU.WithLabelValues(
-		centralid.Get(),
-		getHosting(),
-		installmethod.Get(),
-		clusterid.GetNoWait(),
-	).Set(float64(cm.GetCpuCapacity()))
+	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
 }

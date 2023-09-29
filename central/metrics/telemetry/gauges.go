@@ -17,9 +17,10 @@ import (
 )
 
 var (
+	infoGaugeName            = "info"
 	securedClustersGaugeName = "secured_clusters"
 	securedNodesGaugeName    = "secured_nodes"
-	securedVCPUGaugeName     = "secured_vcpu"
+	securedVCPUGaugeName     = "secured_vcpus"
 )
 
 // FetchInstallInfo fetches the installation info.
@@ -62,6 +63,15 @@ func newGaugeMap(installation installationStore.Store) map[string]prometheus.Gau
 	}
 
 	gauges := map[string]prometheus.Gauge{
+		infoGaugeName: prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace:   metrics.PrometheusNamespace,
+				Subsystem:   metrics.CentralSubsystem.String(),
+				Name:        infoGaugeName,
+				Help:        "Telemetry information about Central",
+				ConstLabels: labels,
+			},
+		),
 		securedClustersGaugeName: prometheus.NewGauge(
 			prometheus.GaugeOpts{
 				Namespace:   metrics.PrometheusNamespace,

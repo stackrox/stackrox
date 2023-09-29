@@ -29,8 +29,8 @@ var (
 	storageRunStateToV2 = map[storage.ReportStatus_RunState]apiV2.ReportStatus_RunState{
 		storage.ReportStatus_WAITING:   apiV2.ReportStatus_WAITING,
 		storage.ReportStatus_PREPARING: apiV2.ReportStatus_PREPARING,
-		storage.ReportStatus_GENERATED: apiV2.ReportStatus_SUCCESS,
-		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_SUCCESS,
+		storage.ReportStatus_GENERATED: apiV2.ReportStatus_GENERATED,
+		storage.ReportStatus_DELIVERED: apiV2.ReportStatus_DELIVERED,
 		storage.ReportStatus_FAILURE:   apiV2.ReportStatus_FAILURE,
 	}
 
@@ -133,10 +133,13 @@ func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierCon
 			Id: notifier.GetEmailConfig().GetNotifierId(),
 		},
 	}
-	if notifier.GetEmailConfig() != nil {
+
+	if emailConfig := notifier.GetEmailConfig(); emailConfig != nil {
 		ret.NotifierConfig = &storage.NotifierConfiguration_EmailConfig{
 			EmailConfig: &storage.EmailNotifierConfiguration{
-				MailingLists: notifier.GetEmailConfig().GetMailingLists(),
+				MailingLists:  emailConfig.GetMailingLists(),
+				CustomSubject: emailConfig.GetCustomSubject(),
+				CustomBody:    emailConfig.GetCustomBody(),
 			},
 		}
 	}
@@ -290,12 +293,15 @@ func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.Not
 	if !found {
 		return nil, errors.Errorf("Notifier with ID %s no longer exists", notifierConfig.GetId())
 	}
+
 	return &apiV2.NotifierConfiguration{
 		NotifierName: notifier.GetName(),
 		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
 			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:   notifierConfig.GetId(),
-				MailingLists: notifierConfig.GetEmailConfig().GetMailingLists(),
+				NotifierId:    notifierConfig.GetId(),
+				MailingLists:  notifierConfig.GetEmailConfig().GetMailingLists(),
+				CustomSubject: notifierConfig.GetEmailConfig().GetCustomSubject(),
+				CustomBody:    notifierConfig.GetEmailConfig().GetCustomBody(),
 			},
 		},
 	}, nil
@@ -363,8 +369,10 @@ func (s *serviceImpl) convertProtoNotifierSnapshotToV2(notifierSnapshot *storage
 		NotifierName: notifierSnapshot.GetNotifierName(),
 		NotifierConfig: &apiV2.NotifierConfiguration_EmailConfig{
 			EmailConfig: &apiV2.EmailNotifierConfiguration{
-				NotifierId:   notifierSnapshot.GetEmailConfig().GetNotifierId(),
-				MailingLists: notifierSnapshot.GetEmailConfig().GetMailingLists(),
+				NotifierId:    notifierSnapshot.GetEmailConfig().GetNotifierId(),
+				MailingLists:  notifierSnapshot.GetEmailConfig().GetMailingLists(),
+				CustomSubject: notifierSnapshot.GetEmailConfig().GetCustomSubject(),
+				CustomBody:    notifierSnapshot.GetEmailConfig().GetCustomBody(),
 			},
 		},
 	}

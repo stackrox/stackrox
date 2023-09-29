@@ -207,6 +207,15 @@
         }
       }
     },
+    "storageAdministrationEventsConfig": {
+      "type": "object",
+      "properties": {
+        "retentionDurationDays": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
     "storageAlertRetentionConfig": {
       "type": "object",
       "properties": {
@@ -340,9 +349,12 @@
         },
         "vulnerabilityDeferralConfig": {
           "$ref": "#/definitions/storageVulnerabilityDeferralConfig"
+        },
+        "administrationEventsConfig": {
+          "$ref": "#/definitions/storageAdministrationEventsConfig"
         }
       },
-      "title": "next available tag:8"
+      "title": "next available tag:9"
     },
     "storagePublicConfig": {
       "type": "object",

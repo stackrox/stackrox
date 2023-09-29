@@ -11,10 +11,12 @@ import (
 )
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error) {
 	permissionStore := permissionSetPostgresStore.New(pool)
 	roleStore := rolePostgresStore.New(pool)
 	scopeStore := accessScopePostgresStore.New(pool)
 
-	return New(roleStore, permissionStore, scopeStore, groupFilter.GetFiltered), nil
+	getFilteredFactory := groupFilter.GetTestPostgresGroupFilterGenerator(t, pool)
+
+	return New(roleStore, permissionStore, scopeStore, getFilteredFactory.NewFilteredRetriever()), nil
 }

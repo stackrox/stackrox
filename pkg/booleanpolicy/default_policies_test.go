@@ -95,7 +95,7 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 		suite.customPolicies[customPolicy.GetName()] = customPolicy
 	}
 
-	suite.T().Setenv(features.OPABasedEvaluator.EnvVar(), "true")
+	suite.T().Setenv(features.PolicyEngineEvaluatorTest.EnvVar(), "true")
 	suite.T().Setenv(features.JmesPathBasedEvaluator.EnvVar(), "true")
 	suite.T().Setenv(features.CelBasedEvaluator.EnvVar(), "true")
 }

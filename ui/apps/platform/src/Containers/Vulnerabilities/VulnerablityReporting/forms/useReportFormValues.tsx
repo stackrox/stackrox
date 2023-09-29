@@ -33,7 +33,7 @@ export type SetReportFormFieldValue = (fieldName: string, value: FormFieldValue)
 
 export type ReportParametersFormValues = {
     reportName: string;
-    description: string;
+    reportDescription: string;
     cveSeverities: VulnerabilitySeverity[];
     cveStatus: CVEStatus[];
     imageType: ImageType[];
@@ -60,6 +60,8 @@ export type ReportScope = {
 export type DeliveryDestination = {
     notifier: ReportNotifier | null;
     mailingLists: string[];
+    customSubject: string;
+    customBody: string;
 };
 
 export type ReportNotifier = {
@@ -67,11 +69,14 @@ export type ReportNotifier = {
     name: string;
 };
 
+export const maxEmailSubjectLength = 256;
+export const maxEmailBodyLength = 1500;
+
 export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
     reportParameters: {
         reportName: '',
-        description: '',
+        reportDescription: '',
         cveSeverities: ['CRITICAL_VULNERABILITY_SEVERITY', 'IMPORTANT_VULNERABILITY_SEVERITY'],
         cveStatus: ['FIXABLE'],
         imageType: ['DEPLOYED', 'WATCHED'],
@@ -87,11 +92,24 @@ export const defaultReportFormValues: ReportFormValues = {
     },
 };
 
+export const emailSubjectValidation = yup
+    .string()
+    .default('')
+    .max(
+        maxEmailSubjectLength,
+        `Limit your input to ${maxEmailSubjectLength} characters or fewer.`
+    );
+
+export const emailBodyValidation = yup
+    .string()
+    .default('')
+    .max(maxEmailBodyLength, `Limit your input to ${maxEmailBodyLength} characters or fewer.`);
+
 const validationSchema = yup.object().shape({
     reportId: yup.string(),
     reportParameters: yup.object().shape({
         reportName: yup.string().required('Report name is required'),
-        description: yup.string(),
+        reportDescription: yup.string(),
         cveSeverities: yup
             .array()
             .of(yup.string().oneOf(vulnerabilitySeverities))
@@ -130,6 +148,8 @@ const validationSchema = yup.object().shape({
                     .array()
                     .of(yup.string())
                     .min(1, 'At least 1 delivery destination is required'),
+                customSubject: emailSubjectValidation,
+                customBody: emailBodyValidation,
             })
         )
         .strict()

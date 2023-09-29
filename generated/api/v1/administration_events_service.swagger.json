@@ -1,0 +1,542 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v1/administration_events_service.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/administration/events": {
+      "get": {
+        "summary": "ListAdministrationEvents returns the list of events after filtered by requested fields.",
+        "operationId": "AdministrationEventService_ListAdministrationEvents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAdministrationEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "filter.from",
+            "description": "Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.until",
+            "description": "Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.domain",
+            "description": "Matches events from a specific domain.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.resourceType",
+            "description": "Matches events associated with a specific resource type.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.type",
+            "description": "Matches events based on their type.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+                "ADMINISTRATION_EVENT_TYPE_GENERIC",
+                "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
+              ]
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.level",
+            "description": "Matches events based on their level.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+                "ADMINISTRATION_EVENT_LEVEL_INFO",
+                "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+                "ADMINISTRATION_EVENT_LEVEL_WARNING",
+                "ADMINISTRATION_EVENT_LEVEL_ERROR"
+              ]
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "AdministrationEventService"
+        ]
+      }
+    },
+    "/v1/administration/events/{id}": {
+      "get": {
+        "summary": "GetAdministrationEvent retrieves an event by ID.",
+        "operationId": "AdministrationEventService_GetAdministrationEvent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAdministrationEventResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AdministrationEventService"
+        ]
+      }
+    },
+    "/v1/count/administration/events": {
+      "get": {
+        "summary": "CountAdministrationEvents returns the number of events after filtering by requested fields.",
+        "operationId": "AdministrationEventService_CountAdministrationEvents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountAdministrationEventsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filter.from",
+            "description": "Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.until",
+            "description": "Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "filter.domain",
+            "description": "Matches events from a specific domain.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.resourceType",
+            "description": "Matches events associated with a specific resource type.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.type",
+            "description": "Matches events based on their type.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+                "ADMINISTRATION_EVENT_TYPE_GENERIC",
+                "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
+              ]
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.level",
+            "description": "Matches events based on their level.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+                "ADMINISTRATION_EVENT_LEVEL_INFO",
+                "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+                "ADMINISTRATION_EVENT_LEVEL_WARNING",
+                "ADMINISTRATION_EVENT_LEVEL_ERROR"
+              ]
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "AdministrationEventService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. This string must contain at least\none \"/\" character. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\nExample 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\nExample 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := \u0026pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1AdministrationEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID of the event."
+        },
+        "type": {
+          "$ref": "#/definitions/v1AdministrationEventType",
+          "description": "Type of the event."
+        },
+        "level": {
+          "$ref": "#/definitions/v1AdministrationEventLevel",
+          "description": "Level associated with the event. The level is categorized into danger, warn, info,\nsuccess."
+        },
+        "message": {
+          "type": "string",
+          "description": "Message associated with the event. The message may include detailed information\nfor this particular event."
+        },
+        "hint": {
+          "type": "string",
+          "description": "Hint associated with the event. The hint may include different information based\non the type of event. It can include instructions to resolve an event, or\ninformational hints."
+        },
+        "domain": {
+          "type": "string",
+          "description": "Domain associated with the event. An event's domain outlines the feature domain where\nthe event was created from. As an example, this might be \"Image Scanning\".\nIn case of events that cannot be tied to a specific domain, this will be \"General\"."
+        },
+        "resource": {
+          "$ref": "#/definitions/v1AdministrationEventResource"
+        },
+        "numOccurrences": {
+          "type": "string",
+          "format": "int64",
+          "description": "Occurrences associated with the event. When events may occur multiple times, the\noccurrences track the amount."
+        },
+        "lastOccurredAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Specifies the time when the event has last occurred."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Specifies the time when the event has been created."
+        }
+      },
+      "description": "AdministrationEvents are administrative events emitted by Central. They are used to create\ntransparency for users for asynchronous, background tasks. Events are part of Central's\nsystem health view."
+    },
+    "v1AdministrationEventLevel": {
+      "type": "string",
+      "enum": [
+        "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+        "ADMINISTRATION_EVENT_LEVEL_INFO",
+        "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+        "ADMINISTRATION_EVENT_LEVEL_WARNING",
+        "ADMINISTRATION_EVENT_LEVEL_ERROR"
+      ],
+      "default": "ADMINISTRATION_EVENT_LEVEL_UNKNOWN",
+      "description": "AdministrationEventLevel exposes the different levels of events."
+    },
+    "v1AdministrationEventResource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Resource type associated with the event. An event may refer to an underlying resource\nsuch as a particular image. In that case, the resource type will be filled here."
+        },
+        "id": {
+          "type": "string",
+          "description": "Resource ID associated with the event. If an event refers to an underlying resource,\nthe resource ID identifies the underlying resource. The resource ID is not guaranteed\nto be set, depending on the context of the administration event."
+        },
+        "name": {
+          "type": "string",
+          "description": "Resource name associated with the event. If an event refers to an underlying resource,\nthe resource name identifies the underlying resource. The resource name is not guaranteed\nto be set, depending on the context of the administration event."
+        }
+      },
+      "description": "Resource holds all information about the resource associated with the event."
+    },
+    "v1AdministrationEventType": {
+      "type": "string",
+      "enum": [
+        "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+        "ADMINISTRATION_EVENT_TYPE_GENERIC",
+        "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE"
+      ],
+      "default": "ADMINISTRATION_EVENT_TYPE_UNKNOWN",
+      "description": "AdministrationEventType exposes the different types of events."
+    },
+    "v1AdministrationEventsFilter": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Matches events with last_occurred_at after a specific timestamp, i.e. the lower boundary."
+        },
+        "until": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary."
+        },
+        "domain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches events from a specific domain."
+        },
+        "resourceType": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Matches events associated with a specific resource type."
+        },
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AdministrationEventType"
+          },
+          "description": "Matches events based on their type."
+        },
+        "level": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AdministrationEventLevel"
+          },
+          "description": "Matches events based on their level."
+        }
+      }
+    },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v1CountAdministrationEventsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The total number of events after filtering and deduplication."
+        }
+      }
+    },
+    "v1GetAdministrationEventResponse": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "$ref": "#/definitions/v1AdministrationEvent"
+        }
+      }
+    },
+    "v1ListAdministrationEventsResponse": {
+      "type": "object",
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AdministrationEvent"
+          }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    }
+  }
+}

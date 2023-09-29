@@ -4,37 +4,35 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/notifications"
+	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func TestConvert(t *testing.T) {
-	zc := &zapLogConverter{}
+	zc := &zapLogConverter{consoleEncoder: zapcore.NewConsoleEncoder(config.EncoderConfig)}
 
-	expectedNotification := &storage.Notification{
-		Type:         storage.NotificationType_NOTIFICATION_TYPE_LOG_MESSAGE,
-		Level:        storage.NotificationLevel_NOTIFICATION_LEVEL_WARN,
-		Message:      "this is a notification test",
-		Hint:         notifications.GetHint("Image Scanning", "Image"),
+	expectedEvent := &events.AdministrationEvent{
 		Domain:       "Image Scanning",
+		Hint:         events.GetHint("Image Scanning", "Image"),
+		Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_WARNING,
+		Message:      `Warn: this is an events test {"image": "some-image", "another": true}`,
 		ResourceType: "Image",
-		ResourceId:   "some-image",
-		Occurrences:  1,
+		ResourceName: "some-image",
+		Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
 	}
 
-	notification := zc.Convert("this is a notification test", "warn", "reprocessor", ImageName("some-image"),
+	event := zc.Convert("Warn: this is an events test", "warn", "reprocessor", ImageName("some-image"),
 		zap.Bool("another", true))
 
-	assert.Equal(t, expectedNotification.GetType(), notification.GetType())
-	assert.Equal(t, expectedNotification.GetLevel(), notification.GetLevel())
-	assert.Equal(t, expectedNotification.GetMessage(), notification.GetMessage())
-	assert.Equal(t, expectedNotification.GetHint(), notification.GetHint())
-	assert.Equal(t, expectedNotification.GetDomain(), notification.GetDomain())
-	assert.Equal(t, expectedNotification.GetResourceType(), notification.GetResourceType())
-	assert.Equal(t, expectedNotification.GetResourceId(), notification.GetResourceId())
-	assert.Equal(t, expectedNotification.GetOccurrences(), notification.GetOccurrences())
-	assert.NotEmpty(t, notification.GetLastOccurred())
-	assert.NotEmpty(t, notification.GetCreatedAt())
-	assert.Empty(t, notification.GetId())
+	assert.Equal(t, expectedEvent.GetDomain(), event.GetDomain())
+	assert.Equal(t, expectedEvent.GetHint(), event.GetHint())
+	assert.Equal(t, expectedEvent.GetLevel(), event.GetLevel())
+	assert.Equal(t, expectedEvent.GetMessage(), event.GetMessage())
+	assert.Equal(t, expectedEvent.GetResourceID(), event.GetResourceID())
+	assert.Equal(t, expectedEvent.GetResourceName(), event.GetResourceName())
+	assert.Equal(t, expectedEvent.GetResourceType(), event.GetResourceType())
+	assert.Equal(t, expectedEvent.GetType(), event.GetType())
+	assert.NoError(t, event.Validate())
 }

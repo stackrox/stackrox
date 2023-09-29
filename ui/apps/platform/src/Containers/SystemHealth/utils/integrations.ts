@@ -26,7 +26,7 @@ interface IntegrationsListItem {
 export const mergeIntegrationResponses = (
     integrationsHealth: IntegrationHealthItem[],
     integrations: IntegrationBase[],
-    integrationsList: IntegrationsListItem[]
+    descriptors: IntegrationsListItem[]
 ): IntegrationMergedItem[] => {
     const typeMap: Record<string, string> = {};
     const labelMap: Record<string, string> = {};
@@ -34,7 +34,7 @@ export const mergeIntegrationResponses = (
     integrations.forEach(({ id, type }) => {
         typeMap[id] = type;
     });
-    integrationsList.forEach(({ type, label }) => {
+    descriptors.forEach(({ type, label }) => {
         labelMap[type] = label;
     });
 

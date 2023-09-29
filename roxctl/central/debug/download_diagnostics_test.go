@@ -39,7 +39,7 @@ func TestDownloadDiagnosticsTimeoutReached(t *testing.T) {
 func TestDownloadDiagnosticsServerError(t *testing.T) {
 	expectedErrorStr := "test-server-error"
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.WriteHeader(http.StatusInternalServerError)
+		rw.WriteHeader(http.StatusBadRequest)
 		_, _ = rw.Write([]byte(expectedErrorStr))
 	}))
 	defer server.Close()

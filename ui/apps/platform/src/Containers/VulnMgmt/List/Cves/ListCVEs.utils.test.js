@@ -4,7 +4,7 @@ import WorkflowEntity from 'utils/WorkflowEntity';
 import { WorkflowState } from 'utils/WorkflowState';
 
 import { getCveTableColumns } from './VulnMgmtListCves';
-import { getFilteredCVEColumns } from './ListCVEs.utils';
+import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 
 function mockIsFeatureFlagEnabled(flag) {
     if (flag === 'ROX_ACTIVE_VULN_MGMT') {
@@ -84,6 +84,39 @@ describe('ListCVEs.utils', () => {
             );
 
             expect(filteredColumns).toEqual(tableColumns);
+        });
+    });
+
+    describe('parseCveNamesFromIds', () => {
+        it('should return an empty array when passed an empty array', () => {
+            const selectedCveIds = [];
+
+            const parseCveNames = parseCveNamesFromIds(selectedCveIds);
+
+            expect(parseCveNames).toEqual([]);
+        });
+
+        it('should return just the first CVE name parts of a list of CVE IDs', () => {
+            const selectedCveIds = ['CVE-2005-2541#debian:12', 'CVE-2014-7187#debian:8'];
+
+            const parseCveNames = parseCveNamesFromIds(selectedCveIds);
+
+            expect(parseCveNames).toEqual(['CVE-2005-2541', 'CVE-2014-7187']);
+        });
+
+        it('should return a deduped list of first CVE name parts, when multiple CVE IDs start the same', () => {
+            const selectedCveIds = [
+                'CVE-2005-2541#debian:11',
+                'CVE-2005-2541#debian:10',
+                'CVE-2005-2541#debian:12',
+                'CVE-2014-7187#debian:8',
+                'CVE-2004-0971#debian:9',
+                'CVE-2004-0971#unknown',
+            ];
+
+            const parseCveNames = parseCveNamesFromIds(selectedCveIds);
+
+            expect(parseCveNames).toEqual(['CVE-2005-2541', 'CVE-2014-7187', 'CVE-2004-0971']);
         });
     });
 });

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/administration/events"
+	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -19,7 +21,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 )
 
 // Service provides the interface to the microservice that serves alert data.
@@ -33,7 +35,9 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, watchedImages watchedImageDataStore.DataStore, riskManager manager.Manager,
-	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache, scanWaiterManager waiter.Manager[*storage.Image]) Service {
+	connManager connection.Manager, enricher enricher.ImageEnricher, metadataCache expiringcache.Cache,
+	scanWaiterManager waiter.Manager[*storage.Image], clusterDataStore cluster.DataStore) Service {
+
 	return &serviceImpl{
 		datastore:             datastore,
 		watchedImages:         watchedImages,
@@ -43,5 +47,6 @@ func New(datastore datastore.DataStore, watchedImages watchedImageDataStore.Data
 		connManager:           connManager,
 		scanWaiterManager:     scanWaiterManager,
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		clusterDataStore:      clusterDataStore,
 	}
 }

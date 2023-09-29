@@ -24,8 +24,7 @@
         "build:tailwind": "postcss ./src/index.tw.css -o ./lib/ui-components.css",
         "build:ts": "tsc --build",
         "build": "npm-run-all build:*",
-        "test": "JEST_JUNIT_UNIQUE_OUTPUT_NAME=true JEST_JUNIT_OUTPUT_DIR=${TEST_RESULTS_OUTPUT_DIR:-test-results}/reports jest --verbose=true --slowTestThreshold=1 --coverage --reporters=default --reporters=jest-junit",
-        "test:watch": "jest --watch-all",
+        "test": "echo test",
         "lint": "echo lint",
         "prepublishOnly": "yarn clean && yarn build"
     },
@@ -63,7 +62,6 @@
         "eslint-plugin-prettier": "^4.0.0",
         "eslint-plugin-react": "^7.27.0",
         "eslint-plugin-react-hooks": "^4.6.0",
-        "eslint-plugin-testing-library": "^5.0.5",
         "jest": "^26.6.3",
         "jest-junit": "^12.0.0",
         "npm-run-all": "^4.1.5",

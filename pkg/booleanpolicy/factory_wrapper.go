@@ -74,7 +74,7 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 
 func (f *factoryWrapper) GenerateEvaluator(q *query.Query) (evaluator.Evaluator, error) {
 	e := &evaluatorWrapper{q: q, otherEvaluators: make(map[string]evaluator.Evaluator)}
-	if features.OPABasedEvaluator.Enabled() {
+	if features.PolicyEngineEvaluatorTest.Enabled() {
 		regoEvaluator, err := f.opaBasedFactory.CompileRegoBasedEvaluator(q)
 		if err != nil {
 			if !errors.Is(err, regocompile.ErrRegoNotYetSupported) {

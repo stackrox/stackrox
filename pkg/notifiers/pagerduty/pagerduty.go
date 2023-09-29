@@ -165,7 +165,11 @@ func (p *pagerDuty) createPagerDutyEvent(alert *storage.Alert, eventType string)
 		payload.Source = fmt.Sprintf("Image from %s/%s", entity.Image.GetName().GetRemote(), entity.Image.GetName().GetRegistry())
 		payload.Component = fmt.Sprintf("Image %s", imagesTypes.Wrapper{GenericImage: entity.Image}.FullName())
 	case *storage.Alert_Resource_:
-		payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+		if entity.Resource.GetNamespace() != "" {
+			payload.Source = fmt.Sprintf("%s/%s", entity.Resource.GetClusterName(), entity.Resource.GetNamespace())
+		} else {
+			payload.Source = entity.Resource.GetClusterName()
+		}
 		payload.Component = fmt.Sprintf("%s %s", entity.Resource.GetResourceType(), entity.Resource.GetName())
 	}
 	return pd.V2Event{

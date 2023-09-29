@@ -97,11 +97,13 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN_CONFIG",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE"
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS",
+                "COMPLIANCE_SCAN_CONFIG_STATUS"
               ]
             },
             "collectionFormat": "multi"
@@ -198,11 +200,13 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN_CONFIG",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE"
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS",
+                "COMPLIANCE_SCAN_CONFIG_STATUS"
               ]
             },
             "collectionFormat": "multi"
@@ -293,11 +297,13 @@
                 "REPORT_METADATA",
                 "REPORT_SNAPSHOT",
                 "COMPLIANCE_INTEGRATIONS",
-                "COMPLIANCE_SCAN_SETTINGS",
+                "COMPLIANCE_SCAN_CONFIG",
                 "COMPLIANCE_SCAN",
                 "COMPLIANCE_CHECK_RESULTS",
                 "BLOB",
-                "PRODUCT_USAGE"
+                "PRODUCT_USAGE",
+                "ADMINISTRATION_EVENTS",
+                "COMPLIANCE_SCAN_CONFIG_STATUS"
               ]
             },
             "collectionFormat": "multi"
@@ -437,14 +443,16 @@
         "REPORT_METADATA",
         "REPORT_SNAPSHOT",
         "COMPLIANCE_INTEGRATIONS",
-        "COMPLIANCE_SCAN_SETTINGS",
+        "COMPLIANCE_SCAN_CONFIG",
         "COMPLIANCE_SCAN",
         "COMPLIANCE_CHECK_RESULTS",
         "BLOB",
-        "PRODUCT_USAGE"
+        "PRODUCT_USAGE",
+        "ADMINISTRATION_EVENTS",
+        "COMPLIANCE_SCAN_CONFIG_STATUS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 60"
+      "title": "Next available tag: 62"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

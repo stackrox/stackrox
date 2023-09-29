@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -34,6 +35,7 @@ var (
 		"Discovered At",
 		"Reference",
 	}
+	log = logging.LoggerForModule()
 )
 
 // ImageVulnerability contains image CVE data for vuln report
@@ -80,15 +82,24 @@ type WatchedImagesResult struct {
 	Images []*Image `json:"images,omitempty"`
 }
 
+// ZippedCSVResult contains the compressed report data and the number of CVEs found in deployed and watched images
+type ZippedCSVResult struct {
+	ZippedCsv            *bytes.Buffer
+	NumDeployedImageCVEs int
+	NumWatchedImageCVEs  int
+}
+
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
-// a flag if the report is empty or not
-func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult) (*bytes.Buffer, bool, error) {
+// a flag if the report is empty or not. For v1 config pass an empty string.
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string) (*ZippedCSVResult, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
+	numDeployedImageCVEs := 0
 	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
 			for _, i := range d.Images {
 				for _, c := range i.getComponents() {
 					for _, v := range c.getVulnerabilities() {
+						numDeployedImageCVEs++
 						discoveredTs := "Not Available"
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
@@ -113,10 +124,12 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		}
 	}
 
+	numWatchedImageCVEs := 0
 	for _, r := range watchedImagesResults {
 		for _, i := range r.Images {
 			for _, c := range i.getComponents() {
 				for _, v := range c.getVulnerabilities() {
+					numWatchedImageCVEs++
 					discoveredTs := "Not Available"
 					if v.DiscoveredAtImage != nil {
 						discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
@@ -140,30 +153,43 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		}
 	}
 
-	empty := csvWriter.IsEmpty()
-
 	var buf bytes.Buffer
 	err := csvWriter.WriteBytes(&buf)
 	if err != nil {
-		return nil, true, errors.Wrap(err, "error creating csv report")
+		return nil, errors.Wrap(err, "error creating csv report")
 	}
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
+	var reportName string
+	if len(configName) > 80 {
+		configName = configName[0:80] + "..."
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+	} else if configName == "" {
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
+	} else {
+		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+	}
+
+	zipFile, err := zipWriter.Create(reportName)
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	err = zipWriter.Close()
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
-	return &zipBuf, empty, nil
+
+	return &ZippedCSVResult{
+		ZippedCsv:            &zipBuf,
+		NumDeployedImageCVEs: numDeployedImageCVEs,
+		NumWatchedImageCVEs:  numWatchedImageCVEs,
+	}, nil
 }
 
 // GetClusterName returns name of cluster containing the Deployment

@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"github.com/stackrox/rox/pkg/retry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -147,7 +146,7 @@ func (l *LoggerImpl) Errorf(template string, args ...interface{}) {
 func (l *LoggerImpl) Errorw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Errorw(msg, keysAndValues...)
 
-	l.createNotificationFromLog(msg, "error", keysAndValues...)
+	l.createAdministrationEventFromLog(msg, "error", keysAndValues...)
 }
 
 // Warn uses fmt.Sprintf to construct and log a message.
@@ -165,7 +164,7 @@ func (l *LoggerImpl) Warnf(template string, args ...interface{}) {
 func (l *LoggerImpl) Warnw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Warnw(msg, keysAndValues...)
 
-	l.createNotificationFromLog(msg, "warn", keysAndValues...)
+	l.createAdministrationEventFromLog(msg, "warn", keysAndValues...)
 }
 
 // Info uses fmt.Sprintf to construct and log a message.
@@ -183,7 +182,7 @@ func (l *LoggerImpl) Infof(template string, args ...interface{}) {
 func (l *LoggerImpl) Infow(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Infow(msg, keysAndValues...)
 
-	l.createNotificationFromLog(msg, "info", keysAndValues...)
+	l.createAdministrationEventFromLog(msg, "info", keysAndValues...)
 }
 
 // Debug uses fmt.Sprintf to construct and log a message.
@@ -202,18 +201,13 @@ func (l *LoggerImpl) Debugw(msg string, keysAndValues ...interface{}) {
 	l.InnerLogger.Debugw(msg, keysAndValues...)
 }
 
-func (l *LoggerImpl) createNotificationFromLog(msg string, level string, keysAndValues ...interface{}) {
-	// Short-circuit if no notification stream or converter is found.
-	if l.opts.notificationStream == nil || l.opts.notificationConverter == nil {
+func (l *LoggerImpl) createAdministrationEventFromLog(msg string, level string, keysAndValues ...interface{}) {
+	// Short-circuit if no log event stream or converter is found.
+	if l.opts.AdministrationEventsStream == nil || l.opts.AdministrationEventsConverter == nil {
 		return
 	}
 
-	// We will use the log converter to convert logs to a storage.Notification.
-	notification := l.opts.notificationConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
-	err := retry.WithRetry(func() error {
-		return l.opts.notificationStream.Produce(notification)
-	}, retry.Tries(3))
-	if err != nil {
-		l.Errorf("Failed to create notification from log: %v", err)
-	}
+	// We will use the log converter to convert logs to an events.AdministrationEvent.
+	event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
+	l.opts.AdministrationEventsStream.Produce(event)
 }

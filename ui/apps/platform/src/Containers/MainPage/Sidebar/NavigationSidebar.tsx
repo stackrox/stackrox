@@ -9,12 +9,14 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import {
     RouteKey,
     accessControlBasePath,
+    administrationEventsBasePath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
-    complianceEnhancedBasePath,
+    complianceEnhancedStatusPath,
     configManagementPath,
     dashboardPath,
+    deferralConfigurationPath,
     integrationsPath,
     isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
@@ -46,7 +48,7 @@ const keyForNetwork = 'Network';
 const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForVulnerabilityManagement1 = 'Vulnerability Management (1.0)';
 const keyForVulnerabilityManagement2 = 'Vulnerability Management (2.0)';
-
+const keyForCompliance2 = 'Compliance (2.0)';
 type IsActiveCallback = (pathname: string) => boolean;
 
 type ChildDescription = {
@@ -104,24 +106,30 @@ const navDescriptions: NavDescription[] = [
         routeKey: 'violations',
     },
     {
-        type: 'child',
-        content: (navDescriptionsFiltered) =>
+        type: 'parent',
+        title: (navDescriptionsFiltered) =>
             navDescriptionsFiltered.some(
                 (navDescription) =>
                     navDescription.type === 'child' && navDescription.routeKey === 'compliance'
             )
                 ? 'Compliance (2.0)'
                 : 'Compliance',
-        path: complianceEnhancedBasePath,
-        routeKey: 'compliance-enhanced',
+        key: keyForCompliance2,
+        children: [
+            {
+                type: 'child',
+                content: 'Compliance Status',
+                path: complianceEnhancedStatusPath,
+                routeKey: 'compliance-enhanced',
+            },
+        ],
     },
     {
         type: 'child',
         content: (navDescriptionsFiltered) =>
             navDescriptionsFiltered.some(
                 (navDescription) =>
-                    navDescription.type === 'child' &&
-                    navDescription.routeKey === 'compliance-enhanced'
+                    navDescription.type === 'parent' && navDescription.key === keyForCompliance2
             )
                 ? 'Compliance (1.0)'
                 : 'Compliance',
@@ -235,6 +243,12 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
+                content: 'Deferral Configuration',
+                path: deferralConfigurationPath,
+                routeKey: 'deferral-configuration',
+            },
+            {
+                type: 'child',
                 content: 'Access Control',
                 path: accessControlBasePath,
                 routeKey: 'access-control',
@@ -244,6 +258,12 @@ const navDescriptions: NavDescription[] = [
                 content: 'System Configuration',
                 path: systemConfigPath,
                 routeKey: 'systemconfig',
+            },
+            {
+                type: 'child',
+                content: 'Administration Events',
+                path: administrationEventsBasePath,
+                routeKey: 'administration-events',
             },
             {
                 type: 'child',

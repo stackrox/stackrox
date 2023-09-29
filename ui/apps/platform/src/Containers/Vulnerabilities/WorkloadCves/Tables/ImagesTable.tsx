@@ -2,16 +2,17 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Flex } from '@patternfly/react-core';
+import { Flex, Label } from '@patternfly/react-core';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
+import { EyeIcon } from '@patternfly/react-icons';
 import ImageNameTd from '../components/ImageNameTd';
 import SeverityCountLabels from '../components/SeverityCountLabels';
 import { DynamicColumnIcon } from '../components/DynamicIcon';
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import TooltipTh from '../components/TooltipTh';
-import { VulnerabilitySeverityLabel, watchStatusLabel, WatchStatus } from '../types';
+import { VulnerabilitySeverityLabel, WatchStatus } from '../types';
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -134,7 +135,19 @@ function ImagesTable({
                             <Tr>
                                 <Td dataLabel="Image">
                                     {name ? (
-                                        <ImageNameTd name={name} id={id} />
+                                        <ImageNameTd name={name} id={id}>
+                                            {watchStatus === 'WATCHED' && (
+                                                <Label
+                                                    isCompact
+                                                    variant="outline"
+                                                    color="grey"
+                                                    className="pf-u-mt-xs"
+                                                    icon={<EyeIcon />}
+                                                >
+                                                    Watched image
+                                                </Label>
+                                            )}
+                                        </ImageNameTd>
                                     ) : (
                                         'Image name not available'
                                     )}
@@ -150,7 +163,7 @@ function ImagesTable({
                                     />
                                 </Td>
                                 <Td>{operatingSystem}</Td>
-                                <Td>
+                                <Td modifier="nowrap">
                                     {deploymentCount > 0 ? (
                                         <>
                                             {deploymentCount}{' '}
@@ -159,10 +172,6 @@ function ImagesTable({
                                     ) : (
                                         <Flex>
                                             <div>0 deployments</div>
-                                            {/* TODO: double check on what this links to */}
-                                            <span>
-                                                ({`${watchStatusLabel[watchStatus]}`} image)
-                                            </span>
                                         </Flex>
                                     )}
                                 </Td>
@@ -173,19 +182,19 @@ function ImagesTable({
                                     <DateDistanceTd date={scanTime} />
                                 </Td>
                                 <Td isActionCell>
-                                    <ActionsColumn
-                                        items={[
-                                            {
-                                                title: 'Watch image',
-                                                onClick: () =>
-                                                    onWatchImage(
-                                                        name
-                                                            ? `${name.registry}/${name.remote}:${name.tag}`
-                                                            : ''
-                                                    ),
-                                            },
-                                        ]}
-                                    />
+                                    {name?.tag && (
+                                        <ActionsColumn
+                                            items={[
+                                                {
+                                                    title: 'Watch image',
+                                                    onClick: () =>
+                                                        onWatchImage(
+                                                            `${name.registry}/${name.remote}:${name.tag}`
+                                                        ),
+                                                },
+                                            ]}
+                                        />
+                                    )}
                                 </Td>
                             </Tr>
                         </Tbody>
