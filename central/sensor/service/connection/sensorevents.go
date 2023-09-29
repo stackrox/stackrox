@@ -32,15 +32,16 @@ type sensorEventHandler struct {
 	workerQueues      map[string]*workerQueue
 	workerQueuesMutex sync.RWMutex
 
-	deduper  hashManager.Deduper
-	pipeline pipeline.ClusterPipeline
-	injector common.MessageInjector
-	stopSig  *concurrency.ErrorSignal
+	deduper     hashManager.Deduper
+	initSyncMgr *initSyncManager
+	pipeline    pipeline.ClusterPipeline
+	injector    common.MessageInjector
+	stopSig     *concurrency.ErrorSignal
 
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper) *sensorEventHandler {
+func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, initSyncMgr *initSyncManager) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
 		sensorVersion: sensorVersion,
@@ -48,10 +49,11 @@ func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipel
 		workerQueues:      make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
 
-		deduper:  deduper,
-		pipeline: pipeline,
-		injector: injector,
-		stopSig:  stopSig,
+		deduper:     deduper,
+		initSyncMgr: initSyncMgr,
+		pipeline:    pipeline,
+		injector:    injector,
+		stopSig:     stopSig,
 	}
 }
 
@@ -76,6 +78,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	var workerType string
 	switch event.Resource.(type) {
 	case *central.SensorEvent_Synced:
+		s.initSyncMgr.Remove(s.cluster.GetId())
 		// Call the reconcile functions
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -65,6 +66,7 @@ type manager struct {
 	imageIntegrationMgr        common.ImageIntegrationManager
 	manager                    hashManager.Manager
 	complianceOperatorMgr      common.ComplianceOperatorManager
+	initSyncMgr                *initSyncManager
 	autoTriggerUpgrades        *concurrency.Flag
 }
 
@@ -73,6 +75,7 @@ func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
+		initSyncMgr:            NewInitSyncManager(),
 	}
 }
 
@@ -231,6 +234,8 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 
 // CloseConnection is only used when deleting a cluster hence the removal of the deduper
 func (m *manager) CloseConnection(clusterID string) {
+	m.initSyncMgr.Remove(clusterID)
+
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
 		if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
@@ -248,6 +253,10 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
+	if !m.initSyncMgr.Add(clusterID) {
+		return errors.Wrap(errox.ResourceExhausted, "Central has reached the maximum number of allowed Sensors in init sync state")
+	}
+
 	conn :=
 		newConnection(
 			ctx,
@@ -262,7 +271,9 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.delegatedRegistryConfigMgr,
 			m.imageIntegrationMgr,
 			m.manager,
-			m.complianceOperatorMgr)
+			m.complianceOperatorMgr,
+			m.initSyncMgr,
+		)
 	ctx = withConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)

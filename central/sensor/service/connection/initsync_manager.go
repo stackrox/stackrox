@@ -1,0 +1,59 @@
+package connection
+
+import (
+	"fmt"
+
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+type initSyncManager struct {
+	mutex sync.Mutex
+
+	maxSensors int
+	sensors    set.StringSet
+}
+
+func NewInitSyncManager() *initSyncManager {
+	maxSensors := env.CentralMaxInitSyncSensors.IntegerSetting()
+	if maxSensors < 0 {
+		panic(fmt.Sprintf("Negative number is not allowed for max init sync sensors. Check env variable: %q", env.CentralMaxInitSyncSensors.EnvVar()))
+	}
+
+	return &initSyncManager{
+		maxSensors: maxSensors,
+		sensors:    set.NewStringSet(),
+	}
+}
+
+func (m *initSyncManager) Add(clusterID string) bool {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.maxSensors == 0 {
+		return true
+	}
+
+	if m.sensors.Contains(clusterID) {
+		return true
+	}
+
+	if len(m.sensors) >= m.maxSensors {
+		return false
+	}
+	m.sensors.Add(clusterID)
+
+	return true
+}
+
+func (m *initSyncManager) Remove(clusterID string) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.maxSensors == 0 {
+		return
+	}
+
+	m.sensors.Remove(clusterID)
+}
