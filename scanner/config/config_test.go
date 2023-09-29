@@ -159,10 +159,13 @@ func Test_Database_validate(t *testing.T) {
 	_, err = pwdF.WriteString("foobar-password")
 	assert.NoError(t, err)
 	t.Run("when password files exists then valid", func(t *testing.T) {
-		c := Database{ConnString: "host=foobar", PasswordFile: pwdFile}
+		c := Database{
+			ConnString:   "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10",
+			PasswordFile: pwdFile,
+		}
 		err := c.validate()
 		assert.NoError(t, err)
-		assert.Equal(t, c.ConnString, "host=foobar password=foobar-password")
+		assert.Equal(t, c.ConnString, "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10 password=foobar-password")
 	})
 	t.Run("when password files does not exist then error", func(t *testing.T) {
 		c := Database{ConnString: "host=foobar", PasswordFile: "something that does not exist"}

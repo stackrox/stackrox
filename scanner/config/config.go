@@ -121,7 +121,7 @@ func (d *Database) validate() error {
 	}
 	cfg, err := pgxpool.ParseConfig(d.ConnString)
 	if err != nil {
-		return fmt.Errorf("conn_string: invalid: %v", err)
+		return fmt.Errorf("conn_string: invalid: %w", err)
 	}
 	if cfg.ConnConfig.Password != "" && d.PasswordFile != "" {
 		return errors.New("specify either password in conn_string or password file, but not both")
