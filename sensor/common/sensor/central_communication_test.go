@@ -166,7 +166,7 @@ type fakeSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
-func (f fakeSensorComponent) Notify(e common.SensorComponentEvent) {
+func (f fakeSensorComponent) Notify(common.SensorComponentEvent) {
 	panic("implement me")
 }
 
@@ -174,7 +174,7 @@ func (f fakeSensorComponent) Start() error {
 	panic("implement me")
 }
 
-func (f fakeSensorComponent) Stop(err error) {
+func (f fakeSensorComponent) Stop(error) {
 	panic("implement me")
 }
 
@@ -182,7 +182,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (f fakeSensorComponent) ProcessMessage(msg *central.MsgToSensor) error {
+func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor) error {
 	panic("implement me")
 }
 
