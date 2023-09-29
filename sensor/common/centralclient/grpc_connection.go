@@ -97,7 +97,6 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
 		return
 	}
-	log.Infof("Successfully checked central status") // TODO: Remvove logging
 
 	certs := f.getCentralTLSCerts()
 	if len(certs) != 0 {
