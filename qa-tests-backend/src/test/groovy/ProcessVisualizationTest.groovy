@@ -50,7 +50,7 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (REDISDEPLOYMENT)
-                .setImage ("icr.io/ppc64le-oss/redis-ppc64le:v6.2.6-bv")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-4.0.11")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)
