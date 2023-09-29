@@ -10,8 +10,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [NEXT RELEASE]
 
 ### Added Features
-- A new `cluster` flag has been added to the `roxctl` commands and APIs that perform image scans, this enables delegating scans to specific secured clusters on demand.
-- Ad-hoc image scans delegated to secured clusters will now attempt to infer a namespace from the image path, this enables namespace secrets to be used for registry authentication which in turn enables scanning images from the OCP integrated registry.
+- ROX-18525, ROX-19158: A new `cluster` flag has been added to the `roxctl` commands and APIs that perform image scans, this enables delegating scans to specific secured clusters on demand.
+- ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
+  - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
 
 ### Removed Features
 
