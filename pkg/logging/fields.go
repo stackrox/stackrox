@@ -1,27 +1,31 @@
 package logging
 
 import (
-	"github.com/stackrox/rox/pkg/sac/resources"
+	administrationResources "github.com/stackrox/rox/pkg/administration/events/resources"
 	"go.uber.org/zap"
 )
 
 const (
-	imageField     = "image"
-	clusterIDField = "cluster_id"
-	imageIDField   = "image_id"
-	nodeIDField    = "node_id"
-	notifierField  = "notifier"
-	errCodeField   = "err_code"
-	alertIDField   = "alert_id"
+	imageField        = "image"
+	clusterIDField    = "cluster_id"
+	imageIDField      = "image_id"
+	nodeIDField       = "node_id"
+	notifierField     = "notifier"
+	errCodeField      = "err_code"
+	alertIDField      = "alert_id"
+	apiTokenIDField   = "api_token_id"
+	apiTokenNameField = "api_token_name"
 )
 
 var (
 	resourceTypeFields = map[string]string{
-		imageField:     resources.Image.String(),
-		imageIDField:   resources.Image.String(),
-		clusterIDField: resources.Cluster.String(),
-		nodeIDField:    resources.Node.String(),
-		notifierField:  "Notifier",
+		imageField:        administrationResources.Image,
+		imageIDField:      administrationResources.Image,
+		clusterIDField:    administrationResources.Cluster,
+		nodeIDField:       administrationResources.Node,
+		notifierField:     administrationResources.Notifier,
+		apiTokenIDField:   administrationResources.APIToken,
+		apiTokenNameField: administrationResources.APIToken,
 	}
 )
 
@@ -67,6 +71,18 @@ func AlertID(id string) zap.Field {
 	return zap.String(alertIDField, id)
 }
 
+// APITokenID provides the API token ID as a structured log field.
+func APITokenID(id string) zap.Field {
+	return zap.String(apiTokenIDField, id)
+}
+
+// APITokenName provides the API token name as a structured log field.
+func APITokenName(name string) zap.Field {
+	return zap.String(apiTokenNameField, name)
+}
+
+// Wrapper functions for zap.Field functions.
+
 // String provides a wrapper around zap.String and adds the key-value pair as structured log field.
 // This should be _always_ preferred over direct calls to zap to minimize dependency to it.
 func String(field, value string) zap.Field {
@@ -91,6 +107,10 @@ func Int(field string, value int) zap.Field {
 	return zap.Int(field, value)
 }
 
+// End Wrapper functions for zap.field functions.
+
+// Helper functions.
+
 // getResourceTypeField returns whether the given zap.Field is related to a resource.
 // If it is, it will return true and the name of the resource.
 func getResourceTypeField(field zap.Field) (string, bool) {
@@ -99,5 +119,7 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 }
 
 func isIDField(fieldName string) bool {
-	return fieldName != imageField && fieldName != notifierField
+	return fieldName != imageField &&
+		fieldName != notifierField &&
+		fieldName != apiTokenNameField
 }
