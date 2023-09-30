@@ -51,7 +51,7 @@ all: deps scanner-go-build images
 ###############################################################
 
 OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN):
+$(OSSLS_BIN): scanner-go-check-ver
 	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
 
@@ -159,7 +159,7 @@ copy-db-sigs: ../image/postgres/signatures
 #########
 
 # E2E vars
-# --------
+# ========
 
 SCANNER_E2E_TAG       ?= $(TAG)
 SCANNER_E2E_NAMESPACE ?= stackrox
@@ -168,28 +168,66 @@ e2e-chart     := e2etests/helmchart
 e2e-namespace := $(SCANNER_E2E_NAMESPACE)
 e2e-tag       := $(SCANNER_E2E_TAG)
 
-# E2E helm files
-# --------------
+e2e-conf-files := db-postgresql.conf \
+                  db-pg_hba.conf
 
-e2e-files   := db-postgresql.conf \
-               db-pg_hba.conf
+e2e-ca-files := ca.pem \
+                scanner-v4-key.pem \
+                scanner-v4-cert.pem \
+                scanner-v4-db-key.pem \
+                scanner-v4-db-cert.pem
 
-e2e-files-t := $(addprefix $(e2e-chart)/files/,$(e2e-files))
+e2e-files-d      := $(e2e-chart)/files
+e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
+e2e-ca-files-t   := $(addprefix $(e2e-files-d)/,$(e2e-ca-files))
 
 # E2E rules
-# ---------
+# =========
 
 .PHONY: e2e-deploy e2e-clean
 
 ifdef SILENT
-.SILENT: e2e-deploy e2e $(e2e-files-t)
+.SILENT: e2e-deploy $(e2e-conf-files-t)
 endif
 
-$(e2e-chart)/files/db-%.conf: image/db/%.conf
+# E2E config rules
+# ----------------
+
+$(e2e-files-d)/db-%.conf: image/db/%.conf
 	mkdir -p $(@D)
 	cp $^ $@
 
-e2e-deploy: $(e2e-files-t)
+# E2E cert rules
+# --------------
+
+.PRECIOUS: $(e2e-files-d)/%-key.pem
+$(e2e-files-d)/%-key.pem:
+	openssl genpkey -algorithm RSA -out $@
+
+$(e2e-files-d)/ca.pem: $(e2e-files-d)/ca-key.pem
+	openssl req -x509 -sha256 -new -nodes -days 365 \
+	    -subj "/C=US/ST=State/L=Location/O=Red Hat Inc./CN=RootCA" \
+	    -key $< -out $@
+
+$(e2e-files-d)/%.csr: $(e2e-files-d)/%-key.pem
+	openssl req -new -key $< \
+	    -subj "/C=US/ST=State/L=Location/O=Red Hat Inc./CN=$(@F:%.csr=%).$(e2e-namespace)" \
+	    -out $@
+
+$(e2e-files-d)/%-cert.pem: $(e2e-files-d)/%.csr $(e2e-files-d)/ca.pem $(e2e-files-d)/ca-key.pem
+	openssl x509 -req -in $< \
+	    -CA $(e2e-files-d)/ca.pem \
+	    -CAkey $(e2e-files-d)/ca-key.pem \
+	    -CAcreateserial \
+	    -days 365 \
+	    -sha256 \
+	    -extfile <(echo "subjectAltName = DNS:$(@F:%-cert.pem=%).$(e2e-namespace) DNS:localhost DNS:127.0.0.1") \
+	    -out $@
+
+# E2E deploy & clean
+# ------------------
+
+e2e-deploy: $(e2e-conf-files-t) $(e2e-ca-files-t)
 	@echo "+ $@"
 	-kubectl create namespace $(e2e-namespace)
 	helm upgrade scanner-v4-e2e $(e2e-chart) \
@@ -198,14 +236,14 @@ e2e-deploy: $(e2e-files-t)
 	    --set image.tag="$(e2e-tag)"
 
 e2e-clean:
-	rm -rf $(e2e-chart)/files/*
+	rm -rf $(e2e-files-d)/*
 
 ###########
 ## Clean ##
 ###########
 
 .PHONY: clean
-clean: clean-image clean-gobin clean-deps
+clean: clean-image clean-gobin clean-deps e2e-clean
 	@echo "+ $@"
 
 .PHONY: clean-image
