@@ -654,6 +654,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"names: [ImageName]!",
 		"notPullable: Boolean!",
 		"notes: [Image_Note!]!",
+		"openVexReport: [OpenVex]!",
 		"priority: Int!",
 		"riskScore: Float!",
 		"signature: ImageSignature",
@@ -947,6 +948,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"SumoLogic",
 		"AWSSecurityHub",
 		"Syslog",
+	}))
+	utils.Must(builder.AddType("OpenVex", []string{
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
@@ -7848,6 +7851,12 @@ func (resolver *imageResolver) Notes(ctx context.Context) []string {
 	return stringSlice(value)
 }
 
+func (resolver *imageResolver) OpenVexReport(ctx context.Context) ([]*openVexResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetOpenVexReport()
+	return resolver.root.wrapOpenVexs(value, nil)
+}
+
 func (resolver *imageResolver) Priority(ctx context.Context) int32 {
 	value := resolver.data.GetPriority()
 	if resolver.data == nil {
@@ -10698,6 +10707,53 @@ func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResol
 func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
 	res, ok := resolver.resolver.(*syslogResolver)
 	return res, ok
+}
+
+type openVexResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.OpenVex
+}
+
+func (resolver *Resolver) wrapOpenVex(value *storage.OpenVex, ok bool, err error) (*openVexResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &openVexResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapOpenVexs(values []*storage.OpenVex, err error) ([]*openVexResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*openVexResolver, len(values))
+	for i, v := range values {
+		output[i] = &openVexResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapOpenVexWithContext(ctx context.Context, value *storage.OpenVex, ok bool, err error) (*openVexResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &openVexResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapOpenVexsWithContext(ctx context.Context, values []*storage.OpenVex, err error) ([]*openVexResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*openVexResolver, len(values))
+	for i, v := range values {
+		output[i] = &openVexResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *openVexResolver) OpenVexReport(ctx context.Context) []byte {
+	value := resolver.data.GetOpenVexReport()
+	return value
 }
 
 type orchestratorMetadataResolver struct {

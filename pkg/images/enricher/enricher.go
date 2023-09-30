@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/openvex"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -159,6 +160,8 @@ func New(cvesSuppressor CVESuppressor, cvesSuppressorV2 CVESuppressor, is integr
 		signatureIntegrationGetter: signatureIntegrationGetter,
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
 		signatureFetcher:           signatures.NewSignatureFetcher(),
+
+		openVexFetcher: openvex.NewFetcher(),
 
 		imageGetter: imageGetter,
 
