@@ -27,11 +27,11 @@ type indexerImpl struct {
 func (b *indexerImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Count, "SecuredUnits")
 
-	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_PRODUCT_USAGE, q, b.db)
+	return pgSearch.RunCountRequest(ctx, v1.SearchCategory_ADMINISTRATION_USAGE, q, b.db)
 }
 
 func (b *indexerImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "SecuredUnits")
 
-	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_PRODUCT_USAGE, q, b.db)
+	return pgSearch.RunSearchRequest(ctx, v1.SearchCategory_ADMINISTRATION_USAGE, q, b.db)
 }

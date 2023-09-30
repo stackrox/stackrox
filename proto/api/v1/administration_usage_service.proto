@@ -16,7 +16,7 @@ message TimeRange {
 }
 
 // SecuredUnitsUsageResponse holds the values of the currently observable
-// product usage metrics.
+// administration usage metrics.
 message SecuredUnitsUsageResponse {
     int64 num_nodes     = 1;
     int64 num_cpu_units = 2;
@@ -32,7 +32,7 @@ message MaxSecuredUnitsUsageResponse {
     int64 max_cpu_units                        = 4;
 }
 
-service ProductUsageService {
+service AdministrationUsageService {
     // GetCurrentSecuredUnitsUsage returns the current secured units usage
     // metrics values.
     //
@@ -44,7 +44,7 @@ service ProductUsageService {
     // data for the disconnected clusters.
     rpc GetCurrentSecuredUnitsUsage(v1.Empty) returns (SecuredUnitsUsageResponse) {
         option (google.api.http) = {
-            get: "/v1/product/usage/secured-units/current"
+            get: "/v1/administration/usage/secured-units/current"
         };
     }
 
@@ -60,7 +60,7 @@ service ProductUsageService {
     // The last data from disconnected clusters are taken into account.
     rpc GetMaxSecuredUnitsUsage(TimeRange) returns (MaxSecuredUnitsUsageResponse) {
         option (google.api.http) = {
-            get: "/v1/product/usage/secured-units/max"
+            get: "/v1/administration/usage/secured-units/max"
         };
     }
 }

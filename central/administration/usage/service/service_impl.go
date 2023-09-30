@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	"github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -21,13 +21,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.ProductUsageService/GetCurrentSecuredUnitsUsage",
-			"/v1.ProductUsageService/GetMaxSecuredUnitsUsage",
+			"/v1.AdministrationUsageService/GetCurrentSecuredUnitsUsage",
+			"/v1.AdministrationUsageService/GetMaxSecuredUnitsUsage",
 		}})
 )
 
 type serviceImpl struct {
-	v1.UnimplementedProductUsageServiceServer
+	v1.UnimplementedAdministrationUsageServiceServer
 
 	datastore datastore.DataStore
 }
@@ -41,12 +41,12 @@ func New(datastore datastore.DataStore) Service {
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
-	v1.RegisterProductUsageServiceServer(grpcServer, s)
+	v1.RegisterAdministrationUsageServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterProductUsageServiceHandler(ctx, mux, conn)
+	return v1.RegisterAdministrationUsageServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -57,7 +57,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetCurrentSecuredUnitsUsage(ctx context.Context, _ *v1.Empty) (*v1.SecuredUnitsUsageResponse, error) {
 	m, err := s.datastore.GetCurrentUsage(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot get current product usage")
+		return nil, errors.Wrap(err, "cannot get current administration usage")
 	}
 	return &v1.SecuredUnitsUsageResponse{
 		NumNodes:    m.GetNumNodes(),

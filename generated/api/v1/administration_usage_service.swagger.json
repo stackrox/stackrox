@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/product_usage_service.proto",
+    "title": "api/v1/administration_usage_service.proto",
     "version": "version not set"
   },
   "consumes": [
@@ -11,11 +11,11 @@
     "application/json"
   ],
   "paths": {
-    "/v1/product/usage/secured-units/current": {
+    "/v1/administration/usage/secured-units/current": {
       "get": {
         "summary": "GetCurrentSecuredUnitsUsage returns the current secured units usage\nmetrics values.",
         "description": "Experimental API, feature in tech preview.\n\nThe secured units metrics are collected from all connected clusters every\n5 minutes, so the returned result includes data for the connected\nclusters accurate to about these 5 minutes, and potentially some outdated\ndata for the disconnected clusters.",
-        "operationId": "ProductUsageService_GetCurrentSecuredUnitsUsage",
+        "operationId": "AdministrationUsageService_GetCurrentSecuredUnitsUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -31,15 +31,15 @@
           }
         },
         "tags": [
-          "ProductUsageService"
+          "AdministrationUsageService"
         ]
       }
     },
-    "/v1/product/usage/secured-units/max": {
+    "/v1/administration/usage/secured-units/max": {
       "get": {
         "summary": "GetMaxSecuredUnitsUsage returns the maximum, i.e. peak, secured units\nusage observed during a given time range, together with the time when\nthis maximum was aggregated and stored.",
         "description": "Experimental API, feature in tech preview.\n\nThe usage metrics are continuously collected from all the connected\nclusters. The maximum values are kept for some period of time in memory,\nand then, periodically, are stored to the database.\nThe last data from disconnected clusters are taken into account.",
-        "operationId": "ProductUsageService_GetMaxSecuredUnitsUsage",
+        "operationId": "AdministrationUsageService_GetMaxSecuredUnitsUsage",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -71,7 +71,7 @@
           }
         ],
         "tags": [
-          "ProductUsageService"
+          "AdministrationUsageService"
         ]
       }
     }
@@ -147,7 +147,7 @@
           "format": "int64"
         }
       },
-      "description": "SecuredUnitsUsageResponse holds the values of the currently observable\nproduct usage metrics."
+      "description": "SecuredUnitsUsageResponse holds the values of the currently observable\nadministration usage metrics."
     }
   }
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,7 +34,7 @@ func (i *injectorImpl) gather(ctx context.Context) {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC)
 	newMetrics, err := i.ds.AggregateAndReset(ctx)
 	if err != nil {
-		log.Info("Failed to get and reset the aggregated product usage metrics: ", err)
+		log.Info("Failed to get and reset the aggregated administration usage metrics: ", err)
 		return
 	}
 	if err := i.ds.Add(ctx, newMetrics); err != nil {

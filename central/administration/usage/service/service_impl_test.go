@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	mockstore "github.com/stackrox/rox/central/productusage/datastore/securedunits/mocks"
+	mockstore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"

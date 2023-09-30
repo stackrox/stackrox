@@ -8,7 +8,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errox"
@@ -35,7 +35,7 @@ func getSecuredUnitsConverter() csv.Converter[storage.SecuredUnits] {
 	}
 }
 
-// CSVHandler returns an HTTP handler function that serves product usage data as CSV.
+// CSVHandler returns an HTTP handler function that serves administration usage data as CSV.
 // The handler accepts two optional string parameters "from" and "to", which are
 // expected to represent a timestamp in RFC3339 (or 'ISO') format.
 // The parameters define a time range in which the data is searched. The result
@@ -46,7 +46,7 @@ func CSVHandler(ds datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		from, to, err := parseRequest(r)
 		if err != nil {
-			err = errox.InvalidArgs.New("bad CSV product usage request").CausedBy(err)
+			err = errox.InvalidArgs.New("bad CSV administration usage request").CausedBy(err)
 			http.Error(w, err.Error(), grpcErrors.ErrToHTTPStatus(err))
 			return
 		}

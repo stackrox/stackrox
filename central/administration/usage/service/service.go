@@ -12,5 +12,5 @@ type Service interface {
 	pkgGRPC.APIService
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	v1.ProductUsageServiceServer
+	v1.AdministrationUsageServiceServer
 }

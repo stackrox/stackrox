@@ -16,12 +16,12 @@ message SecuredUnits {
     string id                           = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
     // timestamp stores the moment at which the values of the metrics below are
     // aggregated.
-    google.protobuf.Timestamp timestamp = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Product Usage Timestamp,hidden"'];
+    google.protobuf.Timestamp timestamp = 2 [(gogoproto.moretags) = 'sql:"unique" search:"Administration Usage Timestamp,hidden"'];
     // num_nodes is the maximum number of secured nodes, observed across all
     // registered clusters during last aggregation period.
-    int64 num_nodes                     = 3 [(gogoproto.moretags) = 'search:"Product Usage Nodes,hidden"'];
+    int64 num_nodes                     = 3 [(gogoproto.moretags) = 'search:"Administration Usage Nodes,hidden"'];
     // num_cpu_units is the maximum number of secured CPU units (which are the
     // units reported by Kubernetes), observed across all registered clusters
     // during last aggregation period.
-    int64 num_cpu_units                 = 4 [(gogoproto.moretags) = 'search:"Product Usage CPU Units,hidden"'];
+    int64 num_cpu_units                 = 4 [(gogoproto.moretags) = 'search:"Administration Usage CPU Units,hidden"'];
 }

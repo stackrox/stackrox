@@ -3,7 +3,7 @@ package injector
 import (
 	"time"
 
-	datastore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
+	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )

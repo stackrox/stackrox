@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/productusage/store"
-	"github.com/stackrox/rox/central/productusage/store/cache"
+	"github.com/stackrox/rox/central/administration/usage/store"
+	"github.com/stackrox/rox/central/administration/usage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -44,10 +44,10 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time,
 	}
 
 	pagination := search.NewPagination().
-		AddSortOption(search.NewSortOption(search.ProductUsageTimestamp)).Limit(page)
+		AddSortOption(search.NewSortOption(search.AdministrationUsageTimestamp)).Limit(page)
 
 	query := search.NewQueryBuilder().AddTimeRangeField(
-		search.ProductUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
+		search.AdministrationUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
 
 	for offset := 0; ; offset += page {
 		pagination.Offset(int32(offset))
@@ -69,12 +69,12 @@ func (ds *dataStoreImpl) Walk(ctx context.Context, from time.Time, to time.Time,
 
 // GetMaxNodes returns the record with the maximum value of NumNodes.
 func (ds *dataStoreImpl) GetMaxNumNodes(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
-	return ds.getMax(ctx, search.ProductUsageNodes, from, to)
+	return ds.getMax(ctx, search.AdministrationUsageNodes, from, to)
 }
 
 // GetMaxNumCPUUnits returns the record with the maximum value of NumCpuUnits.
 func (ds *dataStoreImpl) GetMaxNumCPUUnits(ctx context.Context, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
-	return ds.getMax(ctx, search.ProductUsageCPUUnits, from, to)
+	return ds.getMax(ctx, search.AdministrationUsageCPUUnits, from, to)
 }
 
 func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, from time.Time, to time.Time) (*storage.SecuredUnits, error) {
@@ -92,7 +92,7 @@ func (ds *dataStoreImpl) getMax(ctx context.Context, label search.FieldLabel, fr
 		AddSortOption(search.NewSortOption(label).Reversed(true)).Limit(1)
 
 	query := search.NewQueryBuilder().AddTimeRangeField(
-		search.ProductUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
+		search.AdministrationUsageTimestamp, from, to).WithPagination(pagination).ProtoQuery()
 
 	units, err := ds.store.GetByQuery(ctx, query)
 	if err != nil {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/productusage/store"
-	"github.com/stackrox/rox/central/productusage/store/cache"
+	"github.com/stackrox/rox/central/administration/usage/store"
+	"github.com/stackrox/rox/central/administration/usage/store/cache"
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// DataStore is the datastore for product usage.
+// DataStore is the datastore for administration usage.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
