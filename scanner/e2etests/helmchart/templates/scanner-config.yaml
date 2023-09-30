@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.scanner.name }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |-
+    indexer:
+      database:
+        conn_string: host={{ .Values.app.db.name }}.{{ .Release.Namespace }} port=5432 user=postgres sslmode=verify-ca statement_timeout=60000 sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        password_file: /run/secrets/stackrox.io/postgresql/password
+    matcher:
+      database:
+        conn_string: host={{ .Values.app.db.name }}.{{ .Release.Namespace }} port=5432 user=postgres sslmode=verify-ca statement_timeout=60000 sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+        password_file: /run/secrets/stackrox.io/postgresql/password
+    log_level: debug

@@ -33,12 +33,13 @@ endif
 
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
-BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd/scanner
+BUILD_CMD := $(BUILD_FLAGS) go build \
+                 -trimpath \
+                 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" \
+                 -o image/scanner/bin/scanner \
+                 ./cmd/scanner
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -51,7 +52,7 @@ all: deps scanner-go-build images
 
 OSSLS_BIN := $(GOBIN)/ossls
 $(OSSLS_BIN):
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
 
 #########
@@ -60,7 +61,7 @@ $(OSSLS_BIN):
 
 .PHONY: tag
 tag:
-	$(SILENT)echo $(TAG)
+	@echo $(TAG)
 
 ############
 ## Images ##
@@ -69,14 +70,19 @@ tag:
 .PHONY: images
 images: scanner-image db-image
 
-.PHONY: scanner-go-build
+.PHONY: scanner-go-build scanner-go-check-ver
+scanner-go-check-ver:
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
+endif
+
 scanner-go-build: deps
-	$(SILENT)echo "+ $@"
-	$(BUILD_FLAGS) $(BUILD_CMD)
+	@echo "+ $@"
+	$(BUILD_CMD)
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)$(MAKE) GOOS=${HOST_OS} scanner-go-build
 
 OSSLS_NOTICE_DEP := ossls-notice
@@ -85,14 +91,14 @@ ifdef CI
 endif
 .PHONY: scanner-image
 scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
-	$(SILENT)echo "+ $@"
-	$(SILENT)echo "Building scanner:$(TAG)"
+	@echo "+ $@"
+	@echo "Building scanner:$(TAG)"
 	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4:$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
-	$(SILENT)echo "+ $@"
-	$(SILENT)echo "Building scanner-db:$(TAG)"
+	@echo "+ $@"
+	@echo "Building scanner-db:$(TAG)"
 	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
@@ -103,8 +109,8 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 ## Tools ##
 ###########
 
-deps: ../go.mod
-	$(SILENT)echo "+ $@"
+deps: ../go.mod scanner-go-check-ver
+	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
@@ -113,40 +119,86 @@ ifdef CI
 	}
 endif
 	$(SILENT)go mod verify
-	$(SILENT)touch deps
+	$(SILENT)touch $@
 
 .PHONY: ossls-notice-no-download
 ossls-notice-no-download: deps
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)ossls version
 	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
 
 .PHONY: ossls-notice
 ossls-notice: deps $(OSSLS_BIN)
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
 SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 .PHONY: copy-scripts
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
 
 .PHONY: copy-db-scripts
 copy-db-scripts: ../image/postgres/download.sh
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/db
 
 .PHONY: copy-db-image-scripts
 copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/db/scripts
 
 .PHONY: copy-db-sigs
 copy-db-sigs: ../image/postgres/signatures
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp -R $^ image/db/signatures
+
+#########
+## E2E ##
+#########
+
+# E2E vars
+# --------
+
+SCANNER_E2E_TAG       ?= $(TAG)
+SCANNER_E2E_NAMESPACE ?= stackrox
+
+e2e-chart     := e2etests/helmchart
+e2e-namespace := $(SCANNER_E2E_NAMESPACE)
+e2e-tag       := $(SCANNER_E2E_TAG)
+
+# E2E helm files
+# --------------
+
+e2e-files   := db-postgresql.conf \
+               db-pg_hba.conf
+
+e2e-files-t := $(addprefix $(e2e-chart)/files/,$(e2e-files))
+
+# E2E rules
+# ---------
+
+.PHONY: e2e-deploy e2e-clean
+
+ifdef SILENT
+.SILENT: e2e-deploy e2e $(e2e-files-t)
+endif
+
+$(e2e-chart)/files/db-%.conf: image/db/%.conf
+	mkdir -p $(@D)
+	cp $^ $@
+
+e2e-deploy: $(e2e-files-t)
+	@echo "+ $@"
+	-kubectl create namespace $(e2e-namespace)
+	helm upgrade scanner-v4-e2e $(e2e-chart) \
+	    --install \
+	    --namespace $(e2e-namespace) \
+	    --set image.tag="$(e2e-tag)"
+
+e2e-clean:
+	rm -rf $(e2e-chart)/files/*
 
 ###########
 ## Clean ##
@@ -154,19 +206,19 @@ copy-db-sigs: ../image/postgres/signatures
 
 .PHONY: clean
 clean: clean-image clean-gobin clean-deps
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 
 .PHONY: clean-image
 clean-image:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)git clean -xdf image/scanner/bin
 
 .PHONY: clean-gobin
 clean-gobin:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)rm -rf $(GOBIN)
 
 .PHONY: clean-deps
 clean-deps:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)rm -f deps
