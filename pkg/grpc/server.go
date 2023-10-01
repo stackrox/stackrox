@@ -177,10 +177,12 @@ func (a *apiImpl) Stop() bool {
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
+	// The metrics and error interceptors are first in line to make sure all requests are
+	// registered in Prometheus with errors converted to gRPC status codes.
 	u := []grpc.UnaryServerInterceptor{
-		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		grpc_errors.ErrorToGrpcCodeInterceptor,
 		grpc_prometheus.UnaryServerInterceptor,
+		grpc_errors.ErrorToGrpcCodeInterceptor,
+		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
 
@@ -216,10 +218,12 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 }
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
+	// The metrics and error interceptors are first in line to make sure all requests are
+	// registered in Prometheus with errors converted to gRPC status codes.
 	s := []grpc.StreamServerInterceptor{
-		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
 		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
+		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
@@ -446,6 +450,5 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 			}
 		}
-
 	}
 }
