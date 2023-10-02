@@ -33,8 +33,8 @@ import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { VulnerabilitiesDeferralConfig } from 'services/DeferralConfigService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
-
 import usePermissions from 'hooks/usePermissions';
+
 import { useVulnerabilitiesDeferralConfig } from './useVulnerabilitiesDeferralConfig';
 
 type BaseSettingProps = {
@@ -163,12 +163,12 @@ const validationSchema = yup.object({
                 }
 
                 const dayValueToIndexMap: Record<number, number> = {};
-                let error: yup.ValidationError | boolean = true;
+                let error: yup.ValidationError | undefined;
 
                 // If there are duplicate, enabled `dayOptions` with the same `numDays` value return a validation
                 // error at the first index of duplication.
                 dayOptions.forEach((dayOption, currentIndex) => {
-                    if (!dayOption.enabled || error !== true) {
+                    if (!dayOption.enabled || error) {
                         return;
                     }
                     const existingIndex = dayValueToIndexMap[dayOption.numDays];
@@ -181,7 +181,7 @@ const validationSchema = yup.object({
                     dayValueToIndexMap[dayOption.numDays] = currentIndex;
                 });
 
-                return error;
+                return error || true; // `yup` expects either and error object on validation failure, or `true` on validation success
             }),
         fixableCveOptions: yup
             .object({
