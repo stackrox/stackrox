@@ -2,13 +2,9 @@ package postgres
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"sort"
 	"time"
 
 	protoTypes "github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/jackc/pgx/v4"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
@@ -29,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"gorm.io/gorm"
 )
 
@@ -81,26 +76,6 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
-}
-
-var (
-	lock     sync.Mutex
-	imageMap = make(map[string]int)
-)
-
-func normalizeImage(img *storage.Image) {
-	sort.SliceStable(img.GetScan().GetComponents(), func(i, j int) bool {
-		compI, compJ := img.GetScan().GetComponents()[i], img.GetScan().GetComponents()[j]
-		if compI.GetName() != compJ.GetName() {
-			return compI.GetName() < compJ.GetName()
-		}
-		return compI.GetVersion() < compJ.GetVersion()
-	})
-	for _, comp := range img.GetScan().GetComponents() {
-		sort.SliceStable(comp.Vulns, func(i, j int) bool {
-			return comp.Vulns[i].GetCve() < comp.Vulns[j].GetCve()
-		})
-	}
 }
 
 func (s *storeImpl) insertIntoImages(
@@ -721,34 +696,6 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 	return nil
 }
 
-func writeDebug(obj *storage.Image) {
-	if obj.GetScan() == nil {
-		return
-	}
-	marshaler := jsonpb.Marshaler{
-		Indent: "  ",
-	}
-	dir := "/tmp/" + obj.GetId()
-	lock.Lock()
-	numTimesWritten, ok := imageMap[obj.GetId()]
-	if !ok {
-		if err := os.Mkdir("/tmp/"+obj.GetId(), 0777); !os.IsExist(err) && err != nil {
-			panic(err)
-		}
-	}
-	normalizeImage(obj)
-	data, err := marshaler.MarshalToString(obj.GetScan())
-	if err != nil {
-		panic(err)
-	}
-	err = os.WriteFile(fmt.Sprintf("%s/%d", dir, numTimesWritten+1), []byte(data), 0777)
-	if err != nil {
-		panic(err)
-	}
-	imageMap[obj.GetId()] = numTimesWritten + 1
-	lock.Unlock()
-}
-
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
 
@@ -775,9 +722,6 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 		} else if oldImage.GetScan().GetHashoneof() != nil && obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
 			scanUpdated = false
 		}
-	}
-	if scanUpdated {
-		writeDebug(obj)
 	}
 
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
