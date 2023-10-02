@@ -261,7 +261,7 @@ func TestNIST412_Success(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithoutSSH)
+	data.EXPECT().SSHProcessIndicators().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -310,7 +310,7 @@ func TestNIST412_FAIL(t *testing.T) {
 	data.EXPECT().Policies().AnyTimes().Return(policies)
 	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(nil)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
+	data.EXPECT().SSHProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
