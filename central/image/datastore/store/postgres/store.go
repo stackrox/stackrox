@@ -718,7 +718,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 
 	if obj.GetScan() != nil {
 		if err := populateImageScanHash(obj.GetScan()); err != nil {
-			log.Error("unable to populate image scan hash for %q", obj.GetId())
+			log.Errorf("unable to populate image scan hash for %q", obj.GetId())
 		} else if oldImage.GetScan().GetHashoneof() != nil && obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
 			scanUpdated = false
 		}
