@@ -295,7 +295,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         [
             ["/bin/sh", "-c /bin/sleep 600"],
-            ["/bin/sleep", "600"],
+            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
         ] | CENTOSDEPLOYMENT
 
         [
