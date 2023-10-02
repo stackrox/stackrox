@@ -94,7 +94,7 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 
 // parseIndexReport will generate an index report from a Contents payload.
 func (s *matcherService) parseIndexReport(ctx context.Context, contents *v4.Contents) (*claircore.IndexReport, error) {
-	ir, err := converters.ToClairCoreIndexReport(ctx, contents)
+	ir, err := converters.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
 		return nil, fmt.Errorf("internal error: %w", err)
