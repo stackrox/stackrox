@@ -47,6 +47,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
+import InviteUsersModal from './InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -231,6 +232,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
+                <InviteUsersModal />
             </ErrorBoundary>
         </div>
     );

@@ -2,6 +2,7 @@ import { selectors as userPageSelectors } from '../constants/UserPage';
 import { selectors as topNavSelectors } from '../constants/TopNavigation';
 import withAuth from '../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../helpers/title';
+import { checkInviteUsersModal } from '../helpers/inviteUsers';
 import {
     visitUserProfile,
     visitUserProfileFromTopNav,
@@ -64,6 +65,18 @@ describe('User Profile', () => {
                 'contain.text',
                 'Continuous Integration'
             );
+        });
+
+        it('should have a trigger for opening the Invite users modal', () => {
+            visitUserProfileWithStaticResponseForAuthStatus(
+                staticResponseForMultiRolesWithOidcProvider
+            );
+
+            // open menu and click Invite useres menu item
+            cy.get(topNavSelectors.menuButton).click();
+            cy.get('.pf-c-dropdown__menu-item:contains("Invite users")').click();
+
+            checkInviteUsersModal();
         });
 
         it('should navigate to the user page', () => {

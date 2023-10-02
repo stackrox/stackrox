@@ -9,6 +9,7 @@ import clusterInitBundles, { selectors as clusterInitBundleSelectors } from './c
 import feedback, { selectors as feedbackSelectors } from './feedback';
 import formMessages, { selectors as formMessageSelectors } from './formMessages';
 import integrations, { selectors as integrationSelectors } from './integrations';
+import invite, { selectors as inviteSelectors } from './invite';
 import notifications, { selectors as notificationSelectors } from './notifications';
 import featureFlags, { selectors as featureFlagSelectors } from './featureFlags';
 import policies, { selectors as policySelectors } from './policies/reducer';
@@ -36,6 +37,7 @@ const appReducer = combineReducers({
     feedback,
     formMessages,
     integrations,
+    invite,
     notifications,
     featureFlags,
     policies,
@@ -70,6 +72,7 @@ const getClusterInitBundles = (state) => getApp(state).clusterInitBundles;
 const getFeedback = (state) => getApp(state).feedback;
 const getFormMessages = (state) => getApp(state).formMessages;
 const getIntegrations = (state) => getApp(state).integrations;
+const getInvite = (state) => getApp(state).invite;
 const getNotifications = (state) => getApp(state).notifications;
 const getFeatureFlags = (state) => getApp(state).featureFlags;
 const getPolicies = (state) => getApp(state).policies;
@@ -90,6 +93,7 @@ const boundSelectors = {
     ...bindSelectors(getFeedback, feedbackSelectors),
     ...bindSelectors(getFormMessages, formMessageSelectors),
     ...bindSelectors(getIntegrations, integrationSelectors),
+    ...bindSelectors(getInvite, inviteSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
     ...bindSelectors(getFeatureFlags, featureFlagSelectors),
     ...bindSelectors(getPolicies, policySelectors),

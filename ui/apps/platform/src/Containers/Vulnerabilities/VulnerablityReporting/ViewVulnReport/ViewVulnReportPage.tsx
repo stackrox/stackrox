@@ -31,7 +31,9 @@ import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/Vulnerablity
 import { systemConfigPath, vulnerabilityReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
-import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
+import useDeleteModal, {
+    isErrorDeleteResult,
+} from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -77,7 +79,7 @@ function ViewVulnReportPage() {
         hasReadAccess('Image') && // for vulnerabilities
         hasReadAccess('Integration'); // for notifiers
 
-    const { reportConfiguration, isLoading, error } = useFetchReport(reportId);
+    const { reportConfiguration, isLoading, error: fetchError } = useFetchReport(reportId);
     const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfiguration);
     const reportSnapshot = reportSnapshots[reportId];
 
@@ -87,7 +89,7 @@ function ViewVulnReportPage() {
         closeDeleteModal,
         isDeleting,
         onDelete,
-        deleteError,
+        deleteResults,
     } = useDeleteModal({
         onCompleted: () => {
             history.push(vulnerabilityReportsPath);
@@ -125,11 +127,11 @@ function ViewVulnReportPage() {
         );
     }
 
-    if (error || !reportConfiguration) {
+    if (fetchError || !reportConfiguration) {
         return (
             <NotFoundMessage
                 title="Error fetching the report configuration"
-                message={error || 'No data available'}
+                message={fetchError || 'No data available'}
                 actionText="Go to reports"
                 url={vulnerabilityReportsPath}
             />
@@ -191,7 +193,6 @@ function ViewVulnReportPage() {
                                 position="right"
                                 toggle={
                                     <DropdownToggle
-                                        isPrimary
                                         onToggle={onToggleActionsDropdown}
                                         toggleIndicator={CaretDownIcon}
                                     >
@@ -251,7 +252,7 @@ function ViewVulnReportPage() {
                                         className="pf-u-danger-color-100"
                                         component="button"
                                         onClick={() => {
-                                            openDeleteModal(reportConfiguration.id);
+                                            openDeleteModal([reportConfiguration.id]);
                                         }}
                                         isDisabled={isReportStatusPending || isRunning}
                                     >
@@ -337,10 +338,25 @@ function ViewVulnReportPage() {
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
-                error={deleteError}
             >
-                This report and any attached downloadable reports will be permanently deleted. The
-                action cannot be undone.
+                <AlertGroup>
+                    {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
+                        return (
+                            <Alert
+                                isInline
+                                variant={AlertVariant.danger}
+                                title={`Failed to delete "${reportConfiguration.name}"`}
+                                className="pf-u-mb-sm"
+                            >
+                                {deleteResult.error}
+                            </Alert>
+                        );
+                    })}
+                </AlertGroup>
+                <p>
+                    The selected report and any attached downloadable reports will be permanently
+                    deleted. The action cannot be undone.
+                </p>
             </DeleteModal>
         </>
     );

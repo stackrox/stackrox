@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
 
@@ -23,7 +25,7 @@ var (
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
-func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
+func ToProtoV4IndexReport(ctx context.Context, r *claircore.IndexReport) *v4.IndexReport {
 	if r == nil {
 		return nil
 	}
@@ -31,32 +33,34 @@ func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
 		State:    r.State,
 		Success:  r.Success,
 		Err:      r.Err,
-		Contents: toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments),
+		Contents: toProtoV4Contents(ctx, r.Packages, r.Distributions, r.Repositories, r.Environments),
 	}
 }
 
 // ToProtoV4VulnerabilityReport maps claircore.VulnerabilityReport to v4.VulnerabilityReport.
-func ToProtoV4VulnerabilityReport(r *claircore.VulnerabilityReport) (*v4.VulnerabilityReport, error) {
+func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.VulnerabilityReport) (*v4.VulnerabilityReport, error) {
 	if r == nil {
 		return nil, nil
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(r.Vulnerabilities)
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
 		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities),
-		Contents:               toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments),
+		Contents:               toProtoV4Contents(ctx, r.Packages, r.Distributions, r.Repositories, r.Environments),
 	}, nil
 }
 
 // ToClairCoreIndexReport converts v4.Contents to a claircore.IndexReport.
-func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
+func ToClairCoreIndexReport(ctx context.Context, contents *v4.Contents) (*claircore.IndexReport, error) {
 	if contents == nil {
 		return nil, errors.New("internal error: empty contents")
 	}
-	pkgs, err := convertSliceToMap(contents.GetPackages(), toClairCorePackage)
+	pkgs, err := convertSliceToMap(contents.GetPackages(), func(p *v4.Package) (string, *claircore.Package, error) {
+		return toClairCorePackage(ctx, p)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -90,6 +94,7 @@ func ToClairCoreIndexReport(contents *v4.Contents) (*claircore.IndexReport, erro
 }
 
 func toProtoV4Contents(
+	ctx context.Context,
 	pkgs map[string]*claircore.Package,
 	dists map[string]*claircore.Distribution,
 	repos map[string]*claircore.Repository,
@@ -110,14 +115,16 @@ func toProtoV4Contents(
 		}
 	}
 	return &v4.Contents{
-		Packages:      convertMapToSlice(toProtoV4Package, pkgs),
+		Packages: convertMapToSlice(func(p *claircore.Package) *v4.Package {
+			return toProtoV4Package(ctx, p)
+		}, pkgs),
 		Distributions: convertMapToSlice(toProtoV4Distribution, dists),
 		Repositories:  convertMapToSlice(toProtoV4Repository, repos),
 		Environments:  environments,
 	}
 }
 
-func toProtoV4Package(p *claircore.Package) *v4.Package {
+func toProtoV4Package(ctx context.Context, p *claircore.Package) *v4.Package {
 	if p == nil {
 		return nil
 	}
@@ -134,7 +141,10 @@ func toProtoV4Package(p *claircore.Package) *v4.Package {
 		}
 		// Sanitize and avoid recursion.
 		src.Source = nil
-		return toProtoV4Package(src)
+		zlog.Warn(ctx).
+			Str("package_id", p.ID).
+			Msg("the clair core package's source specifies a source, sanitizing to nil")
+		return toProtoV4Package(ctx, src)
 	}
 	return &v4.Package{
 		Id:                p.ID,
@@ -212,7 +222,7 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 	return pkgVulns
 }
 
-func toProtoV4VulnerabilitiesMap(vulns map[string]*claircore.Vulnerability) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
@@ -240,7 +250,7 @@ func toProtoV4VulnerabilitiesMap(vulns map[string]*claircore.Vulnerability) (map
 		if v.Repo != nil {
 			repoID = v.Repo.ID
 		}
-		normalizedSeverity := toProtoV4VulnerabilitySeverity(v.NormalizedSeverity)
+		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               v.Name,
@@ -258,10 +268,13 @@ func toProtoV4VulnerabilitiesMap(vulns map[string]*claircore.Vulnerability) (map
 	return vulnerabilities, nil
 }
 
-func toProtoV4VulnerabilitySeverity(ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {
+func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {
 	if mappedSeverity, ok := severityMapping[ccSeverity]; ok {
 		return mappedSeverity
 	}
+	zlog.Warn(ctx).
+		Str("claircore_severity", ccSeverity.String()).
+		Msgf("unknown ClairCore severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
 	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
@@ -290,7 +303,7 @@ func toClairCoreCPE(s string) (cpe.WFN, error) {
 	return c, nil
 }
 
-func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
+func toClairCorePackage(ctx context.Context, p *v4.Package) (string, *claircore.Package, error) {
 	// Conversion functions.
 	toNormalizedVersion := func(v *v4.NormalizedVersion) (ccV claircore.Version) {
 		ccV.Kind = v.GetKind()
@@ -303,9 +316,12 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 		}
 		// Prevent deeper recursion.
 		if src.GetSource() != nil {
+			zlog.Warn(ctx).
+				Str("package_id", p.Id).
+				Msg("the package's source specifies a source, sanitizing to nil")
 			src.Source = nil
 		}
-		_, ccP, err := toClairCorePackage(src)
+		_, ccP, err := toClairCorePackage(ctx, src)
 		return ccP, err
 	}
 	// Fields that might fail.

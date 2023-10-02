@@ -36,18 +36,14 @@ func ssh(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		return
 	}
 	for runningContainerID, containerName := range runningContainerIDs {
-		for _, indicator := range ctx.Data().ProcessIndicators() {
+		for _, indicator := range ctx.Data().SSHProcessIndicators() {
 			// indicator.GetSignal().GetContainerId() only returns the first 12 characters of the container ID.
 			if strings.HasPrefix(runningContainerID, indicator.GetSignal().GetContainerId()) {
-				process := indicator.GetSignal().GetExecFilePath()
-				if strings.Contains(process, "ssh") {
-					fail = true
-					processWithArgs := fmt.Sprintf("%s %s", process, indicator.GetSignal().GetArgs())
-					framework.Failf(ctx, "Container %q has ssh process running: %q", containerName, processWithArgs)
-				}
+				fail = true
+				processWithArgs := fmt.Sprintf("%s %s", indicator.GetSignal().GetExecFilePath(), indicator.GetSignal().GetArgs())
+				framework.Failf(ctx, "Container %q has ssh process running: %q", containerName, processWithArgs)
 			}
 		}
-
 		if !fail {
 			framework.Passf(ctx, "Container %q has no ssh process running", containerName)
 		}

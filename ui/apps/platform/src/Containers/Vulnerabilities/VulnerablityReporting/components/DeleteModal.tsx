@@ -1,4 +1,4 @@
-import { Alert, AlertVariant, Button, Modal } from '@patternfly/react-core';
+import { Button, Modal } from '@patternfly/react-core';
 import React, { ReactElement } from 'react';
 
 export type DeleteModalProps = {
@@ -7,8 +7,7 @@ export type DeleteModalProps = {
     onClose: () => void;
     isDeleting: boolean;
     onDelete: () => void;
-    error: string | null;
-    children: string;
+    children: ReactElement | ReactElement[];
 };
 
 function DeleteModal({
@@ -17,7 +16,6 @@ function DeleteModal({
     onClose,
     isDeleting,
     onDelete,
-    error,
     children,
 }: DeleteModalProps): ReactElement {
     return (
@@ -41,15 +39,7 @@ function DeleteModal({
                 </Button>,
             ]}
         >
-            {error && (
-                <Alert
-                    isInline
-                    variant={AlertVariant.danger}
-                    title={error}
-                    className="pf-u-mb-sm"
-                />
-            )}
-            <p>{children}</p>
+            {children}
         </Modal>
     );
 }

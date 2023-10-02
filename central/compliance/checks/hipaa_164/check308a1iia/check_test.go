@@ -58,7 +58,7 @@ func (s *suiteImpl) TestFail() {
 	data.EXPECT().Cluster().AnyTimes().Return(s.cluster())
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(nil)
+	data.EXPECT().HasProcessIndicators().AnyTimes().Return(false)
 	data.EXPECT().NetworkFlows().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
@@ -108,11 +108,6 @@ func (s *suiteImpl) TestPass() {
 			},
 		},
 	}
-	processIndicators := []*storage.ProcessIndicator{
-		{
-			ContainerName: "foo",
-		},
-	}
 	flows := []*storage.NetworkFlow{
 		{
 			LastSeenTimestamp: types.TimestampNow(),
@@ -123,7 +118,7 @@ func (s *suiteImpl) TestPass() {
 	data.EXPECT().Cluster().AnyTimes().Return(s.cluster())
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(processIndicators)
+	data.EXPECT().HasProcessIndicators().AnyTimes().Return(true)
 	data.EXPECT().NetworkFlows().AnyTimes().Return(flows)
 
 	run, err := framework.NewComplianceRun(check)
