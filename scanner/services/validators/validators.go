@@ -14,7 +14,7 @@ import (
 )
 
 // hasIDAndCPE is the common interface offered by some proto definitions related
-// to ClairCore. It's used to simply validation.
+// to ClairCore. It's used to simplify validation.
 type hasIDAndCPE interface {
 	GetCpe() string
 	GetId() string

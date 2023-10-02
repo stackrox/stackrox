@@ -102,8 +102,7 @@ func main() {
 	}
 	log.Printf("Index Report: %s", indexReport.GetHashId())
 	vulnResp, err := vulnC.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
-		HashId:   hashId,
-		Contents: nil,
+		HashId: hashId,
 	})
 	if err != nil {
 		log.Fatalf("failed to get vulnerabilities: %s", err)
