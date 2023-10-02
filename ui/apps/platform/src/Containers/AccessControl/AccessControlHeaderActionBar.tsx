@@ -11,6 +11,7 @@ export type AccessControlHeaderActionBarProps = {
      * The UI component that performs the main action on this page.
      */
     actionComponent?: ReactNode;
+    inviteComponent?: ReactNode;
 };
 
 /**
@@ -20,12 +21,14 @@ export type AccessControlHeaderActionBarProps = {
 function AccessControlHeaderActionBar({
     displayComponent,
     actionComponent,
+    inviteComponent,
 }: AccessControlHeaderActionBarProps): ReactElement {
     return (
         <>
             <PageSection variant="light" className="pf-u-py-md">
                 <Split>
                     <SplitItem isFilled>{displayComponent}</SplitItem>
+                    {inviteComponent && <SplitItem>{inviteComponent}</SplitItem>}
                     {actionComponent && <SplitItem>{actionComponent}</SplitItem>}
                 </Split>
             </PageSection>

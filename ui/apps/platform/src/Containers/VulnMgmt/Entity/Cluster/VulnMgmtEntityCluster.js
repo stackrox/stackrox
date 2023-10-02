@@ -28,27 +28,11 @@ const VulmMgmtEntityCluster = ({
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
-        query getCluster($id: ID!, $policyQuery: String) {
+        query getCluster($id: ID!) {
             result: cluster(id: $id) {
                 id
                 name
                 priority
-                policyStatus(query: $policyQuery) {
-                    status
-                    failingPolicies {
-                        id
-                        name
-                        description
-                        policyStatus
-                        latestViolation
-                        severity
-                        deploymentCount: failingDeploymentCount # field changed to failingDeploymentCount to improve performance
-                        lifecycleStages
-                        enforcementActions
-                        notifiers
-                        lastUpdated
-                    }
-                }
                 #createdAt
                 status {
                     orchestratorMetadata {
@@ -57,7 +41,6 @@ const VulmMgmtEntityCluster = ({
                     }
                 }
                 istioEnabled
-                policyCount(query: $policyQuery)
                 nodeCount
                 namespaceCount
                 deploymentCount

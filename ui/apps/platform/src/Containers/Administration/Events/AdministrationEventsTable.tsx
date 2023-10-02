@@ -11,6 +11,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 
+import IconText from 'Components/PatternFly/IconText/IconText';
 import { AdministrationEvent } from 'services/AdministrationEventsService';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
@@ -27,12 +28,11 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
             <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
                 <Thead>
                     <Tr>
-                        <Td />
-                        <Th>Level</Th>
                         <Th>Domain</Th>
-                        <Th>Resource type</Th>
+                        <Th modifier="nowrap">Resource type</Th>
+                        <Th>Level</Th>
                         <Th>Event last occurred at</Th>
-                        <Th className="pf-u-text-align-right">Occurrences</Th>
+                        <Th className="pf-u-text-align-right">Count</Th>
                     </Tr>
                 </Thead>
                 {events.map((event) => {
@@ -44,8 +44,9 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                         level,
                         message,
                         numOccurrences,
-                        resourceType,
+                        resource,
                     } = event;
+                    const { type: resourceType } = resource;
 
                     return (
                         <Tbody
@@ -56,27 +57,36 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                             }}
                         >
                             <Tr>
-                                <Td dataLabel="Level icon">{getLevelIcon(level)}</Td>
-                                <Td dataLabel="Level">
-                                    <Link to={`/main/administration-events/${id}`}>
-                                        {getLevelText(level)}
-                                    </Link>
+                                <Td dataLabel="Domain" modifier="nowrap">
+                                    <Link to={`/main/administration-events/${id}`}>{domain}</Link>
                                 </Td>
-                                <Td dataLabel="Domain">{domain}</Td>
-                                <Td dataLabel="Resource type">{resourceType}</Td>
+                                <Td dataLabel="Resource type" modifier="nowrap">
+                                    {resourceType}
+                                </Td>
+                                <Td dataLabel="Level">
+                                    <IconText
+                                        icon={getLevelIcon(level)}
+                                        text={getLevelText(level)}
+                                    />
+                                </Td>
                                 <Td dataLabel="Event last occurred at" modifier="nowrap">
                                     {lastOccurredAt}
                                 </Td>
-                                <Td dataLabel="Occurrences" className="pf-u-text-align-right">
+                                <Td dataLabel="Count" className="pf-u-text-align-right">
                                     {numOccurrences}
                                 </Td>
                             </Tr>
                             <Tr>
-                                <Td />
-                                <Td colSpan={6}>
+                                <Td colSpan={5}>
                                     <ExpandableRowContent>
                                         <Flex direction={{ default: 'column' }}>
-                                            {hint && <p>{hint}</p>}
+                                            {hint && (
+                                                <div>
+                                                    {hint.split('\n').map((line) => (
+                                                        <p key={line}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            )}
                                             <CodeBlock>{message}</CodeBlock>
                                         </Flex>
                                     </ExpandableRowContent>

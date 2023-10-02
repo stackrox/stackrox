@@ -18,7 +18,8 @@ export type AdministrationEventDescriptionProps = {
 function AdministrationEventDescription({
     event,
 }: AdministrationEventDescriptionProps): ReactElement {
-    const { createdAt, lastOccurredAt, numOccurrences, resourceId, resourceType, type } = event;
+    const { createdAt, id, lastOccurredAt, numOccurrences, resource, type } = event;
+    const { id: resourceID, name: resourceName, type: resourceType } = resource;
 
     // TODO render hint and message when page design is ready.
     // TODO factor out if same presentation in page and table.
@@ -30,15 +31,25 @@ function AdministrationEventDescription({
                     <DescriptionListTerm>Resource type</DescriptionListTerm>
                     <DescriptionListDescription>{resourceType}</DescriptionListDescription>
                 </DescriptionListGroup>
-                {resourceId && (
+                {resourceName && (
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Resource Id</DescriptionListTerm>
-                        <DescriptionListDescription>{resourceId}</DescriptionListDescription>
+                        <DescriptionListTerm>Resource name</DescriptionListTerm>
+                        <DescriptionListDescription>{resourceName}</DescriptionListDescription>
+                    </DescriptionListGroup>
+                )}
+                {resourceID && (
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Resource ID</DescriptionListTerm>
+                        <DescriptionListDescription>{resourceID}</DescriptionListDescription>
                     </DescriptionListGroup>
                 )}
                 <DescriptionListGroup>
                     <DescriptionListTerm>Event type</DescriptionListTerm>
                     <DescriptionListDescription>{getTypeText(type)}</DescriptionListDescription>
+                </DescriptionListGroup>
+                <DescriptionListGroup>
+                    <DescriptionListTerm>Event ID</DescriptionListTerm>
+                    <DescriptionListDescription>{id}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Created at</DescriptionListTerm>
@@ -49,7 +60,7 @@ function AdministrationEventDescription({
                     <DescriptionListDescription>{lastOccurredAt}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Occurrences</DescriptionListTerm>
+                    <DescriptionListTerm>Count</DescriptionListTerm>
                     <DescriptionListDescription>{numOccurrences}</DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>

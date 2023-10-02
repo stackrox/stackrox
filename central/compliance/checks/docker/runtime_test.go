@@ -204,7 +204,7 @@ func runtimeTest(t *testing.T, c *testStruct, validationFunc func(*testing.T, fr
 		DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
 	})
 
-	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicators)
+	data.EXPECT().SSHProcessIndicators().AnyTimes().Return(indicators)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
