@@ -335,3 +335,40 @@ func (mr *MockNetworkEntityManagerMockRecorder) GetAllEntitiesForCluster(ctx, cl
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllEntitiesForCluster", reflect.TypeOf((*MockNetworkEntityManager)(nil).GetAllEntitiesForCluster), ctx, clusterID)
 }
+
+// MockComplianceOperatorManager is a mock of ComplianceOperatorManager interface.
+type MockComplianceOperatorManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockComplianceOperatorManagerMockRecorder
+}
+
+// MockComplianceOperatorManagerMockRecorder is the mock recorder for MockComplianceOperatorManager.
+type MockComplianceOperatorManagerMockRecorder struct {
+	mock *MockComplianceOperatorManager
+}
+
+// NewMockComplianceOperatorManager creates a new mock instance.
+func NewMockComplianceOperatorManager(ctrl *gomock.Controller) *MockComplianceOperatorManager {
+	mock := &MockComplianceOperatorManager{ctrl: ctrl}
+	mock.recorder = &MockComplianceOperatorManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockComplianceOperatorManager) EXPECT() *MockComplianceOperatorManagerMockRecorder {
+	return m.recorder
+}
+
+// HandleScanRequestResponse mocks base method.
+func (m *MockComplianceOperatorManager) HandleScanRequestResponse(ctx context.Context, requestID, clusterID, responsePayload string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScanRequestResponse", ctx, requestID, clusterID, responsePayload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScanRequestResponse indicates an expected call of HandleScanRequestResponse.
+func (mr *MockComplianceOperatorManagerMockRecorder) HandleScanRequestResponse(ctx, requestID, clusterID, responsePayload interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRequestResponse", reflect.TypeOf((*MockComplianceOperatorManager)(nil).HandleScanRequestResponse), ctx, requestID, clusterID, responsePayload)
+}

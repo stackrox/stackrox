@@ -95,6 +95,10 @@ message ListComplianceScanResultsResponse {
 
 service ComplianceResultsService {
     // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+    // Supported optional RawQuery query fields which can be combined
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceScanResultsOverview (RawQuery) returns (ListComplianceScanResultsOverviewResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/overview"
@@ -102,20 +106,31 @@ service ComplianceResultsService {
     }
 
     // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+    // Supported optional RawQuery query fields which can be combined
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceScanResults (RawQuery) returns (ListComplianceScanResultsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/results"
         };
     }
 
-    // GetComplianceProfileScanStats lists current scan stats by profile
+    // GetComplianceProfileScanStats lists current scan stats grouped by profile
+    // Supported optional RawQuery query fields which can be combined
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceProfileScanStats (RawQuery) returns (ListComplianceProfileScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/profile"
         };
     }
 
-    // GetComplianceClusterScanStats lists current scan stats by cluster
+    // GetComplianceClusterScanStats lists current scan stats grouped by cluster
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceClusterScanStats (RawQuery) returns (ListComplianceClusterScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/cluster"

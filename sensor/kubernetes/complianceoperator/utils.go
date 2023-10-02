@@ -45,7 +45,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,
-			Kind:     complianceoperator.ScanSetting.Kind,
+			Kind:     complianceoperator.Profile.Kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		})
 	}
@@ -62,7 +62,7 @@ func convertCentralRequestToScanSettingBinding(namespace string, request *centra
 		},
 		Profiles: profileRefs,
 		SettingsRef: &v1alpha1.NamedObjectReference{
-			Name:     defaultScanSettingName,
+			Name:     request.GetScanName(),
 			Kind:     complianceoperator.ScanSetting.Kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		},

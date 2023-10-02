@@ -21,9 +21,13 @@ type Manager interface {
 	// TODO: update interface{} type to exact struct once API modeling is complete.
 
 	// ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
-	ProcessScanRequest(ctx context.Context, scanRequest interface{}) error
+	ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error)
+	// HandleScanRequestResponse processes response of compliance scan configuration from a sensor.
+	HandleScanRequestResponse(ctx context.Context, requestID string, clusterID string, responsePayload string) error
+
 	// ProcessRescanRequest processes a request to rerun an existing compliance scan configuration.
 	ProcessRescanRequest(ctx context.Context, rescanRequest interface{}) error
 	// DeleteScan processes a request to delete an existing compliance scan configuration.
+	// TODO(ROX-19540)
 	DeleteScan(ctx context.Context, deleteScanRequest interface{}) error
 }

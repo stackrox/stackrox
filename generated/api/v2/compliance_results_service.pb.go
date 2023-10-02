@@ -1041,12 +1041,27 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ComplianceResultsServiceClient interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResults(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats by profile
+	// GetComplianceProfileScanStats lists current scan stats grouped by profile
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats by cluster
+	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceClusterScanStatsResponse, error)
 }
 
@@ -1097,12 +1112,27 @@ func (c *complianceResultsServiceClient) GetComplianceClusterScanStats(ctx conte
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
 type ComplianceResultsServiceServer interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(context.Context, *RawQuery) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceScanResults(context.Context, *RawQuery) (*ListComplianceScanResultsResponse, error)
-	// GetComplianceProfileScanStats lists current scan stats by profile
+	// GetComplianceProfileScanStats lists current scan stats grouped by profile
+	// Supported optional RawQuery query fields which can be combined
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
-	// GetComplianceClusterScanStats lists current scan stats by cluster
+	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// - scan: id(s) of the compliance scan
+	// - cluster: id(s) of the cluster
+	// - profile: id(s) of the profile
 	GetComplianceClusterScanStats(context.Context, *RawQuery) (*ListComplianceClusterScanStatsResponse, error)
 }
 
