@@ -120,7 +120,7 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurations() {
 	s.Require().Equal(0, len(scanConfigs))
 }
 
-func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationExists() {
+func (s *complianceScanConfigDataStoreTestSuite) TestScanConfigurationExists() {
 	configID := uuid.NewV4().String()
 
 	scanConfig := getTestRec()

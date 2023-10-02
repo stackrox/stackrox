@@ -174,7 +174,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		{
 			desc: "Successful creation of scan configuration",
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "")
@@ -184,7 +184,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		{
 			desc: "Scan configuration already exists",
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfigurationExists(gomock.Any(), mockScanName).Return(true, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(true, nil).Times(1)
 			},
 			isErrorTest: true,
 			expectedErr: errors.Errorf("Scan Configuration named %q already exists.", mockScanName),
@@ -192,7 +192,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		{
 			desc: "Unable to store scan configuration",
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(errors.Errorf("Unable to save scan config named %q", mockScanName)).Times(1)
 			},
 			isErrorTest: true,
@@ -201,7 +201,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequest() {
 		{
 			desc: "Error from sensor",
 			setMocks: func() {
-				suite.scanConfigDS.EXPECT().GetScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
+				suite.scanConfigDS.EXPECT().ScanConfigurationExists(gomock.Any(), mockScanName).Return(false, nil).Times(1)
 				suite.scanConfigDS.EXPECT().UpsertScanConfiguration(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 				suite.connectionMgr.EXPECT().SendMessage(fixtureconsts.Cluster1, gomock.Any()).Return(errors.New("Unable to process sensor message")).Times(1)
 				suite.scanConfigDS.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any(), fixtureconsts.Cluster1, "Unable to process sensor message")
