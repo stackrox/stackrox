@@ -29,6 +29,7 @@ import (
 	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	grpc_logging "github.com/stackrox/rox/pkg/grpc/logging"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -122,6 +123,7 @@ type Config struct {
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
 	Auditor            audit.Auditor
+	RateLimiter        ratelimit.RateLimiter
 
 	PreAuthContextEnrichers  []contextutil.ContextUpdater
 	PostAuthContextEnrichers []contextutil.ContextUpdater
@@ -179,15 +181,20 @@ func (a *apiImpl) Stop() bool {
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
+	var u []grpc.UnaryServerInterceptor
+
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted
 	// to gRPC status codes.
-	u := []grpc.UnaryServerInterceptor{
-		grpc_prometheus.UnaryServerInterceptor,
-		grpc_errors.ErrorToGrpcCodeInterceptor,
-		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
+	u = append(u, grpc_prometheus.UnaryServerInterceptor)
+	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
+
+	if a.config.RateLimiter != nil {
+		u = append(u, a.config.RateLimiter.GetUnaryServerInterceptor())
 	}
+
+	u = append(u, contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
+	u = append(u, contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
 
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		u = append(u, contextutil.UnaryServerInterceptor(a.config.PreAuthContextEnrichers...))
@@ -294,23 +301,28 @@ func allowCookiesHeaderMatcher(key string) (string, bool) {
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
+	var preAuthHTTPInterceptors []httputil.HTTPInterceptor
+	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.requestInfoHandler.HTTPIntercept)
+
+	if a.config.RateLimiter != nil {
+		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
+	}
+
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
 	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
+	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, contextutil.HTTPInterceptor(contextUpdaters...))
 
 	// Interceptors for HTTP/1.1 requests (in order of processing):
 	// - RequestInfo handler (consumed by other handlers)
 	// - IdentityExtractor
 	// - AuthConfigChecker
-	preAuthHTTPInterceptors := httputil.ChainInterceptors(
-		a.requestInfoHandler.HTTPIntercept,
-		contextutil.HTTPInterceptor(contextUpdaters...),
-	)
+	preAuthHTTPInterceptorChain := httputil.ChainInterceptors(preAuthHTTPInterceptors...)
 
 	// Interceptors for HTTP/1.1 requests that must be called after
 	// authorization (in order of processing):
 	// - Post auth context enrichers, including SAC (with authz tracing if on)
 	// - Any other specified interceptors (with authz tracing sink if on)
-	postAuthHTTPInterceptors := httputil.ChainInterceptors(
+	postAuthHTTPInterceptorChain := httputil.ChainInterceptors(
 		append([]httputil.HTTPInterceptor{
 			contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)},
 			a.config.HTTPInterceptors...)...,
@@ -326,13 +338,13 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		allRoutes = append(allRoutes, srvWithRoutes.CustomRoutes()...)
 	}
 	for _, route := range allRoutes {
-		handler := preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptors))
+		handler := preAuthHTTPInterceptorChain(route.Handler(postAuthHTTPInterceptorChain))
 
 		if a.config.Auditor != nil && route.EnableAudit {
 			postAuthHTTPInterceptorsWithAudit := httputil.ChainInterceptors(
-				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptors)...,
+				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptorChain)...,
 			)
-			handler = preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptorsWithAudit))
+			handler = preAuthHTTPInterceptorChain(route.Handler(postAuthHTTPInterceptorsWithAudit))
 		}
 
 		if a.config.HTTPMetrics != nil {
@@ -342,7 +354,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	if a.config.AuthProviders != nil {
-		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptors(a.config.AuthProviders))
+		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptorChain(a.config.AuthProviders))
 	}
 
 	gwMux := runtime.NewServeMux(

@@ -183,6 +183,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -536,6 +537,7 @@ func startGRPCServer() {
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
+		RateLimiter:        ratelimit.NewRateLimiter(),
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
