@@ -15,6 +15,8 @@ type initSyncManager struct {
 	sensors    set.StringSet
 }
 
+// NewInitSyncManager creates an initSyncManager with max sensors
+// retrieved from env variable, ensuring it is non-negative.
 func NewInitSyncManager() *initSyncManager {
 	maxSensors := env.CentralMaxInitSyncSensors.IntegerSetting()
 	if maxSensors < 0 {
