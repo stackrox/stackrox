@@ -121,6 +121,7 @@ export const selectors = scopeSelectors('main', {
 export const accessModalSelectors = {
     title: '.pf-c-modal-box__title-text',
     body: '.pf-c-modal-box__body',
+    button: '.pf-c-modal-box__footer button',
     cancel: '.pf-c-modal-box__footer button:contains("Cancel")',
     delete: '.pf-c-modal-box__footer button:contains("Delete")',
 };
