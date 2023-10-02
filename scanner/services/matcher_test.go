@@ -63,7 +63,7 @@ func (s *matcherServiceTestSuite) Test_matcherService_GetVulnerabilities_empty_c
 		Kind: "",
 		V:    []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
-	
+
 	manifestDigest, err := createManifestDigest("/v4/containerimage/foobar")
 	s.NoError(err)
 
