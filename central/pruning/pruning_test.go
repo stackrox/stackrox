@@ -98,7 +98,7 @@ var (
 			},
 			ImageRetentionDurationDays:           configDatastore.DefaultImageRetention,
 			ReportRetentionConfig:                &storage.ReportRetentionConfig{},
-			ExpiredApiTokenRetentionDurationDays: testRetentionApiToken,
+			ExpiredApiTokenRetentionDurationDays: testRetentionAPIToken,
 		},
 	}
 )
