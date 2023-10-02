@@ -277,16 +277,15 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVResult, err := common.Format(reportData, nil, "")
+	zippedCSVData, empty, err := common.Format(reportData)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
-	zippedCSVData := zippedCSVResult.ZippedCsv
 
 	// If it is an empty report, do not send an attachment in the final notification email and the email body
 	// will indicate that no vulns were found
 	templateStr := vulnReportEmailTemplate
-	if zippedCSVResult.NumDeployedImageCVEs == 0 && zippedCSVResult.NumWatchedImageCVEs == 0 {
+	if empty {
 		// If it is an empty report, the email body will indicate that no vulns were found
 		zippedCSVData = nil
 		templateStr = noVulnsFoundEmailTemplate
