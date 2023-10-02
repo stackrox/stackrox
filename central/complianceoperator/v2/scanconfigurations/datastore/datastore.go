@@ -25,8 +25,8 @@ type DataStore interface {
 	// GetScanConfiguration retrieves the scan configuration specified by id
 	GetScanConfiguration(ctx context.Context, id string) (*storage.ComplianceOperatorScanConfigurationV2, bool, error)
 
-	// GetScanConfigurationExists retrieves the existence of scan configuration specified by name
-	GetScanConfigurationExists(ctx context.Context, scanName string) (bool, error)
+	// ScanConfigurationExists retrieves the existence of scan configuration specified by name
+	ScanConfigurationExists(ctx context.Context, scanName string) (bool, error)
 
 	// GetScanConfigurations retrieves the scan configurations specified by query
 	GetScanConfigurations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorScanConfigurationV2, error)

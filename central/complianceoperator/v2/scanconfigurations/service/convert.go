@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cluster/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -164,7 +163,7 @@ func convertProtoScheduleToV2(schedule *storage.Schedule) *v2.Schedule {
 	return ret
 }
 
-func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, clusterStore datastore.DataStore, configDS complianceDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
+func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) (*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfig == nil {
 		return nil, nil
 	}
@@ -187,16 +186,9 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 		ClusterStatus: func() []*v2.ClusterScanStatus {
 			clusterStatuses := make([]*v2.ClusterScanStatus, 0, len(scanClusters))
 			for _, cluster := range scanClusters {
-				clusterName, found, err := clusterStore.GetClusterName(ctx, cluster.GetClusterId())
-				if err != nil {
-					log.Error(err)
-				}
-				if !found {
-					log.Errorf("unable to find cluster name for cluster %q", cluster.GetClusterId())
-				}
 				clusterStatuses = append(clusterStatuses, &v2.ClusterScanStatus{
 					ClusterId:   cluster.GetClusterId(),
-					ClusterName: clusterName,
+					ClusterName: cluster.GetClusterName(),
 					Errors:      cluster.GetErrors(),
 				})
 			}
@@ -217,14 +209,14 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context, scanConfig *sto
 	}, nil
 }
 
-func convertStorageScanConfigToV2ScanStatuses(ctx context.Context, scanConfigs []*storage.ComplianceOperatorScanConfigurationV2, clusterStore datastore.DataStore, configDS complianceDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
+func convertStorageScanConfigToV2ScanStatuses(ctx context.Context, scanConfigs []*storage.ComplianceOperatorScanConfigurationV2, configDS complianceDS.DataStore) ([]*v2.ComplianceScanConfigurationStatus, error) {
 	if scanConfigs == nil {
 		return nil, nil
 	}
 
 	scanStatuses := make([]*v2.ComplianceScanConfigurationStatus, 0, len(scanConfigs))
 	for _, scanConfig := range scanConfigs {
-		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, clusterStore, configDS)
+		converted, err := convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, configDS)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error converting storage compliance operator scan configuration status with name %s to response", scanConfig.GetScanName())
 		}

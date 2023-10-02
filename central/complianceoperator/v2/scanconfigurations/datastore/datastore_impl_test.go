@@ -129,12 +129,12 @@ func (s *complianceScanConfigDataStoreTestSuite) TestGetScanConfigurationExists(
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
 
-	found, err := s.dataStore.GetScanConfigurationExists(s.hasReadCtx, mockScanName)
+	found, err := s.dataStore.ScanConfigurationExists(s.hasReadCtx, mockScanName)
 	s.Require().NoError(err)
 	s.Require().True(found)
 
 	// Retrieve a record that does not exist
-	found, err = s.dataStore.GetScanConfigurationExists(s.hasReadCtx, "DOES NOT EXIST")
+	found, err = s.dataStore.ScanConfigurationExists(s.hasReadCtx, "DOES NOT EXIST")
 	s.Require().NoError(err)
 	s.Require().False(found)
 }

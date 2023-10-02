@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -76,7 +75,6 @@ type ComplianceScanConfigServiceTestSuite struct {
 
 	ctx                 context.Context
 	manager             *managerMocks.MockManager
-	clusterDatastore    *clusterMocks.MockDataStore
 	scanConfigDatastore *scanConfigMocks.MockDataStore
 	service             Service
 }
@@ -93,18 +91,17 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupSuite() {
 
 func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
 	s.scanConfigDatastore = scanConfigMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.scanConfigDatastore, s.manager, s.clusterDatastore)
+	s.service = New(s.scanConfigDatastore, s.manager)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestPostComplianceScanConfiguration() {
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfiguration() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
 	request := getTestAPIRec()
@@ -120,12 +117,12 @@ func (s *ComplianceScanConfigServiceTestSuite) TestPostComplianceScanConfigurati
 		},
 	}, nil).Times(1)
 
-	config, err := s.service.PostComplianceScanConfiguration(allAccessContext, request)
+	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().NoError(err)
 	s.Require().Equal(request, config)
 }
 
-func (s *ComplianceScanConfigServiceTestSuite) TestPostComplianceScanConfigurationScanExists() {
+func (s *ComplianceScanConfigServiceTestSuite) TestCreateComplianceScanConfigurationScanExists() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 
 	request := getTestAPIRec()
@@ -134,7 +131,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestPostComplianceScanConfigurati
 	s.manager.EXPECT().ProcessScanRequest(gomock.Any(), storageRequest, []string{fixtureconsts.Cluster1}).Return(nil, managerErr).Times(1)
 	expectedErr := errors.Wrapf(errox.InvalidArgs, "Unable to process scan config. Scan Configuration named %q already exists.", request.GetScanName())
 
-	config, err := s.service.PostComplianceScanConfiguration(allAccessContext, request)
+	config, err := s.service.CreateComplianceScanConfiguration(allAccessContext, request)
 	s.Require().Equal(expectedErr.Error(), err.Error())
 	s.Require().Nil(config)
 }
@@ -177,8 +174,6 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 					getTestAPIStatusRec(createdTime, lastUpdatedTime),
 				},
 			}
-
-			s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return(mockClusterName, true, nil).Times(1)
 
 			s.scanConfigDatastore.EXPECT().GetScanConfigurations(allAccessContext, tc.expectedQ).
 				Return([]*storage.ComplianceOperatorScanConfigurationV2{
@@ -248,8 +243,6 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
 			if tc.found {
-				s.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return(mockClusterName, true, nil).Times(1)
-
 				s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, tc.scanID).
 					Return(&storage.ComplianceOperatorScanConfigurationV2{
 						Id:                     uuid.NewDummy().String(),

@@ -118,7 +118,7 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 	}
 
 	// Check if scan configuration already exists.
-	found, err := m.scanSettingDS.GetScanConfigurationExists(ctx, scanRequest.GetScanName())
+	found, err := m.scanSettingDS.ScanConfigurationExists(ctx, scanRequest.GetScanName())
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Wrapf(err, "Unable to create scan configuration named %q.", scanRequest.GetScanName())
@@ -213,12 +213,16 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 	var scanID string
 	if clusterScanData, found := m.runningRequests[requestID]; found {
 		if clusterScanData.clusterID != clusterID {
+			delete(m.runningRequests, requestID)
 			return errors.Errorf("Cluster mismatch for request %q", requestID)
 		}
 		scanID = clusterScanData.scanID
 	} else {
 		return errors.Errorf("Unable to find request %q", requestID)
 	}
+
+	// The request was found, remove it from the map
+	delete(m.runningRequests, requestID)
 
 	if scanID == "" {
 		return errors.Errorf("Unable to map request %q to a scan configuration", requestID)
@@ -228,7 +232,6 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 	if err != nil {
 		return err
 	}
-	delete(m.runningRequests, requestID)
 
 	return nil
 }

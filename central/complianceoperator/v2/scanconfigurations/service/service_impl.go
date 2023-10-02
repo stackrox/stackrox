@@ -5,7 +5,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -42,11 +41,10 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceScanSettingsDS complianceDS.DataStore, manager compliancemanager.Manager, clusterStore datastore.DataStore) Service {
+func New(complianceScanSettingsDS complianceDS.DataStore, manager compliancemanager.Manager) Service {
 	return &serviceImpl{
 		complianceScanSettingsDS: complianceScanSettingsDS,
 		manager:                  manager,
-		clusterStore:             clusterStore,
 	}
 }
 
@@ -55,7 +53,6 @@ type serviceImpl struct {
 
 	complianceScanSettingsDS complianceDS.DataStore
 	manager                  compliancemanager.Manager
-	clusterStore             datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -73,7 +70,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) PostComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
+func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req *v2.ComplianceScanConfiguration) (*v2.ComplianceScanConfiguration, error) {
 	if req.GetScanName() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
 	}
@@ -109,7 +106,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
 	}
 
-	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.clusterStore, s.complianceScanSettingsDS)
+	scanStatuses, err := convertStorageScanConfigToV2ScanStatuses(ctx, scanConfigs, s.complianceScanSettingsDS)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
@@ -132,5 +129,5 @@ func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v
 		return nil, errors.Errorf("failed to retrieve compliance scan configuration with id %q.", req.GetId())
 	}
 
-	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.clusterStore, s.complianceScanSettingsDS)
+	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.complianceScanSettingsDS)
 }

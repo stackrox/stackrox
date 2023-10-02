@@ -38,8 +38,8 @@ func (ds *datastoreImpl) GetScanConfiguration(ctx context.Context, id string) (*
 	return ds.storage.Get(ctx, id)
 }
 
-// GetScanConfigurationExists retrieves the existence of scan configuration specified by name
-func (ds *datastoreImpl) GetScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
+// ScanConfigurationExists retrieves the existence of scan configuration specified by name
+func (ds *datastoreImpl) ScanConfigurationExists(ctx context.Context, scanName string) (bool, error) {
 	if ok, err := scanConfigurationsSAC.ReadAllowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
