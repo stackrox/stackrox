@@ -78,11 +78,11 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	var workerType string
 	switch event.Resource.(type) {
 	case *central.SensorEvent_Synced:
-		s.initSyncMgr.Remove(s.cluster.GetId())
 		// Call the reconcile functions
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
+		s.initSyncMgr.Remove(s.cluster.GetId())
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return

@@ -30,12 +30,12 @@ func NewInitSyncManager() *initSyncManager {
 }
 
 func (m *initSyncManager) Add(clusterID string) bool {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	if m.maxSensors == 0 {
 		return true
 	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	if m.sensors.Contains(clusterID) {
 		return true
@@ -50,12 +50,12 @@ func (m *initSyncManager) Add(clusterID string) bool {
 }
 
 func (m *initSyncManager) Remove(clusterID string) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	if m.maxSensors == 0 {
 		return
 	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	m.sensors.Remove(clusterID)
 }
