@@ -4,6 +4,7 @@ import { visit, visitWithStaticResponseForAuthStatus } from './visit';
 
 const basePath = '/main/user';
 
+const menuText = 'My profile';
 const title = 'User Profile';
 
 export function visitUserProfile() {
@@ -16,7 +17,7 @@ export function visitUserProfileFromTopNav() {
     visitMainDashboard();
 
     cy.get(topNavSelectors.menuButton).click();
-    cy.get(`a[role="menuitem"]:contains("${title}")`).click();
+    cy.get(`a[role="menuitem"]:contains("${menuText}")`).click();
 
     cy.location('pathname').should('eq', basePath);
     cy.get(`h1:contains("${title}")`);
