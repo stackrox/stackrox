@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	scanStatusStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/scanconfigstatus/store/postgres"
 	configStore "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,10 +18,12 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
-	mockScanName = "mock-scan"
+	mockClusterName = "mock-cluster"
+	mockScanName    = "mock-scan"
 )
 
 func TestComplianceScanConfigDataStore(t *testing.T) {
@@ -29,15 +32,17 @@ func TestComplianceScanConfigDataStore(t *testing.T) {
 
 type complianceScanConfigDataStoreTestSuite struct {
 	suite.Suite
+	mockCtrl *gomock.Controller
 
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 	noAccessCtx context.Context
 
-	dataStore     DataStore
-	db            *pgtest.TestPostgres
-	storage       configStore.Store
-	statusStorage scanStatusStore.Store
+	dataStore        DataStore
+	db               *pgtest.TestPostgres
+	storage          configStore.Store
+	statusStorage    scanStatusStore.Store
+	clusterDatastore *clusterMocks.MockDataStore
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) SetupSuite() {
@@ -59,13 +64,16 @@ func (s *complianceScanConfigDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.ComplianceOperator)))
 	s.noAccessCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 
+	s.mockCtrl = gomock.NewController(s.T())
+	s.clusterDatastore = clusterMocks.NewMockDataStore(s.mockCtrl)
+
 	s.db = pgtest.ForT(s.T())
 	var err error
 	s.storage = configStore.New(s.db)
 	s.statusStorage = scanStatusStore.New(s.db)
 	s.Require().NoError(err)
 
-	s.dataStore = New(s.storage, s.statusStorage)
+	s.dataStore = New(s.storage, s.statusStorage, s.clusterDatastore)
 }
 
 func (s *complianceScanConfigDataStoreTestSuite) TearDownTest() {
@@ -189,6 +197,11 @@ func (s *complianceScanConfigDataStoreTestSuite) TestClusterStatus() {
 
 	scanConfig := getTestRec()
 	scanConfig.Id = configID
+
+	s.clusterDatastore.EXPECT().GetCluster(gomock.Any(), fixtureconsts.Cluster1).Return(&storage.Cluster{
+		Id:   fixtureconsts.Cluster1,
+		Name: mockClusterName,
+	}, true, nil).Times(2)
 
 	// Add a record so we have something to find
 	s.Require().NoError(s.storage.Upsert(s.hasWriteCtx, scanConfig))
