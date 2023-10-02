@@ -199,9 +199,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 			s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 				{
-					ClusterId: fixtureconsts.Cluster1,
-					ScanId:    uuid.NewDummy().String(),
-					Errors:    []string{"Error 1", "Error 2", "Error 3"},
+					ClusterId:   fixtureconsts.Cluster1,
+					ClusterName: mockClusterName,
+					ScanId:      uuid.NewDummy().String(),
+					Errors:      []string{"Error 1", "Error 2", "Error 3"},
 				},
 			}, nil).Times(1)
 
@@ -265,9 +266,10 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetComplianceScanConfiguratio
 
 				s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, uuid.NewDummy().String()).Return([]*storage.ComplianceOperatorClusterScanConfigStatus{
 					{
-						ClusterId: fixtureconsts.Cluster1,
-						ScanId:    uuid.NewDummy().String(),
-						Errors:    []string{"Error 1", "Error 2", "Error 3"},
+						ClusterId:   fixtureconsts.Cluster1,
+						ClusterName: mockClusterName,
+						ScanId:      uuid.NewDummy().String(),
+						Errors:      []string{"Error 1", "Error 2", "Error 3"},
 					},
 				}, nil).Times(1)
 			} else {
