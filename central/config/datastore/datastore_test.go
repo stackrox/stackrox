@@ -88,6 +88,7 @@ var (
 )
 
 func (s *configDataStoreTestSuite) TestAllowsGetPublic() {
+	getPublicConfigCache().Purge()
 	s.storage.EXPECT().Get(gomock.Any()).Return(sampleConfig, true, nil).Times(1)
 
 	publicCfg, err := s.dataStore.GetPublicConfig()
