@@ -500,10 +500,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	var lookupResults []clusterentities.LookupResult
+	var isInternet = false
 
 	// Check if the remote address represents the de-facto INTERNET entity.
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
+		isInternet = true
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
@@ -545,7 +547,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				log.Debugf("Not showing flow on the network graph: %v", err)
 				return
 			}
-			if !isExternal {
+			if isExternal {
+				if !isInternet {
+					entityType = networkgraph.LearnedExternalEntity(net.IPNetworkFromNetworkPeerID(conn.remote.IPAndPort))
+				}
+			} else {
 				entityType = networkgraph.InternalEntities()
 			}
 

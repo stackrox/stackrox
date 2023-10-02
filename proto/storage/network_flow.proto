@@ -83,6 +83,8 @@ message NetworkEntityInfo {
     }
     // `default` indicates whether the external source is user-generated or system-generated.
     bool default = 3 [(gogoproto.moretags) = 'search:"Default External Source,hidden"'];
+    // `learned` indicates whether the external source is harvested from monitored traffic.
+    bool learned = 4 [(gogoproto.moretags) = 'search:"Learned External Source,hidden"'];
   }
 
   Type type = 1 [(gogoproto.moretags) = 'sql:"index"'];
