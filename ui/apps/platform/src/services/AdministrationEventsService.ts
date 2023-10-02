@@ -5,6 +5,18 @@ import { Pagination } from './types';
 const eventsCountUrl = '/v1/count/administration/events';
 const eventsUrl = '/v1/administration/events';
 
+/*
+ * Especially to prevent confusion which id and type value,
+ * we recommend destructuring assignment to local variable names:
+ *
+ * const { id: resourceID, name: resourceName, type: resourceType } = resource;
+ */
+export type AdministrationEventResource = {
+    type: string;
+    id: string;
+    name: string;
+};
+
 export type AdministrationEvent = {
     id: string;
     type: AdministrationEventType;
@@ -12,8 +24,7 @@ export type AdministrationEvent = {
     message: string;
     hint: string;
     domain: string;
-    resourceType: string;
-    resourceId: string;
+    resource: AdministrationEventResource;
     numOccurrences: string; // int64
     lastOccurredAt: string; // ISO 8601
     createdAt: string; // ISO 8601

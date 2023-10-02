@@ -16,7 +16,6 @@ import { AdministrationEvent, getAdministrationEvent } from 'services/Administra
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { administrationEventsBasePath } from 'routePaths';
 
-import { getLevelText } from './AdministrationEvent';
 import AdministrationEventDescription from './AdministrationEventDescription';
 
 export type AdministrationEventPageProps = {
@@ -44,7 +43,7 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
             });
     }, [id]);
 
-    const h1 = event ? `${getLevelText(event.level)} - ${event.domain}` : 'Administration event';
+    const h1 = event ? event.domain : 'Administration event';
 
     /* eslint-disable no-nested-ternary */
     return (
