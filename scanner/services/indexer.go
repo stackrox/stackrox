@@ -75,7 +75,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	indexReport := converters.ToProtoV4IndexReport(clairReport)
+	indexReport := converters.ToProtoV4IndexReport(ctx, clairReport)
 	indexReport.HashId = req.GetHashId()
 	// TODO Define behavior for indexReport.Err != "".
 	return indexReport, nil
@@ -86,7 +86,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	if err != nil {
 		return nil, err
 	}
-	indexReport := converters.ToProtoV4IndexReport(clairReport)
+	indexReport := converters.ToProtoV4IndexReport(ctx, clairReport)
 	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
 }
