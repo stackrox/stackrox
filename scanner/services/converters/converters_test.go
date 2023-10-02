@@ -13,18 +13,15 @@ import (
 )
 
 var (
-	emptyNormalizedVersion = v4.NormalizedVersion{
-		Kind: "",
-		V:    []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	}
 	emptyCPE = "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"
 )
 
 func Test_ToProtoV4IndexReport(t *testing.T) {
 	tests := []struct {
-		name string
-		arg  *claircore.IndexReport
-		want *v4.IndexReport
+		name    string
+		arg     *claircore.IndexReport
+		want    *v4.IndexReport
+		wantErr string
 	}{
 		{
 			name: "when nil then nil",
@@ -35,10 +32,16 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 			want: &v4.IndexReport{Contents: &v4.Contents{}},
 		},
 	}
-	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ToProtoV4IndexReport(ctx, tt.arg))
+			got, err := ToProtoV4IndexReport(tt.arg)
+			if tt.wantErr != "" {
+				assert.Nil(t, tt.want)
+				assert.ErrorContains(t, err, tt.wantErr)
+			} else {
+				assert.Equal(t, tt.want, got)
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
@@ -147,7 +150,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			arg:  &v4.Contents{},
 			want: &claircore.IndexReport{},
 		},
-		"when content package has source with source then return without source": {
+		"when content package has source with source then error": {
 			arg: &v4.Contents{
 				Packages: []*v4.Package{
 					{
@@ -161,18 +164,7 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 					},
 				},
 			},
-			want: &claircore.IndexReport{
-				Packages: map[string]*claircore.Package{
-					"sample package": {
-						ID:  "sample package",
-						CPE: cpe.MustUnbind("cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*"),
-						Source: &claircore.Package{
-							ID:  "source",
-							CPE: cpe.MustUnbind("cpe:2.3:a:redhat:scanner:4:*:el9:*:*:*:*:*"),
-						},
-					},
-				},
-			},
+			wantErr: "source specifies source",
 		},
 		"when content package has invalid CPE then error": {
 			arg: &v4.Contents{
@@ -325,10 +317,9 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			},
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := ToClairCoreIndexReport(ctx, tt.arg)
+			got, err := ToClairCoreIndexReport(tt.arg)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
 			} else {
@@ -341,9 +332,10 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 
 func Test_toProtoV4Package(t *testing.T) {
 	tests := []struct {
-		name string
-		arg  *claircore.Package
-		want *v4.Package
+		name    string
+		arg     *claircore.Package
+		want    *v4.Package
+		wantErr string
 	}{
 		{
 			name: "when nil then nil",
@@ -385,7 +377,7 @@ func Test_toProtoV4Package(t *testing.T) {
 			},
 		},
 		{
-			name: "when source with source then input is sanitized and no error",
+			name: "when source with source then error",
 			arg: &claircore.Package{
 				Name: "Sample name",
 				Source: &claircore.Package{
@@ -395,27 +387,23 @@ func Test_toProtoV4Package(t *testing.T) {
 					},
 				},
 			},
-			want: &v4.Package{
-				Name: "Sample name",
-				Source: &v4.Package{
-					Name:              "sample source",
-					NormalizedVersion: &emptyNormalizedVersion,
-					Cpe:               emptyCPE,
-				},
-				NormalizedVersion: &emptyNormalizedVersion,
-				Cpe:               emptyCPE,
-			},
+			wantErr: "source specifies source",
 		},
 	}
-	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := toProtoV4Package(ctx, tt.arg)
-			assert.Equal(t, tt.want, got)
+			got, err := toProtoV4Package(tt.arg)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				assert.Nil(t, tt.want)
+			} else {
+				assert.Equal(t, tt.want, got)
+				assert.NoError(t, err)
+			}
 		})
 	}
-	// Test source with another source (prevents recursion).
-	t.Run("when source has source no conversion", func(t *testing.T) {
+	// Test source with another source.
+	t.Run("when source has source then error", func(t *testing.T) {
 		arg := &claircore.Package{
 			Name: "Package",
 			Source: &claircore.Package{
@@ -425,8 +413,9 @@ func Test_toProtoV4Package(t *testing.T) {
 				},
 			},
 		}
-		got := toProtoV4Package(ctx, arg)
-		assert.Nil(t, got.GetSource().GetSource())
+		got, err := toProtoV4Package(arg)
+		assert.Nil(t, got)
+		assert.ErrorContains(t, err, "source specifies source")
 	})
 }
 
@@ -564,8 +553,9 @@ func Test_toProtoV4Contents(t *testing.T) {
 		envs  map[string][]*claircore.Environment
 	}
 	tests := map[string]struct {
-		args args
-		want *v4.Contents
+		args    args
+		want    *v4.Contents
+		wantErr string
 	}{
 		"when one empty environment": {
 			args: args{
@@ -598,11 +588,16 @@ func Test_toProtoV4Contents(t *testing.T) {
 			},
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := toProtoV4Contents(ctx, tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs)
-			assert.EqualValues(t, tt.want, got)
+			got, err := toProtoV4Contents(tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs)
+			if tt.wantErr != "" {
+				assert.Nil(t, got)
+				assert.ErrorContains(t, err, tt.wantErr)
+			} else {
+				assert.EqualValues(t, tt.want, got)
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
