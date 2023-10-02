@@ -33,7 +33,8 @@ type ComplianceDataRepository interface {
 	ImageIntegrations() []*storage.ImageIntegration
 	RegistryIntegrations() []ImageMatcher
 	ScannerIntegrations() []ImageMatcher
-	ProcessIndicators() []*storage.ProcessIndicator
+	SSHProcessIndicators() []*storage.ProcessIndicator
+	HasProcessIndicators() bool
 	NetworkFlows() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
 	Notifiers() []*storage.Notifier
