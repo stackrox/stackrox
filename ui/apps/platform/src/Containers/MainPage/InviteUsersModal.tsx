@@ -7,11 +7,11 @@ import * as yup from 'yup';
 
 import { selectors } from 'reducers';
 import { actions as inviteActions } from 'reducers/invite';
-import { actions as authActions, types as authActionTypes } from 'reducers/auth';
+import { actions as authActions } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
-import { AuthProvider } from 'services/AuthService/AuthService';
-import { dedupeDelimtedString } from 'utils/textUtils';
+import { actions as roleActions } from 'reducers/roles';
+import { AuthProvider } from 'services/AuthService';
+import { dedupeDelimitedString } from 'utils/textUtils';
 import { mergeGroupsWithAuthProviders } from '../AccessControl/AuthProviders/authProviders.utils';
 import InviteUsersForm from './InviteUsersForm';
 
@@ -27,7 +27,7 @@ const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const validationSchema = yup.object().shape({
     emails: yup
         .string()
-        .transform((value) => dedupeDelimtedString(value).join(',')) // dedupe - optional step
+        .transform((value) => dedupeDelimitedString(value).join(',')) // dedupe - optional step
         .required('At least one email is required')
         .test('emails', 'Invalid email address', (value) =>
             Boolean(
@@ -52,16 +52,15 @@ const feedbackState = createStructuredSelector({
     authProviders: selectors.getAvailableAuthProviders,
     groups: selectors.getRuleGroups,
     roles: selectors.getRoles,
-    isFetchingAuthProviders: (state) =>
-        selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
-    isFetchingRoles: (state) =>
-        selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
-    invite: selectors.inviteSelector,
+    showInviteModal: selectors.inviteSelector,
 });
 
 function InviteUsersModal(): ReactElement | null {
-    const { invite: showInviteModal } = useSelector(feedbackState);
+    const { authProviders, groups, roles, showInviteModal } = useSelector(feedbackState);
+    const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
+
     const dispatch = useDispatch();
+
     const formik = useFormik<InviteFormValues>({
         initialValues: defaultInviteFormValues,
         onSubmit: () => {}, // required but not used, because the submit action is in the modal footer
@@ -70,10 +69,6 @@ function InviteUsersModal(): ReactElement | null {
     });
 
     const { isValid, values, setFieldValue } = formik;
-
-    const { authProviders, groups, roles } = useSelector(feedbackState);
-
-    const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
 
     const allowedRoles = roles.filter((role) => {
         return role.name !== 'Admin' && role.name !== 'None';
@@ -86,7 +81,13 @@ function InviteUsersModal(): ReactElement | null {
     }, [dispatch]);
 
     useEffect(() => {
-        const typedProviders = authProviders as AuthProvider[]; // redux state from sagas is not yet typed
+        // redux state from sagas is not yet typed, and API response could corrupt Redux at runtime
+        if (!Array.isArray(authProviders)) {
+            return;
+        }
+        const typedProviders = (authProviders as AuthProvider[]).filter(
+            (provider) => typeof provider.name === 'string'
+        );
 
         // if there is only 1 authProvider, pre-select it in the dropdown
         if (typedProviders.length === 1) {
@@ -94,10 +95,12 @@ function InviteUsersModal(): ReactElement | null {
             void setFieldValue('provider', typedProviders[0].name);
         } else if (typedProviders.length > 1) {
             // if there is more than 1 authProvider, pre-select RedHat / OpenShift provider if possible
-            const redhatSsoProvider = typedProviders.find(
-                (provider) =>
-                    provider.name.includes('Red Hat SSO') || provider.name.includes('Red Hat SSO')
-            );
+            const redhatSsoProvider = typedProviders.find((provider) => {
+                const lowercasedName = provider.name.toLocaleLowerCase();
+                return (
+                    lowercasedName.includes('red Hat sso') || lowercasedName.includes('openshift')
+                );
+            });
 
             if (redhatSsoProvider) {
                 // eslint-disable-next-line no-void
@@ -116,7 +119,36 @@ function InviteUsersModal(): ReactElement | null {
     }
 
     function submitInvitations() {
+        // eslint-disable-next-line no-console
         console.log({ values });
+
+        // check whether any of the listed emails already have rules for this auth provider
+        const providerWithRules = authProvidersWithRules.find(
+            (provider) => provider.name === values.provider
+        );
+        if (providerWithRules) {
+            const emailArr = dedupeDelimitedString(values.emails);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const emailBuckets = emailArr.reduce<{ new: string[]; existing: string[] }>(
+                (acc, email) => {
+                    if (
+                        providerWithRules.groups?.some(
+                            (group) => group.props.key === 'email' && group.props.value === email
+                        )
+                    ) {
+                        return { new: acc.new, existing: [...acc.existing, email] };
+                    }
+                    return { new: [...acc.new, email], existing: acc.existing };
+                },
+                { new: [], existing: [] }
+            );
+
+            // TODO: Show warning if some emails will not be added
+        }
+
+        // TODO: detect if an email server is available
+        //       1. if so, send emails to the listed recipients
+        //       2. if not, show the emails and the message body for copying to a manual email
     }
 
     function onClose() {

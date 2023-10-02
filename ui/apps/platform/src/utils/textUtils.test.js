@@ -1,4 +1,4 @@
-import { truncate, pluralizeHas, dedupeDelimtedString } from './textUtils';
+import { truncate, pluralizeHas, dedupeDelimitedString } from './textUtils';
 
 describe('truncate pipe', () => {
     it('should return the same string if shorter than length', () => {
@@ -40,11 +40,11 @@ describe('pluralizeHas', () => {
     });
 });
 
-describe('dedupeDelimtedString', () => {
+describe('dedupeDelimitedString', () => {
     it('should split strings on the default comma delimiter', () => {
         const original = 'scooby.doo@example.com,shaggy.rogers@example.com';
 
-        const actual = dedupeDelimtedString(original);
+        const actual = dedupeDelimitedString(original);
 
         expect(actual).toEqual(['scooby.doo@example.com', 'shaggy.rogers@example.com']);
     });
@@ -53,7 +53,7 @@ describe('dedupeDelimtedString', () => {
         const original =
             ' scooby.doo@example.com,shaggy.rogers@example.com , velma.dinkley@example.com ';
 
-        const actual = dedupeDelimtedString(original);
+        const actual = dedupeDelimitedString(original);
 
         expect(actual).toEqual([
             'scooby.doo@example.com',
@@ -66,7 +66,7 @@ describe('dedupeDelimtedString', () => {
         const original =
             ' scooby.doo@example.com,shaggy.rogers@example.com , velma.dinkley@example.com ,shaggy.rogers@example.com';
 
-        const actual = dedupeDelimtedString(original);
+        const actual = dedupeDelimitedString(original);
 
         expect(actual).toEqual([
             'scooby.doo@example.com',

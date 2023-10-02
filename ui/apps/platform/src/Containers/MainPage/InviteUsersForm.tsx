@@ -19,7 +19,6 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
             >
                 <TextArea
                     isRequired
-                    className="json-input"
                     type="text"
                     id="emails"
                     value={values.emails}
