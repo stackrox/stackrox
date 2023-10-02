@@ -321,6 +321,7 @@ var (
 
 	// External network sources fields
 	DefaultExternalSource = newFieldLabel("Default External Source")
+	LearnedExternalSource = newFieldLabel("Learned External Source")
 
 	// Report configurations search fields
 	ReportName     = newFieldLabel("Report Name")
