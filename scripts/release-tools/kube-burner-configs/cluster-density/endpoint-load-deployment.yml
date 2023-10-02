@@ -51,11 +51,6 @@ spec:
           items:
           - key: workload.toml
             path: workload.toml
-            #    downwardAPI:
-            #      items:
-            #        - path: "labels"
-            #          fieldRef:
-            #            fieldPath: metadata.labels
       # Add not-ready/unreachable tolerations for 15 minutes so that node
       # failure doesn't trigger pod deletion.
       tolerations:
