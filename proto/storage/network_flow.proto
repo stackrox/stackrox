@@ -82,6 +82,8 @@ message NetworkEntityInfo {
     }
     // `default` indicates whether the external source is user-generated or system-generated.
     bool default = 3; // @gotags: search:"Default External Source,hidden"
+    // `learned` indicates whether the external source is harvested from monitored traffic.
+    bool learned = 4; // @gotags: search:"Learned External Source,hidden"
   }
 
   Type type = 1; // @gotags: sql:"index"
