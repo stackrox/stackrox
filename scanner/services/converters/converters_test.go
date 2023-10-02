@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -118,9 +119,10 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			wantErr: "",
 		},
 	}
+	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := ToProtoV4VulnerabilityReport(tt.arg)
+			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
 			} else {
@@ -322,9 +324,10 @@ func Test_ToClairCoreIndexReport(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := ToClairCoreIndexReport(tt.arg)
+			got, err := ToClairCoreIndexReport(ctx, tt.arg)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
 			} else {
@@ -638,9 +641,10 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := toProtoV4VulnerabilitiesMap(tt.ccVulnerabilities)
+			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 			} else {
@@ -652,14 +656,15 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 }
 
 func Test_convertToNormalizedSeverity(t *testing.T) {
+	ctx := context.Background()
 	// Check all severities can be mapped.
 	for i := 0; i <= int(claircore.Critical); i++ {
 		ccS := claircore.Severity(i)
 		switch ccS {
 		case claircore.Unknown:
-			assert.Equal(t, v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED, toProtoV4VulnerabilitySeverity(ccS))
+			assert.Equal(t, v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED, toProtoV4VulnerabilitySeverity(ctx, ccS))
 		case claircore.Negligible, claircore.Low, claircore.Medium, claircore.High, claircore.Critical:
-			assert.NotEqual(t, v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED, toProtoV4VulnerabilitySeverity(ccS))
+			assert.NotEqual(t, v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED, toProtoV4VulnerabilitySeverity(ctx, ccS))
 		default:
 			t.Errorf("Unexpected Severity value %d found", i)
 		}
