@@ -177,8 +177,9 @@ func (a *apiImpl) Stop() bool {
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
-	// The metrics and error interceptors are first in line to make sure all requests are
-	// registered in Prometheus with errors converted to gRPC status codes.
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
 	u := []grpc.UnaryServerInterceptor{
 		grpc_prometheus.UnaryServerInterceptor,
 		grpc_errors.ErrorToGrpcCodeInterceptor,
@@ -218,8 +219,9 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 }
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
-	// The metrics and error interceptors are first in line to make sure all requests are
-	// registered in Prometheus with errors converted to gRPC status codes.
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
 	s := []grpc.StreamServerInterceptor{
 		grpc_prometheus.StreamServerInterceptor,
 		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
