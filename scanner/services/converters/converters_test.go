@@ -35,9 +35,10 @@ func Test_ToProtoV4IndexReport(t *testing.T) {
 			want: &v4.IndexReport{Contents: &v4.Contents{}},
 		},
 	}
+	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ToProtoV4IndexReport(tt.arg))
+			assert.Equal(t, tt.want, ToProtoV4IndexReport(ctx, tt.arg))
 		})
 	}
 }
@@ -406,9 +407,10 @@ func Test_toProtoV4Package(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := toProtoV4Package(tt.arg)
+			got := toProtoV4Package(ctx, tt.arg)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -423,7 +425,7 @@ func Test_toProtoV4Package(t *testing.T) {
 				},
 			},
 		}
-		got := toProtoV4Package(arg)
+		got := toProtoV4Package(ctx, arg)
 		assert.Nil(t, got.GetSource().GetSource())
 	})
 }
@@ -596,9 +598,10 @@ func Test_toProtoV4Contents(t *testing.T) {
 			},
 		},
 	}
+	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := toProtoV4Contents(tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs)
+			got := toProtoV4Contents(ctx, tt.args.pkgs, tt.args.dists, tt.args.repos, tt.args.envs)
 			assert.EqualValues(t, tt.want, got)
 		})
 	}

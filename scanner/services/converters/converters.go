@@ -25,7 +25,7 @@ var (
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
-func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
+func ToProtoV4IndexReport(ctx context.Context, r *claircore.IndexReport) *v4.IndexReport {
 	if r == nil {
 		return nil
 	}
@@ -33,7 +33,7 @@ func ToProtoV4IndexReport(r *claircore.IndexReport) *v4.IndexReport {
 		State:    r.State,
 		Success:  r.Success,
 		Err:      r.Err,
-		Contents: toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments),
+		Contents: toProtoV4Contents(ctx, r.Packages, r.Distributions, r.Repositories, r.Environments),
 	}
 }
 
@@ -49,7 +49,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
 		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities),
-		Contents:               toProtoV4Contents(r.Packages, r.Distributions, r.Repositories, r.Environments),
+		Contents:               toProtoV4Contents(ctx, r.Packages, r.Distributions, r.Repositories, r.Environments),
 	}, nil
 }
 
@@ -94,6 +94,7 @@ func ToClairCoreIndexReport(ctx context.Context, contents *v4.Contents) (*clairc
 }
 
 func toProtoV4Contents(
+	ctx context.Context,
 	pkgs map[string]*claircore.Package,
 	dists map[string]*claircore.Distribution,
 	repos map[string]*claircore.Repository,
@@ -114,14 +115,16 @@ func toProtoV4Contents(
 		}
 	}
 	return &v4.Contents{
-		Packages:      convertMapToSlice(toProtoV4Package, pkgs),
+		Packages: convertMapToSlice(func(p *claircore.Package) *v4.Package {
+			return toProtoV4Package(ctx, p)
+		}, pkgs),
 		Distributions: convertMapToSlice(toProtoV4Distribution, dists),
 		Repositories:  convertMapToSlice(toProtoV4Repository, repos),
 		Environments:  environments,
 	}
 }
 
-func toProtoV4Package(p *claircore.Package) *v4.Package {
+func toProtoV4Package(ctx context.Context, p *claircore.Package) *v4.Package {
 	if p == nil {
 		return nil
 	}
@@ -138,7 +141,10 @@ func toProtoV4Package(p *claircore.Package) *v4.Package {
 		}
 		// Sanitize and avoid recursion.
 		src.Source = nil
-		return toProtoV4Package(src)
+		zlog.Warn(ctx).
+			Str("package_id", p.ID).
+			Msg("the clair core package's source specifies a source, sanitizing to nil")
+		return toProtoV4Package(ctx, src)
 	}
 	return &v4.Package{
 		Id:                p.ID,
