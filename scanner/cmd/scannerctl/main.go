@@ -41,11 +41,11 @@ func main() {
 	// Extract basic auth username and password.
 	var username, password string
 	if *basicAuth != "" {
-		auth := strings.SplitN(*basicAuth, ":", 2)
-		if len(auth) < 2 {
-			log.Fatalf("Invalid auth: %q", auth)
+		var ok bool
+		username, password, ok = strings.Cut(*basicAuth, ":")
+		if !ok {
+			log.Fatalf("Invalid auth: %q", *basicAuth)
 		}
-		username, password = auth[0], auth[1]
 	}
 	if len(flag.Args()) < 1 {
 		log.Fatalf("Missing <image-url>")
