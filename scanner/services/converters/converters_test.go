@@ -57,7 +57,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 		wantErr string
 	}{
 		"when nil then nil": {},
-		"when default values then attributes are definde": {
+		"when default values then attributes are define": {
 			arg:  &claircore.VulnerabilityReport{},
 			want: &v4.VulnerabilityReport{Contents: &v4.Contents{}},
 		},
