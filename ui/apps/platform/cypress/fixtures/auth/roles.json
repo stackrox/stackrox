@@ -1,0 +1,121 @@
+{
+    "roles": [
+        {
+            "name": "Admin",
+            "description": "For users: use it to provide read and write access to all the resources",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Analyst",
+            "description": "For users: use it to give read-only access to all the resources",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffffe",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Continuous Integration",
+            "description": "For automation: it includes the permissions required to enforce deployment policies",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffffd",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Network Graph Viewer",
+            "description": "For users: use it to give read-only access to the NetworkGraph pages",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff5",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "None",
+            "description": "For users: use it to provide no read and write access to any resource",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffffc",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Sensor Creator",
+            "description": "For automation: it consists of the permissions to create Sensors in secured clusters",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffffa",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Vulnerability Management Approver",
+            "description": "For users: use it to provide access to approve vulnerability deferrals or false positive requests",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff9",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Vulnerability Management Requester",
+            "description": "For users: use it to provide access to request vulnerability deferrals or false positives",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff8",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        },
+        {
+            "name": "Vulnerability Report Creator",
+            "description": "For users: use it to create and manage vulnerability reporting configurations for scheduled vulnerability reports",
+            "permissionSetId": "ffffffff-ffff-fff4-f5ff-fffffffffff7",
+            "accessScopeId": "ffffffff-ffff-fff4-f5ff-ffffffffffff",
+            "globalAccess": "NO_ACCESS",
+            "resourceToAccess": {},
+            "traits": {
+                "mutabilityMode": "ALLOW_MUTATE",
+                "visibility": "VISIBLE",
+                "origin": "DEFAULT"
+            }
+        }
+    ]
+}
