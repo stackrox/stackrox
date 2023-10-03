@@ -23,6 +23,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/internal/version"
 )
 
 // Indexer represents an image indexer.
@@ -147,8 +148,13 @@ func (i *localIndexer) IndexContainerImage(
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
-	reg := imgRef.Context().Registry
-	tr, err := transport.NewWithContext(ctx, reg, auth, http.DefaultTransport, nil)
+	repo := imgRef.Context()
+	reg := repo.Registry
+	tr := remote.DefaultTransport
+	tr = transport.NewUserAgent(tr, `StackRox Scanner/`+version.Version)
+	tr = transport.NewRetry(tr)
+	var err error
+	tr, err = transport.NewWithContext(ctx, reg, auth, tr, []string{repo.Scope(transport.PullScope)})
 	if err != nil {
 		return nil, err
 	}
