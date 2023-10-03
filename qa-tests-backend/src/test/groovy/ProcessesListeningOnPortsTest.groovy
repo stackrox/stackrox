@@ -114,7 +114,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert processesListeningOnPorts.totalListeningEndpoints == 2
 
         def endpoint1 = list[0]
-        //def endpoint1 = list.find { it.endpoint.port == 80 }
 
         verifyAll(endpoint1) {
                 deploymentId
@@ -129,7 +128,6 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         }
 
         def endpoint2 = list[1]
-        //def endpoint2 = list.find { it.endpoint.port == 8080 }
 
         verifyAll(endpoint2) {
                 deploymentId
