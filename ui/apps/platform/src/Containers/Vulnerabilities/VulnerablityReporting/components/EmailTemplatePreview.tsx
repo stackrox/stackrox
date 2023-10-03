@@ -13,18 +13,24 @@ import {
 } from '@patternfly/react-core';
 import React, { useState } from 'react';
 
+import { vulnerabilitySeverityLabels } from 'messages/common';
+import { fixabilityLabels } from 'constants/reportConstants';
 import { defaultEmailBody, defaultEmailBodyWithNoCVEsFound } from '../forms/emailTemplateFormUtils';
+import { ReportParametersFormValues } from '../forms/useReportFormValues';
+import { getCVEsDiscoveredSinceText, imageTypeLabelMap } from '../utils';
 
 export type EmailTemplatePreviewProps = {
     emailSubject: string;
     emailBody: string;
     defaultEmailSubject: string;
+    reportParameters: ReportParametersFormValues;
 };
 
 function EmailTemplatePreview({
     emailSubject,
     emailBody,
     defaultEmailSubject,
+    reportParameters,
 }: EmailTemplatePreviewProps) {
     const [selectedPreviewText, setSelectedPreviewText] = useState<string>('CVEs found');
 
@@ -77,7 +83,7 @@ function EmailTemplatePreview({
                                 </span>
                                 <span>
                                     {selectedPreviewText === 'CVEs found'
-                                        ? '50 in Deployed images; 30 in Watched images'
+                                        ? '# in Deployed images; # in Watched images'
                                         : '0 in Deployed images; 0 in Watched images'}
                                 </span>
                             </div>
@@ -85,31 +91,49 @@ function EmailTemplatePreview({
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     CVE severity:
                                 </span>
-                                <span>Critical, Important, Moderate, Low</span>
+                                <span>
+                                    {reportParameters.cveSeverities
+                                        .map((cveSeverity) => {
+                                            return vulnerabilitySeverityLabels[cveSeverity];
+                                        })
+                                        .join(', ')}
+                                </span>
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     CVE status:
                                 </span>
-                                <span>Fixable, Not fixable</span>
+                                <span>
+                                    {reportParameters.cveStatus
+                                        .map((status) => {
+                                            return fixabilityLabels[status];
+                                        })
+                                        .join(', ')}
+                                </span>
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     Report scope:
                                 </span>
-                                <span>Collection 1</span>
+                                <span>{reportParameters.reportScope?.name || '-'}</span>
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     Image type:
                                 </span>
-                                <span>Deployed images, Watched images</span>
+                                <span>
+                                    {reportParameters.imageType
+                                        .map((type) => {
+                                            return imageTypeLabelMap[type];
+                                        })
+                                        .join(', ')}
+                                </span>
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     CVEs discovered since:
                                 </span>
-                                <span>All time</span>
+                                <span>{getCVEsDiscoveredSinceText(reportParameters)}</span>
                             </div>
                         </div>
                     </CardFooter>
