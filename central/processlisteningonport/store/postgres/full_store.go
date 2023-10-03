@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -155,6 +156,23 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	return results, rows.Err()
 }
 
+func plopComparison(plop1 *storage.ProcessListeningOnPort, plop2 *storage.ProcessListeningOnPort) bool {
+        if plop1.PodId != plop2.PodId {
+                return plop1.PodId < plop2.PodId
+        }
+        if plop1.Signal.ExecFilePath != plop2.Signal.ExecFilePath {
+                return plop1.Signal.ExecFilePath < plop2.Signal.ExecFilePath
+        }
+        if plop1.Endpoint.Port != plop2.Endpoint.Port {
+                return plop1.Endpoint.Port < plop2.Endpoint.Port
+        }
+        return plop1.Endpoint.Protocol < plop2.Endpoint.Protocol
+}
+
+func sortPlops(plops []*storage.ProcessListeningOnPort) {
+	sort.Slice(plops, func(i, j int) bool { return plopComparison(plops[i], plops[j]) })
+}
+
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
 // ProcessListeningOnPortStorage) object enriched with ProcessIndicator info.
 func (s *fullStoreImpl) readRows(
@@ -261,6 +279,8 @@ func (s *fullStoreImpl) readRows(
 			plops = append(plops, plop)
 		}
 	}
+
+	sortPlops(plops)
 
 	log.Debugf("Read returned %+v plops", len(plops))
 	if len(plops) == 0 {
