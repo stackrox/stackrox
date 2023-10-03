@@ -349,6 +349,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                 initialEmailBody={selectedEmailBody}
                 defaultEmailSubject={defaultEmailSubject}
                 defaultEmailBody={defaultEmailBody}
+                reportParameters={formik.values.reportParameters}
             />
         </>
     );

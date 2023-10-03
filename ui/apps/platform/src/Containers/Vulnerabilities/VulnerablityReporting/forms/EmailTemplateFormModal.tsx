@@ -19,7 +19,11 @@ import { FormikErrors, FormikTouched, useFormik } from 'formik';
 import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
 
-import { maxEmailBodyLength, maxEmailSubjectLength } from './useReportFormValues';
+import {
+    ReportParametersFormValues,
+    maxEmailBodyLength,
+    maxEmailSubjectLength,
+} from './useReportFormValues';
 import { EmailTemplateFormData, emailTemplateValidationSchema } from './emailTemplateFormUtils';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 
@@ -31,6 +35,7 @@ export type EmailTemplateFormModalProps = {
     initialEmailBody: string;
     defaultEmailSubject: string;
     defaultEmailBody: string;
+    reportParameters: ReportParametersFormValues;
 };
 
 function getFieldValidated(
@@ -51,6 +56,7 @@ function EmailTemplateFormModal({
     initialEmailBody,
     defaultEmailSubject,
     defaultEmailBody,
+    reportParameters,
 }: EmailTemplateFormModalProps) {
     const {
         values,
@@ -214,6 +220,7 @@ function EmailTemplateFormModal({
                         emailSubject={values.emailSubject}
                         emailBody={values.emailBody}
                         defaultEmailSubject={defaultEmailSubject}
+                        reportParameters={reportParameters}
                     />
                 </Tab>
             </Tabs>
