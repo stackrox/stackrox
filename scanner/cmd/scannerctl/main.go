@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -19,6 +20,7 @@ import (
 
 func main() {
 	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
+	basicAuth := flag.String("auth", "", "Use basic auth to authenticate with registries.")
 	flag.Parse()
 
 	// If certs was specified, configure the identity environment.
@@ -29,7 +31,15 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName)))
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
-
+	// Extract basic auth username and password.
+	var username, password string
+	if *basicAuth != "" {
+		var ok bool
+		username, password, ok = strings.Cut(*basicAuth, ":")
+		if !ok {
+			log.Fatalf("Invalid auth: %q", *basicAuth)
+		}
+	}
 	if len(flag.Args()) < 1 {
 		log.Fatalf("Missing <image-url>")
 	}
@@ -53,8 +63,8 @@ func main() {
 		HashId: fmt.Sprintf("/v4/containerimage/%x", sha512.Sum512([]byte(imageURL))),
 		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{ContainerImage: &v4.ContainerImageLocator{
 			Url:      imageURL,
-			Username: "",
-			Password: "",
+			Username: username,
+			Password: password,
 		}},
 	})
 	log.Printf("Reply: %v (%v)", resp, err)
