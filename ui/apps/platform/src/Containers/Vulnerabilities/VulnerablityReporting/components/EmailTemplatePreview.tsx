@@ -81,7 +81,7 @@ function EmailTemplatePreview({
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
                                     Config name:
                                 </span>
-                                <span>Report Config 1</span>
+                                <span>{reportParameters.reportName}</span>
                             </div>
                             <div style={{ padding: '0 0 10px 0' }}>
                                 <span style={{ fontWeight: 'bold', marginRight: '10px' }}>
