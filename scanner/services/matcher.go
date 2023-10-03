@@ -58,7 +58,7 @@ func (s *matcherService) GetVulnerabilities(ctx context.Context, req *v4.GetVuln
 		ir, err = s.retrieveIndexReport(ctx, req.GetHashId())
 	} else {
 		zlog.Info(ctx).Msg("has contents, parsing")
-		ir, err = s.parseIndexReport(ctx, req.GetContents())
+		ir, err = s.parseIndexReport(req.GetContents())
 	}
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (s *matcherService) retrieveIndexReport(ctx context.Context, hashID string)
 }
 
 // parseIndexReport will generate an index report from a Contents payload.
-func (s *matcherService) parseIndexReport(ctx context.Context, contents *v4.Contents) (*claircore.IndexReport, error) {
+func (s *matcherService) parseIndexReport(contents *v4.Contents) (*claircore.IndexReport, error) {
 	ir, err := converters.ToClairCoreIndexReport(contents)
 	if err != nil {
 		// Validation should have captured all conversion errors.
