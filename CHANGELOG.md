@@ -23,6 +23,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19738: Previously categories passed to the detection service's APIs `v1/detect/build, v1/detect/deploy, v1/detect/deploy/yaml`
   have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
   are required to be title-cased.
+- ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 
 ## [4.2.0]
 
