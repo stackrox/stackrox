@@ -122,7 +122,7 @@ var (
 func main() {
 	w := &bytes.Buffer{}
 	codegen.GenerateResolvers(walkParameters, w)
-	err := os.WriteFile("generated.go", w.Bytes(), 0644)
+	err := os.WriteFile("central/graphql/resolvers/generated.go", w.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}
