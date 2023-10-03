@@ -1,7 +1,16 @@
 import React, { useEffect, ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Modal, ModalVariant, ModalBoxBody, ModalBoxFooter, Button } from '@patternfly/react-core';
+import {
+    Alert,
+    Button,
+    Modal,
+    ModalVariant,
+    ModalBoxBody,
+    ModalBoxFooter,
+    Text,
+} from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -10,6 +19,7 @@ import { actions as inviteActions } from 'reducers/invite';
 import { actions as authActions } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { actions as roleActions } from 'reducers/roles';
+import { accessControlBasePath } from 'routePaths';
 import { AuthProvider } from 'services/AuthService';
 import { dedupeDelimitedString } from 'utils/textUtils';
 import { mergeGroupsWithAuthProviders } from '../AccessControl/AuthProviders/authProviders.utils';
@@ -165,7 +175,25 @@ function InviteUsersModal(): ReactElement | null {
             hasNoBodyWrapper
         >
             <ModalBoxBody>
-                {/* <p>{JSON.stringify(authProvidersWithRules)}</p> */}
+                {authProviders.length === 0 && (
+                    <Alert
+                        title="No auth providers are available."
+                        variant="warning"
+                        isInline
+                        className="pf-u-mb-lg"
+                    >
+                        <Text>
+                            You must have at least one auth provider in order to invite users.
+                        </Text>
+                        <Text>
+                            Visit the{' '}
+                            <Link onClick={onClose} to={`${accessControlBasePath}/auth-providers`}>
+                                Access Control
+                            </Link>{' '}
+                            section to add an auth provider.
+                        </Text>
+                    </Alert>
+                )}
                 <InviteUsersForm
                     formik={formik}
                     providers={authProviders}

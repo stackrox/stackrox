@@ -432,4 +432,23 @@ describe('Invite users', () => {
 
         checkInviteUsersModal();
     });
+
+    it('should warn if there are no auth providers available', () => {
+        const staticResponseMap = {
+            [authProvidersAlias]: {
+                fixture: 'auth/authProviders-empty.json',
+            },
+            [rolesAlias]: {
+                fixture: 'auth/roles.json',
+            },
+        };
+        visitAccessControlEntities(entitiesKey, staticResponseMap);
+
+        cy.get('button:contains("Invite users")').click();
+
+        cy.get('.pf-c-alert__title:contains("No auth providers are available")');
+        cy.get('.pf-c-modal-box__body .pf-m-warning a:contains("Access Control")').click();
+
+        assertAccessControlEntitiesPage(entitiesKey);
+    });
 });
