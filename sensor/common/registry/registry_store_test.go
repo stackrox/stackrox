@@ -34,6 +34,10 @@ func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 	return false, nil
 }
 
+func alwaysSecureCheckTLS(_ context.Context, _ string) (bool, error) {
+	return true, nil
+}
+
 func alwaysFailCheckTLS(_ context.Context, _ string) (bool, error) {
 	return false, errors.New("fake tls failure")
 }
@@ -125,6 +129,21 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	assert.Equal(t, reg.Config().Password, dceB.Password)
 }
 
+func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	ns := "namespace"
+
+	// upsert that fails TLS check should error out and NOT perform an upsert
+	require.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	require.Nil(t, regStore.store[ns])
+
+	// a subsequent upsert should not return an error and also NOT perform an upsert
+	require.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	require.Nil(t, regStore.store[ns])
+}
+
 func TestRegistryStore_GlobalStore(t *testing.T) {
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
@@ -150,10 +169,12 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 
-	// upsert that fails TLS check should error out
+	// upsert that fails TLS check should error out and NOT perform an upsert
 	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
 
-	// sanity check
+	// a subsequent upsert should not return an error and also NOT perform an upsert
+	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
 }
 
@@ -323,4 +344,51 @@ func TestDataRaceAtCleanup(_ *testing.T) {
 	regStore.Cleanup()
 	doneSignal.Signal()
 	wg.Wait()
+}
+
+func TestRegistryStore_CheckTLS(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("secure", func(t *testing.T) {
+		regStore := NewRegistryStore(alwaysSecureCheckTLS)
+		secure, skip, err := regStore.checkTLS(ctx, "fake")
+		assert.True(t, secure)
+		assert.False(t, skip)
+		assert.NoError(t, err)
+
+		// Ensure the results do not change when attempted again / using cache
+		secure, skip, err = regStore.checkTLS(ctx, "fake")
+		assert.True(t, secure)
+		assert.False(t, skip)
+		assert.NoError(t, err)
+	})
+
+	t.Run("insecure", func(t *testing.T) {
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		secure, skip, err := regStore.checkTLS(ctx, "fake")
+		assert.False(t, secure)
+		assert.False(t, skip)
+		assert.NoError(t, err)
+
+		// Ensure the results do not change when attempted again / using cache
+		regStore = NewRegistryStore(alwaysInsecureCheckTLS)
+		secure, skip, err = regStore.checkTLS(ctx, "fake")
+		assert.False(t, secure)
+		assert.False(t, skip)
+		assert.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		regStore := NewRegistryStore(alwaysFailCheckTLS)
+		secure, skip, err := regStore.checkTLS(ctx, "fake")
+		assert.False(t, secure)
+		assert.False(t, skip)
+		assert.Error(t, err)
+
+		// Results expected to change, skip should be true due to previous error.
+		secure, skip, err = regStore.checkTLS(ctx, "fake")
+		assert.False(t, secure)
+		assert.True(t, skip)
+		assert.NoError(t, err)
+	})
 }
