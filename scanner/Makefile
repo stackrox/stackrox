@@ -43,6 +43,9 @@ BUILD_CMD := $(BUILD_FLAGS) go build \
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
+# The namespace to use for targets that requires it (E2E, certs, etc).
+SCANNER_NAMESPACE ?= stackrox
+
 .PHONY: all
 all: deps scanner-go-build images
 
@@ -154,6 +157,100 @@ copy-db-sigs: ../image/postgres/signatures
 	@echo "+ $@"
 	$(SILENT)cp -R $^ image/db/signatures
 
+##################
+## Certificates ##
+##################
+
+# Certificates vars
+# =================
+
+SCANNER_CERTS_NAMESPACE ?= $(SCANNER_NAMESPACE)
+
+certs-d         := certs
+certs-names     := stackrox-v4 stackrox-v4-db scannerctl
+certs-namespace := $(SCANNER_CERTS_NAMESPACE)
+
+# Targets.
+certs-t := $(foreach name,$(certs-names),$(certs-d)/$(name)/.verified)
+
+# Subject prefix.
+certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=Stackrox Scanner
+
+# DNS name or CN of the current cert target.
+cert-dns = $(notdir $(@D)).$(certs-namespace)
+
+# Certificates rules
+# ==================
+
+.PHONY: certs clean-certs
+
+certs: $(certs-t)
+
+clean-certs:
+	@echo "+ $@"
+	$(SILENT)rm -rf certs/
+
+# Generate keys.
+#
+.PRECIOUS: $(certs-d)/%/key.pem $(certs-d)/%/cert.pem
+
+$(certs-d)/%/key.pem:
+	@echo "+ $@"
+	$(SILENT)mkdir -p $(@D)
+	$(SILENT) 2>/dev/null openssl genpkey  \
+	    -algorithm RSA \
+	    -out $@
+
+# Generate root certificate authority.
+#
+$(certs-d)/ca/root.pem: $(certs-d)/ca/key.pem
+	@echo "+ $@"
+	$(SILENT) openssl req \
+	    -new \
+	    -x509 \
+	    -nodes \
+	    -days 398 \
+	    -subj "$(certs-subj)/CN=RootCA" \
+	    -key $< \
+	    -out $@
+
+# Generate a certicate signing request.
+#
+$(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
+	$(SILENT) openssl req \
+	    -new \
+	    -subj "$(certs-subj)/CN=$(cert-dns)" \
+	    -key $< \
+	    -out $@
+
+# Generate a certificate.
+#
+$(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
+	@echo "+ $@"
+	$(SILENT)cp $< $@
+
+$(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/ca/key.pem
+	@echo "+ $@"
+	$(SILENT) 2>/dev/null openssl x509 \
+	    -req \
+	    -days 365 \
+	    -in $< \
+	    -CA $(@D)ca.pem \
+	    -CAkey $(certs-d)/ca/key.pem \
+	    -CAcreateserial \
+	    -sha256 \
+	    -extfile <(echo "subjectAltName = DNS:$(cert-dns) DNS:localhost DNS:127.0.0.1") \
+	    -out $@
+
+
+# Verify certs (lose sanity check).
+#
+$(certs-d)/%/.verified: $(certs-d)/%/cert.pem
+	$(SILENT) openssl verify \
+	    -CAfile $(@D)/ca.pem \
+	    $<
+	@echo >$@
+
 #########
 ## E2E ##
 #########
@@ -162,7 +259,7 @@ copy-db-sigs: ../image/postgres/signatures
 # ========
 
 SCANNER_E2E_TAG       ?= $(TAG)
-SCANNER_E2E_NAMESPACE ?= stackrox
+SCANNER_E2E_NAMESPACE ?= $(SCANNER_NAMESPACE)
 
 e2e-chart     := e2etests/helmchart
 e2e-namespace := $(SCANNER_E2E_NAMESPACE)
@@ -171,79 +268,60 @@ e2e-tag       := $(SCANNER_E2E_TAG)
 e2e-conf-files := db-postgresql.conf \
                   db-pg_hba.conf
 
-e2e-ca-files := ca.pem \
-                scanner-v4-key.pem \
-                scanner-v4-cert.pem \
-                scanner-v4-db-key.pem \
-                scanner-v4-db-cert.pem
+e2e-certs := ca.pem \
+             scanner-v4-key.pem \
+             scanner-v4-cert.pem \
+             scanner-v4-db-key.pem \
+             scanner-v4-db-cert.pem
 
 e2e-files-d      := $(e2e-chart)/files
 e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
-e2e-ca-files-t   := $(addprefix $(e2e-files-d)/,$(e2e-ca-files))
+e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
 
 # E2E rules
 # =========
 
-.PHONY: e2e-deploy e2e-clean
+.PHONY: e2e-deploy clean-e2e
 
-ifdef SILENT
+ifeq ($(SILENT),@)
 .SILENT: e2e-deploy $(e2e-conf-files-t)
 endif
 
-# E2E config rules
-# ----------------
-
-$(e2e-files-d)/db-%.conf: image/db/%.conf
-	mkdir -p $(@D)
-	cp $^ $@
-
-# E2E cert rules
-# --------------
-
-.PRECIOUS: $(e2e-files-d)/%-key.pem
-$(e2e-files-d)/%-key.pem:
-	openssl genpkey -algorithm RSA -out $@
-
-$(e2e-files-d)/ca.pem: $(e2e-files-d)/ca-key.pem
-	openssl req -x509 -sha256 -new -nodes -days 365 \
-	    -subj "/C=US/ST=State/L=Location/O=Red Hat Inc./CN=RootCA" \
-	    -key $< -out $@
-
-$(e2e-files-d)/%.csr: $(e2e-files-d)/%-key.pem
-	openssl req -new -key $< \
-	    -subj "/C=US/ST=State/L=Location/O=Red Hat Inc./CN=$(@F:%.csr=%).$(e2e-namespace)" \
-	    -out $@
-
-$(e2e-files-d)/%-cert.pem: $(e2e-files-d)/%.csr $(e2e-files-d)/ca.pem $(e2e-files-d)/ca-key.pem
-	openssl x509 -req -in $< \
-	    -CA $(e2e-files-d)/ca.pem \
-	    -CAkey $(e2e-files-d)/ca-key.pem \
-	    -CAcreateserial \
-	    -days 365 \
-	    -sha256 \
-	    -extfile <(echo "subjectAltName = DNS:$(@F:%-cert.pem=%).$(e2e-namespace) DNS:localhost DNS:127.0.0.1") \
-	    -out $@
-
-# E2E deploy & clean
-# ------------------
-
-e2e-deploy: $(e2e-conf-files-t) $(e2e-ca-files-t)
-	@echo "+ $@"
-	-kubectl create namespace $(e2e-namespace)
+e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
+	@echo "+ $@" $(e2e-tag)
+	$(SILENT)-kubectl create namespace $(e2e-namespace)
 	helm upgrade scanner-v4-e2e $(e2e-chart) \
 	    --install \
 	    --namespace $(e2e-namespace) \
 	    --set image.tag="$(e2e-tag)"
 
-e2e-clean:
-	rm -rf $(e2e-files-d)/*
+clean-e2e:
+	@echo "+ $@"
+	$(SILENT)rm -rf $(e2e-files-d)/*
+
+# DB configuration files.
+#
+$(e2e-files-d)/db-%.conf: image/db/%.conf
+	$(SILENT)mkdir -p $(@D)
+	$(SILENT)cp $^ $@
+
+# CA, cert and key from cert targets.
+#
+$(e2e-files-d)/%-key.pem: $(certs-d)/%/.verified
+	$(SILENT)cp $(<D)/key.pem $@
+
+$(e2e-files-d)/%-cert.pem: $(certs-d)/%/.verified
+	$(SILENT)cp $(<D)/cert.pem $@
+
+$(e2e-files-d)/ca.pem: $(certs-d)/ca/root.pem
+	$(SILENT)cp $< $@
 
 ###########
 ## Clean ##
 ###########
 
 .PHONY: clean
-clean: clean-image clean-gobin clean-deps e2e-clean
+clean: clean-image clean-gobin clean-deps clean-e2e clean-certs
 	@echo "+ $@"
 
 .PHONY: clean-image
