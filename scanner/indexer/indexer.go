@@ -37,7 +37,7 @@ type Indexer interface {
 
 // localIndexer is the Indexer implementation that runs libindex locally.
 type localIndexer struct {
-	indexer         *libindex.Libindex
+	libIndex        *libindex.Libindex
 	getLayerTimeout time.Duration
 }
 
@@ -84,14 +84,14 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}
 
 	return &localIndexer{
-		indexer:         indexer,
+		libIndex:        indexer,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
 }
 
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
-	return i.indexer.Close(ctx)
+	return i.libIndex.Close(ctx)
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
@@ -144,7 +144,7 @@ func (i *localIndexer) IndexContainerImage(
 			Headers: layerReq.Header,
 		})
 	}
-	return i.indexer.Index(ctx, manifest)
+	return i.libIndex.Index(ctx, manifest)
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
@@ -205,7 +205,7 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 
 // GetIndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
 func (i *localIndexer) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
-	return i.indexer.IndexReport(ctx, manifestDigest)
+	return i.libIndex.IndexReport(ctx, manifestDigest)
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
