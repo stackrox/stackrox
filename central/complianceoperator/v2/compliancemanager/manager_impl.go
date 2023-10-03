@@ -202,7 +202,7 @@ func (m *managerImpl) trackSensorRequest(sensorRequestID, clusterID, scanConfigI
 // HandleScanRequestResponse processes response of compliance scan configuration from a sensor.
 func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID string, clusterID string, responsePayload string) error {
 	if !features.ComplianceEnhancements.Enabled() {
-		return nil
+		return errors.Errorf("Compliance is disabled. Cannot process request ID: %q", requestID)
 	}
 
 	m.runningRequestsLock.Lock()
@@ -211,18 +211,18 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 	// TODO(ROX-18711): This mapping will not survive a restart, such cases will be covered by
 	// the sync process when implemented
 	var scanID string
-	if clusterScanData, found := m.runningRequests[requestID]; found {
-		if clusterScanData.clusterID != clusterID {
-			delete(m.runningRequests, requestID)
-			return errors.Errorf("Cluster mismatch for request %q", requestID)
-		}
-		scanID = clusterScanData.scanID
-	} else {
+	clusterScanData, found := m.runningRequests[requestID]
+	if !found {
 		return errors.Errorf("Unable to find request %q", requestID)
 	}
 
 	// The request was found, remove it from the map
 	delete(m.runningRequests, requestID)
+
+	if clusterScanData.clusterID != clusterID {
+		return errors.Errorf("Cluster mismatch for request %q", requestID)
+	}
+	scanID = clusterScanData.scanID
 
 	if scanID == "" {
 		return errors.Errorf("Unable to map request %q to a scan configuration", requestID)
