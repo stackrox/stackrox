@@ -17,6 +17,7 @@ message Schedule {
         UNSET           = 0;
         WEEKLY          = 1;
         MONTHLY         = 2;
+        DAILY           = 3;
     }
 
     // Sunday = 0, Monday = 1, .... Saturday =  6
