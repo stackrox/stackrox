@@ -8,6 +8,11 @@ import {
     visitUserProfileFromTopNav,
     visitUserProfileWithStaticResponseForAuthStatus,
 } from '../helpers/user';
+import {
+    authProvidersAlias,
+    rolesAlias,
+    visitAccessControlEntities,
+} from './accessControl/accessControl.helpers';
 
 const staticResponseForAdminRoleWithoutProvider = {
     fixture: 'auth/adminUserStatus',
@@ -68,9 +73,15 @@ describe('User Profile', () => {
         });
 
         it('should have a trigger for opening the Invite users modal', () => {
-            visitUserProfileWithStaticResponseForAuthStatus(
-                staticResponseForMultiRolesWithOidcProvider
-            );
+            const staticResponseMap = {
+                [authProvidersAlias]: {
+                    fixture: 'auth/authProviders-id1-id3.json',
+                },
+                [rolesAlias]: {
+                    fixture: 'auth/roles.json',
+                },
+            };
+            visitAccessControlEntities('roles', staticResponseMap); // page doens't matter because user menu is on every page
 
             // open menu and click Invite useres menu item
             cy.get(topNavSelectors.menuButton).click();
