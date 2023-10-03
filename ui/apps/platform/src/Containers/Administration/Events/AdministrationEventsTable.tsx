@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { CodeBlock, Flex } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -15,6 +14,7 @@ import IconText from 'Components/PatternFly/IconText/IconText';
 import { AdministrationEvent } from 'services/AdministrationEventsService';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
+import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
 import './AdministrationEventsTable.css';
 
@@ -36,16 +36,7 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                     </Tr>
                 </Thead>
                 {events.map((event) => {
-                    const {
-                        domain,
-                        hint,
-                        id,
-                        lastOccurredAt,
-                        level,
-                        message,
-                        numOccurrences,
-                        resource,
-                    } = event;
+                    const { domain, id, lastOccurredAt, level, numOccurrences, resource } = event;
                     const { type: resourceType } = resource;
 
                     return (
@@ -79,16 +70,7 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                             <Tr>
                                 <Td colSpan={5}>
                                     <ExpandableRowContent>
-                                        <Flex direction={{ default: 'column' }}>
-                                            {hint && (
-                                                <div>
-                                                    {hint.split('\n').map((line) => (
-                                                        <p key={line}>{line}</p>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <CodeBlock>{message}</CodeBlock>
-                                        </Flex>
+                                        <AdministrationEventHintMessage event={event} />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
