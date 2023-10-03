@@ -213,7 +213,7 @@ message PortConfig {
     ExposureLevel exposure       = 4 [(gogoproto.moretags) = 'search:"Max Exposure Level,store"'];
     int32 exposed_port           = 5 [deprecated = true];
 
-    repeated ExposureInfo exposure_infos = 6 [(gogoproto.moretags) = 'policy:"Exposure Infos"'];
+    repeated ExposureInfo exposure_infos = 6 [(gogoproto.moretags) = 'policy:"Exposure Infos" sensorhash:"set"'];
 }
 
 message ContainerConfig {
