@@ -43,7 +43,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	plopDBstore := plopStore.NewFullStore(pool)
 	indicatorDS, err := processIndicatorStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
-		log.Infof("Issuing getting test store %v", err)
+		log.Infof("getting test store %v", err)
 	}
 	return newDatastoreImpl(plopDBstore, indicatorDS)
 }

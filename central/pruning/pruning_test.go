@@ -1382,9 +1382,8 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 
 			// Make sure it is there
 			plopIDs, err := plopDBstore.GetIDs(pruningCtx)
-			log.Infof("SHREWS -- ids -- %v", plopIDs)
 			s.Require().NoError(err)
-			s.Require().NotEqual(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+			s.Require().Contains(plopIDs, c.initialPlops[0].GetId())
 
 			gci.removeOrphanedPLOP()
 
@@ -1392,9 +1391,9 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			plopIDs, err = plopDBstore.GetIDs(pruningCtx)
 			s.Require().NoError(err)
 			if len(c.expectedDeletions) == 0 {
-				s.Require().NotEqual(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+				s.Require().Contains(plopIDs, c.initialPlops[0].GetId())
 			} else {
-				s.Require().Equal(-1, sliceutils.Find(plopIDs, c.initialPlops[0].GetId()))
+				s.Require().NotContains(plopIDs, c.initialPlops[0].GetId())
 			}
 		})
 	}

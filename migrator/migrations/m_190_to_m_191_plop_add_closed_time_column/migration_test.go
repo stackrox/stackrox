@@ -5,7 +5,6 @@ package m190tom191
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/schema"
@@ -72,9 +71,7 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Require().Equal(numPlop, n)
 
 	// Now run the migration
-	log.Infof("SHREWS start -- %v", time.Now())
 	s.Require().NoError(migration.Run(dbs))
-	log.Infof("SHREWS end -- %v", time.Now())
 
 	// After the migration, timestamp should not be NULL
 	err = s.db.DB.QueryRow(s.ctx, "SELECT COUNT(*) FROM listening_endpoints WHERE closetimestamp IS NULL;").Scan(&n)
