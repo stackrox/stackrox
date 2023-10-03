@@ -17,7 +17,7 @@ import TableEntityToolbar from '../components/TableEntityToolbar';
 type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+    cveStatusTab?: CveStatusTab; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
 };
 

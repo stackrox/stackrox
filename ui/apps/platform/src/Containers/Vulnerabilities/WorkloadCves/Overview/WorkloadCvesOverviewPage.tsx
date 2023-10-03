@@ -8,6 +8,10 @@ import {
     Card,
     CardBody,
     Button,
+    Tab,
+    TabTitleText,
+    Tabs,
+    TabsComponent,
 } from '@patternfly/react-core';
 import { useApolloClient, useQuery } from '@apollo/client';
 
@@ -17,6 +21,8 @@ import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { VulnMgmtLocalStorage, cveStatusTabValues, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
@@ -24,7 +30,6 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
-import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -40,6 +45,14 @@ function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
+
+    const [activeCVEStatusKey, setActiveCVEStatusKey] = useURLStringUnion(
+        'cveStatus',
+        cveStatusTabValues
+    );
+    const currentCveStatus = isUnifiedDeferralsEnabled ? activeCVEStatusKey : undefined;
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -48,7 +61,7 @@ function WorkloadCvesOverviewPage() {
     const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 }, loading } =
         useQuery(entityTypeCountsQuery, {
             variables: {
-                query: getCveStatusScopedQueryString(querySearchFilter),
+                query: getCveStatusScopedQueryString(querySearchFilter, currentCveStatus),
             },
         });
 
@@ -62,6 +75,10 @@ function WorkloadCvesOverviewPage() {
 
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
+    }
+
+    function handleTabClick(e, tab) {
+        setActiveCVEStatusKey(tab);
     }
 
     return (
@@ -94,6 +111,24 @@ function WorkloadCvesOverviewPage() {
                 )}
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
+                {isUnifiedDeferralsEnabled && (
+                    <Tabs
+                        activeKey={activeCVEStatusKey}
+                        onSelect={handleTabClick}
+                        component={TabsComponent.nav}
+                        className="pf-u-pl-lg pf-u-background-color-100"
+                    >
+                        <Tab
+                            eventKey="Observed"
+                            title={<TabTitleText>Observed CVEs</TabTitleText>}
+                        />
+                        <Tab eventKey="Deferred" title={<TabTitleText>Deferrals</TabTitleText>} />
+                        <Tab
+                            eventKey="False Positive"
+                            title={<TabTitleText>False positives</TabTitleText>}
+                        />
+                    </Tabs>
+                )}
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody
@@ -106,6 +141,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
+                                    cveStatusTab={currentCveStatus}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
@@ -114,6 +150,7 @@ function WorkloadCvesOverviewPage() {
                                     countsData={countsData}
                                     pagination={pagination}
                                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
+                                    cveStatusTab={currentCveStatus}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
@@ -129,6 +166,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
+                                    cveStatusTab={currentCveStatus}
                                 />
                             )}
                         </CardBody>
