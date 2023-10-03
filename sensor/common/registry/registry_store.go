@@ -116,6 +116,8 @@ func (rs *Store) Cleanup() {
 	rs.cleanupRegistries()
 	rs.cleanupClusterLocalRegistryHosts()
 	rs.cleanupDelegatedRegistryConfig()
+
+	rs.tlsCheckResults.RemoveAll()
 }
 
 func (rs *Store) cleanupRegistries() {
