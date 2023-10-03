@@ -143,7 +143,7 @@ func toProtoV4Package(p *claircore.Package) (*v4.Package, error) {
 		return nil, fmt.Errorf("package %q: invalid source package %q: source specifies source",
 			p.ID, p.Source.ID)
 	}
-	// Conversion functions.
+	// Conversion function.
 	toNormalizedVersion := func(version claircore.Version) *v4.NormalizedVersion {
 		return &v4.NormalizedVersion{
 			Kind: version.Kind,
@@ -315,7 +315,7 @@ func toClairCorePackage(p *v4.Package) (string, *claircore.Package, error) {
 	if p == nil {
 		return "", nil, nil
 	}
-	// Conversion functions.
+	// Conversion function.
 	toNormalizedVersion := func(v *v4.NormalizedVersion) (ccV claircore.Version) {
 		ccV.Kind = v.GetKind()
 		copy(ccV.V[:], v.GetV())

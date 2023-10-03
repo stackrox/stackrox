@@ -77,7 +77,7 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 	}
 	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("internal error")
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
 	indexReport.HashId = req.GetHashId()
@@ -92,7 +92,7 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	}
 	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("internal error")
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
 	indexReport.HashId = req.GetHashId()
