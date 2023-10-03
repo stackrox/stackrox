@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/services/converters"
 	"google.golang.org/grpc"
 )
 
@@ -74,7 +75,11 @@ func (s *indexerService) CreateIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Send()
 		return nil, err
 	}
-	indexReport := convertToIndexReport(clairReport)
+	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
+		return nil, err
+	}
 	indexReport.HashId = req.GetHashId()
 	// TODO Define behavior for indexReport.Err != "".
 	return indexReport, nil
@@ -85,7 +90,11 @@ func (s *indexerService) GetIndexReport(ctx context.Context, req *v4.GetIndexRep
 	if err != nil {
 		return nil, err
 	}
-	indexReport := convertToIndexReport(clairReport)
+	indexReport, err := converters.ToProtoV4IndexReport(clairReport)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
+		return nil, err
+	}
 	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
 }
