@@ -97,7 +97,7 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 			},
 		},
 		"when a package has a source package with another source package": {
-			wantErr: `Contents.Packages element #1 (id: "foo"): source package also has a source package`,
+			wantErr: `Contents.Packages element #1 (id: "foo"): package ID="foo" has a source with a source`,
 			argOpts: []opts{
 				addPackage(&v4.Package{
 					Id:     "foo",
