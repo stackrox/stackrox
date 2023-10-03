@@ -113,7 +113,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert list.size() == 2
         assert processesListeningOnPorts.totalListeningEndpoints == 2
 
-        def endpoint1 = list.find { it.endpoint.port == 80 }
+        def endpoint1 = list[0]
+        //def endpoint1 = list.find { it.endpoint.port == 80 }
 
         verifyAll(endpoint1) {
                 deploymentId
@@ -127,7 +128,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
                 signal.args == "-d -d -v TCP-LISTEN:80,fork STDOUT"
         }
 
-        def endpoint2 = list.find { it.endpoint.port == 8080 }
+        def endpoint2 = list[1]
+        //def endpoint2 = list.find { it.endpoint.port == 8080 }
 
         verifyAll(endpoint2) {
                 deploymentId
