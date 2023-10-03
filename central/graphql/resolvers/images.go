@@ -23,6 +23,7 @@ import (
 var (
 	imageWatchStatuses []string
 
+	unknownImageWatchStatus    = registerImageWatchStatus("UNKNOWN")
 	notWatchedImageWatchStatus = registerImageWatchStatus("NOT_WATCHED")
 	watchedImageStatus         = registerImageWatchStatus("WATCHED")
 )
@@ -273,7 +274,7 @@ func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) 
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "WatchStatus")
 	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
 		if errors.Is(err, errox.NotAuthorized) {
-			return "unknown", nil
+			return unknownImageWatchStatus, nil
 		}
 		return "", err
 	}
