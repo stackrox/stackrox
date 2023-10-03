@@ -1279,9 +1279,13 @@
           "items": {
             "$ref": "#/definitions/storageImageScanNote"
           }
+        },
+        "hash": {
+          "type": "string",
+          "format": "uint64"
         }
       },
-      "title": "Next tag: 7"
+      "title": "Next tag: 8"
     },
     "storageImageScanNote": {
       "type": "string",
