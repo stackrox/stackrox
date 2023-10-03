@@ -82,13 +82,13 @@ func main() {
 	}
 	defer utils.IgnoreError(conn.Close)
 
-	idxC := v4.NewIndexerClient(conn)
-	vulnC := v4.NewMatcherClient(conn)
+	idxClient := v4.NewIndexerClient(conn)
+	vulnClient := v4.NewMatcherClient(conn)
 
 	hashId := fmt.Sprintf("/v4/containerimage/%s", *imageDigest)
-	indexReport, err := idxC.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashId})
+	indexReport, err := idxClient.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashId})
 	if err != nil || indexReport.State == "IndexError" {
-		indexReport, err = idxC.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
+		indexReport, err = idxClient.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
 			HashId: hashId,
 			ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{ContainerImage: &v4.ContainerImageLocator{
 				Url:      imageURL,
@@ -101,7 +101,7 @@ func main() {
 		}
 	}
 	log.Printf("Index Report: %s", indexReport.GetHashId())
-	vulnResp, err := vulnC.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
+	vulnResp, err := vulnClient.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
 		HashId: hashId,
 	})
 	if err != nil {
