@@ -24,11 +24,14 @@ describe('Workload CVE watched images flow', () => {
         unwatchAllImages();
     });
 
+    // The first watch image can take a very long time in CI, so we need to increase the command timeout
+    const extendedCommandTimeoutOptions = {
+        defaultCommandTimeout: 20000,
+    };
+
     it(
         'should allow adding a watched image via the images table row action',
-        {
-            defaultCommandTimeout: 10000,
-        },
+        extendedCommandTimeoutOptions,
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
@@ -47,10 +50,7 @@ describe('Workload CVE watched images flow', () => {
 
     it(
         'should allow management of watched images via the overview page header button',
-
-        {
-            defaultCommandTimeout: 10000,
-        },
+        extendedCommandTimeoutOptions,
         () => {
             visitWorkloadCveOverview();
             selectEntityTab('Image');
@@ -107,4 +107,40 @@ describe('Workload CVE watched images flow', () => {
         cy.get(selectors.currentWatchedImagesTable).should('not.exist');
         cy.get('*:contains("No watched images found")');
     });
+
+    it(
+        'should allow user to unwatch an image via the images table row action',
+        extendedCommandTimeoutOptions,
+        () => {
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+
+            selectUnwatchedImageTextFromTable().then(([, nameAndTag, fullName]) => {
+                cy.get(`${selectors.firstUnwatchedImageRow} *[aria-label="Actions"]`).click();
+                cy.get('button:contains("Watch image")').click();
+
+                // Verify that the selected image is pre-populated in the modal
+                cy.get(`${selectors.addWatchedImageNameInput}[value="${fullName}"]`);
+
+                // Watch the image so we can unwatch it
+                watchImageFlowFromModal(fullName, nameAndTag);
+
+                // Open the unwatch modal via the table row action
+                cy.get(selectors.tableRowActionsForImage(nameAndTag)).click();
+                cy.get('button:contains("Unwatch image")').click();
+
+                cy.get('*[role="dialog"] button:contains("Unwatch")').click();
+
+                cy.get(
+                    selectors.modalAlertWithText(
+                        'The image was successfully removed from the watch list'
+                    )
+                );
+
+                // Close the modal and verify the update in the table
+                cy.get('*[role="dialog"]  button:contains("Close")').click();
+                cy.get(selectors.watchedImageCellWithName(nameAndTag)).should('not.exist');
+            });
+        }
+    );
 });
