@@ -53,3 +53,10 @@ func UpsertTestEvents(ctx context.Context, _ testing.TB, datastore DataStore,
 	events ...*storage.AdministrationEvent) error {
 	return datastore.(*datastoreImpl).store.UpsertMany(ctx, events)
 }
+
+// RemoveTestEvents provides a way to remove storage.AdministrationEvents directly from the database.
+// This is required for test cleanups, since the datastore doesn't expose functionality to remove events for clients.
+func RemoveTestEvents(ctx context.Context, _ testing.TB, datastore DataStore,
+	ids ...string) error {
+	return datastore.(*datastoreImpl).store.DeleteMany(ctx, ids)
+}
