@@ -10,6 +10,7 @@ class IntegrationHealthTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify vulnerability definitions information is available"() {
         when:
         "Vulnerability definition is requested"

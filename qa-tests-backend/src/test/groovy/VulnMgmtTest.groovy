@@ -7,6 +7,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")
+@Tag("PZ")
 class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =
             "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
