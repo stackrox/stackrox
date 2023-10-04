@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -81,11 +82,7 @@ func resetDatabase(b *testing.B, datastore DataStore, preExistingEvents []*event
 	existingEvents, err := datastore.ListEvents(testCtx, search.EmptyQuery())
 	require.NoError(b, err)
 
-	ids := make([]string, 0, len(existingEvents))
-	for _, event := range existingEvents {
-		ids = append(ids, event.GetId())
-	}
-	require.NoError(b, RemoveTestEvents(testCtx, b, datastore, ids...))
+	require.NoError(b, RemoveTestEvents(testCtx, b, datastore, protoutils.GetIDs(existingEvents)...))
 
 	for _, event := range preExistingEvents {
 		require.NoError(b, datastore.AddEvent(testCtx, event))
