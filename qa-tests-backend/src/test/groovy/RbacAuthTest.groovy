@@ -99,6 +99,7 @@ spec:
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"

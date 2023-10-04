@@ -84,6 +84,7 @@ class TLSChallengeTest extends BaseSpecification {
     }
 
     @Tag("SensorBounceNext")
+    @Tag("PZ")
     def "Verify sensor can communicate with central behind an untrusted load balancer"() {
         when:
         "Deploying Sensor without root CA certs can't connect to load balancer"

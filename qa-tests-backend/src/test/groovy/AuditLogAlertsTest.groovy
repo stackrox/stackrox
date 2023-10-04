@@ -27,6 +27,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     def "Verify Audit Log Event Source Policies Trigger: #verb - #resourceType"() {
         when:
         "Audit log collection is enabled"
@@ -84,6 +85,7 @@ class AuditLogAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     def "Verify collection continues even after ACS components restarts: #component"() {
         when:
         "Audit log collection is enabled"
@@ -152,6 +154,7 @@ class AuditLogAlertsTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     def "Verify collection continues when it is disabled and then re-enabled"() {
         when:
         "Audit log collection is enabled"
@@ -213,6 +216,7 @@ class AuditLogAlertsTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     def "Verify collection stops when feature is is disabled"() {
         when:
         "Audit log collection is disabled"

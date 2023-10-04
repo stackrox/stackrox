@@ -69,6 +69,7 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify Admission Controller Behavior for No Image Scans Policy"() {
         String gcrId
 
