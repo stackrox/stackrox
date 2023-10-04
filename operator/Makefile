@@ -481,3 +481,4 @@ docker-push-bundle: ## Push docker image with the bundle.
 .PHONY: docker-push-index
 docker-push-index: ## Push docker image with the index.
 	docker push "$(INDEX_IMG)"
+
