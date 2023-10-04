@@ -59,6 +59,8 @@ type Options struct {
 	PerRPCCreds                    credentials.PerRPCCredentials
 
 	DialTLS DialTLSFunc
+
+	MaxMsgRecvSize int
 }
 
 func (o *Options) dialTLSFunc() DialTLSFunc {
@@ -168,6 +170,7 @@ type connectionOptions struct {
 	useInsecureNoTLS    bool
 	dialTLSFunc         DialTLSFunc
 	rootCAs             *x509.CertPool
+	maxMsgRecvSize      int
 }
 
 // ConnectionOption allows specifying additional options when establishing GRPC connections.
@@ -195,6 +198,14 @@ func AddRootCAs(certs ...*x509.Certificate) ConnectionOption {
 		for _, c := range certs {
 			opts.rootCAs.AddCert(c)
 		}
+		return nil
+	})
+}
+
+// MaxMsgReceiveSize overrides the default 4MB max receive size for gRPC client.
+func MaxMsgReceiveSize(size int) ConnectionOption {
+	return connectOptFunc(func(opts *connectionOptions) error {
+		opts.maxMsgRecvSize = size
 		return nil
 	})
 }
@@ -255,6 +266,8 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(&leafCert)
 	}
 
+	clientConnOpts.MaxMsgRecvSize = connOpts.maxMsgRecvSize
+
 	return clientConnOpts, nil
 }
 
@@ -270,7 +283,13 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 		return nil, err
 	}
 
-	return GRPCConnection(context.Background(), server, endpoint, clientConnOpts, keepAliveDialOption())
+	var dialOpts []grpc.DialOption
+	dialOpts = append(dialOpts, keepAliveDialOption())
+	if clientConnOpts.MaxMsgRecvSize > 0 {
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(clientConnOpts.MaxMsgRecvSize)))
+	}
+
+	return GRPCConnection(context.Background(), server, endpoint, clientConnOpts, dialOpts...)
 }
 
 // HTTPTransport returns a RoundTripper for talking to the specified endpoint. The RoundTripper accepts requests with
