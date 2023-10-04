@@ -1,13 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Load(t *testing.T) {
@@ -45,13 +45,7 @@ something: unexpected
 }
 
 func Test_MTLSConfig_validate(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "Test_MTLSConfig_validate")
-	assert.NoError(t, err)
-	t.Cleanup(func() {
-		if err = os.RemoveAll(tempDir); err != nil {
-			fmt.Printf("failed to delete test directory: %q\n", tempDir)
-		}
-	})
+	tempDir := t.TempDir()
 	t.Run("when cert dir exists and is directory then ok", func(t *testing.T) {
 		c := &MTLSConfig{CertsDir: tempDir}
 		err := c.validate()
@@ -111,7 +105,7 @@ func Test_IndexerConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 	})
-	t.Run("when enabled then error", func(t *testing.T) {
+	t.Run("when enabled with invalid conn string then error", func(t *testing.T) {
 		c := IndexerConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
 		err := c.validate()
 		assert.Error(t, err)
@@ -124,7 +118,7 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 	})
-	t.Run("when enabled then error", func(t *testing.T) {
+	t.Run("when enabled with invalid conn string then error", func(t *testing.T) {
 		c := MatcherConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
 		err := c.validate()
 		assert.Error(t, err)
@@ -137,12 +131,12 @@ func Test_Database_validate(t *testing.T) {
 	//
 	//	# Example URL
 	//	postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10
-	t.Run("when DNS then no error", func(t *testing.T) {
+	t.Run("when DSN then no error", func(t *testing.T) {
 		c := Database{ConnString: "user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10"}
 		err := c.validate()
 		assert.NoError(t, err)
 	})
-	t.Run("when URL then valid", func(t *testing.T) {
+	t.Run("when using URLs then error", func(t *testing.T) {
 		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
 		err := c.validate()
 		assert.ErrorContains(t, err, "URLs are not supported")
@@ -158,18 +152,12 @@ func Test_Database_validate(t *testing.T) {
 		assert.ErrorContains(t, err, "cannot parse")
 	})
 
-	tempDir, err := os.MkdirTemp("", "Test_Database_validate")
-	assert.NoError(t, err)
-	t.Cleanup(func() {
-		if err = os.RemoveAll(tempDir); err != nil {
-			fmt.Printf("failed to delete test directory: %q\n", tempDir)
-		}
-	})
+	tempDir := t.TempDir()
 	pwdFile := filepath.Join(tempDir, "password_file")
 	pwdF, err := os.Create(pwdFile)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = pwdF.WriteString("foobar-password")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	t.Run("when password files exists then valid", func(t *testing.T) {
 		c := Database{
 			ConnString:   "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10",

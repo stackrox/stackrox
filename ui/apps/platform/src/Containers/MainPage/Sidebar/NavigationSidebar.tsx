@@ -156,11 +156,7 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
-                content: (
-                    <NavigationContent variant="TechPreview">
-                        Vulnerability Reporting
-                    </NavigationContent>
-                ),
+                content: 'Vulnerability Reporting',
                 path: vulnerabilityReportsPath,
                 routeKey: 'vulnerabilities/reports',
             },

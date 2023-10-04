@@ -1,4 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getDescriptionListGroup,
     getHelperElementByLabel,
@@ -19,6 +20,12 @@ import {
 
 describe('Vulnerability Management Reporting form', () => {
     withAuth();
+
+    before(function () {
+        if (hasFeatureFlag('ROX_VULN_MGMT_REPORTING_ENHANCEMENTS')) {
+            this.skip();
+        }
+    });
 
     it('should navigate from table by button', () => {
         visitVulnerabilityReporting();

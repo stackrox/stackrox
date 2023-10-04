@@ -403,6 +403,8 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
+            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
+            docker system prune --all --force
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 

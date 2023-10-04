@@ -67,8 +67,8 @@ service ComplianceScanConfigurationService {
         };
     }
 
-    // PostComplianceScanConfiguration creates a compliance scan configuration
-    rpc PostComplianceScanConfiguration (ComplianceScanConfiguration) returns (ComplianceScanConfiguration) {
+    // CreateComplianceScanConfiguration creates a compliance scan configuration
+    rpc CreateComplianceScanConfiguration (ComplianceScanConfiguration) returns (ComplianceScanConfiguration) {
         option (google.api.http) = {
             post: "/v2/compliance/scan/configurations"
             body: "*"

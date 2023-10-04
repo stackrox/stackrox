@@ -112,9 +112,11 @@ func (c *MatcherConfig) validate() error {
 
 // Database provides database configuration for scanner backends.
 type Database struct {
-	// DBConnString provides database configuration.
+	// ConnString provides database DSN configuration.
 	ConnString string `yaml:"conn_string"`
-	// PasswordFile specifies the database password by reading from a file.
+	// PasswordFile specifies the database password by reading from a file,
+	// only valid for the password to be specified in a file if not in
+	// the ConnString.
 	PasswordFile string `yaml:"password_file"`
 }
 
