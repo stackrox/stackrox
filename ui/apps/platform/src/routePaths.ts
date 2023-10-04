@@ -306,7 +306,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'workload-cves': {
         featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
-        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
 };
 
