@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
@@ -20,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -28,19 +26,8 @@ const (
 	globalRegNamePrefix  = "Global"
 )
 
-type tlsCheckResult uint8
-
-const (
-	tlsCheckResultUnknown tlsCheckResult = iota
-	tlsCheckResultSecure
-	tlsCheckResultInsecure
-	tlsCheckResultError
-)
-
 var (
 	log = logging.LoggerForModule()
-
-	tlsCheckTTL = env.RegistryTLSCheckTTL.DurationSetting()
 )
 
 // Store stores cluster-internal registries by namespace.
@@ -60,7 +47,7 @@ type Store struct {
 
 	mutex sync.RWMutex
 
-	checkTLSFn CheckTLS
+	checkTLSFunc CheckTLS
 
 	// delegatedRegistryConfig is used to determine if scanning images from a registry
 	// should be done via local scanner or sent to central.
@@ -95,7 +82,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	store := &Store{
 		factory:                     regFactory,
 		store:                       make(map[string]registries.Set),
-		checkTLSFn:                  tlscheck.CheckTLS,
+		checkTLSFunc:                tlscheck.CheckTLS,
 		globalRegistries:            registries.NewSet(regFactory),
 		centralRegistryIntegrations: registries.NewSet(regFactory),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
@@ -103,7 +90,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 	}
 
 	if checkTLS != nil {
-		store.checkTLSFn = checkTLS
+		store.checkTLSFunc = checkTLS
 	}
 
 	return store
@@ -392,51 +379,4 @@ func (rs *Store) GetMatchingCentralRegistryIntegrations(imgName *storage.ImageNa
 	}
 
 	return regs
-}
-
-// checkTLS performs a TLS check on a registry or returns the result from a
-// previous check. Returns true for skip if there was a previous error and the
-// registry should not be upserted into the store.
-func (rs *Store) checkTLS(ctx context.Context, registry string) (secure bool, skip bool, err error) {
-	result := rs.getCachedTLSCheckResult(registry)
-	switch result {
-	case tlsCheckResultUnknown:
-		// Do nothing (will proceed to after switch block).
-	case tlsCheckResultSecure:
-		return true, false, nil
-	case tlsCheckResultInsecure:
-		return false, false, nil
-	case tlsCheckResultError:
-		return false, true, nil
-	default:
-		utils.Should(errors.Errorf("Unsupported TLS check result: %v", result))
-	}
-
-	secure, err = rs.performAndCacheTLSCheck(ctx, registry)
-	return secure, false, err
-}
-
-func (rs *Store) getCachedTLSCheckResult(registry string) tlsCheckResult {
-	resultI := rs.tlsCheckResults.Get(registry)
-	if resultI == nil {
-		return tlsCheckResultUnknown
-	}
-
-	return resultI.(tlsCheckResult)
-}
-
-func (rs *Store) performAndCacheTLSCheck(ctx context.Context, registry string) (bool, error) {
-	secure, err := rs.checkTLSFn(ctx, registry)
-	if err != nil {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultError)
-		return false, errors.Wrapf(err, "unable to check TLS for registry %q", registry)
-	}
-
-	if secure {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultSecure)
-	} else {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultInsecure)
-	}
-
-	return secure, nil
 }

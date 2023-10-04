@@ -136,12 +136,12 @@ func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
 	ns := "namespace"
 
 	// upsert that fails TLS check should error out and NOT perform an upsert
-	require.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	require.Nil(t, regStore.store[ns])
+	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	assert.Nil(t, regStore.store[ns])
 
 	// a subsequent upsert should not return an error and also NOT perform an upsert
-	require.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	require.Nil(t, regStore.store[ns])
+	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	assert.Nil(t, regStore.store[ns])
 }
 
 func TestRegistryStore_GlobalStore(t *testing.T) {
@@ -344,51 +344,4 @@ func TestDataRaceAtCleanup(_ *testing.T) {
 	regStore.Cleanup()
 	doneSignal.Signal()
 	wg.Wait()
-}
-
-func TestRegistryStore_CheckTLS(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("secure", func(t *testing.T) {
-		regStore := NewRegistryStore(alwaysSecureCheckTLS)
-		secure, skip, err := regStore.checkTLS(ctx, "fake")
-		assert.True(t, secure)
-		assert.False(t, skip)
-		assert.NoError(t, err)
-
-		// Ensure the results do not change when attempted again / using cache
-		secure, skip, err = regStore.checkTLS(ctx, "fake")
-		assert.True(t, secure)
-		assert.False(t, skip)
-		assert.NoError(t, err)
-	})
-
-	t.Run("insecure", func(t *testing.T) {
-		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-		secure, skip, err := regStore.checkTLS(ctx, "fake")
-		assert.False(t, secure)
-		assert.False(t, skip)
-		assert.NoError(t, err)
-
-		// Ensure the results do not change when attempted again / using cache
-		regStore = NewRegistryStore(alwaysInsecureCheckTLS)
-		secure, skip, err = regStore.checkTLS(ctx, "fake")
-		assert.False(t, secure)
-		assert.False(t, skip)
-		assert.NoError(t, err)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		regStore := NewRegistryStore(alwaysFailCheckTLS)
-		secure, skip, err := regStore.checkTLS(ctx, "fake")
-		assert.False(t, secure)
-		assert.False(t, skip)
-		assert.Error(t, err)
-
-		// Results expected to change, skip should be true due to previous error.
-		secure, skip, err = regStore.checkTLS(ctx, "fake")
-		assert.False(t, secure)
-		assert.True(t, skip)
-		assert.NoError(t, err)
-	})
 }
