@@ -42,9 +42,7 @@ function AdministrationEventsToolbar({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                if (count < (page - 1) * newPerPage) {
-                                    setPage(1);
-                                }
+                                setPage(1);
                                 setPerPage(newPerPage);
                             }}
                         />

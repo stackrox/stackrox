@@ -35,31 +35,23 @@ export type AdministrationEvent = {
     createdAt: string; // ISO 8601
 };
 
-export type AdministrationEventType =
-    | 'ADMINISTRATION_EVENT_TYPE_UNKNOWN'
-    | 'ADMINISTRATION_EVENT_TYPE_GENERIC'
-    | 'ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE';
-
-const types: AdministrationEventType[] = [
+const types = [
     'ADMINISTRATION_EVENT_TYPE_UNKNOWN',
     'ADMINISTRATION_EVENT_TYPE_GENERIC',
     'ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE',
-]; // for isType function
+] as const; // for isType function
 
-export type AdministrationEventLevel =
-    | 'ADMINISTRATION_EVENT_LEVEL_UNKNOWN'
-    | 'ADMINISTRATION_EVENT_LEVEL_INFO'
-    | 'ADMINISTRATION_EVENT_LEVEL_SUCCESS'
-    | 'ADMINISTRATION_EVENT_LEVEL_WARNING'
-    | 'ADMINISTRATION_EVENT_LEVEL_ERROR';
+export type AdministrationEventType = (typeof types)[number];
 
-const levels: AdministrationEventLevel[] = [
+const levels = [
     'ADMINISTRATION_EVENT_LEVEL_UNKNOWN',
     'ADMINISTRATION_EVENT_LEVEL_INFO',
     'ADMINISTRATION_EVENT_LEVEL_SUCCESS',
     'ADMINISTRATION_EVENT_LEVEL_WARNING',
     'ADMINISTRATION_EVENT_LEVEL_ERROR',
-]; // for isLevel function
+] as const; // for isLevel function
+
+export type AdministrationEventLevel = (typeof levels)[number];
 
 export type AdministrationEventsFilter = {
     from?: string; // ISO 8601 lower (older) boundary
@@ -138,14 +130,14 @@ function getLevel(arg: SearchFilterValue): AdministrationEventLevel[] | undefine
     }
 
     if (Array.isArray(arg)) {
-        return arg.filter((item) => isLevel(item)) as AdministrationEventLevel[];
+        return arg.filter(isLevel);
     }
 
     return undefined;
 }
 
 function isLevel(arg: string): arg is AdministrationEventLevel {
-    return levels.includes(arg as AdministrationEventLevel);
+    return levels.some((level) => level === arg);
 }
 
 function getType(arg: SearchFilterValue): AdministrationEventType[] | undefined {
@@ -154,7 +146,7 @@ function getType(arg: SearchFilterValue): AdministrationEventType[] | undefined 
     }
 
     if (Array.isArray(arg)) {
-        return arg.filter((item) => isType(item)) as AdministrationEventType[];
+        return arg.filter(isType);
     }
 
     return undefined;
