@@ -108,4 +108,3 @@ sensor-bounce-test: compile
 pz-test: compile
 	@echo "+ $@"
 	$(GRADLE) testPZ $(GRADLE_TEST_ARGS)
-	
