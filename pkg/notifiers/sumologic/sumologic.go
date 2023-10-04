@@ -12,17 +12,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 const (
@@ -80,7 +76,7 @@ func (s *sumologic) sendPayload(ctx context.Context, buf io.Reader) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Sumo Logic", resp)
+	return notifiers.CreateError(s.GetName(), resp, codes.SumoLogicGeneric)
 }
 
 func validateConfig(sumologic *storage.SumoLogic) error {

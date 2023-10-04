@@ -14,6 +14,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imagesTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -127,7 +128,9 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	resp, err := p.pdClient.ManageEvent(&pagerDutyEvent)
 
 	if err != nil {
-		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
+		log.Errorw("Error sending alert to PagerDuty",
+			logging.Any("response", resp), logging.Err(err), logging.ErrCode(codes.PagerDutyGeneric),
+			logging.NotifierName(p.GetName()))
 
 		matches := httpStatusCodePattern.FindAllString(err.Error(), 1)
 		if len(matches) == 0 {
@@ -139,7 +142,6 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 			return err
 		}
 		if statusCode != http.StatusAccepted {
-			log.Errorf("PagerDuty error response: %v", err)
 			return errors.Errorf("Received HTTP status code %d from PagerDuty. Check central logs for full error.", statusCode)
 		}
 	}

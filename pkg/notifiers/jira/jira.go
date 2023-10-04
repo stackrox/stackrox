@@ -16,6 +16,7 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -48,7 +49,7 @@ var (
 	pattern = regexp.MustCompile(`^(P[0-9])\b`)
 )
 
-// jira notifier plugin
+// jira notifier plugin.
 type jira struct {
 	client *jiraLib.Client
 
@@ -171,7 +172,7 @@ func (j *jira) Close(_ context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the notification
+// AlertNotify takes in an alert and generates the notification.
 func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	description, err := j.getAlertDescription(alert)
 	if err != nil {
@@ -191,7 +192,13 @@ func (j *jira) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			Description: description,
 		},
 	}
-	return j.createIssue(ctx, alert.GetPolicy().GetSeverity(), i)
+	err = j.createIssue(ctx, alert.GetPolicy().GetSeverity(), i)
+	if err != nil {
+		log.Errorw("failed to create JIRA issue for alert",
+			logging.Err(err), logging.NotifierName(j.notifier.GetName()), logging.ErrCode(codes.JIRAGeneric),
+			logging.AlertID(alert.GetId()))
+	}
+	return err
 }
 
 func (j *jira) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
@@ -219,7 +226,12 @@ func (j *jira) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluster
 			Description: description,
 		},
 	}
-	return j.createIssue(ctx, storage.Severity_MEDIUM_SEVERITY, i)
+	err = j.createIssue(ctx, storage.Severity_MEDIUM_SEVERITY, i)
+	if err != nil {
+		log.Errorw("failed to create JIRA issue for network policy",
+			logging.Err(err), logging.NotifierName(j.notifier.GetName()), logging.ErrCode(codes.JIRAGeneric))
+	}
+	return err
 }
 
 func validate(jira *storage.Jira) error {
