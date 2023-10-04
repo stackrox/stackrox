@@ -47,30 +47,6 @@ func BenchmarkDatastore_Add_and_Flush(b *testing.B) {
 		preExistingEvents))
 }
 
-func BenchmarkDatastore_Add(b *testing.B) {
-	pool := pgtest.ForT(b)
-	b.Cleanup(func() {
-		pool.Close()
-	})
-	datastore := GetTestPostgresDataStore(b, pool)
-
-	benchmarkEvents, preExistingEvents := getEvents(1000)
-	b.Run("add 1000 events to the writer", benchmarkDatastoreWithoutFlush(datastore, benchmarkEvents,
-		preExistingEvents))
-
-	benchmarkEvents, preExistingEvents = getEvents(5000)
-	b.Run("add 5000 events to the writer", benchmarkDatastoreWithoutFlush(datastore, benchmarkEvents,
-		preExistingEvents))
-
-	benchmarkEvents, preExistingEvents = getEvents(10000)
-	b.Run("add 10000 events to the writer", benchmarkDatastoreWithoutFlush(datastore, benchmarkEvents,
-		preExistingEvents))
-
-	benchmarkEvents, preExistingEvents = getEvents(20000)
-	b.Run("add 20000 events to the writer", benchmarkDatastoreWithoutFlush(datastore, benchmarkEvents,
-		preExistingEvents))
-}
-
 // benchmarkDatastoreWithFlush does an explicit Flush call after adding all events, in addition to the implicit flush
 // calls done by the writer once the buffer is full.
 func benchmarkDatastoreWithFlush(datastore DataStore, benchmarkEvents []*events.AdministrationEvent,
@@ -93,30 +69,6 @@ func benchmarkDatastoreWithFlush(datastore DataStore, benchmarkEvents []*events.
 			}
 			if err := datastore.Flush(testCtx); err != nil {
 				b.Error(err)
-			}
-		}
-	}
-}
-
-// benchmarkDatastoreWithoutFlush does not call an explicit flush call, instead the events will be flushed by the
-// writer implicitly.
-func benchmarkDatastoreWithoutFlush(datastore DataStore, benchmarkEvents []*events.AdministrationEvent,
-	preExistingEvents []*events.AdministrationEvent) func(b *testing.B) {
-	return func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			// Need to ensure the database is in its initial state:
-			// - no pre-existing events are within the database.
-			// - add the custom events that should exist beforehand.
-			// Stopping / Starting the timer in-between, as this would otherwise contribute to false benchmark timings.
-			// Also need to do this for each benchmark run, to ensure every run has the same initial conditions.
-			b.StopTimer()
-			resetDatabase(b, datastore, preExistingEvents)
-			b.StartTimer()
-
-			for _, evt := range benchmarkEvents {
-				if err := datastore.AddEvent(testCtx, evt); err != nil {
-					b.Error(err)
-				}
 			}
 		}
 	}
