@@ -77,32 +77,6 @@ func TestUpdateAndParse(t *testing.T) {
 
 }
 
-//func TestUpdateMemory(t *testing.T) {
-//	ctx := context.Background()
-//	filePath := filepath.Join(t.TempDir(), "cvss.zip")
-//	u, err := NewUpdaterWithCvssEnricher(file.New(filePath), &http.Client{Timeout: 30 * time.Second}, defURL, 1*time.Hour)
-//	if err != nil {
-//		t.Fatalf("Failed to create new updater with enricher: %v", err)
-//	}
-//
-//	// Measure memory before
-//	var memStart, memEnd runtime.MemStats
-//	runtime.ReadMemStats(&memStart)
-//
-//	// Call the function
-//	require.NoError(t, u.doUpdate(ctx))
-//
-//	// Measure memory after
-//	runtime.ReadMemStats(&memEnd)
-//
-//	// Calculate and print the difference
-//	allocDiff := memEnd.Alloc - memStart.Alloc
-//	totalAllocDiff := memEnd.TotalAlloc - memStart.TotalAlloc
-//
-//	fmt.Printf("Memory Alloc (difference): %v bytes\n", allocDiff)
-//	fmt.Printf("Memory TotalAlloc (difference): %v bytes\n", totalAllocDiff)
-//}
-
 func InitializeClaircoreEnricher() (*cvss.Enricher, error) {
 	client := &http.Client{}
 

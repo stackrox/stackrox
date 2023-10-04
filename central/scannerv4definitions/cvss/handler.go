@@ -105,11 +105,16 @@ func (h *httpHandler) fetchCvssData(ctx context.Context) {
 			log.Infof("Context done: %v", ctx.Err())
 			return
 		case <-ticker.C:
-			h.updater.update(ctx)
-			err := h.handleCvssDataFile(ctx) // Check the error here
+			err := h.updater.doUpdate(ctx)
 			if err != nil {
-				log.Errorf("Error handling CVSS data file: %v", err)
+				log.Errorf("Error updating CVSS data: %v", err)
+			} else {
+				err = h.handleCvssDataFile(ctx)
+				if err != nil {
+					log.Errorf("Error handling CVSS data file: %v", err)
+				}
 			}
+
 			interval := nextInterval()
 			ticker.Reset(interval)
 		}

@@ -67,7 +67,7 @@ func (u *cvssUpdater) Stop() {
 func (u *cvssUpdater) Start() {
 	u.once.Do(func() {
 		ctx := context.Background()
-		u.update(ctx)
+		u.doUpdate(ctx)
 		go u.runForever()
 	})
 }
@@ -81,15 +81,10 @@ func (u *cvssUpdater) runForever() {
 	for {
 		select {
 		case <-t.C:
-			u.update(ctx)
+			u.doUpdate(ctx)
 		case <-u.stopSig.Done():
 			return
 		}
-	}
-}
-func (u *cvssUpdater) update(ctx context.Context) {
-	if err := u.doUpdate(ctx); err != nil {
-		log.Errorf("Failed to update CVSS enrichment data: %v", err)
 	}
 }
 
