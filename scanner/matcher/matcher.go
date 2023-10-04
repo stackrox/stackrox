@@ -49,10 +49,11 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:  store,
 		Locker: locker,
-		// Run in "air-gapped" mode.
-		DisableBackgroundUpdates: true,
-		UpdateRetention:          libvuln.DefaultUpdateRetention,
-		Client:                   c,
+		// TODO: Enable when Scanner V4 updater pipeline is available.
+		// // Run in "air-gapped" mode.
+		// DisableBackgroundUpdates: true,
+		UpdateRetention: libvuln.DefaultUpdateRetention,
+		Client:          c,
 		Enrichers: []driver.Enricher{
 			&cvss.Enricher{},
 		},
