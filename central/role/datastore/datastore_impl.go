@@ -677,25 +677,25 @@ func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list all access scopes")
 	}
-	permissionSetsById := make(map[string]*storage.PermissionSet, len(permissionSets))
+	permissionSetsByID := make(map[string]*storage.PermissionSet, len(permissionSets))
 	for _, ps := range permissionSets {
-		permissionSetsById[ps.GetId()] = ps
+		permissionSetsByID[ps.GetId()] = ps
 	}
-	accessScopesById := make(map[string]*storage.SimpleAccessScope, len(accessScopes))
+	accessScopesByID := make(map[string]*storage.SimpleAccessScope, len(accessScopes))
 	for _, as := range accessScopes {
-		accessScopesById[as.GetId()] = as
+		accessScopesByID[as.GetId()] = as
 	}
 	result := make([]permissions.ResolvedRole, 0, len(roles))
 	for _, role := range roles {
 		resolvedRole := &resolvedRoleImpl{
 			role: role,
 		}
-		if ps, ok := permissionSetsById[role.GetPermissionSetId()]; ok {
+		if ps, ok := permissionSetsByID[role.GetPermissionSetId()]; ok {
 			resolvedRole.permissionSet = ps
 		} else {
 			return nil, errors.Wrapf(errox.InvariantViolation, "no permission set found for role %s", role.GetName())
 		}
-		if as, ok := accessScopesById[role.GetAccessScopeId()]; ok {
+		if as, ok := accessScopesByID[role.GetAccessScopeId()]; ok {
 			resolvedRole.accessScope = as
 		} else {
 			return nil, errors.Wrapf(errox.InvariantViolation, "no access scope found for role %s", role.GetName())
