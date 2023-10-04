@@ -265,7 +265,9 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							EncryptNotifierSecrets: pointer.Bool(true),
+							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
+								Enabled: pointer.Bool(true),
+							},
 						},
 						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
@@ -446,7 +448,9 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
-					"encryptNotifierSecrets": true,
+					"notifierSecretsEncryption": map[string]interface{}{
+						"enabled": true,
+					},
 				},
 				"env": map[string]interface{}{
 					"offlineMode": true,
