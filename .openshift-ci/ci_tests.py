@@ -237,7 +237,7 @@ class CustomSetTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
 
     def run(self):
-        print("Executing a small set of qa-tests-backend tests for power and s390x")
+        print("Executing a sub set of qa-tests-backend tests for power and s390x")
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT

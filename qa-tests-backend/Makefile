@@ -103,3 +103,8 @@ graphql-test: compile
 sensor-bounce-test: compile
 	@echo "+ $@"
 	$(GRADLE) testSensorBounce testSensorBounceNext $(GRADLE_TEST_ARGS)
+
+.PHONY: pz-test
+pz-test: compile
+	@echo "+ $@"
+	$(GRADLE) testPZ $(GRADLE_TEST_ARGS)
