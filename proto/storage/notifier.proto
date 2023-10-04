@@ -29,6 +29,8 @@ message Notifier {
         AWSSecurityHub aws_security_hub  = 17;
         Syslog syslog                    = 18;
     }
+    string notifier_secret = 19 [(gogoproto.moretags) = 'scrub:"always"'];
+
     Traits traits = 50;
 
     // These fields should be safe to un-reserve after a few releases. evan@
