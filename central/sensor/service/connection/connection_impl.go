@@ -550,6 +550,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get policy sync msg for %q", c.clusterID)
 		}
+		log.Infof("[cluster=%s] initial policies message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
 		}
@@ -558,6 +559,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
 		}
+		log.Infof("[cluster=%s] initial process baseline message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
 		}
@@ -566,6 +568,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
 		}
+		log.Infof("[cluster=%s] initial network baseline message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
 		}
