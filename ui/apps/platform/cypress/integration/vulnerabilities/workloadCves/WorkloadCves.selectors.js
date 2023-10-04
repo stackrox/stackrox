@@ -34,10 +34,17 @@ export const selectors = {
         `.pf-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
     summaryCard: (cardTitle) => `.pf-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
+    bulkActionMenuToggle: 'button:contains("Bulk actions")',
+    menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
+    paginationPrevious: "button[aria-label='Go to previous page']",
+    paginationNext: "button[aria-label='Go to next page']",
 
     // Data table selectors
     isUpdatingTable: '*[aria-busy="true"] table',
     firstTableRow: 'table tbody:nth-of-type(1) tr:nth-of-type(1)',
+    tableRowSelectCheckbox: 'td input[type="checkbox"][aria-label^="Select row"]',
+    tableRowSelectAllCheckbox: 'thead input[type="checkbox"][aria-label^="Select all rows"]',
+    tableRowMenuToggle: 'td button[aria-label="Actions"]',
     nonZeroCveSeverityCounts: '*[aria-label*="severity cves"i]:not([aria-label^="0"])',
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
@@ -47,6 +54,10 @@ export const selectors = {
         `span[aria-label*="with ${severity.toLowerCase()} severity"]`,
     hiddenSeverityCount: (severity) =>
         `span[aria-label="${severity} severity is hidden by the applied filter"]`,
+
+    // Exception flow selectors
+    deferCveModal: '*[role="dialog"]:contains("Request deferral for")',
+    markCveFalsePositiveModal: '*[role="dialog"]:contains("Mark"):contains("as false positive")',
 
     // Watched image selectors
     watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,
