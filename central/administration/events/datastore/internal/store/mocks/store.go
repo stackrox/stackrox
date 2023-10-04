@@ -81,6 +81,22 @@ func (mr *MockStoreMockRecorder) GetByQuery(ctx, query interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
 }
 
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.AdministrationEvent, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
+	ret0, _ := ret[0].([]*storage.AdministrationEvent)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, identifiers interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, identifiers)
+}
+
 // UpsertMany mocks base method.
 func (m *MockStore) UpsertMany(ctx context.Context, objs []*storage.AdministrationEvent) error {
 	m.ctrl.T.Helper()

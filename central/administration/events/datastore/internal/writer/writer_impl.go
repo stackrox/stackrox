@@ -7,6 +7,9 @@ import (
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
+	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -37,16 +40,41 @@ func (c *writerImpl) resetNoLock() {
 }
 
 func (c *writerImpl) flushNoLock(ctx context.Context) error {
-	eventChunk := make([]*storage.AdministrationEvent, 0, len(c.buffer))
-	for _, event := range c.buffer {
-		eventChunk = append(eventChunk, event)
+	// Short-circuit here in case we have no events to be added.
+	if len(c.buffer) == 0 {
+		return nil
 	}
-	err := c.store.UpsertMany(ctx, eventChunk)
+
+	eventsToAdd := sliceutils.ShallowClone(maputil.Values(c.buffer))
+
+	ids := protoutils.GetIDs(eventsToAdd)
+	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are
+	// not de-duplicated against stored events from the database. The reason why we do the de-duplication during Flush
+	// instead of upon adding is to lower the amount of database operations, since adding events may be done quite
+	// frequently (i.e. for each emitted log statement that is subject to administration events creation).
+	storedEvents, missingIndicies, err := c.store.GetMany(ctx, ids)
 	if err != nil {
-		return errors.Wrap(err, "failed to upsert event chunk")
+		return errors.Wrap(err, "failed to query for existing records")
 	}
-	// Reset buffer only if upsert was successful.
+
+	// Remove the events that didn't exist within the database from the events to add and keep them separate.
+	// This way, the indices match between stored events and events to add.
+	notStoredEvents := getNotStoredEvents(eventsToAdd, missingIndicies)
+	mergedEvents := sliceutils.Without(eventsToAdd, notStoredEvents)
+
+	// Merge the events in the buffer with the stored event's information (i.e. timestamps and occurrences).
+	for i, storedEvent := range storedEvents {
+		mergedEvents[i] = mergeEvents(mergedEvents[i], storedEvent)
+	}
+
+	// After merging events, upsert both the newly added events, and the merged events.
+	if err := c.store.UpsertMany(ctx, append(mergedEvents, notStoredEvents...)); err != nil {
+		return errors.Wrap(err, "failed to upsert events chunk")
+	}
+
+	// After successful DB operations, reset the buffer.
 	c.resetNoLock()
+
 	return nil
 }
 
@@ -56,13 +84,10 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 	}
 
 	enrichedEvent := event.ToStorageEvent()
-	id := enrichedEvent.GetId()
 
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	// If the buffer is full, first flush and clear the buffer. This ensures concurrent callers won't receive
-	// unexpected errors and additional logic on their side to flush and retry.
 	if len(c.buffer) >= maxWriterSize {
 		if err := c.flushNoLock(ctx); err != nil {
 			return errors.Wrap(err, "failed to flush events when buffer was full")
@@ -70,23 +95,15 @@ func (c *writerImpl) Upsert(ctx context.Context, event *events.AdministrationEve
 	}
 
 	var baseEvent *storage.AdministrationEvent
-	eventInBuffer, foundInBuffer := c.readNoLock(id)
-	// If an event already exists in the buffer it is the most recent.
-	// We use it as a base to merge with the new event.
+	// We operate the de-duplication under the context of the buffer and are not taking into account events within
+	// the database. This will be done once Flush is called. The reason for this is that upserting events is done in a
+	// high frequency (i.e. each time a log statement is issued that is subject to administration event creation), and
+	// we want to avoid high bursts of read operations for the database and instead do those _only_ during the flush
+	// operation.
+	eventInBuffer, foundInBuffer := c.readNoLock(enrichedEvent.GetId())
 	if foundInBuffer {
 		baseEvent = eventInBuffer
-	} else {
-		// If no event is in the buffer, we try to fetch an event
-		// from the database. If foundInDB, we use it as the base for the merge.
-		eventInDB, foundInDB, err := c.store.Get(ctx, id)
-		if err != nil {
-			return errors.Wrap(err, "failed to query for existing record")
-		}
-		if foundInDB {
-			baseEvent = eventInDB
-		}
 	}
-
 	// Merge events to up the occurrence and update the time stamps.
 	if baseEvent != nil {
 		enrichedEvent = mergeEvents(enrichedEvent, baseEvent)
@@ -122,4 +139,12 @@ func mergeEvents(updated *storage.AdministrationEvent, base *storage.Administrat
 	}
 	updated.NumOccurrences = base.GetNumOccurrences() + 1
 	return updated
+}
+
+func getNotStoredEvents(events []*storage.AdministrationEvent, eventsNotStoredIndices []int) []*storage.AdministrationEvent {
+	eventsNotStored := make([]*storage.AdministrationEvent, 0, len(eventsNotStoredIndices))
+	for _, index := range eventsNotStoredIndices {
+		eventsNotStored = append(eventsNotStored, events[index])
+	}
+	return eventsNotStored
 }
