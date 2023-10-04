@@ -1,27 +1,51 @@
 import React, { ReactElement } from 'react';
 import {
     Pagination,
+    Text,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
+import pluralize from 'pluralize';
 
 export type AdministrationEventsToolbarProps = {
-    count: string; // int64
+    count: number;
+    page: number;
+    perPage: number;
+    setPage: (newPage: number) => void;
+    setPerPage: (newPerPage: number) => void;
 };
 
-function AdministrationEventsToolbar({ count }: AdministrationEventsToolbarProps): ReactElement {
-    // TODO table filters and pagination
-    const page = 1;
-    const perPage = 10;
+function AdministrationEventsToolbar({
+    count,
+    page,
+    perPage,
+    setPage,
+    setPerPage,
+}: AdministrationEventsToolbarProps): ReactElement {
+    const countText = `${count} ${pluralize('event', count)} found`;
 
     return (
         <Toolbar>
             <ToolbarContent>
+                <ToolbarGroup>
+                    <ToolbarItem variant="label">
+                        <Text>{countText}</Text>
+                    </ToolbarItem>
+                </ToolbarGroup>
                 <ToolbarGroup alignment={{ default: 'alignRight' }}>
                     <ToolbarItem variant="pagination">
-                        <Pagination itemCount={Number(count) ?? 0} page={page} perPage={perPage} />
+                        <Pagination
+                            itemCount={count}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPage(1);
+                                setPerPage(newPerPage);
+                            }}
+                        />
                     </ToolbarItem>
                 </ToolbarGroup>
             </ToolbarContent>
