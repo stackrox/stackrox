@@ -91,18 +91,18 @@ func (mr *MockEnvironmentMockRecorder) ConnectNames() *gomock.Call {
 }
 
 // GRPCConnection mocks base method.
-func (m *MockEnvironment) GRPCConnection() (*grpc.ClientConn, error) {
+func (m *MockEnvironment) GRPCConnection(retryTimeout time.Duration) (*grpc.ClientConn, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GRPCConnection")
+	ret := m.ctrl.Call(m, "GRPCConnection", retryTimeout)
 	ret0, _ := ret[0].(*grpc.ClientConn)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GRPCConnection indicates an expected call of GRPCConnection.
-func (mr *MockEnvironmentMockRecorder) GRPCConnection() *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) GRPCConnection(retryTimeout interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GRPCConnection", reflect.TypeOf((*MockEnvironment)(nil).GRPCConnection))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GRPCConnection", reflect.TypeOf((*MockEnvironment)(nil).GRPCConnection), retryTimeout)
 }
 
 // HTTPClient mocks base method.

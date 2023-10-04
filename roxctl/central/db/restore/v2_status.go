@@ -24,7 +24,7 @@ func v2RestoreStatusCmd(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "Show information about the ongoing database restore process.",
 		Long:  "Show information such as start time, state, and transfer progress about the ongoing database restore process if one exists.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return showRestoreStatus(cliEnvironment, flags.Timeout(c))
+			return showRestoreStatus(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),
 	}
 
@@ -54,8 +54,8 @@ func printStatus(logger logger.Logger, st *v1.DBRestoreProcessStatus) {
 	}
 }
 
-func showRestoreStatus(cliEnvironment environment.Environment, timeout time.Duration) error {
-	conn, err := cliEnvironment.GRPCConnection()
+func showRestoreStatus(cliEnvironment environment.Environment, timeout time.Duration, retryTimeout time.Duration) error {
+	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
 	if err != nil {
 		return errors.Wrap(err, "could not establish gRPC connection to central")
 	}

@@ -16,11 +16,13 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-func fetchCAConfig(cliEnvironment environment.Environment, outputFile string, timeout time.Duration) error {
+func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
+	timeout time.Duration, retryTimeout time.Duration,
+) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
 	if err != nil {
 		return err
 	}
@@ -31,7 +33,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string, ti
 		return writeCA(ctx, svc, cliEnvironment.InputOutput().Out())
 	}
 
-	bundleOutput, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	bundleOutput, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
 		return errors.Wrap(err, "opening output file for writing CA config")
 	}
@@ -78,7 +80,7 @@ func fetchCACommand(cliEnvironment environment.Environment) *cobra.Command {
 			} else if outputFile == "-" {
 				outputFile = ""
 			}
-			return fetchCAConfig(cliEnvironment, outputFile, flags.Timeout(cmd))
+			return fetchCAConfig(cliEnvironment, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
 	c.PersistentFlags().StringVar(&outputFile, "output", "", "file to be used for storing the CA config")

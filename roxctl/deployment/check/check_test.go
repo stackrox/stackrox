@@ -238,7 +238,8 @@ type deployCheckTestSuite struct {
 }
 
 func (d *deployCheckTestSuite) createGRPCMockDetectionService(alerts []*storage.Alert,
-	ignoredObjRefs []string) (*grpc.ClientConn, func()) {
+	ignoredObjRefs []string,
+) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -273,6 +274,7 @@ func (d *deployCheckTestSuite) SetupTest() {
 		retryDelay:         3,
 		retryCount:         3,
 		timeout:            1 * time.Minute,
+		retryTimeout:       1 * time.Minute,
 		printAllViolations: true,
 	}
 }
@@ -292,6 +294,7 @@ func (d *deployCheckTestSuite) TestConstruct() {
 
 	testCmd := &cobra.Command{Use: "test"}
 	testCmd.Flags().Duration("timeout", expectedTimeout, "")
+	testCmd.Flags().Duration("retry-timeout", expectedTimeout, "")
 
 	cases := map[string]struct {
 		timeout    time.Duration
@@ -519,7 +522,8 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 }
 
 func (d *deployCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
-	standardizedFormat bool) {
+	standardizedFormat bool,
+) {
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		d.Run(name, func() {
@@ -562,7 +566,8 @@ func (d *deployCheckTestSuite) assertError(deployCheckCmd deploymentCheckCommand
 }
 
 func (d *deployCheckTestSuite) createDeployCheckCmd(c outputFormatTest, printer printer.ObjectPrinter,
-	standardizedFormat bool) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
+	standardizedFormat bool,
+) (deploymentCheckCommand, *bytes.Buffer, *bytes.Buffer, func()) {
 	conn, closeF := d.createGRPCMockDetectionService(c.alerts, c.ignoredObjRefs)
 
 	deployCheckCmd := d.defaultDeploymentCheckCommand

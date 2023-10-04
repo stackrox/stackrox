@@ -57,11 +57,13 @@ func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse
 	}
 }
 
-func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string, timeout time.Duration) error {
+func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []string,
+	timeout time.Duration, retryTimeout time.Duration,
+) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
 	if err != nil {
 		return err
 	}
@@ -83,7 +85,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return revokeInitBundles(cliEnvironment, args, flags.Timeout(cmd))
+			return revokeInitBundles(cliEnvironment, args, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
 	}
 

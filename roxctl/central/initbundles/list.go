@@ -17,11 +17,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-func listInitBundles(cliEnvironment environment.Environment, timeout time.Duration) error {
+func listInitBundles(cliEnvironment environment.Environment, timeout time.Duration, retryTimeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Short: "List cluster init bundles",
 		Long:  "List all previously generated init bundles for bootstrapping new StackRox secured clusters",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			return listInitBundles(cliEnvironment, flags.Timeout(c))
+			return listInitBundles(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),
 	}
 	return c

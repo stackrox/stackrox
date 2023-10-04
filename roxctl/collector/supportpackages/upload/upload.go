@@ -51,7 +51,7 @@ func analyzePackageFile(pkg *zip.Reader) (map[string]*zip.File, bool) {
 }
 
 func (cmd *collectorSPUploadCommand) retrieveExistingProbeFiles(probeFilesInPackage map[string]*zip.File) ([]*v1.ProbeUploadManifest_File, error) {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to establish a gRPC connection to Central")
 	}

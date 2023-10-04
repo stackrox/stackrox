@@ -32,15 +32,15 @@ func authzTraceCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Long: `Stream built-in authorizer traces for all incoming requests.
 The command blocks for the given number of minutes and collects the authorization trace log for all incoming API requests to the Central service.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
-			timeout := flags.Timeout(c)
-			return writeAuthzTraces(cliEnvironment, timeout)
+			return writeAuthzTraces(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, authzTraceTimeout)
+	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	return c
 }
 
-func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration) error {
+func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, retryTimeout time.Duration) error {
 	// Write traces directly to stdout without buffering. Sync iff supported,
 	// e.g., stdout is redirected to a file and not attached to the console.
 	traceOutput := os.Stdout //nolint:forbidigo // TODO(ROX-13473)
@@ -49,7 +49,7 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 		toSync = true
 	}
 
-	streamErr := streamAuthzTraces(cliEnvironment, timeout, traceOutput)
+	streamErr := streamAuthzTraces(cliEnvironment, timeout, retryTimeout, traceOutput)
 
 	var syncErr error
 	if toSync {
@@ -62,12 +62,14 @@ func writeAuthzTraces(cliEnvironment environment.Environment, timeout time.Durat
 	return multierror.Append(streamErr, syncErr).ErrorOrNil()
 }
 
-func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration, traceOutput io.Writer) error {
+func streamAuthzTraces(cliEnvironment environment.Environment, timeout time.Duration,
+	retryTimeout time.Duration, traceOutput io.Writer,
+) error {
 	// pkgCommon.Context() is canceled on SIGINT, we will use that to stop on Ctrl-C.
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
 	defer cancel()
 
-	conn, err := cliEnvironment.GRPCConnection()
+	conn, err := cliEnvironment.GRPCConnection(retryTimeout)
 	if err != nil {
 		return err
 	}

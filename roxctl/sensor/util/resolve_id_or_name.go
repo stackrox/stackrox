@@ -15,12 +15,12 @@ import (
 
 // ResolveClusterID returns the cluster ID corresponding to the given id or name,
 // or an error if no matching cluster was found.
-func ResolveClusterID(idOrName string, timeout time.Duration, env environment.Environment) (string, error) {
+func ResolveClusterID(idOrName string, timeout time.Duration, retryTimeout time.Duration, env environment.Environment) (string, error) {
 	if _, err := uuid.FromString(idOrName); err == nil {
 		return idOrName, nil
 	}
 
-	conn, err := env.GRPCConnection()
+	conn, err := env.GRPCConnection(retryTimeout)
 	if err != nil {
 		return "", err
 	}

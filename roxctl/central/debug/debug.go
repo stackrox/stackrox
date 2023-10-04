@@ -28,8 +28,9 @@ type centralDebugLogLevelCommand struct {
 	modules []string
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
+	env          environment.Environment
+	timeout      time.Duration
+	retryTimeout time.Duration
 }
 
 // Command defines the debug command tree
@@ -58,6 +59,7 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			levelCmd.timeout = flags.Timeout(c)
+			levelCmd.retryTimeout = flags.RetryTimeout(c)
 			if levelCmd.level == "" {
 				return levelCmd.getLogLevel()
 			}
@@ -68,11 +70,12 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 		fmt.Sprintf("the log level to set the modules to (%s) ", levelList))
 	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "the modules to which to apply the command")
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }
 
 func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return err
 	}
@@ -113,7 +116,7 @@ func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelR
 }
 
 func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return err
 	}

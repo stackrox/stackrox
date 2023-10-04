@@ -55,9 +55,9 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 				OutputDir:  outputDir,
 			}, cliEnvironment)
 			if isTimeoutError(err) {
-				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle. 
-Timeout value used was %s, while default timeout value is %s. 
-If your timeout value is less than the default value, use the default value. 
+				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle.
+Timeout value used was %s, while default timeout value is %s.
+If your timeout value is less than the default value, use the default value.
 If your timeout value is more or equal to default value, increase timeout value twice in size.
 To specify timeout, run  'roxctl' command:
 'roxctl central debug download-diagnostics --timeout=<timeout> <other parameters'`, flags.Timeout(c), diagnosticBundleDownloadTimeout)
@@ -66,6 +66,7 @@ To specify timeout, run  'roxctl' command:
 		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
+	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory in which to store bundle")
 	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "comma separated list of sensor clusters from which logs should be collected")
 	c.PersistentFlags().StringVar(&since, "since", "", "timestamp starting when logs should be collected from sensor clusters")

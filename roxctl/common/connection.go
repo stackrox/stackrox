@@ -21,7 +21,7 @@ import (
 )
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
-func GetGRPCConnection(am auth.Method, logger logger.Logger) (*grpc.ClientConn, error) {
+func GetGRPCConnection(am auth.Method, logger logger.Logger, retryTimeout time.Duration) (*grpc.ClientConn, error) {
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
@@ -44,6 +44,7 @@ func GetGRPCConnection(am auth.Method, logger logger.Logger) (*grpc.ClientConn, 
 		useDirectGRPC: flags.UseDirectGRPC(),
 		forceHTTP1:    flags.ForceHTTP1(),
 		endpoint:      endpoint,
+		retryTimeout:  retryTimeout,
 	})
 }
 
@@ -55,6 +56,7 @@ type grpcConfig struct {
 	useDirectGRPC bool
 	forceHTTP1    bool
 	endpoint      string
+	retryTimeout  time.Duration
 }
 
 func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
@@ -63,6 +65,7 @@ func createGRPCConn(c grpcConfig) (*grpc.ClientConn, error) {
 		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(initialBackoffDuration)),
 		// First retry after 100ms, last retry after 51.2s.
 		grpc_retry.WithMax(10),
+		grpc_retry.WithPerRetryTimeout(c.retryTimeout),
 	}
 
 	grpcDialOpts := []grpc.DialOption{

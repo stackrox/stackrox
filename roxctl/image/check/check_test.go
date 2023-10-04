@@ -228,10 +228,11 @@ func (suite *imageCheckTestSuite) newTestMockEnvironment(conn *grpc.ClientConn) 
 
 func (suite *imageCheckTestSuite) SetupTest() {
 	suite.imageCheckCommand = imageCheckCommand{
-		image:      "nginx:test",
-		retryDelay: 3,
-		retryCount: 3,
-		timeout:    1 * time.Minute,
+		image:        "nginx:test",
+		retryDelay:   3,
+		retryCount:   3,
+		timeout:      1 * time.Minute,
+		retryTimeout: 1 * time.Minute,
 	}
 }
 
@@ -344,6 +345,7 @@ func (suite *imageCheckTestSuite) TestConstruct() {
 
 	cmd := &cobra.Command{Use: "test"}
 	cmd.Flags().Duration("timeout", 1*time.Minute, "")
+	cmd.Flags().Duration("retry-timeout", 1*time.Minute, "")
 
 	cases := map[string]struct {
 		shouldFail         bool
@@ -379,6 +381,7 @@ func (suite *imageCheckTestSuite) TestConstruct() {
 			suite.Assert().Equal(c.printer, imgCheckCmd.objectPrinter)
 			suite.Assert().Equal(c.standardizedFormat, imgCheckCmd.standardizedOutputFormat)
 			suite.Assert().Equal(1*time.Minute, imgCheckCmd.timeout)
+			suite.Assert().Equal(1*time.Minute, imgCheckCmd.retryTimeout)
 		})
 	}
 }
@@ -517,7 +520,8 @@ func (suite *imageCheckTestSuite) TestLegacyPrint_Format() {
 
 // helper to run output format tests
 func (suite *imageCheckTestSuite) runOutputTests(cases map[string]outputFormatTest, printer printer.ObjectPrinter,
-	standardizedFormat bool) {
+	standardizedFormat bool,
+) {
 	const colorTestPrefix = "color_"
 	for name, c := range cases {
 		suite.Run(name, func() {

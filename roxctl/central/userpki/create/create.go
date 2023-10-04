@@ -29,6 +29,7 @@ type centralUserPkiCreateCommand struct {
 	// Properties that are injected or constructed.
 	env          environment.Environment
 	timeout      time.Duration
+	retryTimeout time.Duration
 	providerName string
 }
 
@@ -60,6 +61,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().StringVarP(&centralUserPkiCreateCmd.roleName, "role", "r", "", "Minimum access role for users of this provider")
 	utils.Must(c.MarkFlagRequired("role"))
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }
 
@@ -76,6 +78,7 @@ func (cmd *centralUserPkiCreateCommand) validate(args []string) error {
 func (cmd *centralUserPkiCreateCommand) construct(cbr *cobra.Command, args []string) error {
 	cmd.providerName = args[0]
 	cmd.timeout = flags.Timeout(cbr)
+	cmd.retryTimeout = flags.RetryTimeout(cbr)
 	return nil
 }
 
@@ -102,7 +105,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 		utils.Must(pems.WriteByte('\n'))
 	}
 
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return err
 	}

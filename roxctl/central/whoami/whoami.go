@@ -16,8 +16,9 @@ import (
 
 type centralWhoAmICommand struct {
 	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
+	env          environment.Environment
+	timeout      time.Duration
+	retryTimeout time.Duration
 }
 
 // Command defines the central command tree
@@ -31,18 +32,20 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 
 	flags.AddTimeout(cbr)
+	flags.AddRetryTimeout(cbr)
 	return cbr
 }
 
 func makeCentralWhoAmICommand(cliEnvironment environment.Environment, cbr *cobra.Command) *centralWhoAmICommand {
 	return &centralWhoAmICommand{
-		env:     cliEnvironment,
-		timeout: flags.Timeout(cbr),
+		env:          cliEnvironment,
+		timeout:      flags.Timeout(cbr),
+		retryTimeout: flags.RetryTimeout(cbr),
 	}
 }
 
 func (cmd *centralWhoAmICommand) whoami() error {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return err
 	}

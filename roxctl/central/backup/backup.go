@@ -47,6 +47,7 @@ If the provided path is a file path, the backup will be written to the file, ove
 If the provided path is a directory, the backup will be saved in that directory with the server-provided filename.
 If this argument is omitted, the backup will be saved in the current working directory with the server-provided filename.`)
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
+	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	return c
 }
 

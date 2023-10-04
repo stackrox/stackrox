@@ -21,5 +21,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(restore.V2Command(cliEnvironment))
 	c.AddCommand(generate.Command(cliEnvironment))
 	flags.AddTimeoutWithDefault(c, 1*time.Hour)
+	flags.AddRetryTimeoutWithDefault(c, time.Duration(0))
 	return c
 }

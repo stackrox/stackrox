@@ -11,9 +11,10 @@ import (
 
 type collectorSPUploadCommand struct {
 	// Properties that are bound to cobra flags.
-	overwrite   bool
-	packageFile string
-	timeout     time.Duration
+	overwrite    bool
+	packageFile  string
+	timeout      time.Duration
+	retryTimeout time.Duration
 
 	// Properties that are injected or constructed.
 	env environment.Environment
@@ -21,7 +22,6 @@ type collectorSPUploadCommand struct {
 
 // Command defines the command. See usage strings for details.
 func Command(cliEnvironment environment.Environment) *cobra.Command {
-
 	collectorSPUploadCmd := &collectorSPUploadCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "upload <package-file>",
@@ -39,6 +39,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.Flags().BoolVarP(&collectorSPUploadCmd.overwrite, "overwrite", "", false, "whether to overwrite present but different files")
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }
 
@@ -55,5 +56,6 @@ func validate(args []string) error {
 func (cmd *collectorSPUploadCommand) construct(c *cobra.Command, args []string) error {
 	cmd.packageFile = args[0]
 	cmd.timeout = flags.Timeout(c)
+	cmd.retryTimeout = flags.RetryTimeout(c)
 	return nil
 }

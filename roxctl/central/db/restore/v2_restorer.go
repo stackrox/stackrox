@@ -55,6 +55,7 @@ var (
 type v2Restorer struct {
 	env           environment.Environment
 	retryDeadline time.Time // does not affect ongoing transfers
+	retryTimeout  time.Duration
 
 	interrupt bool
 	confirm   func() error
@@ -78,7 +79,7 @@ type v2Restorer struct {
 }
 
 func (cmd *centralDbRestoreCommand) newV2Restorer(confirm func() error, retryDeadline time.Time) (*v2Restorer, error) {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}
@@ -94,6 +95,7 @@ func (cmd *centralDbRestoreCommand) newV2Restorer(confirm func() error, retryDea
 		httpClient:    httpClient,
 		dbClient:      dbClient,
 		retryDeadline: retryDeadline,
+		retryTimeout:  cmd.retryTimeout,
 		interrupt:     cmd.interrupt,
 		confirm:       confirm,
 	}, nil
@@ -380,7 +382,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 }
 
 func (r *v2Restorer) init(ctx context.Context, file *os.File) (*http.Request, error) {
-	conn, err := r.env.GRPCConnection()
+	conn, err := r.env.GRPCConnection(r.retryTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not establish gRPC connection to central")
 	}

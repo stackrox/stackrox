@@ -22,8 +22,9 @@ type centralUserPkiListCommand struct {
 	json bool
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
+	env          environment.Environment
+	timeout      time.Duration
+	retryTimeout time.Duration
 }
 
 // Command adds the userpki list command
@@ -42,16 +43,18 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	}
 	c.Flags().BoolVarP(&centralUserPkiListCmd.json, "json", "j", false, "Enable JSON output")
 	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
 	return c
 }
 
 func (cmd *centralUserPkiListCommand) construct(cbr *cobra.Command) error {
 	cmd.timeout = flags.Timeout(cbr)
+	cmd.retryTimeout = flags.RetryTimeout(cbr)
 	return nil
 }
 
 func (cmd *centralUserPkiListCommand) listProviders() error {
-	conn, err := cmd.env.GRPCConnection()
+	conn, err := cmd.env.GRPCConnection(cmd.retryTimeout)
 	if err != nil {
 		return err
 	}

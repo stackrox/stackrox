@@ -35,9 +35,10 @@ type centralDbRestoreCommand struct {
 	interrupt bool
 
 	// Properties that are injected or constructed.
-	env     environment.Environment
-	timeout time.Duration
-	confirm func() error
+	env          environment.Environment
+	timeout      time.Duration
+	retryTimeout time.Duration
+	confirm      func() error
 }
 
 // V2Command defines the new db restore command
@@ -87,6 +88,7 @@ func (cmd *centralDbRestoreCommand) construct(cbr *cobra.Command, args []string)
 		return flags.CheckConfirmation(cbr, cmd.env.Logger(), cmd.env.InputOutput())
 	}
 	cmd.timeout = flags.Timeout(cbr)
+	cmd.retryTimeout = flags.RetryTimeout(cbr)
 	if cmd.file == "" {
 		cmd.file = args[0]
 	}
