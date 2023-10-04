@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -49,7 +51,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	// We could instead do abs(severity - 4) + 2 but I feel this is high maintenance and obfuscates the meaning
 	alertToSyslogSeverityMap = map[storage.Severity]int{
@@ -235,7 +237,8 @@ func makeExtensionPair(key, value string) string {
 func makeJSONExtensionPair(key string, valueObject interface{}) string {
 	value, err := json.Marshal(valueObject)
 	if err != nil {
-		log.Warnf("unable to json marshal audit log field %s due to %v", key, err)
+		log.Warnw("Unable to JSON marshal audit log field",
+			logging.String("audit_log_field", key), logging.Err(err))
 		return makeExtensionPair(key, "missing")
 	}
 	return makeExtensionPair(key, string(value))
@@ -267,7 +270,15 @@ func (s *syslog) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if err != nil {
 		return err
 	}
-	return s.sendSyslog(severity, timestamp, stackroxKubernetesSecurityPlatformAlert, unstructuredData)
+	err = s.sendSyslog(severity, timestamp, stackroxKubernetesSecurityPlatformAlert, unstructuredData)
+	if err != nil {
+		log.Errorw("Failed to send alert to syslog",
+			logging.Err(err),
+			logging.ErrCode(codes.SyslogGeneric),
+			logging.AlertID(alert.GetId()),
+			logging.NotifierName(s.GetName()))
+	}
+	return err
 }
 
 func (s *syslog) Close(context.Context) error {
