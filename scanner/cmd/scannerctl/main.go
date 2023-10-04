@@ -70,8 +70,8 @@ func main() {
 
 	ctx := context.Background()
 	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-		ServerName: "scanner-v4.stackrox",
+		UseClientCert:      clientconn.MustUseClientCert,
+		ServerName:         "scanner-v4.stackrox",
 		InsecureSkipVerify: true,
 	})
 	if err != nil {
