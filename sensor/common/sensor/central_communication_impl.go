@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -257,7 +258,21 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
 	// TODO: stop waiting for initial deduper state if it takes too long
-	msg, err := stream.Recv()
+	done := make(chan struct{})
+	timeout := 10 * time.Second
+	var err error
+	var msg *central.MsgToSensor
+	go func() {
+		msg, err = stream.Recv()
+		close(done)
+	}()
+	select {
+	case <-time.After(timeout):
+		log.Error("timeout reached waiting for the initial deduper sync")
+		return errors.Errorf("%v timeout reached waiting for the initial deduper state", timeout)
+	case <-done:
+		break
+	}
 	if err != nil {
 		return errors.Wrap(err, "receiving deduper state")
 	}
