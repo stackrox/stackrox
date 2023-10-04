@@ -112,21 +112,15 @@ type AdministrationEvent struct {
 	// Domain associated with the event. An event's domain outlines the feature domain where
 	// the event was created from. As an example, this might be "Image Scanning".
 	// In case of events that cannot be tied to a specific domain, this will be "General".
-	Domain string `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty"`
-	// Resource type associated with the event. An event may refer to an underlying resource
-	// such as a particular image. In that case, the resource type will be filled here.
-	ResourceType string `protobuf:"bytes,7,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
-	// Resource ID associated with the event. If an event refers to an underlying resource,
-	// the resource ID identifies the underlying resource. The resource ID is not guaranteed
-	// to uniquely identify the object. For example, a resource name is a valid resource ID.
-	ResourceId string `protobuf:"bytes,8,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Domain   string                        `protobuf:"bytes,6,opt,name=domain,proto3" json:"domain,omitempty"`
+	Resource *AdministrationEvent_Resource `protobuf:"bytes,7,opt,name=resource,proto3" json:"resource,omitempty"`
 	// Occurrences associated with the event. When events may occur multiple times, the
 	// occurrences track the amount.
-	NumOccurrences int64 `protobuf:"varint,9,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty"`
+	NumOccurrences int64 `protobuf:"varint,8,opt,name=num_occurrences,json=numOccurrences,proto3" json:"num_occurrences,omitempty"`
 	// Specifies the time when the event has last occurred.
-	LastOccurredAt *types.Timestamp `protobuf:"bytes,10,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty"`
+	LastOccurredAt *types.Timestamp `protobuf:"bytes,9,opt,name=last_occurred_at,json=lastOccurredAt,proto3" json:"last_occurred_at,omitempty"`
 	// Specifies the time when the event has been created.
-	CreatedAt            *types.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	CreatedAt            *types.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -207,18 +201,11 @@ func (m *AdministrationEvent) GetDomain() string {
 	return ""
 }
 
-func (m *AdministrationEvent) GetResourceType() string {
+func (m *AdministrationEvent) GetResource() *AdministrationEvent_Resource {
 	if m != nil {
-		return m.ResourceType
+		return m.Resource
 	}
-	return ""
-}
-
-func (m *AdministrationEvent) GetResourceId() string {
-	if m != nil {
-		return m.ResourceId
-	}
-	return ""
+	return nil
 }
 
 func (m *AdministrationEvent) GetNumOccurrences() int64 {
@@ -252,8 +239,94 @@ func (m *AdministrationEvent) Clone() *AdministrationEvent {
 	cloned := new(AdministrationEvent)
 	*cloned = *m
 
+	cloned.Resource = m.Resource.Clone()
 	cloned.LastOccurredAt = m.LastOccurredAt.Clone()
 	cloned.CreatedAt = m.CreatedAt.Clone()
+	return cloned
+}
+
+// Resource holds all information about the resource associated with the event.
+type AdministrationEvent_Resource struct {
+	// Resource type associated with the event. An event may refer to an underlying resource
+	// such as a particular image. In that case, the resource type will be filled here.
+	Type string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	// Resource ID associated with the event. If an event refers to an underlying resource,
+	// the resource ID identifies the underlying resource. The resource ID is not guaranteed
+	// to be set, depending on the context of the administration event.
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	// Resource name associated with the event. If an event refers to an underlying resource,
+	// the resource name identifies the underlying resource. The resource name is not guaranteed
+	// to be set, depending on the context of the administration event.
+	Name                 string   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *AdministrationEvent_Resource) Reset()         { *m = AdministrationEvent_Resource{} }
+func (m *AdministrationEvent_Resource) String() string { return proto.CompactTextString(m) }
+func (*AdministrationEvent_Resource) ProtoMessage()    {}
+func (*AdministrationEvent_Resource) Descriptor() ([]byte, []int) {
+	return fileDescriptor_91ed8038492412f4, []int{0, 0}
+}
+func (m *AdministrationEvent_Resource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *AdministrationEvent_Resource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_AdministrationEvent_Resource.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *AdministrationEvent_Resource) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AdministrationEvent_Resource.Merge(m, src)
+}
+func (m *AdministrationEvent_Resource) XXX_Size() int {
+	return m.Size()
+}
+func (m *AdministrationEvent_Resource) XXX_DiscardUnknown() {
+	xxx_messageInfo_AdministrationEvent_Resource.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AdministrationEvent_Resource proto.InternalMessageInfo
+
+func (m *AdministrationEvent_Resource) GetType() string {
+	if m != nil {
+		return m.Type
+	}
+	return ""
+}
+
+func (m *AdministrationEvent_Resource) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *AdministrationEvent_Resource) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *AdministrationEvent_Resource) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *AdministrationEvent_Resource) Clone() *AdministrationEvent_Resource {
+	if m == nil {
+		return nil
+	}
+	cloned := new(AdministrationEvent_Resource)
+	*cloned = *m
+
 	return cloned
 }
 
@@ -263,16 +336,16 @@ type AdministrationEventsFilter struct {
 	// Matches events with last_occurred_at before a specific timestamp, i.e. the upper boundary.
 	Until *types.Timestamp `protobuf:"bytes,2,opt,name=until,proto3" json:"until,omitempty"`
 	// Matches events from a specific domain.
-	Domain string `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+	Domain []string `protobuf:"bytes,3,rep,name=domain,proto3" json:"domain,omitempty"`
 	// Matches events associated with a specific resource type.
-	ResourceType string `protobuf:"bytes,4,opt,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
+	ResourceType []string `protobuf:"bytes,4,rep,name=resource_type,json=resourceType,proto3" json:"resource_type,omitempty"`
 	// Matches events based on their type.
-	Type AdministrationEventType `protobuf:"varint,5,opt,name=type,proto3,enum=v1.AdministrationEventType" json:"type,omitempty"`
+	Type []AdministrationEventType `protobuf:"varint,5,rep,packed,name=type,proto3,enum=v1.AdministrationEventType" json:"type,omitempty"`
 	// Matches events based on their level.
-	Level                AdministrationEventLevel `protobuf:"varint,6,opt,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
-	XXX_unrecognized     []byte                   `json:"-"`
-	XXX_sizecache        int32                    `json:"-"`
+	Level                []AdministrationEventLevel `protobuf:"varint,6,rep,packed,name=level,proto3,enum=v1.AdministrationEventLevel" json:"level,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
 func (m *AdministrationEventsFilter) Reset()         { *m = AdministrationEventsFilter{} }
@@ -322,32 +395,32 @@ func (m *AdministrationEventsFilter) GetUntil() *types.Timestamp {
 	return nil
 }
 
-func (m *AdministrationEventsFilter) GetDomain() string {
+func (m *AdministrationEventsFilter) GetDomain() []string {
 	if m != nil {
 		return m.Domain
 	}
-	return ""
+	return nil
 }
 
-func (m *AdministrationEventsFilter) GetResourceType() string {
+func (m *AdministrationEventsFilter) GetResourceType() []string {
 	if m != nil {
 		return m.ResourceType
 	}
-	return ""
+	return nil
 }
 
-func (m *AdministrationEventsFilter) GetType() AdministrationEventType {
+func (m *AdministrationEventsFilter) GetType() []AdministrationEventType {
 	if m != nil {
 		return m.Type
 	}
-	return AdministrationEventType_ADMINISTRATION_EVENT_TYPE_UNKNOWN
+	return nil
 }
 
-func (m *AdministrationEventsFilter) GetLevel() AdministrationEventLevel {
+func (m *AdministrationEventsFilter) GetLevel() []AdministrationEventLevel {
 	if m != nil {
 		return m.Level
 	}
-	return AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_UNKNOWN
+	return nil
 }
 
 func (m *AdministrationEventsFilter) MessageClone() proto.Message {
@@ -362,6 +435,22 @@ func (m *AdministrationEventsFilter) Clone() *AdministrationEventsFilter {
 
 	cloned.From = m.From.Clone()
 	cloned.Until = m.Until.Clone()
+	if m.Domain != nil {
+		cloned.Domain = make([]string, len(m.Domain))
+		copy(cloned.Domain, m.Domain)
+	}
+	if m.ResourceType != nil {
+		cloned.ResourceType = make([]string, len(m.ResourceType))
+		copy(cloned.ResourceType, m.ResourceType)
+	}
+	if m.Type != nil {
+		cloned.Type = make([]AdministrationEventType, len(m.Type))
+		copy(cloned.Type, m.Type)
+	}
+	if m.Level != nil {
+		cloned.Level = make([]AdministrationEventLevel, len(m.Level))
+		copy(cloned.Level, m.Level)
+	}
 	return cloned
 }
 
@@ -429,7 +518,7 @@ func (m *CountAdministrationEventsRequest) Clone() *CountAdministrationEventsReq
 
 type CountAdministrationEventsResponse struct {
 	// The total number of events after filtering and deduplication.
-	Count                int64    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Count                int32    `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -468,7 +557,7 @@ func (m *CountAdministrationEventsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CountAdministrationEventsResponse proto.InternalMessageInfo
 
-func (m *CountAdministrationEventsResponse) GetCount() int64 {
+func (m *CountAdministrationEventsResponse) GetCount() int32 {
 	if m != nil {
 		return m.Count
 	}
@@ -691,6 +780,7 @@ func init() {
 	proto.RegisterEnum("v1.AdministrationEventType", AdministrationEventType_name, AdministrationEventType_value)
 	proto.RegisterEnum("v1.AdministrationEventLevel", AdministrationEventLevel_name, AdministrationEventLevel_value)
 	proto.RegisterType((*AdministrationEvent)(nil), "v1.AdministrationEvent")
+	proto.RegisterType((*AdministrationEvent_Resource)(nil), "v1.AdministrationEvent.Resource")
 	proto.RegisterType((*AdministrationEventsFilter)(nil), "v1.AdministrationEventsFilter")
 	proto.RegisterType((*CountAdministrationEventsRequest)(nil), "v1.CountAdministrationEventsRequest")
 	proto.RegisterType((*CountAdministrationEventsResponse)(nil), "v1.CountAdministrationEventsResponse")
@@ -704,61 +794,64 @@ func init() {
 }
 
 var fileDescriptor_91ed8038492412f4 = []byte{
-	// 863 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0xcf, 0x6f, 0xdc, 0x44,
-	0x14, 0xc7, 0x63, 0xef, 0x8f, 0x92, 0x17, 0x58, 0xac, 0x29, 0x6a, 0xdc, 0x6d, 0xb5, 0xeb, 0x38,
-	0x49, 0x1b, 0x22, 0xe1, 0x65, 0x83, 0x84, 0xd4, 0xe3, 0x36, 0x71, 0x57, 0x2b, 0xb6, 0xde, 0x6a,
-	0x76, 0xdb, 0x42, 0x2f, 0x96, 0x6b, 0x4f, 0xc2, 0x88, 0xb5, 0xbd, 0x78, 0xc6, 0x16, 0x11, 0xe2,
-	0xc2, 0x09, 0x8e, 0xc0, 0x85, 0x23, 0xff, 0x03, 0xff, 0x00, 0x47, 0x8e, 0x48, 0x9c, 0x91, 0x50,
-	0xe0, 0x0f, 0x41, 0x1e, 0xcf, 0xa6, 0x01, 0xd6, 0xde, 0xe6, 0xe6, 0x79, 0xfe, 0xbc, 0x37, 0xdf,
-	0x79, 0xef, 0xcd, 0x1b, 0x38, 0xf4, 0x16, 0xb4, 0x97, 0xf5, 0x7b, 0x5e, 0x10, 0xd2, 0x88, 0x32,
-	0x9e, 0x78, 0x9c, 0xc6, 0x91, 0x4b, 0x32, 0x12, 0x71, 0xe6, 0x32, 0x92, 0x64, 0xd4, 0x27, 0xd6,
-	0x22, 0x89, 0x79, 0x8c, 0xd4, 0xac, 0xdf, 0xbe, 0x7b, 0x16, 0xc7, 0x67, 0x73, 0xd2, 0xcb, 0xdd,
-	0xbc, 0x28, 0x8a, 0xb9, 0xe0, 0x59, 0x41, 0xb4, 0x6f, 0xca, 0x68, 0x7e, 0x1c, 0x86, 0x71, 0x24,
-	0x8d, 0xdb, 0xd2, 0xb8, 0xf0, 0xce, 0x68, 0x24, 0x70, 0xf9, 0xa3, 0x2b, 0x63, 0x89, 0xd5, 0xcb,
-	0xf4, 0xb4, 0xc7, 0x69, 0x48, 0x18, 0xf7, 0xc2, 0x45, 0x01, 0x98, 0xbf, 0xd4, 0xe0, 0xe6, 0xe0,
-	0x5f, 0xc2, 0xec, 0x5c, 0x17, 0x6a, 0x81, 0x4a, 0x03, 0x5d, 0x31, 0x94, 0x83, 0x4d, 0xac, 0xd2,
-	0x00, 0xf5, 0xa0, 0xce, 0xcf, 0x17, 0x44, 0x57, 0x0d, 0xe5, 0xa0, 0x75, 0x74, 0xc7, 0xca, 0xfa,
-	0xd6, 0x0a, 0xb7, 0xd9, 0xf9, 0x82, 0x60, 0x01, 0xa2, 0x23, 0x68, 0xcc, 0x49, 0x46, 0xe6, 0x7a,
-	0x4d, 0x78, 0xdc, 0x2d, 0xf1, 0x18, 0xe7, 0x0c, 0x2e, 0x50, 0xa4, 0xc3, 0x8d, 0x90, 0x30, 0xe6,
-	0x9d, 0x11, 0xbd, 0x2e, 0x76, 0x5e, 0x2e, 0x11, 0x82, 0xfa, 0xa7, 0x34, 0xe2, 0x7a, 0x43, 0x98,
-	0xc5, 0x37, 0xba, 0x05, 0xcd, 0x20, 0x0e, 0x3d, 0x1a, 0xe9, 0x4d, 0x61, 0x95, 0x2b, 0xb4, 0x0b,
-	0x6f, 0x25, 0x84, 0xc5, 0x69, 0xe2, 0x13, 0x57, 0x68, 0xbe, 0x21, 0x7e, 0xbf, 0xb9, 0x34, 0xe6,
-	0x22, 0x51, 0x17, 0xb6, 0x2e, 0x21, 0x1a, 0xe8, 0x6f, 0x08, 0x04, 0x96, 0xa6, 0x51, 0x80, 0xee,
-	0xc3, 0xdb, 0x51, 0x1a, 0xba, 0xb1, 0xef, 0xa7, 0x49, 0x42, 0x22, 0x9f, 0x30, 0x7d, 0xd3, 0x50,
-	0x0e, 0x6a, 0xb8, 0x15, 0xa5, 0xe1, 0xe4, 0x95, 0x15, 0x9d, 0x80, 0x36, 0xf7, 0x18, 0x5f, 0x92,
-	0x81, 0xeb, 0x71, 0x1d, 0x0c, 0xe5, 0x60, 0xeb, 0xa8, 0x6d, 0x15, 0xd9, 0xb7, 0x96, 0xd9, 0xb7,
-	0x66, 0xcb, 0xec, 0xe3, 0x56, 0xee, 0x23, 0xc3, 0x04, 0x03, 0x8e, 0x1e, 0x00, 0xf8, 0x09, 0xf1,
-	0x78, 0xe1, 0xbf, 0xb5, 0xd6, 0x7f, 0x53, 0xd2, 0x03, 0x6e, 0xfe, 0xa4, 0x42, 0x7b, 0x45, 0x66,
-	0xd9, 0x23, 0x3a, 0xe7, 0x24, 0x41, 0x16, 0xd4, 0x4f, 0x93, 0x38, 0x14, 0xb5, 0xac, 0x8e, 0x29,
-	0x38, 0xf4, 0x3e, 0x34, 0xd2, 0x88, 0xd3, 0xb9, 0x28, 0x75, 0xb5, 0x43, 0x01, 0x5e, 0x29, 0x44,
-	0xad, 0xba, 0x10, 0xf5, 0x15, 0x85, 0x58, 0x36, 0x56, 0xe3, 0xda, 0x8d, 0xd5, 0x7c, 0xed, 0xc6,
-	0x32, 0x5f, 0x80, 0x71, 0x1c, 0xa7, 0x11, 0x5f, 0x95, 0x26, 0x4c, 0x3e, 0x4f, 0x09, 0xe3, 0xe8,
-	0x43, 0x68, 0x9e, 0x8a, 0x8c, 0xc9, 0x4c, 0x75, 0x4a, 0x02, 0xcb, 0xbc, 0x62, 0x49, 0x9b, 0x0f,
-	0x60, 0xa7, 0x22, 0x36, 0x5b, 0xc4, 0x11, 0x23, 0xe8, 0x1d, 0x68, 0xf8, 0x39, 0x24, 0x62, 0xd7,
-	0x70, 0xb1, 0x30, 0x27, 0xd0, 0x19, 0x92, 0x55, 0x8e, 0x97, 0x7e, 0xef, 0x41, 0x43, 0xcc, 0x09,
-	0xa9, 0x69, 0xbb, 0x44, 0x13, 0x2e, 0x28, 0xf3, 0x5b, 0x05, 0xba, 0x63, 0xca, 0x2a, 0xcf, 0x69,
-	0x01, 0xbc, 0x1a, 0x13, 0x32, 0x6e, 0x2b, 0x8f, 0xfb, 0xe4, 0xd2, 0x8a, 0xaf, 0x10, 0x57, 0xf2,
-	0xa2, 0x5e, 0x2b, 0x2f, 0x53, 0x30, 0xca, 0xa5, 0xc8, 0xe3, 0xf5, 0xa0, 0x59, 0x8c, 0x41, 0x5d,
-	0x31, 0x6a, 0x55, 0xe7, 0x93, 0xd8, 0xe1, 0xf7, 0x0a, 0x6c, 0x97, 0xb4, 0x07, 0xda, 0x87, 0x9d,
-	0xc1, 0xc9, 0xe3, 0x91, 0x33, 0x9a, 0xce, 0xf0, 0x60, 0x36, 0x9a, 0x38, 0xae, 0xfd, 0xcc, 0x76,
-	0x66, 0xee, 0xec, 0x93, 0x27, 0xb6, 0xfb, 0xd4, 0xf9, 0xc8, 0x99, 0x3c, 0x77, 0xb4, 0x8d, 0x6a,
-	0x6c, 0x68, 0x3b, 0x36, 0x1e, 0x1d, 0x6b, 0x0a, 0x7a, 0x17, 0xf6, 0xcb, 0xb1, 0xf1, 0x64, 0xe8,
-	0x3e, 0xb6, 0xa7, 0xd3, 0xc1, 0xd0, 0xd6, 0xd4, 0xc3, 0x3f, 0x14, 0xd0, 0xcb, 0x3a, 0x10, 0xdd,
-	0x03, 0x73, 0x65, 0x9c, 0xb1, 0xfd, 0xcc, 0x1e, 0x5f, 0x91, 0xb5, 0x0b, 0xdd, 0x0a, 0x6e, 0xe4,
-	0x3c, 0x9a, 0x68, 0xca, 0x9a, 0x60, 0xd3, 0xa7, 0xc7, 0xc7, 0xf6, 0x74, 0xaa, 0xa9, 0x6b, 0xb8,
-	0xe7, 0x03, 0xec, 0x8c, 0x9c, 0xa1, 0x56, 0x43, 0x7b, 0x60, 0x54, 0x70, 0x36, 0xc6, 0x13, 0xac,
-	0xd5, 0x8f, 0x7e, 0xae, 0xad, 0x1c, 0x30, 0xd3, 0xe2, 0xe5, 0x42, 0xdf, 0x29, 0x70, 0xbb, 0xf4,
-	0x06, 0xa0, 0xbd, 0xbc, 0xa4, 0xeb, 0x2e, 0x5f, 0x7b, 0x7f, 0x0d, 0x55, 0xf4, 0x8b, 0x79, 0xff,
-	0xeb, 0xdf, 0xff, 0xfe, 0x41, 0xdd, 0x41, 0xdd, 0xe2, 0x05, 0x4c, 0x23, 0xfe, 0x9f, 0x57, 0xb5,
-	0x57, 0xf4, 0x09, 0xca, 0xe0, 0xd6, 0xea, 0x9b, 0x85, 0xb4, 0x7c, 0x27, 0x2c, 0x27, 0xd0, 0xc3,
-	0xf3, 0xd1, 0x49, 0xdb, 0xcc, 0x2d, 0xd5, 0xf7, 0xd0, 0xbc, 0x27, 0x36, 0x36, 0x50, 0xe7, 0xff,
-	0x0f, 0xb9, 0xdc, 0xb2, 0xf7, 0x25, 0x0d, 0xbe, 0x42, 0xdf, 0x28, 0xa0, 0x97, 0x75, 0x3d, 0xda,
-	0xcd, 0x37, 0x5a, 0x73, 0x3d, 0xdb, 0x7b, 0xd5, 0x90, 0xd4, 0xb3, 0x23, 0xf4, 0xdc, 0x41, 0xb7,
-	0x4b, 0xf5, 0x3c, 0xb4, 0x7e, 0xbd, 0xe8, 0x28, 0xbf, 0x5d, 0x74, 0x94, 0x3f, 0x2f, 0x3a, 0xca,
-	0x8f, 0x7f, 0x75, 0x36, 0x40, 0xa7, 0xb1, 0xc5, 0xb8, 0xe7, 0x7f, 0x96, 0xc4, 0x5f, 0x14, 0xe3,
-	0xdc, 0xf2, 0x16, 0xd4, 0xca, 0xfa, 0x2f, 0xd4, 0xac, 0xff, 0xf1, 0xc6, 0xcb, 0xa6, 0xb0, 0x7d,
-	0xf0, 0x4f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x33, 0xe2, 0xab, 0xdf, 0xb1, 0x08, 0x00, 0x00,
+	// 898 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x96, 0x41, 0x6f, 0xe3, 0x44,
+	0x14, 0xc7, 0x6b, 0x3b, 0xc9, 0xb6, 0x0f, 0x28, 0xd6, 0x2c, 0xda, 0x7a, 0xb3, 0xab, 0xd4, 0x75,
+	0xdb, 0xdd, 0x52, 0x09, 0x87, 0x14, 0x09, 0x69, 0x25, 0x2e, 0x69, 0xeb, 0x8d, 0x22, 0xb2, 0xce,
+	0x6a, 0x92, 0xdd, 0x85, 0xbd, 0x58, 0x5e, 0x67, 0x5a, 0x2c, 0xe2, 0x71, 0xb0, 0xc7, 0x16, 0x15,
+	0xe2, 0xc2, 0x09, 0x8e, 0xc0, 0x85, 0x23, 0xdf, 0x81, 0x2f, 0xc1, 0x11, 0x89, 0x33, 0x12, 0x2a,
+	0x7c, 0x0c, 0x0e, 0xc8, 0x33, 0x93, 0x6c, 0x80, 0xd8, 0x61, 0x6f, 0x99, 0xe7, 0xdf, 0xff, 0xbd,
+	0x37, 0xef, 0xbd, 0x99, 0x09, 0x1c, 0xfb, 0xb3, 0xb0, 0x9d, 0x77, 0xda, 0xfe, 0x24, 0x0a, 0x69,
+	0x98, 0xb2, 0xc4, 0x67, 0x61, 0x4c, 0x3d, 0x92, 0x13, 0xca, 0x52, 0x2f, 0x25, 0x49, 0x1e, 0x06,
+	0xc4, 0x9e, 0x25, 0x31, 0x8b, 0x91, 0x9a, 0x77, 0x9a, 0x77, 0x2f, 0xe3, 0xf8, 0x72, 0x4a, 0xda,
+	0x85, 0xcc, 0xa7, 0x34, 0x66, 0x9c, 0x4f, 0x05, 0xd1, 0xbc, 0x29, 0xbd, 0x05, 0x71, 0x14, 0xc5,
+	0x54, 0x1a, 0x77, 0xa4, 0x71, 0xe6, 0x5f, 0x86, 0x94, 0xe3, 0xf2, 0xc3, 0xae, 0xf4, 0xc5, 0x57,
+	0x2f, 0xb2, 0x8b, 0x36, 0x0b, 0x23, 0x92, 0x32, 0x3f, 0x9a, 0x09, 0xc0, 0xfa, 0x4b, 0x83, 0x9b,
+	0xdd, 0x7f, 0x24, 0xe6, 0x14, 0x79, 0xa1, 0x6d, 0x50, 0xc3, 0x89, 0xa1, 0x98, 0xca, 0xd1, 0x16,
+	0x56, 0xc3, 0x09, 0x6a, 0x43, 0x8d, 0x5d, 0xcd, 0x88, 0xa1, 0x9a, 0xca, 0xd1, 0xf6, 0xc9, 0x1d,
+	0x3b, 0xef, 0xd8, 0x2b, 0x64, 0xe3, 0xab, 0x19, 0xc1, 0x1c, 0x44, 0x27, 0x50, 0x9f, 0x92, 0x9c,
+	0x4c, 0x0d, 0x8d, 0x2b, 0xee, 0x96, 0x28, 0x06, 0x05, 0x83, 0x05, 0x8a, 0x0c, 0xb8, 0x11, 0x91,
+	0x34, 0xf5, 0x2f, 0x89, 0x51, 0xe3, 0x91, 0xe7, 0x4b, 0x84, 0xa0, 0xf6, 0x49, 0x48, 0x99, 0x51,
+	0xe7, 0x66, 0xfe, 0x1b, 0xdd, 0x82, 0xc6, 0x24, 0x8e, 0xfc, 0x90, 0x1a, 0x0d, 0x6e, 0x95, 0x2b,
+	0xf4, 0x01, 0x6c, 0x26, 0x24, 0x8d, 0xb3, 0x24, 0x20, 0xc6, 0x0d, 0x53, 0x39, 0x7a, 0xed, 0xc4,
+	0x2c, 0x09, 0x6e, 0x63, 0xc9, 0xe1, 0x85, 0x02, 0xdd, 0x87, 0x37, 0x69, 0x16, 0x79, 0x71, 0x10,
+	0x64, 0x49, 0x42, 0x68, 0x40, 0x52, 0x63, 0xd3, 0x54, 0x8e, 0x34, 0xbc, 0x4d, 0xb3, 0x68, 0xf8,
+	0xd2, 0x8a, 0xce, 0x41, 0x9f, 0xfa, 0x29, 0x9b, 0x93, 0x13, 0xcf, 0x67, 0xc6, 0x16, 0x0f, 0xd7,
+	0xb4, 0x45, 0xd5, 0xed, 0x79, 0xd5, 0xed, 0xf1, 0xbc, 0xea, 0x78, 0xbb, 0xd0, 0x48, 0x37, 0x93,
+	0x2e, 0x43, 0x0f, 0x00, 0x82, 0x84, 0xf8, 0x4c, 0xe8, 0x61, 0xad, 0x7e, 0x4b, 0xd2, 0x5d, 0xd6,
+	0x3c, 0x85, 0xcd, 0x79, 0xfe, 0x45, 0x7d, 0x78, 0x7b, 0x44, 0xc3, 0x44, 0x07, 0x44, 0x0b, 0xd5,
+	0x45, 0x0b, 0x11, 0xd4, 0xa8, 0x1f, 0x11, 0xde, 0x90, 0x2d, 0xcc, 0x7f, 0x5b, 0x3f, 0xaa, 0xd0,
+	0x5c, 0x51, 0x98, 0xf4, 0x61, 0x38, 0x65, 0x24, 0x41, 0x36, 0xd4, 0x2e, 0x92, 0x38, 0xe2, 0x6e,
+	0xab, 0xf3, 0xe2, 0x1c, 0x7a, 0x17, 0xea, 0x19, 0x65, 0xe1, 0x94, 0x47, 0xad, 0x16, 0x08, 0x70,
+	0xa9, 0x89, 0x9a, 0xa9, 0x2d, 0x35, 0x71, 0x1f, 0xde, 0x98, 0xb7, 0xc4, 0xe3, 0x3b, 0xab, 0xf1,
+	0xcf, 0xaf, 0xcf, 0x8d, 0xc5, 0xa4, 0x2d, 0x86, 0xb2, 0x6e, 0x6a, 0xaf, 0x38, 0x94, 0x0d, 0xae,
+	0xf8, 0x3f, 0x43, 0x69, 0x3d, 0x07, 0xf3, 0x2c, 0xce, 0x28, 0x5b, 0x55, 0x26, 0x4c, 0x3e, 0xcb,
+	0x48, 0xca, 0xd0, 0xfb, 0xd0, 0xb8, 0xe0, 0x15, 0x93, 0x95, 0x6a, 0x95, 0x38, 0x96, 0x75, 0xc5,
+	0x92, 0xb6, 0x1e, 0xc0, 0x5e, 0x85, 0xef, 0x74, 0x16, 0xd3, 0x94, 0xa0, 0xb7, 0xa0, 0x1e, 0x14,
+	0x10, 0xf7, 0x5d, 0xc7, 0x62, 0x61, 0x0d, 0xa1, 0xd5, 0x23, 0xab, 0x84, 0x0b, 0xdd, 0x3b, 0x50,
+	0xe7, 0x77, 0x8c, 0xcc, 0x69, 0xa7, 0x24, 0x27, 0x2c, 0x28, 0xeb, 0x1b, 0x05, 0x76, 0x07, 0x61,
+	0x5a, 0xb9, 0x4f, 0x1b, 0xe0, 0xe5, 0x15, 0x23, 0xfd, 0x6e, 0x17, 0x7e, 0x1f, 0x2f, 0xac, 0x78,
+	0x89, 0x58, 0xaa, 0x8b, 0xfa, 0x4a, 0x75, 0x19, 0x81, 0x59, 0x9e, 0x8a, 0xdc, 0x5e, 0x1b, 0x1a,
+	0xe2, 0x0a, 0x35, 0x14, 0x53, 0xab, 0xda, 0x9f, 0xc4, 0x8e, 0xbf, 0x53, 0x60, 0xa7, 0x64, 0x3c,
+	0xd0, 0x21, 0xec, 0x75, 0xcf, 0x1f, 0xf5, 0xdd, 0xfe, 0x68, 0x8c, 0xbb, 0xe3, 0xfe, 0xd0, 0xf5,
+	0x9c, 0xa7, 0x8e, 0x3b, 0xf6, 0xc6, 0x1f, 0x3f, 0x76, 0xbc, 0x27, 0xee, 0x87, 0xee, 0xf0, 0x99,
+	0xab, 0x6f, 0x54, 0x63, 0x3d, 0xc7, 0x75, 0x70, 0xff, 0x4c, 0x57, 0xd0, 0xdb, 0x70, 0x58, 0x8e,
+	0x0d, 0x86, 0x3d, 0xef, 0x91, 0x33, 0x1a, 0x75, 0x7b, 0x8e, 0xae, 0x1e, 0xff, 0xa6, 0x80, 0x51,
+	0x36, 0x81, 0xe8, 0x1e, 0x58, 0x2b, 0xfd, 0x0c, 0x9c, 0xa7, 0xce, 0x60, 0x29, 0xad, 0x7d, 0xd8,
+	0xad, 0xe0, 0xfa, 0xee, 0xc3, 0xa1, 0xae, 0xac, 0x71, 0x36, 0x7a, 0x72, 0x76, 0xe6, 0x8c, 0x46,
+	0xba, 0xba, 0x86, 0x7b, 0xd6, 0xc5, 0x6e, 0xdf, 0xed, 0xe9, 0x1a, 0x3a, 0x00, 0xb3, 0x82, 0x73,
+	0x30, 0x1e, 0x62, 0xbd, 0x76, 0xf2, 0x93, 0xb6, 0xf2, 0x82, 0x19, 0x89, 0x57, 0x0f, 0x7d, 0xab,
+	0xc0, 0xed, 0xd2, 0x13, 0x80, 0x0e, 0x8a, 0x96, 0xae, 0x3b, 0x7c, 0xcd, 0xc3, 0x35, 0x94, 0x98,
+	0x17, 0xeb, 0xfe, 0x57, 0xbf, 0xfe, 0xf9, 0xbd, 0xba, 0x87, 0x76, 0xc5, 0xeb, 0x99, 0x51, 0xf6,
+	0xaf, 0x17, 0xb9, 0x2d, 0xe6, 0x04, 0xe5, 0x70, 0x6b, 0xf5, 0xc9, 0x42, 0x7a, 0x11, 0x69, 0x7e,
+	0xe7, 0x9e, 0x5e, 0xf5, 0xcf, 0x9b, 0x56, 0x61, 0xa9, 0x3e, 0x87, 0xd6, 0x3d, 0x1e, 0xd8, 0x44,
+	0xad, 0xff, 0xfe, 0x09, 0x90, 0x21, 0xdb, 0x5f, 0x84, 0x93, 0x2f, 0xd1, 0xd7, 0x0a, 0x18, 0x65,
+	0x53, 0x8f, 0xf6, 0x8b, 0x40, 0x6b, 0x8e, 0x67, 0xf3, 0xa0, 0x1a, 0x92, 0xf9, 0xec, 0xf1, 0x7c,
+	0xee, 0xa0, 0xdb, 0xa5, 0xf9, 0x9c, 0xda, 0x3f, 0x5f, 0xb7, 0x94, 0x5f, 0xae, 0x5b, 0xca, 0xef,
+	0xd7, 0x2d, 0xe5, 0x87, 0x3f, 0x5a, 0x1b, 0x60, 0x84, 0xb1, 0x9d, 0x32, 0x3f, 0xf8, 0x34, 0x89,
+	0x3f, 0x17, 0xd7, 0xb9, 0xed, 0xcf, 0x42, 0x3b, 0xef, 0x3c, 0x57, 0xf3, 0xce, 0x47, 0x1b, 0x2f,
+	0x1a, 0xdc, 0xf6, 0xde, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xdf, 0xba, 0x2b, 0x1f, 0xed, 0x08,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -953,7 +1046,7 @@ func (m *AdministrationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintAdministrationEventsService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x5a
+		dAtA[i] = 0x52
 	}
 	if m.LastOccurredAt != nil {
 		{
@@ -965,24 +1058,22 @@ func (m *AdministrationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i = encodeVarintAdministrationEventsService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x52
+		dAtA[i] = 0x4a
 	}
 	if m.NumOccurrences != 0 {
 		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(m.NumOccurrences))
 		i--
-		dAtA[i] = 0x48
+		dAtA[i] = 0x40
 	}
-	if len(m.ResourceId) > 0 {
-		i -= len(m.ResourceId)
-		copy(dAtA[i:], m.ResourceId)
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.ResourceId)))
-		i--
-		dAtA[i] = 0x42
-	}
-	if len(m.ResourceType) > 0 {
-		i -= len(m.ResourceType)
-		copy(dAtA[i:], m.ResourceType)
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.ResourceType)))
+	if m.Resource != nil {
+		{
+			size, err := m.Resource.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintAdministrationEventsService(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x3a
 	}
@@ -1027,6 +1118,54 @@ func (m *AdministrationEvent) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *AdministrationEvent_Resource) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *AdministrationEvent_Resource) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *AdministrationEvent_Resource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.XXX_unrecognized != nil {
+		i -= len(m.XXX_unrecognized)
+		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Type) > 0 {
+		i -= len(m.Type)
+		copy(dAtA[i:], m.Type)
+		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.Type)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *AdministrationEventsFilter) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -1051,29 +1190,59 @@ func (m *AdministrationEventsFilter) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.Level != 0 {
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(m.Level))
+	if len(m.Level) > 0 {
+		dAtA5 := make([]byte, len(m.Level)*10)
+		var j4 int
+		for _, num := range m.Level {
+			for num >= 1<<7 {
+				dAtA5[j4] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j4++
+			}
+			dAtA5[j4] = uint8(num)
+			j4++
+		}
+		i -= j4
+		copy(dAtA[i:], dAtA5[:j4])
+		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(j4))
 		i--
-		dAtA[i] = 0x30
+		dAtA[i] = 0x32
 	}
-	if m.Type != 0 {
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(m.Type))
+	if len(m.Type) > 0 {
+		dAtA7 := make([]byte, len(m.Type)*10)
+		var j6 int
+		for _, num := range m.Type {
+			for num >= 1<<7 {
+				dAtA7[j6] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j6++
+			}
+			dAtA7[j6] = uint8(num)
+			j6++
+		}
+		i -= j6
+		copy(dAtA[i:], dAtA7[:j6])
+		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(j6))
 		i--
-		dAtA[i] = 0x28
+		dAtA[i] = 0x2a
 	}
 	if len(m.ResourceType) > 0 {
-		i -= len(m.ResourceType)
-		copy(dAtA[i:], m.ResourceType)
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.ResourceType)))
-		i--
-		dAtA[i] = 0x22
+		for iNdEx := len(m.ResourceType) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ResourceType[iNdEx])
+			copy(dAtA[i:], m.ResourceType[iNdEx])
+			i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.ResourceType[iNdEx])))
+			i--
+			dAtA[i] = 0x22
+		}
 	}
 	if len(m.Domain) > 0 {
-		i -= len(m.Domain)
-		copy(dAtA[i:], m.Domain)
-		i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.Domain)))
-		i--
-		dAtA[i] = 0x1a
+		for iNdEx := len(m.Domain) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Domain[iNdEx])
+			copy(dAtA[i:], m.Domain[iNdEx])
+			i = encodeVarintAdministrationEventsService(dAtA, i, uint64(len(m.Domain[iNdEx])))
+			i--
+			dAtA[i] = 0x1a
+		}
 	}
 	if m.Until != nil {
 		{
@@ -1343,12 +1512,8 @@ func (m *AdministrationEvent) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovAdministrationEventsService(uint64(l))
 	}
-	l = len(m.ResourceType)
-	if l > 0 {
-		n += 1 + l + sovAdministrationEventsService(uint64(l))
-	}
-	l = len(m.ResourceId)
-	if l > 0 {
+	if m.Resource != nil {
+		l = m.Resource.Size()
 		n += 1 + l + sovAdministrationEventsService(uint64(l))
 	}
 	if m.NumOccurrences != 0 {
@@ -1360,6 +1525,30 @@ func (m *AdministrationEvent) Size() (n int) {
 	}
 	if m.CreatedAt != nil {
 		l = m.CreatedAt.Size()
+		n += 1 + l + sovAdministrationEventsService(uint64(l))
+	}
+	if m.XXX_unrecognized != nil {
+		n += len(m.XXX_unrecognized)
+	}
+	return n
+}
+
+func (m *AdministrationEvent_Resource) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Type)
+	if l > 0 {
+		n += 1 + l + sovAdministrationEventsService(uint64(l))
+	}
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovAdministrationEventsService(uint64(l))
+	}
+	l = len(m.Name)
+	if l > 0 {
 		n += 1 + l + sovAdministrationEventsService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1382,19 +1571,31 @@ func (m *AdministrationEventsFilter) Size() (n int) {
 		l = m.Until.Size()
 		n += 1 + l + sovAdministrationEventsService(uint64(l))
 	}
-	l = len(m.Domain)
-	if l > 0 {
-		n += 1 + l + sovAdministrationEventsService(uint64(l))
+	if len(m.Domain) > 0 {
+		for _, s := range m.Domain {
+			l = len(s)
+			n += 1 + l + sovAdministrationEventsService(uint64(l))
+		}
 	}
-	l = len(m.ResourceType)
-	if l > 0 {
-		n += 1 + l + sovAdministrationEventsService(uint64(l))
+	if len(m.ResourceType) > 0 {
+		for _, s := range m.ResourceType {
+			l = len(s)
+			n += 1 + l + sovAdministrationEventsService(uint64(l))
+		}
 	}
-	if m.Type != 0 {
-		n += 1 + sovAdministrationEventsService(uint64(m.Type))
+	if len(m.Type) > 0 {
+		l = 0
+		for _, e := range m.Type {
+			l += sovAdministrationEventsService(uint64(e))
+		}
+		n += 1 + sovAdministrationEventsService(uint64(l)) + l
 	}
-	if m.Level != 0 {
-		n += 1 + sovAdministrationEventsService(uint64(m.Level))
+	if len(m.Level) > 0 {
+		l = 0
+		for _, e := range m.Level {
+			l += sovAdministrationEventsService(uint64(e))
+		}
+		n += 1 + sovAdministrationEventsService(uint64(l)) + l
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -1690,9 +1891,9 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ResourceType", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Resource", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowAdministrationEventsService
@@ -1702,57 +1903,29 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthAdministrationEventsService
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthAdministrationEventsService
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ResourceType = string(dAtA[iNdEx:postIndex])
+			if m.Resource == nil {
+				m.Resource = &AdministrationEvent_Resource{}
+			}
+			if err := m.Resource.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		case 8:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ResourceId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAdministrationEventsService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAdministrationEventsService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAdministrationEventsService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ResourceId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 9:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NumOccurrences", wireType)
 			}
@@ -1771,7 +1944,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastOccurredAt", wireType)
 			}
@@ -1807,7 +1980,7 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedAt", wireType)
 			}
@@ -1842,6 +2015,153 @@ func (m *AdministrationEvent) Unmarshal(dAtA []byte) error {
 			if err := m.CreatedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipAdministrationEventsService(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *AdministrationEvent_Resource) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowAdministrationEventsService
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Resource: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Resource: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdministrationEventsService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdministrationEventsService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowAdministrationEventsService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthAdministrationEventsService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1996,7 +2316,7 @@ func (m *AdministrationEventsFilter) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Domain = string(dAtA[iNdEx:postIndex])
+			m.Domain = append(m.Domain, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -2028,45 +2348,145 @@ func (m *AdministrationEventsFilter) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ResourceType = string(dAtA[iNdEx:postIndex])
+			m.ResourceType = append(m.ResourceType, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 5:
-			if wireType != 0 {
+			if wireType == 0 {
+				var v AdministrationEventType
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowAdministrationEventsService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= AdministrationEventType(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Type = append(m.Type, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowAdministrationEventsService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthAdministrationEventsService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthAdministrationEventsService
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Type) == 0 {
+					m.Type = make([]AdministrationEventType, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v AdministrationEventType
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowAdministrationEventsService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= AdministrationEventType(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Type = append(m.Type, v)
+				}
+			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
 			}
-			m.Type = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAdministrationEventsService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Type |= AdministrationEventType(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		case 6:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
-			}
-			m.Level = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAdministrationEventsService
+			if wireType == 0 {
+				var v AdministrationEventLevel
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowAdministrationEventsService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= AdministrationEventLevel(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.Level = append(m.Level, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowAdministrationEventsService
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthAdministrationEventsService
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthAdministrationEventsService
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Level |= AdministrationEventLevel(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				if elementCount != 0 && len(m.Level) == 0 {
+					m.Level = make([]AdministrationEventLevel, 0, elementCount)
 				}
+				for iNdEx < postIndex {
+					var v AdministrationEventLevel
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowAdministrationEventsService
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= AdministrationEventLevel(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Level = append(m.Level, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Level", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -2220,7 +2640,7 @@ func (m *CountAdministrationEventsResponse) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Count |= int64(b&0x7F) << shift
+				m.Count |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

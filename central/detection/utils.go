@@ -1,8 +1,6 @@
 package detection
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/set"
@@ -15,9 +13,8 @@ func MakeCategoryFilter(filterForCategories []string) (detection.FilterOption, f
 	allowedCategorySet := set.NewStringSet()
 	unusedCategorySet := set.NewStringSet()
 	for _, category := range filterForCategories {
-		lowercaseCategory := strings.ToLower(category)
-		allowedCategorySet.Add(lowercaseCategory)
-		unusedCategorySet.Add(lowercaseCategory)
+		allowedCategorySet.Add(category)
+		unusedCategorySet.Add(category)
 	}
 
 	filterOption := func(policy *storage.Policy) bool {
@@ -27,9 +24,8 @@ func MakeCategoryFilter(filterForCategories []string) (detection.FilterOption, f
 
 		foundAllowedCategory := false
 		for _, category := range policy.GetCategories() {
-			lowercaseCategory := strings.ToLower(category)
-			if allowedCategorySet.Contains(lowercaseCategory) {
-				unusedCategorySet.Remove(lowercaseCategory)
+			if allowedCategorySet.Contains(category) {
+				unusedCategorySet.Remove(category)
 				foundAllowedCategory = true
 			}
 		}

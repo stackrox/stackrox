@@ -48,7 +48,7 @@ func (s *migrationTestSuite) TestMigration() {
 	pgutils.CreateTableFromModel(dbs.DBCtx, dbs.GormDB, oldSchema.CreateTableLogImbuesStmt)
 
 	// Add some log imbues
-	numImbues := 20
+	numImbues := 2000
 	var convertedLogImbues []oldSchema.LogImbues
 	for i := 0; i < numImbues; i++ {
 		logImbue := &storage.LogImbue{}

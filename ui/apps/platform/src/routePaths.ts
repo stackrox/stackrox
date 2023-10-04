@@ -17,6 +17,8 @@ export const authorizeRoxctlPath = '/authorize-roxctl';
 // Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 export const accessControlBasePath = `${mainPath}/access-control`;
 export const accessControlPath = `${accessControlBasePath}/:entitySegment?/:entityId?`;
+export const administrationEventsBasePath = `${mainPath}/administration-events`;
+export const administrationEventsPathWithParam = `${administrationEventsBasePath}/:id?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const clustersBasePath = `${mainPath}/clusters`;
 export const clustersPathWithParam = `${clustersBasePath}/:clusterId?`;
@@ -36,6 +38,7 @@ export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
+export const deferralConfigurationPath = `${mainPath}/deferral-configuration`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
@@ -71,6 +74,23 @@ export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
 
+// Given an array of feature flags, higher-order functions return true or false based on
+// whether all feature flags are enabled or disabled
+
+type FeatureFlagPredicate = (isFeatureFlagEnabled: IsFeatureFlagEnabled) => boolean;
+
+export function allEnabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => isFeatureFlagEnabled(featureFlag));
+    };
+}
+
+export function allDisabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => !isFeatureFlagEnabled(featureFlag));
+    };
+}
+
 // Compose resourceAccessRequirements from resource names and predicates.
 
 type ResourcePredicate = (hasReadAccess: HasReadAccess) => boolean;
@@ -85,7 +105,7 @@ function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) 
     return hasReadAccess(resourceItem);
 }
 
-// Given array or resource names, higher-order functions return predicate function.
+// Given array of resource names, higher-order functions return predicate function.
 // You can also compose every with some, if requirements ever become so complicated.
 
 export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
@@ -104,13 +124,13 @@ export function someResource(resourceItems: ResourceItem[]): ResourcePredicate {
 // If the route ever requires global resources, spread them in resourceAccessRequirements property.
 export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
     'Deployment',
-    'DeploymentExtension',
+    // 'DeploymentExtension',
     'NetworkGraph',
-    'NetworkPolicy',
+    // 'NetworkPolicy',
 ];
 
 type RouteRequirements = {
-    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    featureFlagRequirements?: FeatureFlagPredicate;
     resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
@@ -119,6 +139,7 @@ type RouteRequirements = {
 // prettier-ignore
 export type RouteKey =
     | 'access-control'
+    | 'administration-events'
     | 'apidocs'
     // Delegated image scanning must precede generic Clusters in Body and so here for consistency.
     | 'clusters/delegated-image-scanning'
@@ -130,6 +151,7 @@ export type RouteKey =
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
+    | 'deferral-configuration'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -154,6 +176,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'access-control': {
         resourceAccessRequirements: everyResource(['Access']),
     },
+    'administration-events': {
+        featureFlagRequirements: allEnabled(['ROX_ADMINISTRATION_EVENTS']),
+        resourceAccessRequirements: everyResource(['Administration']),
+    },
     apidocs: {
         resourceAccessRequirements: everyResource([]),
     },
@@ -163,7 +189,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
-        featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
+        featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     clusters: {
@@ -173,45 +199,51 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
     },
     compliance: {
+        // Same resources as compliance-enhanced although lack of commented-out resources affects entire list or entity pages.
         resourceAccessRequirements: everyResource([
-            'Alert', // for Deployment
-            'Cluster',
+            // 'Alert', // for Deployment
+            // 'Cluster',
             'Compliance',
-            'Deployment',
-            'Image', // for Deployment and Namespace
-            'K8sRole', // for Cluster
-            'K8sRoleBinding', // for Cluster
-            'K8sSubject', // for Cluster
-            'Namespace',
-            'NetworkPolicy', // for Namespace
-            'Node',
-            'Secret', // for Deployment and Namespace
-            'ServiceAccount', // for Cluster and Deployment
+            // 'Deployment',
+            // 'Image', // for Deployment and Namespace
+            // 'K8sRole', // for Cluster
+            // 'K8sRoleBinding', // for Cluster
+            // 'K8sSubject', // for Cluster
+            // 'Namespace',
+            // 'NetworkPolicy', // for Namespace
+            // 'Node',
+            // 'Secret', // for Deployment and Namespace
+            // 'ServiceAccount', // for Cluster and Deployment
         ]),
     },
     'compliance-enhanced': {
-        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
-        resourceAccessRequirements: everyResource([
+        // Require at least one resource for a dashboard widget.
+        resourceAccessRequirements: someResource([
             'Alert',
-            'Cluster',
+            // 'Cluster',
             'Compliance',
-            'Deployment',
-            'Image',
-            'K8sRole',
-            'K8sRoleBinding',
+            // 'Deployment',
+            // 'Image',
+            // 'K8sRole',
+            // 'K8sRoleBinding',
             'K8sSubject',
-            'Namespace',
-            'Node',
+            // 'Namespace',
+            // 'Node',
             'Secret',
-            'ServiceAccount',
-            'WorkflowAdministration',
+            // 'ServiceAccount',
+            // 'WorkflowAdministration',
         ]),
     },
     dashboard: {
         resourceAccessRequirements: everyResource([]),
+    },
+    'deferral-configuration': {
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
+        resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
@@ -223,15 +255,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(nonGlobalResourceNamesForNetworkGraph),
     },
     'policy-management': {
+        // The resources that are optional to view policies might become required to clone/create/edit a policy.
         resourceAccessRequirements: everyResource([
-            'Deployment',
-            'Image',
-            'Integration',
+            // 'Deployment',
+            // 'Image',
+            // 'Integration',
             'WorkflowAdministration',
         ]),
     },
     risk: {
-        resourceAccessRequirements: everyResource(['Deployment', 'DeploymentExtension']),
+        resourceAccessRequirements: everyResource(['Deployment']),
     },
     search: {
         resourceAccessRequirements: everyResource([
@@ -263,11 +296,12 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/reports': {
-        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     // Reports must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/reports': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
@@ -279,18 +313,17 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
-            'Alert', // for Cluster and Deployment and Namespace
-            'Cluster',
-            'Deployment',
+            // 'Alert', // for Cluster and Deployment and Namespace
+            // 'Cluster', // on Dashboard for with most widget
+            'Deployment', // on Dashboard for Top Risky, Recently Detected, Most Common widgets
             'Image',
-            'Namespace',
-            'Node',
-            'WatchedImage', // for Image
-            'WorkflowAdministration', // TODO obsolete because of policies for Cluster and Namespace?
+            // 'Namespace',
+            // 'Node',
+            // 'WatchedImage', // for Image
         ]),
     },
     'workload-cves': {
-        featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
     },
 };
@@ -304,19 +337,15 @@ export function isRouteEnabled(
     { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
     routeKey: RouteKey
 ) {
-    const { featureFlagDependency, resourceAccessRequirements } = routeRequirementsMap[routeKey];
+    const { featureFlagRequirements, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
-    if (Array.isArray(featureFlagDependency)) {
-        if (
-            !featureFlagDependency.every((featureFlagEnvVar) =>
-                isFeatureFlagEnabled(featureFlagEnvVar)
-            )
-        ) {
-            return false;
-        }
-    }
+    const areFeatureFlagRequirementsMet = featureFlagRequirements
+        ? featureFlagRequirements(isFeatureFlagEnabled)
+        : true;
 
-    return resourceAccessRequirements(hasReadAccess);
+    const areResourceAccessRequirementsMet = resourceAccessRequirements(hasReadAccess);
+
+    return areFeatureFlagRequirementsMet && areResourceAccessRequirementsMet;
 }
 
 /**

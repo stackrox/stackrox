@@ -87,13 +87,18 @@ const (
 
 	// Delete the log imbues with old timestamp
 	pruneLogImbues = `DELETE FROM log_imbues WHERE timestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
+	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
+	// Delete orphaned PLOPs
+	pruneOrphanedPLOPs = `DELETE FROM listening_endpoints WHERE closetimestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 )
 
 var (
 	log = logging.LoggerForModule()
 )
 
-// PruneActiveComponents - prunes active components
+// PruneActiveComponents - prunes active components.
 // TODO (ROX-12710):  This will no longer be necessary when the foreign keys are added back
 func PruneActiveComponents(ctx context.Context, pool postgres.DB) {
 	if _, err := pool.Exec(ctx, pruneActiveComponentsStmt); err != nil {
@@ -101,7 +106,7 @@ func PruneActiveComponents(ctx context.Context, pool postgres.DB) {
 	}
 }
 
-// PruneClusterHealthStatuses - prunes cluster health statuses
+// PruneClusterHealthStatuses - prunes cluster health statuses.
 // TODO (ROX-12711):  This will no longer be necessary when the foreign keys are added back
 func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
 	if _, err := pool.Exec(ctx, pruneClusterHealthStatusesStmt); err != nil {
@@ -126,7 +131,7 @@ func getOrphanedIDs(ctx context.Context, pool postgres.DB, query string) ([]stri
 	return ids, rows.Err()
 }
 
-// GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned so they can be resolved
+// GetOrphanedAlertIDs returns the alert IDs for alerts that are orphaned, so they can be resolved.
 func GetOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) ([]string, error) {
 	return pgutils.Retry2(func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
@@ -137,7 +142,7 @@ func GetOrphanedAlertIDs(ctx context.Context, pool postgres.DB, orphanWindow tim
 	})
 }
 
-// GetOrphanedPodIDs returns the pod IDs for pods that are orphaned so they can be removed
+// GetOrphanedPodIDs returns the pod IDs for pods that are orphaned, so they can be removed.
 func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) {
 	return pgutils.Retry2(func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
@@ -147,7 +152,7 @@ func GetOrphanedPodIDs(ctx context.Context, pool postgres.DB) ([]string, error) 
 	})
 }
 
-// GetOrphanedNodeIDs returns the node ids that have a cluster that has been removed
+// GetOrphanedNodeIDs returns the node ids that have a cluster that has been removed.
 func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error) {
 	return pgutils.Retry2(func() ([]string, error) {
 		ctx, cancel := context.WithTimeout(ctx, orphanedTimeout)
@@ -157,7 +162,7 @@ func GetOrphanedNodeIDs(ctx context.Context, pool postgres.DB) ([]string, error)
 	})
 }
 
-// PruneOrphanedProcessIndicators prunes orphaned process indicators and process listening on ports
+// PruneOrphanedProcessIndicators prunes orphaned process indicators and process listening on ports.
 func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
 	// missing deployments
@@ -167,7 +172,7 @@ func PruneOrphanedProcessIndicators(ctx context.Context, pool postgres.DB, orpha
 	}
 
 	// Delete processes listening on ports orphaned because process indicators are orphaned due to
-	// missing pods
+	// missing pods.
 	query = fmt.Sprintf(deleteOrphanedPLOPPods, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune process listening on ports by pods: %v", err)
@@ -187,10 +192,30 @@ func PruneReportHistory(ctx context.Context, pool postgres.DB, retentionDuration
 	}
 }
 
-// PruneLogImbues prunes old log imbues
+// PruneLogImbues prunes old log imbues.
 func PruneLogImbues(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
 	query := fmt.Sprintf(pruneLogImbues, int(orphanWindow.Minutes()))
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune log imbues: %v", err)
 	}
+}
+
+// PruneAdministrationEvents prunes administration events that have occurred before the specified retention duration.
+func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	query := fmt.Sprintf(pruneAdministrationEvents, schema.AdministrationEventsTableName,
+		int(retentionDuration.Minutes()))
+	if _, err := pool.Exec(ctx, query); err != nil {
+		log.Errorf("failed to prune administration events: %v", err)
+	}
+}
+
+// PruneOrphanedPLOP prunes old PLOPs
+func PruneOrphanedPLOP(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
+	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
+	commandTag, err := pool.Exec(ctx, query)
+	if err != nil {
+		log.Errorf("failed to prune PLOP: %v", err)
+	}
+
+	return commandTag.RowsAffected()
 }

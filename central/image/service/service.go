@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/administration/events"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -20,7 +21,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 )
 
 // Service provides the interface to the microservice that serves alert data.

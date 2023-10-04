@@ -22,6 +22,7 @@ type Manager interface {
 		networkBaselineMgr common.NetworkBaselineManager,
 		delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
 		imageIntegrationMgr common.ImageIntegrationManager,
+		complianceOperatorMgr common.ComplianceOperatorManager,
 		autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.

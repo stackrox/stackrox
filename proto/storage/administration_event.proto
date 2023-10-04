@@ -20,11 +20,15 @@ message AdministrationEvent {
     string message                             = 4;
     string hint                                = 5;
     string domain                              = 6 [(gogoproto.moretags) = 'search:"Event Domain,hidden"'];
-    string resource_type                       = 7 [(gogoproto.moretags) = 'search:"Resource Type,hidden"'];
-    string resource_id                         = 8;
-    int64 num_occurrences                      = 9;
-    google.protobuf.Timestamp last_occurred_at = 10 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
-    google.protobuf.Timestamp created_at       = 11 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
+    message Resource {
+        string type = 1 [(gogoproto.moretags) = 'search:"Resource Type,hidden"'];
+        string id   = 2;
+        string name = 3;
+    }
+    Resource resource                          = 7;
+    int64 num_occurrences                      = 8 [(gogoproto.moretags) = 'search:"Event Occurrence,hidden"'];
+    google.protobuf.Timestamp last_occurred_at = 9 [(gogoproto.moretags) = 'search:"Last Updated,hidden"'];
+    google.protobuf.Timestamp created_at       = 10 [(gogoproto.moretags) = 'search:"Created Time,hidden"'];
 }
 
 // AdministrationEventType is the storage representation of the event type.

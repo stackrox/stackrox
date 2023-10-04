@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/utils"
 	"gorm.io/gorm/clause"
 )
 
@@ -25,10 +24,6 @@ func migrate(database *types.Databases) error {
 	rows, err := db.Rows()
 	if err != nil {
 		return errors.Wrapf(err, "failed to iterate table %s", updatedSchema.LogImbuesTableName)
-	}
-	if rows.Err() != nil {
-		utils.Should(rows.Err())
-		return errors.Wrapf(rows.Err(), "failed to get rows for %s", updatedSchema.LogImbuesTableName)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -61,8 +56,14 @@ func migrate(database *types.Databases) error {
 		}
 	}
 
-	if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableLogImbuesStmt.GormModel).Create(&convertedLogImbues).Error; err != nil {
-		return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedLogImbues))
+	if err := rows.Err(); err != nil {
+		return errors.Wrapf(err, "failed to get rows for %s", updatedSchema.LogImbuesTableName)
+	}
+
+	if len(convertedLogImbues) > 0 {
+		if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableLogImbuesStmt.GormModel).Create(&convertedLogImbues).Error; err != nil {
+			return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedLogImbues))
+		}
 	}
 	log.Infof("Converted %d log imbues", count)
 

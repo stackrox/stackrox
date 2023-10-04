@@ -40,7 +40,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -51,7 +52,10 @@ import (
 )
 
 const (
-	keyCentralLabelSelector = "CENTRAL_LABEL_SELECTOR"
+	envCentralLabelSelector            = "CENTRAL_LABEL_SELECTOR"
+	envSecuredClusterLabelSelector     = "SECURED_CLUSTER_LABEL_SELECTOR"
+	envCentralReconcilerEnabled        = "CENTRAL_RECONCILER_ENABLED"
+	envSecuredClusterReconcilerEnabled = "SECURED_CLUSTER_RECONCILER_ENABLED"
 )
 
 var (
@@ -71,7 +75,15 @@ var (
 	// centralLabelSelector is a kubernetes label selector that is used to filter out Central instances
 	// to be managed by this operator. If the selector is empty, all Central instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
-	centralLabelSelector = env.RegisterSetting(keyCentralLabelSelector, env.WithDefault(""))
+	centralLabelSelector = env.RegisterSetting(envCentralLabelSelector, env.WithDefault(""))
+	// securedClusterLabelSelector is a kubernetes label selector that is used to filter out Secured Cluster
+	// instances to be managed by this operator. If the selector is empty, all instances are managed.
+	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
+	securedClusterLabelSelector = env.RegisterSetting(envSecuredClusterLabelSelector, env.WithDefault(""))
+	// centralReconcilerEnabled enables registering central reconciler if set to true otherwise skips it
+	centralReconcilerEnabled = env.RegisterBooleanSetting(envCentralReconcilerEnabled, true)
+	// securedClusterReconcilerEnabled enables registering secured cluster reconciler if set to true otherwise skips it
+	securedClusterReconcilerEnabled = env.RegisterBooleanSetting(envSecuredClusterReconcilerEnabled, true)
 )
 
 func init() {
@@ -111,25 +123,29 @@ func run() error {
 	}
 	defer restore()
 
+	var webhookServer webhook.Server
+	if enableWebhooks.BooleanSetting() {
+		webhookServer = webhook.NewServer(getWebhookOptions())
+	}
+
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Metrics:                server.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
+		WebhookServer:          webhookServer,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
 	}
 
-	if !enableWebhooks.BooleanSetting() {
-		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
-	} else {
-		maybeUseLegacyTLSFileLocation(mgr)
+	if enableWebhooks.BooleanSetting() {
 		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
 			return errors.Wrap(err, "unable to create Central webhook")
 		}
+	} else {
+		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	}
 
 	if enableProfiling.BooleanSetting() {
@@ -146,18 +162,31 @@ func run() error {
 
 	centralLabelSelector := centralLabelSelector.Setting()
 	if len(centralLabelSelector) > 0 {
-		setupLog.Info("using Central label selector from environment variable "+keyCentralLabelSelector, "selector", centralLabelSelector)
+		setupLog.Info("using Central label selector from environment variable "+envCentralLabelSelector, "selector", centralLabelSelector)
+	}
+
+	securedClusterLabelSelector := securedClusterLabelSelector.Setting()
+	if len(securedClusterLabelSelector) > 0 {
+		setupLog.Info("using Secured Cluster label selector from environment variable "+envSecuredClusterLabelSelector, "selector", securedClusterLabelSelector)
 	}
 
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
-	if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
-		return errors.Wrap(err, "unable to set up Central reconciler")
+	if centralReconcilerEnabled.BooleanSetting() {
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
+			return errors.Wrap(err, "unable to set up Central reconciler")
+		}
+	} else {
+		setupLog.Info("skip registering central reconciler because " + envCentralReconcilerEnabled + "==false")
 	}
 
-	if err = securedClusterReconciler.RegisterNewReconciler(mgr); err != nil {
-		return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+	if securedClusterReconcilerEnabled.BooleanSetting() {
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector); err != nil {
+			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
+		}
+	} else {
+		setupLog.Info("skip registering secured cluster reconciler because " + envSecuredClusterReconcilerEnabled + "==false")
 	}
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -174,7 +203,7 @@ func run() error {
 	return nil
 }
 
-func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
+func getWebhookOptions() webhook.Options {
 	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
 	// provide the TLS certificate/key in the location referenced by default by the controller runtime
 	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
@@ -182,12 +211,15 @@ func maybeUseLegacyTLSFileLocation(mgr manager.Manager) {
 	// If the files are missing at the default location, then we explicitly set the settings as follows
 	// to force usage of the legacy location, which is provided both by old and new OLM, but not
 	// by the "make deploy" scaffolding.
+	opts := webhook.Options{
+		Port: 9443,
+	}
 	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
-		return
+		return opts
 	}
 	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
-	server := mgr.GetWebhookServer()
-	server.CertDir = "/apiserver.local.config/certificates"
-	server.CertName = "apiserver.crt"
-	server.KeyName = "apiserver.key"
+	opts.CertDir = "/apiserver.local.config/certificates"
+	opts.CertName = "apiserver.crt"
+	opts.KeyName = "apiserver.key"
+	return opts
 }

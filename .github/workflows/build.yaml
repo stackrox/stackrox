@@ -32,10 +32,10 @@ jobs:
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64", "ppc64le"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64", "ppc64le", "s390x"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64", "ppc64le"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64", "ppc64le", "s390x"]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["STACKROX_BRANDING", "RHACS_BRANDING"]' <<< "$matrix")"
 
@@ -53,11 +53,13 @@ jobs:
             matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
-            # Exclude "arm64", "ppc64le"
+            # Exclude "arm64", "ppc64le", "s390x"
             matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
 
           echo "Job matrix after conditionals:"
@@ -401,6 +403,8 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
+            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
+            docker system prune --all --force
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
@@ -489,7 +493,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        architectures="amd64,arm64,ppc64le"
+        architectures="amd64,arm64,ppc64le,s390x"
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi

@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -55,6 +56,7 @@ type ListeningEndpoints struct {
 	ID                 string             `gorm:"column:id;type:uuid;primaryKey"`
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
+	CloseTimestamp     *time.Time         `gorm:"column:closetimestamp;type:timestamp"`
 	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
 	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`

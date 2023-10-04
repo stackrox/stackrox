@@ -14,6 +14,11 @@ type detectorImpl struct {
 	policySet detection.PolicySet
 }
 
+// PolicySet retrieves the policy set.
+func (d *detectorImpl) PolicySet() detection.PolicySet {
+	return d.policySet
+}
+
 // Detect runs detection on an image, returning any generated alerts.  If policy categories are specified, we will only
 // run policies with the specified categories
 func (d *detectorImpl) Detect(image *storage.Image, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {

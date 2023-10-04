@@ -54,6 +54,17 @@ func TestAdministrationEvent_Validate(t *testing.T) {
 				Type:         0,
 			},
 		},
+		{
+			event: &AdministrationEvent{
+				Domain:       "set",
+				Hint:         "set",
+				Level:        0,
+				Message:      "set",
+				ResourceName: "set",
+				ResourceType: "set",
+				Type:         0,
+			},
+		},
 	}
 
 	for i, tc := range cases {

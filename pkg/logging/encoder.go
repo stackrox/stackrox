@@ -2,9 +2,12 @@ package logging
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -17,7 +20,8 @@ var (
 //   - Arrays, Objects
 //   - Binary data
 type stringObjectEncoder struct {
-	m map[string]string
+	m              map[string]string
+	consoleEncoder zapcore.Encoder
 }
 
 func (z *stringObjectEncoder) AddBool(key string, value bool) {
@@ -45,6 +49,33 @@ func (z *stringObjectEncoder) AddTime(key string, value time.Time) {
 
 func (z *stringObjectEncoder) AddUint64(key string, value uint64) {
 	z.m[key] = strconv.FormatUint(value, 10)
+}
+
+func (z *stringObjectEncoder) CreateMessage(msg string, level string, fields []zapcore.Field) (string, error) {
+	entry := zapcore.Entry{
+		Level:   toZapLevel(level),
+		Message: msg,
+	}
+	buf, err := z.consoleEncoder.EncodeEntry(entry, fields)
+	if err != nil {
+		return "", err
+	}
+
+	split := strings.SplitAfterN(buf.String(), cases.Title(language.English, cases.Compact).String(entry.Level.String()), 2)
+	return strings.TrimSuffix(strings.TrimSpace(split[1]), "\n"), nil
+}
+
+func toZapLevel(level string) zapcore.Level {
+	switch level {
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	default:
+		return zapcore.InfoLevel
+	}
 }
 
 func (z *stringObjectEncoder) AddInt(key string, value int)         { z.AddInt64(key, int64(value)) }

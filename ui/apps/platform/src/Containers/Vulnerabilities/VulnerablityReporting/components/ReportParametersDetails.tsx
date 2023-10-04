@@ -11,9 +11,8 @@ import React, { ReactElement } from 'react';
 
 import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
-import { getDate } from 'utils/dateUtils';
 import {
-    cvesDiscoveredSinceLabelMap,
+    getCVEsDiscoveredSinceText,
     imageTypeLabelMap,
 } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
@@ -104,12 +103,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
                     <DescriptionListGroup>
                         <DescriptionListTerm>CVEs discovered since</DescriptionListTerm>
                         <DescriptionListDescription>
-                            {formValues.reportParameters.cvesDiscoveredSince === 'START_DATE' &&
-                            !!formValues.reportParameters.cvesDiscoveredStartDate
-                                ? getDate(formValues.reportParameters.cvesDiscoveredStartDate)
-                                : cvesDiscoveredSinceLabelMap[
-                                      formValues.reportParameters.cvesDiscoveredSince
-                                  ]}
+                            {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>

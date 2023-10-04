@@ -6,6 +6,7 @@ import { PageSection } from '@patternfly/react-core';
 import {
     RouteKey,
     accessControlPath,
+    administrationEventsPathWithParam,
     apidocsPath,
     clustersDelegatedScanningPath,
     clustersInitBundlesPathWithParam,
@@ -15,6 +16,7 @@ import {
     compliancePath,
     configManagementPath,
     dashboardPath,
+    deferralConfigurationPath,
     deprecatedPoliciesPath,
     integrationsPath,
     isRouteEnabled, // predicate function
@@ -39,12 +41,13 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
-import ErrorBoundary from 'Containers/ErrorBoundary';
+import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
+import InviteUsersModal from './InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -66,6 +69,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'access-control': {
         component: asyncComponent(() => import('Containers/AccessControl/AccessControl')),
         path: accessControlPath,
+    },
+    'administration-events': {
+        component: asyncComponent(
+            () => import('Containers/Administration/Events/AdministrationEventsRoute')
+        ),
+        path: administrationEventsPathWithParam,
     },
     apidocs: {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),
@@ -108,6 +117,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     dashboard: {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
+    },
+    'deferral-configuration': {
+        component: asyncComponent(
+            () => import('Containers/DeferralConfiguration/DeferralConfigurationPage')
+        ),
+        path: deferralConfigurationPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
@@ -217,6 +232,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
+                <InviteUsersModal />
             </ErrorBoundary>
         </div>
     );

@@ -182,19 +182,19 @@ function ImagesTable({
                                     <DateDistanceTd date={scanTime} />
                                 </Td>
                                 <Td isActionCell>
-                                    <ActionsColumn
-                                        items={[
-                                            {
-                                                title: 'Watch image',
-                                                onClick: () =>
-                                                    onWatchImage(
-                                                        name
-                                                            ? `${name.registry}/${name.remote}:${name.tag}`
-                                                            : ''
-                                                    ),
-                                            },
-                                        ]}
-                                    />
+                                    {name?.tag && (
+                                        <ActionsColumn
+                                            items={[
+                                                {
+                                                    title: 'Watch image',
+                                                    onClick: () =>
+                                                        onWatchImage(
+                                                            `${name.registry}/${name.remote}:${name.tag}`
+                                                        ),
+                                                },
+                                            ]}
+                                        />
+                                    )}
                                 </Td>
                             </Tr>
                         </Tbody>

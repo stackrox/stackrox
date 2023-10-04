@@ -9,12 +9,14 @@ import { HasReadAccess } from 'hooks/usePermissions';
 import {
     RouteKey,
     accessControlBasePath,
+    administrationEventsBasePath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
     complianceEnhancedStatusPath,
     configManagementPath,
     dashboardPath,
+    deferralConfigurationPath,
     integrationsPath,
     isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
@@ -154,11 +156,7 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
-                content: (
-                    <NavigationContent variant="TechPreview">
-                        Vulnerability Reporting
-                    </NavigationContent>
-                ),
+                content: 'Vulnerability Reporting',
                 path: vulnerabilityReportsPath,
                 routeKey: 'vulnerabilities/reports',
             },
@@ -241,6 +239,12 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
+                content: 'Deferral Configuration',
+                path: deferralConfigurationPath,
+                routeKey: 'deferral-configuration',
+            },
+            {
+                type: 'child',
                 content: 'Access Control',
                 path: accessControlBasePath,
                 routeKey: 'access-control',
@@ -250,6 +254,12 @@ const navDescriptions: NavDescription[] = [
                 content: 'System Configuration',
                 path: systemConfigPath,
                 routeKey: 'systemconfig',
+            },
+            {
+                type: 'child',
+                content: 'Administration Events',
+                path: administrationEventsBasePath,
+                routeKey: 'administration-events',
             },
             {
                 type: 'child',

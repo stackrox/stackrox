@@ -7,6 +7,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
 	"github.com/stackrox/rox/central/detection/alertmanager"
+	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
@@ -44,12 +45,13 @@ type Manager interface {
 }
 
 // newManager returns a new manager with the injected dependencies.
-func newManager(deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
+func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, baselines baselineDataStore.DataStore,
 	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache expiringcache.Cache, filter filter.Filter,
 	processAggregator aggregator.ProcessAggregator) *managerImpl {
 	m := &managerImpl{
-		deploytimeDetector:      deploytimeDetector,
+		buildTimeDetector:       buildTimeDetector,
+		deployTimeDetector:      deployTimeDetector,
 		runtimeDetector:         runtimeDetector,
 		alertManager:            alertManager,
 		deploymentDataStore:     deploymentDatastore,

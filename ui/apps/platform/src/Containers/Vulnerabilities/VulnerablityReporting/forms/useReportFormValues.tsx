@@ -60,12 +60,17 @@ export type ReportScope = {
 export type DeliveryDestination = {
     notifier: ReportNotifier | null;
     mailingLists: string[];
+    customSubject: string;
+    customBody: string;
 };
 
 export type ReportNotifier = {
     id: string;
     name: string;
 };
+
+export const maxEmailSubjectLength = 256;
+export const maxEmailBodyLength = 1500;
 
 export const defaultReportFormValues: ReportFormValues = {
     reportId: '',
@@ -86,6 +91,19 @@ export const defaultReportFormValues: ReportFormValues = {
         daysOfMonth: [],
     },
 };
+
+export const emailSubjectValidation = yup
+    .string()
+    .default('')
+    .max(
+        maxEmailSubjectLength,
+        `Limit your input to ${maxEmailSubjectLength} characters or fewer.`
+    );
+
+export const emailBodyValidation = yup
+    .string()
+    .default('')
+    .max(maxEmailBodyLength, `Limit your input to ${maxEmailBodyLength} characters or fewer.`);
 
 const validationSchema = yup.object().shape({
     reportId: yup.string(),
@@ -130,6 +148,8 @@ const validationSchema = yup.object().shape({
                     .array()
                     .of(yup.string())
                     .min(1, 'At least 1 delivery destination is required'),
+                customSubject: emailSubjectValidation,
+                customBody: emailBodyValidation,
             })
         )
         .strict()

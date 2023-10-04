@@ -48,12 +48,17 @@ export type ReportRetentionConfig = {
     downloadableReportRetentionDays: number; // uint32
 };
 
+export type AdministrationEventsConfig = {
+    retentionDurationDays: number; // uint32
+};
+
 export type PrivateConfig = {
     alertConfig: AlertRetentionConfig;
     imageRetentionDurationDays: number; // int32
     expiredVulnReqRetentionDurationDays: number; // int32
     decommissionedClusterRetention: DecommissionedClusterRetentionConfig;
     reportRetentionConfig: ReportRetentionConfig;
+    administrationEventsConfig: AdministrationEventsConfig;
 };
 
 export type SystemConfig = {

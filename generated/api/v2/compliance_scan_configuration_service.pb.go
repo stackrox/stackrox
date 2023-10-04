@@ -33,6 +33,7 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type ClusterScanStatus struct {
 	ClusterId            string   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Errors               []string `protobuf:"bytes,2,rep,name=errors,proto3" json:"errors,omitempty"`
+	ClusterName          string   `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -83,6 +84,13 @@ func (m *ClusterScanStatus) GetErrors() []string {
 		return m.Errors
 	}
 	return nil
+}
+
+func (m *ClusterScanStatus) GetClusterName() string {
+	if m != nil {
+		return m.ClusterName
+	}
+	return ""
 }
 
 func (m *ClusterScanStatus) MessageClone() proto.Message {
@@ -188,9 +196,10 @@ func (m *BaseComplianceScanConfigurationSettings) Clone() *BaseComplianceScanCon
 
 // Next available tag: 4
 type ComplianceScanConfiguration struct {
-	ScanName             string                                   `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
-	ScanConfig           *BaseComplianceScanConfigurationSettings `protobuf:"bytes,2,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
-	Clusters             []string                                 `protobuf:"bytes,3,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	Id                   string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ScanName             string                                   `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	ScanConfig           *BaseComplianceScanConfigurationSettings `protobuf:"bytes,3,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
+	Clusters             []string                                 `protobuf:"bytes,4,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
 	XXX_unrecognized     []byte                                   `json:"-"`
 	XXX_sizecache        int32                                    `json:"-"`
@@ -228,6 +237,13 @@ func (m *ComplianceScanConfiguration) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_ComplianceScanConfiguration proto.InternalMessageInfo
+
+func (m *ComplianceScanConfiguration) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
 
 func (m *ComplianceScanConfiguration) GetScanName() string {
 	if m != nil {
@@ -268,15 +284,16 @@ func (m *ComplianceScanConfiguration) Clone() *ComplianceScanConfiguration {
 	return cloned
 }
 
-// Next available tag: 7
+// Next available tag: 8
 type ComplianceScanConfigurationStatus struct {
-	ScanName        string                                   `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
-	ScanConfig      *BaseComplianceScanConfigurationSettings `protobuf:"bytes,2,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
-	ClusterStatus   []*ClusterScanStatus                     `protobuf:"bytes,3,rep,name=cluster_status,json=clusterStatus,proto3" json:"cluster_status,omitempty"`
-	CreatedTime     *types.Timestamp                         `protobuf:"bytes,4,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	LastUpdatedTime *types.Timestamp                         `protobuf:"bytes,5,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
+	Id              string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ScanName        string                                   `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	ScanConfig      *BaseComplianceScanConfigurationSettings `protobuf:"bytes,3,opt,name=scan_config,json=scanConfig,proto3" json:"scan_config,omitempty"`
+	ClusterStatus   []*ClusterScanStatus                     `protobuf:"bytes,4,rep,name=cluster_status,json=clusterStatus,proto3" json:"cluster_status,omitempty"`
+	CreatedTime     *types.Timestamp                         `protobuf:"bytes,5,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	LastUpdatedTime *types.Timestamp                         `protobuf:"bytes,6,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty"`
 	// Most recent user to update the scan settings
-	CreatedBy            *SlimUser `protobuf:"bytes,6,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	ModifiedBy           *SlimUser `protobuf:"bytes,7,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -315,6 +332,13 @@ func (m *ComplianceScanConfigurationStatus) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ComplianceScanConfigurationStatus proto.InternalMessageInfo
 
+func (m *ComplianceScanConfigurationStatus) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 func (m *ComplianceScanConfigurationStatus) GetScanName() string {
 	if m != nil {
 		return m.ScanName
@@ -350,9 +374,9 @@ func (m *ComplianceScanConfigurationStatus) GetLastUpdatedTime() *types.Timestam
 	return nil
 }
 
-func (m *ComplianceScanConfigurationStatus) GetCreatedBy() *SlimUser {
+func (m *ComplianceScanConfigurationStatus) GetModifiedBy() *SlimUser {
 	if m != nil {
-		return m.CreatedBy
+		return m.ModifiedBy
 	}
 	return nil
 }
@@ -376,68 +400,7 @@ func (m *ComplianceScanConfigurationStatus) Clone() *ComplianceScanConfiguration
 	}
 	cloned.CreatedTime = m.CreatedTime.Clone()
 	cloned.LastUpdatedTime = m.LastUpdatedTime.Clone()
-	cloned.CreatedBy = m.CreatedBy.Clone()
-	return cloned
-}
-
-// Next available tag: 2
-type ComplianceScanConfigurationRequest struct {
-	ScanName             string   `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ComplianceScanConfigurationRequest) Reset()         { *m = ComplianceScanConfigurationRequest{} }
-func (m *ComplianceScanConfigurationRequest) String() string { return proto.CompactTextString(m) }
-func (*ComplianceScanConfigurationRequest) ProtoMessage()    {}
-func (*ComplianceScanConfigurationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d441c70a62230c3d, []int{4}
-}
-func (m *ComplianceScanConfigurationRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ComplianceScanConfigurationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ComplianceScanConfigurationRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ComplianceScanConfigurationRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ComplianceScanConfigurationRequest.Merge(m, src)
-}
-func (m *ComplianceScanConfigurationRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *ComplianceScanConfigurationRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_ComplianceScanConfigurationRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ComplianceScanConfigurationRequest proto.InternalMessageInfo
-
-func (m *ComplianceScanConfigurationRequest) GetScanName() string {
-	if m != nil {
-		return m.ScanName
-	}
-	return ""
-}
-
-func (m *ComplianceScanConfigurationRequest) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *ComplianceScanConfigurationRequest) Clone() *ComplianceScanConfigurationRequest {
-	if m == nil {
-		return nil
-	}
-	cloned := new(ComplianceScanConfigurationRequest)
-	*cloned = *m
-
+	cloned.ModifiedBy = m.ModifiedBy.Clone()
 	return cloned
 }
 
@@ -455,7 +418,7 @@ func (m *ListComplianceScanConfigurationResponse) Reset() {
 func (m *ListComplianceScanConfigurationResponse) String() string { return proto.CompactTextString(m) }
 func (*ListComplianceScanConfigurationResponse) ProtoMessage()    {}
 func (*ListComplianceScanConfigurationResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d441c70a62230c3d, []int{5}
+	return fileDescriptor_d441c70a62230c3d, []int{4}
 }
 func (m *ListComplianceScanConfigurationResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -515,7 +478,6 @@ func init() {
 	proto.RegisterType((*BaseComplianceScanConfigurationSettings)(nil), "v2.BaseComplianceScanConfigurationSettings")
 	proto.RegisterType((*ComplianceScanConfiguration)(nil), "v2.ComplianceScanConfiguration")
 	proto.RegisterType((*ComplianceScanConfigurationStatus)(nil), "v2.ComplianceScanConfigurationStatus")
-	proto.RegisterType((*ComplianceScanConfigurationRequest)(nil), "v2.ComplianceScanConfigurationRequest")
 	proto.RegisterType((*ListComplianceScanConfigurationResponse)(nil), "v2.ListComplianceScanConfigurationResponse")
 }
 
@@ -524,54 +486,55 @@ func init() {
 }
 
 var fileDescriptor_d441c70a62230c3d = []byte{
-	// 749 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x94, 0x5f, 0x6b, 0x13, 0x4d,
-	0x14, 0xc6, 0xdf, 0x49, 0x5e, 0x6b, 0x33, 0x69, 0x94, 0x8e, 0x28, 0xeb, 0x56, 0xd3, 0x74, 0x51,
-	0x5b, 0x5a, 0xdc, 0xe8, 0x16, 0x8a, 0x8a, 0x0a, 0xb6, 0xfe, 0x41, 0x2d, 0xa2, 0x9b, 0x16, 0xc4,
-	0x9b, 0x30, 0xdd, 0x9c, 0xa6, 0x8b, 0xbb, 0x3b, 0xdb, 0x9d, 0xd9, 0xd8, 0x20, 0x82, 0x78, 0xa7,
-	0x17, 0x5e, 0xd8, 0x1b, 0x2f, 0xbc, 0x53, 0xf0, 0xab, 0x78, 0x29, 0xf8, 0x05, 0xa4, 0xfa, 0x41,
-	0x64, 0x67, 0x27, 0x69, 0x82, 0xb0, 0x9b, 0xa2, 0x78, 0x39, 0x67, 0xce, 0x3c, 0xe7, 0x77, 0x9e,
-	0x73, 0x18, 0x6c, 0xd1, 0xd0, 0xad, 0x77, 0xac, 0xba, 0xc3, 0xfc, 0xd0, 0x73, 0x69, 0xe0, 0x40,
-	0x93, 0x3b, 0x34, 0x68, 0x3a, 0x2c, 0xd8, 0x74, 0xdb, 0x71, 0x44, 0x85, 0xcb, 0x82, 0x26, 0x87,
-	0xa8, 0xe3, 0x3a, 0x60, 0x86, 0x11, 0x13, 0x8c, 0x14, 0x3a, 0x96, 0x3e, 0xdd, 0x66, 0xac, 0xed,
-	0x41, 0x5d, 0x46, 0x36, 0xe2, 0xcd, 0xba, 0x70, 0x7d, 0xe0, 0x82, 0xfa, 0x61, 0x9a, 0xa4, 0x9f,
-	0x52, 0x09, 0x89, 0x3e, 0x0d, 0x02, 0x26, 0xa4, 0x12, 0x57, 0xb7, 0xc7, 0xf6, 0xcb, 0xfa, 0x2c,
-	0x50, 0xc1, 0x93, 0x2a, 0xc8, 0x81, 0x46, 0xce, 0x56, 0x73, 0x3b, 0x86, 0xa8, 0xab, 0xae, 0x26,
-	0xd5, 0x55, 0xcc, 0x21, 0x4a, 0x43, 0xc6, 0x3d, 0x3c, 0xb9, 0xe2, 0xc5, 0x5c, 0x40, 0xd4, 0x70,
-	0x68, 0xd0, 0x10, 0x54, 0xc4, 0x9c, 0x9c, 0xc6, 0xd8, 0x49, 0x83, 0x4d, 0xb7, 0xa5, 0xa1, 0x1a,
-	0x9a, 0x2b, 0xd9, 0x25, 0x15, 0xb9, 0xdb, 0x22, 0x27, 0xf0, 0x18, 0x44, 0x11, 0x8b, 0xb8, 0x56,
-	0xa8, 0x15, 0xe7, 0x4a, 0xb6, 0x3a, 0x19, 0x1f, 0x10, 0x9e, 0x5d, 0xa6, 0x1c, 0x56, 0xfa, 0x2e,
-	0x24, 0x9a, 0x2b, 0x83, 0x1e, 0x34, 0x40, 0x08, 0x37, 0x68, 0x73, 0x62, 0xe0, 0x0a, 0x0b, 0xa0,
-	0x99, 0xf4, 0x2b, 0xad, 0x92, 0x55, 0xc6, 0xed, 0x32, 0x0b, 0x60, 0xcd, 0xf5, 0xe5, 0x43, 0xa2,
-	0xe3, 0xf1, 0x30, 0x62, 0x9b, 0xae, 0x07, 0xbd, 0x4a, 0xfd, 0x33, 0xb9, 0x88, 0x2b, 0xd2, 0x61,
-	0xee, 0x6c, 0x41, 0x2b, 0xf6, 0x40, 0x2b, 0xd6, 0xd0, 0x5c, 0xd9, 0x9a, 0x30, 0x3b, 0x96, 0xd9,
-	0x50, 0x31, 0x7b, 0x22, 0x49, 0xe9, 0x9d, 0x8c, 0x4f, 0x08, 0x4f, 0x65, 0xa0, 0x91, 0x29, 0x5c,
-	0x92, 0x92, 0x01, 0xf5, 0x41, 0x35, 0x3d, 0x9e, 0x04, 0x1e, 0x50, 0x1f, 0xc8, 0x2a, 0x2e, 0x0f,
-	0x4c, 0x54, 0x2b, 0xc8, 0x6a, 0x0b, 0x49, 0xb5, 0x11, 0x3b, 0xb6, 0x31, 0xef, 0x5f, 0x25, 0x9d,
-	0x29, 0x3b, 0xb9, 0x56, 0x4c, 0x3b, 0xeb, 0x9d, 0x8d, 0x97, 0x45, 0x3c, 0x93, 0xa5, 0x97, 0x8e,
-	0xe8, 0x1f, 0xc2, 0x5e, 0xc5, 0x47, 0x7a, 0xdb, 0xc0, 0x65, 0x71, 0x89, 0x5c, 0xb6, 0x8e, 0x27,
-	0x82, 0xbf, 0x2d, 0x8f, 0x5d, 0x51, 0xc9, 0x0a, 0xf4, 0x1a, 0x9e, 0x70, 0x22, 0xa0, 0x02, 0x5a,
-	0x72, 0xd8, 0xda, 0xff, 0x12, 0x46, 0x37, 0xd3, 0xc5, 0x36, 0x7b, 0x9b, 0x6f, 0xae, 0xf5, 0x36,
-	0xdf, 0x2e, 0xab, 0xfc, 0x24, 0x42, 0x6e, 0xe3, 0x49, 0x8f, 0x72, 0xd1, 0x8c, 0xc3, 0xd6, 0xbe,
-	0xc6, 0xa1, 0x5c, 0x8d, 0xa3, 0xc9, 0xa3, 0xf5, 0xf4, 0x8d, 0xd4, 0x59, 0xc0, 0xb8, 0x87, 0xb1,
-	0xd1, 0xd5, 0xc6, 0x06, 0x96, 0xc5, 0x73, 0xfd, 0x75, 0x0e, 0x91, 0x5d, 0x52, 0xf7, 0xcb, 0x5d,
-	0xe3, 0x06, 0x36, 0x32, 0x4c, 0xb2, 0x61, 0x3b, 0x06, 0x2e, 0x32, 0x47, 0x60, 0x74, 0xf0, 0xec,
-	0xaa, 0xcb, 0x45, 0xa6, 0x0c, 0x0f, 0x59, 0xc0, 0x81, 0xdc, 0xc7, 0x95, 0xa1, 0x7f, 0x42, 0x43,
-	0xd2, 0xde, 0xb3, 0xd2, 0xde, 0xbc, 0x45, 0xb0, 0x87, 0xdf, 0x5a, 0x1f, 0x0f, 0x67, 0xb2, 0x37,
-	0xd2, 0x2f, 0x88, 0xbc, 0x46, 0xb8, 0x96, 0xc3, 0xc7, 0x89, 0xf4, 0xc7, 0xa6, 0xcf, 0x1e, 0x25,
-	0x5f, 0x88, 0x2e, 0xf7, 0x67, 0xc4, 0x9e, 0x8c, 0xf9, 0x57, 0xdf, 0x7e, 0xee, 0x16, 0xce, 0x10,
-	0x63, 0xf8, 0x57, 0xac, 0x27, 0xfe, 0xd4, 0x9d, 0xe1, 0x32, 0x9f, 0x11, 0xae, 0xde, 0x81, 0x2c,
-	0x59, 0x72, 0x2e, 0xc7, 0x0b, 0x35, 0x12, 0x7d, 0x34, 0xcf, 0x8c, 0x25, 0x49, 0x77, 0x81, 0x98,
-	0xf9, 0x74, 0xf5, 0xe7, 0xfd, 0x19, 0xbf, 0x20, 0xef, 0x10, 0x9e, 0x7e, 0xc8, 0x32, 0x1d, 0x20,
-	0xd3, 0x39, 0x08, 0x7a, 0x5e, 0x82, 0x71, 0x5e, 0xd2, 0xcd, 0x1a, 0x23, 0x78, 0x77, 0x05, 0xcd,
-	0x93, 0x37, 0x08, 0xcf, 0xa4, 0x9b, 0xfe, 0x47, 0x58, 0xa5, 0x24, 0xe1, 0x96, 0x1f, 0x8a, 0xae,
-	0x71, 0x59, 0x02, 0x2c, 0xea, 0x07, 0xb4, 0x27, 0x81, 0x79, 0x8b, 0xf0, 0xcc, 0x4d, 0xf0, 0x20,
-	0x1b, 0x66, 0xd4, 0x71, 0x0e, 0x30, 0xa9, 0x91, 0xcd, 0x1f, 0x74, 0x64, 0xbb, 0x08, 0x57, 0xed,
-	0x38, 0xf8, 0xcb, 0x34, 0xd7, 0x25, 0xcd, 0x25, 0xb2, 0x34, 0x02, 0x0d, 0xec, 0x80, 0x13, 0x0b,
-	0x18, 0xa4, 0x5a, 0x36, 0xbf, 0xec, 0x55, 0xd1, 0xd7, 0xbd, 0x2a, 0xfa, 0xbe, 0x57, 0x45, 0xef,
-	0x7f, 0x54, 0xff, 0xc3, 0x9a, 0xcb, 0x4c, 0x2e, 0xa8, 0xf3, 0x34, 0x62, 0x3b, 0xe9, 0x87, 0x66,
-	0xd2, 0xd0, 0x35, 0x3b, 0xd6, 0x93, 0x42, 0xc7, 0x7a, 0x8c, 0x36, 0xc6, 0x64, 0x6c, 0xf1, 0x57,
-	0x00, 0x00, 0x00, 0xff, 0xff, 0x75, 0xbe, 0x91, 0x6d, 0x6a, 0x08, 0x00, 0x00,
+	// 766 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x54, 0xc1, 0x6e, 0xdb, 0x46,
+	0x10, 0x2d, 0xe5, 0x56, 0xb5, 0x56, 0x92, 0x5b, 0x6f, 0xd1, 0x82, 0xa5, 0x5b, 0xd9, 0x22, 0x5a,
+	0xc8, 0x75, 0x6b, 0x12, 0x66, 0x0f, 0x05, 0x8a, 0xf6, 0x22, 0xb9, 0x2d, 0x8c, 0x1a, 0x05, 0x4a,
+	0xd9, 0x40, 0xd1, 0x0b, 0xb1, 0x26, 0x47, 0xf2, 0xa2, 0x24, 0x97, 0xe6, 0x2e, 0x59, 0x0b, 0x45,
+	0x2f, 0xc9, 0x29, 0x39, 0x26, 0x39, 0xe4, 0x90, 0xcf, 0xc8, 0x2f, 0x04, 0xc8, 0x31, 0x40, 0x7e,
+	0x20, 0x70, 0xf2, 0x21, 0x01, 0x97, 0x4b, 0x59, 0x82, 0x01, 0x49, 0x48, 0x0e, 0x39, 0xee, 0xdb,
+	0x99, 0x79, 0x6f, 0xde, 0xcc, 0x2e, 0x72, 0x48, 0x42, 0xed, 0xdc, 0xb1, 0x7d, 0x16, 0x25, 0x21,
+	0x25, 0xb1, 0x0f, 0x1e, 0xf7, 0x49, 0xec, 0xf9, 0x2c, 0x1e, 0xd1, 0x71, 0x96, 0x12, 0x41, 0x59,
+	0xec, 0x71, 0x48, 0x73, 0xea, 0x83, 0x95, 0xa4, 0x4c, 0x30, 0x5c, 0xcb, 0x1d, 0x63, 0x7b, 0xcc,
+	0xd8, 0x38, 0x04, 0x5b, 0x22, 0x67, 0xd9, 0xc8, 0x16, 0x34, 0x02, 0x2e, 0x48, 0x94, 0x94, 0x41,
+	0xc6, 0x17, 0x2a, 0xa0, 0xa8, 0x4f, 0xe2, 0x98, 0x09, 0x59, 0x89, 0xab, 0xdb, 0x4f, 0xae, 0x69,
+	0x23, 0x16, 0x2b, 0xf0, 0x73, 0x05, 0x72, 0x20, 0xa9, 0x7f, 0xee, 0x5d, 0x64, 0x90, 0x4e, 0xd4,
+	0xd5, 0xa6, 0xba, 0xca, 0x38, 0xa4, 0x25, 0x64, 0x46, 0x68, 0x73, 0x10, 0x66, 0x5c, 0x40, 0x3a,
+	0xf4, 0x49, 0x3c, 0x14, 0x44, 0x64, 0x1c, 0x7f, 0x89, 0x90, 0x5f, 0x82, 0x1e, 0x0d, 0x74, 0x6d,
+	0x47, 0xdb, 0x6d, 0xb8, 0x0d, 0x85, 0x1c, 0x05, 0xf8, 0x33, 0x54, 0x87, 0x34, 0x65, 0x29, 0xd7,
+	0x6b, 0x3b, 0x6b, 0xbb, 0x0d, 0x57, 0x9d, 0x70, 0x17, 0xb5, 0xaa, 0xb4, 0x98, 0x44, 0xa0, 0xaf,
+	0xc9, 0xc4, 0xa6, 0xc2, 0xfe, 0x20, 0x11, 0x98, 0x8f, 0x34, 0xd4, 0xeb, 0x13, 0x0e, 0x83, 0xa9,
+	0x51, 0x05, 0xed, 0x60, 0xd6, 0xa6, 0x21, 0x08, 0x41, 0xe3, 0x31, 0xc7, 0x26, 0x6a, 0xb3, 0x18,
+	0xbc, 0xc2, 0x12, 0xe9, 0xa6, 0x14, 0xb2, 0xee, 0x36, 0x59, 0x0c, 0x27, 0x34, 0x92, 0x89, 0xd8,
+	0x40, 0xeb, 0x49, 0xca, 0x46, 0x34, 0x84, 0x4a, 0xcc, 0xf4, 0x8c, 0x0f, 0x50, 0x5b, 0x0e, 0x81,
+	0xfb, 0xe7, 0x10, 0x64, 0x61, 0xa9, 0xa7, 0xe9, 0xb4, 0xac, 0xdc, 0xb1, 0x86, 0x0a, 0x73, 0x5b,
+	0x45, 0x48, 0x75, 0x32, 0x1f, 0x6b, 0x68, 0x6b, 0x81, 0x34, 0xbc, 0x81, 0x6a, 0x53, 0x43, 0x6a,
+	0x34, 0xc0, 0x5b, 0xa8, 0x21, 0x29, 0x64, 0xbb, 0x35, 0x09, 0xaf, 0x17, 0x40, 0xd1, 0x2b, 0x3e,
+	0x46, 0xcd, 0x99, 0x25, 0x50, 0xec, 0xdf, 0x16, 0xec, 0x2b, 0x3a, 0xe0, 0x22, 0x3e, 0xbd, 0x2a,
+	0x3a, 0x55, 0x46, 0x72, 0xfd, 0xfd, 0xb2, 0xd3, 0xea, 0x6c, 0xde, 0x5b, 0x43, 0xdd, 0x45, 0xf5,
+	0xca, 0xa9, 0xbe, 0x43, 0xf1, 0x3f, 0xa1, 0x8d, 0x6a, 0x33, 0xb8, 0x14, 0x23, 0x5b, 0x68, 0x3a,
+	0x9f, 0x16, 0x05, 0x6f, 0xec, 0x9f, 0xdb, 0x56, 0xc1, 0x4a, 0xf8, 0xcf, 0xa8, 0xe5, 0xa7, 0x40,
+	0x04, 0x04, 0x72, 0x19, 0xf4, 0x0f, 0xa4, 0x18, 0xc3, 0x2a, 0xdf, 0x86, 0x55, 0x3d, 0x1e, 0xeb,
+	0xa4, 0x7a, 0x3c, 0x6e, 0x53, 0xc5, 0x17, 0x08, 0xfe, 0x15, 0x6d, 0x86, 0x84, 0x0b, 0x2f, 0x4b,
+	0x82, 0xeb, 0x1a, 0xf5, 0xa5, 0x35, 0x3e, 0x2a, 0x92, 0x4e, 0xcb, 0x1c, 0x59, 0x67, 0x1f, 0x35,
+	0x23, 0x16, 0xd0, 0x11, 0x85, 0xc0, 0x3b, 0x9b, 0xe8, 0x1f, 0xce, 0x6c, 0x53, 0x48, 0xa3, 0x53,
+	0x0e, 0xa9, 0x8b, 0xaa, 0x80, 0xfe, 0xc4, 0xcc, 0x51, 0xef, 0x98, 0x72, 0xb1, 0xc0, 0x2a, 0x17,
+	0x78, 0xc2, 0x62, 0x0e, 0xf8, 0x77, 0xd4, 0x9e, 0xfb, 0x29, 0x74, 0x4d, 0xba, 0xf3, 0xb5, 0x74,
+	0x67, 0xd9, 0x5c, 0xdd, 0xf9, 0x5c, 0xe7, 0x49, 0x1d, 0x99, 0x0b, 0xe7, 0x23, 0x3f, 0x21, 0x7c,
+	0x47, 0x43, 0x3b, 0x4b, 0xf4, 0x71, 0x2c, 0xbb, 0x73, 0xc9, 0xbf, 0x7f, 0x16, 0x9f, 0x88, 0x21,
+	0xc7, 0xbf, 0x62, 0x4f, 0xe6, 0xde, 0xad, 0xe7, 0xaf, 0xee, 0xd7, 0xbe, 0xc2, 0xe6, 0xfc, 0xbf,
+	0x68, 0x17, 0x5b, 0x61, 0xfb, 0xf3, 0x34, 0x77, 0x35, 0xd4, 0xf9, 0x0d, 0x16, 0x95, 0xc5, 0x1f,
+	0x4b, 0x25, 0xc0, 0x59, 0x96, 0xfa, 0xd0, 0x9f, 0x1c, 0x1d, 0x1a, 0xab, 0xb9, 0x63, 0xda, 0x52,
+	0xc7, 0x37, 0xb8, 0xb7, 0x5c, 0x87, 0xfd, 0x1f, 0x0d, 0xfe, 0xc7, 0x0f, 0x34, 0xd4, 0x1d, 0xc8,
+	0xf5, 0x59, 0xa4, 0x67, 0x7b, 0x09, 0xbb, 0xb1, 0x2c, 0xc0, 0xdc, 0x97, 0xc2, 0x7a, 0xe6, 0x0a,
+	0x06, 0xfd, 0xa8, 0xed, 0xe1, 0xdb, 0x1a, 0xea, 0x96, 0xdb, 0xf8, 0x56, 0xb2, 0x1a, 0x45, 0xc0,
+	0x2f, 0x51, 0x22, 0x26, 0xa6, 0x23, 0x05, 0x7c, 0x67, 0xac, 0xea, 0x4c, 0xa1, 0xe2, 0x02, 0x75,
+	0x0f, 0x21, 0x84, 0xc5, 0x22, 0x6e, 0xce, 0x6a, 0x86, 0x55, 0xcd, 0x63, 0x6f, 0xe5, 0x79, 0xe4,
+	0xa8, 0xe3, 0x66, 0xf1, 0x1b, 0xf3, 0xfd, 0x20, 0xf9, 0x0e, 0xb0, 0xbd, 0x02, 0x1f, 0x5c, 0x82,
+	0x9f, 0x09, 0x90, 0xbc, 0x7d, 0xeb, 0xe9, 0x55, 0x47, 0x7b, 0x76, 0xd5, 0xd1, 0x5e, 0x5c, 0x75,
+	0xb4, 0x87, 0x2f, 0x3b, 0xef, 0x21, 0x9d, 0x32, 0x8b, 0x0b, 0xe2, 0xff, 0x93, 0xb2, 0xcb, 0xf2,
+	0xc7, 0xb0, 0x48, 0x42, 0xad, 0xdc, 0xf9, 0xbb, 0x96, 0x3b, 0x7f, 0x69, 0x67, 0x75, 0x89, 0x7d,
+	0xff, 0x3a, 0x00, 0x00, 0xff, 0xff, 0x57, 0x95, 0x90, 0xdb, 0x0e, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -589,15 +552,15 @@ type ComplianceScanConfigurationServiceClient interface {
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigurations(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigurationResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
-	GetComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error)
-	// PostComplianceScanConfiguration creates a compliance scan configuration
-	PostComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfiguration, opts ...grpc.CallOption) (*ComplianceScanConfiguration, error)
+	GetComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error)
+	// CreateComplianceScanConfiguration creates a compliance scan configuration
+	CreateComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfiguration, opts ...grpc.CallOption) (*ComplianceScanConfiguration, error)
 	// UpdateComplianceScanConfiguration updates a compliance scan configuration
 	UpdateComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfiguration, opts ...grpc.CallOption) (*Empty, error)
 	// DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
-	DeleteComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*Empty, error)
+	DeleteComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// RunComplianceScanConfiguration launches scan for the specified scan configuration
-	RunComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*Empty, error)
+	RunComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type complianceScanConfigurationServiceClient struct {
@@ -617,7 +580,7 @@ func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigurati
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) GetComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error) {
+func (c *complianceScanConfigurationServiceClient) GetComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error) {
 	out := new(ComplianceScanConfigurationStatus)
 	err := c.cc.Invoke(ctx, "/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration", in, out, opts...)
 	if err != nil {
@@ -626,9 +589,9 @@ func (c *complianceScanConfigurationServiceClient) GetComplianceScanConfiguratio
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) PostComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfiguration, opts ...grpc.CallOption) (*ComplianceScanConfiguration, error) {
+func (c *complianceScanConfigurationServiceClient) CreateComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfiguration, opts ...grpc.CallOption) (*ComplianceScanConfiguration, error) {
 	out := new(ComplianceScanConfiguration)
-	err := c.cc.Invoke(ctx, "/v2.ComplianceScanConfigurationService/PostComplianceScanConfiguration", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -644,7 +607,7 @@ func (c *complianceScanConfigurationServiceClient) UpdateComplianceScanConfigura
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) DeleteComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *complianceScanConfigurationServiceClient) DeleteComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration", in, out, opts...)
 	if err != nil {
@@ -653,7 +616,7 @@ func (c *complianceScanConfigurationServiceClient) DeleteComplianceScanConfigura
 	return out, nil
 }
 
-func (c *complianceScanConfigurationServiceClient) RunComplianceScanConfiguration(ctx context.Context, in *ComplianceScanConfigurationRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *complianceScanConfigurationServiceClient) RunComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration", in, out, opts...)
 	if err != nil {
@@ -667,15 +630,15 @@ type ComplianceScanConfigurationServiceServer interface {
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigurations(context.Context, *RawQuery) (*ListComplianceScanConfigurationResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
-	GetComplianceScanConfiguration(context.Context, *ComplianceScanConfigurationRequest) (*ComplianceScanConfigurationStatus, error)
-	// PostComplianceScanConfiguration creates a compliance scan configuration
-	PostComplianceScanConfiguration(context.Context, *ComplianceScanConfiguration) (*ComplianceScanConfiguration, error)
+	GetComplianceScanConfiguration(context.Context, *ResourceByID) (*ComplianceScanConfigurationStatus, error)
+	// CreateComplianceScanConfiguration creates a compliance scan configuration
+	CreateComplianceScanConfiguration(context.Context, *ComplianceScanConfiguration) (*ComplianceScanConfiguration, error)
 	// UpdateComplianceScanConfiguration updates a compliance scan configuration
 	UpdateComplianceScanConfiguration(context.Context, *ComplianceScanConfiguration) (*Empty, error)
 	// DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name
-	DeleteComplianceScanConfiguration(context.Context, *ComplianceScanConfigurationRequest) (*Empty, error)
+	DeleteComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	// RunComplianceScanConfiguration launches scan for the specified scan configuration
-	RunComplianceScanConfiguration(context.Context, *ComplianceScanConfigurationRequest) (*Empty, error)
+	RunComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error)
 }
 
 // UnimplementedComplianceScanConfigurationServiceServer can be embedded to have forward compatible implementations.
@@ -685,19 +648,19 @@ type UnimplementedComplianceScanConfigurationServiceServer struct {
 func (*UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigurations(ctx context.Context, req *RawQuery) (*ListComplianceScanConfigurationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceScanConfigurations not implemented")
 }
-func (*UnimplementedComplianceScanConfigurationServiceServer) GetComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfigurationRequest) (*ComplianceScanConfigurationStatus, error) {
+func (*UnimplementedComplianceScanConfigurationServiceServer) GetComplianceScanConfiguration(ctx context.Context, req *ResourceByID) (*ComplianceScanConfigurationStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetComplianceScanConfiguration not implemented")
 }
-func (*UnimplementedComplianceScanConfigurationServiceServer) PostComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfiguration) (*ComplianceScanConfiguration, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PostComplianceScanConfiguration not implemented")
+func (*UnimplementedComplianceScanConfigurationServiceServer) CreateComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfiguration) (*ComplianceScanConfiguration, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateComplianceScanConfiguration not implemented")
 }
 func (*UnimplementedComplianceScanConfigurationServiceServer) UpdateComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfiguration) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateComplianceScanConfiguration not implemented")
 }
-func (*UnimplementedComplianceScanConfigurationServiceServer) DeleteComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfigurationRequest) (*Empty, error) {
+func (*UnimplementedComplianceScanConfigurationServiceServer) DeleteComplianceScanConfiguration(ctx context.Context, req *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteComplianceScanConfiguration not implemented")
 }
-func (*UnimplementedComplianceScanConfigurationServiceServer) RunComplianceScanConfiguration(ctx context.Context, req *ComplianceScanConfigurationRequest) (*Empty, error) {
+func (*UnimplementedComplianceScanConfigurationServiceServer) RunComplianceScanConfiguration(ctx context.Context, req *ResourceByID) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunComplianceScanConfiguration not implemented")
 }
 
@@ -724,7 +687,7 @@ func _ComplianceScanConfigurationService_ListComplianceScanConfigurations_Handle
 }
 
 func _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ComplianceScanConfigurationRequest)
+	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -736,25 +699,25 @@ func _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler(
 		FullMethod: "/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceScanConfigurationServiceServer).GetComplianceScanConfiguration(ctx, req.(*ComplianceScanConfigurationRequest))
+		return srv.(ComplianceScanConfigurationServiceServer).GetComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_PostComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceScanConfigurationService_CreateComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceScanConfiguration)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ComplianceScanConfigurationServiceServer).PostComplianceScanConfiguration(ctx, in)
+		return srv.(ComplianceScanConfigurationServiceServer).CreateComplianceScanConfiguration(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v2.ComplianceScanConfigurationService/PostComplianceScanConfiguration",
+		FullMethod: "/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceScanConfigurationServiceServer).PostComplianceScanConfiguration(ctx, req.(*ComplianceScanConfiguration))
+		return srv.(ComplianceScanConfigurationServiceServer).CreateComplianceScanConfiguration(ctx, req.(*ComplianceScanConfiguration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -778,7 +741,7 @@ func _ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_Handl
 }
 
 func _ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ComplianceScanConfigurationRequest)
+	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -790,13 +753,13 @@ func _ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_Handl
 		FullMethod: "/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceScanConfigurationServiceServer).DeleteComplianceScanConfiguration(ctx, req.(*ComplianceScanConfigurationRequest))
+		return srv.(ComplianceScanConfigurationServiceServer).DeleteComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ComplianceScanConfigurationRequest)
+	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -808,7 +771,7 @@ func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(
 		FullMethod: "/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ComplianceScanConfigurationServiceServer).RunComplianceScanConfiguration(ctx, req.(*ComplianceScanConfigurationRequest))
+		return srv.(ComplianceScanConfigurationServiceServer).RunComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -826,8 +789,8 @@ var _ComplianceScanConfigurationService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler,
 		},
 		{
-			MethodName: "PostComplianceScanConfiguration",
-			Handler:    _ComplianceScanConfigurationService_PostComplianceScanConfiguration_Handler,
+			MethodName: "CreateComplianceScanConfiguration",
+			Handler:    _ComplianceScanConfigurationService_CreateComplianceScanConfiguration_Handler,
 		},
 		{
 			MethodName: "UpdateComplianceScanConfiguration",
@@ -869,6 +832,13 @@ func (m *ClusterScanStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.XXX_unrecognized != nil {
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
+	}
+	if len(m.ClusterName) > 0 {
+		i -= len(m.ClusterName)
+		copy(dAtA[i:], m.ClusterName)
+		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.ClusterName)))
+		i--
+		dAtA[i] = 0x1a
 	}
 	if len(m.Errors) > 0 {
 		for iNdEx := len(m.Errors) - 1; iNdEx >= 0; iNdEx-- {
@@ -977,7 +947,7 @@ func (m *ComplianceScanConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, er
 			copy(dAtA[i:], m.Clusters[iNdEx])
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.Clusters[iNdEx])))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x22
 		}
 	}
 	if m.ScanConfig != nil {
@@ -990,12 +960,19 @@ func (m *ComplianceScanConfiguration) MarshalToSizedBuffer(dAtA []byte) (int, er
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x1a
 	}
 	if len(m.ScanName) > 0 {
 		i -= len(m.ScanName)
 		copy(dAtA[i:], m.ScanName)
 		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.ScanName)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1026,9 +1003,9 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.CreatedBy != nil {
+	if m.ModifiedBy != nil {
 		{
-			size, err := m.CreatedBy.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.ModifiedBy.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -1036,7 +1013,7 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x3a
 	}
 	if m.LastUpdatedTime != nil {
 		{
@@ -1048,7 +1025,7 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x32
 	}
 	if m.CreatedTime != nil {
 		{
@@ -1060,7 +1037,7 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x2a
 	}
 	if len(m.ClusterStatus) > 0 {
 		for iNdEx := len(m.ClusterStatus) - 1; iNdEx >= 0; iNdEx-- {
@@ -1073,7 +1050,7 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 				i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 			}
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x22
 		}
 	}
 	if m.ScanConfig != nil {
@@ -1086,46 +1063,19 @@ func (m *ComplianceScanConfigurationStatus) MarshalToSizedBuffer(dAtA []byte) (i
 			i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x12
+		dAtA[i] = 0x1a
 	}
 	if len(m.ScanName) > 0 {
 		i -= len(m.ScanName)
 		copy(dAtA[i:], m.ScanName)
 		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.ScanName)))
 		i--
-		dAtA[i] = 0xa
+		dAtA[i] = 0x12
 	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ComplianceScanConfigurationRequest) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ComplianceScanConfigurationRequest) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ComplianceScanConfigurationRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.ScanName) > 0 {
-		i -= len(m.ScanName)
-		copy(dAtA[i:], m.ScanName)
-		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.ScanName)))
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintComplianceScanConfigurationService(dAtA, i, uint64(len(m.Id)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1200,6 +1150,10 @@ func (m *ClusterScanStatus) Size() (n int) {
 			n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
 		}
 	}
+	l = len(m.ClusterName)
+	if l > 0 {
+		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
+	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
 	}
@@ -1237,6 +1191,10 @@ func (m *ComplianceScanConfiguration) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
+	}
 	l = len(m.ScanName)
 	if l > 0 {
 		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
@@ -1263,6 +1221,10 @@ func (m *ComplianceScanConfigurationStatus) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
+	}
 	l = len(m.ScanName)
 	if l > 0 {
 		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
@@ -1285,24 +1247,8 @@ func (m *ComplianceScanConfigurationStatus) Size() (n int) {
 		l = m.LastUpdatedTime.Size()
 		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
 	}
-	if m.CreatedBy != nil {
-		l = m.CreatedBy.Size()
-		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *ComplianceScanConfigurationRequest) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ScanName)
-	if l > 0 {
+	if m.ModifiedBy != nil {
+		l = m.ModifiedBy.Size()
 		n += 1 + l + sovComplianceScanConfigurationService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -1427,6 +1373,38 @@ func (m *ClusterScanStatus) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Errors = append(m.Errors, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceScanConfigurationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1620,6 +1598,38 @@ func (m *ComplianceScanConfiguration) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceScanConfigurationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanName", wireType)
 			}
 			var stringLen uint64
@@ -1650,7 +1660,7 @@ func (m *ComplianceScanConfiguration) Unmarshal(dAtA []byte) error {
 			}
 			m.ScanName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanConfig", wireType)
 			}
@@ -1686,7 +1696,7 @@ func (m *ComplianceScanConfiguration) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Clusters", wireType)
 			}
@@ -1771,6 +1781,38 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowComplianceScanConfigurationService
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthComplianceScanConfigurationService
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanName", wireType)
 			}
 			var stringLen uint64
@@ -1801,7 +1843,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 			}
 			m.ScanName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 2:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ScanConfig", wireType)
 			}
@@ -1837,7 +1879,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 3:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ClusterStatus", wireType)
 			}
@@ -1871,7 +1913,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CreatedTime", wireType)
 			}
@@ -1907,7 +1949,7 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdatedTime", wireType)
 			}
@@ -1943,9 +1985,9 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedBy", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ModifiedBy", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1972,95 +2014,12 @@ func (m *ComplianceScanConfigurationStatus) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CreatedBy == nil {
-				m.CreatedBy = &SlimUser{}
+			if m.ModifiedBy == nil {
+				m.ModifiedBy = &SlimUser{}
 			}
-			if err := m.CreatedBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ModifiedBy.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipComplianceScanConfigurationService(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthComplianceScanConfigurationService
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ComplianceScanConfigurationRequest) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowComplianceScanConfigurationService
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ComplianceScanConfigurationRequest: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ComplianceScanConfigurationRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowComplianceScanConfigurationService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthComplianceScanConfigurationService
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthComplianceScanConfigurationService
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ScanName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

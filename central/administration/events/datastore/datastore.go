@@ -44,3 +44,12 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	writer := writer.New(store)
 	return newDataStore(searcher, store, writer)
 }
+
+// UpsertTestEvents provides a way to upsert storage.AdministrationEvents directly to the database.
+// This is required for testing with custom timestamps, since the datastore expects a struct with only a subset
+// of fields that clients may set. We still want this to be the case for callers, however for testing we can
+// be more lax in our enforcement.
+func UpsertTestEvents(ctx context.Context, _ testing.TB, datastore DataStore,
+	events ...*storage.AdministrationEvent) error {
+	return datastore.(*datastoreImpl).store.UpsertMany(ctx, events)
+}

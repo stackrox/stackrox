@@ -36,9 +36,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorScanV2)(nil)), "compliance_operator_scan_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":                         ClustersSchema,
-			"storage.ComplianceOperatorProfileV2":     ComplianceOperatorProfileV2Schema,
-			"storage.ComplianceOperatorScanSettingV2": ComplianceOperatorScanSettingV2Schema,
+			"storage.Cluster":                               ClustersSchema,
+			"storage.ComplianceOperatorProfileV2":           ComplianceOperatorProfileV2Schema,
+			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -61,10 +61,10 @@ const (
 
 // ComplianceOperatorScanV2 holds the Gorm model for Postgres table `compliance_operator_scan_v2`.
 type ComplianceOperatorScanV2 struct {
-	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	ScanName   string `gorm:"column:scanname;type:varchar;uniqueIndex:scan_unique_indicator"`
-	ClusterID  string `gorm:"column:clusterid;type:uuid;uniqueIndex:scan_unique_indicator;index:complianceoperatorscanv2_sac_filter,type:btree"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	ID           string `gorm:"column:id;type:varchar;primaryKey"`
+	ScanConfigID string `gorm:"column:scanconfigid;type:varchar;uniqueIndex:scan_unique_indicator"`
+	ClusterID    string `gorm:"column:clusterid;type:uuid;uniqueIndex:scan_unique_indicator;index:complianceoperatorscanv2_sac_filter,type:btree"`
+	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorScanV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_v2_profiles`.
