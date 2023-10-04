@@ -52,7 +52,7 @@ const CVEStackedPill = ({
     return (
         <div className="flex items-center w-full">
             {useScan && !hasScan && <span>{entityName} not scanned</span>}
-            {!hasCounts && <span>No CVEs</span>}
+            {(!useScan || hasScan) && !hasCounts && <span>No CVEs</span>}
             {hasCounts && (
                 <>
                     <div className={`mr-2 ${width}`}>
