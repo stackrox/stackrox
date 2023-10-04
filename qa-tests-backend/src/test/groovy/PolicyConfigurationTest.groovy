@@ -92,7 +92,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
-                    .setCreateLoadBalancer(true).setExposeAsService(true),
+                    .setCreateLoadBalancer(
+                        !(Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
+                    .setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
@@ -163,7 +165,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         when:
         withRetry(30, 2) {
             def image = ImageService.getImage(
-                    "sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
+                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
             assert image != null
         }
 
