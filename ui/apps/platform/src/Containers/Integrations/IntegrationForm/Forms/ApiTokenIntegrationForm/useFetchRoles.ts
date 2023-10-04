@@ -21,7 +21,7 @@ const useRoles = (): UseRolesResult => {
         setResult((prevResult) => ({ ...prevResult, isLoading: true }));
         fetchAllowedRoles()
             .then((roles) => {
-                setResult({ roles: roles.response.roles, error: null, isLoading: false });
+                setResult({ roles, error: null, isLoading: false });
             })
             .catch((error) => {
                 setResult({ roles: [], error, isLoading: false });
