@@ -49,13 +49,12 @@ Please ensure that:
 - Central can access AWS Security Hub.
 
 In case a timeout happened, you may adjust the timeout for uploading alerts to AWS Security Hub by adjusting the "ROX_AWSSH_UPLOAD_TIMEOUT"
-environment variable, and increase the default timeout of 2 seconds.
-`,
+environment variable.`,
 				codes.AWSSHCacheExhausted: `The cache of alerts to-be-uploaded to AWS Security Hub is increasing.
 This will lead to an increasing delay in alerts being uploaded to AWS Security Hub.
 
 You may adjust the upload interval for uploading alerts to AWS Security Hub by adjusting the "ROX_AWSSH_UPLOAD_INTERVAL"
-environment variable, and lower the default interval of 15 seconds.`,
+environment variable.`,
 				codes.EmailGeneric: `An issue occurred when using the Email notifier.
 Please ensure that:
 - Configuration is valid, specifically the auth information and TLS configuration.
@@ -105,21 +104,21 @@ Please ensure that:
 - Central can access the Teams endpoint.
 
 In case a timeout error occurred, you may adjust the timeout for sending alerts to teams by adjusting the "ROX_TEAMS_TIMEOUT"
-environment variable, and increase the default timeout of 10 seconds.`,
+environment variable.`,
 				codes.CloudPlatformGeneric: `An issue occurred when using the Cloud Security Platform notifier.
 Please ensure that:
 - Configuration is valid.
 - Central can access the Cloud Security platform endpoint.
 
 In case a timeout error occurred, you may adjust the timeout for sending alerts by adjusting the "ROX_CSCC_TIMEOUT"
-environment variable, and increase the default timeout of 5 seconds.`,
+environment variable.`,
 				codes.WebhookGeneric: `An issue occurred when using the Generic notifier.
 Please ensure that:
 - Configuration is valid, specifically the auth information and TLS certificates.
 - Central can access the webhook endpoint.
 
 In case a timeout error occurred, you may adjust the timeout for sending alerts by adjusting the "ROX_WEBHOOK_TIMEOUT"
-environment variable, and increase the default timeout of 5 seconds.`,
+environment variable.`,
 			},
 		},
 	}
