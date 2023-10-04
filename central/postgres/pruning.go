@@ -89,6 +89,9 @@ const (
 	pruneLogImbues = `DELETE FROM log_imbues WHERE timestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 
 	pruneAdministrationEvents = `DELETE FROM %s WHERE lastoccurredat < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
+
+	// Delete orphaned PLOPs
+	pruneOrphanedPLOPs = `DELETE FROM listening_endpoints WHERE closetimestamp < now() at time zone 'utc' - INTERVAL '%d MINUTES'`
 )
 
 var (
@@ -204,4 +207,15 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 	if _, err := pool.Exec(ctx, query); err != nil {
 		log.Errorf("failed to prune administration events: %v", err)
 	}
+}
+
+// PruneOrphanedPLOP prunes old PLOPs
+func PruneOrphanedPLOP(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
+	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
+	commandTag, err := pool.Exec(ctx, query)
+	if err != nil {
+		log.Errorf("failed to prune PLOP: %v", err)
+	}
+
+	return commandTag.RowsAffected()
 }
