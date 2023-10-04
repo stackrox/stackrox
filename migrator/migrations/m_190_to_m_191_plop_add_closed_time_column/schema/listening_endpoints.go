@@ -9,11 +9,11 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	referenceschema2 "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/referenceschema"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -25,14 +25,10 @@ var (
 
 	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
 	ListeningEndpointsSchema = func() *walker.Schema {
-		schema := GetSchemaForTable("listening_endpoints")
-		if schema != nil {
-			return schema
-		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
+		schema := walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ProcessIndicator": ProcessIndicatorsSchema,
-			"storage.Deployment":       DeploymentsSchema,
+			"storage.ProcessIndicator": referenceschema2.ProcessIndicatorsSchema,
+			"storage.Deployment":       referenceschema2.DeploymentsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -40,8 +36,6 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, "processlisteningonportstorage", (*storage.ProcessListeningOnPortStorage)(nil)))
 		schema.ScopingResource = resources.DeploymentExtension
-		RegisterTable(schema, CreateTableListeningEndpointsStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, schema)
 		return schema
 	}()
 )
