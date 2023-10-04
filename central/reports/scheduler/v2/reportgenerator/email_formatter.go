@@ -62,8 +62,7 @@ func formatEmailSubject(subjectTemplate string, snapshot *storage.ReportSnapshot
 
 func formatEmailBody(emailTemplate string) (string, error) {
 	data := &reportEmailBodyFormat{
-		BrandedProductName:      branding.GetProductName(),
-		BrandedProductNameShort: branding.GetProductNameShort(),
+		BrandedPrefix: branding.GetCombinedProductAndShortName(),
 	}
 
 	tmpl, err := template.New("emailBody").Parse(emailTemplate)

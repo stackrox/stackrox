@@ -22,9 +22,9 @@ import (
 
 const (
 	// CustomEmailSubjectMaxLen is the maximum allowed length for custom email subject
-	CustomEmailSubjectMaxLen = 250
+	CustomEmailSubjectMaxLen = 256
 	// CustomEmailBodyMaxLen is the maximum allowed length for custom email body
-	CustomEmailBodyMaxLen = 1000
+	CustomEmailBodyMaxLen = 1500
 )
 
 // Use this context only to
