@@ -40,12 +40,12 @@ func (c *writerImpl) resetNoLock() {
 }
 
 func (c *writerImpl) flushNoLock(ctx context.Context) error {
-	eventsToAdd := sliceutils.ShallowClone(maputil.Values(c.buffer))
-
 	// Short-circuit here in case we have no events to be added.
-	if len(eventsToAdd) == 0 {
+	if len(c.buffer) == 0 {
 		return nil
 	}
+
+	eventsToAdd := sliceutils.ShallowClone(maputil.Values(c.buffer))
 
 	ids := protoutils.GetIDs(eventsToAdd)
 	// The events we currently hold in the buffer are de-duplicated within the context of the buffer. However, they are

@@ -18,7 +18,7 @@ import (
 // transactions and table locks.
 //
 // When events are upserted to the writer, they first end up in a buffer.
-// The buffered event has the most recent event state.The buffer is written to the
+// The buffered event has the most recent event state. The buffer is written to the
 // data store once the writer is flushed. If an entry for the event is already
 // present in the data store, this record is merged with the buffered record.
 //
