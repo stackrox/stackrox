@@ -11,7 +11,7 @@ import (
 // Writer implements a buffered write for the administration events datastore.
 //
 // Since we generate events from logs, there could be many log events created
-// in a small-time frame. The buffer is essentially a write optimization such
+// in a small timeframe. The buffer is essentially a write optimization such
 // that we don't have to perform an upsert query for each event individually.
 // While event ingestion would probably be fine without the buffer from Central's
 // perspective, it would increase the load on the database due to many concurrent
