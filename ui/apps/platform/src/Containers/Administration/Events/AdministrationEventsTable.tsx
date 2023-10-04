@@ -11,7 +11,12 @@ import {
 } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-import { AdministrationEvent } from 'services/AdministrationEventsService';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    AdministrationEvent,
+    lastOccurredAtField,
+    numOccurrencesField,
+} from 'services/AdministrationEventsService';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
@@ -20,9 +25,13 @@ import './AdministrationEventsTable.css';
 
 export type AdministrationEventsTableProps = {
     events: AdministrationEvent[];
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function AdministrationEventsTable({ events }: AdministrationEventsTableProps): ReactElement {
+function AdministrationEventsTable({
+    events,
+    getSortParams,
+}: AdministrationEventsTableProps): ReactElement {
     return (
         <>
             <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
@@ -31,8 +40,13 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                         <Th>Domain</Th>
                         <Th modifier="nowrap">Resource type</Th>
                         <Th>Level</Th>
-                        <Th>Event last occurred at</Th>
-                        <Th className="pf-u-text-align-right">Count</Th>
+                        <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
+                        <Th
+                            sort={getSortParams(numOccurrencesField)}
+                            className="pf-u-text-align-right"
+                        >
+                            Count
+                        </Th>
                     </Tr>
                 </Thead>
                 {events.map((event) => {

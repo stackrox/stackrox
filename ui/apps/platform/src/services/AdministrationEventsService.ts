@@ -178,8 +178,11 @@ function getValue(arg: SearchFilterValue): string[] | undefined {
 
 // For useURLSort hook.
 
-export const sortFields = ['Event Occurrence', 'Last Updated']; // correspond to numOccurrences and lastOccurredAt
+export const lastOccurredAtField = 'Last Updated';
+export const numOccurrencesField = 'Event Occurrence';
+
+export const sortFields = [lastOccurredAtField, numOccurrencesField]; // correspond to numOccurrences and lastOccurredAt
 export const defaultSortOption: SortOption = {
-    field: 'Last Updated',
+    field: lastOccurredAtField,
     direction: 'desc', // descending from most recent
 };

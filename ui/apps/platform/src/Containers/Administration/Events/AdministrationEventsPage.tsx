@@ -21,7 +21,7 @@ import AdministrationEventsToolbar from './AdministrationEventsToolbar';
 function AdministrationEventsPage(): ReactElement {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { searchFilter } = useURLSearch();
-    const { sortOption } = useURLSort({ defaultSortOption, sortFields });
+    const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [isLoading, setIsLoading] = useState(false);
     const [events, setEvents] = useState<AdministrationEvent[]>([]);
@@ -93,7 +93,7 @@ function AdministrationEventsPage(): ReactElement {
                             setPage={setPage}
                             setPerPage={setPerPage}
                         />
-                        <AdministrationEventsTable events={events} />
+                        <AdministrationEventsTable events={events} getSortParams={getSortParams} />
                     </>
                 )}
             </PageSection>
