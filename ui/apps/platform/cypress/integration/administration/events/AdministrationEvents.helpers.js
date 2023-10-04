@@ -43,7 +43,7 @@ export function visitAdministrationEvents(staticResponseMap) {
 export function visitAdministrationEventFromTableRow(index0, staticResponseMap) {
     interactAndWaitForResponses(
         () => {
-            cy.get(`tbody tr:nth-child(${index0 + 1}) td[data-label="Level"] a`).click();
+            cy.get(`tbody tr:nth-child(${index0 + 1}) td[data-label="Domain"] a`).click();
         },
         routeMatcherMapForAdministationEvent,
         staticResponseMap

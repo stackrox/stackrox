@@ -138,6 +138,7 @@ function DeliveryDestinationsDetails({
                     emailSubject={selectedEmailSubject}
                     emailBody={selectedEmailBody}
                     defaultEmailSubject={defaultSelectedEmailSubject}
+                    reportParameters={formValues.reportParameters}
                 />
             </Modal>
         </>

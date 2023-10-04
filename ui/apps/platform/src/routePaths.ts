@@ -74,6 +74,23 @@ export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
 
+// Given an array of feature flags, higher-order functions return true or false based on
+// whether all feature flags are enabled or disabled
+
+type FeatureFlagPredicate = (isFeatureFlagEnabled: IsFeatureFlagEnabled) => boolean;
+
+export function allEnabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => isFeatureFlagEnabled(featureFlag));
+    };
+}
+
+export function allDisabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => !isFeatureFlagEnabled(featureFlag));
+    };
+}
+
 // Compose resourceAccessRequirements from resource names and predicates.
 
 type ResourcePredicate = (hasReadAccess: HasReadAccess) => boolean;
@@ -88,7 +105,7 @@ function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) 
     return hasReadAccess(resourceItem);
 }
 
-// Given array or resource names, higher-order functions return predicate function.
+// Given array of resource names, higher-order functions return predicate function.
 // You can also compose every with some, if requirements ever become so complicated.
 
 export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
@@ -113,7 +130,7 @@ export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
 ];
 
 type RouteRequirements = {
-    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    featureFlagRequirements?: FeatureFlagPredicate;
     resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
@@ -160,7 +177,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Access']),
     },
     'administration-events': {
-        featureFlagDependency: ['ROX_ADMINISTRATION_EVENTS'],
+        featureFlagRequirements: allEnabled(['ROX_ADMINISTRATION_EVENTS']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     apidocs: {
@@ -172,7 +189,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
-        featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
+        featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     clusters: {
@@ -200,7 +217,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-enhanced': {
-        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
@@ -225,7 +242,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource([]),
     },
     'deferral-configuration': {
-        featureFlagDependency: ['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     integrations: {
@@ -279,11 +296,12 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/reports': {
-        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     // Reports must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/reports': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
@@ -305,7 +323,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'workload-cves': {
-        featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
     },
 };
@@ -319,19 +337,15 @@ export function isRouteEnabled(
     { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
     routeKey: RouteKey
 ) {
-    const { featureFlagDependency, resourceAccessRequirements } = routeRequirementsMap[routeKey];
+    const { featureFlagRequirements, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
-    if (Array.isArray(featureFlagDependency)) {
-        if (
-            !featureFlagDependency.every((featureFlagEnvVar) =>
-                isFeatureFlagEnabled(featureFlagEnvVar)
-            )
-        ) {
-            return false;
-        }
-    }
+    const areFeatureFlagRequirementsMet = featureFlagRequirements
+        ? featureFlagRequirements(isFeatureFlagEnabled)
+        : true;
 
-    return resourceAccessRequirements(hasReadAccess);
+    const areResourceAccessRequirementsMet = resourceAccessRequirements(hasReadAccess);
+
+    return areFeatureFlagRequirementsMet && areResourceAccessRequirementsMet;
 }
 
 /**

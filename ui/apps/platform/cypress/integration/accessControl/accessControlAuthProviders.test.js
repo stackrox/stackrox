@@ -4,6 +4,7 @@ import updateMinimumAccessRoleRequest from '../../fixtures/auth/updateMinimumAcc
 
 import withAuth from '../../helpers/basicAuth';
 import { assertCannotFindThePage } from '../../helpers/visit';
+import { checkInviteUsersModal } from '../../helpers/inviteUsers';
 
 import {
     assertAccessControlEntitiesPage,
@@ -18,6 +19,7 @@ import {
     clickRowActionMenuItemInTable,
     groupsAlias,
     groupsBatchAliasForPOST,
+    rolesAlias,
     saveCreatedAuthProvider,
     saveUpdatedAuthProvider,
     visitAccessControlEntities,
@@ -409,5 +411,25 @@ describe('Access Control Auth providers', () => {
         visitAccessControlEntity(entitiesKey, entityId);
 
         assertAccessControlEntityDoesNotExist(entitiesKey);
+    });
+});
+
+describe('Invite users', () => {
+    withAuth();
+
+    it('should have a trigger for opening the Invite users modal in the Auth Providers table header', () => {
+        const staticResponseMap = {
+            [authProvidersAlias]: {
+                fixture: 'auth/authProviders-id1-id3.json',
+            },
+            [rolesAlias]: {
+                fixture: 'auth/roles.json',
+            },
+        };
+        visitAccessControlEntities(entitiesKey, staticResponseMap);
+
+        cy.get('button:contains("Invite users")').click();
+
+        checkInviteUsersModal();
     });
 });
