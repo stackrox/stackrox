@@ -14,9 +14,7 @@ export function fetchAPITokens() {
 }
 
 export function fetchAllowedRoles() {
-    return axios.get(`${url}/generate/allowed-roles`).then((response) => ({
-        response: response.data,
-    }));
+    return axios.get(`${url}/generate/allowed-roles`).then((response) => response.data.roles);
 }
 
 export function generateAPIToken(data) {
