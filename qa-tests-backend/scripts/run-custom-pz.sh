@@ -83,19 +83,16 @@ test_custom() {
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
     STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest")
-    STACKROX_TESTNAMES+=("AttemptedAlertsTest" "AuditLogAlertsTest" "AuthServiceTest" "AutocompleteTest")
-    STACKROX_TESTNAMES+=("CertExpiryTest" "CertRotationTest" "ClusterInitBundleTest" "ClustersTest")
-    STACKROX_TESTNAMES+=("DeploymentEventGraphQLTest" "DiagnosticBundleTest")
-    #STACKROX_TESTNAMES+=("Enforcement")
-    STACKROX_TESTNAMES+=("GlobalSearch" "GroupsTest")
-    STACKROX_TESTNAMES+=("IntegrationHealthTest")
-    STACKROX_TESTNAMES+=("K8sRbacTest")
-    STACKROX_TESTNAMES+=("NetworkBaselineTest" "NetworkSimulator" "NodeInventoryTest")
-    STACKROX_TESTNAMES+=("PaginationTest" "ProcessesListeningOnPortsTest")
-    STACKROX_TESTNAMES+=("RbacAuthTest" "RuntimePolicyTest" "RuntimeViolationLifecycleTest")
-    STACKROX_TESTNAMES+=("SecretsTest" "SummaryTest")
-    STACKROX_TESTNAMES+=("TLSChallengeTest")
-    STACKROX_TESTNAMES+=("VulnMgmtSACTest" "VulnMgmtTest" "VulnMgmtWorkflowTest")
+    STACKROX_TESTNAMES+=("AdmissionControllerTest")
+    STACKROX_TESTNAMES+=("ComplianceTest" "CSVTest")
+    STACKROX_TESTNAMES+=("DeploymentTest")
+    STACKROX_TESTNAMES+=("Enforcement" "ExternalNetworkSourcesTest")
+    STACKROX_TESTNAMES+=("IntegrationsTest")
+    STACKROX_TESTNAMES+=("NetworkFlowTest")
+    STACKROX_TESTNAMES+=("RiskTest" "RoutesTest")
+    STACKROX_TESTNAMES+=("SACTest")
+    STACKROX_TESTNAMES+=("UpgradesTest")
+    STACKROX_TESTNAMES+=("VulnScanWithGraphQLTest")
 
     #Initialize variables
     interval_sec=20
