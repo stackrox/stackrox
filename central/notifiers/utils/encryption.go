@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	encryptionKeyFile = "/run/secrets/stackrox.io/notifiers/enc-key"
+	encryptionKeyFile = "/run/secrets/stackrox.io/central-encryption-key/encryption-key"
 )
 
-// GetNotifierSecretEncryptionKey returns the key for encryptiong/decrypting notifier secrets
+// GetNotifierSecretEncryptionKey returns the key for encrypting/decrypting notifier secrets
 func GetNotifierSecretEncryptionKey() (string, error) {
 	key, err := os.ReadFile(encryptionKeyFile)
 	if err != nil {

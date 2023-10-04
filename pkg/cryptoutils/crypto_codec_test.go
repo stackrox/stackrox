@@ -1,4 +1,4 @@
-package crypto
+package cryptoutils
 
 import (
 	"encoding/base64"
@@ -8,15 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEncryptionDecryption(t *testing.T) {
+func TestGCMEncryptionDecryption(t *testing.T) {
 	// Test string encryption/decryption
 	originalText := "lorem ipsum dolor sit amet"
 	keyString := base64.StdEncoding.EncodeToString([]byte("AES256Key-32Characters1234567890"))
+	codec := NewGCMCryptoCodec()
 
-	cryptoText, err := EncryptAESGCM(keyString, originalText)
+	cryptoText, err := codec.Encrypt(keyString, originalText)
 	assert.NoError(t, err)
 
-	decryptedText, err := DecryptAESGCM(keyString, cryptoText)
+	decryptedText, err := codec.Decrypt(keyString, cryptoText)
 	assert.NoError(t, err)
 	assert.Equal(t, originalText, decryptedText)
 
@@ -29,13 +30,14 @@ func TestEncryptionDecryption(t *testing.T) {
 	assert.NoError(t, err)
 	marshalledString := string(marshalled)
 
-	cryptoText, err = EncryptAESGCM(keyString, marshalledString)
+	cryptoText, err = codec.Encrypt(keyString, marshalledString)
 	assert.NoError(t, err)
 
-	decryptedText, err = DecryptAESGCM(keyString, cryptoText)
+	decryptedText, err = codec.Decrypt(keyString, cryptoText)
 	assert.NoError(t, err)
 	decryptedBytes := []byte(decryptedText)
 	decryptedCreds := &storage.AWSSecurityHub_Credentials{}
-	decryptedCreds.Unmarshal(decryptedBytes)
+	err = decryptedCreds.Unmarshal(decryptedBytes)
+	assert.NoError(t, err)
 	assert.Equal(t, originalCreds, decryptedCreds)
 }
