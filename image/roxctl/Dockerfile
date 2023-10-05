@@ -4,8 +4,10 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# TODO: if git fetch fails, check if privileges/file owners are OK
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
+    # We could add tag fetching to: https://github.com/redhat-appstudio/build-definitions/blob/main/task/git-clone/0.1/git-clone.yaml
+    # TODO: if git fetch fails, check if privileges/file owners are OK
+    # TODO: this prevents hermetic builds
     git fetch --tags --force && \
     mkdir -p image/bin
 
@@ -18,6 +20,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as app
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
+# TODO: this prevents hermetic builds
 RUN microdnf upgrade -y --nobest && \
     microdnf clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
@@ -27,13 +30,14 @@ LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     name="rhacs-roxctl-rhel8" \
     maintainer="Red Hat, Inc." \
+    # These labels are added to override the base image values.
     description="The CLI for ACS" \
     io.k8s.description="The CLI for ACS" \
     io.k8s.display-name="roxctl" \
-    io.openshift.tags="4.2.x-275-g1e681e191b" \
+    io.openshift.tags="rhacs roxctl" \
     summary="The CLI for ACS"
 
-    # TODO: what are these for?
+    # TODO: what are these for & if they're required, how can we ?
     # version="${CI_VERSION}" \
     # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \
     # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
