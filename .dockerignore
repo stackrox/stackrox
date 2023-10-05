@@ -2,10 +2,8 @@
 # TODO: separate .dockerignore for RHTAP?
 # /.git/ <- required to pass .git to the roxctl container for avoiding "Malformed status.sh output line STABLE_GIT_SHORT_SHA"
 /bin/
-/image/bin/*
-!/image/bin/.gitignore
-/image/rhel/bin/*
-!/image/rhel/bin/.gitignore
+/image/bin/
+/image/rhel/bin/
 /linux-gocache/
 /operator/*/bin/
-# /qa-tests-backend/ <- this would create a diff, causing `make tag` to add the "-dirty" suffix
+/qa-tests-backend/
