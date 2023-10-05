@@ -33,6 +33,7 @@ LABEL \
     io.openshift.tags="4.2.x-275-g1e681e191b" \
     summary="The CLI for ACS"
 
+    # TODO: what are these for?
     # version="${CI_VERSION}" \
     # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \
     # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
