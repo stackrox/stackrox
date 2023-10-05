@@ -35,7 +35,7 @@ message Audit {
             string endpoint             = 1;
             string method               = 2;
             google.protobuf.Any payload = 3;
-            string source_host          = 4;
+            string source_ip            = 4;
         }
         google.protobuf.Timestamp time          = 1;
         RequestStatus             status        = 2;
