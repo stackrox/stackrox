@@ -8,4 +8,4 @@
 !/image/rhel/bin/.gitignore
 /linux-gocache/
 /operator/*/bin/
-/qa-tests-backend/
+# /qa-tests-backend/
