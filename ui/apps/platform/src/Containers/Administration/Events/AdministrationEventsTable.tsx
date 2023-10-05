@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { CodeBlock, Flex } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -12,17 +11,27 @@ import {
 } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
-import { AdministrationEvent } from 'services/AdministrationEventsService';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    AdministrationEvent,
+    lastOccurredAtField,
+    numOccurrencesField,
+} from 'services/AdministrationEventsService';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
+import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
 import './AdministrationEventsTable.css';
 
 export type AdministrationEventsTableProps = {
     events: AdministrationEvent[];
+    getSortParams: UseURLSortResult['getSortParams'];
 };
 
-function AdministrationEventsTable({ events }: AdministrationEventsTableProps): ReactElement {
+function AdministrationEventsTable({
+    events,
+    getSortParams,
+}: AdministrationEventsTableProps): ReactElement {
     return (
         <>
             <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
@@ -31,21 +40,12 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                         <Th>Domain</Th>
                         <Th modifier="nowrap">Resource type</Th>
                         <Th>Level</Th>
-                        <Th>Event last occurred at</Th>
-                        <Th className="pf-u-text-align-right">Count</Th>
+                        <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
+                        <Th sort={getSortParams(numOccurrencesField)}>Count</Th>
                     </Tr>
                 </Thead>
                 {events.map((event) => {
-                    const {
-                        domain,
-                        hint,
-                        id,
-                        lastOccurredAt,
-                        level,
-                        message,
-                        numOccurrences,
-                        resource,
-                    } = event;
+                    const { domain, id, lastOccurredAt, level, numOccurrences, resource } = event;
                     const { type: resourceType } = resource;
 
                     return (
@@ -79,16 +79,7 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                             <Tr>
                                 <Td colSpan={5}>
                                     <ExpandableRowContent>
-                                        <Flex direction={{ default: 'column' }}>
-                                            {hint && (
-                                                <div>
-                                                    {hint.split('\n').map((line) => (
-                                                        <p key={line}>{line}</p>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <CodeBlock>{message}</CodeBlock>
-                                        </Flex>
+                                        <AdministrationEventHintMessage event={event} />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

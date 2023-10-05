@@ -928,6 +928,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labelDefault: String!",
 		"labelKey: String!",
 		"name: String!",
+		"notifierSecret: String!",
 		"pagerduty: PagerDuty",
 		"splunk: Splunk",
 		"sumologic: SumoLogic",
@@ -10564,6 +10565,11 @@ func (resolver *notifierResolver) LabelKey(ctx context.Context) string {
 
 func (resolver *notifierResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *notifierResolver) NotifierSecret(ctx context.Context) string {
+	value := resolver.data.GetNotifierSecret()
 	return value
 }
 
