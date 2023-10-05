@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
@@ -30,12 +31,13 @@ import (
 type centralCommunicationSuite struct {
 	suite.Suite
 
-	receivedMessages chan *central.MsgFromSensor
-	conn             *grpc.ClientConn
-	closeF           func()
-	mockHandler      *configMocks.MockHandler
-	mockDetector     *mocksDetector.MockDetector
-	fakeCentral      *centralDebug.FakeService
+	receivedMessages     chan *central.MsgFromSensor
+	conn                 *grpc.ClientConn
+	centralCommunication CentralCommunication
+	closeF               func()
+	mockHandler          *configMocks.MockHandler
+	mockDetector         *mocksDetector.MockDetector
+	fakeCentral          *centralDebug.FakeService
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
@@ -94,6 +96,14 @@ func (c *centralCommunicationSuite) Test_CentralCommunication_Start() {
 }
 
 func (c *centralCommunicationSuite) Test_ClientReconciliation() {
+	dep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central"})
+	dep2 := givenDeployment(fixtureconsts.Deployment2, "dep2", map[string]string{"app": "sensor"})
+	updatedDep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central_updated"})
+	hasher := hash.NewHasher()
+	hash1, _ := hasher.HashEvent(dep1.GetEvent())
+	updatedHash1, _ := hasher.HashEvent(updatedDep1.GetEvent())
+	setSensorHash(dep1, hash1)
+	setSensorHash(updatedDep1, updatedHash1)
 	testCases := map[string]struct {
 		deduperState           map[string]uint64
 		componentMessages      []*central.MsgFromSensor
@@ -102,29 +112,22 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	}{
 		"Deduper hash hit": {
 			deduperState: map[string]uint64{
-				deploymentKey(fixtureconsts.Deployment1): 1111,
+				deploymentKey(fixtureconsts.Deployment1): hash1,
 			},
-			componentMessages: []*central.MsgFromSensor{
-				givenDeployment(fixtureconsts.Deployment1, "dep1", "1111"),
-			},
+			componentMessages: []*central.MsgFromSensor{dep1},
 			neverMatchesState: anyDeploymentSent,
 		},
 		"All deployments sent": {
-			deduperState: map[string]uint64{},
-			componentMessages: []*central.MsgFromSensor{
-				givenDeployment(fixtureconsts.Deployment1, "dep1", "1111"),
-				givenDeployment(fixtureconsts.Deployment2, "dep2", "2222"),
-			},
+			deduperState:           map[string]uint64{},
+			componentMessages:      []*central.MsgFromSensor{dep1, dep2},
 			eventuallyMatchesState: deploymentsSentCount(2),
 		},
 		"Updated deployment": {
 			deduperState: map[string]uint64{
-				deploymentKey(fixtureconsts.Deployment1): 1111,
+				deploymentKey(fixtureconsts.Deployment1): hash1,
 			},
-			componentMessages: []*central.MsgFromSensor{
-				givenDeployment(fixtureconsts.Deployment1, "dep1", "1212"), // hash was updated
-			},
-			eventuallyMatchesState: deploymentIDSent(fixtureconsts.Deployment1),
+			componentMessages:      []*central.MsgFromSensor{updatedDep1},
+			eventuallyMatchesState: deploymentIDSent(fixtureconsts.Deployment1, updatedHash1),
 		},
 	}
 
@@ -152,11 +155,11 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	}
 }
 
-func deploymentIDSent(id string) func([]*central.MsgFromSensor) bool {
+func deploymentIDSent(id string, hash uint64) func([]*central.MsgFromSensor) bool {
 	return func(messages []*central.MsgFromSensor) bool {
 		for _, m := range messages {
 			if dep := m.GetEvent().GetDeployment(); dep != nil {
-				if dep.GetId() == id {
+				if dep.GetId() == id && m.GetEvent().GetSensorHash() == hash {
 					return true
 				}
 			}
@@ -227,34 +230,50 @@ func (c *centralCommunicationSuite) serverReconciliationFakeCentral() *centralDe
 
 func (c *centralCommunicationSuite) givenCentralCommunication() chan *message.ExpiringMessage {
 	componentMessages := make(chan *message.ExpiringMessage, 10)
+	c.centralCommunication = c.startCentralCommunication(componentMessages)
+	return componentMessages
+}
+
+func (c *centralCommunicationSuite) startCentralCommunication(componentMessages chan *message.ExpiringMessage) CentralCommunication {
 	comms := NewCentralCommunication(true, false, NewFakeSensorComponent(componentMessages))
 
 	reachable := concurrency.Flag{}
 	// This implicitly starts a goroutine
 	comms.Start(c.conn, &reachable, c.mockHandler, c.mockDetector)
-
-	return componentMessages
+	return comms
 }
 
-func givenDeployment(uuid, name, hash string) *central.MsgFromSensor {
+func givenDeployment(uuid, name string, labels map[string]string) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		HashKey:           "",
-		DedupeKey:         "", // TODO: check if these are the properties I need to use in deduper
+		DedupeKey:         "",
 		ProcessingAttempt: 0,
 		Msg: &central.MsgFromSensor_Event{
+			// The hash in the gRPC deduper is constructed by the central.SensorEvent struct
+			// Any changes in this struct will prevent the deduper from filtering the message
 			Event: &central.SensorEvent{
-				Id:              "",
-				Action:          0,
-				Timing:          nil,
-				SensorHashOneof: nil, // TODO: or maybe this hash?
+				Id:     uuid,
+				Action: 0,
+				Timing: nil,
+				// SensorHash stores the SensorEvent hash. It is set later
+				SensorHashOneof: nil,
 				Resource: &central.SensorEvent_Deployment{
 					Deployment: &storage.Deployment{
-						Id:   uuid,
-						Name: name,
+						Id:     uuid,
+						Name:   name,
+						Labels: labels,
 					},
 				},
 			},
 		},
+	}
+}
+
+func setSensorHash(sensorMsg *central.MsgFromSensor, sensorHash uint64) {
+	if event := sensorMsg.GetEvent(); event != nil {
+		event.SensorHashOneof = &central.SensorEvent_SensorHash{
+			SensorHash: sensorHash,
+		}
 	}
 }
 
