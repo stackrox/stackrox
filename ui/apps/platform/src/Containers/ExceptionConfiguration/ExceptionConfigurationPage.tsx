@@ -5,16 +5,16 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import VulnerabilitiesConfiguration from './VulnerabilitiesConfiguration';
 
-const deferralConfigurationCategories = ['Vulnerabilities'] as const;
+const exceptionConfigurationCategories = ['Vulnerabilities'] as const;
 
-function DeferralConfigurationPage() {
-    const [category, setCategory] = useURLStringUnion('category', deferralConfigurationCategories);
+function ExceptionConfigurationPage() {
+    const [category, setCategory] = useURLStringUnion('category', exceptionConfigurationCategories);
 
     return (
         <>
-            <PageTitle title="Deferral configuration" />
+            <PageTitle title="Exception configuration" />
             <PageSection variant="light">
-                <Title headingLevel="h1">Deferral configuration</Title>
+                <Title headingLevel="h1">Exception configuration</Title>
             </PageSection>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Tabs
@@ -32,4 +32,4 @@ function DeferralConfigurationPage() {
     );
 }
 
-export default DeferralConfigurationPage;
+export default ExceptionConfigurationPage;
