@@ -100,7 +100,8 @@ class RoutesTest extends BaseSpecification {
 
         deploymentName                    | autoExposeAsService | exposeAsService | loadBalancer
         "server-auto-exposure-cluster-ip" | true                | true            | false
-        "server-auto-exposure-lb"         | true                | true            | true
+        "server-auto-exposure-lb"         | true                | true            |
+                (!(Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
         "server-exposure-cluster-ip"      | false               | true            | false
         "server-exposure-lb"              | false               | true            | true
         "server-no-exposure"              | false               | false           | false
