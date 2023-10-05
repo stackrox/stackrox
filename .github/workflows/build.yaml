@@ -78,13 +78,13 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -110,13 +110,13 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -146,13 +146,13 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -199,13 +199,13 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -285,13 +285,13 @@ jobs:
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
 
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -442,13 +442,13 @@ jobs:
           echo "ROX_PRODUCT_BRANDING=${brand}"
         } >> "$GITHUB_ENV"
 
-    - uses: ./.github/actions/job-preamble
-
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
 
     - name: Checkout submodules
       run: |
@@ -504,13 +504,13 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -571,13 +571,13 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-    - uses: ./.github/actions/job-preamble
-
     - name: Checkout
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -624,13 +624,13 @@ jobs:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
     steps:
-      - uses: ./.github/actions/job-preamble
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
 
       - name: Checkout submodules
         run: |
