@@ -24,7 +24,13 @@ RUN microdnf upgrade -y --nobest && \
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     name="rhacs-roxctl-rhel8" \
-    maintainer="Red Hat, Inc."
+    maintainer="Red Hat, Inc." \
+    description="The CLI for ACS" \
+    io.k8s.description="The CLI for ACS" \
+    io.k8s.display-name="roxctl" \
+    io.openshift.tags="4.2.x-275-g1e681e191b" \
+    summary="The CLI for ACS"
+
     # version="${CI_VERSION}" \
     # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \
     # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
