@@ -130,6 +130,7 @@ import (
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
+	scannerV4DefinitionsHandler "github.com/stackrox/rox/central/scannerv4definitions/handler"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -824,6 +825,27 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
+			EnableAudit:   true,
+		},
+	)
+
+	scannerV4DefinitionsRoute := "/api/extensions/scanner-v4/definitions"
+	utils.CrashOnError(err)
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route: scannerV4DefinitionsRoute,
+			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
+				or.SensorOr(
+					or.ScannerOr(
+						user.With(permissions.View(resources.Administration)))): {
+					routes.RPCNameForHTTP(scannerV4DefinitionsRoute, http.MethodGet),
+				},
+				// TODO: allow customer to upload vuln bundle in offline mode: ROX-20520
+				user.With(permissions.Modify(resources.Administration)): {
+					routes.RPCNameForHTTP(scannerV4DefinitionsRoute, http.MethodPost),
+				},
+			}),
+			ServerHandler: definitionsFileGzipHandler(scannerV4DefinitionsHandler.Singleton()),
 			EnableAudit:   true,
 		},
 	)

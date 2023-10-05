@@ -22,7 +22,6 @@ import (
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
 // and then outputting the result as a zstd-compressed file with .ztd extension
 func Export(ctx context.Context, outputDir string) error {
-
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
 		return err
