@@ -1,8 +1,14 @@
 package repomapping
 
 import (
+	"archive/zip"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
+
+	"path/filepath"
 
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -77,8 +83,118 @@ func (u *repoMappingUpdater) update() {
 }
 
 func (u *repoMappingUpdater) doUpdate() error {
-	req, err := http.NewRequest(http.MethodGet, u.downloadURL, nil)
-	if err != nil {
-		return errors.Wrap(err, "constructing request")
+
+	// Downloading known files A.json and B.json
+	for _, file := range []string{container2Repo, repo2Cpe} {
+		err := downloadFromURL(baseURL+file, filePath, file)
+		if err != nil {
+			return fmt.Errorf("Failed to download %s: %v\n", file, err)
+		} else {
+			log.Infof("Successfully downloaded %s\n", file)
+		}
 	}
+	return nil
+}
+
+func addFileToZip(zipWriter *zip.Writer, filename string) error {
+	fileToZip, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeErr := fileToZip.Close()
+		if closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	// Get the file information
+	info, err := fileToZip.Stat()
+	if err != nil {
+		return err
+	}
+
+	// Create a header based on the file information
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+	header.Method = zip.Deflate
+
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(writer, fileToZip)
+	return err
+}
+
+// err := archiveFiles("mydir", "mydir/archive.zip")
+//
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+func archiveFiles(dirPath, zipFilePath string, files []string) error {
+	if files == nil || len(files) < 1 {
+		return fmt.Errorf("error: no repository mapping files available to archive")
+	}
+	// Create a new zip archive.
+	outFile, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	zipWriter := zip.NewWriter(outFile)
+	defer zipWriter.Close()
+
+	for _, file := range files {
+		fileName := filepath.Join(dirPath, file)
+		err = addFileToZip(zipWriter, fileName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func downloadFromURL(url, dir, filename string) error {
+	const maxRetries = 3
+	var lastErr error
+	var statusCode int
+
+	for i := 0; i < maxRetries; i++ {
+		statusCode, lastErr = downloadAttempt(url, dir, filename)
+		if lastErr == nil && statusCode == http.StatusOK { // Success
+			return nil
+		} else {
+			time.Sleep(time.Second * 3)
+			continue
+		}
+
+		break
+	}
+	return lastErr
+}
+
+func downloadAttempt(url, dir, filename string) (int, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err // 0 as a placeholder since the status is unknown when there's an error
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return resp.StatusCode, fmt.Errorf("failed to download %s, status code: %d", url, resp.StatusCode)
+	}
+
+	out, err := os.Create(filepath.Join(dir, filename))
+	if err != nil {
+		return resp.StatusCode, err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return resp.StatusCode, err
 }
