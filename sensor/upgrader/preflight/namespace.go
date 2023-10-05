@@ -3,15 +3,16 @@ package preflight
 import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
-// Resources created in system namespaces for OpenShift monitoring.
-var resourceExceptions = map[string][]string{
-	namespaces.KubeSystem:          {"RoleBinding"},
-	namespaces.OpenShiftMonitoring: {"ServiceMonitor", "PrometheusRule"},
+// Resources created in namespaces other than common.Namespace.
+var resourceExceptions = map[string]set.FrozenStringSet{
+	namespaces.KubeSystem:          set.NewFrozenStringSet("RoleBinding"),
+	namespaces.OpenShiftMonitoring: set.NewFrozenStringSet("ServiceMonitor", "PrometheusRule"),
 }
 
 type namespaceCheck struct{}
@@ -22,10 +23,8 @@ func (namespaceCheck) Name() string {
 
 func matchesException(resource *k8sobjects.ObjectRef) bool {
 	if kinds, ok := resourceExceptions[resource.Namespace]; ok {
-		for _, k := range kinds {
-			if k == resource.GVK.Kind {
-				return true
-			}
+		if kinds.Contains(resource.GVK.Kind) {
+			return true
 		}
 	}
 	return false
