@@ -27,10 +27,6 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
-    - name: Check checkout
-      run: |
-        git log
-
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -125,10 +121,6 @@ jobs:
       uses: actions/checkout@v4
 
     - uses: ./.github/actions/job-preamble
-
-    - name: Check checkout
-      run: |
-        git log
 
     - name: Create combined mono repo lock file
       uses: ./.github/actions/create-concatenated-ui-monorepo-lock
