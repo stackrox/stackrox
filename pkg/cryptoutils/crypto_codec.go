@@ -90,5 +90,5 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s", decrypted), nil
+	return string(decrypted), nil
 }
