@@ -31,11 +31,11 @@ import * as yup from 'yup';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { VulnerabilitiesDeferralConfig } from 'services/DeferralConfigService';
+import { VulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import usePermissions from 'hooks/usePermissions';
 
-import { useVulnerabilitiesDeferralConfig } from './useVulnerabilitiesDeferralConfig';
+import { useVulnerabilitiesExceptionConfig } from './useVulnerabilitiesExceptionConfig';
 
 type BaseSettingProps = {
     fieldId: string;
@@ -121,7 +121,7 @@ function BooleanSetting({
     );
 }
 
-function getDefaultConfig(): VulnerabilitiesDeferralConfig {
+function getDefaultConfig(): VulnerabilitiesExceptionConfig {
     return {
         expiryOptions: {
             dayOptions: [
@@ -195,8 +195,8 @@ const validationSchema = yup.object({
 });
 
 function ensureMinimumDayOptions(
-    config: VulnerabilitiesDeferralConfig
-): VulnerabilitiesDeferralConfig {
+    config: VulnerabilitiesExceptionConfig
+): VulnerabilitiesExceptionConfig {
     const minimumLength = 4;
     const dayOptions = [...config.expiryOptions.dayOptions];
     while (dayOptions.length < minimumLength) {
@@ -216,14 +216,14 @@ function VulnerabilitiesConfiguration() {
     const { toasts, addToast, removeToast } = useToasts();
 
     const { config, isConfigLoading, isUpdateInProgress, configLoadError, updateConfig } =
-        useVulnerabilitiesDeferralConfig();
+        useVulnerabilitiesExceptionConfig();
 
-    const deferralConfig = ensureMinimumDayOptions(config ?? getDefaultConfig());
+    const exceptionConfig = ensureMinimumDayOptions(config ?? getDefaultConfig());
 
     const { values, handleChange, errors, submitForm } = useFormik({
         enableReinitialize: true,
         // Ensure that there are at least 4 day options in case this array was set to zero via the API
-        initialValues: deferralConfig,
+        initialValues: exceptionConfig,
         validationSchema,
         onSubmit: (formValues) =>
             updateConfig(formValues, {
@@ -243,7 +243,7 @@ function VulnerabilitiesConfiguration() {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Administration');
 
-    const isConfigDirty = !isEqual(deferralConfig, values);
+    const isConfigDirty = !isEqual(exceptionConfig, values);
     const hasFormError = Object.keys(errors).length > 0;
 
     const { dayOptions, fixableCveOptions, customDate } = values.expiryOptions;
@@ -253,7 +253,7 @@ function VulnerabilitiesConfiguration() {
             <div className="pf-u-py-md pf-u-px-md pf-u-px-lg-on-xl">
                 <Split className="pf-u-align-items-center">
                     <SplitItem isFilled>
-                        <Text>Configure deferral behavior for vulnerabilities</Text>
+                        <Text>Configure exception behavior for vulnerabilities</Text>
                     </SplitItem>
                     {hasWriteAccessForPage && (
                         <SplitItem>
@@ -271,16 +271,16 @@ function VulnerabilitiesConfiguration() {
             </div>
             <Divider component="div" />
             <PageSection variant="light" component="div">
-                <Title headingLevel="h2">Configure deferral times</Title>
+                <Title headingLevel="h2">Configure exception times</Title>
                 {isConfigLoading && (
                     <Bullseye>
-                        <Spinner aria-label="Loading current vulnerability deferral configuration" />
+                        <Spinner aria-label="Loading current vulnerability exception configuration" />
                     </Bullseye>
                 )}
                 {configLoadError && (
                     <Bullseye>
                         <EmptyStateTemplate
-                            title="Error loading vulnerability deferral configuration"
+                            title="Error loading vulnerability exception configuration"
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
                             iconClassName="pf-u-danger-color-100"
