@@ -47,6 +47,7 @@ type centralCommunicationImpl struct {
 	isReconnect          bool
 	clientReconciliation bool
 	initialDeduperState  map[string]uint64
+	syncTimeout          time.Duration
 }
 
 var (
@@ -260,19 +261,17 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialDeduperSync(stream)
+	return s.initialDeduperSync(stream, s.syncTimeout)
 }
 
-func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
-	// If client reconciliation is disabled or cental does not support it, don't expect a deduper sync message to arrive
+func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient, timeout time.Duration) error {
+	// If client reconciliation is disabled or central does not support it, don't expect a deduper sync message to arrive
 	if !s.clientReconcile || !centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) {
 		log.Info("Skipping client reconciliation. Sensor will not wait for deduper state")
 		return nil
 	}
 	log.Info("Waiting for deduper state from Central")
-	// TODO: stop waiting for initial deduper state if it takes too long
 	done := make(chan struct{})
-	timeout := 10 * time.Second
 	var err error
 	var msg *central.MsgToSensor
 	go func() {
