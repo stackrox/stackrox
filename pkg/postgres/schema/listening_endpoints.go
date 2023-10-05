@@ -60,5 +60,6 @@ type ListeningEndpoints struct {
 	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
 	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
+	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

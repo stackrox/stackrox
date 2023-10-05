@@ -132,6 +132,7 @@ type processListeningIndicator struct {
 	key      processUniqueKey
 	port     uint16
 	protocol storage.L4Protocol
+	podUID   string
 }
 
 func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
@@ -146,6 +147,7 @@ func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.Proce
 			ProcessArgs:         i.key.process.processArgs,
 		},
 		DeploymentId: i.key.deploymentID,
+		PodUid:       i.podUID,
 	}
 
 	if ts != timestamp.InfiniteFuture {
@@ -576,6 +578,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		},
 		port:     ep.endpoint.IPAndPort.Port,
 		protocol: ep.endpoint.L4Proto.ToProtobuf(),
+		podUID:   container.PodUID,
 	}
 
 	processesListening[indicator] = status.lastSeen

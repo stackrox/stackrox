@@ -37,6 +37,7 @@ message ProcessListeningOnPortFromSensor {
     google.protobuf.Timestamp close_timestamp = 4;
     string cluster_id = 6;
     string deployment_id = 7;
+    string pod_uid = 8;
 }
 
 message ProcessListeningOnPortStorage {
@@ -60,4 +61,6 @@ message ProcessListeningOnPortStorage {
     ProcessIndicatorUniqueKey process = 7;
 
     string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
+
+    string pod_uid = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"index=hash,type(uuid)"'];
 }
