@@ -197,7 +197,7 @@ clean-certs:
 $(certs-d)/%/key.pem:
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(@D)
-	$(SILENT) 2>/dev/null openssl genpkey  \
+	$(SILENT) openssl genpkey  \
 	    -algorithm RSA \
 	    -out $@
 
@@ -214,7 +214,7 @@ $(certs-d)/ca/root.pem: $(certs-d)/ca/key.pem
 	    -key $< \
 	    -out $@
 
-# Generate a certicate signing request.
+# Generate a certificate signing request.
 #
 $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 	$(SILENT) openssl req \
@@ -225,17 +225,18 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 
 # Generate a certificate.
 #
+.PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
 	$(SILENT)cp $< $@
 
 $(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/ca/key.pem
 	@echo "+ $@"
-	$(SILENT) 2>/dev/null openssl x509 \
+	$(SILENT) openssl x509 \
 	    -req \
 	    -days 365 \
 	    -in $< \
-	    -CA $(@D)ca.pem \
+	    -CA $(@D)/ca.pem \
 	    -CAkey $(certs-d)/ca/key.pem \
 	    -CAcreateserial \
 	    -sha256 \
@@ -245,6 +246,7 @@ $(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/ca/k
 
 # Verify certs (lose sanity check).
 #
+.PRECIOUS: $(certs-d)/%/.verified
 $(certs-d)/%/.verified: $(certs-d)/%/cert.pem
 	$(SILENT) openssl verify \
 	    -CAfile $(@D)/ca.pem \
