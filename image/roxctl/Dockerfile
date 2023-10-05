@@ -1,3 +1,4 @@
+# TODO: can we follow tags?
 FROM registry.access.redhat.com/ubi8/go-toolset:1.19 as builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
@@ -16,6 +17,7 @@ ENV CI=1 GOFLAGS="" GOTAGS="release"
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
+# TODO: can we follow tags?
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as app
 
 COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
@@ -34,7 +36,7 @@ LABEL \
     description="The CLI for ACS" \
     io.k8s.description="The CLI for ACS" \
     io.k8s.display-name="roxctl" \
-    io.openshift.tags="rhacs roxctl" \
+    io.openshift.tags="rhacs,roxctl" \
     summary="The CLI for ACS"
 
     # TODO: what are these for & if they're required, how can we ?
