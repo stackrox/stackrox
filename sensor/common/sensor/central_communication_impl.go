@@ -278,9 +278,8 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 
 	if deduperState := msg.GetDeduperState(); deduperState == nil {
 		return errors.Wrapf(err, "expected deduper state to be sent but received: %T", msg.Msg)
-	} else {
-		s.initialDeduperState = deduperState.GetResourceHashes()
 	}
+	s.initialDeduperState = msg.GetDeduperState().GetResourceHashes()
 	return nil
 }
 
