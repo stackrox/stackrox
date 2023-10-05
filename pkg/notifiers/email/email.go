@@ -22,6 +22,8 @@ import (
 	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -48,6 +50,8 @@ type email struct {
 	mitreStore     mitreDS.AttackReadOnlyDataStore
 
 	notifier *storage.Notifier
+	codec    cryptoutils.CryptoCodec
+	creds    string
 }
 
 type plainAuthUnencrypted struct {
@@ -176,6 +180,7 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 		notifier:       notifier,
 		metadataGetter: metadataGetter,
 		mitreStore:     mitreStore,
+		codec:          cryptoutils.NewGCMCryptoCodec(),
 	}, nil
 }
 
@@ -296,6 +301,24 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 
 func (*email) Close(context.Context) error {
 	return nil
+}
+
+func (e *email) EncryptCredentials(key string) (string, error) {
+	if !env.EncNotifierCreds.BooleanSetting() {
+		e.creds = e.config.GetPassword()
+		return "", nil
+	}
+
+	encCreds, err := e.codec.Encrypt(key, e.notifier.GetEmail().GetPassword())
+	if err != nil {
+		return "", err
+	}
+	decCreds, err := e.codec.Decrypt(key, encCreds)
+	if err != nil {
+		return "", err
+	}
+	e.creds = decCreds
+	return encCreds, nil
 }
 
 // AlertNotify takes in an alert and generates the email.

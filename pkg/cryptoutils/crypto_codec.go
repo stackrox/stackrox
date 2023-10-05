@@ -14,11 +14,11 @@ const gcmNonceSizeBytes = 12
 type CryptoCodec interface {
 	// Encrypt encrypts the given text and returns the encrypted
 	// bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
-	Encrypt(keyString string, stringToEncrypt string) (string, error)
+	Encrypt(encodedKey string, stringToEncrypt string) (string, error)
 
 	// Decrypt decrypts the given base64 std encoded encrypted string
 	// and returns the decrypted bytes as string. The encryption key should be a base64 std encoded string.
-	Decrypt(keyString string, stringToDecrypt string) (string, error)
+	Decrypt(encodedKey string, stringToDecrypt string) (string, error)
 }
 
 // NewGCMCryptoCodec returns new CryptoCodec that can perform GCM encryption/decryption
@@ -34,8 +34,8 @@ type gcmCryptoCodecImpl struct {
 
 // Encrypt GCM encrypts the given text and returns the encrypted
 // bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
-func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string) (string, error) {
-	key, err := base64.StdEncoding.DecodeString(keyString)
+func (gcm *gcmCryptoCodecImpl) Encrypt(encodedKey string, stringToEncrypt string) (string, error) {
+	key, err := base64.StdEncoding.DecodeString(encodedKey)
 	if err != nil {
 		return "", err
 	}
@@ -63,8 +63,8 @@ func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string)
 
 // Decrypt decrypts the given base64 std encoded encrypted string
 // and returns the decrypted bytes as string. The encryption key should be a base64 std encoded string.
-func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string) (string, error) {
-	key, err := base64.StdEncoding.DecodeString(keyString)
+func (gcm *gcmCryptoCodecImpl) Decrypt(encodedKey string, stringToDecrypt string) (string, error) {
+	key, err := base64.StdEncoding.DecodeString(encodedKey)
 	if err != nil {
 		return "", err
 	}
