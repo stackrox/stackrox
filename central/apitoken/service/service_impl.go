@@ -28,11 +28,15 @@ var (
 		user.With(permissions.View(resources.Integration)): {
 			"/v1.APITokenService/GetAPIToken",
 			"/v1.APITokenService/GetAPITokens",
-			"/v1.APITokenService/GetAllowedTokenRoles",
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.APITokenService/GenerateToken",
 			"/v1.APITokenService/RevokeToken",
+		},
+		user.With(permissions.View(resources.Access), permissions.Modify(resources.Integration)): {
+			"/v1.APITokenService/GenerateToken",
+		},
+		user.With(permissions.View(resources.Access)): {
+			"/v1.APITokenService/GetAllowedTokenRoles",
 		},
 	})
 )
@@ -140,7 +144,7 @@ func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v
 		}
 	}
 	return &v1.GetAllowedTokenRolesResponse{
-		Roles: result,
+		RoleNames: result,
 	}, nil
 }
 

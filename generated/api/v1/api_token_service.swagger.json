@@ -274,7 +274,7 @@
     "v1GetAllowedTokenRolesResponse": {
       "type": "object",
       "properties": {
-        "roles": {
+        "roleNames": {
           "type": "array",
           "items": {
             "type": "string"

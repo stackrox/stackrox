@@ -73,7 +73,7 @@ function ApiTokenIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const { roles, isLoading: isRolesLoading } = useFetchRoles();
+    const { roleNames, isLoading: isRolesLoading } = useFetchRoles();
     const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
@@ -166,10 +166,10 @@ function ApiTokenIntegrationForm({
                                 isDisabled={!isEditable || isRolesLoading || isGenerated}
                                 placeholderText="Choose role..."
                             >
-                                {roles.map((role) => {
+                                {roleNames.map((roleName) => {
                                     return (
-                                        <SelectOption key={role} value={role}>
-                                            {role}
+                                        <SelectOption key={roleName} value={roleName}>
+                                            {roleName}
                                         </SelectOption>
                                     );
                                 })}

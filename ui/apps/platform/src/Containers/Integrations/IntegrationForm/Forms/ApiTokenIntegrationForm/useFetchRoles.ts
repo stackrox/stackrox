@@ -3,32 +3,32 @@ import { useEffect, useState } from 'react';
 import { fetchAllowedRoles } from 'services/APITokensService';
 
 export type UseRolesResult = {
-    roles: string[];
+    roleNames: string[];
     error: string | null;
     isLoading: boolean;
 };
 
 const defaultResult = {
-    roles: [],
+    roleNames: [],
     error: null,
     isLoading: false,
 };
 
-const useRoles = (): UseRolesResult => {
+const useAllowedRoles = (): UseRolesResult => {
     const [result, setResult] = useState<UseRolesResult>(defaultResult);
 
     useEffect(() => {
         setResult((prevResult) => ({ ...prevResult, isLoading: true }));
         fetchAllowedRoles()
-            .then((roles) => {
-                setResult({ roles, error: null, isLoading: false });
+            .then((roleNames) => {
+                setResult({ roleNames, error: null, isLoading: false });
             })
             .catch((error) => {
-                setResult({ roles: [], error, isLoading: false });
+                setResult({ roleNames: [], error, isLoading: false });
             });
     }, []);
 
     return result;
 };
 
-export default useRoles;
+export default useAllowedRoles;

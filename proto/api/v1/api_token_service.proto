@@ -34,7 +34,7 @@ message GetAPITokensResponse {
 }
 
 message GetAllowedTokenRolesResponse {
-    repeated string roles = 1;
+    repeated string roleNames = 1;
 }
 
 // APITokenService APIs can be used to manage API tokens.
