@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/logging"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
@@ -20,25 +19,25 @@ var (
 	log = logging.LoggerForModule()
 
 	deduperTypes = []any{
-		storage.NetworkPolicy{},
-		storage.Deployment{},
-		storage.Pod{},
-		storage.NamespaceMetadata{},
-		storage.Secret{},
-		storage.Node{},
-		storage.NodeInventory{},
-		storage.ServiceAccount{},
-		storage.K8SRole{},
-		storage.K8SRoleBinding{},
-		storage.ProcessIndicator{},
-		storage.ProviderMetadata{},
-		storage.OrchestratorMetadata{},
-		storage.ImageIntegration{},
-		storage.ComplianceOperatorCheckResult{},
-		storage.ComplianceOperatorProfile{},
-		storage.ComplianceOperatorRule{},
-		storage.ComplianceOperatorScanSettingBinding{},
-		storage.ComplianceOperatorScan{},
+		&central.SensorEvent_NetworkPolicy{},
+		&central.SensorEvent_Deployment{},
+		&central.SensorEvent_Pod{},
+		&central.SensorEvent_Namespace{},
+		&central.SensorEvent_Secret{},
+		&central.SensorEvent_Node{},
+		&central.SensorEvent_NodeInventory{},
+		&central.SensorEvent_ServiceAccount{},
+		&central.SensorEvent_Role{},
+		&central.SensorEvent_Binding{},
+		&central.SensorEvent_ProcessIndicator{},
+		&central.SensorEvent_ProviderMetadata{},
+		&central.SensorEvent_OrchestratorMetadata{},
+		&central.SensorEvent_ImageIntegration{},
+		&central.SensorEvent_ComplianceOperatorResult{},
+		&central.SensorEvent_ComplianceOperatorProfile{},
+		&central.SensorEvent_ComplianceOperatorRule{},
+		&central.SensorEvent_ComplianceOperatorScanSettingBinding{},
+		&central.SensorEvent_ComplianceOperatorScan{},
 	}
 )
 
