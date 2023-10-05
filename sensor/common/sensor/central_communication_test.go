@@ -250,13 +250,10 @@ func deploymentsSentCount(n int) func([]*central.MsgFromSensor) bool {
 		var count int
 		for _, m := range messages {
 			if m.GetEvent().GetDeployment() != nil {
-				count += 1
+				count++
 			}
 		}
-		if count == n {
-			return true
-		}
-		return false
+		return count == n
 	}
 }
 
