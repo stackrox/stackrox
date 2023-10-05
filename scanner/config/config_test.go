@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,13 +44,7 @@ something: unexpected
 }
 
 func Test_MTLSConfig_validate(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "Test_MTLSConfig_validate")
-	assert.NoError(t, err)
-	t.Cleanup(func() {
-		if err = os.RemoveAll(tempDir); err != nil {
-			fmt.Printf("failed to delete test directory: %q\n", tempDir)
-		}
-	})
+	tempDir := t.TempDir()
 	t.Run("when cert dir exists and is directory then ok", func(t *testing.T) {
 		c := &MTLSConfig{CertsDir: tempDir}
 		err := c.validate()
