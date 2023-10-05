@@ -8,6 +8,7 @@ import (
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -78,7 +79,7 @@ type Sensor struct {
 }
 
 type reconciliationHandler interface {
-	ProcessHashes(map[string]uint64) []string
+	ProcessHashes(map[string]uint64) []central.MsgFromSensor
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
