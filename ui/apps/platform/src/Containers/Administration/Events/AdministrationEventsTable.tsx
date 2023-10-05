@@ -41,12 +41,7 @@ function AdministrationEventsTable({
                         <Th modifier="nowrap">Resource type</Th>
                         <Th>Level</Th>
                         <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
-                        <Th
-                            sort={getSortParams(numOccurrencesField)}
-                            className="pf-u-text-align-right"
-                        >
-                            Count
-                        </Th>
+                        <Th sort={getSortParams(numOccurrencesField)}>Count</Th>
                     </Tr>
                 </Thead>
                 {events.map((event) => {
