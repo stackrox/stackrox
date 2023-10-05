@@ -46,6 +46,7 @@ type centralCommunicationImpl struct {
 	isReconnect          bool
 	clientReconciliation bool
 	initialDeduperState  map[string]uint64
+	syncTimeout          time.Duration
 }
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -251,15 +252,13 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 	if s.clientReconciliation {
 		// If client is reconciling, Sensor needs to wait for Central to send the hashes
-		return s.initialDeduperSync(stream)
+		return s.initialDeduperSync(stream, s.syncTimeout)
 	}
 	return nil
 }
 
-func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
-	// TODO: stop waiting for initial deduper state if it takes too long
+func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient, timeout time.Duration) error {
 	done := make(chan struct{})
-	timeout := 10 * time.Second
 	var err error
 	var msg *central.MsgToSensor
 	go func() {
