@@ -1,11 +1,17 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Alert, Bullseye, PageSection, Spinner, Title } from '@patternfly/react-core';
+import { Alert, Bullseye, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import {
     AdministrationEvent,
     countAdministrationEvents,
+    defaultSortOption,
+    getAdministrationEventsFilter,
     listAdministrationEvents,
+    sortFields,
 } from 'services/AdministrationEventsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -13,18 +19,23 @@ import AdministrationEventsTable from './AdministrationEventsTable';
 import AdministrationEventsToolbar from './AdministrationEventsToolbar';
 
 function AdministrationEventsPage(): ReactElement {
-    // TODO query string for table filter and pagination
+    const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { searchFilter } = useURLSearch();
+    const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [isLoading, setIsLoading] = useState(false);
     const [events, setEvents] = useState<AdministrationEvent[]>([]);
-    const [count, setCount] = useState('0'); // int64
+    const [count, setCount] = useState(0);
     const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         setIsLoading(true);
+
+        const filter = getAdministrationEventsFilter(searchFilter);
+        const pagination = { limit: perPage, offset: page - 1, sortOption };
         // TODO Promise.all for consistent count and events?
 
-        listAdministrationEvents()
+        listAdministrationEvents({ filter, pagination })
             .then((eventsArg) => {
                 setEvents(eventsArg);
                 setErrorMessage('');
@@ -37,14 +48,14 @@ function AdministrationEventsPage(): ReactElement {
                 setIsLoading(false);
             });
 
-        countAdministrationEvents()
+        countAdministrationEvents(filter)
             .then((countArg) => {
                 setCount(countArg);
             })
             .catch(() => {
-                setCount('0');
+                setCount(0);
             });
-    }, [setIsLoading]);
+    }, [page, perPage, searchFilter, sortOption, setIsLoading]);
 
     // TODO empty state with and without filter
     // TODO polling and last updated with conditionally rendered reload button like Network Graph
@@ -54,6 +65,10 @@ function AdministrationEventsPage(): ReactElement {
             <PageTitle title="Administration Events" />
             <PageSection component="div" variant="light">
                 <Title headingLevel="h1">Administration Events</Title>
+                <Text>
+                    Troubleshoot platform issues by reviewing event logs. Events are purged after 4
+                    days by default.
+                </Text>
             </PageSection>
             <PageSection component="div">
                 {isLoading ? (
@@ -71,8 +86,14 @@ function AdministrationEventsPage(): ReactElement {
                     </Alert>
                 ) : (
                     <>
-                        <AdministrationEventsToolbar count={count} />
-                        <AdministrationEventsTable events={events} />
+                        <AdministrationEventsToolbar
+                            count={count}
+                            page={page}
+                            perPage={perPage}
+                            setPage={setPage}
+                            setPerPage={setPerPage}
+                        />
+                        <AdministrationEventsTable events={events} getSortParams={getSortParams} />
                     </>
                 )}
             </PageSection>

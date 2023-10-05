@@ -186,7 +186,8 @@ var (
 	ProcessCreationTime = newFieldLabel("Process Creation Time")
 
 	// ProcessListeningOnPort Search fields
-	Closed = newFieldLabel("Closed")
+	Closed     = newFieldLabel("Closed")
+	ClosedTime = newFieldLabel("Closed Time")
 
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")

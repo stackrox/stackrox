@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,7 +24,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(events.EnableAdministrationEvents())
 
 	expirySearchCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -183,7 +184,7 @@ func generateExpiringTokenLog(token *storage.TokenMetadata, now time.Time, expir
 	if sliceCount != 1 {
 		sliceDuration = sliceName + "s"
 	}
-	return fmt.Sprintf("API Token %s (ID %s) will expire in less than %d %s.", token.GetName(), token.GetId(), sliceCount, sliceDuration)
+	return fmt.Sprintf("API Token will expire in less than %d %s", sliceCount, sliceDuration)
 }
 
 func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
@@ -191,7 +192,8 @@ func (n *logExpirationNotifier) Notify(items []*storage.TokenMetadata) error {
 	expirationSliceDuration := env.APITokenExpirationExpirationSlice.DurationSetting()
 	expirationSliceName := env.APITokenExpirationExpirationSliceName.Setting()
 	for _, token := range items {
-		log.Warn(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName))
+		log.Warnw(generateExpiringTokenLog(token, now, expirationSliceDuration, expirationSliceName),
+			logging.APITokenName(token.GetName()), logging.APITokenID(token.GetId()))
 	}
 	return nil
 }

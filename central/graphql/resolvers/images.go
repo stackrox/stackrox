@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,6 +23,7 @@ import (
 var (
 	imageWatchStatuses []string
 
+	unknownImageWatchStatus    = registerImageWatchStatus("UNKNOWN")
 	notWatchedImageWatchStatus = registerImageWatchStatus("NOT_WATCHED")
 	watchedImageStatus         = registerImageWatchStatus("WATCHED")
 )
@@ -271,6 +273,9 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 func (resolver *imageResolver) WatchStatus(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "WatchStatus")
 	if err := readAuth(resources.WatchedImage)(ctx); err != nil {
+		if errors.Is(err, errox.NotAuthorized) {
+			return unknownImageWatchStatus, nil
+		}
 		return "", err
 	}
 	watched, err := resolver.root.WatchedImageDataStore.Exists(ctx, resolver.data.GetName().GetFullName())

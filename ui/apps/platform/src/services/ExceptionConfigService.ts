@@ -2,7 +2,7 @@ import axios from './instance';
 
 const vulnBaseUrl = '/v1/config/private/deferral/vulnerabilities';
 
-export type VulnerabilitiesDeferralConfig = {
+export type VulnerabilitiesExceptionConfig = {
     expiryOptions: {
         dayOptions: {
             numDays: number;
@@ -16,16 +16,16 @@ export type VulnerabilitiesDeferralConfig = {
     };
 };
 
-export function fetchVulnerabilitiesDeferralConfig(): Promise<VulnerabilitiesDeferralConfig | null> {
+export function fetchVulnerabilitiesExceptionConfig(): Promise<VulnerabilitiesExceptionConfig | null> {
     return axios
-        .get<{ config: VulnerabilitiesDeferralConfig | null }>(vulnBaseUrl)
+        .get<{ config: VulnerabilitiesExceptionConfig | null }>(vulnBaseUrl)
         .then(({ data }) => data.config);
 }
 
-export function updateVulnerabilitiesDeferralConfig(
-    config: Partial<VulnerabilitiesDeferralConfig>
-): Promise<Partial<VulnerabilitiesDeferralConfig>> {
+export function updateVulnerabilitiesExceptionConfig(
+    config: Partial<VulnerabilitiesExceptionConfig>
+): Promise<Partial<VulnerabilitiesExceptionConfig>> {
     return axios
-        .put<{ config: Partial<VulnerabilitiesDeferralConfig> }>(`${vulnBaseUrl}`, { config })
+        .put<{ config: Partial<VulnerabilitiesExceptionConfig> }>(`${vulnBaseUrl}`, { config })
         .then(({ data }) => data.config);
 }
