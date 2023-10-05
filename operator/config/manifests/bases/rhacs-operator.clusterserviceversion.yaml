@@ -80,7 +80,8 @@ spec:
         path: central.monitoring.exposeEndpoint
       - description: Enables the encryption of notifier secrets stored in the Central
           DB. An encryption key must be provided in a secret called `central-encryption-key`
-          in the Central namespace.
+          in the Central namespace, with the key stored in the `encryption-key` data
+          field.
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the

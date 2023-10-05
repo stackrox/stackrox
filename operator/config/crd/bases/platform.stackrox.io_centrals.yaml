@@ -369,7 +369,8 @@ spec:
                         description: Enables the encryption of notifier secrets stored
                           in the Central DB. An encryption key must be provided in
                           a secret called `central-encryption-key` in the Central
-                          namespace.
+                          namespace, with the key stored in the `encryption-key` data
+                          field.
                         type: boolean
                     type: object
                   persistence:
