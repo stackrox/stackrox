@@ -81,7 +81,7 @@ get_unique_gs_destination() {
 }
 
 set_gs_path_vars() {
-    GS_URL="gs://roxci-artifacts"
+    GS_URL="gs://stackrox-ci-artifacts"
 
     if is_OPENSHIFT_CI; then
         local repo

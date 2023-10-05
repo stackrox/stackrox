@@ -62,7 +62,7 @@ for sha in "${shas[@]}"; do
     temp_file="$(mktemp)"
 
     error_code=0
-    gsutil -m cp -r "gs://roxci-artifacts/stackrox/$sha" "$temp_dir" || error_code=$?
+    gsutil -m cp -r "gs://stackrox-ci-artifacts/stackrox/$sha" "$temp_dir" || error_code=$?
     if (( error_code == 0 )); then
         "$DIR/get-info-about-osci-jobs.sh" "$temp_dir" >> "$output"
         tail -n +2 "$output" >> "$temp_file"

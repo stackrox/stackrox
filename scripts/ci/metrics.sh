@@ -8,7 +8,7 @@ source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
-_TABLE_NAME="stackrox-ci.ci_metrics.stackrox_jobs"
+_TABLE_NAME="acs-san-stackroxci.ci_metrics.stackrox_jobs"
 
 create_job_record() {
     _create_job_record "$@" || {

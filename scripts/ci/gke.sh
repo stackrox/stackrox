@@ -312,7 +312,7 @@ refresh_gke_token() {
         echo >/tmp/kubeconfig-new
         chmod 0600 /tmp/kubeconfig-new
         # shellcheck disable=SC2153
-        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME"
+        KUBECONFIG=/tmp/kubeconfig-new gcloud container clusters get-credentials --project acs-san-stackroxci --zone "$ZONE" "$CLUSTER_NAME"
         KUBECONFIG=/tmp/kubeconfig-new kubectl get ns >/dev/null
         mv /tmp/kubeconfig-new "$real_kubeconfig"
     done
