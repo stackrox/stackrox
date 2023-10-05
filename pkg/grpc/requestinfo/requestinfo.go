@@ -38,6 +38,8 @@ const (
 	remoteAddr       = "Remote-Addr"
 	host             = "Host"
 	userAgent        = "User-Agent"
+	forwardedHost    = "X-Forwarded-Host"
+	forwardedProto   = "X-Forwarded-Proto"
 )
 
 var (
@@ -64,7 +66,7 @@ type HTTPRequest struct {
 //     leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
 type RequestInfo struct {
 	// Hostname is the hostname specified in a request, as intended by the client. This is derived from the
-	// `X-Forwarded-Host` (if present) or the `Hostname` header for a HTTP/1.1 request, and from the TLS ServerName
+	// `X-Forwarded-Host` (if present) or the `Hostname` header for an HTTP/1.1 request, and from the TLS ServerName
 	// otherwise.
 	Hostname string
 	// ClientUsedTLS indicates whether the client used TLS (i.e., "https") to connect. This is populated from
@@ -85,6 +87,9 @@ type RequestInfo struct {
 	Metadata metadata.MD
 	// HTTPRequest is a slimmed down version of *http.Request that will only be populated if the request came through the gateway
 	HTTPRequest *HTTPRequest
+	// SourceIP is the source IP specified in a request by the client. This is derieved from the `X-Forwarded-For` (if
+	// present) or the `Remote-Addr` headers.
+	SourceIP string
 }
 
 // ExtractCertInfo gets the cert info from a cert.
@@ -122,8 +127,7 @@ func ExtractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]mtls.CertIn
 
 // Handler takes care of populating the context with a RequestInfo, as well as handling the
 // serialization/deserialization for the HTTP/1.1 gateway.
-type Handler struct {
-}
+type Handler struct{}
 
 // NewRequestInfoHandler creates a new request info handler.
 func NewRequestInfoHandler() *Handler {
@@ -150,14 +154,16 @@ func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 
 	ri.HTTPRequest = slimHTTPRequest(req)
 
+	ri.SourceIP = sourceIPFromRequest(req)
+
 	// X-Forwarded-Host takes precedence in case we are behind a proxy. `Hostname` should match what the client sees.
-	if fwdHost := req.Header.Get("X-Forwarded-Host"); fwdHost != "" {
+	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
 		ri.Hostname = fwdHost
 	} else if tlsState != nil {
 		ri.Hostname = tlsState.ServerName
 	}
 
-	if fwdProto := req.Header.Get("X-Forwarded-Proto"); fwdProto != "" {
+	if fwdProto := req.Header.Get(forwardedProto); fwdProto != "" {
 		ri.ClientUsedTLS = fwdProto != "http"
 	} else {
 		ri.ClientUsedTLS = tlsState != nil
@@ -257,6 +263,7 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 			Hostname:    r.Host,
 			Metadata:    metadataFromHeader(r.Header),
 			HTTPRequest: slimHTTPRequest(r),
+			SourceIP:    sourceIPFromRequest(r),
 		}
 		// X-Forwarded-Host takes precedence in case we are behind a proxy.
 		// `Hostname` should match what the client sees.
@@ -284,15 +291,9 @@ func logRequest(request *http.Request) {
 	}
 
 	forwardedBy := stringutils.OrDefault(request.Header.Get(forwardedKey), "N/A")
-
-	// If using the XFF header, the real client IP is the first one in the csv value
 	xff := request.Header.Get(forwardedForKey)
-	clientIP := ""
-	if xff != "" {
-		ips := strings.Split(xff, ",")
-		clientIP = strings.TrimSpace(ips[0])
-	}
-	sourceIP := stringutils.FirstNonEmpty(clientIP, request.RemoteAddr, request.Header.Get(remoteAddr), "N/A")
+
+	sourceIP := sourceIPFromRequest(request)
 
 	var referer string
 	if request.Header.Get(refererKey) != "" {
@@ -322,4 +323,27 @@ func metadataFromHeader(header http.Header) metadata.MD {
 		md.Append(key, vals...)
 	}
 	return md
+}
+
+// sourceIPFromRequest retrieve the source IP from the HTTP request with the following order:
+//   - The `X-Forwarded-For` header.
+//   - The remote address on the request object.
+//   - The `Remote-Addr` header.
+//
+// In case the source IP cannot be determined, `N/A` will be returned.
+func sourceIPFromRequest(request *http.Request) string {
+	// If using the XFF header, the real client IP is the first value in the list of CSV values.
+	var xffSourceIP string
+	xff := request.Header.Get(forwardedForKey)
+	if xff != "" {
+		ips := strings.Split(xff, ",")
+		xffSourceIP = strings.TrimSpace(ips[0])
+	}
+
+	return stringutils.FirstNonEmpty(
+		xffSourceIP,
+		request.RemoteAddr,
+		request.Header.Get(remoteAddr),
+		"N/A",
+	)
 }
