@@ -1,6 +1,7 @@
 package orchestratornamespaces
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,7 +16,7 @@ type OrchestratorNamespaces struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (n *OrchestratorNamespaces) ReconcileDelete(resType, resID string, resHash uint64) ([]string, error) {
+func (n *OrchestratorNamespaces) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
 	panic("implement me")

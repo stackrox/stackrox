@@ -60,7 +60,7 @@ type Store struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) ([]string, error) {
+func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
 	panic("implement me")
