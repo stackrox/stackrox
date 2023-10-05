@@ -4,13 +4,13 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"fmt"
 
 	"github.com/pkg/errors"
 )
 
 const gcmNonceSizeBytes = 12
 
+// CryptoCodec interface allows encrypting and decrypting secrets using a key
 type CryptoCodec interface {
 	// Encrypt encrypts the given text and returns the encrypted
 	// bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
@@ -90,5 +90,5 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s", decrypted), nil
+	return string(decrypted), nil
 }
