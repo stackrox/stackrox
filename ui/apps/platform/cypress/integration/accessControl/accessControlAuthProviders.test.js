@@ -425,12 +425,32 @@ describe('Invite users', () => {
             [rolesAlias]: {
                 fixture: 'auth/roles.json',
             },
+            [groupsBatchAliasForPOST]: {
+                statusCode: 200,
+                body: {},
+            },
         };
         visitAccessControlEntities(entitiesKey, staticResponseMap);
 
         cy.get('button:contains("Invite users")').click();
 
         checkInviteUsersModal();
+
+        cy.get('.pf-c-modal-box__footer button:contains("Invite users")').click();
+
+        // TODO: fix the mocking so that groupsbatch is mocked to 200, instead of the 400 at the raw environment returns
+        // cy.get(
+        //     '.pf-c-modal-box__body p:contains("New rules have been created, but invitation emails could not be sent. Use the text below to manually send emails to your invitees.")'
+        // );
+        // cy.get('.pf-c-modal-box__body p:contains("Role: Network Graph Viewer")');
+        // cy.get(
+        //     '.pf-c-modal-box__body [aria-label="Copyable input]:contains("scooby.doo@redhat.com")'
+        // );
+        // cy.get(
+        //     '.pf-c-modal-box__body .pf-c-clipboard-copy__expandable-content:contains("You have been invited to use Red Hat Advanced Cluster Security. Please use the link to sign in: ")'
+        // );
+
+        // cy.get('.pf-c-modal-box__footer button:contains("Done")').click();
     });
 
     it('should warn if there are no auth providers available', () => {

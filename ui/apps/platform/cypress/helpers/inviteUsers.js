@@ -17,7 +17,4 @@ export function checkInviteUsersModal() {
     getSelectButtonByLabel('Role').click();
     cy.get(`.pf-c-select__menu-item`).should('have.length', 7);
     getSelectOption('Network Graph Viewer').click();
-
-    // test closing the modal
-    cy.get(`${accessModalSelectors.button}:contains("Cancel")`).click();
 }

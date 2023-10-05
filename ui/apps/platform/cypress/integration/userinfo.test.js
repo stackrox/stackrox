@@ -13,6 +13,7 @@ import {
     rolesAlias,
     visitAccessControlEntities,
 } from './accessControl/accessControl.helpers';
+import { accessModalSelectors } from './accessControl/accessControl.selectors';
 
 const staticResponseForAdminRoleWithoutProvider = {
     fixture: 'auth/adminUserStatus',
@@ -88,6 +89,9 @@ describe('User Profile', () => {
             cy.get('.pf-c-dropdown__menu-item:contains("Invite users")').click();
 
             checkInviteUsersModal();
+
+            // test closing the modal
+            cy.get(`${accessModalSelectors.button}:contains("Cancel")`).click();
         });
 
         it('should navigate to the user page', () => {

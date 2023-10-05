@@ -1,4 +1,4 @@
-import React, { useEffect, ReactElement } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import {
@@ -21,14 +21,22 @@ import { actions as groupActions } from 'reducers/groups';
 import { actions as roleActions } from 'reducers/roles';
 import { accessControlBasePath } from 'routePaths';
 import { AuthProvider } from 'services/AuthService';
+import { updateOrAddGroup } from 'services/GroupsService';
 import { dedupeDelimitedString } from 'utils/textUtils';
 import { mergeGroupsWithAuthProviders } from '../AccessControl/AuthProviders/authProviders.utils';
 import InviteUsersForm from './InviteUsersForm';
+// eslint-disable-next-line import/no-cycle
+import InviteUsersConfirmationNoEmail from './InviteUsersConfirmationNoEmail';
 
 type InviteFormValues = {
     emails: string;
     provider: string;
     role: string;
+};
+
+export type EmailBuckets = {
+    new: string[];
+    existing: string[];
 };
 
 // email validation from discussion in Yup repo,
@@ -66,8 +74,15 @@ const feedbackState = createStructuredSelector({
 });
 
 function InviteUsersModal(): ReactElement | null {
+    const [modalView, setModalView] = useState<'FORM' | 'TEMPLATE' | 'CONFIRM'>('FORM');
+    const [emailBuckets, setEmailBuckets] = useState<EmailBuckets | null>(null);
+    const [apiError, setApiError] = useState<Error | null>(null);
+
     const { authProviders, groups, roles, showInviteModal } = useSelector(feedbackState);
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
+
+    // TODO: replace this constant with an actual check for an email service
+    const isEmailServiceAvailable = false;
 
     const dispatch = useDispatch();
 
@@ -78,7 +93,7 @@ function InviteUsersModal(): ReactElement | null {
         validateOnMount: true,
     });
 
-    const { isValid, values, setFieldValue } = formik;
+    const { isValid, values, setFieldValue, resetForm } = formik;
 
     const allowedRoles = roles.filter((role) => {
         return role.name !== 'Admin' && role.name !== 'None';
@@ -108,7 +123,7 @@ function InviteUsersModal(): ReactElement | null {
             const redhatSsoProvider = typedProviders.find((provider) => {
                 const lowercasedName = provider.name.toLocaleLowerCase();
                 return (
-                    lowercasedName.includes('red Hat sso') || lowercasedName.includes('openshift')
+                    lowercasedName.includes('red hat sso') || lowercasedName.includes('openshift')
                 );
             });
 
@@ -129,39 +144,79 @@ function InviteUsersModal(): ReactElement | null {
     }
 
     function submitInvitations() {
-        // eslint-disable-next-line no-console
-        console.log({ values });
-
         // check whether any of the listed emails already have rules for this auth provider
         const providerWithRules = authProvidersWithRules.find(
             (provider) => provider.name === values.provider
         );
-        if (providerWithRules) {
-            const emailArr = dedupeDelimitedString(values.emails);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const emailBuckets = emailArr.reduce<{ new: string[]; existing: string[] }>(
-                (acc, email) => {
-                    if (
-                        providerWithRules.groups?.some(
-                            (group) => group.props.key === 'email' && group.props.value === email
-                        )
-                    ) {
-                        return { new: acc.new, existing: [...acc.existing, email] };
-                    }
-                    return { new: [...acc.new, email], existing: acc.existing };
-                },
-                { new: [], existing: [] }
-            );
 
-            // TODO: Show warning if some emails will not be added
+        if (!providerWithRules) {
+            // this should not be possible, but just in case
+            throw new Error('selected auth provider for inviting users is no longer available');
         }
 
-        // TODO: detect if an email server is available
-        //       1. if so, send emails to the listed recipients
-        //       2. if not, show the emails and the message body for copying to a manual email
+        const emailArr = dedupeDelimitedString(values.emails);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const buckets = emailArr.reduce<{ new: string[]; existing: string[] }>(
+            (acc, email) => {
+                if (
+                    Array.isArray(providerWithRules.groups) &&
+                    providerWithRules.groups.some(
+                        (group) => group.props.key === 'email' && group.props.value === email
+                    )
+                ) {
+                    return { new: acc.new, existing: [...acc.existing, email] };
+                }
+                return { new: [...acc.new, email], existing: acc.existing };
+            },
+            { new: [], existing: [] }
+        );
+        setEmailBuckets(buckets);
+
+        if (buckets.new.length === 0) {
+            // don't reset form, so that user can come back and try again
+            setModalView('TEMPLATE');
+        } else {
+            // create new auth provider rules
+            const requiredGroups = buckets.new.map((newEmail) => ({
+                props: {
+                    id: '',
+                    traits: {
+                        mutabilityMode: 'ALLOW_MUTATE',
+                        visibility: 'VISIBLE',
+                        origin: 'IMPERATIVE',
+                    },
+                    authProviderId: providerWithRules.id,
+                    key: 'email',
+                    value: newEmail,
+                },
+                roleName: values.role,
+            }));
+
+            // eslint-disable-next-line no-void
+            void updateOrAddGroup({ oldGroups: [], newGroups: requiredGroups })
+                .then(() => {
+                    // TODO: detect if an email server is available
+                    //       1. if so, send emails to the listed recipients
+                    //       2. if not, show the emails and the message body for copying to a manual email
+                    if (isEmailServiceAvailable) {
+                        // TODO send emails
+                    }
+
+                    setModalView('TEMPLATE');
+                })
+                .catch((err) => {
+                    setApiError(err);
+                });
+        }
+
+        // TODO: Show warning if some emails will not be added
     }
 
     function onClose() {
+        resetForm();
+        setModalView('FORM');
+        setEmailBuckets(null);
+
         dispatch(inviteActions.setInviteModalVisibility(false));
     }
 
@@ -194,25 +249,73 @@ function InviteUsersModal(): ReactElement | null {
                         </Text>
                     </Alert>
                 )}
-                <InviteUsersForm
-                    formik={formik}
-                    providers={authProviders}
-                    roles={allowedRoles}
-                    onChange={onChange}
-                />
+                {modalView === 'FORM' && (
+                    <>
+                        {apiError && (
+                            <Alert
+                                title="Problem inviting the specified users"
+                                variant="danger"
+                                isInline
+                                className="pf-u-mb-lg"
+                            >
+                                <Text>The following error occurred:</Text>
+                                <Text>{apiError?.message}</Text>
+                            </Alert>
+                        )}
+                        <InviteUsersForm
+                            formik={formik}
+                            providers={authProviders}
+                            roles={allowedRoles}
+                            onChange={onChange}
+                        />
+                    </>
+                )}
+                {modalView === 'TEMPLATE' && emailBuckets !== null && (
+                    <InviteUsersConfirmationNoEmail
+                        emailBuckets={emailBuckets}
+                        onClose={onClose}
+                        role={values.role}
+                    />
+                )}
             </ModalBoxBody>
             <ModalBoxFooter>
-                <Button
-                    key="invite"
-                    variant="primary"
-                    onClick={submitInvitations}
-                    isDisabled={!isValid}
-                >
-                    Invite users
-                </Button>
-                <Button key="cancel" variant="link" onClick={onClose}>
-                    Cancel
-                </Button>
+                {modalView === 'FORM' && (
+                    <>
+                        <Button
+                            key="invite"
+                            variant="primary"
+                            onClick={submitInvitations}
+                            isDisabled={!isValid}
+                        >
+                            Invite users
+                        </Button>
+                        <Button key="cancel" variant="link" onClick={onClose}>
+                            Cancel
+                        </Button>
+                    </>
+                )}
+                {modalView === 'TEMPLATE' && (
+                    <>
+                        {emailBuckets?.new?.length === 0 && (
+                            <Button
+                                key="done"
+                                variant="secondary"
+                                onClick={() => setModalView('FORM')}
+                                isDisabled={!isValid}
+                            >
+                                Go back to form
+                            </Button>
+                        )}
+                        <Button
+                            key="done"
+                            variant="primary"
+                            onClick={onClose}
+                            isDisabled={!isValid}
+                        >
+                            Done
+                        </Button>
+                    </>
+                )}
             </ModalBoxFooter>
         </Modal>
     );
