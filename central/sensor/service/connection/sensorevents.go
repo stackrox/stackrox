@@ -77,6 +77,8 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 
 	var workerType string
 	switch event.Resource.(type) {
+	// The occurrence of a "Synced" event from the sensor marks the conclusion
+	// of the initial synchronization process.
 	case *central.SensorEvent_Synced:
 		// Call the reconcile functions
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {

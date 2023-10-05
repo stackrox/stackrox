@@ -279,6 +279,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)
+		m.initSyncMgr.Remove(clusterID)
 		return errors.Wrap(err, "replacing old connection")
 	}
 
@@ -289,6 +290,10 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 
 	err = conn.Run(ctx, server, conn.capabilities)
 	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
+
+	// Address the scenario in which the sensor loses its connection during
+	// the initial synchronization process.
+	m.initSyncMgr.Remove(clusterID)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
 		connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]

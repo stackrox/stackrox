@@ -14,7 +14,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
   - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
 
-- ROX-19561: A new environment variable, `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS`, has been introduced in Central, with a default value of `0`.
+- ROX-19561: A new environment variable, `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS`, has been introduced in Central, with a default value of `0` (unlimited).
   When a value greater than `0` is assigned to it, it serves as a limit on the number of sensors performing initial synchronization.
   This synchronization occurs once sensors establish a connection with Central. It is recommended to set this limit when a significant
   number of secured clusters are connected to a single Central instance.

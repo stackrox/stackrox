@@ -37,10 +37,6 @@ func (m *initSyncManager) Add(clusterID string) bool {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.sensors.Contains(clusterID) {
-		return true
-	}
-
 	if len(m.sensors) >= m.maxSensors {
 		return false
 	}
