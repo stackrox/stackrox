@@ -8,9 +8,11 @@ setup_gcp() {
     info "Setting up GCP auth and config"
 
     local service_account
-    if [[ -n "${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX:-}" ]]; then
-        service_account="${GCLOUD_SERVICE_ACCOUNT_OPENSHIFT_CI_ROX}"
+    if [[ -n "${GCP_SERVICE_ACCOUNT_STACKROX_CI:-}" ]]; then
+        service_account="${GCP_SERVICE_ACCOUNT_STACKROX_CI}"
     elif [[ -n "${GCLOUD_SERVICE_ACCOUNT_CI_ROX:-}" ]]; then
+        # ROX-19985 stackrox/jenkins-plugin relies on this env name. This can be
+        # removed once that issue is closed.
         service_account="${GCLOUD_SERVICE_ACCOUNT_CI_ROX}"
     else
         die "Support is missing for this environment"
