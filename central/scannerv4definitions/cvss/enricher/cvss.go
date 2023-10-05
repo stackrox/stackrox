@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// Ensure CvssEnricher implements driver.Enricher
 var (
 	defaultFeed *url.URL
 )
@@ -27,14 +26,9 @@ var (
 const (
 	// DefaultFeeds is the default place to look for CVE feeds.
 	//
-	// The enricher expects the structure to mirror that found here: files
-	// organized by year, prefixed with `nvdcve-1.1-` and with `.meta` and
-	// `.json.gz` extensions.
-	//
 	//doc:url updater
 	DefaultFeeds = `https://nvd.nist.gov/feeds/json/cve/1.1/`
 
-	// This appears above and must be the same.
 	name = `CVSS_Enricher`
 
 	// First year for the yearly CVE feeds: https://nvd.nist.gov/vuln/data-feeds
@@ -56,12 +50,12 @@ type Enricher struct {
 	feed *url.URL
 }
 
-// Config holds the configuration for the CvssEnricher.
+// Config holds the configuration for the Enricher.
 type Config struct {
 	FeedRoot *string `json:"feed_root" yaml:"feed_root"`
 }
 
-// Configure sets up the CvssEnricher with given configuration.
+// Configure sets up the Enricher with given configuration.
 func (e *Enricher) Configure(f driver.ConfigUnmarshaler, c *http.Client) error {
 	var cfg Config
 	e.c = c
@@ -93,12 +87,12 @@ func (e *Enricher) Name() string {
 }
 
 // FetchEnrichment fetches the enrichment data for the given fingerprint and file path.
-func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint, fileName string) (string, driver.Fingerprint, error) {
+func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint, fileName string) (string, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "central/scannerV4Definitions/cvss/FetchEnrichment")
 
 	prev := make(map[int]string)
 	if err := json.Unmarshal([]byte(hint), &prev); err != nil && hint != "" {
-		return "", driver.Fingerprint(""), err
+		return "", err
 	}
 	cur := make(map[int]string, len(prev))
 	yrs := make([]int, 0)
@@ -107,24 +101,20 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint,
 		yrs = append(yrs, y)
 		u, err := metafileURL(e.feed, y)
 		if err != nil {
-			return "", hint, err
+			return "", err
 		}
-		zlog.Debug(ctx).
-			Int("year", y).
-			Stringer("url", u).
-			Msg("fetching meta file")
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if err != nil {
-			return "", hint, err
+			return "", err
 		}
 		res, err := e.c.Do(req)
 		if err != nil {
-			return "", hint, err
+			return "", err
 		}
 		var buf bytes.Buffer
 		_, err = io.Copy(&buf, res.Body)
 		if err != nil {
-			return "", hint, err
+			return "", err
 		}
 		err = res.Body.Close() // Don't defer because we're in a loop.
 		if err != nil {
@@ -132,13 +122,13 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint,
 		}
 		var mf meta
 		if err := mf.parseBufferToMeta(&buf); err != nil {
-			return "", hint, err
+			return "", err
 		}
 		zlog.Debug(ctx).
 			Int("year", y).
 			Stringer("url", u).
 			Time("mod", mf.LastModifiedDate).
-			Msg("parsed meta file")
+			Msg("downloaded and parsed meta file")
 		cur[y] = strings.ToUpper(mf.SHA256)
 	}
 
@@ -150,31 +140,31 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint,
 		}
 	}
 	if !doFetch {
-		return "", hint, driver.Unchanged
+		return "", driver.Unchanged
 	}
 
-	tmpDir, err := os.MkdirTemp("", "prefix")
+	tmpDir, err := os.MkdirTemp("", "cvssTemp")
 	if err != nil {
-		return "", hint, fmt.Errorf("failed to create temp directory: %w", err)
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
 	}
 	tmpFilePath := filepath.Join(tmpDir, fileName)
 	out, err := os.Create(tmpFilePath)
 	if err != nil {
-		return "", hint, fmt.Errorf("failed to create temp file: %w", err)
+		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 
 	for _, y := range yrs {
 		u, err := gzURL(e.feed, y)
 		if err != nil {
-			return "", hint, fmt.Errorf("bad URL: %w", err)
+			return "", fmt.Errorf("bad URL: %w", err)
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if err != nil {
-			return "", hint, fmt.Errorf("unable to create request: %w", err)
+			return "", fmt.Errorf("unable to create request: %w", err)
 		}
 		res, err := e.c.Do(req)
 		if err != nil {
-			return "", hint, fmt.Errorf("unable to do request: %w", err)
+			return "", fmt.Errorf("unable to do request: %w", err)
 		}
 
 		gz, err := gzip.NewReader(res.Body)
@@ -182,34 +172,32 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint,
 			utils.IgnoreError(func() error {
 				return res.Body.Close()
 			})
-			return "", hint, fmt.Errorf("unable to create gzip reader: %w", err)
+			return "", fmt.Errorf("unable to create gzip reader: %w", err)
 		}
 		err = ProcessAndWriteCVSS(y, ctx, gz, out)
 		if err != nil {
-			return "", hint, fmt.Errorf("unable to write item feed for year %d: %w", y, err)
+			return "", fmt.Errorf("unable to write item feed for year %d: %w", y, err)
 		}
 		err = gz.Close()
 		if err != nil {
 			zlog.Error(ctx).Msg(err.Error())
 		}
 	}
-	nh, err := json.Marshal(cur)
 	if err != nil {
-		return "", "", fmt.Errorf("unable to serialize new hint: %w", err)
+		return "", fmt.Errorf("unable to serialize new hint: %w", err)
 	}
 	// After all the processing and writing to the out file
 	info, err := out.Stat() // Get the file info
 	if err != nil {
-		// Handle error if required, or you can simply log it
 		zlog.Warn(ctx).Err(err).Msg("Failed to get the file size.")
 	} else {
-		size := info.Size() // This gives you size in bytes
+		size := info.Size()
 		zlog.Info(ctx).
 			Str("fileName", out.Name()).
 			Int64("fileSize", size).
 			Msg("Size of the JSON file.")
 	}
-	return out.Name(), driver.Fingerprint(nh), nil
+	return out.Name(), nil
 }
 
 func metafileURL(root *url.URL, yr int) (*url.URL, error) {

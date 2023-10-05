@@ -89,7 +89,6 @@ func (u *cvssUpdater) runForever() {
 }
 
 func (u *cvssUpdater) doUpdate(ctx context.Context) error {
-	// Run enrichment and gzip content directly into the temporary file
 	log.Infof("Starting CVSS data enricher")
 	zipFile, err := runEnricher(ctx, u.enricher)
 	if err != nil {
@@ -103,13 +102,12 @@ func (u *cvssUpdater) doUpdate(ctx context.Context) error {
 		}
 	}()
 
-	// Seek to the beginning of the file
+	// Seek to the beginning of the zip file
 	_, err = zipFile.Seek(0, io.SeekStart)
 	if err != nil {
 		return fmt.Errorf("error seeking to the beginning of zip file: %w", err)
 	}
 
-	// Call WriteContent to finalize the operation
 	return u.file.WriteContent(zipFile)
 }
 
@@ -117,7 +115,7 @@ func runEnricher(ctx context.Context, u *enricher.Enricher) (*os.File, error) {
 	var err error
 	var pathToJson string
 	for i := 0; i < 5; i++ {
-		pathToJson, _, err = u.FetchEnrichment(ctx, fp, tmpJson)
+		pathToJson, err = u.FetchEnrichment(ctx, fp, tmpJson)
 		if err == nil {
 			break
 		}
@@ -153,7 +151,6 @@ func jsonToZip(jsonFilePath string) (*os.File, error) {
 		return nil, fmt.Errorf("failed to create temp zip file: %w", err)
 	}
 
-	// Create a new zip archive.
 	zipWriter := zip.NewWriter(zipFile)
 
 	// Open the JSON file for reading.
@@ -191,7 +188,7 @@ func jsonToZip(jsonFilePath string) (*os.File, error) {
 
 	err = zipWriter.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to close zip writer: %w", err)
+		log.Errorf("Fail to close zip writer: %v", err)
 	}
 
 	err = os.RemoveAll(jsonFilePath)

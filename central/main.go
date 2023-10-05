@@ -129,6 +129,7 @@ import (
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
+	scannerV4CvssHandler "github.com/stackrox/rox/central/scannerv4definitions/cvss"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
