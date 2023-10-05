@@ -16,6 +16,7 @@ import (
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Ensure CvssEnricher implements driver.Enricher
@@ -61,7 +62,7 @@ type Config struct {
 }
 
 // Configure sets up the CvssEnricher with given configuration.
-func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+func (e *Enricher) Configure(f driver.ConfigUnmarshaler, c *http.Client) error {
 	var cfg Config
 	e.c = c
 	if err := f(&cfg); err != nil {
@@ -178,7 +179,9 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint,
 
 		gz, err := gzip.NewReader(res.Body)
 		if err != nil {
-			res.Body.Close()
+			utils.IgnoreError(func() error {
+				return res.Body.Close()
+			})
 			return "", hint, fmt.Errorf("unable to create gzip reader: %w", err)
 		}
 		err = ProcessAndWriteCVSS(y, ctx, gz, out)

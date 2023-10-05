@@ -38,7 +38,6 @@ const (
 	cvssDataURL = "https://storage.googleapis.com/scanner-v4-test/nvddata/"
 
 	defaultUpdateInterval = 4 * time.Hour
-	//initialUpdateInterval = 5 * time.Minute
 )
 
 var (

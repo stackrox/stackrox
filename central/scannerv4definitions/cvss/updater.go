@@ -33,7 +33,6 @@ var fp driver.Fingerprint
 
 func NewUpdaterWithCvssEnricher(file *file.File, client *http.Client, downloadURL string, interval time.Duration) *cvssUpdater {
 	e := &enricher.Enricher{}
-	ctx := context.Background() // Or pass a context in if available.
 
 	configFunc := func(cfg interface{}) error {
 		c, ok := cfg.(*enricher.Config) // Type assertion for safety
@@ -44,7 +43,7 @@ func NewUpdaterWithCvssEnricher(file *file.File, client *http.Client, downloadUR
 		return nil
 	}
 
-	err := e.Configure(ctx, configFunc, client)
+	err := e.Configure(configFunc, client)
 	if err != nil {
 		// TODO log config is bad
 		return nil
@@ -66,8 +65,6 @@ func (u *cvssUpdater) Stop() {
 
 func (u *cvssUpdater) Start() {
 	u.once.Do(func() {
-		ctx := context.Background()
-		u.doUpdate(ctx)
 		go u.runForever()
 	})
 }
@@ -81,7 +78,10 @@ func (u *cvssUpdater) runForever() {
 	for {
 		select {
 		case <-t.C:
-			u.doUpdate(ctx)
+			err := u.doUpdate(ctx)
+			if err != nil {
+				log.Errorf("Error running CVSS updater: %v", err)
+			}
 		case <-u.stopSig.Done():
 			return
 		}
@@ -196,7 +196,7 @@ func jsonToZip(jsonFilePath string) (*os.File, error) {
 
 	err = os.RemoveAll(jsonFilePath)
 	if err != nil {
-		log.Errorf("Failed to delete json file: %w", err)
+		log.Errorf("Failed to delete json file: %v", err)
 	}
 
 	return zipFile, nil

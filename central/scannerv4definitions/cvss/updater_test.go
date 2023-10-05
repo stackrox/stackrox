@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/stackrox/rox/central/scannerdefinitions/file"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -105,7 +106,9 @@ func unzipSingleJSONFile(filePath string) (io.ReadCloser, error) {
 
 	rc, err := r.File[0].Open()
 	if err != nil {
-		r.Close()
+		utils.IgnoreError(func() error {
+			return r.Close()
+		})
 		return nil, err
 	}
 
