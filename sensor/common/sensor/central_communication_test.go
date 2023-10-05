@@ -176,10 +176,7 @@ func deploymentsSentCount(n int) func([]*central.MsgFromSensor) bool {
 				count += 1
 			}
 		}
-		if count == n {
-			return true
-		}
-		return false
+		return count == n
 	}
 }
 
