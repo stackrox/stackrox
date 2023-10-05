@@ -605,10 +605,12 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 	if connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
-		log.Infof("Sensor (%q) can do client reconciliation: sending deduper state", c.clusterID)
+		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 
 		// Send hashes to sensor
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+
+		// TODO: Remove. This is debugging code
 		if ridiculousPayload.IntegerSetting() > 0 {
 			log.Infof("Increasing deduper payload artificially to load test communication: increased by %d\n", ridiculousPayload.IntegerSetting())
 			for i := 0; i < ridiculousPayload.IntegerSetting(); i++ {
@@ -627,13 +629,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 		err := server.Send(deduperMessage)
 		if err != nil {
-			log.Errorf("Central wasn't able to send deduper state to sensor (%q): %s", c.clusterID, err)
-			log.Infof("Central will perform the reconciliation for sensor (%q) due to previous errors.", c.clusterID)
+			log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
+			return errors.Wrap(err, "unable to sync deduper state")
 		} else {
 			c.sensorEventHandler.disableReconciliation()
 		}
 	} else {
-		log.Infof("Sensor (%q) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
+		log.Infof("Sensor (%s) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
 	}
 
 	go c.runSend(server)
