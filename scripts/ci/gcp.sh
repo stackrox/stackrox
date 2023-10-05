@@ -20,13 +20,13 @@ setup_gcp() {
 
     require_executable "gcloud"
 
-    if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "stackrox-ci" ]]; then
-        echo "Current project is already set to stackrox-ci. Assuming configuration already applied."
+    if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
+        echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
         return
     fi
     gcloud auth activate-service-account --key-file <(echo "$service_account")
     gcloud auth list
-    gcloud config set project stackrox-ci
+    gcloud config set project acs-san-stackroxci
     gcloud config set compute/region us-central1
     gcloud config unset compute/zone
     gcloud config set core/disable_prompts True
