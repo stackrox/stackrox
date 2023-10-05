@@ -3,15 +3,17 @@ package events
 import "regexp"
 
 const (
-	defaultDomain       = "General"
-	imageScanningDomain = "Image Scanning"
-	integrationDomain   = "Integrations"
+	authenticationDomain = "Authentication"
+	defaultDomain        = "General"
+	imageScanningDomain  = "Image Scanning"
+	integrationDomain    = "Integrations"
 )
 
 var (
 	moduleToDomain = map[*regexp.Regexp]string{
 		regexp.MustCompile(`^reprocessor|image/service`): imageScanningDomain,
 		regexp.MustCompile(`^pkg/notifiers(/|$)`):        integrationDomain,
+		regexp.MustCompile(`^apitoken/expiration`):       authenticationDomain,
 	}
 )
 

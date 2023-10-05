@@ -55,6 +55,24 @@ func TestConvert(t *testing.T) {
 			},
 		},
 		{
+			event: &events.AdministrationEvent{
+				Domain:       "Authentication",
+				Hint:         events.GetHint("Authentication", "API Token", ""),
+				Level:        storage.AdministrationEventLevel_ADMINISTRATION_EVENT_LEVEL_ERROR,
+				Message:      `Error: this is an events test {"api_token_id": "some-token-id", "api_token_name": "some-token-name"}`,
+				ResourceType: "API Token",
+				ResourceName: "some-token-name",
+				ResourceID:   "some-token-id",
+				Type:         storage.AdministrationEventType_ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE,
+			},
+			msg:    "Error: this is an events test",
+			level:  "error",
+			module: "apitoken/expiration",
+			fields: []interface{}{
+				APITokenID("some-token-id"), APITokenName("some-token-name"),
+			},
+		},
+		{
 			msg:    "Error: something went wrong",
 			level:  "error",
 			module: "pkg/random/something",

@@ -27,7 +27,8 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	// according to https://github.com/uber-go/zap/blob/master/field.go. Thus, the given interfaces
 	// shall be a strongly-typed zap.Field.
 	var resourceType string
-	var resourceTypeKey string
+	var resourceIDKey string
+	var resourceNameKey string
 	var errCode string
 	for _, c := range context {
 		// Currently silently drop the given context of the log entry if it's not a zap.Field.
@@ -35,13 +36,18 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 			field.AddTo(enc)
 			fields = append(fields, field)
 			if resource, exists := getResourceTypeField(field); exists {
-				if resourceType != "" {
-					// We cannot import utils.Should, hence need to handle this conditionally here ourselves.
-					err := fmt.Errorf("duplicate resource field found: %s", field.Key)
-					should(err)
-				} else {
+				if isIDField(field.Key) {
+					if resourceIDKey != "" {
+						should(fmt.Errorf("duplicate resource ID field found: %s", field.Key))
+					}
+					resourceIDKey = field.Key
 					resourceType = resource
-					resourceTypeKey = field.Key
+				} else {
+					if resourceNameKey != "" {
+						should(fmt.Errorf("duplicate resource name field found: %s", field.Key))
+					}
+					resourceNameKey = field.Key
+					resourceType = resource
 				}
 			}
 			if field.Key == errCodeField {
@@ -71,10 +77,11 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 	event.Message = msgWithContext
 
 	event.ResourceType = resourceType
-	if isIDField(resourceTypeKey) {
-		event.ResourceID = enc.m[resourceTypeKey]
-	} else {
-		event.ResourceName = enc.m[resourceTypeKey]
+	if resourceIDKey != "" {
+		event.ResourceID = enc.m[resourceIDKey]
+	}
+	if resourceNameKey != "" {
+		event.ResourceName = enc.m[resourceNameKey]
 	}
 
 	event.Domain = events.GetDomainFromModule(module)
