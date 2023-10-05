@@ -3,6 +3,8 @@ package features
 import (
 	"os"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/buildinfo"
 )
 
 type feature struct {
@@ -25,7 +27,7 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
-	if f.unchangeable {
+	if buildinfo.ReleaseBuild && f.unchangeable {
 		return f.defaultValue
 	}
 
