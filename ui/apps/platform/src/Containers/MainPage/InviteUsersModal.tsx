@@ -98,7 +98,7 @@ function InviteUsersModal(): ReactElement | null {
             const redhatSsoProvider = typedProviders.find((provider) => {
                 const lowercasedName = provider.name.toLocaleLowerCase();
                 return (
-                    lowercasedName.includes('red Hat sso') || lowercasedName.includes('openshift')
+                    lowercasedName.includes('red hat sso') || lowercasedName.includes('openshift')
                 );
             });
 
