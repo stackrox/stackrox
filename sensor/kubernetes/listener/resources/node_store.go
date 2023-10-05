@@ -66,10 +66,10 @@ func (s *nodeStoreImpl) Cleanup() {
 // addOrUpdateNode upserts node into store.
 // It returns true if the IP addresses of the node changed as a result.
 func (s *nodeStoreImpl) addOrUpdateNode(node *nodeWrap) bool {
-	var oldNode *nodeWrap
-	concurrency.WithLock(&s.mutex, func() {
-		oldNode = s.nodes[node.Name]
+	oldNode := concurrency.WithLock1(&s.mutex, func() *nodeWrap {
+		oldNode := s.nodes[node.Name]
 		s.nodes[node.Name] = node
+		return oldNode
 	})
 
 	if oldNode == nil || len(oldNode.addresses) != len(node.addresses) {

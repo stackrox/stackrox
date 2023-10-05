@@ -109,11 +109,8 @@ func (p *providerImpl) BackendFactory() BackendFactory {
 }
 
 func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) {
-	var backend Backend
-	var err error
-	concurrency.WithRLock(&p.mutex, func() {
-		backend = p.backend
-		err = p.backendCreationDone.Err()
+	backend, err := concurrency.WithRLock2(&p.mutex, func() (Backend, error) {
+		return p.backend, p.backendCreationDone.Err()
 	})
 
 	if backend != nil && err == nil {
@@ -127,12 +124,10 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 				" this is probably because of a recent upgrade or a configuration change")
 	}
 
-	var doneErrSig concurrency.ReadOnlyErrorSignal
-
-	concurrency.WithLock(&p.mutex, func() {
-		doneErrSig = p.backendCreationDone.Snapshot()
+	doneErrSig := concurrency.WithLock1(&p.mutex, func() concurrency.ReadOnlyErrorSignal {
+		doneErrSig := p.backendCreationDone.Snapshot()
 		if time.Since(p.lastBackendCreationAttempt) < backendCreationInterval {
-			return
+			return doneErrSig
 		}
 
 		// Calling reset on the default value of an ErrorSignal returns true
@@ -142,8 +137,9 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 				p.storedInfo.GetClaimMappings())
 
 			p.lastBackendCreationAttempt = time.Now()
-			doneErrSig = p.backendCreationDone.Snapshot()
+			return p.backendCreationDone.Snapshot()
 		}
+		return doneErrSig
 	})
 
 	select {
@@ -156,8 +152,8 @@ func (p *providerImpl) GetOrCreateBackend(ctx context.Context) (Backend, error) 
 		return nil, err
 	}
 
-	concurrency.WithRLock(&p.mutex, func() {
-		backend = p.backend
+	backend = concurrency.WithRLock1(&p.mutex, func() Backend {
+		return p.backend
 	})
 	if backend == nil {
 		return nil, utils.ShouldErr(errors.New("unexpected: backend was nil"))
