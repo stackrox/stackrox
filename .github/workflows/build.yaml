@@ -78,6 +78,14 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
+      - name: Investigate runner space
+        run: |
+          df .
+          df /
+          docker system prune --force --all
+          df .
+          df /
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
