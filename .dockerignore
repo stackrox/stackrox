@@ -8,4 +8,4 @@
 !/image/rhel/bin/.gitignore
 /linux-gocache/
 /operator/*/bin/
-# /qa-tests-backend/
+# /qa-tests-backend/ <- this would create a diff, causing `make tag` to add the "-dirty" suffix
