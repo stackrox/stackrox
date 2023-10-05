@@ -448,7 +448,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-         ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Checkout submodules
       run: |
@@ -577,7 +577,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-         ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies

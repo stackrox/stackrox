@@ -28,7 +28,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-         ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -52,7 +52,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-         ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -113,7 +113,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-         ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
