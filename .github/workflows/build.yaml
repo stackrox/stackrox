@@ -80,11 +80,9 @@ jobs:
     steps:
       - name: Investigate runner space
         run: |
-          df .
-          df /
+          df --si /
           docker system prune --force --all
-          df .
-          df /
+          df --si /
 
       - name: Checkout
         uses: actions/checkout@v4
