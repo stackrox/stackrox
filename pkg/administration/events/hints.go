@@ -2,7 +2,7 @@ package events
 
 import (
 	"github.com/stackrox/rox/pkg/administration/events/codes"
-	"github.com/stackrox/rox/pkg/sac/resources"
+	adminResources "github.com/stackrox/rox/pkg/administration/events/resources"
 )
 
 const (
@@ -15,19 +15,30 @@ var (
 	// In the future, we may extend this, and possibly also ensure hints are loaded externally (similar to
 	// vulnerability definitions).
 	hints = map[string]map[string]map[string]string{
+		authenticationDomain: {
+			adminResources.APIToken: {
+				"": `An API token is about to expire. See the details on the expiration time within the event message.
+It is not possible to re-create the token, instead you have to do the following:
+- Delete the expiring API token.
+- Create a new API token (you may choose the same name).
+
+Afterwards, you may use the newly created API token.
+`,
+			},
+		},
+		defaultDomain: {},
 		imageScanningDomain: {
 			// For now, this is an example string. We may want to revisit those together with UX / the docs team to get
 			// errors that are in-line with documentation guidelines.
-			resources.Image.String(): {
+			adminResources.Image: {
 				"": `An issue occurred scanning the image. Please ensure that:
 - Scanner can access the registry.
 - Correct credentials are configured for the particular registry / repository.
 - The scanned manifest exists within the registry / repository.`,
 			},
 		},
-		defaultDomain: {},
 		integrationDomain: {
-			"Notifier": {
+			adminResources.Notifier: {
 				codes.AWSSHGeneric: `An issue occurred when using the AWS Security Hub notifier.
 Please ensure that:
 - Credentials are configured correctly.
