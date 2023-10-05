@@ -22,6 +22,12 @@ jobs:
     steps:
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -71,6 +77,12 @@ jobs:
     steps:
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Run Postgres
       run: |
         su postgres -c 'initdb -D /tmp/data'
@@ -109,6 +121,12 @@ jobs:
     steps:
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Create combined mono repo lock file
       uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -137,6 +155,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - uses: ./.github/actions/job-preamble
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies

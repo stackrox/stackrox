@@ -80,6 +80,12 @@ jobs:
     steps:
       - uses: ./.github/actions/job-preamble
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -105,6 +111,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -135,6 +147,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -182,6 +200,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -262,6 +286,12 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -414,6 +444,12 @@ jobs:
 
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Checkout submodules
       run: |
         git submodule update --init
@@ -469,6 +505,12 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -531,6 +573,12 @@ jobs:
     steps:
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -577,6 +625,12 @@ jobs:
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
     steps:
       - uses: ./.github/actions/job-preamble
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout submodules
         run: |

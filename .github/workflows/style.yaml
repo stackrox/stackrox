@@ -24,6 +24,12 @@ jobs:
     steps:
     - uses: ./.github/actions/job-preamble
 
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
+
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
@@ -41,6 +47,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - uses: ./.github/actions/job-preamble
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -66,6 +78,12 @@ jobs:
     steps:
       - uses: ./.github/actions/job-preamble
 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
@@ -90,6 +108,12 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
     - uses: ./.github/actions/job-preamble
+
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
