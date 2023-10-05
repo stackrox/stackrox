@@ -78,22 +78,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - name: Investigate runner space
-        run: |
-          df --si /
-          docker system prune --force --all
-          df --si /
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -119,16 +104,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -158,16 +134,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -214,16 +181,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -303,22 +261,13 @@ jobs:
             echo "ROX_PRODUCT_BRANDING=${brand}"
           } >> "$GITHUB_ENV"
 
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/job-preamble
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
 
       - name: Checkout submodules
         run: |
@@ -463,16 +412,7 @@ jobs:
           echo "ROX_PRODUCT_BRANDING=${brand}"
         } >> "$GITHUB_ENV"
 
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Checkout submodules
       run: |
@@ -528,16 +468,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -598,16 +529,7 @@ jobs:
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.59
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -654,16 +576,7 @@ jobs:
         STACKROX_CI_INSTANCE_API_KEY: ${{ secrets.STACKROX_CI_INSTANCE_API_KEY }}
         STACKROX_CI_INSTANCE_CENTRAL_HOST: ${{ secrets.STACKROX_CI_INSTANCE_CENTRAL_HOST }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Checkout submodules
         run: |
