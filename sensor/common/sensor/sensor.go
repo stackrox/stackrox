@@ -366,7 +366,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	}
 
 	err := backoff.RetryNotify(func() error {
-		log.Info("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
+		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection is up, we can try to create a new central communication
