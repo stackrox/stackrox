@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -34,9 +33,10 @@ import (
 // sensor implements the Sensor interface by sending inputs to central,
 // and providing the output from central asynchronously.
 type centralCommunicationImpl struct {
-	receiver   CentralReceiver
-	sender     CentralSender
-	components []common.SensorComponent
+	receiver        CentralReceiver
+	sender          CentralSender
+	components      []common.SensorComponent
+	clientReconcile bool
 
 	stopper concurrency.Stopper
 
@@ -45,6 +45,10 @@ type centralCommunicationImpl struct {
 
 	isReconnect bool
 }
+
+var (
+	errCantReconcile = errors.New("unable to reconcile due to deduper payload too large")
+)
 
 func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
 	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
@@ -130,10 +134,13 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
-	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
-	if features.SensorReconciliationOnReconnect.Enabled() {
+	if s.clientReconcile {
+		log.Info("Sensor is capable of doing client reconciliation")
 		capsSet.Add(centralsensor.SensorReconciliationOnReconnect)
+	} else {
+		log.Info("Sensor has client reconciliation disabled")
 	}
+	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
@@ -246,7 +253,36 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialPolicySync(stream, detector)
+	if err := s.initialPolicySync(stream, detector); err != nil {
+		return err
+	}
+
+	return s.initialDeduperSync(stream)
+}
+
+func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
+	// If client reconciliation is disabled or cental does not support it, don't expect a deduper sync message to arrive
+	if !s.clientReconcile || !centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) {
+		log.Info("Skipping client reconciliation. Sensor will not wait for deduper state")
+		return nil
+	}
+	log.Info("Waiting for deduper state from Central")
+
+	msg, err := stream.Recv()
+	if err != nil {
+		if e, ok := status.FromError(err); ok {
+			if e.Code() == codes.ResourceExhausted {
+				return errors.Wrap(errCantReconcile, e.String())
+			}
+		}
+		return errors.Wrap(err, "receiving initial deduper sync")
+	}
+	if msg.GetDeduperState().GetResourceHashes() == nil {
+		return errors.Errorf("expected DeduperState but received: %t", msg.Msg)
+	}
+
+	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
@@ -284,6 +320,18 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	}
 	if err := detector.ProcessMessage(msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
+	}
+
+	// Network Baseline sync
+	msg, err = stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving network baseline sync")
+	}
+	if msg.GetNetworkBaselineSync() == nil {
+		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
+	}
+	if err := detector.ProcessMessage(msg); err != nil {
+		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil
 }

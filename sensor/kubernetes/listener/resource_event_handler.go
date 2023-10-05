@@ -290,6 +290,7 @@ func (k *listenerImpl) handleAllEvents() {
 				},
 			},
 		},
+		Context: k.context,
 	})
 }
 
