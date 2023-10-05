@@ -522,9 +522,9 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 	// transmit a password.
 	switch e.notifier.GetEmail().GetStartTLSAuthMethod() {
 	case storage.Email_PLAIN:
-		auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+		auth = smtp.PlainAuth("", e.config.GetUsername(), e.creds, e.smtpServer.host)
 	case storage.Email_LOGIN:
-		auth = loginAuthMethod(e.config.GetUsername(), e.config.GetPassword())
+		auth = loginAuthMethod(e.config.GetUsername(), e.creds)
 	}
 	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
