@@ -36,10 +36,10 @@ EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 BUILD_CMD := $(BUILD_FLAGS) go build \
-                 -trimpath \
-                 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" \
-                 -o image/scanner/bin/scanner \
-                 ./cmd/scanner
+		 -trimpath \
+		 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" \
+		 -o image/scanner/bin/scanner \
+		 ./cmd/scanner
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -192,8 +192,7 @@ clean-certs:
 
 # Generate keys.
 #
-.PRECIOUS: $(certs-d)/%/key.pem $(certs-d)/%/cert.pem
-
+.PRECIOUS: $(certs-d)/%/key.pem
 $(certs-d)/%/key.pem:
 	@echo "+ $@"
 	$(SILENT)mkdir -p $(@D)
@@ -223,19 +222,21 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 	    -key $< \
 	    -out $@
 
-# Generate a certificate.
+# Copy CA cert and key.
 #
-
 .PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
-	$(SILENT)ln -s $(abspath $<) $@
+	$(SILENT)ln -fs $(abspath $<) $@
 
 .PRECIOUS: $(certs-d)/%/ca-key.pem
 $(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
 	@echo "+ $@"
-	$(SILENT)ln -s $(abspath $<) $@
+	$(SILENT)ln -fs $(abspath $<) $@
 
+# Generate a certificate.
+#
+.PRECIOUS: $(certs-d)/%/cert.pem
 $(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/%/ca-key.pem
 	@echo "+ $@"
 	$(SILENT) openssl x509 \
@@ -249,10 +250,8 @@ $(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/%/ca
 	    -extfile <(echo "subjectAltName = DNS:$(cert-dns) DNS:localhost DNS:127.0.0.1") \
 	    -out $@
 
-
 # Verify certs (loose sanity check).
 #
-.PRECIOUS: $(certs-d)/%/.verified
 $(certs-d)/%/.verified: $(certs-d)/%/cert.pem
 	$(SILENT) openssl verify \
 	    -CAfile $(@D)/ca.pem \
