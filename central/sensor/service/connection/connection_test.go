@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -71,7 +72,10 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 }
 
 func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
-
+	s.T().Setenv("ROX_SENSOR_RECONCILIATION", "true")
+	if !features.SensorReconciliationOnReconnect.Enabled() {
+		s.T().Skip("Test skipped if ROX_SENSOR_RECONCILIATION feature flag isn't set")
+	}
 	cases := map[string]struct {
 		givenSensorCapabilities       []centralsensor.SensorCapability
 		givenSensorState              central.SensorHello_SensorState
