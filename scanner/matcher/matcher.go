@@ -31,7 +31,7 @@ type matcherImpl struct {
 // NewMatcher creates a new matcher.
 func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher")
-	pool, err := postgres.Connect(ctx, cfg.DBConnString, "libvuln")
+	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libvuln")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for matcher: %w", err)
 	}
