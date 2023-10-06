@@ -162,13 +162,33 @@ func archiveFiles(dirPath, zipFilePath string, files []string) error {
 func downloadFromURL(url, dir, filename string) error {
 	const maxRetries = 3
 	var lastErr error
-	var statusCode int
 
 	for i := 0; i < maxRetries; i++ {
-		statusCode, lastErr = downloadAttempt(url, dir, filename)
-		if lastErr == nil && statusCode == http.StatusOK { // Success
+		resp, err := http.Get(url)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode == http.StatusOK { // Success
+			out, err := os.Create(filepath.Join(dir, filename))
+			if err != nil {
+				lastErr = err
+				resp.Body.Close()
+				continue
+			}
+
+			_, err = io.Copy(out, resp.Body)
+			if err != nil {
+				lastErr = err
+				out.Close()
+				continue
+			}
+			resp.Body.Close()
+			out.Close()
 			return nil
 		} else {
+			resp.Body.Close()
 			time.Sleep(time.Second * 3)
 			continue
 		}
@@ -176,25 +196,4 @@ func downloadFromURL(url, dir, filename string) error {
 		break
 	}
 	return lastErr
-}
-
-func downloadAttempt(url, dir, filename string) (int, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return 0, err // 0 as a placeholder since the status is unknown when there's an error
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return resp.StatusCode, fmt.Errorf("failed to download %s, status code: %d", url, resp.StatusCode)
-	}
-
-	out, err := os.Create(filepath.Join(dir, filename))
-	if err != nil {
-		return resp.StatusCode, err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return resp.StatusCode, err
 }
