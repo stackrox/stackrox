@@ -16,6 +16,8 @@ import (
 )
 
 // ClusterSacHelper is an interface to query the scope of the requester for basic cluster information (ID and name).
+//
+//go:generate mockgen-wrapper
 type ClusterSacHelper interface {
 	GetClustersForPermissions(
 		ctx context.Context,
@@ -31,6 +33,8 @@ type ClusterSacHelper interface {
 }
 
 // ClusterNamespaceSacHelper is an interface to query the scope of the requester for basic cluster and namespace information (ID and name).
+//
+//go:generate mockgen-wrapper
 type ClusterNamespaceSacHelper interface {
 	GetNamespacesForClusterAndPermissions(
 		ctx context.Context,

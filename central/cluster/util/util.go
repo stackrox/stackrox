@@ -3,15 +3,16 @@ package util
 import (
 	"context"
 
-	cluster "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/pkg/errox"
 )
 
 // GetClusterIDFromNameOrID returns the ID of cluster. If cluster is already an ID than it is returned
-// as is, if cluster is a name will return the associated cluster's ID.
-func GetClusterIDFromNameOrID(ctx context.Context, ds cluster.DataStore, cluster string) (string, error) {
+// as is, if cluster is a name will return the associated cluster's ID. Permissions are used by the
+// sachelper to determine which clusters are accessible, see sachelper for details.
+func GetClusterIDFromNameOrID(ctx context.Context, clusterSACHelper sachelper.ClusterSacHelper, cluster string, permissions []string) (string, error) {
 	// Clusters will be filtered based on what the user (from ctx) has access to.
-	clusters, err := ds.GetClusters(ctx)
+	clusters, err := clusterSACHelper.GetClustersForPermissions(ctx, permissions, nil)
 	if err != nil {
 		return "", err
 	}
