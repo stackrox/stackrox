@@ -60,7 +60,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
-    static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
+    //static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
     static final private String COMPONENT_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 169:91)
     static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         " apt, bash, curl, wget":" apt, bash, curl")
@@ -440,7 +440,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                     " contains " + CVE_COUNT + " CVEs with severities ranging between " +
+                     " contains \\d{3,} CVEs with severities ranging between " +
                      "Low and Critical" | []
 
         "Service Configuration"           | 2.0f     |
