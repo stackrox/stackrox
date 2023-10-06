@@ -14,7 +14,6 @@ import (
 	operatorV1Alpha1 "github.com/openshift/api/operator/v1alpha1"
 	"github.com/openshift/runtime-utils/pkg/registries"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -43,7 +42,7 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	Cleanup()
-	ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error)
+	ReconcileDelete(resType, resID string, resHash uint64) (string, error)
 
 	UpsertImageContentSourcePolicy(icsp *operatorV1Alpha1.ImageContentSourcePolicy) error
 	DeleteImageContentSourcePolicy(uid types.UID) error
@@ -113,7 +112,7 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (s *FileStore) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
+func (s *FileStore) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
 	panic("implement me")

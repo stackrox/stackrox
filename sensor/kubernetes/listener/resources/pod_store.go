@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -16,9 +15,9 @@ type PodStore struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (*central.MsgFromSensor, error) {
+func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
 	if resType != "Pod" {
-		return nil, nil
+		return "", nil
 	}
 	var pod *storage.Pod
 	for _, p := range ps.GetAll() {
@@ -29,19 +28,10 @@ func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (*central.M
 	}
 	// Resource exists on central but not on Sensor, send delete event
 	if pod == nil {
-		msg := central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     resID,
-				Action: central.ResourceAction_REMOVE_RESOURCE,
-				Resource: &central.SensorEvent_Pod{
-					Pod: &storage.Pod{Id: resID},
-				},
-			},
-		}
-		return &central.MsgFromSensor{Msg: &msg}, nil
+		return resID, nil
 
 	}
-	return nil, nil
+	return "", nil
 }
 
 // Cleanup deletes all entries from store

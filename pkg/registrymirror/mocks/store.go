@@ -13,7 +13,6 @@ import (
 
 	v1 "github.com/openshift/api/config/v1"
 	v1alpha1 "github.com/openshift/api/operator/v1alpha1"
-	central "github.com/stackrox/rox/generated/internalapi/central"
 	gomock "go.uber.org/mock/gomock"
 	types "k8s.io/apimachinery/pkg/types"
 )
@@ -111,10 +110,10 @@ func (mr *MockStoreMockRecorder) PullSources(srcImage any) *gomock.Call {
 }
 
 // ReconcileDelete mocks base method.
-func (m *MockStore) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
+func (m *MockStore) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReconcileDelete", resType, resID, resHash)
-	ret0, _ := ret[0].(*central.MsgFromSensor)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

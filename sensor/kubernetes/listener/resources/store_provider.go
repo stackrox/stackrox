@@ -2,10 +2,8 @@ package resources
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registrymirror"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -147,36 +145,40 @@ func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
 }
 
-// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
-// should be deleted in Central to keep the state of Sensor and Central in sync.
-func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) []central.MsgFromSensor {
-	events := make([]central.MsgFromSensor, 0)
-	for typeWithID, hashValue := range h {
-		resType, resID := stringutils.Split2(typeWithID, ":")
-		if resID == "" {
-			log.Errorf("malformed hash key: %s", typeWithID)
-			continue
-		}
-		resEvent, err := p.ReconcileDelete(resType, resID, hashValue)
-		if err != nil {
-			log.Errorf("reconciliation error: %s", err)
-		}
-		if resEvent == nil {
-			log.Error("empty reconciliation result")
-			continue
-		}
-
-		events = append(events, *resEvent)
-	}
-	return events
-}
+//// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
+//// should be deleted in Central to keep the state of Sensor and Central in sync.
+// func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) []central.MsgFromSensor {
+//	events := make([]central.MsgFromSensor, 0)
+//	for typeWithID, hashValue := range h {
+//		resType, resID := stringutils.Split2(typeWithID, ":")
+//		if resID == "" {
+//			log.Errorf("malformed hash key: %s", typeWithID)
+//			continue
+//		}
+//		toDeleteID, err := p.ReconcileDelete(resType, resID, hashValue)
+//		if err != nil {
+//			log.Errorf("reconciliation error: %s", err)
+//		}
+//		if toDeleteID == "" {
+//			// Resource was found on Sensor and Central, continue to next item
+//			continue
+//		}
+//		delMsg, err := p.resourceToMessage(resType, toDeleteID)
+//		if err != nil {
+//			log.Errorf("converting resource to MsgFromSensor: %s", err)
+//			continue
+//		}
+//		events = append(events, *delMsg)
+//	}
+//	return events
+//}
 
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (p *InMemoryStoreProvider) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
+func (p *InMemoryStoreProvider) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	if resStore, found := p.reconcilableStores[resType]; found {
 		return resStore.ReconcileDelete(resType, resID, resHash)
 	}
-	return nil, errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
+	return "", errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
 }

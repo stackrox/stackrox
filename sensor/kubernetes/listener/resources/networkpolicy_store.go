@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -86,7 +85,7 @@ type networkPolicyStoreImpl struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (*central.MsgFromSensor, error) {
+func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
 	panic("implement me")

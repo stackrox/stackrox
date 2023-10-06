@@ -25,15 +25,26 @@ func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) []central.
 			log.Errorf("malformed hash key: %s", typeWithID)
 			continue
 		}
-		resEvent, err := hr.storeProvider.ReconcileDelete(resType, resID, hashValue)
+		toDeleteID, err := hr.storeProvider.ReconcileDelete(resType, resID, hashValue)
 		if err != nil {
 			log.Errorf("reconciliation error: %s", err)
 		}
-		if resEvent == nil {
+		if toDeleteID == "" {
 			log.Error("empty reconciliation result")
 			continue
 		}
-		events = append(events, *resEvent)
+		delMsg, err := resourceToMessage(resType, toDeleteID)
+		if err != nil {
+			log.Errorf("converting resource to MsgFromSensor: %s", err)
+			continue
+		}
+		events = append(events, *delMsg)
 	}
 	return events
+}
+
+func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, error) {
+	_, _ = resType, resID
+	panic("Not implemented")
+
 }
