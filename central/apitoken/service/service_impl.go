@@ -36,7 +36,7 @@ var (
 			"/v1.APITokenService/GenerateToken",
 		},
 		user.With(permissions.View(resources.Access)): {
-			"/v1.APITokenService/GetAllowedTokenRoles",
+			"/v1.APITokenService/ListAllowedTokenRoles",
 		},
 	})
 )
