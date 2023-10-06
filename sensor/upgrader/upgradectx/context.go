@@ -317,15 +317,17 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 		if resourceMD.Purpose&resourcePurpose != resourcePurpose {
 			continue
 		}
-		resourceClient := c.DynamicClientForResource(resourceMD, common.Namespace)
-		listObj, err := resourceClient.List(c.ctx, *listOpts)
-		if err != nil {
-			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceMD)
-		}
+		for _, ns := range common.AllowedNamespaces {
+			resourceClient := c.DynamicClientForResource(resourceMD, ns)
+			listObj, err := resourceClient.List(c.ctx, *listOpts)
+			if err != nil {
+				return nil, errors.Wrapf(err, "listing relevant objects of type %v in namespace %s", resourceMD, ns)
+			}
 
-		for _, item := range listObj.Items {
-			item := item // create a copy to prevent aliasing
-			result = append(result, &item)
+			for _, item := range listObj.Items {
+				item := item // create a copy to prevent aliasing
+				result = append(result, &item)
+			}
 		}
 	}
 
