@@ -42,6 +42,20 @@ export function getLevelText(level: AdministrationEventLevel) {
     return textMap[level] ?? textMap.ADMINISTRATION_EVENT_LEVEL_UNKNOWN;
 }
 
+type AlertVariant = 'danger' | 'default' | 'info' | 'success' | 'warning';
+
+const variantMap: Record<AdministrationEventLevel, AlertVariant> = {
+    ADMINISTRATION_EVENT_LEVEL_ERROR: 'danger',
+    ADMINISTRATION_EVENT_LEVEL_INFO: 'info',
+    ADMINISTRATION_EVENT_LEVEL_SUCCESS: 'success',
+    ADMINISTRATION_EVENT_LEVEL_UNKNOWN: 'default',
+    ADMINISTRATION_EVENT_LEVEL_WARNING: 'warning',
+};
+
+export function getLevelVariant(level: AdministrationEventLevel) {
+    return variantMap[level] ?? variantMap.ADMINISTRATION_EVENT_LEVEL_UNKNOWN;
+}
+
 const typeMap: Record<AdministrationEventType, string> = {
     ADMINISTRATION_EVENT_TYPE_UNKNOWN: 'Unknown',
     ADMINISTRATION_EVENT_TYPE_GENERIC: 'Generic',

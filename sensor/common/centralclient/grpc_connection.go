@@ -5,11 +5,11 @@ import (
 	"crypto/x509"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
 )
@@ -73,26 +73,6 @@ func (f *centralConnectionFactoryImpl) pingCentral() error {
 	return err
 }
 
-// waitUntilCentralIsReady blocks until Central responds to a ping or until the
-// retry budget is exhausted, in which case the sensor is marked as stopped and
-// the program will exit.
-func (f *centralConnectionFactoryImpl) waitUntilCentralIsReady() error {
-	exponential := backoff.NewExponentialBackOff()
-	exponential.MaxElapsedTime = 5 * time.Minute
-	exponential.MaxInterval = 32 * time.Second
-	err := backoff.RetryNotify(func() error {
-		return f.pingCentral()
-	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Check Central status failed: %s. Retrying after %s...", err, d.Round(time.Millisecond))
-	})
-
-	if err != nil {
-		return errors.Wrapf(err, "checking central status failed after %s", exponential.GetElapsedTime())
-	}
-
-	return nil
-}
-
 // getCentralTLSCerts only logs errors because this feature should not break
 // sensors start-up.
 func (f *centralConnectionFactoryImpl) getCentralTLSCerts() []*x509.Certificate {
@@ -112,8 +92,9 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
-	if err := f.waitUntilCentralIsReady(); err != nil {
-		f.stopSignal.SignalWithError(err)
+	if err := f.pingCentral(); err != nil {
+		log.Errorf("checking central status failed: %v", err)
+		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
 		return
 	}
 
@@ -127,6 +108,10 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	} else {
 		log.Info("Did not add central CA cert to gRPC connection")
 	}
+
+	// Use pkg/grpc configuration for MaxMsgSize on client connections as well. This will overwrite the 4MB threshold
+	// set by gRPC lib.
+	opts = append(opts, clientconn.MaxMsgReceiveSize(grpc.MaxMsgSizeSetting.IntegerSetting()))
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {

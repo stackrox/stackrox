@@ -285,7 +285,8 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                     </Td>
                                     <Td dataLabel="Status">
                                         <ReportJobStatus
-                                            reportSnapshot={reportSnapshot}
+                                            reportStatus={reportSnapshot.reportStatus}
+                                            isDownloadAvailable={reportSnapshot.isDownloadAvailable}
                                             areDownloadActionsDisabled={areDownloadActionsDisabled}
                                             onDownload={onDownload}
                                         />

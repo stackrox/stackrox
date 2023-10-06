@@ -18,6 +18,8 @@ import (
 
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -29,7 +31,7 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 const (
@@ -37,7 +39,7 @@ const (
 	emailLineLength = 78
 )
 
-// email notifier plugin
+// email notifier plugin.
 type email struct {
 	config     *storage.Email
 	smtpServer smtpServer
@@ -142,7 +144,7 @@ func validate(email *storage.Email) error {
 	return errorList.ToError()
 }
 
-// NewEmail exported to allow for usage in various components
+// NewEmail exported to allow for usage in various components.
 func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*email, error) {
 	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
@@ -296,7 +298,7 @@ func (*email) Close(context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the email
+// AlertNotify takes in an alert and generates the email.
 func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	subject := notifiers.SummaryForAlert(alert)
 	body, err := e.plainTextAlert(alert)
@@ -309,7 +311,7 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 }
 
 // ReportNotify takes in reporting data, a list of intended recipients, email subject and an email message to send out a report.
-// Set subject to empty string for v1 report configs
+// Set subject to empty string for v1 report configs.
 func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
 	var from string
 	if e.config.GetFrom() != "" {
@@ -336,7 +338,7 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 	return e.send(ctx, &msg)
 }
 
-// YamlNotify takes in a yaml file and generates the email message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the email message.
 func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	subject := fmt.Sprintf("New network policy YAML for cluster '%s' needs to be applied", clusterName)
 
@@ -351,7 +353,7 @@ func (e *email) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	return e.sendEmail(ctx, e.notifier.GetLabelDefault(), subject, body)
 }
 
-// Test sends a test notification
+// Test sends a test notification.
 func (e *email) Test(ctx context.Context) error {
 	subject := "StackRox Test Email"
 	body := fmt.Sprintf("%v\r\n", "This is a test email created to test integration with StackRox.")
@@ -380,49 +382,49 @@ func (e *email) sendEmail(ctx context.Context, recipient, subject, body string) 
 func (e *email) send(ctx context.Context, m *message) error {
 	conn, auth, err := e.connection(ctx)
 	if err != nil {
-		return createError("Connection failed", err)
+		return createError("Connection failed", err, e.notifier.GetName())
 	}
 
 	client, err := e.createClient(conn)
 	if err != nil {
-		return createError("SMTP client creation failed", err)
+		return createError("SMTP client creation failed", err, e.notifier.GetName())
 	}
 	defer func() {
 		if err := client.Quit(); err != nil {
-			log.Errorf("Failed to quit client cleanly: %v", err)
+			log.Error("Failed to quit client cleanly", logging.Err(err))
 		}
 	}()
 
 	if e.config.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		if err = client.StartTLS(e.tlsConfig()); err != nil {
-			return createError("SMTP STARTTLS failed", err)
+			return createError("SMTP STARTTLS failed", err, e.notifier.GetName())
 		}
 	}
 
 	if !e.notifier.GetEmail().GetAllowUnauthenticatedSmtp() {
 		if err = client.Auth(auth); err != nil {
-			return createError("SMTP authentication failed", err)
+			return createError("SMTP authentication failed", err, e.notifier.GetName())
 		}
 	}
 
 	if err = client.Mail(e.config.GetSender()); err != nil {
-		return createError("SMTP MAIL command failed", err)
+		return createError("SMTP MAIL command failed", err, e.notifier.GetName())
 	}
 	for _, toAddr := range m.To {
 		if err = client.Rcpt(toAddr); err != nil {
-			return createError("SMTP RCPT command failed", err)
+			return createError("SMTP RCPT command failed", err, e.notifier.GetName())
 		}
 	}
 
 	w, err := client.Data()
 	if err != nil {
-		return createError("SMTP DATA command failed", err)
+		return createError("SMTP DATA command failed", err, e.notifier.GetName())
 	}
 	defer utils.IgnoreError(w.Close)
 
 	_, err = w.Write(m.Bytes())
 	if err != nil {
-		return createError("SMTP message writing failed", err)
+		return createError("SMTP message writing failed", err, e.notifier.GetName())
 	}
 
 	return nil
@@ -515,12 +517,11 @@ func (e *email) ProtoNotifier() *storage.Notifier {
 	return e.notifier
 }
 
-func createError(msg string, err error) error {
+func createError(msg string, err error, notifierName string) error {
 	if e, _ := err.(*textproto.Error); e != nil {
 		msg = fmt.Sprintf("%s (code: %d)", msg, e.Code)
-	} else {
-		msg = fmt.Sprintf("%s: %v", msg, err)
 	}
-	log.Errorf("%s: %v", msg, err)
+	log.Errorw(msg, logging.Err(err), logging.ErrCode(codes.EmailGeneric),
+		logging.NotifierName(notifierName))
 	return errors.New(msg)
 }

@@ -12,6 +12,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -27,10 +30,11 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log     = logging.LoggerForModule(option.EnableAdministrationEvents())
+	timeout = env.TeamsTimeout.DurationSetting()
 )
 
-// teams notifier plugin
+// teams notifier plugin.
 type teams struct {
 	*storage.Notifier
 
@@ -47,7 +51,7 @@ type fact struct {
 	Value string `json:"value"`
 }
 
-// notification json struct for richly-formatted notifications
+// notification json struct for richly-formatted notifications.
 type notification struct {
 	Color    string    `json:"themeColor"`
 	Title    string    `json:"title"`
@@ -254,7 +258,7 @@ func (*teams) Close(_ context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the Teams message
+// AlertNotify takes in an alert and generates the Teams message.
 func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	var sections []section
 	title := notifiers.SummaryForAlert(alert)
@@ -294,7 +298,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -304,7 +308,7 @@ func (t *teams) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	)
 }
 
-// YamlNotify takes in a yaml file and generates the teams message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the teams message.
 func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	tagLine := fmt.Sprintf("Network policy YAML applied on cluster %q", clusterName)
 
@@ -335,7 +339,7 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -343,7 +347,7 @@ func (t *teams) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, cluste
 	)
 }
 
-// NewTeams exported to allow for usage in various components
+// NewTeams exported to allow for usage in various components.
 func NewTeams(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter) (*teams, error) {
 	return &teams{
 		Notifier:       notifier,
@@ -368,7 +372,7 @@ func (t *teams) Test(ctx context.Context) error {
 
 	return retry.WithRetry(
 		func() error {
-			return postMessage(ctx, webhook, jsonPayload)
+			return t.postMessage(ctx, webhook, jsonPayload)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -376,23 +380,26 @@ func (t *teams) Test(ctx context.Context) error {
 	)
 }
 
-func postMessage(ctx context.Context, url string, jsonPayload []byte) error {
+func (t *teams) postMessage(ctx context.Context, url string, jsonPayload []byte) error {
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{
-		Timeout:   notifiers.Timeout,
+		Timeout:   timeout,
 		Transport: proxy.RoundTripper(),
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Errorf("Error posting to teams: %v", err)
+		log.Errorw("Error posting message to teams",
+			logging.Err(err),
+			logging.ErrCode(codes.TeamsGeneric),
+			logging.NotifierName(t.GetName()))
 		return errors.Wrap(err, "Error posting to teams")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
-	return notifiers.CreateError("Teams", resp)
+	return notifiers.CreateError(t.GetName(), resp, codes.TeamsGeneric)
 }
 
 func backOff(previousAttempt int) {

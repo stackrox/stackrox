@@ -19,6 +19,7 @@ import {
     clickRowActionMenuItemInTable,
     groupsAlias,
     groupsBatchAliasForPOST,
+    rolesAlias,
     saveCreatedAuthProvider,
     saveUpdatedAuthProvider,
     visitAccessControlEntities,
@@ -417,7 +418,15 @@ describe('Invite users', () => {
     withAuth();
 
     it('should have a trigger for opening the Invite users modal in the Auth Providers table header', () => {
-        visitAccessControlEntities(entitiesKey);
+        const staticResponseMap = {
+            [authProvidersAlias]: {
+                fixture: 'auth/authProviders-id1-id3.json',
+            },
+            [rolesAlias]: {
+                fixture: 'auth/roles.json',
+            },
+        };
+        visitAccessControlEntities(entitiesKey, staticResponseMap);
 
         cy.get('button:contains("Invite users")').click();
 

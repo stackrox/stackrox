@@ -1,4 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     visitVulnerabilityReportingFromLeftNav,
@@ -7,6 +8,12 @@ import {
 
 describe('Vulnerability Management Reporting table', () => {
     withAuth();
+
+    before(function () {
+        if (hasFeatureFlag('ROX_VULN_MGMT_REPORTING_ENHANCEMENTS')) {
+            this.skip();
+        }
+    });
 
     it('should go from left navigation', () => {
         visitVulnerabilityReportingFromLeftNav();

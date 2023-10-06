@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
-	"go.uber.org/zap"
 )
 
 var (
@@ -100,7 +99,7 @@ func readCA(file string) ([]byte, bool, error) {
 		if os.IsNotExist(err) {
 			return nil, false, nil
 		}
-		log.Errorw("Reading CA file", logging.Err(err), zap.String("file", file))
+		log.Errorw("Reading CA file", logging.Err(err), logging.String("file", file))
 		return nil, false, err
 	}
 

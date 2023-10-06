@@ -162,7 +162,8 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 		srvs = append(srvs, services.NewIndexerService(backends.Indexer))
 	}
 	if backends.Matcher != nil {
-		srvs = append(srvs, services.NewMatcherService(backends.Matcher))
+		// nil indexer is ok, see implementation.
+		srvs = append(srvs, services.NewMatcherService(backends.Matcher, backends.Indexer))
 	}
 	grpcSrv.Register(srvs...)
 

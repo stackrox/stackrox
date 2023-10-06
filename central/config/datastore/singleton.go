@@ -104,6 +104,10 @@ func initialize() {
 		panic(err)
 	}
 
+	// See the note next to the publicConfigCache variable in datastore.go for
+	// more information on public config caching.
+	cachePublicConfig(config.GetPublicConfig())
+
 	privateConfig := config.GetPrivateConfig()
 	needsUpsert := false
 	if privateConfig == nil {

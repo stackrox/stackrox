@@ -35,7 +35,9 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
+	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
@@ -426,6 +428,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
 	}
 
 	if features.AdministrationEvents.Enabled() {
@@ -441,6 +444,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		networkBaselineDataStore.Singleton(),
 		delegatedRegistryConfigDataStore.Singleton(),
 		iiDatastore.Singleton(),
+		v2ComplianceMgr.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
@@ -560,13 +564,8 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
-		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
+		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				gs := cfg.Gatherer()
