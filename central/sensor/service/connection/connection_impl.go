@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -604,7 +605,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
-	if connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
+	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
 		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 
