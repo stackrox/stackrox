@@ -58,9 +58,10 @@ function WatchedImagesModal({
 
     return (
         <Modal
+            aria-labelledby="manage-watched-images-modal-title"
             header={
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
-                    <Title headingLevel="h2" size="2xl">
+                    <Title id="manage-watched-images-modal-title" headingLevel="h2" size="2xl">
                         Manage watched images
                     </Title>
                     <Text>
