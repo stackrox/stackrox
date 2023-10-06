@@ -550,6 +550,7 @@ publish_roxctl() {
     "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/prepare.sh" . "${temp_dir}"
     tree "${temp_dir}"
     find "${temp_dir}" -name sha256sum.txt -ls -exec cat {} \;
+    find "${temp_dir}" -name 'roxctl*' -ls -exec file {} \;
     echo "would have run this:" "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://sr-roxc"
     echo "would have run this:" "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
 }
