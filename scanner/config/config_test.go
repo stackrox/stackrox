@@ -136,7 +136,7 @@ func Test_Database_validate(t *testing.T) {
 		err := c.validate()
 		assert.NoError(t, err)
 	})
-	t.Run("when using URLs then error", func(t *testing.T) {
+	t.Run("when using URL then error", func(t *testing.T) {
 		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
 		err := c.validate()
 		assert.ErrorContains(t, err, "URLs are not supported")
@@ -158,7 +158,8 @@ func Test_Database_validate(t *testing.T) {
 	require.NoError(t, err)
 	_, err = pwdF.WriteString("foobar-password")
 	require.NoError(t, err)
-	t.Run("when password files exists then valid", func(t *testing.T) {
+	require.NoError(t, pwdF.Close())
+	t.Run("when password file exists then valid", func(t *testing.T) {
 		c := Database{
 			ConnString:   "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10",
 			PasswordFile: pwdFile,
@@ -167,7 +168,7 @@ func Test_Database_validate(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, c.ConnString, "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10 password=foobar-password")
 	})
-	t.Run("when password files does not exist then error", func(t *testing.T) {
+	t.Run("when password file does not exist then error", func(t *testing.T) {
 		c := Database{ConnString: "host=foobar", PasswordFile: "something that does not exist"}
 		err := c.validate()
 		assert.ErrorContains(t, err, "invalid password")
