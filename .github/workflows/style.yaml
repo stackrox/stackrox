@@ -28,10 +28,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -55,13 +52,10 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: ./.github/actions/job-preamble
+
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
-
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
 
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
@@ -88,10 +82,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -122,10 +113,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
