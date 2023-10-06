@@ -304,6 +304,9 @@ var (
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserID                      = newFieldLabel("User ID")
 	UserName                    = newFieldLabel("User Name")
+	ImageRegistryScope          = newFieldLabel("Image Registry Scope")
+	ImageRemoteScope            = newFieldLabel("Image Remote Scope")
+	ImageTagScope               = newFieldLabel("Image Tag Scope")
 
 	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
 	ComplianceRunID                = newFieldLabel("Compliance Run ID")
