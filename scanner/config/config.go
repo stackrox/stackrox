@@ -217,7 +217,6 @@ func Read(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	utils.IgnoreError(r.Close)
-
+	defer utils.IgnoreError(r.Close)
 	return Load(r)
 }
