@@ -79,10 +79,9 @@ tag:
 .PHONY: images
 images: scanner-image db-image
 
-.PHONY: scanner-go-build
-scanner-go-build: scanner
+scanner-go-build: deps
 	@echo "+ $@"
-	cp $< image/scanner/bin/scanner
+	$(BUILD_CMD)
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
