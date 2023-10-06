@@ -66,9 +66,9 @@ class Deployment {
     }
 
     static final List<String> TEST_IMAGES_TO_IGNORE_FOR_RATE_LIMIT_CHECK = [
-            "quay.io/rhacs-eng/qa-multi-arch-busybox:latest",
+            "busybox:latest",
             "busybox",
-            "quay.io/rhacs-eng/qa-multi-arch-nginx:latest",
+            "nginx:latest",
             "nginx",
             "non-existent:image",
     ]
