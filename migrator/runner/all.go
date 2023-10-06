@@ -25,4 +25,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_188_to_m_189_logimbues_add_time_column"
 	_ "github.com/stackrox/rox/migrator/migrations/m_189_to_m_190_vulnerability_requests_add_name"
 	_ "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column"
+	_ "github.com/stackrox/rox/migrator/migrations/m_191_to_m_192_vulnerability_requests_searchable_scope"
 )
