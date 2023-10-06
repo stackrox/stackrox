@@ -19,11 +19,9 @@ func TestClusterIDFromNameOrID(t *testing.T) {
 	ctx := context.Background()
 	clusterSACHelper := sacHelperMocks.NewMockClusterSacHelper(gomock.NewController(t))
 
-	permissions := []string{"Alert", "Image"}
-
 	t.Run("no cluster id returned when sachelper returns error", func(t *testing.T) {
-		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, permissions, nil).Return(nil, errBroken)
-		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "", permissions)
+		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, nil, nil).Return(nil, errBroken)
+		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "", nil)
 		assert.Error(t, err)
 		assert.Empty(t, clusterID)
 	})
@@ -34,15 +32,15 @@ func TestClusterIDFromNameOrID(t *testing.T) {
 	}
 
 	t.Run("id returned on id match", func(t *testing.T) {
-		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, permissions, nil).Return(clusters, nil)
-		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-id", permissions)
+		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, nil, nil).Return(clusters, nil)
+		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-id", nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "cluster2-id", clusterID)
 	})
 
 	t.Run("id returned on name match", func(t *testing.T) {
-		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, permissions, nil).Return(clusters, nil)
-		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-name", permissions)
+		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, nil, nil).Return(clusters, nil)
+		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-name", nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "cluster2-id", clusterID)
 	})
@@ -53,8 +51,8 @@ func TestClusterIDFromNameOrID(t *testing.T) {
 			{Id: "cluster2-id", Name: "cluster2-name"},
 		}
 
-		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, permissions, nil).Return(clusters, nil)
-		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-id", permissions)
+		clusterSACHelper.EXPECT().GetClustersForPermissions(ctx, nil, nil).Return(clusters, nil)
+		clusterID, err := GetClusterIDFromNameOrID(ctx, clusterSACHelper, "cluster2-id", nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "cluster2-id", clusterID)
 	})
