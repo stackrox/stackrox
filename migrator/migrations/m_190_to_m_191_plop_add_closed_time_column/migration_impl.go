@@ -10,7 +10,7 @@ var (
 	log       = logging.LoggerForModule()
 )
 
-func migrate(database *types.Databases) error {
+func migrate(_ *types.Databases) error {
 	// broken.  turning off to unblock tests.  fixing under ROX-20017
 	log.Infof("Skipping migration of plop records")
 
