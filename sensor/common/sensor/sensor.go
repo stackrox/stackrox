@@ -363,7 +363,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Info("Attempting connection setup")
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
-			// Connection if up, we can try to create a new central communication
+			// Connection is up, we can try to create a new central communication
 			s.changeState(common.SensorComponentEventCentralReachable)
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Connection is still broken, report and try again
@@ -371,7 +371,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			return wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "connection couldn't be re-established")
 		}
 
-		// At this point, we know that connection factory reported that connection if up.
+		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
 		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)

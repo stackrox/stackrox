@@ -20,7 +20,7 @@ import AdministrationEventsToolbar from './AdministrationEventsToolbar';
 
 function AdministrationEventsPage(): ReactElement {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
-    const { searchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter } = useURLSearch();
     const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -57,7 +57,6 @@ function AdministrationEventsPage(): ReactElement {
             });
     }, [page, perPage, searchFilter, sortOption, setIsLoading]);
 
-    // TODO empty state with and without filter
     // TODO polling and last updated with conditionally rendered reload button like Network Graph
     /* eslint-disable no-nested-ternary */
     return (
@@ -92,8 +91,14 @@ function AdministrationEventsPage(): ReactElement {
                             perPage={perPage}
                             setPage={setPage}
                             setPerPage={setPerPage}
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
                         />
-                        <AdministrationEventsTable events={events} getSortParams={getSortParams} />
+                        <AdministrationEventsTable
+                            events={events}
+                            getSortParams={getSortParams}
+                            searchFilter={searchFilter}
+                        />
                     </>
                 )}
             </PageSection>

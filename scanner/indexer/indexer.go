@@ -43,7 +43,7 @@ type localIndexer struct {
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
-	pool, err := postgres.Connect(ctx, cfg.DBConnString, "libindex")
+	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}

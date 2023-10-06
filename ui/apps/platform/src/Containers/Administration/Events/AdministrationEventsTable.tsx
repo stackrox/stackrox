@@ -14,42 +14,49 @@ import IconText from 'Components/PatternFly/IconText/IconText';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import {
     AdministrationEvent,
+    hasAdministrationEventsFilter,
     lastOccurredAtField,
     numOccurrencesField,
 } from 'services/AdministrationEventsService';
+import { SearchFilter } from 'types/search';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
 import './AdministrationEventsTable.css';
+import AdministrationEventsEmptyState from './AdministrationEventsEmptyState';
+
+const colSpan = 6;
 
 export type AdministrationEventsTableProps = {
     events: AdministrationEvent[];
     getSortParams: UseURLSortResult['getSortParams'];
+    searchFilter: SearchFilter;
 };
 
 function AdministrationEventsTable({
     events,
     getSortParams,
+    searchFilter,
 }: AdministrationEventsTableProps): ReactElement {
     return (
-        <>
-            <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
-                <Thead>
-                    <Tr>
-                        <Th>Domain</Th>
-                        <Th modifier="nowrap">Resource type</Th>
-                        <Th>Level</Th>
-                        <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
-                        <Th
-                            sort={getSortParams(numOccurrencesField)}
-                            className="pf-u-text-align-right"
-                        >
-                            Count
-                        </Th>
-                    </Tr>
-                </Thead>
-                {events.map((event) => {
+        <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
+            <Thead>
+                <Tr>
+                    <Th>Domain</Th>
+                    <Th modifier="nowrap">Resource type</Th>
+                    <Th>Level</Th>
+                    <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
+                    <Th sort={getSortParams(numOccurrencesField)}>Count</Th>
+                </Tr>
+            </Thead>
+            {events.length === 0 ? (
+                <AdministrationEventsEmptyState
+                    colSpan={colSpan}
+                    hasFilter={hasAdministrationEventsFilter(searchFilter)}
+                />
+            ) : (
+                events.map((event) => {
                     const { domain, id, lastOccurredAt, level, numOccurrences, resource } = event;
                     const { type: resourceType } = resource;
 
@@ -82,7 +89,7 @@ function AdministrationEventsTable({
                                 </Td>
                             </Tr>
                             <Tr>
-                                <Td colSpan={5}>
+                                <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
                                         <AdministrationEventHintMessage event={event} />
                                     </ExpandableRowContent>
@@ -90,9 +97,9 @@ function AdministrationEventsTable({
                             </Tr>
                         </Tbody>
                     );
-                })}
-            </TableComposable>
-        </>
+                })
+            )}
+        </TableComposable>
     );
 }
 
