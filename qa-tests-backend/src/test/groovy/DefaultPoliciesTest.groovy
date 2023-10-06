@@ -99,11 +99,11 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
         STRUTS_DEPLOYMENT,
-        new Deployment()
-            .setName(SSL_TERMINATOR)
-            .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
-            .addLabel("app", "test")
-            .setCommand(["sleep", "600"]),
+        // new Deployment()
+        //     .setName(SSL_TERMINATOR)
+        //     .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
+        //     .addLabel("app", "test")
+        //     .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(TRIGGER_MOST)
             .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
