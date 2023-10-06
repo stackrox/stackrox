@@ -439,7 +439,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
-                "Image " + "\\\"" + STRUTS_IMAGE + "\\\"" +
+                "Image \"" + STRUTS_IMAGE + "\\\"" +
                      " contains " + CVE_COUNT + " CVEs with severities ranging between " +
                      "Low and Critical" | []
 
@@ -447,12 +447,12 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image " + "\"" + STRUTS_IMAGE + "\"" +
+                "Image \"" + STRUTS_IMAGE + "\"" +
                 " contains components useful for attackers:" +
                     COMPONENTS | null | []
 
         "Number of Components in Image"   | 1.5f     | null |
-                "Image " + "\\\"" + STRUTS_IMAGE + "\\\"" +
+                "Image \"" + STRUTS_IMAGE + "\\\"" +
                 " contains " + COMPONENT_COUNT + " components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
