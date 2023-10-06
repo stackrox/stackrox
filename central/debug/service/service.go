@@ -612,6 +612,7 @@ type debugDumpOptions struct {
 	withNotifiers     bool
 	withCentral       bool
 	clusters          []string
+	excludeClusters   []string
 	since             time.Time
 }
 
@@ -842,8 +843,16 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	values := u.Query()
 
 	clusters := values["cluster"]
+	excludeClusters := values["excludeCluster"]
+	if len(clusters) > 0 && len(excludeClusters) > 0 {
+		return errox.InvalidArgs.New("cluster and excludeCluster parameters are mutually exclusive")
+	}
+
 	if len(clusters) > 0 {
 		opts.clusters = clusters
+	}
+	if len(excludeClusters) > 0 {
+		opts.excludeClusters = excludeClusters
 	}
 
 	timeSince := values.Get("since")

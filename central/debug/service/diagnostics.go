@@ -186,12 +186,11 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string,
 	return res.files, nil
 }
 
-func addMissingClustersInfo(remainingClusterNameMap map[string]string,
-	filterClusters []string) ([]k8sintrospect.File, error) {
+func addMissingClustersInfo(remainingClusterNameMap map[string]string, opts debugDumpOptions) ([]k8sintrospect.File, error) {
 	sb := strings.Builder{}
 	sb.WriteString("Data from the following clusters is unavailable:\n")
 	for _, clusterName := range remainingClusterNameMap {
-		if filterClusters != nil && slices.Index(filterClusters, clusterName) != -1 {
+		if checkClusterExcluded(opts, clusterName) {
 			sb.WriteString(fmt.Sprintf("- %s (not requested by user)\n", clusterName))
 		} else {
 			sb.WriteString(fmt.Sprintf("- %s (no active connection)\n", clusterName))
@@ -237,12 +236,22 @@ func getClusterCandidate(conn connection.SensorConnection, clusterNameMap map[st
 	delete(clusterNameMap, clusterID)
 
 	// if there are no cluster filters, all clusters must be considered.
-	if opts.clusters != nil && slices.Index(opts.clusters, clusterName) == -1 {
+	if checkClusterExcluded(opts, clusterName) {
 		return "", "", false
 	}
 
 	// Make sure we use a name that doesn't clash with any other cluster name.
 	return clusterName, sanitizeClusterName(clusterName), true
+}
+
+func checkClusterExcluded(opts debugDumpOptions, clusterName string) bool {
+	if opts.clusters != nil && sliceutils.Find(opts.clusters, clusterName) == -1 {
+		return true
+	}
+	if opts.excludeClusters != nil && sliceutils.Find(opts.excludeClusters, clusterName) != -1 {
+		return true
+	}
+	return false
 }
 
 // getClusterNameForSensorConnection returns the cluster name associated with the given sensor connection.
