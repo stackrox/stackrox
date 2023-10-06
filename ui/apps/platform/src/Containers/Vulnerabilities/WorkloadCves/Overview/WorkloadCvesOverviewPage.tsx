@@ -16,7 +16,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import PageTitle from 'Components/PageTitle';
 import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
-import { VulnMgmtLocalStorage, entityTabValues } from '../types';
+import usePermissions from 'hooks/usePermissions';
 import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
@@ -24,6 +24,7 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
+import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -37,6 +38,8 @@ const emptyStorage: VulnMgmtLocalStorage = {
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
+    const { hasReadWriteAccess } = usePermissions();
+    const canWriteWatchedImages = hasReadWriteAccess('WatchedImage');
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -80,17 +83,19 @@ function WorkloadCvesOverviewPage() {
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
                 </Flex>
-                <FlexItem className="pf-u-pr-lg">
-                    <Button
-                        variant="secondary"
-                        onClick={() => {
-                            setDefaultWatchedImageName('');
-                            watchedImagesModalToggle.openSelect();
-                        }}
-                    >
-                        Manage watched images
-                    </Button>
-                </FlexItem>
+                {canWriteWatchedImages && (
+                    <FlexItem className="pf-u-pr-lg">
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setDefaultWatchedImageName('');
+                                watchedImagesModalToggle.openSelect();
+                            }}
+                        >
+                            Manage watched images
+                        </Button>
+                    </FlexItem>
+                )}
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
@@ -112,6 +117,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
+                                    canWriteWatchedImages={canWriteWatchedImages}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();

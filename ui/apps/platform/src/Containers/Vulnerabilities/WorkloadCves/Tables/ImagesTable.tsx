@@ -79,6 +79,7 @@ export type ImagesTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    canWriteWatchedImages: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
 };
@@ -88,9 +89,12 @@ function ImagesTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
+    canWriteWatchedImages,
     onWatchImage,
     onUnwatchImage,
 }: ImagesTableProps) {
+    const colSpan = canWriteWatchedImages ? 7 : 6;
+
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -108,10 +112,10 @@ function ImagesTable({
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
-                    <Td />
+                    {canWriteWatchedImages && <Th aria-label="Image action menu" />}
                 </Tr>
             </Thead>
-            {images.length === 0 && <EmptyTableResults colSpan={6} />}
+            {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
             {images.map(
                 ({
                     id,
@@ -188,21 +192,23 @@ function ImagesTable({
                                 <Td>
                                     <DateDistanceTd date={scanTime} />
                                 </Td>
-                                <Td isActionCell>
-                                    {name?.tag && (
-                                        <ActionsColumn
-                                            items={[
-                                                {
-                                                    title: watchImageMenuText,
-                                                    onClick: () =>
-                                                        watchImageMenuAction(
-                                                            `${name.registry}/${name.remote}:${name.tag}`
-                                                        ),
-                                                },
-                                            ]}
-                                        />
-                                    )}
-                                </Td>
+                                {canWriteWatchedImages && (
+                                    <Td isActionCell>
+                                        {name?.tag && (
+                                            <ActionsColumn
+                                                items={[
+                                                    {
+                                                        title: watchImageMenuText,
+                                                        onClick: () =>
+                                                            watchImageMenuAction(
+                                                                `${name.registry}/${name.remote}:${name.tag}`
+                                                            ),
+                                                    },
+                                                ]}
+                                            />
+                                        )}
+                                    </Td>
+                                )}
                             </Tr>
                         </Tbody>
                     );
