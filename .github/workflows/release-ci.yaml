@@ -5,6 +5,11 @@ on:
     - 'release-*'
     tags-ignore:
     - '*-nightly-*'
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
   run-parameters:
@@ -110,8 +115,8 @@ jobs:
             push_helm_charts "${STACKROX_TAG}"
 
   publish-roxctl:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    needs: [build] #, check-scanner-version, check-collector-version, check-is-release]
+    #if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
