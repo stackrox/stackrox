@@ -61,7 +61,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
     //static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
-    static final private String COMPONENT_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 169:91)
+    static private String COMPONENT_COUNT = ""
     static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         " apt, bash, curl, wget":" apt, bash, curl")
 
@@ -170,6 +170,17 @@ class DefaultPoliciesTest extends BaseSpecification {
         Helpers.collectImageScanForDebug(
                 STRUTS_DEPLOYMENT.getImage(), 'default-policies-test-struts-app.json'
         )
+
+        switch(Env.REMOTE_CLUSTER_ARCH){
+            case "s390x":
+                COMPONENT_COUNT=92;
+                break;
+            case "ppc64le":
+                COMPONENT_COUNT=91;
+                break;
+            default:
+                COMPONENT_COUNT=169;
+        }
     }
 
     def cleanupSpec() {
