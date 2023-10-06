@@ -273,6 +273,7 @@ splunk:
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Check successful creation, update, and deletion of declarative resources"() {
         when:
 
@@ -461,6 +462,7 @@ splunk:
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Check creating invalid configuration will not work"() {
         when:
         orchestrator.createConfigMap(CONFIGMAP_NAME,
@@ -535,6 +537,7 @@ splunk:
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Check orphaned declarative resources are correctly handled"() {
         when:
 

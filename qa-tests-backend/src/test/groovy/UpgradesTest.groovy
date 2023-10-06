@@ -47,6 +47,7 @@ class UpgradesTest extends BaseSpecification {
         }"""
 
     @Tag("Upgrade")
+    @Tag("PZ")
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
         "Migrated clusters to have admissionControllerEvents set to true"
@@ -56,6 +57,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @Tag("PZ")
     def "Verify cluster has disable audit logs set to true"() {
         expect:
         "Migrated k8s clusters to have disableAuditLogs set to true"
@@ -65,6 +67,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @Tag("PZ")
     def "Verify that summary API returns non-zero values on upgrade"() {
         expect:
         "Summary API returns non-zero values on upgrade"
@@ -79,6 +82,7 @@ class UpgradesTest extends BaseSpecification {
 
     @Unroll
     @Tag("Upgrade")
+    @Tag("PZ")
     def "verify that we find the correct number of #resourceType for query"() {
         when:
         "Fetch the #resourceType from GraphQL"
@@ -116,6 +120,7 @@ class UpgradesTest extends BaseSpecification {
 
     @Unroll
     @Tag("Upgrade")
+    @Tag("PZ")
     def "verify that we find the correct number of compliance results"() {
         when:
         "Fetch the compliance results by #unit from GraphQL"
@@ -198,6 +203,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @Tag("PZ")
     @IgnoreIf({ true }) // ROX-16401 this test will not work with current upgrade methodology & image tags
     def "Verify upgraded policies match default policy set"() {
         given:

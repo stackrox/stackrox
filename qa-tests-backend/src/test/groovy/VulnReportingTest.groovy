@@ -16,7 +16,7 @@ import spock.lang.IgnoreIf
 import util.Env
 
 // slack notifications are not supported on P/Z
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+//@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class VulnReportingTest extends BaseSpecification {
 
     static final private String SECONDARY_NAMESPACE = "vulnreport-2nd-namespace"
@@ -66,6 +66,7 @@ class VulnReportingTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
         "Central is using postgres"
