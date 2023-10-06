@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -206,7 +207,7 @@ func Load(r io.Reader) (*Config, error) {
 	return &cfg, cfg.validate()
 }
 
-// Read load Scanner configuration from a file.
+// Read loads Scanner configuration from a file.
 func Read(filename string) (*Config, error) {
 	if filename == "" {
 		cfg := defaultConfiguration
@@ -216,5 +217,7 @@ func Read(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	utils.IgnoreError(r.Close)
+
 	return Load(r)
 }

@@ -107,14 +107,6 @@ export const accessControlLabels: Record<AccessControlEntityType, string> = {
     ROLE: 'Role',
 };
 
-export const stackroxSupport = Object.freeze({
-    phoneNumber: {
-        withSpaces: '1 (650) 385-8329',
-        withDashes: '1-650-385-8329',
-    },
-    email: 'support@stackrox.com',
-});
-
 export const portExposureLabels = Object.freeze({
     ROUTE: 'Route',
     EXTERNAL: 'LoadBalancer',
