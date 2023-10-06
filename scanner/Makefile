@@ -54,9 +54,15 @@ all: deps scanner-go-build images
 ###############################################################
 
 OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN): scanner-go-check-ver
+$(OSSLS_BIN): | scanner-go-check-ver
 	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
+
+.PHONY: scanner-go-check-ver
+scanner-go-check-ver:
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
+endif
 
 #########
 ## Tag ##
@@ -73,15 +79,10 @@ tag:
 .PHONY: images
 images: scanner-image db-image
 
-.PHONY: scanner-go-build scanner-go-check-ver
-scanner-go-check-ver:
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
-
-scanner-go-build: deps
+.PHONY: scanner-go-build
+scanner-go-build: scanner
 	@echo "+ $@"
-	$(BUILD_CMD)
+	cp $< image/scanner/bin/scanner
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
@@ -112,7 +113,7 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 ## Tools ##
 ###########
 
-deps: ../go.mod scanner-go-check-ver
+deps: ../go.mod | scanner-go-check-ver
 	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
@@ -167,7 +168,7 @@ copy-db-sigs: ../image/postgres/signatures
 SCANNER_CERTS_NAMESPACE ?= $(SCANNER_NAMESPACE)
 
 certs-d         := certs
-certs-names     := stackrox-v4 stackrox-v4-db scannerctl
+certs-names     := scanner-v4 scanner-v4-db scannerctl
 certs-namespace := $(SCANNER_CERTS_NAMESPACE)
 
 # Targets.
@@ -225,19 +226,25 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 
 # Generate a certificate.
 #
+
 .PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
-	$(SILENT)cp $< $@
+	$(SILENT)ln -s $(abspath $<) $@
 
-$(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/ca/key.pem
+.PRECIOUS: $(certs-d)/%/ca-key.pem
+$(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
+	@echo "+ $@"
+	$(SILENT)ln -s $(abspath $<) $@
+
+$(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/%/ca-key.pem
 	@echo "+ $@"
 	$(SILENT) openssl x509 \
 	    -req \
 	    -days 365 \
 	    -in $< \
 	    -CA $(@D)/ca.pem \
-	    -CAkey $(certs-d)/ca/key.pem \
+	    -CAkey $(@D)/ca-key.pem \
 	    -CAcreateserial \
 	    -sha256 \
 	    -extfile <(echo "subjectAltName = DNS:$(cert-dns) DNS:localhost DNS:127.0.0.1") \
