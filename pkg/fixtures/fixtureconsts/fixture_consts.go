@@ -1,7 +1,7 @@
 package fixtureconsts
 
-// Deployment UUID constants for testing with fixtures
 const (
+	// Deployment UUID constants for testing with fixtures
 	Alert1              = "aeaaaaaa-bbbb-4011-0000-111111111111"
 	Alert2              = "aeaaaaaa-bbbb-4011-0000-222222222222"
 	Alert3              = "aeaaaaaa-bbbb-4011-0000-333333333333"
@@ -46,4 +46,7 @@ const (
 	NetworkPolicy2      = "ffaaaaaa-0000-0000-0000-111111111111"
 	NetworkPolicy3      = "ffaaaaaa-0000-0000-0000-222222222222"
 	NetworkPolicy4      = "ffaaaaaa-0000-0000-0000-333333333333"
+
+	PodName1            = "nginx-7db9fccd9b-92hfs"
+	PodName2            = "visa-processor"
 )
