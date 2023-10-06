@@ -13,7 +13,7 @@ import services.ProcessesListeningOnPortsService
 @Stepwise
 @Tag("BAT")
 @Tag("Parallel")
-@Tag("PZ")
+
 @IgnoreIf({ Env.get("ROX_PROCESSES_LISTENING_ON_PORT", "true") != "true" })
 class ProcessesListeningOnPortsTest extends BaseSpecification {
 

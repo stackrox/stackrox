@@ -17,7 +17,7 @@ class AutocompleteTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    @Tag("PZ")
+    
     def "Verify Autocomplete: #query #category #contains"() {
         when:
         SearchServiceOuterClass.AutocompleteResponse resp = SearchService.autocomplete(
@@ -44,7 +44,7 @@ class AutocompleteTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    @Tag("PZ")
+    
     def "Verify #category search options contains #options"() {
         when:
         def resp = SearchService.options(category)

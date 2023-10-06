@@ -113,7 +113,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    @Tag("PZ")
+    
     def "Verify runtime excluded scope lifecycle"() {
         setup:
         "Create the deployment, verify that policy exists"
@@ -185,7 +185,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    @Tag("PZ")
+    
     def "Verify runtime alert remains after deletion"() {
         setup:
         "Create the deployment, verify that policy exists"

@@ -28,7 +28,7 @@ class NodeInventoryTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify node inventories and their scans"() {
         given:
         "given a non-empty list of nodes"

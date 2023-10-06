@@ -12,7 +12,7 @@ import util.Env
 
 @Tag("BAT")
 @Tag("GraphQL")
-@Tag("PZ")
+
 class DeploymentEventGraphQLTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "eventnginx"
     private static final String PARENT_NAME = "/bin/sh"

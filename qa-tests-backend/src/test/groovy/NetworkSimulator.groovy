@@ -57,7 +57,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator replace existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -127,7 +127,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator add to an existing network policy"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -202,7 +202,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator with query - multiple policy simulation"() {
         given:
         def allDeps = new NetworkGraphUtil().getDeploymentsAsGraphNodes()
@@ -297,7 +297,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
-    @Tag("PZ")
+    
     // skip if executed in a test environment with just secured-cluster deployed in the test cluster
     // i.e. central is deployed elsewhere
     @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
@@ -375,7 +375,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Tag("NetworkPolicySimulation")
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator with delete policies"() {
         given:
         def allDeps = NetworkGraphUtil.getDeploymentsAsGraphNodes()
@@ -467,7 +467,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator allow traffic to an application from all namespaces"() {
         when:
         "generate simulation"
@@ -532,7 +532,7 @@ class NetworkSimulator extends BaseSpecification {
      }
 
     @Tag("NetworkPolicySimulation")
-    @Tag("PZ")
+    
     def "Verify yaml requires namespace in metadata"() {
         when:
         "create NetworkPolicy object"
@@ -544,7 +544,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-    @Tag("PZ")
+    
     def "Verify malformed yaml returns error"() {
         when:
         "create NetworkPolicy object"
@@ -565,7 +565,7 @@ class NetworkSimulator extends BaseSpecification {
 
     @Unroll
     @Tag("NetworkPolicySimulation")
-    @Tag("PZ")
+    
     def "Verify NetworkPolicy Simulator results for #policy.name"() {
         when:
         "Get Base Graph"
@@ -710,7 +710,7 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-    @Tag("PZ")
+    
     def "Verify invalid notifierId passed to notification API"() {
         when:
         "create Netowrk Policy yaml"

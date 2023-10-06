@@ -82,7 +82,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify deployment pagination"() {
         when:
         "Set pagination limit to 3"
@@ -133,7 +133,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify image pagination"() {
         when:
         "Set pagination limit to 3"
@@ -184,7 +184,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify secret pagination"() {
         when:
         "Set pagination limit to 3"
@@ -235,7 +235,7 @@ class PaginationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify violation pagination"() {
         given:
         "6 violations exist for pagination"

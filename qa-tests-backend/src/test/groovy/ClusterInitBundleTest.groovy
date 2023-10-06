@@ -11,7 +11,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 
 @Tag("BAT")
-@Tag("PZ")
+
 class ClusterInitBundleTest extends BaseSpecification {
 
     @Shared

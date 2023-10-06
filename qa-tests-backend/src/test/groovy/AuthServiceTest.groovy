@@ -8,7 +8,7 @@ import spock.lang.Tag
 
 @Tag("BAT")
 @Tag("COMPATIBILITY")
-@Tag("PZ")
+
 class AuthServiceTest extends BaseSpecification {
 
     private static Map<String, List<String>> getAttrMap(List<AuthServiceOuterClass.UserAttribute> attrList) {

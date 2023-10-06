@@ -59,7 +59,7 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify Global search (no policies)(#query, #searchCategories)"(
         String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
         String expectedResultPrefix,
@@ -124,7 +124,7 @@ class GlobalSearch extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
+    
     def "Verify Global search on policies (#query, #searchCategories)"(
             String query, List<SearchServiceOuterClass.SearchCategory> searchCategories,
             String expectedResultPrefix,

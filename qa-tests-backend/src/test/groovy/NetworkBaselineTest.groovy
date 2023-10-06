@@ -177,7 +177,7 @@ class NetworkBaselineTest extends BaseSpecification {
     org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
 
     @Tag("NetworkBaseline")
-    @Tag("PZ")
+    
     def "Verify network baseline functionality"() {
         when:
         "Create initial set of deployments, wait for baseline to populate"
