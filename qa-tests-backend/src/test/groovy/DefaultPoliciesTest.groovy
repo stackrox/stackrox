@@ -57,7 +57,13 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "qadefpoltriggermost"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
-    static final private String WGET_CURL_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") STRUTS:TRIGGER_MOST)
+    static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
+    static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
+    static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
+    static final private String COMPONENT_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 169:91)
+    static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        " apt, bash, curl, wget":" apt, bash, curl")
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
@@ -81,7 +87,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
+            .setImage(STRUTS_IMAGE)
             .addLabel("app", "test")
             .addPort(80)
 
@@ -237,7 +243,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
 
-        "Wget in Image"                                 | WGET_CURL_IMAGE  | "C939"
+        "Wget in Image"                                 | WGET_CURL      | "C939"
 
         "90-Day Image Age"                              | STRUTS         | "C810"
 
@@ -247,7 +253,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
-        "Curl in Image"                                 | WGET_CURL_IMAGE  | "C948"
+        "Curl in Image"                                 | WGET_CURL      | "C948"
     }
 
     def hasApacheStrutsVuln(image) {
@@ -433,21 +439,21 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
-                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\"" +
-                     " contains 139 CVEs with severities ranging between " +
+                "Image " + "\\\"" + STRUTS_IMAGE + "\\\"" +
+                     " contains " + CVE_COUNT + " CVEs with severities ranging between " +
                      "Low and Critical" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\" " +
-                "contains components useful for attackers:" +
-                    " apt, bash, curl" | null | []
+                "Image " + "\"" + STRUTS_IMAGE + "\"" +
+                " contains components useful for attackers:" +
+                    COMPONENTS | null | []
 
         "Number of Components in Image"   | 1.5f     | null |
-                "Image \"quay.io/rhacs-eng/qa-multi-arch:struts-app\"" +
-                " contains 91 components" | []
+                "Image " + "\\\"" + STRUTS_IMAGE + "\\\"" +
+                " contains " + COMPONENT_COUNT + " components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
         // TODO(ROX-9637)
