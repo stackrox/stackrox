@@ -78,12 +78,12 @@
     "/v1/apitokens/generate/allowed-roles": {
       "get": {
         "summary": "GetAllowedTokenRoles return roles that user is allowed to request for API token.",
-        "operationId": "APITokenService_GetAllowedTokenRoles",
+        "operationId": "APITokenService_ListAllowedTokenRoles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetAllowedTokenRolesResponse"
+              "$ref": "#/definitions/v1ListAllowedTokenRolesResponse"
             }
           },
           "default": {
@@ -271,7 +271,7 @@
         }
       }
     },
-    "v1GetAllowedTokenRolesResponse": {
+    "v1ListAllowedTokenRolesResponse": {
       "type": "object",
       "properties": {
         "roleNames": {

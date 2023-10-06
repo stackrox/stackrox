@@ -123,7 +123,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}, nil
 }
 
-func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.GetAllowedTokenRolesResponse, error) {
+func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (s *serviceImpl) GetAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v
 			result = append(result, role.GetRoleName())
 		}
 	}
-	return &v1.GetAllowedTokenRolesResponse{
+	return &v1.ListAllowedTokenRolesResponse{
 		RoleNames: result,
 	}, nil
 }

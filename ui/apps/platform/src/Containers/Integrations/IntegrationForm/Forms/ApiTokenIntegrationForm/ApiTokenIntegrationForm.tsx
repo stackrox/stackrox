@@ -24,7 +24,7 @@ import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
-import useFetchRoles from './useFetchRoles';
+import useAllowedRoles from './useFetchRoles';
 
 export type ApiTokenIntegrationFormValues = {
     name: string;
@@ -73,7 +73,7 @@ function ApiTokenIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const { roleNames, isLoading: isRolesLoading } = useFetchRoles();
+    const { roleNames, isLoading: isRolesLoading } = useAllowedRoles();
     const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
