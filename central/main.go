@@ -129,6 +129,7 @@ import (
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
 	scannerDefinitionsHandler "github.com/stackrox/rox/central/scannerdefinitions/handler"
+	scannerV4RepoMappingHandler "github.com/stackrox/rox/central/scannerv4definitions/repomapping"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -816,6 +817,23 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: definitionsFileGzipHandler(scannerDefinitionsHandler.Singleton()),
+			EnableAudit:   true,
+		},
+	)
+
+	repoMappingRoute := "/api/extensions/scanner-v4/repomappings"
+	utils.CrashOnError(err)
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route: repoMappingRoute,
+			Authorizer: perrpc.FromMap(map[authz.Authorizer][]string{
+				or.SensorOr(
+					or.ScannerOr(
+						user.With(permissions.View(resources.Administration)))): {
+					routes.RPCNameForHTTP(repoMappingRoute, http.MethodGet),
+				},
+			}),
+			ServerHandler: definitionsFileGzipHandler(scannerV4RepoMappingHandler.Singleton()),
 			EnableAudit:   true,
 		},
 	)

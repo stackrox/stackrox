@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -35,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/common/scannerv4definitions/repomappings"
 )
 
 const (
@@ -286,6 +286,22 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.Cus
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
+		Authorizer:    idcheck.ScannerOnly(),
+		ServerHandler: handler,
+	}, nil
+}
+
+// newScannerRepoMappingRoute returns a custom route that serves scanner v4
+// repo mapping compressed file retrieved from Central.
+func (s *Sensor) newScannerRepoMappingRoute(centralEndpoint string) (*routes.CustomRoute, error) {
+	handler, err := repomappings.NewRepoMappingHandler(centralEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	s.AddNotifiable(handler)
+	// We rely on central to handle content encoding negotiation.
+	return &routes.CustomRoute{
+		Route:         "/scanner-v4/repomappings",
 		Authorizer:    idcheck.ScannerOnly(),
 		ServerHandler: handler,
 	}, nil
