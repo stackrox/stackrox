@@ -3,6 +3,7 @@ import { selectors as topNavSelectors } from '../constants/TopNavigation';
 import withAuth from '../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../helpers/title';
 import { checkInviteUsersModal } from '../helpers/inviteUsers';
+import { closeModalByButton } from '../helpers/modal';
 import {
     visitUserProfile,
     visitUserProfileFromTopNav,
@@ -13,7 +14,6 @@ import {
     rolesAlias,
     visitAccessControlEntities,
 } from './accessControl/accessControl.helpers';
-import { accessModalSelectors } from './accessControl/accessControl.selectors';
 
 const staticResponseForAdminRoleWithoutProvider = {
     fixture: 'auth/adminUserStatus',
@@ -91,7 +91,7 @@ describe('User Profile', () => {
             checkInviteUsersModal();
 
             // test closing the modal
-            cy.get(`${accessModalSelectors.button}:contains("Cancel")`).click();
+            closeModalByButton();
         });
 
         it('should navigate to the user page', () => {

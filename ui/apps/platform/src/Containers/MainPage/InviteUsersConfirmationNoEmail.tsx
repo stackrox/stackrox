@@ -19,7 +19,7 @@ function InviteUsersConfirmationNoEmail({
 }: InviteUsersConfirmationNoEmailProps): ReactElement {
     return (
         <div>
-            {emailBuckets.new.length === 0 ? (
+            {emailBuckets.newEmails.length === 0 ? (
                 <Alert
                     title="All entered emails already have auth provider rules"
                     variant="warning"
@@ -40,7 +40,7 @@ function InviteUsersConfirmationNoEmail({
                 </Alert>
             ) : (
                 <>
-                    {emailBuckets.existing.length > 0 && (
+                    {emailBuckets.existingEmails.length > 0 && (
                         <Alert
                             title="Some emails already have auth provider rules."
                             variant="warning"
@@ -51,7 +51,9 @@ function InviteUsersConfirmationNoEmail({
                                 The following users could not be invited because their emails
                                 already have rules applied to them.
                             </Text>
-                            <Text className="pf-u-mb-md">{emailBuckets.existing.join(', ')}</Text>
+                            <Text className="pf-u-mb-md">
+                                {emailBuckets.existingEmails.join(', ')}
+                            </Text>
                             <Text>
                                 Visit the{' '}
                                 <Link
@@ -79,7 +81,7 @@ function InviteUsersConfirmationNoEmail({
                         variant={ClipboardCopyVariant.expansion}
                         className="pf-u-mb-md"
                     >
-                        {emailBuckets.new.join(', ')}
+                        {emailBuckets.newEmails.join(', ')}
                     </ClipboardCopy>
                     <ClipboardCopy
                         isReadOnly

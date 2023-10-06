@@ -35,8 +35,8 @@ type InviteFormValues = {
 };
 
 export type EmailBuckets = {
-    new: string[];
-    existing: string[];
+    newEmails: string[];
+    existingEmails: string[];
 };
 
 // email validation from discussion in Yup repo,
@@ -156,7 +156,7 @@ function InviteUsersModal(): ReactElement | null {
 
         const emailArr = dedupeDelimitedString(values.emails);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const buckets = emailArr.reduce<{ new: string[]; existing: string[] }>(
+        const buckets = emailArr.reduce<EmailBuckets>(
             (acc, email) => {
                 if (
                     Array.isArray(providerWithRules.groups) &&
@@ -164,20 +164,23 @@ function InviteUsersModal(): ReactElement | null {
                         (group) => group.props.key === 'email' && group.props.value === email
                     )
                 ) {
-                    return { new: acc.new, existing: [...acc.existing, email] };
+                    return {
+                        newEmails: acc.newEmails,
+                        existingEmails: [...acc.existingEmails, email],
+                    };
                 }
-                return { new: [...acc.new, email], existing: acc.existing };
+                return { newEmails: [...acc.newEmails, email], existingEmails: acc.existingEmails };
             },
-            { new: [], existing: [] }
+            { newEmails: [], existingEmails: [] }
         );
         setEmailBuckets(buckets);
 
-        if (buckets.new.length === 0) {
+        if (buckets.newEmails.length === 0) {
             // don't reset form, so that user can come back and try again
             setModalView('TEMPLATE');
         } else {
             // create new auth provider rules
-            const requiredGroups = buckets.new.map((newEmail) => ({
+            const requiredGroups = buckets.newEmails.map((newEmail) => ({
                 props: {
                     id: '',
                     traits: {
@@ -241,11 +244,10 @@ function InviteUsersModal(): ReactElement | null {
                             You must have at least one auth provider in order to invite users.
                         </Text>
                         <Text>
-                            Visit the{' '}
+                            To add an auth provider, visit:
                             <Link onClick={onClose} to={`${accessControlBasePath}/auth-providers`}>
                                 Access Control
                             </Link>{' '}
-                            section to add an auth provider.
                         </Text>
                     </Alert>
                 )}
@@ -296,7 +298,7 @@ function InviteUsersModal(): ReactElement | null {
                 )}
                 {modalView === 'TEMPLATE' && (
                     <>
-                        {emailBuckets?.new?.length === 0 && (
+                        {emailBuckets?.newEmails?.length === 0 && (
                             <Button
                                 key="done"
                                 variant="secondary"
