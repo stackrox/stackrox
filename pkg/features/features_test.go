@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,7 +57,7 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultVal
 		}
 
 		got := feature.Enabled()
-		if unchangeableFeature {
+		if buildinfo.ReleaseBuild && unchangeableFeature {
 			assert.Equal(t, got, defaultValue)
 		} else {
 			assert.Equal(t, got, test.expected)
