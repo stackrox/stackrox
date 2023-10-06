@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/common/scannerv4definitions"
 )
 
 const (
@@ -216,6 +217,15 @@ func (s *Sensor) Start() {
 		customRoutes = append(customRoutes, *route)
 	}
 
+	// Enable endpoint to retrieve vulnerability definitions if scanner v4 is enabled.
+	if env.ScannerV4Enabled.BooleanSetting() {
+		route, err := s.newScannerV4DefinitionsRoute(s.centralEndpoint)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
+		}
+		customRoutes = append(customRoutes, *route)
+	}
+
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()
 	if err != nil {
@@ -297,6 +307,22 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string) (*routes.Cus
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
+		Authorizer:    idcheck.ScannerOnly(),
+		ServerHandler: handler,
+	}, nil
+}
+
+// newScannerV4DefinitionsRoute returns a custom route that serves scanner v4
+// definitions retrieved from Central.
+func (s *Sensor) newScannerV4DefinitionsRoute(centralEndpoint string) (*routes.CustomRoute, error) {
+	handler, err := scannerv4definitions.NewV4DefinitionsHandler(centralEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	s.AddNotifiable(handler)
+	// We rely on central to handle content encoding negotiation.
+	return &routes.CustomRoute{
+		Route:         "/scanner-v4/definitions",
 		Authorizer:    idcheck.ScannerOnly(),
 		ServerHandler: handler,
 	}, nil
