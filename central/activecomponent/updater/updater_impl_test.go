@@ -16,7 +16,7 @@ import (
 	piMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
@@ -146,7 +146,7 @@ var (
 )
 
 func TestActiveComponentUpdater(t *testing.T) {
-	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 	suite.Run(t, new(acUpdaterTestSuite))
 }
 

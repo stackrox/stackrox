@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -60,9 +60,9 @@ type configServiceTestSuite struct {
 }
 
 func (s *configServiceTestSuite) SetupSuite() {
-	s.T().Setenv(env.UnifiedCVEDeferral.EnvVar(), "true")
-	if !env.UnifiedCVEDeferral.BooleanSetting() {
-		s.T().Skipf("Skip test because %s=false", env.UnifiedCVEDeferral.EnvVar())
+	s.T().Setenv(features.UnifiedCVEDeferral.EnvVar(), "true")
+	if !features.UnifiedCVEDeferral.Enabled() {
+		s.T().Skipf("Skip test because %s=false", features.UnifiedCVEDeferral.EnvVar())
 		s.T().SkipNow()
 	}
 

@@ -31,7 +31,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -161,7 +160,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		g.removeOldReportHistory(pvtConfig)
 		g.removeOldReportBlobs(pvtConfig)
 	}
