@@ -24,9 +24,6 @@ spec:
       - name: init-db
         image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
         imagePullPolicy: IfNotPresent
-        env:
-        - name: POSTGRES_PASSWORD_FILE
-          value: "/run/secrets/stackrox.io/secrets/password"
         command:
         - init-entrypoint.sh
         resources:
