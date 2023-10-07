@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/component"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func TestConvertVulnerability(t *testing.T) {
 }
 
 func TestConvertFeatures(t *testing.T) {
-	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 
 	clairFeatures, protoComponents := mock.GetTestFeatures()
 	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures, ""))
@@ -47,7 +47,7 @@ func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanC
 }
 
 func TestConvertFeaturesWithLayerIndexes(t *testing.T) {
-	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 
 	var cases = []struct {
 		name               string
