@@ -27,8 +27,6 @@ spec:
         env:
         - name: POSTGRES_PASSWORD_FILE
           value: "/run/secrets/stackrox.io/secrets/password"
-        - name: ROX_SCANNER_DB_INIT
-          value: "true"
         command:
         - init-entrypoint.sh
         resources:
