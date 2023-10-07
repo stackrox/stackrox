@@ -34,13 +34,10 @@ spec:
             cpu: 200m
             memory: 200Mi
         volumeMounts:
-        - name: data
+        - name: disk
           mountPath: /var/lib/postgresql/data
         - name: config
           mountPath: /etc/stackrox.d/config/
-          readOnly: true
-        - name: tls-volume
-          mountPath: /run/secrets/stackrox.io/certs
           readOnly: true
         - name: password
           mountPath: /run/secrets/stackrox.io/secrets
@@ -61,7 +58,7 @@ spec:
             cpu: 200m
             memory: 200Mi
         volumeMounts:
-        - name: data
+        - name: disk
           mountPath: /var/lib/postgresql/data
         - name: config
           mountPath: /etc/stackrox.d/config
@@ -73,7 +70,7 @@ spec:
       - name: config
         configMap:
           name: {{ .Values.app.db.name }}-config
-      - name: data
+      - name: disk
         emptyDir: {}
       - name: tls-volume
         secret:
