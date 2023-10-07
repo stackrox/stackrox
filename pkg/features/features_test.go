@@ -38,14 +38,16 @@ var (
 	}
 )
 
-func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultValue, unchangeableFeature bool) {
-	t.Run(fmt.Sprintf("%s/%s", feature.Name(), test.env), func(t *testing.T) {
+func testFlagEnabled(t *testing.T, feature FeatureFlag, envSetting string, expected bool) {
+	t.Run(fmt.Sprintf("%s/%s", feature.Name(), envSetting), func(t *testing.T) {
 		oldValue, exists := os.LookupEnv(feature.EnvVar())
 
-		err := os.Setenv(feature.EnvVar(), test.env)
+		err := os.Setenv(feature.EnvVar(), envSetting)
 		if err != nil {
 			t.Fatalf("Setting env failed for %s", feature.EnvVar())
 		}
+
+		// Make sure the env var is cleaned up or reset after the test finishes
 		if !exists {
 			defer func() {
 				assert.NoError(t, os.Unsetenv(feature.EnvVar()))
@@ -56,39 +58,56 @@ func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest, defaultVal
 			}()
 		}
 
-		got := feature.Enabled()
-		if buildinfo.ReleaseBuild && unchangeableFeature {
-			assert.Equal(t, got, defaultValue)
-		} else {
-			assert.Equal(t, got, test.expected)
-		}
+		assert.Equal(t, feature.Enabled(), expected)
+	})
+}
+
+func TestFeatureEnvVarStartsWithRox(t *testing.T) {
+	// Use two blocks because it should fail if either of them doesn't panic
+	assert.Panics(t, func() {
+		registerFeature("blah", "NOT_ROX_WHATEVER", false)
+	})
+	assert.Panics(t, func() {
+		registerUnchangeableFeature("blah", "NOT_ROX_WHATEVER", false)
 	})
 }
 
 func TestFeatureFlags(t *testing.T) {
-	assert.Panics(t, func() {
-		registerFeature("blah", "NOT_ROX_WHATEVER", false)
-	})
 	defaultTrueFeature := registerFeature("default_true", "ROX_DEFAULT_TRUE", true)
 	for _, test := range defaultTrueCases {
-		testFlagEnabled(t, defaultTrueFeature, test, true, false)
+		testFlagEnabled(t, defaultTrueFeature, test.env, test.expected)
 	}
 	defaultFalseFeature := registerFeature("default_false", "ROX_DEFAULT_FALSE", false)
 	for _, test := range defaultFalseCases {
-		testFlagEnabled(t, defaultFalseFeature, test, false, false)
+		testFlagEnabled(t, defaultFalseFeature, test.env, test.expected)
 	}
 }
 
-func TestUnchangeableFeatureFlags(t *testing.T) {
-	assert.Panics(t, func() {
-		registerUnchangeableFeature("blah", "NOT_ROX_WHATEVER", false)
-	})
-	defaultTrueFeature := registerUnchangeableFeature("default_true", "ROX_DEFAULT_TRUE", true)
-	for _, test := range defaultTrueCases {
-		testFlagEnabled(t, defaultTrueFeature, test, true, true)
-	}
-	defaultFalseFeature := registerUnchangeableFeature("default_false", "ROX_DEFAULT_FALSE", false)
-	for _, test := range defaultFalseCases {
-		testFlagEnabled(t, defaultFalseFeature, test, false, true)
+// Test that the feature override works as expected given an appropriate overridable setting
+func TestFeatureOverrideSetting(t *testing.T) {
+	overridableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, true)
+	unchangeableFeature := saveFeature("test_feat", "ROX_TEST_FEAT", true, false)
+
+	// overridable features can be changed from the default value (true)
+	testFlagEnabled(t, overridableFeature, "false", false)
+
+	// unchangeable features cannot be changed from the default value (true)
+	testFlagEnabled(t, unchangeableFeature, "false", true)
+}
+
+// This is a similar test as `TestFeatureOverrideSetting` but the difference is that this tests the fact that
+// registerUnchangeableFeature sets the correct overridable setting on a release build
+func TestOverridesOnReleaseBuilds(t *testing.T) {
+	overridableFeature := registerFeature("test_feat", "ROX_TEST_FEAT", true)
+	unchangeableFeature := registerUnchangeableFeature("test_feat", "ROX_TEST_FEAT", true)
+
+	// overridable features can be changed from the default value (true) regardless of the type of build
+	testFlagEnabled(t, overridableFeature, "false", false)
+
+	// unchangeable features canb only be changed from the default value (true) on non-release builds
+	if buildinfo.ReleaseBuild {
+		testFlagEnabled(t, unchangeableFeature, "false", true)
+	} else {
+		testFlagEnabled(t, unchangeableFeature, "false", false)
 	}
 }
