@@ -76,6 +76,8 @@ tag:
 ## Images ##
 ############
 
+image-prefix := scanner-v4
+
 .PHONY: images
 images: scanner-image db-image
 
@@ -95,14 +97,14 @@ endif
 .PHONY: scanner-image
 scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
 	@echo "+ $@"
-	@echo "Building scanner:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4:$(TAG) -f image/scanner/Dockerfile image/scanner
+	@echo "Building $(image-prefix):$(TAG)"
+	$(SILENT)$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 	@echo "+ $@"
-	@echo "Building scanner-db:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4-db:$(TAG) -f image/db/Dockerfile image/db
+	@echo "Building $(image-prefix)-db:$(TAG)"
+	$(SILENT)$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##
