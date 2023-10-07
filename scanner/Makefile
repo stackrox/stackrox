@@ -174,7 +174,7 @@ certs-namespace := $(SCANNER_CERTS_NAMESPACE)
 certs-t := $(foreach name,$(certs-names),$(certs-d)/$(name)/.verified)
 
 # Subject prefix.
-certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=Stackrox Scanner
+certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=Scanner
 
 # DNS name or CN of the current cert target.
 cert-dns = $(notdir $(@D)).$(certs-namespace)
@@ -247,7 +247,7 @@ $(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/%/ca
 	    -CAkey $(@D)/ca-key.pem \
 	    -CAcreateserial \
 	    -sha256 \
-	    -extfile <(echo "subjectAltName = DNS:$(cert-dns) DNS:localhost DNS:127.0.0.1") \
+	    -extfile <(echo "subjectAltName = DNS:$(cert-dns), DNS:localhost, DNS:127.0.0.1") \
 	    -out $@
 
 # Verify certs (loose sanity check).
