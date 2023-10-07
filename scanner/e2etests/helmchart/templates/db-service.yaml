@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-  - name: {{ .Values.app.db.name }}
+  - name: tcp-{{ .Values.app.db.name }}
     port: 5432
     targetPort: postgresql
   selector:
