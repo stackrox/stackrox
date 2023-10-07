@@ -513,3 +513,13 @@ func addNewPLOP(plopObjects []*storage.ProcessListeningOnPortStorage,
 
 	return append(plopObjects, newPLOP)
 }
+
+func (ds *datastoreImpl) RemovePLOPsByPod(ctx context.Context, id string) error {
+        if ok, err := plopSAC.WriteAllowed(ctx); err != nil {
+                return err
+        } else if !ok {
+                return sac.ErrResourceAccessDenied
+        }
+        q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
+        return ds.storage.DeleteByQuery(ctx, q)
+}

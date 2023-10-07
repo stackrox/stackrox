@@ -9,6 +9,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/pod/store/postgres"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	piFilter "github.com/stackrox/rox/central/processindicator/filter"
+	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -35,13 +36,13 @@ type DataStore interface {
 }
 
 // NewPostgresDB creates a pod datastore based on Postgres
-func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store, err := cache.NewCachedStore(pgStore.New(db))
 	if err != nil {
 		return nil, err
 	}
 	searcher := search.New(store, pgStore.NewIndexer(db))
-	return newDatastoreImpl(store, searcher, indicators, processFilter), nil
+	return newDatastoreImpl(store, searcher, indicators, plops, processFilter), nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -50,6 +51,10 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
+	plopStore, plopErr := plopDS.GetTestPostgresDataStore(t, pool)
+	if plopErr != nil {
+		return nil, err
+	}
 	processIndicatorFilter := piFilter.Singleton()
-	return NewPostgresDB(pool, processIndicatorStore, processIndicatorFilter)
+	return NewPostgresDB(pool, processIndicatorStore, plopStore, processIndicatorFilter)
 }
