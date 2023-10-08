@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	productUsageWriteSCC = sac.AllowFixedScopes(
+	administrationUsageUsageWriteSCC = sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Administration))
 	log = logging.LoggerForModule()
@@ -31,7 +31,7 @@ type injectorImpl struct {
 }
 
 func (i *injectorImpl) gather(ctx context.Context) {
-	ctx = sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC)
+	ctx = sac.WithGlobalAccessScopeChecker(ctx, administrationUsageUsageWriteSCC)
 	newMetrics, err := i.ds.AggregateAndReset(ctx)
 	if err != nil {
 		log.Info("Failed to get and reset the aggregated administration usage metrics: ", err)

@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	productUsageWriteSCC = sac.AllowFixedScopes(
+	administrationUsageWriteSCC = sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Administration))
 
@@ -85,7 +85,7 @@ func (p *pipelineImpl) Run(
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
 
-	if err := p.usageStore.UpdateUsage(sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC),
+	if err := p.usageStore.UpdateUsage(sac.WithGlobalAccessScopeChecker(ctx, administrationUsageWriteSCC),
 		clusterID, &storage.SecuredUnits{
 			NumNodes:    clusterMetrics.GetNodeCount(),
 			NumCpuUnits: clusterMetrics.GetCpuCapacity(),

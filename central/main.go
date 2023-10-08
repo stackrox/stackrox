@@ -12,10 +12,10 @@ import (
 	"github.com/NYTimes/gziphandler"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
-	productUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
-	productUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
-	productUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
-	productUsageService "github.com/stackrox/rox/central/administration/usage/service"
+	administrationUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
+	administrationUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
+	administrationUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
+	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
@@ -344,7 +344,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
-	productUsageInjector.Singleton().Start()
+	administrationUsageInjector.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
@@ -396,7 +396,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
-		productUsageService.Singleton(),
+		administrationUsageService.Singleton(),
 		rbacService.Singleton(),
 		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
@@ -770,7 +770,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/product/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
-			ServerHandler: productUsageCSV.CSVHandler(productUsageDataStore.Singleton()),
+			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
 			Compression:   true,
 		},
 	}
@@ -854,7 +854,7 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
-		{productUsageInjector.Singleton(), "product usage injector"},
+		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
 		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}

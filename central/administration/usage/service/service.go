@@ -7,7 +7,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 )
 
-// Service provides the interface to the svc that handles ProductUsage.
+// Service provides the interface to the svc that handles AdministrationUsage.
 type Service interface {
 	pkgGRPC.APIService
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
