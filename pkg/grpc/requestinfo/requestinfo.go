@@ -340,14 +340,6 @@ func sourceIPFromRequest(request *http.Request) string {
 		xffSourceIP = strings.TrimSpace(ips[0])
 	}
 
-	log.Infof(`Obtaining source IP from HTTP request:
-XFF header: %s
-Request's remote addr: %s
-Remote-Addr header: %s
-
-All other Headers on the request: %+v
-`, xff, request.RemoteAddr, request.Header.Get(remoteAddr), request.Header)
-
 	return stringutils.FirstNonEmpty(
 		xffSourceIP,
 		request.RemoteAddr,
