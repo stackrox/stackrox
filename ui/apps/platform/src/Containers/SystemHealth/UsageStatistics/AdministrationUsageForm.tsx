@@ -15,16 +15,16 @@ import {
     Title,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
-import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from 'types/productUsage.proto';
+import { MaxSecuredUnitsUsageResponse, SecuredUnitsUsage } from 'types/administrationUsage.proto';
 import {
-    downloadProductUsageCsv,
-    fetchCurrentProductUsage,
+    downloadAdministrationUsageCsv,
+    fetchCurrentAdministrationUsage,
     fetchMaxCurrentUsage,
-} from 'services/ProductUsageService';
+} from 'services/AdministrationUsageService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import dateFns from 'date-fns';
 
-function ProductUsageForm(): ReactElement {
+function AdministrationUsageForm(): ReactElement {
     const initialStartDate = dateFns.subDays(new Date(), 30);
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(new Date());
@@ -42,7 +42,7 @@ function ProductUsageForm(): ReactElement {
     const [errorFetchingMax, setErrorFetchingMax] = useState<string>('');
 
     useEffect(() => {
-        fetchCurrentProductUsage()
+        fetchCurrentAdministrationUsage()
             .then((usage) => {
                 setCurrentUsage(usage.data);
                 setErrorFetchingCurrent('');
@@ -151,7 +151,7 @@ function ProductUsageForm(): ReactElement {
                         onClick={() => {
                             // Add 1 day to include end date completely in the request.
                             const requestedEndDate = dateFns.addDays(endDate, 1);
-                            return downloadProductUsageCsv({
+                            return downloadAdministrationUsageCsv({
                                 from: startDate.toISOString(),
                                 to: requestedEndDate.toISOString(),
                             });
@@ -165,4 +165,4 @@ function ProductUsageForm(): ReactElement {
     );
 }
 
-export default ProductUsageForm;
+export default AdministrationUsageForm;

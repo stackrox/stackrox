@@ -4,11 +4,11 @@ import {
     MaxSecuredUnitsUsageResponse,
     SecuredUnitsUsage,
     TimeRange,
-} from '../types/productUsage.proto';
+} from '../types/administrationUsage.proto';
 import { saveFile } from './DownloadService';
 
-export function fetchCurrentProductUsage() {
-    return axios.get<SecuredUnitsUsage>('/v1/product/usage/secured-units/current');
+export function fetchCurrentAdministrationUsage() {
+    return axios.get<SecuredUnitsUsage>('/v1/administration/usage/secured-units/current');
 }
 
 export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
@@ -23,13 +23,13 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
         }
     );
     return axios
-        .get<MaxSecuredUnitsUsageResponse>(`/v1/product/usage/secured-units/max?${queryString}`)
+        .get<MaxSecuredUnitsUsageResponse>(`/v1/administration/usage/secured-units/max?${queryString}`)
         .then((response) => {
             return response.data;
         });
 }
 
-export function downloadProductUsageCsv({ from, to }: TimeRange): Promise<void> {
+export function downloadAdministrationUsageCsv({ from, to }: TimeRange): Promise<void> {
     const queryString = qs.stringify(
         {
             from,
@@ -42,7 +42,7 @@ export function downloadProductUsageCsv({ from, to }: TimeRange): Promise<void> 
     );
     return saveFile({
         method: 'get',
-        url: `/api/product/usage/secured-units/csv?${queryString}`,
+        url: `/api/administration/usage/secured-units/csv?${queryString}`,
         data: null,
     });
 }
