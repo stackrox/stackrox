@@ -51,10 +51,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	plopStore, plopErr := plopDS.GetTestPostgresDataStore(t, pool)
-	if plopErr != nil {
-		return nil, err
-	}
+	plopStore := plopDS.GetTestPostgresDataStore(t, pool)
 	processIndicatorFilter := piFilter.Singleton()
 	return NewPostgresDB(pool, processIndicatorStore, plopStore, processIndicatorFilter)
 }

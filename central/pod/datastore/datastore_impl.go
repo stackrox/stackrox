@@ -180,11 +180,11 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 
 	errPlop := ds.plops.RemovePlopsByPod(deleteIndicatorsCtx, id)
 
-       if errInidicators != nil {
-               return errIndicators
-       }
+	if errIndicators != nil {
+		return errIndicators
+	}
 
-       return errPlop
+	return errPlop
 }
 
 func (ds *datastoreImpl) GetPodIDs(ctx context.Context) ([]string, error) {
