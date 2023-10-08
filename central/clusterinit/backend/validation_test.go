@@ -47,6 +47,6 @@ func (s *clusterInitValidationTestSuite) TestInitBundleNameValidation() {
 	}
 
 	for _, name := range invalidNames {
-		s.Equalf(ErrInvalidInitBundleName, validateName(name), "The name %q validated sucessfully but it is assumed to be invalid.", name)
+		s.Equalf(ErrInvalidInitBundleName, validateName(name), "The name %q validated successfully but it is assumed to be invalid.", name)
 	}
 }

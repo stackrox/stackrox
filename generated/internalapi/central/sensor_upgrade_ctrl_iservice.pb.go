@@ -34,7 +34,7 @@ type UpgradeCheckInFromUpgraderRequest struct {
 	LastExecutedStage string `protobuf:"bytes,3,opt,name=last_executed_stage,json=lastExecutedStage,proto3" json:"last_executed_stage,omitempty"`
 	// The error from the last executed stage, if any.
 	// If this is empty, that implies that the last stage
-	// was succesfully executed.
+	// was successfully executed.
 	LastExecutedStageError string   `protobuf:"bytes,4,opt,name=last_executed_stage_error,json=lastExecutedStageError,proto3" json:"last_executed_stage_error,omitempty"`
 	XXX_NoUnkeyedLiteral   struct{} `json:"-"`
 	XXX_unrecognized       []byte   `json:"-"`

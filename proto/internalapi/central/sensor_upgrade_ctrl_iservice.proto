@@ -15,7 +15,7 @@ message UpgradeCheckInFromUpgraderRequest {
 
     // The error from the last executed stage, if any.
     // If this is empty, that implies that the last stage
-    // was succesfully executed.
+    // was successfully executed.
     string  last_executed_stage_error = 4;
 }
 
