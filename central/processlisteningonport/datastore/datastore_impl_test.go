@@ -94,6 +94,16 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 	return indicatorsFromDB
 }
 
+func getPlopMap(plops []*storage.ProcessListeningOnPortStorage) map[string]*storage.ProcessListeningOnPortStorage {
+    plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
+
+    for _, plop := range plops {
+        plopMap[getPlopKey(plop)] = plop
+    }
+
+    return plopMap
+}
+
 func getIndicators() []*storage.ProcessIndicator {
 	testNamespace := "test_namespace"
 
@@ -1475,33 +1485,38 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	id1 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop1.Process)
 	id2 := id.GetIndicatorIDFromProcessIndicatorUniqueKey(plop2.Process)
 
-	expectedPlopStorage1 := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
-		Port:               plopObjects[0].GetPort(),
-		Protocol:           plopObjects[0].GetProtocol(),
-		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
-		ProcessIndicatorId: id1,
-		Closed:             false,
-		Process:            plopObjects[0].GetProcess(),
-		DeploymentId:       plopObjects[0].GetDeploymentId(),
-		PodUid:             plopObjects[0].GetPodUid(),
+	plopMap := getPlopMap(newPlopsFromDB)
+
+	expectedPlopStorage :=  []*storage.ProcessListeningOnPortStorage{
+		{
+			Port:               plopObjects[0].GetPort(),
+			Protocol:           plopObjects[0].GetProtocol(),
+			CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+			ProcessIndicatorId: id1,
+			Closed:             false,
+			Process:            plopObjects[0].GetProcess(),
+			DeploymentId:       plopObjects[0].GetDeploymentId(),
+			PodUid:             plopObjects[0].GetPodUid(),
+		},
+		{
+			Port:               plopObjects[1].GetPort(),
+			Protocol:           plopObjects[1].GetProtocol(),
+			CloseTimestamp:     plopObjects[1].GetCloseTimestamp(),
+			ProcessIndicatorId: id2,
+			Closed:             false,
+			Process:            plopObjects[1].GetProcess(),
+			DeploymentId:       plopObjects[1].GetDeploymentId(),
+			PodUid:             plopObjects[1].GetPodUid(),
+		},
 	}
 
-	suite.Equal(expectedPlopStorage1, newPlopsFromDB[0])
+	expectedPlopStorageMap := getPlopMap(expectedPlopStorage)
 
-	expectedPlopStorage2 := &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[1].GetId(),
-		Port:               plopObjects[1].GetPort(),
-		Protocol:           plopObjects[1].GetProtocol(),
-		CloseTimestamp:     plopObjects[1].GetCloseTimestamp(),
-		ProcessIndicatorId: id2,
-		Closed:             false,
-		Process:            plopObjects[1].GetProcess(),
-		DeploymentId:       plopObjects[1].GetDeploymentId(),
-		PodUid:             plopObjects[1].GetPodUid(),
+	for key, expectedPlop := range expectedPlopStorageMap {
+		// We cannot know the Id in advance so set it here.
+		expectedPlop.Id = plopMap[key].Id
+		suite.Equal(expectedPlop, plopMap[key])
 	}
-
-	suite.Equal(expectedPlopStorage2, newPlopsFromDB[1])
 
 	// Remove the PLOP for the pod
 	suite.NoError(suite.datastore.RemovePlopsByPod(
@@ -1509,10 +1524,10 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 
 	// Verify the PLOP has been deleted for the specified pod
 	newPlopsFromDB2 := suite.getPlopsFromDB()
-	suite.Len(newPlopsFromDB, 1)
+	suite.Len(newPlopsFromDB2, 1)
 
-	expectedPlopStorage1 = &storage.ProcessListeningOnPortStorage{
-		Id:                 newPlopsFromDB[0].GetId(),
+	expectedPlopStorage1 := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB2[0].GetId(),
 		Port:               plopObjects[1].GetPort(),
 		Protocol:           plopObjects[1].GetProtocol(),
 		CloseTimestamp:     plopObjects[1].GetCloseTimestamp(),
@@ -1522,18 +1537,6 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		DeploymentId:       plopObjects[1].GetDeploymentId(),
 		PodUid:             plopObjects[1].GetPodUid(),
 	}
-
-	//expectedPlopStorage1 = &storage.ProcessListeningOnPortStorage{
-	//	Id:                 newPlopsFromDB[0].GetId(),
-	//	Port:               plopObjects[1].GetPort(),
-	//	Protocol:           plopObjects[1].GetProtocol(),
-	//	CloseTimestamp:     plopObjects[1].GetCloseTimestamp(),
-	//	ProcessIndicatorId: id2,
-	//	Closed:             false,
-	//	Process:            plopObjects[1].GetProcess(),
-	//	DeploymentId:       plopObjects[1].GetDeploymentId(),
-	//	PodUid:             fixtureconsts.PodUID2,
-	//}
 
 	suite.Equal(expectedPlopStorage1, newPlopsFromDB2[0])
 
