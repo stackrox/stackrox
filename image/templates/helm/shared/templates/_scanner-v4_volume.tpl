@@ -26,7 +26,13 @@
      or no other persistence backend has been configured yet. */}}
 {{ if or (not (deepEqual $._rox._configShapeScannerV4.scannerV4.db.persistence.persistentVolumeClaim $scannerV4DBCfg.persistence.persistentVolumeClaim)) (not $scannerV4DBVolumeCfg) }}
   {{ $scannerV4DBPVCCfg := $scannerV4DBCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $._rox.scannerV4DBPVCDefaults (dict "createClaim" .Release.IsInstall)) }}
+  {{ if and ($._rox._defaults) ($._rox._defaults.scannerV4DBPVCDefaults) }}
+    {{/* Central Services defaults are added to `_defaults` object */}}
+    {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $._rox._defaults.scannerV4DBPVCDefaults (dict "createClaim" .Release.IsInstall)) }}
+  {{ else }}
+    {{/* Secured Cluster services defaults are at object root */}}
+    {{ $_ := include "srox.mergeInto" (list $scannerV4DBPVCCfg $._rox.scannerV4DBPVCDefaults (dict "createClaim" .Release.IsInstall)) }}
+  {{ end }}
   {{ $_ = set $scannerV4DBVolumeCfg "persistentVolumeClaim" (dict "claimName" $scannerV4DBPVCCfg.claimName) }}
   {{ if $scannerV4DBPVCCfg.createClaim }}
     {{ $_ = set $scannerV4DBCfg.persistence "_pvcCfg" $scannerV4DBPVCCfg }}

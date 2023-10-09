@@ -16,7 +16,7 @@ scannerV4:
         memory: "4Gi"
         cpu: "2000m"
   matcher:
-    disable: [< not .FeatureFlags.ROX_SCANNER_V4 >]
+    disable: true
   db:
     postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
     hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
