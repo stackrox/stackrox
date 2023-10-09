@@ -24,7 +24,7 @@ import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
-import useFetchRoles from './useFetchRoles';
+import useAllowedRoles from './useFetchRoles';
 
 export type ApiTokenIntegrationFormValues = {
     name: string;
@@ -73,7 +73,7 @@ function ApiTokenIntegrationForm({
         validationSchema,
     });
     const { isEditing, isViewingDetails } = usePageState();
-    const { roles, isLoading: isRolesLoading } = useFetchRoles();
+    const { roleNames, isLoading: isRolesLoading } = useAllowedRoles();
     const isGenerated = Boolean((message as ApiTokenFormResponseMessage)?.responseData);
 
     function onChange(value, event) {
@@ -166,10 +166,10 @@ function ApiTokenIntegrationForm({
                                 isDisabled={!isEditable || isRolesLoading || isGenerated}
                                 placeholderText="Choose role..."
                             >
-                                {roles.map((role) => {
+                                {roleNames.map((roleName) => {
                                     return (
-                                        <SelectOption key={role.name} value={role.name}>
-                                            {role.name}
+                                        <SelectOption key={roleName} value={roleName}>
+                                            {roleName}
                                         </SelectOption>
                                     );
                                 })}
