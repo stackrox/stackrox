@@ -61,7 +61,7 @@ type Store struct {
 func (e *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 // NewStore creates and returns a new store instance.

@@ -115,7 +115,7 @@ func NewFileStore(opts ...fileStoreOption) *FileStore {
 func (s *FileStore) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 // Cleanup resets the store which includes in-memory and disk resources.

@@ -63,7 +63,7 @@ type Store struct {
 func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.

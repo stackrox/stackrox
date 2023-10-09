@@ -3,6 +3,7 @@ package resources
 import (
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
@@ -56,7 +57,7 @@ type nodeStoreImpl struct {
 func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 func newNodeStore() *nodeStoreImpl {

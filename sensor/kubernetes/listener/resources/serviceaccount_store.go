@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -21,7 +22,7 @@ type ServiceAccountStore struct {
 func (sas *ServiceAccountStore) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 func newServiceAccountStore() *ServiceAccountStore {

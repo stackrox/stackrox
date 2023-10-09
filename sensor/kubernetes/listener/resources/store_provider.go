@@ -145,34 +145,6 @@ func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
 }
 
-//// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
-//// should be deleted in Central to keep the state of Sensor and Central in sync.
-// func (p *InMemoryStoreProvider) ProcessHashes(h map[string]uint64) []central.MsgFromSensor {
-//	events := make([]central.MsgFromSensor, 0)
-//	for typeWithID, hashValue := range h {
-//		resType, resID := stringutils.Split2(typeWithID, ":")
-//		if resID == "" {
-//			log.Errorf("malformed hash key: %s", typeWithID)
-//			continue
-//		}
-//		toDeleteID, err := p.ReconcileDelete(resType, resID, hashValue)
-//		if err != nil {
-//			log.Errorf("reconciliation error: %s", err)
-//		}
-//		if toDeleteID == "" {
-//			// Resource was found on Sensor and Central, continue to next item
-//			continue
-//		}
-//		delMsg, err := p.resourceToMessage(resType, toDeleteID)
-//		if err != nil {
-//			log.Errorf("converting resource to MsgFromSensor: %s", err)
-//			continue
-//		}
-//		events = append(events, *delMsg)
-//	}
-//	return events
-//}
-
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.

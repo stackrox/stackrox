@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -88,7 +89,7 @@ type networkPolicyStoreImpl struct {
 func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 func newNetworkPoliciesStore() *networkPolicyStoreImpl {

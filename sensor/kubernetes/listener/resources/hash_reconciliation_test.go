@@ -40,7 +40,7 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
-			expectedError: errors.Errorf("Not implemented for resource type Unknown"),
+			expectedError: errors.New("Not implemented for resource type Unknown"),
 		},
 	}
 

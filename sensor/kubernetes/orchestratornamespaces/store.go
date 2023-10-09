@@ -1,6 +1,7 @@
 package orchestratornamespaces
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -18,7 +19,7 @@ type OrchestratorNamespaces struct {
 func (n *OrchestratorNamespaces) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 // NewOrchestratorNamespaces returns a new OrchestratorNamespaces store

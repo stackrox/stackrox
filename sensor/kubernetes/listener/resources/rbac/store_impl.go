@@ -1,6 +1,7 @@
 package rbac
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -39,7 +40,7 @@ func (rs *storeImpl) Cleanup() {
 func (rs *storeImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
 	// TODO implement me
-	panic("implement me")
+	return "", errors.New("Not implemented")
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {
