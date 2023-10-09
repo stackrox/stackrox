@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -130,6 +131,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
+	if features.SensorReconciliationOnReconnect.Enabled() {
+		capsSet.Add(centralsensor.SensorReconciliationOnReconnect)
+	}
 
 	// Inject desired Helm configuration, if any.
 	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
