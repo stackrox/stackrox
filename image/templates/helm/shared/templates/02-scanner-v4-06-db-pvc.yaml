@@ -1,5 +1,7 @@
 {{- include "srox.init" . -}}
 
+{{- if not ._rox.scannerV4.disable -}}
+
 {{ if ._rox.scannerV4.db.persistence._pvcCfg -}}
 {{- $pvcCfg := ._rox.scannerV4.db.persistence._pvcCfg -}}
 {{- $claimName := $pvcCfg.claimName -}}
@@ -62,4 +64,6 @@ spec:
   resources:
     requests:
       storage: {{ include "srox.formatStorageSize" $pvcCfg.size }}
+{{- end }}
+
 {{- end }}

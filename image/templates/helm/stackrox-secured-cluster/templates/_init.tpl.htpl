@@ -269,27 +269,31 @@
    Local scanner-v4-indexer setup.
   */}}
 
-{{ include "srox.scannerV4Volume" $ }}
+{{ if eq ._rox.scannerV4.disable false}}
+  {{ include "srox.scannerV4Volume" $ }}
 
-{{ if eq ._rox.scannerV4.indexer.disable false }}
-  {{ $centralDeployment := dict }}
-  {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
-  {{ if $centralDeployment.result }}
-    {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
-    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-    {{ $_ := set $._rox.scanner "disable" true }}
-    {{ $_ := set $._rox.scannerV4.indexer "disable" true }}
+  {{ if eq ._rox.scannerV4.indexer.disable false }}
+    {{ $centralDeployment := dict }}
+    {{ include "srox.safeLookup" (list $ $centralDeployment "apps/v1" "Deployment" $.Release.Namespace "central") }}
+    {{ if $centralDeployment.result }}
+      {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner-v4-indexer from this chart and configuring sensor to use existing scanner-v4-indexer instance, if any.") }}
+      {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+      {{ $_ := set $._rox.scanner "disable" true }}
+      {{ $_ := set $._rox.scannerV4.indexer "disable" true }}
+    {{ end }}
   {{ end }}
-{{ end }}
 
-{{ if eq ._rox.scannerV4.matcher.disable false }}
-  {{ include "srox.fail" (print "Only scanner-v4-indexer is allowed in Secured Cluster. To solve this, disable the matcher: scannerV4.matcher.disable=true.") }}
-{{ end }}
+  {{ if eq ._rox.scannerV4.matcher.disable false }}
+    {{ include "srox.fail" (print "Only scanner-v4-indexer is allowed in Secured Cluster. To solve this, disable the matcher: scannerV4.matcher.disable=true.") }}
+  {{ end }}
 
-{{ if eq ._rox.scannerV4.indexer.disable false }}
-  {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
-  {{ include "srox.scannerV4Init" (list $ $._rox.scannerV4) }}
-  {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner-v4") $.Release.Namespace) }}
+  {{ if eq ._rox.scannerV4.indexer.disable false }}
+    {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}
+    {{ $_ := set $._rox.scannerV4.indexer "image" ._rox.image.scannerV4 }}
+    {{ $_ := set $._rox.scannerV4.db "image" ._rox.image.scannerV4DB }}
+    {{ include "srox.scannerV4Init" (list $ $._rox.scannerV4) }}
+    {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" (list "stackrox" "stackrox-scanner-v4") $.Release.Namespace) }}
+  {{ end }}
 {{ end }}
 [<- end >]
 
