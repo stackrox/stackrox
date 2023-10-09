@@ -20,6 +20,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Stepwise
+@Tag("PZ")
 class AttemptedAlertsTest extends BaseSpecification {
     static final private String DEP_PREFIX = "attempted-alerts-dep"
     static final private String[] DEP_NAMES = getDeploymentNames()
@@ -99,7 +100,6 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    @Tag("PZ")
     def "Verify attempted alerts on deployment create: #desc"() {
         when:
         "Set 'Latest Tag' policy enforcement to #policyEnforcements"
@@ -173,7 +173,6 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    @Tag("PZ")
     def "Verify attempted alerts on deployment updates: #desc"() {
         given:
         "Create deployment not violating 'Latest Tag' policy"
@@ -249,7 +248,6 @@ class AttemptedAlertsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    @Tag("PZ")
     // K8s event detection is currently not supported on OpenShift.
     @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify attempted alerts on kubernetes events: #desc"() {

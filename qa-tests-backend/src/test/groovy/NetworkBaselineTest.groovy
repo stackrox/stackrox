@@ -16,6 +16,7 @@ import org.junit.Rule
 import spock.lang.Tag
 import spock.lang.Timeout
 
+@Tag("PZ")
 class NetworkBaselineTest extends BaseSpecification {
     private static final String SERVER_DEP_NAME = "net-bl-server"
     private static final String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
@@ -177,7 +178,6 @@ class NetworkBaselineTest extends BaseSpecification {
     org.junit.rules.Timeout globalTimeout = new org.junit.rules.Timeout(1600, TimeUnit.SECONDS)
 
     @Tag("NetworkBaseline")
-    @Tag("PZ")
     def "Verify network baseline functionality"() {
         when:
         "Create initial set of deployments, wait for baseline to populate"

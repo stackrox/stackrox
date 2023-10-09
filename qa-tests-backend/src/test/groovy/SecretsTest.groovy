@@ -9,6 +9,7 @@ import util.Timer
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class SecretsTest extends BaseSpecification {
 
     private static Deployment renderDeployment(String deploymentName, String secretName, boolean fromEnv) {
@@ -29,7 +30,6 @@ class SecretsTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("COMPATIBILITY")
-    @Tag("PZ")
     def "Verify the secret api can return the secret's information when adding a new secret"() {
         when:
         "Create a Secret"
@@ -47,7 +47,6 @@ class SecretsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify the secret item should show the binding deployments (from env var: #fromEnv)"() {
         when:
         "Create a Secret"
@@ -78,7 +77,6 @@ class SecretsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify the secret should not show the deleted binding deployment (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
@@ -131,7 +129,6 @@ class SecretsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify the secret information should not be infected by the previous secrets (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
@@ -170,7 +167,6 @@ class SecretsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify secrets page should not be messed up when a deployment's secret changed (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"

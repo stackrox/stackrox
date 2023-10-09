@@ -13,6 +13,7 @@ import util.Timer
 import spock.lang.Shared
 import spock.lang.Tag
 
+@Tag("PZ")
 class AdmissionControllerNoImageScanTest extends BaseSpecification {
     @Shared
     private List<PolicyOuterClass.EnforcementAction> noImageScansEnforcements
@@ -69,7 +70,6 @@ OqxYbK0Iro6GzSmOzxkn+N2AKawLyXi84WSwJQBK//psATakCgAQKkNTAA==
     }
 
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify Admission Controller Behavior for No Image Scans Policy"() {
         String gcrId
 

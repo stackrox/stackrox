@@ -7,6 +7,7 @@ import services.VulnRequestService
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
     static final private NGINX_1_12_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
@@ -30,7 +31,6 @@ class VulnMgmtWorkflowTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("RUNTIME")
-    @Tag("PZ")
     def "Verify Vulnerability Requests can transition between states - #requestType - approve?(#approve)"() {
         when:
         "A user requests a vuln be deferred or marked as FP"

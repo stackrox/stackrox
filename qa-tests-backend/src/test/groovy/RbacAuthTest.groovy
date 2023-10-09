@@ -18,6 +18,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class RbacAuthTest extends BaseSpecification {
 
     private static final NETPOL_YAML = """
@@ -99,7 +100,6 @@ spec:
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
