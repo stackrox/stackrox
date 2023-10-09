@@ -110,12 +110,41 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
+	// Create a fake SensorComponent
+	responsesC := make(chan *message.ExpiringMessage)
+	defer close(responsesC)
+	comm := NewCentralCommunication(false, NewFakeSensorComponent(responsesC))
+
+	reachable := concurrency.Flag{}
+	mockService := &MockSensorServiceClient{
+		connected: concurrency.NewSignal(),
+		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
+	}
+
+	expectSyncMessages(centralSyncMessages, mockService)
+	ch := make(chan struct{})
+	mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
+		defer close(ch)
+		return nil
+	})
+	// Start the go routine with the mocked client
+	go comm.(*centralCommunicationImpl).sendEvents(mockService, &reachable, c.mockHandler, c.mockDetector, comm.(*centralCommunicationImpl).receiver.Stop, comm.(*centralCommunicationImpl).sender.Stop)
+	mockService.connected.Wait()
+	comm.Stop(nil)
+	select {
+	case <-ch:
+		break
+	case <-time.After(5 * time.Second):
+		c.Fail("timeout reached waiting for the communication to stop")
+	}
+}
+
 func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
 	md := metadata.MD{
 		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
 	}
 	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
-	service.client.EXPECT().CloseSend().AnyTimes()
 	service.client.EXPECT().Send(gomock.Any()).Return(nil)
 	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
 	var orderedCalls []*gomock.Call
