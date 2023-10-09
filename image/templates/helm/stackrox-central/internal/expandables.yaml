@@ -46,3 +46,14 @@ scanner:
   dbServiceTLS:
     cert: true
     key: true
+scannerV4:
+  indexer:
+    resources: true
+  matcher:
+    resources: true
+  db:
+    resources: true
+    postgresConfig: true
+    hbaConfig: true
+    password:
+      value: true

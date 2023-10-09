@@ -39,6 +39,12 @@
 {{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
 {{ $_ = set $._rox "_configShape" $configShape }}
 
+[< if .FeatureFlags.ROX_SCANNER_V4 ->]
+  {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml}}
+  {{ $_ = include "srox.mergeInto" (list $rox $configShapeScannerV4) }}
+  {{ $_ = set $._rox "_configShapeScannerV4" $configShapeScannerV4 }}
+[< end >]
+
 {{/*
     General validation.
    */}}
@@ -272,6 +278,22 @@
   {{ end }}
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
+
+[< if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4 ->]
+
+{{/*
+   ScannerV4 setup.
+  */}}
+
+{{ if not ._rox.scannerV4.disable }}
+  {{/* TODO: should also check if indexer and matcher are disabled? */}}
+  {{/* if and (not ._rox.scannerV4.indexer.disable) (not ._rox.scannerV4.matcher.disable) }}
+  {{ end */}}
+  {{ include "srox.scannerV4Volume" $ }}
+  {{ include "srox.scannerV4Init" (list $ $._rox.scannerV4) }}
+{{ end }}
+
+[<- end >]
 
 
 {{/*
