@@ -41,22 +41,22 @@ var (
 	}
 )
 
-// key is the key by which messages are deduped.
-type key struct {
+// Key is the key by which messages are deduped.
+type Key struct {
 	id           string
 	resourceType reflect.Type
 }
 
-func keyFrom(v string) (key, error) {
+func keyFrom(v string) (Key, error) {
 	parts := strings.Split(v, ":")
 	if len(parts) != 2 {
-		return key{}, fmt.Errorf("invalid key format: %s", v)
+		return Key{}, fmt.Errorf("invalid Key format: %s", v)
 	}
 	t, err := mapType(parts[0])
 	if err != nil {
-		return key{}, errors.Wrap(err, "map type")
+		return Key{}, errors.Wrap(err, "map type")
 	}
-	return key{
+	return Key{
 		id:           parts[1],
 		resourceType: t,
 	}, nil
@@ -74,28 +74,27 @@ func mapType(typeStr string) (reflect.Type, error) {
 // deduper takes care of deduping sensor events.
 type deduper struct {
 	stream   messagestream.SensorMessageStream
-	lastSent map[key]uint64
+	lastSent map[Key]uint64
 
 	hasher *hash.Hasher
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[string]uint64) messagestream.SensorMessageStream {
-	lastSeen := copyDeduperState(deduperState)
-
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[Key]uint64) messagestream.SensorMessageStream {
 	return &deduper{
 		stream:   stream,
-		lastSent: lastSeen,
+		lastSent: deduperState,
 		hasher:   hash.NewHasher(),
 	}
 }
 
-func copyDeduperState(state map[string]uint64) map[key]uint64 {
+// CopyDeduperState makes a copy of the deduper state.
+func CopyDeduperState(state map[string]uint64) map[Key]uint64 {
 	if state == nil {
-		return make(map[key]uint64)
+		return make(map[Key]uint64)
 	}
 
-	result := make(map[key]uint64, len(state))
+	result := make(map[Key]uint64, len(state))
 	for k, v := range state {
 		parsedKey, err := keyFrom(k)
 		if err != nil {
@@ -119,7 +118,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return nil
 	}
 
-	key := key{
+	key := Key{
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),
 	}

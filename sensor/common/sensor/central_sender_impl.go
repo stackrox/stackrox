@@ -13,13 +13,13 @@ import (
 )
 
 type centralSenderImpl struct {
-	initialState map[string]uint64
+	initialState map[deduper.Key]uint64
 	senders      []common.SensorComponent
 	stopper      concurrency.Stopper
 	finished     *sync.WaitGroup
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[string]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
 	s.initialState = initialDeduperState
 	go s.send(stream, onStops...)
 }

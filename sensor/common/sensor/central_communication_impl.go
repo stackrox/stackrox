@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
@@ -44,10 +45,9 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect          bool
-	clientReconciliation bool
-	initialDeduperState  map[string]uint64
-	syncTimeout          time.Duration
+	isReconnect         bool
+	initialDeduperState map[deduper.Key]uint64
+	syncTimeout         time.Duration
 }
 
 var (
@@ -297,8 +297,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		return errors.Errorf("expected DeduperState but received: %t", msg.Msg)
 	}
 
-	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
-	s.initialDeduperState = msg.GetDeduperState().GetResourceHashes()
+	s.initialDeduperState = deduper.CopyDeduperState(msg.GetDeduperState().GetResourceHashes())
 	return nil
 }
 
