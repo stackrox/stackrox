@@ -1,5 +1,7 @@
+# This file is the same as the .dockerignore, minus /.git/
+# It is required to pass .git to the builder containers on RHTAP so we can bake build information into the binary
+# To regenerate, copy the contents of .dockerignore, remove /.git/ and reproduce these comments.
 **/node_modules/
-# /.git/ <- required to pass .git to the roxctl container for avoiding "Malformed status.sh output line STABLE_GIT_SHORT_SHA"
 /bin/
 /image/bin/
 /image/rhel/bin/

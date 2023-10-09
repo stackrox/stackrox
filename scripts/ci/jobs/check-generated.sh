@@ -60,6 +60,19 @@ check-operator-generated-files-up-to-date || {
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
 
+info 'Check .{docker,container}ignore files are up to date (If this fails, follow instructions in .containerignore to update the file.)'
+function check-container-ignore-files-up-to-date() {
+    diff -u -I '/.git/|#.*' .containerignore .dockerignore
+}
+check-container-ignore-files-up-to-date || {
+    save_junit_failure "Check_Container_Ignore_Files" \
+        "Container ignore files are not up to date" \
+        "$(diff -u -I '/.git/|#.*' .containerignore .dockerignore || true)"
+    git reset --hard HEAD
+    echo check-container-ignore-files-up-to-date >> "$FAIL_FLAG"
+}
+
+
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
 function check-shellcheck-failing-list() {
