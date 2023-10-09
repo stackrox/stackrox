@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,11 +30,15 @@ type Service interface {
 func New(storage datastore.DataStore,
 	processor notifier.Processor,
 	policyCleaner policycleaner.PolicyCleaner,
-	reporter integrationhealth.Reporter) Service {
+	reporter integrationhealth.Reporter,
+	cryptoCodec cryptoutils.CryptoCodec,
+	cryptoKey string) Service {
 	return &serviceImpl{
 		storage:       storage,
 		processor:     processor,
 		policyCleaner: policyCleaner,
 		reporter:      reporter,
+		cryptoCodec:   cryptoCodec,
+		cryptoKey:     cryptoKey,
 	}
 }

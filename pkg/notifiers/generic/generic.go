@@ -236,7 +236,7 @@ func (g *generic) AuditLoggingEnabled() bool {
 }
 
 func init() {
-	notifiers.Add("generic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.GenericType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		g, err := newGeneric(notifier)
 		return g, err
 	})

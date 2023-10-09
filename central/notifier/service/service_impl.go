@@ -8,9 +8,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -20,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/integrationhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
-	"github.com/stackrox/rox/pkg/notifiers"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/splunk"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
@@ -50,9 +52,11 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
-	storage   datastore.DataStore
-	processor notifier.Processor
-	reporter  integrationhealth.Reporter
+	storage     datastore.DataStore
+	processor   notifier.Processor
+	reporter    integrationhealth.Reporter
+	cryptoCodec cryptoutils.CryptoCodec
+	cryptoKey   string
 
 	policyCleaner policycleaner.PolicyCleaner
 }
@@ -131,11 +135,18 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
-	notifierCreator, ok := notifiers.Registry[request.GetNotifier().GetType()]
+	notifierCreator, ok := pkgNotifiers.Registry[request.GetNotifier().GetType()]
 	if !ok {
 		return nil, errors.Wrapf(errox.InvalidArgs, "notifier type %v is not a valid notifier type", request.GetNotifier().GetType())
 	}
 	upgradeNotifierConfig(request.GetNotifier())
+	if request.GetUpdatePassword() {
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoCodec, s.cryptoKey)
+		if err != nil {
+			// Don't send out error from crypto lib
+			return nil, errors.New("Error securing notifier")
+		}
+	}
 	notifier, err := notifierCreator(request.GetNotifier())
 	if err != nil {
 		return nil, err
@@ -156,7 +167,12 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
-	notifier, err := notifiers.CreateNotifier(request)
+	err := notifierUtils.SecureNotifier(request, s.cryptoCodec, s.cryptoKey)
+	if err != nil {
+		// Don't send out error from crypto lib
+		return nil, errors.New("Error securing notifier")
+	}
+	notifier, err := pkgNotifiers.CreateNotifier(request)
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
@@ -186,7 +202,14 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if err := s.reconcileUpdateNotifierRequest(ctx, request); err != nil {
 		return nil, err
 	}
-	notifier, err := notifiers.CreateNotifier(request.GetNotifier())
+	if request.GetUpdatePassword() {
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoCodec, s.cryptoKey)
+		if err != nil {
+			// Don't send out error from crypto lib
+			return nil, errors.New("Error securing notifier")
+		}
+	}
+	notifier, err := pkgNotifiers.CreateNotifier(request.GetNotifier())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}

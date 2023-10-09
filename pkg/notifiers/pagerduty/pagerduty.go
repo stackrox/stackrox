@@ -202,7 +202,7 @@ func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
 }
 
 func init() {
-	notifiers.Add("pagerduty", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.PagerDutyType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newPagerDuty(notifier)
 		return s, err
 	})

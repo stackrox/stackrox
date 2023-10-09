@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	notifiers.Add("jira", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.JiraType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		j, err := jira.NewJira(notifier, metadatagetter.Singleton(), mitreDataStore.Singleton())
 		return j, err
 	})
