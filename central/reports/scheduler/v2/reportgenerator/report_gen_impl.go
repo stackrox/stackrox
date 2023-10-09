@@ -48,17 +48,44 @@ var (
 
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
-	querySelects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageName).Proto(),
-		search.NewQuerySelect(search.Component).Proto(),
-		search.NewQuerySelect(search.ComponentVersion).Proto(),
-		search.NewQuerySelect(search.CVEID).Proto(),
-		search.NewQuerySelect(search.CVE).Proto(),
-		search.NewQuerySelect(search.Fixable).Proto(),
-		search.NewQuerySelect(search.FixedBy).Proto(),
-		search.NewQuerySelect(search.Severity).Proto(),
-		search.NewQuerySelect(search.CVSS).Proto(),
-		search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+	deployedImagesQueryParams = &ReportQueryParams{
+		Schema: schema.ImageCvesSchema,
+		Selects: []*v1.QuerySelect{
+			search.NewQuerySelect(search.ImageName).Proto(),
+			search.NewQuerySelect(search.Component).Proto(),
+			search.NewQuerySelect(search.ComponentVersion).Proto(),
+			search.NewQuerySelect(search.CVEID).Proto(),
+			search.NewQuerySelect(search.CVE).Proto(),
+			search.NewQuerySelect(search.Fixable).Proto(),
+			search.NewQuerySelect(search.FixedBy).Proto(),
+			search.NewQuerySelect(search.Severity).Proto(),
+			search.NewQuerySelect(search.CVSS).Proto(),
+			search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+			search.NewQuerySelect(search.Cluster).Proto(),
+			search.NewQuerySelect(search.Namespace).Proto(),
+			search.NewQuerySelect(search.DeploymentName).Proto(),
+		},
+		Pagination: search.NewPagination().
+			AddSortOption(search.NewSortOption(search.Cluster)).
+			AddSortOption(search.NewSortOption(search.Namespace)).Proto(),
+	}
+
+	watchedImagesQueryParams = &ReportQueryParams{
+		Schema: schema.ImageCvesSchema,
+		Selects: []*v1.QuerySelect{
+			search.NewQuerySelect(search.ImageName).Proto(),
+			search.NewQuerySelect(search.Component).Proto(),
+			search.NewQuerySelect(search.ComponentVersion).Proto(),
+			search.NewQuerySelect(search.CVEID).Proto(),
+			search.NewQuerySelect(search.CVE).Proto(),
+			search.NewQuerySelect(search.Fixable).Proto(),
+			search.NewQuerySelect(search.FixedBy).Proto(),
+			search.NewQuerySelect(search.Severity).Proto(),
+			search.NewQuerySelect(search.CVSS).Proto(),
+			search.NewQuerySelect(search.FirstImageOccurrenceTimestamp).Proto(),
+		},
+		Pagination: search.NewPagination().
+			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
 )
 
@@ -273,16 +300,12 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	var cveResponses []*ImageCVEQueryResponse
 	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
-		query.Pagination = search.NewPagination().
-			AddSortOption(search.NewSortOption(search.Cluster)).
-			AddSortOption(search.NewSortOption(search.Namespace)).Proto()
-		query.Selects = append(querySelects,
-			search.NewQuerySelect(search.Cluster).Proto(),
-			search.NewQuerySelect(search.Namespace).Proto(),
-			search.NewQuerySelect(search.DeploymentName).Proto())
-		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db, schema.ImageCvesSchema, query)
+		query.Pagination = deployedImagesQueryParams.Pagination
+		query.Selects = deployedImagesQueryParams.Selects
+		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			deployedImagesQueryParams.Schema, query)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
 		}
 		numDeployedImageResults = len(cveResponses)
 	}
@@ -297,12 +320,12 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 			query := search.ConjunctionQuery(
 				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
 				cveFilterQuery)
-			query.Pagination = search.NewPagination().
-				AddSortOption(search.NewSortOption(search.ImageName)).Proto()
-			query.Selects = querySelects
-			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db, schema.ImageCvesSchema, query)
+			query.Pagination = watchedImagesQueryParams.Pagination
+			query.Selects = watchedImagesQueryParams.Selects
+			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+				watchedImagesQueryParams.Schema, query)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 			}
 			numWatchedImageResults = len(watchedImageCVEResponses)
 			cveResponses = append(cveResponses, watchedImageCVEResponses...)

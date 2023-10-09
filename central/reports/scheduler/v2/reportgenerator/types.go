@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 )
 
 // ReportRequest contains information needed to generate and notify a report
@@ -25,6 +27,7 @@ type reportEmailSubjectFormat struct {
 	CollectionName          string
 }
 
+// ImageCVEQueryResponse contains the fields of report query response
 type ImageCVEQueryResponse struct {
 	Cluster           string                        `db:"cluster"`
 	Namespace         string                        `db:"namespace"`
@@ -43,6 +46,14 @@ type ImageCVEQueryResponse struct {
 	Link string
 }
 
+// ReportQueryParams contains the parts used to build the report query
+type ReportQueryParams struct {
+	Schema     *walker.Schema
+	Selects    []*v1.QuerySelect
+	Pagination *v1.QueryPagination
+}
+
+// ReportData contains the cve rows to be included in the report along with counts of deployed and watched image CVEs
 type ReportData struct {
 	CVEResponses            []*ImageCVEQueryResponse
 	NumDeployedImageResults int

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -64,25 +65,24 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	var reportName string
+	truncatedName := configName
 	if len(configName) > 80 {
-		configName = configName[0:80] + "..."
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
-	} else {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
+		truncatedName = configName[0:80] + "..."
 	}
 
+	reportName := fmt.Sprintf("%s_Vulnerability_Report_%s_%s.csv", branding.GetProductNameShort(),
+		truncatedName, time.Now().Format("02_January_2006"))
 	zipFile, err := zipWriter.Create(reportName)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrapf(err, "unable to create the zip file for report config '%s'", configName)
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrapf(err, "unable to write the zip file for report config '%s'", configName)
 	}
 	err = zipWriter.Close()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, errors.Wrapf(err, "unable to close the zip file for report config %s", configName)
 	}
 	return &zipBuf, nil
 }

@@ -83,7 +83,7 @@ type WatchedImagesResult struct {
 }
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
-// // a flag if the report is empty or not
+// a flag that is set to true if the report csv has rows
 func Format(deployedImagesResults []DeployedImagesResult) (*bytes.Buffer, bool, error) {
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 	for _, r := range deployedImagesResults {
@@ -115,29 +115,29 @@ func Format(deployedImagesResults []DeployedImagesResult) (*bytes.Buffer, bool, 
 		}
 	}
 
-	empty := csvWriter.IsEmpty()
+	hasRows := !csvWriter.IsEmpty()
 
 	var buf bytes.Buffer
 	err := csvWriter.WriteBytes(&buf)
 	if err != nil {
-		return nil, true, errors.Wrap(err, "error creating csv report")
+		return nil, false, errors.Wrap(err, "error creating csv report")
 	}
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	zipFile, err := zipWriter.Create(fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006")))
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, false, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, false, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
 	err = zipWriter.Close()
 	if err != nil {
-		return nil, true, errors.Wrap(err, "unable to create a zip file of the vuln report")
+		return nil, false, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
-	return &zipBuf, empty, nil
+	return &zipBuf, hasRows, nil
 }
 
 // GetClusterName returns name of cluster containing the Deployment
