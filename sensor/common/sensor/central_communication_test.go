@@ -16,7 +16,6 @@ import (
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
-	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -27,13 +26,9 @@ import (
 type centralCommunicationSuite struct {
 	suite.Suite
 
-	controller       *gomock.Controller
-	receivedMessages chan *central.MsgFromSensor
-	conn             *grpc.ClientConn
-	closeF           func()
-	mockHandler      *configMocks.MockHandler
-	mockDetector     *mocksDetector.MockDetector
-	fakeCentral      *centralDebug.FakeService
+	controller   *gomock.Controller
+	mockHandler  *configMocks.MockHandler
+	mockDetector *mocksDetector.MockDetector
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
@@ -116,9 +111,8 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
-	key := strings.ToLower(centralsensor.SensorHelloMetadataKey)
 	md := metadata.MD{
-		key: []string{"true"},
+		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
 	}
 	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
 	service.client.EXPECT().CloseSend().AnyTimes()
@@ -126,7 +120,7 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
 	var orderedCalls []*gomock.Call
 	for _, m := range messages {
-		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Return(m, nil))
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
 	}
 	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
 	gomock.InOrder(orderedCalls...)
