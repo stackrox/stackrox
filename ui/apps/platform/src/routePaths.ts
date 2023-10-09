@@ -38,7 +38,7 @@ export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
-export const deferralConfigurationPath = `${mainPath}/deferral-configuration`;
+export const exceptionConfigurationPath = `${mainPath}/exception-configuration`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
@@ -151,7 +151,7 @@ export type RouteKey =
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
-    | 'deferral-configuration'
+    | 'exception-configuration'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -241,7 +241,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     dashboard: {
         resourceAccessRequirements: everyResource([]),
     },
-    'deferral-configuration': {
+    'exception-configuration': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
@@ -324,7 +324,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'workload-cves': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
-        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
 };
 

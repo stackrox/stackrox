@@ -12,6 +12,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
@@ -28,7 +30,7 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 // slack notifier plugin
@@ -262,10 +264,11 @@ func (s *slack) postMessage(ctx context.Context, url string, jsonPayload []byte)
 
 	resp, err := s.client.Do(req.WithContext(ctx))
 	if err != nil {
-		log.Errorf("Error posting to slack: %v", err)
+		log.Errorw("Error posting message to Slack", logging.Err(err),
+			logging.ErrCode(codes.SlackGeneric), logging.NotifierName(s.GetName()))
 		return errors.Wrap(err, "Error posting to slack")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Slack", resp)
+	return notifiers.CreateError(s.GetName(), resp, codes.SlackGeneric)
 }

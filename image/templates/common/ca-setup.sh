@@ -57,7 +57,7 @@ function create_directory {
 	local dir="$1"
 	echo "The following certificates will be used as additional CAs:"
 	from_file_args=()
-	for f in "$dir/*.crt" "$dir/*.pem"; do
+	for f in "$dir"/*.crt "$dir"/*.pem; do
     	if [ -f "$f" ] ; then
     		from_file_args+=("--from-file=$(basename "$f")=$f")
 			echo "  - $f"

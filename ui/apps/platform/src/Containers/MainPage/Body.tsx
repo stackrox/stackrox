@@ -16,7 +16,7 @@ import {
     compliancePath,
     configManagementPath,
     dashboardPath,
-    deferralConfigurationPath,
+    exceptionConfigurationPath,
     deprecatedPoliciesPath,
     integrationsPath,
     isRouteEnabled, // predicate function
@@ -118,11 +118,11 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
-    'deferral-configuration': {
+    'exception-configuration': {
         component: asyncComponent(
-            () => import('Containers/DeferralConfiguration/DeferralConfigurationPage')
+            () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
-        path: deferralConfigurationPath,
+        path: exceptionConfigurationPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),

@@ -51,6 +51,8 @@ export const selectors = {
     // Watched image selectors
     watchedImageLabel: `.pf-c-label:contains("${watchedImageLabelText}")`,
     firstUnwatchedImageRow: `tbody tr:has(td[data-label="Image"]:not(:contains("${watchedImageLabelText}"))):eq(0)`,
+    tableRowActionsForImage: (name) =>
+        `tbody tr:has(td[data-label="Image"]:contains("${name}")) *[aria-label="Actions"]`,
     watchedImageCellWithName: (name) =>
         `tbody tr td[data-label="Image"]:contains("${name}"):contains("${watchedImageLabelText}")`,
     manageWatchedImagesButton: 'button:contains("Manage watched images")',

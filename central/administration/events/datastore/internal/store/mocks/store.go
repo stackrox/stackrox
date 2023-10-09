@@ -36,6 +36,20 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteMany mocks base method.
+func (m *MockStore) DeleteMany(ctx context.Context, identifiers []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMany", ctx, identifiers)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMany indicates an expected call of DeleteMany.
+func (mr *MockStoreMockRecorder) DeleteMany(ctx, identifiers interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), ctx, identifiers)
+}
+
 // Get mocks base method.
 func (m *MockStore) Get(ctx context.Context, id string) (*storage.AdministrationEvent, bool, error) {
 	m.ctrl.T.Helper()
@@ -65,6 +79,22 @@ func (m *MockStore) GetByQuery(ctx context.Context, query *v1.Query) ([]*storage
 func (mr *MockStoreMockRecorder) GetByQuery(ctx, query interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQuery", reflect.TypeOf((*MockStore)(nil).GetByQuery), ctx, query)
+}
+
+// GetMany mocks base method.
+func (m *MockStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.AdministrationEvent, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
+	ret0, _ := ret[0].([]*storage.AdministrationEvent)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockStoreMockRecorder) GetMany(ctx, identifiers interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, identifiers)
 }
 
 // UpsertMany mocks base method.

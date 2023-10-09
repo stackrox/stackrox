@@ -1,34 +1,34 @@
 // We can move this out to a higher level if more components need it
 import { useEffect, useState } from 'react';
-import { Role, fetchRolesAsArray } from 'services/RolesService';
+import { fetchAllowedRoles } from 'services/APITokensService';
 
 export type UseRolesResult = {
-    roles: Role[];
+    roleNames: string[];
     error: string | null;
     isLoading: boolean;
 };
 
 const defaultResult = {
-    roles: [],
+    roleNames: [],
     error: null,
     isLoading: false,
 };
 
-const useRoles = (): UseRolesResult => {
+const useAllowedRoles = (): UseRolesResult => {
     const [result, setResult] = useState<UseRolesResult>(defaultResult);
 
     useEffect(() => {
         setResult((prevResult) => ({ ...prevResult, isLoading: true }));
-        fetchRolesAsArray()
-            .then((roles) => {
-                setResult({ roles, error: null, isLoading: false });
+        fetchAllowedRoles()
+            .then((roleNames) => {
+                setResult({ roleNames, error: null, isLoading: false });
             })
             .catch((error) => {
-                setResult({ roles: [], error, isLoading: false });
+                setResult({ roleNames: [], error, isLoading: false });
             });
     }, []);
 
     return result;
 };
 
-export default useRoles;
+export default useAllowedRoles;

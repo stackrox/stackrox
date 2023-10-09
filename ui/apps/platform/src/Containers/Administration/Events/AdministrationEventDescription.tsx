@@ -1,5 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
+    Alert,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -9,7 +10,8 @@ import {
 
 import { AdministrationEvent } from 'services/AdministrationEventsService';
 
-import { getTypeText } from './AdministrationEvent';
+import { getLevelText, getLevelVariant, getTypeText } from './AdministrationEvent';
+import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
 export type AdministrationEventDescriptionProps = {
     event: AdministrationEvent;
@@ -18,14 +20,19 @@ export type AdministrationEventDescriptionProps = {
 function AdministrationEventDescription({
     event,
 }: AdministrationEventDescriptionProps): ReactElement {
-    const { createdAt, id, lastOccurredAt, numOccurrences, resource, type } = event;
+    const { createdAt, id, lastOccurredAt, level, numOccurrences, resource, type } = event;
     const { id: resourceID, name: resourceName, type: resourceType } = resource;
 
-    // TODO render hint and message when page design is ready.
-    // TODO factor out if same presentation in page and table.
-    // TODO render optional resourceName when it has been added to response.
     return (
         <Flex direction={{ default: 'column' }}>
+            <Alert
+                component="p"
+                isInline
+                title={getLevelText(level)}
+                variant={getLevelVariant(level)}
+            >
+                <AdministrationEventHintMessage event={event} />
+            </Alert>
             <DescriptionList isCompact isHorizontal>
                 <DescriptionListGroup>
                     <DescriptionListTerm>Resource type</DescriptionListTerm>

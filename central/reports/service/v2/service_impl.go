@@ -17,8 +17,8 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -82,7 +82,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		return apiV2.RegisterReportServiceHandler(ctx, mux, conn)
 	}
 	return nil

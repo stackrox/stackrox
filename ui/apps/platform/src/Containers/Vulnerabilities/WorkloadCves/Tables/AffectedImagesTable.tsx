@@ -30,6 +30,7 @@ import ImageComponentVulnerabilitiesTable, {
 import EmptyTableResults from '../components/EmptyTableResults';
 import DateDistanceTd from '../components/DatePhraseTd';
 import CvssTd from '../components/CvssTd';
+import { WatchStatus } from '../types';
 
 export type ImageForCve = {
     id: string;
@@ -47,7 +48,7 @@ export type ImageForCve = {
         } | null;
     } | null;
     operatingSystem: string;
-    watchStatus: 'WATCHED' | 'NOT_WATCHED';
+    watchStatus: WatchStatus;
     scanTime: string | null;
     imageComponents: (ImageComponentVulnerability & {
         imageVulnerabilities: (ImageComponentVulnerability['imageVulnerabilities'][number] & {

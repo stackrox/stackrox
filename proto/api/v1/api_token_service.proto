@@ -33,6 +33,10 @@ message GetAPITokensResponse {
     repeated storage.TokenMetadata tokens = 1;
 }
 
+message ListAllowedTokenRolesResponse {
+    repeated string roleNames = 1;
+}
+
 // APITokenService APIs can be used to manage API tokens.
 service APITokenService {
 
@@ -65,4 +69,10 @@ service APITokenService {
         };
     }
 
+    // GetAllowedTokenRoles return roles that user is allowed to request for API token.
+    rpc ListAllowedTokenRoles (Empty) returns (ListAllowedTokenRolesResponse) {
+        option (google.api.http) = {
+            get: "/v1/apitokens/generate/allowed-roles"
+        };
+    }
 }

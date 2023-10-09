@@ -9,11 +9,11 @@ export const eventsCountAlias = 'count/administration/events';
 const routeMatcherMapForAdministationEvents = {
     [eventsAlias]: {
         method: 'GET',
-        url: '/v1/administration/events',
+        url: '/v1/administration/events?*',
     },
     [eventsCountAlias]: {
         method: 'GET',
-        url: '/v1/count/administration/events',
+        url: '/v1/count/administration/events?*',
     },
 };
 

@@ -17,22 +17,17 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
-
 const (
-	timeout = 5 * time.Second
-
 	alertMessageKey         = "alert"
 	auditMessageKey         = "audit"
 	networkPolicyMessageKey = "networkpolicy"
@@ -43,7 +38,11 @@ const (
 	serviceOperatorCAPath = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
 )
 
-// generic notifier plugin
+var (
+	timeout = env.WebhookTimeout.DurationSetting()
+)
+
+// generic notifier plugin.
 type generic struct {
 	*storage.Notifier
 
@@ -56,12 +55,12 @@ func (*generic) Close(_ context.Context) error {
 	return nil
 }
 
-// AlertNotify takes in an alert and generates the Slack message
+// AlertNotify takes in an alert and generates the Slack message.
 func (g *generic) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return g.postMessageWithRetry(ctx, alert, alertMessageKey)
 }
 
-// YamlNotify takes in a yaml file and generates the Slack message
+// NetworkPolicyYAMLNotify takes in a yaml file and generates the Slack message.
 func (g *generic) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, clusterName string) error {
 	msg := &v1.NetworkPolicyNotification{
 		Cluster: clusterName,
@@ -208,7 +207,7 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 		return err
 	}
 
-	return notifiers.CreateError("webhook", resp)
+	return notifiers.CreateError(g.GetName(), resp, codes.WebhookGeneric)
 }
 
 func (g *generic) postMessageWithRetry(ctx context.Context, message proto.Message, msgKey string) error {

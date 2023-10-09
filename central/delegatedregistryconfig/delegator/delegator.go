@@ -3,10 +3,12 @@ package delegator
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
+	centralMetrics "github.com/stackrox/rox/central/metrics"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -123,6 +125,9 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 	namespace := utils.ExtractOpenShiftProject(imgName)
 
 	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorSearchNamespaces")
+
 	// SearchNamespaces will only return a result if user has access.
 	namespaces, err := d.namespaceDS.SearchNamespaces(ctx, q)
 	if err != nil {
