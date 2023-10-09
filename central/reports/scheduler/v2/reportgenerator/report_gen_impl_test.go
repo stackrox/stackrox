@@ -20,7 +20,6 @@ import (
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -62,8 +61,8 @@ type vulnReportData struct {
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
-	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
+	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
+	if !features.VulnReportingEnhancements.Enabled() {
 		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
 		s.T().SkipNow()
 	}
