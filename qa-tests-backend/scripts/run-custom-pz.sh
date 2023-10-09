@@ -25,6 +25,8 @@ run_custom() {
 
     config_custom
     test_custom
+    #Remove the comment if you want to run particular tests.
+    #test_specific
 }
 
 config_custom() {
@@ -91,6 +93,37 @@ test_custom() {
 
     store_qa_test_results "pz-tests"
     [[ ! -f FAIL ]] || die "PZ tests failed"
+}
+
+#This function is for quickly running particular tests and avoid execution of all the other PZ tests.
+#For debugging purposes
+test_specific() {
+    info "Running specific set of tests for ppc64le/s390x"
+
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+    fi
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+    #Specify the particular tests inside this array
+    declare -a STACKROX_TESTNAMES=()
+    update_job_record "test_target" "PZ-specific-tests"
+    #Initialize variables
+    interval_sec=20
+    #Generate srcs
+    make -C qa-tests-backend compile
+    #Change directory into qa-tests-backend
+    cd qa-tests-backend
+    
+    #fetch and execute tests
+   for testName in "${STACKROX_TESTNAMES[@]}";
+   do
+      ./gradlew test --tests "$testName" || true
+    #allow previous test data to cleanup
+      sleep $interval_sec
+    done
+
+    store_qa_test_results "pz-specific-tests"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
