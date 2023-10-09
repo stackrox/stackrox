@@ -39,6 +39,10 @@ func migrate(database *types.Databases) error {
 	// Use databases.DBCtx to take advantage of the transaction wrapping present in the migration initiator
 
 	// {{template "TODO"}}: Migration code comes here
+	// {{template "TODO"}}: When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
+	// db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
+	// query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
+	// See README for more details
 
 	return nil
 }
