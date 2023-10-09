@@ -75,6 +75,29 @@
         ]
       }
     },
+    "/v1/apitokens/generate/allowed-roles": {
+      "get": {
+        "summary": "GetAllowedTokenRoles return roles that user is allowed to request for API token.",
+        "operationId": "APITokenService_ListAllowedTokenRoles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAllowedTokenRolesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "APITokenService"
+        ]
+      }
+    },
     "/v1/apitokens/revoke/{id}": {
       "patch": {
         "summary": "RevokeToken removes the API token for a given id.",
@@ -244,6 +267,17 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageTokenMetadata"
+          }
+        }
+      }
+    },
+    "v1ListAllowedTokenRolesResponse": {
+      "type": "object",
+      "properties": {
+        "roleNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }
