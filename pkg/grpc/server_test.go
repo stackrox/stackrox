@@ -120,7 +120,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 
 	a.Run("default unlimited", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		cfg.RateLimiterRegistry = ratelimit.NewRateLimiterRegistry()
+		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
+			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
+			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
+		}
 
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
@@ -141,7 +144,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 		a.T().Setenv(env.CentralApiRateLimitPerSecond.EnvVar(), "10")
 
 		cfg, endpointReached := configWithCustomRoute()
-		cfg.RateLimiterRegistry = ratelimit.NewRateLimiterRegistry()
+		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
+			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
+			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
+		}
 
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
@@ -231,7 +237,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 
 	a.Run("default unlimited", func() {
 		cfg := defaultConf()
-		cfg.RateLimiterRegistry = ratelimit.NewRateLimiterRegistry()
+		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
+			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
+			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
+		}
 
 		api := NewAPI(cfg)
 		pingService := &pingServiceTestImpl{}
@@ -252,7 +261,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 		a.T().Setenv(env.CentralApiRateLimitPerSecond.EnvVar(), "10")
 
 		cfg := defaultConf()
-		cfg.RateLimiterRegistry = ratelimit.NewRateLimiterRegistry()
+		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
+			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
+			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
+		}
 
 		api := NewAPI(cfg)
 		pingService := &pingServiceTestImpl{}

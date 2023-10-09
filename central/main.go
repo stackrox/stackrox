@@ -537,7 +537,7 @@ func startGRPCServer() {
 		IdentityExtractors:  idExtractors,
 		AuthProviders:       registry,
 		Auditor:             audit.New(processor.Singleton()),
-		RateLimiterRegistry: ratelimit.NewRateLimiterRegistry(),
+		RateLimiterRegistry: ratelimit.GetRateLimiterRegistry(),
 		GRPCMetrics:         metrics.GRPCSingleton(),
 		HTTPMetrics:         metrics.HTTPSingleton(),
 		Endpoints:           endpointCfgs,
