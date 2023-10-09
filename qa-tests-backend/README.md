@@ -81,6 +81,20 @@ To run tests, from within `qa-tests-backend` directory:
 If you have deployed the cluster differently or need to use a custom configuration, set `CLUSTER`, `API_HOSTNAME`,
 `PORT`,`ROX_USERNAME`, `ROX_PASSWORD` and other relevant integration credential environment variables.
 
+## Running a single test multiple times
+
+To test for flakiness, you can run a single test multiple times while emulating a CI environment. This is
+achieved by running the following commands:
+
+```sh
+./tests/e2e/run-e2e-tests.sh -t "$MAIN_IMAGE_TAG" -y --config-only qa
+./tests/e2e/run-e2e-tests.sh -d -t "$MAIN_IMAGE_TAG" --spin-cycle=100 -y qa DiagnosticBundleTest
+```
+
+Note that access to the
+[CI vault instance](https://vault.ci.openshift.org/ui/vault/secrets/kv/show/selfservice/stackrox-stackrox-e2e-tests/credentials)
+is required to set up credentials as they are used in CI.
+
 # Adding Tests
 ## Annotations
 New tests are added with a `@Tag` annotation to indicate which to which
@@ -112,6 +126,6 @@ We don't use a paid account there and so image pulls get throttled, and
 tests that use such images fail.
 
 If you need a specific image from DockerHub, pull it, retag as
-`quay.io/rhacs-eng/qa:<your-tag-here>` and push. 
+`quay.io/rhacs-eng/qa:<your-tag-here>` and push.
 Then consume the new image from `quay.io/rhacs-eng/qa:<your-tag-here>`
 in tests. Such pulls shouldn't get throttled.
