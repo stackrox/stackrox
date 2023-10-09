@@ -113,7 +113,7 @@ spec:
         - name: ROX_SCANNER_V4_GRPC_ENDPOINT
           value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
         - name: ROX_SCANNER_V4_ENABLED
-          value: true
+          value: "true"
         {{- end }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
