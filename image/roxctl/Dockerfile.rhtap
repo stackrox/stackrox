@@ -1,5 +1,5 @@
 # TODO: can we follow tags?
-FROM registry.access.redhat.com/ubi8/go-toolset:1.19 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.20 as builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
