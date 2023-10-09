@@ -22,6 +22,10 @@ class ImageManagementTest extends BaseSpecification {
     private static final String TEST_NAMESPACE = "qa-image-management"
 
     private static final String FEDORA_28 = "fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187"
+    private static final String WGET_IMAGE_NS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        "rhacs-eng/qa":"rhacs-eng/qa-multi-arch")
+    private static final String WGET_IMAGE_TAG = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        "struts-app":"trigger-policy-violations-most")
 
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
@@ -70,7 +74,7 @@ class ImageManagementTest extends BaseSpecification {
         "Ubuntu Package Manager in Image" | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         "Curl in Image"                   | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
         "Fixable CVSS >= 7"               | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "nginx-1.12" | ""
-        "Wget in Image"                   | "quay.io"     | "rhacs-eng/qa"                   | "struts-app" | ""
+        "Wget in Image"                   | "quay.io"     | WGET_IMAGE_NS                  | WGET_IMAGE_TAG | ""
         "Apache Struts: CVE-2017-5638"    | "quay.io"     | "rhacs-eng/qa-multi-arch"        | "struts-app" | ""
     }
 
@@ -227,13 +231,13 @@ class ImageManagementTest extends BaseSpecification {
         when:
         "Scan an image and then grab the image data"
         ImageService.scanImage(
-          "mysql@sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
+          "quay.io/rhacs-eng/qa-multi-arch-nginx@sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
 
         then:
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:de2913a0ec53d98ced6f6bd607f487b7ad8fe8d2a86e2128308ebf4be2f92667")
+                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
             assert image != null && image.riskScore != 0
         }
     }
@@ -247,7 +251,7 @@ class ImageManagementTest extends BaseSpecification {
                 .setName("risk-image")
                 .setNamespace(TEST_NAMESPACE)
                 .setReplicas(1)
-                .setImage("quay.io/rhacs-eng/qa:mysql-from-docker-io")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx@sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
                 .setCommand(["sleep", "60000"])
                 .setSkipReplicaWait(false)
 
@@ -257,7 +261,7 @@ class ImageManagementTest extends BaseSpecification {
         "Assert that riskScore is non-zero"
         withRetry(10, 3) {
             def image = ImageService.getImage(
-                    "sha256:5c508e03f7f1987a393816a9ce2358f4abbdd36629972ba870af8f4cfcd031c0")
+                    "sha256:6650513efd1d27c1f8a5351cbd33edf85cc7e0d9d0fcb4ffb23d8fa89b601ba8")
             assert image != null && image.riskScore != 0
         }
 
