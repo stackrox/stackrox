@@ -19,10 +19,10 @@ func TestInitSyncManagerZeroNoLimit(t *testing.T) {
 	assert.Equal(t, 0, m.maxSensors)
 
 	assert.True(t, m.Add("test-1"), "Can add if limit is set to 0")
-	assert.Equal(t, 0, len(m.sensors))
+	assert.Len(t, m.sensors, 0)
 
 	m.Remove("test-2")
-	assert.Equal(t, 0, len(m.sensors))
+	assert.Len(t, m.sensors, 0)
 }
 
 func TestInitSyncManagerDefault(t *testing.T) {
@@ -30,7 +30,7 @@ func TestInitSyncManagerDefault(t *testing.T) {
 	assert.Equal(t, 0, m.maxSensors)
 
 	assert.True(t, m.Add("test-1"), "Can add if limit is set to 0")
-	assert.Equal(t, 0, len(m.sensors))
+	assert.Len(t, m.sensors, 0)
 }
 
 func TestInitSyncManager(t *testing.T) {
@@ -41,15 +41,15 @@ func TestInitSyncManager(t *testing.T) {
 		assert.True(t, m.Add(fmt.Sprintf("test-%d", i)))
 	}
 	assert.False(t, m.Add("test-a"), "Unable to add after limit is reached")
-	assert.Equal(t, 3, len(m.sensors))
+	assert.Len(t, m.sensors, 3)
 
 	m.Remove("test-a")
 	assert.False(t, m.Add("test-a"), "Unable to add after removing non-existing")
 
 	m.Remove("test-1")
-	assert.Equal(t, 2, len(m.sensors))
+	assert.Len(t, m.sensors, 2)
 	assert.True(t, m.Add("test-a"), "Can add after one is removed")
-	assert.Equal(t, 3, len(m.sensors))
+	assert.Len(t, m.sensors, 3)
 
 	assert.False(t, m.Add("test-b"), "Unable to add after limit is reached")
 }
