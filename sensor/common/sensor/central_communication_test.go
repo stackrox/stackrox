@@ -2,8 +2,8 @@ package sensor
 
 import (
 	"context"
-	"net"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,23 +11,23 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
+	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/grpc/metadata"
 )
 
 type centralCommunicationSuite struct {
 	suite.Suite
 
+	controller       *gomock.Controller
 	receivedMessages chan *central.MsgFromSensor
 	conn             *grpc.ClientConn
 	closeF           func()
@@ -37,31 +37,13 @@ type centralCommunicationSuite struct {
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
-var _ suite.TearDownTestSuite = (*centralCommunicationSuite)(nil)
-
-func (c *centralCommunicationSuite) TearDownTest() {
-	c.fakeCentral.Stop()
-	c.fakeCentral.ServerPointer.GracefulStop()
-	c.closeF()
-}
 
 func (c *centralCommunicationSuite) SetupTest() {
 	mockCtrl := gomock.NewController(c.T())
 
+	c.controller = mockCtrl
 	c.mockHandler = configMocks.NewMockHandler(mockCtrl)
 	c.mockDetector = mocksDetector.NewMockDetector(mockCtrl)
-
-	c.receivedMessages = make(chan *central.MsgFromSensor, 10)
-
-	c.fakeCentral = centralDebug.MakeFakeCentralWithInitialMessages(
-		debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
-		debuggerMessage.ClusterConfig(),
-		debuggerMessage.PolicySync([]*storage.Policy{}),
-		debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}))
-
-	c.fakeCentral.OnMessage(func(msg *central.MsgFromSensor) {
-		c.receivedMessages <- msg
-	})
 
 	certPath := "../../../tools/local-sensor/certs/"
 
@@ -69,8 +51,6 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.T().Setenv("ROX_MTLS_KEY_FILE", path.Join(certPath, "/key.pem"))
 	c.T().Setenv("ROX_MTLS_CA_FILE", path.Join(certPath, "/caCert.pem"))
 	c.T().Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(certPath, "/caKey.pem"))
-
-	c.conn, c.closeF = createConnectionAndStartServer(c.fakeCentral)
 
 	// Setup Mocks:
 	c.mockHandler.EXPECT().GetDeploymentIdentification().AnyTimes().Return(nil)
@@ -84,70 +64,78 @@ func Test_CentralCommunicationSuite(t *testing.T) {
 	suite.Run(t, new(centralCommunicationSuite))
 }
 
+type MockSensorServiceClient struct {
+	client    *mocksClient.MockServiceCommunicateClient
+	connected concurrency.Signal
+}
+
+func (s *MockSensorServiceClient) Communicate(_ context.Context, _ ...grpc.CallOption) (central.SensorService_CommunicateClient, error) {
+	defer s.connected.Signal()
+	return s.client, nil
+}
+
+var _ central.SensorServiceClient = (*MockSensorServiceClient)(nil)
+
+var centralSyncMessages = []*central.MsgToSensor{
+	debuggerMessage.SensorHello("00000000-0000-4000-A000-000000000000"),
+	debuggerMessage.ClusterConfig(),
+	debuggerMessage.PolicySync([]*storage.Policy{}),
+	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+}
+
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
-	componentMessages := c.givenCentralCommunication()
+	// Create a fake SensorComponent
+	responsesC := make(chan *message.ExpiringMessage)
+	defer close(responsesC)
+	comm := NewCentralCommunication(false, NewFakeSensorComponent(responsesC))
 
-	// Pretend that a component (listener) is sending the sync event
-	componentMessages <- message.New(syncMessage())
-
-	// Wait for sync message or timeout after 5s
-	timeout := time.After(5 * time.Second)
-	var syncReceived bool
-	for syncReceived {
-		select {
-		case <-timeout:
-			c.Fail("Didn't receive sync message after 3 seconds")
-		case msg := <-c.receivedMessages:
-			c.T().Logf("Received: %s", msg.String())
-			syncReceived = msg.GetEvent().GetSynced() != nil
-		}
+	reachable := concurrency.Flag{}
+	mockService := &MockSensorServiceClient{
+		connected: concurrency.NewSignal(),
+		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
 	}
+
+	expectSyncMessages(centralSyncMessages, mockService)
+	ch := make(chan struct{})
+	mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
+		defer close(ch)
+		c.Assert().NotNil(msg.GetEvent().GetSynced())
+		return nil
+	})
+	// Start the go routine with the mocked client
+	go comm.(*centralCommunicationImpl).sendEvents(mockService, &reachable, c.mockHandler, c.mockDetector)
+	mockService.connected.Wait()
+	// Pretend that a component (listener) is sending the sync event
+	responsesC <- message.New(syncMessage())
+	select {
+	case <-ch:
+		break
+	case <-time.After(5 * time.Second):
+		c.Fail("timeout reached waiting for the sync event")
+	}
+}
+
+func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
+	key := strings.ToLower(centralsensor.SensorHelloMetadataKey)
+	md := metadata.MD{
+		key: []string{"true"},
+	}
+	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
+	service.client.EXPECT().CloseSend().AnyTimes()
+	service.client.EXPECT().Send(gomock.Any()).Return(nil)
+	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
+	var orderedCalls []*gomock.Call
+	for _, m := range messages {
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Return(m, nil))
+	}
+	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
+	gomock.InOrder(orderedCalls...)
 }
 
 func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.SensorComponent {
 	return &fakeSensorComponent{
 		responsesC: responsesC,
 	}
-}
-
-func (c *centralCommunicationSuite) givenCentralCommunication() chan *message.ExpiringMessage {
-	componentMessages := make(chan *message.ExpiringMessage, 10)
-	comms := NewCentralCommunication(false, NewFakeSensorComponent(componentMessages))
-
-	reachable := concurrency.Flag{}
-	// This implicitly starts a goroutine
-	comms.Start(c.conn, &reachable, c.mockHandler, c.mockDetector)
-
-	return componentMessages
-}
-
-func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
-	buffer := 1024 * 1024
-	listener := bufconn.Listen(buffer)
-
-	fakeCentral.ServerPointer = grpc.NewServer()
-	central.RegisterSensorServiceServer(fakeCentral.ServerPointer, fakeCentral)
-
-	go func() {
-		utils.IgnoreError(func() error {
-			return fakeCentral.ServerPointer.Serve(listener)
-		})
-	}()
-
-	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-		return listener.Dial()
-	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	if err != nil {
-		panic(err)
-	}
-
-	closeF := func() {
-		utils.IgnoreError(listener.Close)
-		fakeCentral.ServerPointer.Stop()
-	}
-
-	return conn, closeF
 }
 
 func syncMessage() *central.MsgFromSensor {
@@ -183,7 +171,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor) error {
-	panic("implement me")
+	return nil
 }
 
 func (f fakeSensorComponent) ResponsesC() <-chan *message.ExpiringMessage {
