@@ -53,7 +53,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
     static final private String NGINX_LATEST = "qadefpolnginxlatest"
     static final private String STRUTS = "qadefpolstruts"
-    static final private String SSL_TERMINATOR = "qadefpolsslterm"
+    //static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String TRIGGER_MOST = "qadefpoltriggermost"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
@@ -61,9 +61,11 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
     //static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
-    static private String COMPONENT_COUNT = ""
     static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         " apt, bash, curl, wget":" apt, bash, curl")
+
+    @Shared
+    private String componentCount = ""
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
@@ -94,7 +96,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")// this is docker.io/nginx:1.23.3 but tagged as latest
+            // this is docker.io/nginx:1.23.3 but tagged as latest
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
@@ -171,15 +174,16 @@ class DefaultPoliciesTest extends BaseSpecification {
                 STRUTS_DEPLOYMENT.getImage(), 'default-policies-test-struts-app.json'
         )
 
-        switch(Env.REMOTE_CLUSTER_ARCH){
+        switch (Env.REMOTE_CLUSTER_ARCH) {
             case "s390x":
-                COMPONENT_COUNT=92;
-                break;
+                componentCount=92
+                break
             case "ppc64le":
-                COMPONENT_COUNT=91;
-                break;
+                componentCount=91
+                break
             default:
-                COMPONENT_COUNT=169;
+                componentCount=169
+                break
         }
     }
 
@@ -464,7 +468,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Number of Components in Image"   | 1.5f     | null |
                 "Image \"" + STRUTS_IMAGE + "\\\"" +
-                " contains " + COMPONENT_COUNT + " components" | []
+                " contains " + componentCount + " components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
         // TODO(ROX-9637)
