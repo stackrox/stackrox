@@ -72,7 +72,6 @@ check-container-ignore-files-up-to-date || {
     echo check-container-ignore-files-up-to-date >> "$FAIL_FLAG"
 }
 
-
 # shellcheck disable=SC2016
 echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
 function check-shellcheck-failing-list() {
