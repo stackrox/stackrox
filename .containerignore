@@ -1,0 +1,8 @@
+**/node_modules/
+# /.git/ <- required to pass .git to the roxctl container for avoiding "Malformed status.sh output line STABLE_GIT_SHORT_SHA"
+/bin/
+/image/bin/
+/image/rhel/bin/
+/linux-gocache/
+/operator/*/bin/
+/qa-tests-backend/

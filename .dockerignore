@@ -1,6 +1,5 @@
 **/node_modules/
-# TODO: separate .dockerignore for RHTAP?
-# /.git/ <- required to pass .git to the roxctl container for avoiding "Malformed status.sh output line STABLE_GIT_SHORT_SHA"
+/.git/
 /bin/
 /image/bin/
 /image/rhel/bin/

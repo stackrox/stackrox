@@ -42,7 +42,7 @@ LABEL \
 
     # TODO: what are these for & if they're required, how can we ?
     # version="${CI_VERSION}" \
-    # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \
+    # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \ --> vcs-ref on RHTAP
     # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
     # "git-tag:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_TAG}"
 
