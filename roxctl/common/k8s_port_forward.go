@@ -129,10 +129,18 @@ func runPortForward() (uint16, error) {
 	if err != nil {
 		return 0, errPortForwarding.CausedBy(err)
 	}
+
+	errChan := make(chan error)
 	go func() {
-		_ = forwarder.ForwardPorts()
+		errChan <- forwarder.ForwardPorts()
 	}()
-	<-readyChannel
+	select {
+	case <-readyChannel:
+	case err := <-errChan:
+		if err != nil {
+			return 0, errPortForwarding.CausedBy(err)
+		}
+	}
 
 	ports, err := forwarder.GetPorts()
 	if err != nil {
