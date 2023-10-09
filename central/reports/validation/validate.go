@@ -13,18 +13,12 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
-)
-
-const (
-	// CustomEmailSubjectMaxLen is the maximum allowed length for custom email subject
-	CustomEmailSubjectMaxLen = 256
-	// CustomEmailBodyMaxLen is the maximum allowed length for custom email body
-	CustomEmailBodyMaxLen = 1500
 )
 
 // Use this context only to
@@ -129,11 +123,13 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 	if len(emailConfig.GetMailingLists()) == 0 {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
 	}
-	if len(emailConfig.GetCustomSubject()) > CustomEmailSubjectMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", CustomEmailSubjectMaxLen)
+	subjectMaxLen := env.ReportCustomEmailSubjectMaxLen.IntegerSetting()
+	if len(emailConfig.GetCustomSubject()) > subjectMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", subjectMaxLen)
 	}
-	if len(emailConfig.GetCustomBody()) > CustomEmailBodyMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", CustomEmailBodyMaxLen)
+	bodyMaxLen := env.ReportCustomEmailBodyMaxLen.IntegerSetting()
+	if len(emailConfig.GetCustomBody()) > bodyMaxLen {
+		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", bodyMaxLen)
 	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
