@@ -29,9 +29,13 @@ type centralCommunicationSuite struct {
 	controller   *gomock.Controller
 	mockHandler  *configMocks.MockHandler
 	mockDetector *mocksDetector.MockDetector
+	mockService  *MockSensorServiceClient
+	comm         CentralCommunication
+	responsesC   chan *message.ExpiringMessage
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
+var _ suite.TearDownTestSuite = (*centralCommunicationSuite)(nil)
 
 func (c *centralCommunicationSuite) SetupTest() {
 	mockCtrl := gomock.NewController(c.T())
@@ -53,6 +57,19 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+	// Create a fake SensorComponent
+	c.responsesC = make(chan *message.ExpiringMessage)
+	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
+
+	c.mockService = &MockSensorServiceClient{
+		connected: concurrency.NewSignal(),
+		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
+	}
+}
+
+func (c *centralCommunicationSuite) TearDownTest() {
+	defer close(c.responsesC)
 }
 
 func Test_CentralCommunicationSuite(t *testing.T) {
@@ -79,29 +96,21 @@ var centralSyncMessages = []*central.MsgToSensor{
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
-	// Create a fake SensorComponent
-	responsesC := make(chan *message.ExpiringMessage)
-	defer close(responsesC)
-	comm := NewCentralCommunication(false, NewFakeSensorComponent(responsesC))
-
-	reachable := concurrency.Flag{}
-	mockService := &MockSensorServiceClient{
-		connected: concurrency.NewSignal(),
-		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
-	}
-
-	expectSyncMessages(centralSyncMessages, mockService)
+	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
-	mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
+	c.mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
 		defer close(ch)
 		c.Assert().NotNil(msg.GetEvent().GetSynced())
 		return nil
 	})
+
+	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go comm.(*centralCommunicationImpl).sendEvents(mockService, &reachable, c.mockHandler, c.mockDetector)
-	mockService.connected.Wait()
+	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.mockService.connected.Wait()
+
 	// Pretend that a component (listener) is sending the sync event
-	responsesC <- message.New(syncMessage())
+	c.responsesC <- message.New(syncMessage())
 	select {
 	case <-ch:
 		break
@@ -111,27 +120,20 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
-	// Create a fake SensorComponent
-	responsesC := make(chan *message.ExpiringMessage)
-	defer close(responsesC)
-	comm := NewCentralCommunication(false, NewFakeSensorComponent(responsesC))
-
-	reachable := concurrency.Flag{}
-	mockService := &MockSensorServiceClient{
-		connected: concurrency.NewSignal(),
-		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
-	}
-
-	expectSyncMessages(centralSyncMessages, mockService)
+	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
-	mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
+	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
 		defer close(ch)
 		return nil
 	})
+
+	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go comm.(*centralCommunicationImpl).sendEvents(mockService, &reachable, c.mockHandler, c.mockDetector, comm.(*centralCommunicationImpl).receiver.Stop, comm.(*centralCommunicationImpl).sender.Stop)
-	mockService.connected.Wait()
-	comm.Stop(nil)
+	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+	c.mockService.connected.Wait()
+
+	// Stop CentralCommunication
+	c.comm.Stop(nil)
 	select {
 	case <-ch:
 		break
