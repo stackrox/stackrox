@@ -31,6 +31,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
   are required to be title-cased.
 - ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
+- The experimental API `/v1/product/usage` has been renamed to `/v1/administration/usage`.
 
 ## [4.2.0]
 
