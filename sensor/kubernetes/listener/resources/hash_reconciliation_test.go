@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -57,67 +58,70 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 	}
 }
 
-func (s *HashReconciliationSuite) TestEmptyDeploymentProvider() {
-	store := InitializeStore()
-	rc := NewResourceStoreReconciler(store)
-
-	// given the stores are empty, if you provide a single deduper entry, generate 1 delete event
-	dstate := map[string]uint64{
-		"Deployment:1234": 01234,
+func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error) {
+	switch resType {
+	case "*central.SensorEvent_Deployment":
+		return func(event *central.SensorEvent) string {
+			return event.GetDeployment().GetId()
+		}, nil
+	case "*central.SensorEvent_Pod":
+		return func(event *central.SensorEvent) string {
+			return event.GetPod().GetId()
+		}, nil
+	default:
+		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
 
-	msgs := rc.ProcessHashes(dstate)
-
-	s.Equal(1, len(msgs))
-	s.Equal(msgs[0].GetEvent().Action, central.ResourceAction_REMOVE_RESOURCE)
-	s.Equal(msgs[0].GetEvent().GetDeployment().GetId(), "1234")
 }
 
-func (s *HashReconciliationSuite) TestDeploymentProviderSingleDelete() {
-	store := InitializeStore()
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("123"))
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("456"))
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("678"))
-	rc := NewResourceStoreReconciler(store)
-
-	// given the stores are empty, if you provide a single deduper entry, generate 1 delete event
-	dstate := map[string]uint64{
-		"Deployment:1234": 87654,
-		"Deployment:456":  76543,
-	}
-
-	msgs := rc.ProcessHashes(dstate)
-
-	s.Equal(1, len(msgs))
-	s.Equal(msgs[0].GetEvent().Action, central.ResourceAction_REMOVE_RESOURCE)
-	s.Equal(msgs[0].GetEvent().GetDeployment().GetId(), "1234")
+func initStore() *InMemoryStoreProvider {
+	s := InitializeStore()
+	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("1"))
+	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("2"))
+	s.podStore.addOrUpdatePod(&storage.Pod{Id: "3"})
+	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
+	return s
 }
 
-func (s *HashReconciliationSuite) TestDeploymentProviderMultiDelete() {
-	store := InitializeStore()
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("123"))
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("456"))
-	store.deploymentStore.addOrUpdateDeployment(createWrapWithID("678"))
-	rc := NewResourceStoreReconciler(store)
-
-	// given the stores are empty, if you provide a single deduper entry, generate 1 delete event
-	dstate := map[string]uint64{
-		"Deployment:1234": 87654,
-		"Deployment:456":  76543,
-		"Deployment:0987": 98755,
+func (s *HashReconciliationSuite) TestDeplProvider() {
+	cases := map[string]struct {
+		dstate     map[string]uint64
+		deletedIDs []string
+	}{
+		"Deployment": {
+			dstate: map[string]uint64{
+				"Deployment:99": 87654,
+				"Deployment:1":  76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Pod": {
+			dstate: map[string]uint64{
+				"Pod:99": 87654,
+				"Pod:3":  76543,
+			},
+			deletedIDs: []string{"99"},
+		},
 	}
 
-	msgs := rc.ProcessHashes(dstate)
+	for n, c := range cases {
+		s.Run(n, func() {
+			rc := NewResourceStoreReconciler(initStore())
+			msgs := rc.ProcessHashes(c.dstate)
 
-	s.Equal(2, len(msgs))
+			s.Equal(len(c.deletedIDs), len(msgs))
 
-	ids := make([]string, 0)
-	for _, m := range msgs {
-		s.Require().Equal(central.ResourceAction_REMOVE_RESOURCE, m.GetEvent().GetAction())
-		ids = append(ids, m.GetEvent().GetDeployment().GetId())
+			ids := make([]string, 0)
+			for _, m := range msgs {
+				s.Require().Equal(central.ResourceAction_REMOVE_RESOURCE, m.GetEvent().GetAction())
+				idfn, err := resourceTypeToFn(reflect.TypeOf(m.GetEvent().GetResource()).String())
+				s.Require().NoError(err)
+				ids = append(ids, idfn(m.GetEvent()))
+			}
+			s.ElementsMatch(c.deletedIDs, ids)
+		})
 	}
 
-	s.ElementsMatch([]string{"0987", "1234"}, ids)
 }
 
 func createWrapWithID(id string) *deploymentWrap {

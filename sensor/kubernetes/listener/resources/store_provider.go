@@ -78,6 +78,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	}
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
 		"Deployment": p.deploymentStore,
+		"Pod":        p.podStore,
 	}
 
 	return p
