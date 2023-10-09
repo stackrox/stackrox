@@ -6,7 +6,7 @@ import (
 )
 
 // InMemoryStoreReconciler handles sensor-side reconciliation using in-memory store
-type InMemoryStoreReconciler struct {
+type ResourceStoreReconciler struct {
 	storeProvider *InMemoryStoreProvider
 }
 
