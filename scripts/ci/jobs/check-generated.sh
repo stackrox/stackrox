@@ -62,12 +62,16 @@ check-operator-generated-files-up-to-date || {
 
 info 'Check .{docker,container}ignore files are up to date (If this fails, follow instructions in .containerignore to update the file.)'
 function check-container-ignore-files-up-to-date() {
-    diff -u -I '/.git/|#.*' .containerignore .dockerignore
+    diff \
+        --unified \
+        --ignore-matching-lines '^\#.*' \
+        --ignore-matching-lines '^\/\.git\/' \
+    .containerignore .dockerignore > diff.txt
 }
 check-container-ignore-files-up-to-date || {
     save_junit_failure "Check_Container_Ignore_Files" \
         "Container ignore files are not up to date" \
-        "$(diff -u -I '/.git/|#.*' .containerignore .dockerignore || true)"
+        "$(cat diff.txt)"
     git reset --hard HEAD
     echo check-container-ignore-files-up-to-date >> "$FAIL_FLAG"
 }
