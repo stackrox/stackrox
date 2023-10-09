@@ -17,6 +17,7 @@ collectors:
 - type: pod
   selector: app=scanner-db
   tail: -1
+timeout: 1500
 ---
 apiVersion: apps/v1
 kind: Deployment
