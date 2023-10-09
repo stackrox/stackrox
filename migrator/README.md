@@ -165,7 +165,7 @@ In migrator, there are a multiple ways to access data.
     The example below, illustrates how to walk the object to populate a field that was promoted to a column.  Note that
     we must explicitly narrow the fields we select.  If we select the whole object, gorm will default to a `select *`
     and in that case a subsquent migration modifying the structure of the same table will fail because the statement
-    cach will be invalid
+    cach will be invalid.  The simplest way to do that is to use a separate handle to query vs write.
     
     ```go
     func migrate(database *types.Databases) error {
