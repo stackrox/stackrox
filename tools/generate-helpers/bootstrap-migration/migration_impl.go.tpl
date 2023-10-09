@@ -40,9 +40,9 @@ func migrate(database *types.Databases) error {
 
 	// {{template "TODO"}}: Migration code comes here
 	// {{template "TODO"}}: When using gorm, make sure you use a separate handle for the updates and the query.  Such as:
-	// db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
-	// query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
-	// See README for more details
+	// {{template "TODO"}}: db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
+	// {{template "TODO"}}: query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
+	// {{template "TODO"}}: See README for more details
 
 	return nil
 }
