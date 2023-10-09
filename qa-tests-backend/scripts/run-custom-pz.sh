@@ -114,12 +114,12 @@ test_specific() {
     make -C qa-tests-backend compile
     #Change directory into qa-tests-backend
     cd qa-tests-backend
-    
+
     #fetch and execute tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
       ./gradlew test --tests "$testName" || true
-    #allow previous test data to cleanup
+      #allow previous test data to cleanup
       sleep $interval_sec
     done
 
