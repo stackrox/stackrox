@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Link, generatePath, useHistory } from 'react-router-dom';
+import isEmpty from 'lodash/isEmpty';
 import {
     AlertActionCloseButton,
     AlertGroup,
@@ -23,11 +25,10 @@ import {
     ToolbarItem,
     SearchInput,
     Pagination,
+    DropdownItem,
 } from '@patternfly/react-core';
 import { ActionsColumn, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link, generatePath, useHistory } from 'react-router-dom';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
-import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityReportsPath } from 'routePaths';
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
@@ -36,18 +37,24 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useRunReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useRunReport';
-import useDeleteModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
+import useDeleteModal, {
+    isErrorDeleteResult,
+    isSuccessDeleteResult,
+} from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteModal';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
+import { useWatchLastSnapshotForReports } from 'Containers/Vulnerabilities/VulnerablityReporting/api/useWatchLastSnapshotForReports';
 
 import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionFormModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
+import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import useTableSelection from 'hooks/useTableSelection';
+import pluralize from 'pluralize';
 import HelpIconTh from './HelpIconTh';
 import MyActiveJobStatus from './MyActiveJobStatus';
 import DeleteModal from '../components/DeleteModal';
-import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 
 const CreateReportsButton = () => {
     return (
@@ -76,6 +83,8 @@ function VulnReportsPage() {
     const isRouteEnabled = useIsRouteEnabled();
     const isCollectionsRouteEnabled = isRouteEnabled('collections');
 
+    const { toasts, addToast, removeToast } = useToasts();
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -83,8 +92,6 @@ function VulnReportsPage() {
         return (searchFilter?.[reportNameSearchKey] as string) || '';
     });
     const [collectionModalId, setCollectionModalId] = useState<string | null>(null);
-
-    const { toasts, addToast, removeToast } = useToasts();
 
     const {
         reportConfigurations,
@@ -114,15 +121,37 @@ function VulnReportsPage() {
     });
 
     const {
+        selected,
+        numSelected,
+        allRowsSelected,
+        hasSelections,
+        onSelect,
+        onSelectAll,
+        onClearAll: onClearAllSelected,
+        getSelectedIds,
+    } = useTableSelection(reportConfigurations || []);
+
+    const {
         openDeleteModal,
         isDeleteModalOpen,
         closeDeleteModal,
         isDeleting,
         onDelete,
-        deleteError,
+        deleteResults,
+        reportIdsToDelete,
     } = useDeleteModal({
-        onCompleted: fetchReports,
+        onCompleted: () => {
+            onClearAllSelected();
+            fetchReports();
+        },
     });
+
+    function onConfirmDeleteSelection() {
+        const selectedIds = getSelectedIds();
+        openDeleteModal(selectedIds);
+    }
+
+    const numSuccessfulDeletions = deleteResults?.filter(isSuccessDeleteResult).length || 0;
 
     return (
         <>
@@ -202,6 +231,17 @@ function VulnReportsPage() {
                                             }}
                                         />
                                     </ToolbarItem>
+                                    <ToolbarItem>
+                                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                                            <DropdownItem
+                                                key="delete"
+                                                component="button"
+                                                onClick={onConfirmDeleteSelection}
+                                            >
+                                                Delete ({numSelected})
+                                            </DropdownItem>
+                                        </BulkActionsDropdown>
+                                    </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"
                                         alignment={{ default: 'alignRight' }}
@@ -242,6 +282,12 @@ function VulnReportsPage() {
                                 <TableComposable borders={false}>
                                     <Thead noWrap>
                                         <Tr>
+                                            <Th
+                                                select={{
+                                                    onSelect: onSelectAll,
+                                                    isSelected: allRowsSelected,
+                                                }}
+                                            />
                                             <Th sort={getSortParams(reportNameSearchKey)}>
                                                 Report
                                             </Th>
@@ -305,7 +351,7 @@ function VulnReportsPage() {
                                     {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
                                         <Tbody>
                                             <Tr>
-                                                <Td colSpan={4}>
+                                                <Td colSpan={6}>
                                                     <Bullseye>
                                                         <EmptyStateTemplate
                                                             title="No vulnerability reports yet"
@@ -339,7 +385,7 @@ function VulnReportsPage() {
                                         !isEmpty(searchFilter) && (
                                             <Tbody>
                                                 <Tr>
-                                                    <Td colSpan={8}>
+                                                    <Td colSpan={6}>
                                                         <Bullseye>
                                                             <EmptyStateTemplate
                                                                 title="No results found"
@@ -384,7 +430,7 @@ function VulnReportsPage() {
                                                 </Tr>
                                             </Tbody>
                                         )}
-                                    {reportConfigurations.map((report) => {
+                                    {reportConfigurations.map((report, rowIndex) => {
                                         const vulnReportURL = generatePath(
                                             vulnerabilityReportPath,
                                             {
@@ -453,7 +499,7 @@ function VulnReportsPage() {
                                                 ),
                                                 onClick: (event) => {
                                                     event.preventDefault();
-                                                    openDeleteModal(report.id);
+                                                    openDeleteModal([report.id]);
                                                 },
                                                 isDisabled: isReportStatusPending,
                                             },
@@ -469,6 +515,14 @@ function VulnReportsPage() {
                                                 }}
                                             >
                                                 <Tr>
+                                                    <Td
+                                                        key={report.id}
+                                                        select={{
+                                                            rowIndex,
+                                                            onSelect,
+                                                            isSelected: selected[rowIndex],
+                                                        }}
+                                                    />
                                                     <Td>
                                                         <Link to={vulnReportURL}>
                                                             {report.name}
@@ -519,15 +573,50 @@ function VulnReportsPage() {
                 </PageSection>
             </PageSection>
             <DeleteModal
-                title="Permanently delete report?"
+                title={`Permanently delete (${reportIdsToDelete.length}) ${pluralize(
+                    'report',
+                    reportIdsToDelete.length
+                )}?`}
                 isOpen={isDeleteModalOpen}
                 onClose={closeDeleteModal}
                 isDeleting={isDeleting}
                 onDelete={onDelete}
-                error={deleteError}
             >
-                This report and any attached downloadable reports will be permanently deleted. The
-                action cannot be undone.
+                <AlertGroup>
+                    {numSuccessfulDeletions > 0 && (
+                        <Alert
+                            isInline
+                            variant={AlertVariant.success}
+                            title={`Successfully deleted ${numSuccessfulDeletions} ${pluralize(
+                                'report',
+                                numSuccessfulDeletions
+                            )}`}
+                            className="pf-u-mb-sm"
+                        />
+                    )}
+                    {deleteResults?.filter(isErrorDeleteResult).map((deleteResult) => {
+                        const report = reportConfigurations?.find(
+                            (reportConfig) => reportConfig.id === deleteResult.id
+                        );
+                        if (!report) {
+                            return null;
+                        }
+                        return (
+                            <Alert
+                                isInline
+                                variant={AlertVariant.danger}
+                                title={`Failed to delete "${report.name}"`}
+                                className="pf-u-mb-sm"
+                            >
+                                {deleteResult.error}
+                            </Alert>
+                        );
+                    })}
+                </AlertGroup>
+                <p>
+                    The selected report(s) and any attached downloadable reports will be permanently
+                    deleted. The action cannot be undone.
+                </p>
             </DeleteModal>
             {collectionModalId && (
                 <CollectionsFormModal

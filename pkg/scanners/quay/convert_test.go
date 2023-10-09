@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,7 +36,7 @@ func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
 }
 
 func TestConvertScanToImageScan(t *testing.T) {
-	t.Setenv(env.ActiveVulnMgmt.EnvVar(), "true")
+	t.Setenv(features.ActiveVulnMgmt.EnvVar(), "true")
 
 	quayScan, protoScan, image := getTestScan()
 	actualScan := convertScanToImageScan(image, quayScan)

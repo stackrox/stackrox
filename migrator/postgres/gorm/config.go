@@ -76,7 +76,9 @@ func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 		CreateBatchSize:   1000,
 		AllowGlobalUpdate: true,
 		Logger:            logger.Discard,
+		QueryFields:       true,
 	})
+
 	if err != nil {
 		log.WriteToStderrf("fail to connect to central db %v", err)
 		return nil, err
@@ -112,6 +114,7 @@ func (gc *gormConfig) ConnectDatabase() (*gorm.DB, error) {
 		CreateBatchSize:   1000,
 		AllowGlobalUpdate: true,
 		Logger:            logger.Discard,
+		QueryFields:       true,
 	})
 	if err != nil {
 		log.WriteToStderrf("fail to connect to central db %v", err)

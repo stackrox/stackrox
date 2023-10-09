@@ -63,6 +63,7 @@ type sensorConnection struct {
 	networkBaselineMgr         common.NetworkBaselineManager
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager
 	imageIntegrationMgr        common.ImageIntegrationManager
+	complianceOperatorMgr      common.ComplianceOperatorManager
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
@@ -80,6 +81,7 @@ func newConnection(ctx context.Context,
 	delegatedRegistryConfigMgr common.DelegatedRegistryConfigManager,
 	imageIntegrationMgr common.ImageIntegrationManager,
 	hashMgr hashManager.Manager,
+	complianceOperatorMgr common.ComplianceOperatorManager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -97,6 +99,7 @@ func newConnection(ctx context.Context,
 		networkBaselineMgr:         networkBaselineMgr,
 		delegatedRegistryConfigMgr: delegatedRegistryConfigMgr,
 		imageIntegrationMgr:        imageIntegrationMgr,
+		complianceOperatorMgr:      complianceOperatorMgr,
 
 		sensorHello: sensorHello,
 		capabilities: set.NewSet(sliceutils.
@@ -245,6 +248,8 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
+	case *central.MsgFromSensor_ComplianceResponse:
+		return c.processComplianceResponse(ctx, msg.GetComplianceResponse())
 	case *central.MsgFromSensor_Event:
 		// Special case the reprocess deployment because its fields are already set
 		if msg.GetEvent().GetReprocessDeployment() != nil {
@@ -262,6 +267,16 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return nil
 	}
 	return c.eventPipeline.Run(ctx, msg, c)
+}
+
+func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
+	switch m := msg.Response.(type) {
+	case *central.ComplianceResponse_ApplyComplianceScanConfigResponse_:
+		return c.complianceOperatorMgr.HandleScanRequestResponse(ctx, m.ApplyComplianceScanConfigResponse.GetId(), c.clusterID, m.ApplyComplianceScanConfigResponse.GetError())
+	default:
+		log.Infof("Unimplemented compliance response  %T", m)
+	}
+	return errors.Errorf("Unimplemented compliance response  %T", msg.Response)
 }
 
 func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Context, request *central.IssueLocalScannerCertsRequest) error {

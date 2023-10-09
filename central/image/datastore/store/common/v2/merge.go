@@ -39,7 +39,11 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 	}
 
 	sort.SliceStable(image.GetScan().GetComponents(), func(i, j int) bool {
-		return image.GetScan().GetComponents()[i].GetName() < image.GetScan().GetComponents()[j].GetName()
+		compI, compJ := image.GetScan().GetComponents()[i], image.GetScan().GetComponents()[j]
+		if compI.GetName() != compJ.GetName() {
+			return compI.GetName() < compJ.GetName()
+		}
+		return compI.GetVersion() < compJ.GetVersion()
 	})
 	for _, comp := range image.GetScan().GetComponents() {
 		sort.SliceStable(comp.Vulns, func(i, j int) bool {

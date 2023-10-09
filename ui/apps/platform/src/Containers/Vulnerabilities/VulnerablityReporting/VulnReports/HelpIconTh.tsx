@@ -12,11 +12,20 @@ type HelpIconThProps = {
 function HelpIconTh({ children, sort, popoverContent }: HelpIconThProps) {
     return (
         <Th sort={sort || undefined}>
-            <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
+            <Flex
+                direction={{ default: 'row' }}
+                alignItems={{ default: 'alignItemsCenter' }}
+                flexWrap={{ default: 'nowrap' }}
+            >
                 <FlexItem>{children}</FlexItem>
                 <FlexItem>
                     <Popover aria-label="Table column info" bodyContent={popoverContent}>
-                        <Button variant="plain" aria-label="Show table column info">
+                        <Button
+                            variant="plain"
+                            isInline
+                            aria-label="Show table column info"
+                            className="pf-u-p-0"
+                        >
                             <OutlinedQuestionCircleIcon />
                         </Button>
                     </Popover>

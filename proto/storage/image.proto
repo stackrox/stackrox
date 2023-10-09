@@ -62,7 +62,7 @@ message DataSource {
     string mirror = 3;
 }
 
-// Next tag: 7
+// Next tag: 8
 message ImageScan {
     string                              scanner_version  = 6;
     google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = 'search:"Image Scan Time,store"'];
@@ -80,6 +80,9 @@ message ImageScan {
         CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
     }
     repeated Note                       notes            = 5;
+    oneof hashoneof {
+        uint64                          hash             = 7;
+    }
 }
 
 message ImageSignatureVerificationData {
@@ -118,11 +121,11 @@ message EmbeddedImageScanComponent {
     string                         name        = 1 [(gogoproto.moretags) = 'search:"Component,store"'];
     string                         version     = 2 [(gogoproto.moretags) = 'search:"Component Version,store"'];
     License                        license     = 3;
-    repeated EmbeddedVulnerability vulns       = 4;
+    repeated EmbeddedVulnerability vulns       = 4 [(gogoproto.moretags) = 'hash:"set"'];
     oneof has_layer_index {
         int32 layer_index                      = 5;
     }
-    int64                          priority    = 6;
+    int64                          priority    = 6 [(gogoproto.moretags) = 'hash:"ignore"'];
     SourceType                     source      = 7;
     string                         location    = 8;
     oneof set_top_cvss {

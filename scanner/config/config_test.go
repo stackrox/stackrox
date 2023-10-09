@@ -1,13 +1,13 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Load(t *testing.T) {
@@ -45,13 +45,7 @@ something: unexpected
 }
 
 func Test_MTLSConfig_validate(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "Test_MTLSConfig_validate")
-	assert.NoError(t, err)
-	t.Cleanup(func() {
-		if err = os.RemoveAll(tempDir); err != nil {
-			fmt.Printf("failed to delete test directory: %q\n", tempDir)
-		}
-	})
+	tempDir := t.TempDir()
 	t.Run("when cert dir exists and is directory then ok", func(t *testing.T) {
 		c := &MTLSConfig{CertsDir: tempDir}
 		err := c.validate()
@@ -90,5 +84,98 @@ func Test_validate(t *testing.T) {
 		c.GRPCListenAddr = ""
 		err := c.validate()
 		assert.ErrorContains(t, err, "grpc_listen_addr is empty")
+	})
+	t.Run("when indexer is invalid then error", func(t *testing.T) {
+		c := defaultConfiguration
+		c.Indexer.Database.ConnString = "force indexer to fail validate"
+		err := c.validate()
+		assert.ErrorContains(t, err, "indexer:")
+	})
+	t.Run("when matcher is invalid then error", func(t *testing.T) {
+		c := defaultConfiguration
+		c.Matcher.Database.ConnString = "force matcher to fail validate"
+		err := c.validate()
+		assert.ErrorContains(t, err, "matcher:")
+	})
+}
+
+func Test_IndexerConfig_validate(t *testing.T) {
+	t.Run("when disabled no error", func(t *testing.T) {
+		c := IndexerConfig{Enable: false, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when enabled with invalid conn string then error", func(t *testing.T) {
+		c := IndexerConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.Error(t, err)
+	})
+}
+
+func Test_MatcherConfig_validate(t *testing.T) {
+	t.Run("when disabled no error", func(t *testing.T) {
+		c := MatcherConfig{Enable: false, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when enabled with invalid conn string then error", func(t *testing.T) {
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "invalid conn string"}}
+		err := c.validate()
+		assert.Error(t, err)
+	})
+}
+
+func Test_Database_validate(t *testing.T) {
+	//	# Example DSN
+	//	user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10
+	//
+	//	# Example URL
+	//	postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10
+	t.Run("when DSN then no error", func(t *testing.T) {
+		c := Database{ConnString: "user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10"}
+		err := c.validate()
+		assert.NoError(t, err)
+	})
+	t.Run("when using URL then error", func(t *testing.T) {
+		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "URLs are not supported")
+	})
+	t.Run("when empty conn string then error", func(t *testing.T) {
+		c := Database{ConnString: ""}
+		err := c.validate()
+		assert.ErrorContains(t, err, "empty is not allowed")
+	})
+	t.Run("when conn string is not parsable then error", func(t *testing.T) {
+		c := Database{ConnString: "this is nothing meaningful"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "cannot parse")
+	})
+
+	tempDir := t.TempDir()
+	pwdFile := filepath.Join(tempDir, "password_file")
+	pwdF, err := os.Create(pwdFile)
+	require.NoError(t, err)
+	_, err = pwdF.WriteString("foobar-password")
+	require.NoError(t, err)
+	require.NoError(t, pwdF.Close())
+	t.Run("when password file exists then valid", func(t *testing.T) {
+		c := Database{
+			ConnString:   "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10",
+			PasswordFile: pwdFile,
+		}
+		err := c.validate()
+		assert.NoError(t, err)
+		assert.Equal(t, c.ConnString, "user=jack host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10 password=foobar-password")
+	})
+	t.Run("when password file does not exist then error", func(t *testing.T) {
+		c := Database{ConnString: "host=foobar", PasswordFile: "something that does not exist"}
+		err := c.validate()
+		assert.ErrorContains(t, err, "invalid password")
+	})
+	t.Run("when both password and file then error", func(t *testing.T) {
+		c := Database{ConnString: "host=foobar password=inline-pass", PasswordFile: pwdFile}
+		err := c.validate()
+		assert.ErrorContains(t, err, "specify either")
 	})
 }

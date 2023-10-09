@@ -20,6 +20,20 @@ var (
 		Help:      "Number of panic calls within Sensor.",
 	}, []string{"FunctionName"})
 
+	detectorDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_dedupe_cache_hits",
+		Help:      "A counter of the total number of times we've deduped deployments in the detector",
+	})
+
+	detectorDeploymentProcessed = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_deployment_processed",
+		Help:      "A counter of the total number of times we've processed deployments in the detector",
+	})
+
 	processDedupeCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -187,6 +201,16 @@ var (
 		[]string{"central_id", "hosting", "install_method", "sensor_id"},
 	)
 )
+
+// IncrementDetectorCacheHit increments the number of deployments deduped by the detector
+func IncrementDetectorCacheHit() {
+	detectorDedupeCacheHits.Inc()
+}
+
+// IncrementDetectorDeploymentProcessed increments the number of deployments processed by the detector
+func IncrementDetectorDeploymentProcessed() {
+	detectorDeploymentProcessed.Inc()
+}
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
 func IncrementPanicCounter(functionName string) {

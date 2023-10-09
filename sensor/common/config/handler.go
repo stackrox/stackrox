@@ -21,6 +21,8 @@ var (
 
 // Handler is responsible for processing dynamic config updates from central and, for Helm-managed clusters, to provide
 // access to the cluster's configuration.
+//
+//go:generate mockgen-wrapper
 type Handler interface {
 	GetConfig() *storage.DynamicClusterConfig
 	GetHelmManagedConfig() *central.HelmManagedConfigInit

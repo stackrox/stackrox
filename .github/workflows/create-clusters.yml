@@ -54,5 +54,5 @@ jobs:
       workflow-ref: v1
       kube-burner-config-ref: ${{ github.event.inputs.version }}
       kube-burner-config-repo: stackrox
-      cluster-with-fake-load-name: gke-long-running-fake-load-${{ github.event.inputs.version }}
-      cluster-with-real-load-name: gke-long-running-real-load-${{ github.event.inputs.version }}
+      cluster-with-fake-load-name: long-fake-load-${{ github.event.inputs.version }}
+      cluster-with-real-load-name: long-real-load-${{ github.event.inputs.version }}

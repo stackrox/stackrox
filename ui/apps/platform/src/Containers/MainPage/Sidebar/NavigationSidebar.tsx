@@ -16,7 +16,7 @@ import {
     complianceEnhancedStatusPath,
     configManagementPath,
     dashboardPath,
-    deferralConfigurationPath,
+    exceptionConfigurationPath,
     integrationsPath,
     isRouteEnabled, // predicate function
     listeningEndpointsBasePath,
@@ -156,11 +156,7 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
-                content: (
-                    <NavigationContent variant="TechPreview">
-                        Vulnerability Reporting
-                    </NavigationContent>
-                ),
+                content: 'Vulnerability Reporting',
                 path: vulnerabilityReportsPath,
                 routeKey: 'vulnerabilities/reports',
             },
@@ -243,9 +239,9 @@ const navDescriptions: NavDescription[] = [
             },
             {
                 type: 'child',
-                content: 'Deferral Configuration',
-                path: deferralConfigurationPath,
-                routeKey: 'deferral-configuration',
+                content: 'Exception Configuration',
+                path: exceptionConfigurationPath,
+                routeKey: 'exception-configuration',
             },
             {
                 type: 'child',

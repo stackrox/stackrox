@@ -2,10 +2,13 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processlisteningonport/store"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // WalkFn is a convenient type alias to use for the Walk function
@@ -33,4 +36,14 @@ func New(
 ) DataStore {
 	ds := newDatastoreImpl(plopStorage, indicatorDataStore)
 	return ds
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
+	plopDBstore := plopStore.NewFullStore(pool)
+	indicatorDS, err := processIndicatorStore.GetTestPostgresDataStore(t, pool)
+	if err != nil {
+		log.Infof("getting test store %v", err)
+	}
+	return newDatastoreImpl(plopDBstore, indicatorDS)
 }

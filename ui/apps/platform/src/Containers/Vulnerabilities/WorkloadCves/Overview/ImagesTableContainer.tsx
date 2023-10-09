@@ -22,6 +22,7 @@ type ImagesTableContainerProps = {
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
     pagination: ReturnType<typeof useURLPagination>;
     onWatchImage: ImagesTableProps['onWatchImage'];
+    onUnwatchImage: ImagesTableProps['onUnwatchImage'];
 };
 
 function ImagesTableContainer({
@@ -30,6 +31,7 @@ function ImagesTableContainer({
     cveStatusTab,
     pagination,
     onWatchImage,
+    onUnwatchImage,
 }: ImagesTableContainerProps) {
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -81,6 +83,7 @@ function ImagesTableContainer({
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
                         onWatchImage={onWatchImage}
+                        onUnwatchImage={onUnwatchImage}
                     />
                 </div>
             )}

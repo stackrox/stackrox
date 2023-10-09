@@ -49,6 +49,20 @@ func (mr *MockManagerMockRecorder) DeleteScan(ctx, deleteScanRequest interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScan", reflect.TypeOf((*MockManager)(nil).DeleteScan), ctx, deleteScanRequest)
 }
 
+// HandleScanRequestResponse mocks base method.
+func (m *MockManager) HandleScanRequestResponse(ctx context.Context, requestID, clusterID, responsePayload string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScanRequestResponse", ctx, requestID, clusterID, responsePayload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScanRequestResponse indicates an expected call of HandleScanRequestResponse.
+func (mr *MockManagerMockRecorder) HandleScanRequestResponse(ctx, requestID, clusterID, responsePayload interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRequestResponse", reflect.TypeOf((*MockManager)(nil).HandleScanRequestResponse), ctx, requestID, clusterID, responsePayload)
+}
+
 // ProcessComplianceOperatorInfo mocks base method.
 func (m *MockManager) ProcessComplianceOperatorInfo(ctx context.Context, complianceIntegration *storage.ComplianceIntegration) error {
 	m.ctrl.T.Helper()
@@ -78,17 +92,18 @@ func (mr *MockManagerMockRecorder) ProcessRescanRequest(ctx, rescanRequest inter
 }
 
 // ProcessScanRequest mocks base method.
-func (m *MockManager) ProcessScanRequest(ctx context.Context, scanRequest interface{}) error {
+func (m *MockManager) ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessScanRequest", ctx, scanRequest)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "ProcessScanRequest", ctx, scanRequest, clusters)
+	ret0, _ := ret[0].(*storage.ComplianceOperatorScanConfigurationV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ProcessScanRequest indicates an expected call of ProcessScanRequest.
-func (mr *MockManagerMockRecorder) ProcessScanRequest(ctx, scanRequest interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) ProcessScanRequest(ctx, scanRequest, clusters interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessScanRequest", reflect.TypeOf((*MockManager)(nil).ProcessScanRequest), ctx, scanRequest)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessScanRequest", reflect.TypeOf((*MockManager)(nil).ProcessScanRequest), ctx, scanRequest, clusters)
 }
 
 // Sync mocks base method.

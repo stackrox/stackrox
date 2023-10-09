@@ -11,9 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
@@ -21,6 +23,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
+	"github.com/stackrox/rox/scanner/internal/version"
 )
 
 // Indexer represents an image indexer.
@@ -32,14 +35,15 @@ type Indexer interface {
 	Close(context.Context) error
 }
 
-type indexerImpl struct {
-	indexer         *libindex.Libindex
+// localIndexer is the Indexer implementation that runs libindex locally.
+type localIndexer struct {
+	libIndex        *libindex.Libindex
 	getLayerTimeout time.Duration
 }
 
 // NewIndexer creates a new indexer.
 func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) {
-	pool, err := postgres.Connect(ctx, cfg.DBConnString, "libindex")
+	pool, err := postgres.Connect(ctx, cfg.Database.ConnString, "libindex")
 	if err != nil {
 		return nil, fmt.Errorf("connecting to postgres for indexer: %w", err)
 	}
@@ -79,22 +83,22 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, fmt.Errorf("creating libindex: %w", err)
 	}
 
-	return &indexerImpl{
-		indexer:         indexer,
+	return &localIndexer{
+		libIndex:        indexer,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 	}, nil
 }
 
 // Close closes the indexer.
-func (i *indexerImpl) Close(ctx context.Context) error {
-	return i.indexer.Close(ctx)
+func (i *localIndexer) Close(ctx context.Context) error {
+	return i.libIndex.Close(ctx)
 }
 
 // IndexContainerImage creates a ClairCore index report for a given container
 // image. The manifest is populated with layers from the image specified by a
 // URL. This method performs a partial content request on each layer to generate
 // the layer's URI and headers.
-func (i *indexerImpl) IndexContainerImage(
+func (i *localIndexer) IndexContainerImage(
 	ctx context.Context,
 	manifestDigest claircore.Digest,
 	imageURL string,
@@ -110,7 +114,10 @@ func (i *indexerImpl) IndexContainerImage(
 	if err != nil {
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
-	httpClient := http.Client{Timeout: i.getLayerTimeout}
+	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout)
+	if err != nil {
+		return nil, err
+	}
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
@@ -124,7 +131,7 @@ func (i *indexerImpl) IndexContainerImage(
 			return nil, fmt.Errorf("getting layer digests: %w", err)
 		}
 		// TODO Check for non-retriable errors (permission denied, etc.) to report properly.
-		layerReq, err := getLayerRequest(&httpClient, imgRef, layerDigest)
+		layerReq, err := getLayerRequest(httpClient, imgRef, layerDigest)
 		if err != nil {
 			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
 				layerDigest.String(), err)
@@ -137,7 +144,25 @@ func (i *indexerImpl) IndexContainerImage(
 			Headers: layerReq.Header,
 		})
 	}
-	return i.indexer.Index(ctx, manifest)
+	return i.libIndex.Index(ctx, manifest)
+}
+
+func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration) (*http.Client, error) {
+	repo := imgRef.Context()
+	reg := repo.Registry
+	tr := remote.DefaultTransport
+	tr = transport.NewUserAgent(tr, `StackRox Scanner/`+version.Version)
+	tr = transport.NewRetry(tr)
+	var err error
+	tr, err = transport.NewWithContext(ctx, reg, auth, tr, []string{repo.Scope(transport.PullScope)})
+	if err != nil {
+		return nil, err
+	}
+	httpClient := http.Client{
+		Timeout:   timeout,
+		Transport: tr,
+	}
+	return &httpClient, nil
 }
 
 // getLayerDigests returns the clairclore and containerregistry digests for the layer.
@@ -179,8 +204,8 @@ func getLayerRequest(httpClient *http.Client, imgRef name.Reference, layerDigest
 }
 
 // GetIndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
-func (i *indexerImpl) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
-	return i.indexer.IndexReport(ctx, manifestDigest)
+func (i *localIndexer) GetIndexReport(ctx context.Context, manifestDigest claircore.Digest) (*claircore.IndexReport, bool, error) {
+	return i.libIndex.IndexReport(ctx, manifestDigest)
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get

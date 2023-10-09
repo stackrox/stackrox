@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
+	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,13 +20,20 @@ var (
 		HTTPListenAddr: "127.0.0.1:9443",
 		GRPCListenAddr: "127.0.0.1:8443",
 		Indexer: IndexerConfig{
-			Enable:          true,
-			DBConnString:    "postgresql:///postgres?host=/var/run/postgresql",
+			Enable: true,
+			Database: Database{
+				ConnString:   "host=/var/run/postgresql",
+				PasswordFile: "",
+			},
+
 			GetLayerTimeout: Duration(time.Minute),
 		},
 		Matcher: MatcherConfig{
-			Enable:       true,
-			DBConnString: "postgresql:///postgres?host=/var/run/postgresql",
+			Enable: true,
+			Database: Database{
+				ConnString:   "host=/var/run/postgresql",
+				PasswordFile: "",
+			},
 		},
 		// Default is empty.
 		MTLS: MTLSConfig{
@@ -45,8 +54,8 @@ type Config struct {
 }
 
 func (c *Config) validate() error {
-	err := c.MTLS.validate()
-	if err != nil {
+
+	if err := c.MTLS.validate(); err != nil {
 		return fmt.Errorf("mtls: %w", err)
 	}
 	if c.HTTPListenAddr == "" {
@@ -55,25 +64,86 @@ func (c *Config) validate() error {
 	if c.GRPCListenAddr == "" {
 		return errors.New("grpc_listen_addr is empty")
 	}
+	if err := c.Indexer.validate(); err != nil {
+		return fmt.Errorf("indexer: %w", err)
+	}
+	if err := c.Matcher.validate(); err != nil {
+		return fmt.Errorf("matcher: %w", err)
+	}
 	return nil
 }
 
 // IndexerConfig provides Scanner Indexer configuration.
 type IndexerConfig struct {
 	// Database provides indexer's database configuration.
-	DBConnString string `yaml:"db_conn_string"`
+	Database Database `yaml:"database"`
 	// Enable if false disables the Indexer service.
 	Enable bool `yaml:"enable"`
 	// GetLayerTimeout timeout duration of GET requests for layers
 	GetLayerTimeout Duration `yaml:"get_layer_timeout"`
 }
 
+func (c *IndexerConfig) validate() error {
+	if !c.Enable {
+		return nil
+	}
+	if err := c.Database.validate(); err != nil {
+		return fmt.Errorf("database: %w", err)
+	}
+	return nil
+}
+
 // MatcherConfig provides Scanner Matcher configuration.
 type MatcherConfig struct {
 	// Database provides matcher's database configuration.
-	DBConnString string `yaml:"db_conn_string"`
+	Database Database `yaml:"database"`
 	// Enable if false disables the Matcher service and vulnerability updater.
 	Enable bool `yaml:"enable"`
+}
+
+func (c *MatcherConfig) validate() error {
+	if !c.Enable {
+		return nil
+	}
+	if err := c.Database.validate(); err != nil {
+		return fmt.Errorf("database: %w", err)
+	}
+	return nil
+}
+
+// Database provides database configuration for scanner backends.
+type Database struct {
+	// ConnString provides database DSN configuration.
+	ConnString string `yaml:"conn_string"`
+	// PasswordFile specifies the database password by reading from a file,
+	// only valid for the password to be specified in a file if not in
+	// the ConnString.
+	PasswordFile string `yaml:"password_file"`
+}
+
+func (d *Database) validate() error {
+	if d.ConnString == "" {
+		return errors.New("conn_string: empty is not allowed")
+	}
+	if strings.HasPrefix(d.ConnString, "postgres://") || strings.HasPrefix(d.ConnString, "postgresql://") {
+		return errors.New("conn_string: URLs are not supported, use DSN")
+	}
+	cfg, err := pgxpool.ParseConfig(d.ConnString)
+	if err != nil {
+		return fmt.Errorf("conn_string: invalid: %w", err)
+	}
+	if cfg.ConnConfig.Password != "" && d.PasswordFile != "" {
+		return errors.New("specify either password in conn_string or password file, but not both")
+	}
+	// TODO Technically this should be in Unmarshal(), it's here for convenience.
+	if d.PasswordFile != "" {
+		pw, err := os.ReadFile(d.PasswordFile)
+		if err != nil {
+			return fmt.Errorf("invalid password file %q: %w", d.PasswordFile, err)
+		}
+		d.ConnString = fmt.Sprintf("%s password=%s", d.ConnString, pw)
+	}
+	return nil
 }
 
 // MTLSConfig configures mutual TLS
@@ -137,7 +207,7 @@ func Load(r io.Reader) (*Config, error) {
 	return &cfg, cfg.validate()
 }
 
-// Read load Scanner configuration from a file.
+// Read loads Scanner configuration from a file.
 func Read(filename string) (*Config, error) {
 	if filename == "" {
 		cfg := defaultConfiguration
@@ -147,5 +217,6 @@ func Read(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer utils.IgnoreError(r.Close)
 	return Load(r)
 }

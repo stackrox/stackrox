@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/central/postgres"
 	processBaselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -32,11 +31,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -80,7 +77,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	deployments deploymentDatastore.DataStore,
 	pods podDatastore.DataStore,
 	processes processDatastore.DataStore,
-	plops plopDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
 	config configDatastore.DataStore,
@@ -102,7 +98,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		deployments:     deployments,
 		pods:            pods,
 		processes:       processes,
-		plops:           plops,
 		processbaseline: processbaseline,
 		networkflows:    networkflows,
 		config:          config,
@@ -130,7 +125,6 @@ type garbageCollectorImpl struct {
 	deployments     deploymentDatastore.DataStore
 	pods            podDatastore.DataStore
 	processes       processDatastore.DataStore
-	plops           plopDatastore.DataStore
 	processbaseline processBaselineDatastore.DataStore
 	networkflows    networkFlowDatastore.ClusterDataStore
 	config          configDatastore.DataStore
@@ -150,24 +144,23 @@ func (g *garbageCollectorImpl) Start() {
 }
 
 func (g *garbageCollectorImpl) pruneBasedOnConfig() {
-	config, err := g.config.GetConfig(pruningCtx)
+	pvtConfig, err := g.config.GetPrivateConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	if config == nil {
+	if pvtConfig == nil {
 		log.Error("UNEXPECTED: Got nil config")
 		return
 	}
 	log.Info("[Pruning] Starting a garbage collection cycle")
-	pvtConfig := config.GetPrivateConfig()
 	g.collectImages(pvtConfig)
 	g.collectAlerts(pvtConfig)
 	g.removeOrphanedResources()
 	g.removeOrphanedRisks()
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		g.removeOldReportHistory(pvtConfig)
 		g.removeOldReportBlobs(pvtConfig)
 	}
@@ -435,34 +428,10 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 // on per-deployment basis, since the deployment and cluster info is taken from
 // the process indicator, so clean without such filtering in batches.
 func (g *garbageCollectorImpl) removeOrphanedPLOP() {
-	var plopToPrune []string
-	now := types.TimestampNow()
-
-	// This walk seems unnecessary, but ClosedTimestamp is a part of serialized
-	// column, not visible to Postgres. So if we would like to keep using
-	// orphanWindow, unfortunately it has to be this way, at least for now.
-	walkRun := func() error {
-		plopToPrune = plopToPrune[:0]
-		return g.plops.WalkAll(pruningCtx, func(plop *storage.ProcessListeningOnPortStorage) error {
-			if protoutils.Sub(now, plop.GetCloseTimestamp()) < orphanWindow {
-				return nil
-			}
-			plopToPrune = append(plopToPrune, plop.GetId())
-			return nil
-		})
-	}
-
-	if err := pgutils.RetryIfPostgres(walkRun); err != nil {
-		log.Error(errors.Wrap(err, "unable to walk processes and mark for pruning"))
-		return
-	}
+	prunedCount := postgres.PruneOrphanedPLOP(pruningCtx, g.postgres, orphanWindow)
 
 	log.Infof("[PLOP pruning] Found %d orphaned process listening on port objects",
-		len(plopToPrune))
-
-	if err := g.plops.RemoveProcessListeningOnPort(pruningCtx, plopToPrune); err != nil {
-		log.Error(errors.Wrap(err, "error removing PLOP"))
-	}
+		prunedCount)
 }
 
 func (g *garbageCollectorImpl) removeExpiredAdministrationEvents(config *storage.PrivateConfig) {

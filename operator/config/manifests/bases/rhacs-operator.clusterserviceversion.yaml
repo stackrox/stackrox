@@ -78,6 +78,12 @@ spec:
           connections to the port.
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
+      - description: Enables the encryption of notifier secrets stored in the Central
+          DB. An encryption key must be provided in a secret called `central-encryption-key`
+          in the Central namespace, with the key stored in the `encryption-key` data
+          field.
+        displayName: Enabled
+        path: central.notifierSecretsEncryption.enabled
       - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
           storage location of persistent data. Recommended for most users.
         displayName: Persistent volume claim
@@ -330,6 +336,12 @@ spec:
       - description: Overlays
         displayName: Overlays
         path: overlays
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Configures the encryption of notifier secrets stored in the Central
+          DB.
+        displayName: Notifier Secrets Encryption
+        path: central.notifierSecretsEncryption
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.

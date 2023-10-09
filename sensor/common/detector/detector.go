@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -327,6 +328,8 @@ func (d *detectorImpl) runDetector() {
 				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
 
+			metrics.IncrementDetectorDeploymentProcessed()
+
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
@@ -467,6 +470,7 @@ func (d *detectorImpl) processDeploymentNoLock(ctx context.Context, deployment *
 		// Check if the deployment has changes that require detection, which is more expensive than hashing
 		// If not, then just return
 		if !d.deduper.needsProcessing(deployment) {
+			metrics.IncrementDetectorCacheHit()
 			return
 		}
 		d.markDeploymentForProcessing(deployment.GetId())

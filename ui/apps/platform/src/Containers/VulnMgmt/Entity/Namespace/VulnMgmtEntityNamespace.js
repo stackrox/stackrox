@@ -28,10 +28,7 @@ const VulnMgmtNamespace = ({
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
-        query getNamespace(
-            $id: ID!
-            $policyQuery: String
-        ) {
+        query getNamespace($id: ID!) {
             result: namespace(id: $id) {
                 metadata {
                     priority
@@ -43,23 +40,6 @@ const VulnMgmtNamespace = ({
                         value
                     }
                 }
-                policyStatus(query: $policyQuery) {
-                    status
-                    failingPolicies {
-                        id
-                        name
-                        description
-                        policyStatus
-                        latestViolation
-                        severity
-                        deploymentCount: failingDeploymentCount # field changed to failingDeploymentCount to improve performance
-                        lifecycleStages
-                        enforcementActions
-                        notifiers
-                        lastUpdated
-                    }
-                }
-                policyCount(query: $policyQuery)
                 deploymentCount
                 imageCount
                 imageComponentCount

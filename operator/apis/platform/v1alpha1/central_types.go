@@ -135,6 +135,10 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
+	// Configures the encryption of notifier secrets stored in the Central DB.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
+
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
 }
@@ -176,6 +180,14 @@ func (c *CentralComponentSpec) IsExternalDB() bool {
 	return c != nil && c.DB.IsExternal()
 }
 
+// GetNotifierSecretsEncryptionEnabled provides a way to retrieve the NotifierSecretsEncryption.Enabled setting that is safe to use on a nil receiver object.
+func (c *CentralComponentSpec) GetNotifierSecretsEncryptionEnabled() bool {
+	if c == nil || c.NotifierSecretsEncryption == nil {
+		return false
+	}
+	return pointer.BoolDeref(c.NotifierSecretsEncryption.Enabled, false)
+}
+
 // DeclarativeConfiguration defines settings for adding resources in a declarative manner.
 type DeclarativeConfiguration struct {
 	// List of config maps containing declarative configuration.
@@ -185,6 +197,16 @@ type DeclarativeConfiguration struct {
 	// List of secrets containing declarative configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secrets containing declarative configuration"
 	Secrets []LocalSecretReference `json:"secrets,omitempty"`
+}
+
+// NotifierSecretsEncryption defines settings for encrypting notifier secrets in the Central DB.
+type NotifierSecretsEncryption struct {
+	// Enables the encryption of notifier secrets stored in the Central DB. An encryption key must be
+	// provided in a secret called `central-encryption-key` in the Central namespace, with the key stored in
+	// the `encryption-key` data field.
+	//+kubebuilder:default=false
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // CentralDBSpec defines settings for the "central db" component.

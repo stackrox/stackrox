@@ -50,4 +50,4 @@ export function isValidEntityTab(value: unknown): value is EntityTab {
     return entityTabValues.some((tab) => tab === value);
 }
 
-export type WatchStatus = 'WATCHED' | 'NOT_WATCHED';
+export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';

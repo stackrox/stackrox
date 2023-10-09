@@ -91,9 +91,10 @@ message ComplianceOperatorScanConfigurationV2 {
     google.protobuf.Timestamp     created_time             = 12;
     google.protobuf.Timestamp     last_updated_time        = 13;
     // Most recent user to update the scan configurations
-    SlimUser                      modified_by               = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
+    SlimUser                      modified_by              = 14 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
 }
 
+// Next Tag: 6
 // Cluster and an error if necessary to handle cases where the scan configuration is
 // unable to be applied to a cluster for whatever reason.
 message ComplianceOperatorClusterScanConfigStatus {
@@ -101,6 +102,7 @@ message ComplianceOperatorClusterScanConfigStatus {
     string                        scan_id             = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint"'];
     repeated string               errors              = 3;
     google.protobuf.Timestamp     last_updated_time   = 4;
+    string                        cluster_name        = 5;
 }
 
 // Next Tag: 15

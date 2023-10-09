@@ -16,7 +16,7 @@ import {
     compliancePath,
     configManagementPath,
     dashboardPath,
-    deferralConfigurationPath,
+    exceptionConfigurationPath,
     deprecatedPoliciesPath,
     integrationsPath,
     isRouteEnabled, // predicate function
@@ -47,6 +47,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
+import InviteUsersModal from './InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -117,11 +118,11 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
-    'deferral-configuration': {
+    'exception-configuration': {
         component: asyncComponent(
-            () => import('Containers/DeferralConfiguration/DeferralConfigurationPage')
+            () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
-        path: deferralConfigurationPath,
+        path: exceptionConfigurationPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
@@ -231,6 +232,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
+                <InviteUsersModal />
             </ErrorBoundary>
         </div>
     );

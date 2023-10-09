@@ -69,9 +69,9 @@ message VulnerabilityRequest {
     }
     message Scope {
         message Image {
-            string registry  = 1;
-            string remote    = 2;
-            string tag       = 3;
+            string registry  = 1 [(gogoproto.moretags) = 'search:"Image Registry Scope"'];
+            string remote    = 2 [(gogoproto.moretags) = 'search:"Image Remote Scope"'];
+            string tag       = 3 [(gogoproto.moretags) = 'search:"Image Tag Scope"'];
         }
 
         message Global {}

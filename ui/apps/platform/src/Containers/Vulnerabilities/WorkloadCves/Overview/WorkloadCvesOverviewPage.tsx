@@ -23,6 +23,7 @@ import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
+import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -52,6 +53,13 @@ function WorkloadCvesOverviewPage() {
 
     const [defaultWatchedImageName, setDefaultWatchedImageName] = useState('');
     const watchedImagesModalToggle = useSelectToggle();
+
+    const [unwatchImageName, setUnwatchImageName] = useState('');
+    const unwatchImageModalToggle = useSelectToggle();
+
+    function onWatchedImagesChange() {
+        return apolloClient.refetchQueries({ include: [imageListQuery] });
+    }
 
     return (
         <>
@@ -108,6 +116,10 @@ function WorkloadCvesOverviewPage() {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
                                     }}
+                                    onUnwatchImage={(imageName) => {
+                                        setUnwatchImageName(imageName);
+                                        unwatchImageModalToggle.openSelect();
+                                    }}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
@@ -128,9 +140,16 @@ function WorkloadCvesOverviewPage() {
                     setDefaultWatchedImageName('');
                     watchedImagesModalToggle.closeSelect();
                 }}
-                onWatchedImagesChange={() =>
-                    apolloClient.refetchQueries({ include: [imageListQuery] })
-                }
+                onWatchedImagesChange={onWatchedImagesChange}
+            />
+            <UnwatchImageModal
+                unwatchImageName={unwatchImageName}
+                isOpen={unwatchImageModalToggle.isOpen}
+                onClose={() => {
+                    setUnwatchImageName('');
+                    unwatchImageModalToggle.closeSelect();
+                }}
+                onWatchedImagesChange={onWatchedImagesChange}
             />
         </>
     );

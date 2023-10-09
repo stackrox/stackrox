@@ -16,7 +16,6 @@ export function pluralizeHas(len) {
     return len === 1 ? 'has' : 'have';
 }
 
-export default {
-    truncate,
-    pluralizeHas,
-};
+export function dedupeDelimitedString(value: string, delimiter = ','): string[] {
+    return Array.from(new Set(value.split(delimiter).map((v) => v.trim())));
+}

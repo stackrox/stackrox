@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -41,7 +41,7 @@ type activeStateResolver struct {
 
 // State is the activeness state
 func (asr *activeStateResolver) State(_ context.Context) string {
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return FeatureDisabled.String()
 	}
 	return asr.state.String()
@@ -50,7 +50,7 @@ func (asr *activeStateResolver) State(_ context.Context) string {
 // ActiveContexts is the slice of active contexts in deployment
 func (asr *activeStateResolver) ActiveContexts(ctx context.Context) ([]*activeComponent_ActiveContextResolver, error) {
 	var acs []*activeComponent_ActiveContextResolver
-	if !env.ActiveVulnMgmt.BooleanSetting() {
+	if !features.ActiveVulnMgmt.Enabled() {
 		return acs, nil
 	}
 	if len(asr.activeComponentIDs) == 0 {

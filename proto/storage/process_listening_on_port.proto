@@ -47,7 +47,7 @@ message ProcessListeningOnPortStorage {
 
     uint32 port = 2 [(gogoproto.moretags) = 'search:"Port,store"'];
     L4Protocol protocol = 3 [(gogoproto.moretags) = 'search:"Port Protocol,store"'];
-    google.protobuf.Timestamp close_timestamp = 4;
+    google.protobuf.Timestamp close_timestamp = 4 [(gogoproto.moretags) = 'search:"Closed Time,hidden"'];
 
     string process_indicator_id = 5
         [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"'];

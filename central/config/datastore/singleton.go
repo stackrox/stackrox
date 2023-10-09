@@ -6,7 +6,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -104,6 +103,10 @@ func initialize() {
 		panic(err)
 	}
 
+	// See the note next to the publicConfigCache variable in datastore.go for
+	// more information on public config caching.
+	cachePublicConfig(config.GetPublicConfig())
+
 	privateConfig := config.GetPrivateConfig()
 	needsUpsert := false
 	if privateConfig == nil {
@@ -127,7 +130,7 @@ func initialize() {
 		needsUpsert = true
 	}
 
-	if env.UnifiedCVEDeferral.BooleanSetting() {
+	if features.UnifiedCVEDeferral.Enabled() {
 		if privateConfig.GetVulnerabilityDeferralConfig() == nil {
 			privateConfig.VulnerabilityDeferralConfig = defaultVulnerabilityDeferralConfig
 		}

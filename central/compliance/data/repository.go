@@ -39,7 +39,8 @@ type repository struct {
 	imageIntegrations     []*storage.ImageIntegration
 	registries            []framework.ImageMatcher
 	scanners              []framework.ImageMatcher
-	processIndicators     []*storage.ProcessIndicator
+	sshProcessIndicators  []*storage.ProcessIndicator
+	hasProcessIndicators  bool
 	networkFlows          []*storage.NetworkFlow
 	notifiers             []*storage.Notifier
 	roles                 []*storage.K8SRole
@@ -91,8 +92,12 @@ func (r *repository) ImageIntegrations() []*storage.ImageIntegration {
 	return r.imageIntegrations
 }
 
-func (r *repository) ProcessIndicators() []*storage.ProcessIndicator {
-	return r.processIndicators
+func (r *repository) SSHProcessIndicators() []*storage.ProcessIndicator {
+	return r.sshProcessIndicators
+}
+
+func (r *repository) HasProcessIndicators() bool {
+	return r.hasProcessIndicators
 }
 
 func (r *repository) NetworkFlows() []*storage.NetworkFlow {
@@ -256,10 +261,21 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		r.scanners = append(r.scanners, scannerIntegration.GetScanner())
 	}
 
-	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)
+	sshProcessQuery := search.NewQueryBuilder().AddRegexes(search.ProcessExecPath, ".*ssh.*").ProtoQuery()
+	sshQuery := search.ConjunctionQuery(clusterQuery, sshProcessQuery)
+
+	r.sshProcessIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, sshQuery)
 	if err != nil {
 		return err
 	}
+
+	hasIndicatorsQuery := clusterQuery.Clone()
+	hasIndicatorsQuery.Pagination.Limit = 1
+	result, err := f.processIndicatorStore.Search(ctx, hasIndicatorsQuery)
+	if err != nil {
+		return err
+	}
+	r.hasProcessIndicators = len(result) != 0
 
 	flowStore, err := f.networkFlowDataStore.GetFlowStore(ctx, domain.Cluster().ID())
 	if err != nil {

@@ -47,3 +47,18 @@ func (mr *MockNonceGeneratorMockRecorder) Nonce() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nonce", reflect.TypeOf((*MockNonceGenerator)(nil).Nonce))
 }
+
+// NonceBytes mocks base method.
+func (m *MockNonceGenerator) NonceBytes() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NonceBytes")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NonceBytes indicates an expected call of NonceBytes.
+func (mr *MockNonceGeneratorMockRecorder) NonceBytes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NonceBytes", reflect.TypeOf((*MockNonceGenerator)(nil).NonceBytes))
+}

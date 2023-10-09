@@ -80,6 +80,7 @@ export type ImagesTableProps = {
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
     onWatchImage: (imageName: string) => void;
+    onUnwatchImage: (imageName: string) => void;
 };
 
 function ImagesTable({
@@ -88,6 +89,7 @@ function ImagesTable({
     isFiltered,
     filteredSeverities,
     onWatchImage,
+    onUnwatchImage,
 }: ImagesTableProps) {
     return (
         <TableComposable borders={false} variant="compact">
@@ -125,6 +127,11 @@ function ImagesTable({
                     const importantCount = imageCVECountBySeverity.important.total;
                     const moderateCount = imageCVECountBySeverity.moderate.total;
                     const lowCount = imageCVECountBySeverity.low.total;
+
+                    const isWatchedImage = watchStatus === 'WATCHED';
+                    const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
+                    const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
+
                     return (
                         <Tbody
                             key={id}
@@ -136,7 +143,7 @@ function ImagesTable({
                                 <Td dataLabel="Image">
                                     {name ? (
                                         <ImageNameTd name={name} id={id}>
-                                            {watchStatus === 'WATCHED' && (
+                                            {isWatchedImage && (
                                                 <Label
                                                     isCompact
                                                     variant="outline"
@@ -186,9 +193,9 @@ function ImagesTable({
                                         <ActionsColumn
                                             items={[
                                                 {
-                                                    title: 'Watch image',
+                                                    title: watchImageMenuText,
                                                     onClick: () =>
-                                                        onWatchImage(
+                                                        watchImageMenuAction(
                                                             `${name.registry}/${name.remote}:${name.tag}`
                                                         ),
                                                 },

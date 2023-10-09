@@ -142,7 +142,7 @@ func (suite *ClusterServiceTestSuite) TestGetClusterWithRetentionInfo() {
 			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
 			suite.dataStore.EXPECT().GetCluster(gomock.Any(), gomock.Any()).Times(1).Return(testCase.cluster, true, nil)
 			if testCase.cluster.GetHealthStatus().GetSensorHealthStatus() == storage.ClusterHealthStatus_UNHEALTHY {
-				suite.sysConfigDatastore.EXPECT().GetConfig(gomock.Any()).Times(1).Return(testCase.config, nil)
+				suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(testCase.config.GetPrivateConfig(), nil)
 			}
 			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
 
@@ -199,7 +199,7 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 
 	ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
 	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
-	suite.sysConfigDatastore.EXPECT().GetConfig(gomock.Any()).Times(3).Return(config, nil)
+	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).Times(3).Return(config.GetPrivateConfig(), nil)
 
 	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
 	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{Query: search.EmptyQuery().String()})

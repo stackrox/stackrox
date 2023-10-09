@@ -5,4 +5,4 @@ set -euo pipefail
 /restore-all-dir-contents
 /import-additional-cas
 
-exec /scanner
+exec /scanner "$@"

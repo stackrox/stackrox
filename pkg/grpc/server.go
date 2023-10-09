@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
@@ -55,7 +56,8 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
-	maxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
+	// MaxMsgSizeSetting is the setting used for gRPC servers and clients to set maximum receive sizes.
+	MaxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
 	maxResponseMsgSizeSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
 	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
@@ -177,10 +179,13 @@ func (a *apiImpl) Stop() bool {
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
 	u := []grpc.UnaryServerInterceptor{
-		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		grpc_errors.ErrorToGrpcCodeInterceptor,
 		grpc_prometheus.UnaryServerInterceptor,
+		grpc_errors.ErrorToGrpcCodeInterceptor,
+		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
 
@@ -216,10 +221,13 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 }
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
 	s := []grpc.StreamServerInterceptor{
-		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
 		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
+		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
@@ -357,7 +365,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
 	}
 	if err := prometheus.Register(mux); err != nil {
@@ -379,7 +387,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
-		grpc.MaxRecvMsgSize(maxMsgSizeSetting.IntegerSetting()),
+		grpc.MaxRecvMsgSize(MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time: 40 * time.Second,
 		}),
@@ -446,6 +454,5 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 			}
 		}
-
 	}
 }

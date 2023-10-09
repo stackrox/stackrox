@@ -320,5 +320,5 @@ jobs:
       workflow-ref: v1
       kube-burner-config-ref: ${{needs.variables.outputs.milestone}}
       kube-burner-config-repo: stackrox
-      cluster-with-fake-load-name: gke-long-running-fake-load-${{needs.variables.outputs.milestone}}
-      cluster-with-real-load-name: gke-long-running-real-load-${{needs.variables.outputs.milestone}}
+      cluster-with-fake-load-name: long-fake-load-${{ needs.variables.outputs.milestone }}
+      cluster-with-real-load-name: long-real-load-${{ needs.variables.outputs.milestone }}
