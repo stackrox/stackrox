@@ -101,7 +101,7 @@ type clusterFromSensorResponse struct {
 func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection, outC chan<- clusterFromSensorResponse, clusterMap map[string]*storage.Cluster) {
 	clusterInfo, err := c.fetchClusterFromSensor(ctx, sensorConn, clusterMap)
 	if err != nil {
-		log.Warnf("Error pulling cluster info from sensor: %w", err)
+		log.Warnw("Error pulling cluster info from sensor", err)
 	}
 	select {
 	case <-ctx.Done():

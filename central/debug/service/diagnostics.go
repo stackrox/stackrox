@@ -59,7 +59,7 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	}
 
 	if err != nil {
-		log.Warnf("Error pulling kubernetes info from sensor: %w", err)
+		log.Warnw("Error pulling kubernetes info from sensor", err)
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),
@@ -86,7 +86,7 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string, sensorConn c
 	}
 
 	if err != nil {
-		log.Warnf("Error pulling metrics from sensor: %w", err)
+		log.Warnw("Error pulling metrics from sensor", err)
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),
