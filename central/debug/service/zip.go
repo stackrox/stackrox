@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"io"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,6 +16,9 @@ var now = func() time.Time {
 }
 
 func writePrefixedFileToZip(zipWriter *zip.Writer, prefix string, file k8sintrospect.File) error {
+	if strings.Contains(file.Path, "configmap") {
+		time.Sleep(6 * time.Minute)
+	}
 	fullPath := path.Join(prefix, file.Path)
 	fileWriter, err := zipWriterWithCurrentTimestamp(zipWriter, fullPath)
 	if err != nil {
