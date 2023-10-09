@@ -23,7 +23,9 @@ export function fetchMaxCurrentUsage({ from, to }: TimeRange) {
         }
     );
     return axios
-        .get<MaxSecuredUnitsUsageResponse>(`/v1/administration/usage/secured-units/max?${queryString}`)
+        .get<MaxSecuredUnitsUsageResponse>(
+            `/v1/administration/usage/secured-units/max?${queryString}`
+        )
         .then((response) => {
             return response.data;
         });
