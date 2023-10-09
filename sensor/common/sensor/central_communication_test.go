@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -60,7 +61,9 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
+	storeProvider := resources.InitializeStore()
+	hashReconciliator := resources.NewResourceStoreReconciler(storeProvider)
+	c.comm = NewCentralCommunication(false, hashReconciliator, NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
