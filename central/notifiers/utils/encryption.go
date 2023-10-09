@@ -32,7 +32,6 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		return nil
 	}
 	cryptoCodec := cryptocodec.Singleton()
-	secret := ""
 	var err error
 	switch notifier.GetType() {
 	case pkgNotifiers.JiraType:
@@ -40,7 +39,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if jira == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, jira.GetPassword())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, jira.GetPassword())
 		if err != nil {
 			return err
 		}
@@ -49,7 +48,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if email == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, email.GetPassword())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, email.GetPassword())
 		if err != nil {
 			return err
 		}
@@ -58,7 +57,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if cscc == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, cscc.GetServiceAccount())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, cscc.GetServiceAccount())
 		if err != nil {
 			return err
 		}
@@ -67,7 +66,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if splunk == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, splunk.GetHttpToken())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, splunk.GetHttpToken())
 		if err != nil {
 			return err
 		}
@@ -76,7 +75,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if pagerDuty == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, pagerDuty.GetApiKey())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, pagerDuty.GetApiKey())
 		if err != nil {
 			return err
 		}
@@ -85,7 +84,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if generic == nil {
 			return nil
 		}
-		secret, err = cryptoCodec.Encrypt(key, generic.GetPassword())
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, generic.GetPassword())
 		if err != nil {
 			return err
 		}
@@ -102,13 +101,11 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 		if err != nil {
 			return err
 		}
-		secret, err = cryptoCodec.Encrypt(key, string(marshalled))
+		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, string(marshalled))
 		if err != nil {
 			return err
 		}
-
 	}
-	notifier.NotifierSecret = secret
 	// TODO (ROX-19879): Cleanup creds if ROX_CLEANUP_NOTIFIER_CREDS is enabled
 	return nil
 }
