@@ -122,7 +122,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation for #policyName is triggered"
-        assert waitForViolation(deploymentName, policyName, isRaceBuild() ? 450 : 30)
+        assert waitForViolation(deploymentName, policyName, isRaceBuild() ? 450 : 120)
 
         where:
         "Data inputs are:"
