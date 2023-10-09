@@ -51,7 +51,6 @@ func TestUpdateAndParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log.Info(filePath)
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		t.Fatalf("Error stating file: %v", err)

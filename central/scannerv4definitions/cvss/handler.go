@@ -77,7 +77,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // New creates a new http.Handler to handle vulnerability data.
 func New(blobStore blob.Datastore) http.Handler {
 	h := &httpHandler{
-		interval:  env.ScannerVulnUpdateInterval.DurationSetting(),
+		interval:  env.CvssDataUpdateInterval.DurationSetting(),
 		blobStore: blobStore,
 	}
 	h.initializeUpdater(context.Background())
