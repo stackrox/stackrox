@@ -95,13 +95,13 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 }
 
 func getPlopMap(plops []*storage.ProcessListeningOnPortStorage) map[string]*storage.ProcessListeningOnPortStorage {
-    plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
+	plopMap := make(map[string]*storage.ProcessListeningOnPortStorage)
 
-    for _, plop := range plops {
-        plopMap[getPlopKey(plop)] = plop
-    }
+	for _, plop := range plops {
+		plopMap[getPlopKey(plop)] = plop
+	}
 
-    return plopMap
+	return plopMap
 }
 
 func getIndicators() []*storage.ProcessIndicator {
@@ -1471,7 +1471,6 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 		PodUid:       fixtureconsts.PodUID2,
 	}
 
-
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&plop1, &plop2}
 
 	// Add PLOP referencing those indicators
@@ -1487,7 +1486,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 
 	plopMap := getPlopMap(newPlopsFromDB)
 
-	expectedPlopStorage :=  []*storage.ProcessListeningOnPortStorage{
+	expectedPlopStorage := []*storage.ProcessListeningOnPortStorage{
 		{
 			Port:               plopObjects[0].GetPort(),
 			Protocol:           plopObjects[0].GetProtocol(),
@@ -1539,6 +1538,5 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	}
 
 	suite.Equal(expectedPlopStorage1, newPlopsFromDB2[0])
-
 
 }
