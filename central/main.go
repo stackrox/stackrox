@@ -533,14 +533,14 @@ func startGRPCServer() {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:       customRoutes(),
-		IdentityExtractors: idExtractors,
-		AuthProviders:      registry,
-		Auditor:            audit.New(processor.Singleton()),
-		RateLimiter:        ratelimit.NewRateLimiter(),
-		GRPCMetrics:        metrics.GRPCSingleton(),
-		HTTPMetrics:        metrics.HTTPSingleton(),
-		Endpoints:          endpointCfgs,
+		CustomRoutes:        customRoutes(),
+		IdentityExtractors:  idExtractors,
+		AuthProviders:       registry,
+		Auditor:             audit.New(processor.Singleton()),
+		RateLimiterRegistry: ratelimit.NewRateLimiterRegistry(),
+		GRPCMetrics:         metrics.GRPCSingleton(),
+		HTTPMetrics:         metrics.HTTPSingleton(),
+		Endpoints:           endpointCfgs,
 	}
 
 	if devbuild.IsEnabled() {

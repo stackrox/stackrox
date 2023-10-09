@@ -13,6 +13,10 @@ type RateLimiter interface {
 	// that can be used to apply rate limiting.
 	GetUnaryServerInterceptor() grpc.UnaryServerInterceptor
 
+	// GetStreamServerInterceptor returns a gRPC StreamServerInterceptor
+	// that can be used to apply rate limiting for gRPC streams.
+	GetStreamServerInterceptor() grpc.StreamServerInterceptor
+
 	// GetHTTPInterceptor returns an HTTPInterceptor that can be used
 	// to apply rate limiting to HTTP handlers.
 	GetHTTPInterceptor() httputil.HTTPInterceptor

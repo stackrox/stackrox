@@ -119,11 +119,11 @@ type apiImpl struct {
 
 // A Config configures the server.
 type Config struct {
-	CustomRoutes       []routes.CustomRoute
-	IdentityExtractors []authn.IdentityExtractor
-	AuthProviders      authproviders.Registry
-	Auditor            audit.Auditor
-	RateLimiter        ratelimit.RateLimiter
+	CustomRoutes        []routes.CustomRoute
+	IdentityExtractors  []authn.IdentityExtractor
+	AuthProviders       authproviders.Registry
+	Auditor             audit.Auditor
+	RateLimiterRegistry ratelimit.RateLimiterRegistry
 
 	PreAuthContextEnrichers  []contextutil.ContextUpdater
 	PostAuthContextEnrichers []contextutil.ContextUpdater
@@ -153,7 +153,7 @@ func NewAPI(config Config) API {
 func (a *apiImpl) Start() *concurrency.ErrorSignal {
 	startedSig := concurrency.NewErrorSignal()
 	if a.shutdownInProgress.Load() {
-		startedSig.SignalWithError(errors.New("cannot start gRPC API after Stop was called"))
+		startedSig.SignalWithError(errors.New("cannot start gRPC APIRateLimiter after Stop was called"))
 	} else {
 		go a.run(&startedSig)
 	}
@@ -189,8 +189,8 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u = append(u, grpc_prometheus.UnaryServerInterceptor)
 	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
 
-	if a.config.RateLimiter != nil {
-		u = append(u, a.config.RateLimiter.GetUnaryServerInterceptor())
+	if a.config.RateLimiterRegistry != nil {
+		u = append(u, a.config.RateLimiterRegistry.Get(ratelimit.APIRateLimiter).GetUnaryServerInterceptor())
 	}
 
 	u = append(u, contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
@@ -228,16 +228,21 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 }
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
+	var s []grpc.StreamServerInterceptor
+
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted
 	// to gRPC status codes.
-	s := []grpc.StreamServerInterceptor{
-		grpc_prometheus.StreamServerInterceptor,
-		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
-		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		contextutil.StreamServerInterceptor(
-			authn.ContextUpdater(a.config.IdentityExtractors...)),
+	s = append(s, grpc_prometheus.StreamServerInterceptor)
+	s = append(s, grpc_errors.ErrorToGrpcCodeStreamInterceptor)
+
+	if a.config.RateLimiterRegistry != nil {
+		s = append(s, a.config.RateLimiterRegistry.Get(ratelimit.SensorRateLimiter).GetStreamServerInterceptor())
 	}
+
+	s = append(s, contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
+	s = append(s, contextutil.StreamServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
+
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		s = append(s, contextutil.StreamServerInterceptor(a.config.PreAuthContextEnrichers...))
 	}
@@ -265,7 +270,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		}
 
 		if !a.shutdownInProgress.Load() {
-			log.Fatal("Unexpected local API server termination.")
+			log.Fatal("Unexpected local APIRateLimiter server termination.")
 		}
 	}()
 	return dialContext
@@ -304,8 +309,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	var preAuthHTTPInterceptors []httputil.HTTPInterceptor
 	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.requestInfoHandler.HTTPIntercept)
 
-	if a.config.RateLimiter != nil {
-		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
+	if a.config.RateLimiterRegistry != nil {
+		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiterRegistry.Get(ratelimit.APIRateLimiter).GetHTTPInterceptor())
 	}
 
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
@@ -372,7 +377,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	if localConn != nil {
 		for _, service := range a.apiServices {
 			if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
-				log.Panicf("failed to register API service: %v", err)
+				log.Panicf("failed to register APIRateLimiter service: %v", err)
 			}
 		}
 	}
