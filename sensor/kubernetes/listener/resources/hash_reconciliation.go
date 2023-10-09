@@ -1,23 +1,25 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
-// InMemoryStoreReconciler handles sensor-side reconciliation using in-memory store
+// ResourceStoreReconciler handles sensor-side reconciliation using in-memory store
 type ResourceStoreReconciler struct {
 	storeProvider *InMemoryStoreProvider
 }
 
-// NewInMemoryStoreReconciler builds InMemoryStoreReconciler for sensor-side reconciliation
-func NewInMemoryStoreReconciler(storeProvider *InMemoryStoreProvider) *InMemoryStoreReconciler {
-	return &InMemoryStoreReconciler{storeProvider: storeProvider}
+// NewResourceStoreReconciler builds ResourceStoreReconciler for sensor-side reconciliation
+func NewResourceStoreReconciler(storeProvider *InMemoryStoreProvider) *ResourceStoreReconciler {
+	return &ResourceStoreReconciler{storeProvider: storeProvider}
 }
 
 // ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
 // should be deleted in Central to keep the state of Sensor and Central in sync.
-func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) []central.MsgFromSensor {
+func (hr *ResourceStoreReconciler) ProcessHashes(h map[string]uint64) []central.MsgFromSensor {
 	events := make([]central.MsgFromSensor, 0)
 	for typeWithID, hashValue := range h {
 		resType, resID := stringutils.Split2(typeWithID, ":")
@@ -30,7 +32,7 @@ func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) []central.
 			log.Errorf("reconciliation error: %s", err)
 		}
 		if toDeleteID == "" {
-			log.Error("empty reconciliation result")
+			log.Debug("empty reconciliation result - not found on Sensor")
 			continue
 		}
 		delMsg, err := resourceToMessage(resType, toDeleteID)
@@ -44,7 +46,30 @@ func (hr *InMemoryStoreReconciler) ProcessHashes(h map[string]uint64) []central.
 }
 
 func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, error) {
-	_, _ = resType, resID
-	panic("Not implemented")
-
+	switch resType {
+	case "Deployment":
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case "Pod":
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Pod{
+					Pod: &storage.Pod{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	default:
+		return nil, errors.Errorf("Not implemented for resource type %v", resType)
+	}
 }
