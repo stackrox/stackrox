@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
@@ -45,7 +46,7 @@ type centralCommunicationImpl struct {
 
 	isReconnect          bool
 	clientReconciliation bool
-	initialDeduperState  map[string]uint64
+	initialDeduperState  map[deduper.Key]uint64
 	syncTimeout          time.Duration
 }
 
@@ -279,7 +280,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	if deduperState := msg.GetDeduperState(); deduperState == nil {
 		return errors.Wrapf(err, "expected deduper state to be sent but received: %T", msg.Msg)
 	}
-	s.initialDeduperState = msg.GetDeduperState().GetResourceHashes()
+	s.initialDeduperState = deduper.CopyDeduperState(msg.GetDeduperState().GetResourceHashes())
 	return nil
 }
 
