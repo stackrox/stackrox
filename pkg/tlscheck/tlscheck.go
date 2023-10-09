@@ -43,8 +43,11 @@ func CheckTLS(ctx context.Context, origAddr string) (bool, error) {
 	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
 	if err != nil {
 		switch err.(type) {
-		// TODO: revert Go 1.20 change for https://github.com/stackrox/stackrox/commit/5b163bd264197c379acb3b3be63c5e344ab48793#diff-7bc8351b84225aaf8f3f66811f6870eded759036ff293085de708860c89e149a.
-		case x509.CertificateInvalidError, x509.HostnameError, x509.UnknownAuthorityError, tls.RecordHeaderError:
+		case x509.CertificateInvalidError,
+			x509.HostnameError,
+			x509.UnknownAuthorityError,
+			tls.RecordHeaderError,
+			*tls.CertificateVerificationError:
 			return false, nil
 		}
 		return false, err
