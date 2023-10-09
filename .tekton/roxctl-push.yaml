@@ -18,7 +18,7 @@ metadata:
 spec:
   params:
   - name: dockerfile
-    value: image/roxctl/Dockerfile.rhtap
+    value: image/roxctl/rhtap.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: output-image
