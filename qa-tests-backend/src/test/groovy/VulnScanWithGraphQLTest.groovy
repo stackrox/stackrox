@@ -10,6 +10,7 @@ import spock.lang.Unroll
 
 @Tag("BAT")
 @Tag("GraphQL")
+@Tag("PZ")
 class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()

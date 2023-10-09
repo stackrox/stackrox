@@ -12,6 +12,7 @@ import util.NetworkGraphUtil
 
 import spock.lang.Tag
 
+@Tag("PZ")
 class ExternalNetworkSourcesTest extends BaseSpecification {
     // Any reliable static IP address should work here.
     // For now we use the one belonging to CloudFlare
