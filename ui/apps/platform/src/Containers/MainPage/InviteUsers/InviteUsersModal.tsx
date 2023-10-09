@@ -23,20 +23,15 @@ import { accessControlBasePath } from 'routePaths';
 import { AuthProvider } from 'services/AuthService';
 import { updateOrAddGroup } from 'services/GroupsService';
 import { dedupeDelimitedString } from 'utils/textUtils';
-import { mergeGroupsWithAuthProviders } from '../AccessControl/AuthProviders/authProviders.utils';
+import { mergeGroupsWithAuthProviders } from '../../AccessControl/AuthProviders/authProviders.utils';
 import InviteUsersForm from './InviteUsersForm';
-// eslint-disable-next-line import/no-cycle
 import InviteUsersConfirmationNoEmail from './InviteUsersConfirmationNoEmail';
+import { splitEmailsIntoNewAndExisting, BucketsForNewAndExistingEmails } from './InviteUsers.utils';
 
 type InviteFormValues = {
     emails: string;
     provider: string;
     role: string;
-};
-
-export type EmailBuckets = {
-    newEmails: string[];
-    existingEmails: string[];
 };
 
 // email validation from discussion in Yup repo,
@@ -75,7 +70,7 @@ const feedbackState = createStructuredSelector({
 
 function InviteUsersModal(): ReactElement | null {
     const [modalView, setModalView] = useState<'FORM' | 'TEMPLATE' | 'CONFIRM'>('FORM');
-    const [emailBuckets, setEmailBuckets] = useState<EmailBuckets | null>(null);
+    const [emailBuckets, setEmailBuckets] = useState<BucketsForNewAndExistingEmails | null>(null);
     const [apiError, setApiError] = useState<Error | null>(null);
 
     const { authProviders, groups, roles, showInviteModal } = useSelector(feedbackState);
@@ -155,24 +150,8 @@ function InviteUsersModal(): ReactElement | null {
         }
 
         const emailArr = dedupeDelimitedString(values.emails);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const buckets = emailArr.reduce<EmailBuckets>(
-            (acc, email) => {
-                if (
-                    Array.isArray(providerWithRules.groups) &&
-                    providerWithRules.groups.some(
-                        (group) => group.props.key === 'email' && group.props.value === email
-                    )
-                ) {
-                    return {
-                        newEmails: acc.newEmails,
-                        existingEmails: [...acc.existingEmails, email],
-                    };
-                }
-                return { newEmails: [...acc.newEmails, email], existingEmails: acc.existingEmails };
-            },
-            { newEmails: [], existingEmails: [] }
-        );
+        const buckets = splitEmailsIntoNewAndExisting(providerWithRules, emailArr);
+
         setEmailBuckets(buckets);
 
         if (buckets.newEmails.length === 0) {

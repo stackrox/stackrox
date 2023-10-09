@@ -1,6 +1,6 @@
 import { Traits } from '../../types/traits.proto';
 
-export function isUserResource(traits?: Traits): boolean {
+export function isUserResource(traits?: Traits | null): boolean {
     return traits == null || traits.origin == null || traits.origin === 'IMPERATIVE';
 }
 
@@ -18,7 +18,7 @@ export const originLabelColours = {
     'Declarative, Orphaned': 'red',
 };
 
-export function getOriginLabel(traits?: Traits): string {
+export function getOriginLabel(traits?: Traits | null): string {
     return traits && traits.origin && traitsOriginLabels[traits.origin]
         ? traitsOriginLabels[traits.origin]
         : 'User';

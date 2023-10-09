@@ -3,11 +3,10 @@ import { Alert, ClipboardCopy, ClipboardCopyVariant, Text } from '@patternfly/re
 import { Link } from 'react-router-dom';
 
 import { accessControlBasePath } from 'routePaths';
-// eslint-disable-next-line import/no-cycle
-import { EmailBuckets } from './InviteUsersModal';
+import { BucketsForNewAndExistingEmails } from './InviteUsers.utils';
 
 type InviteUsersConfirmationNoEmailProps = {
-    emailBuckets: EmailBuckets;
+    emailBuckets: BucketsForNewAndExistingEmails;
     onClose: () => void;
     role: string;
 };
