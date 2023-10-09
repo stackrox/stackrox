@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 )
@@ -24,13 +24,14 @@ func GetNotifierSecretEncryptionKey() (string, error) {
 }
 
 // SecureNotifier secures the secrets in the given notifier
-func SecureNotifier(notifier *storage.Notifier, cryptoCodec cryptoutils.CryptoCodec, key string) error {
+func SecureNotifier(notifier *storage.Notifier, key string) error {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return nil
 	}
 	if notifier.GetConfig() == nil {
 		return nil
 	}
+	cryptoCodec := cryptocodec.Singleton()
 	secret := ""
 	var err error
 	switch notifier.GetType() {
@@ -108,56 +109,6 @@ func SecureNotifier(notifier *storage.Notifier, cryptoCodec cryptoutils.CryptoCo
 
 	}
 	notifier.NotifierSecret = secret
-	cleanupCreds(notifier)
+	// TODO (ROX-19879): Cleanup creds if ROX_CLEANUP_NOTIFIER_CREDS is enabled
 	return nil
-}
-
-func cleanupCreds(notifier *storage.Notifier) {
-	if !env.CleanupNotifierCreds.BooleanSetting() {
-		return
-	}
-	switch notifier.GetType() {
-	case pkgNotifiers.JiraType:
-		jira := notifier.GetJira()
-		if jira == nil {
-			return
-		}
-		jira.Password = ""
-	case pkgNotifiers.EmailType:
-		email := notifier.GetEmail()
-		if email == nil {
-			return
-		}
-		email.Password = ""
-	case pkgNotifiers.CSCCType:
-		cscc := notifier.GetCscc()
-		if cscc == nil {
-			return
-		}
-		cscc.ServiceAccount = ""
-	case pkgNotifiers.SplunkType:
-		splunk := notifier.GetSplunk()
-		if splunk == nil {
-			return
-		}
-		splunk.HttpToken = ""
-	case pkgNotifiers.PagerDutyType:
-		pagerDuty := notifier.GetPagerduty()
-		if pagerDuty == nil {
-			return
-		}
-		pagerDuty.ApiKey = ""
-	case pkgNotifiers.GenericType:
-		generic := notifier.GetGeneric()
-		if generic == nil {
-			return
-		}
-		generic.Password = ""
-	case pkgNotifiers.AWSSecurityHubType:
-		awsSecurityHub := notifier.GetAwsSecurityHub()
-		if awsSecurityHub == nil {
-			return
-		}
-		awsSecurityHub.Credentials = nil
-	}
 }

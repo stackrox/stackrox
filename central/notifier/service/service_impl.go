@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -52,11 +51,10 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedNotifierServiceServer
 
-	storage     datastore.DataStore
-	processor   notifier.Processor
-	reporter    integrationhealth.Reporter
-	cryptoCodec cryptoutils.CryptoCodec
-	cryptoKey   string
+	storage   datastore.DataStore
+	processor notifier.Processor
+	reporter  integrationhealth.Reporter
+	cryptoKey string
 
 	policyCleaner policycleaner.PolicyCleaner
 }
@@ -141,7 +139,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	}
 	upgradeNotifierConfig(request.GetNotifier())
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoCodec, s.cryptoKey)
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
@@ -167,7 +165,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
-	err := notifierUtils.SecureNotifier(request, s.cryptoCodec, s.cryptoKey)
+	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
 		// Don't send out error from crypto lib
 		return nil, errors.New("Error securing notifier")
@@ -203,7 +201,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		return nil, err
 	}
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoCodec, s.cryptoKey)
+		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
