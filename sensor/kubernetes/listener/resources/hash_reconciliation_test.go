@@ -82,54 +82,58 @@ func initStore() *InMemoryStoreProvider {
 	return s
 }
 
+func makeKey(id string, t reflect.Type) Key {
+	return Key{id, t}
+}
+
 func (s *HashReconciliationSuite) TestProcessHashes() {
 	cases := map[string]struct {
-		dstate     map[string]uint64
+		dstate     map[Key]uint64
 		deletedIDs []string
 	}{
 		"No Deployment": {
-			dstate: map[string]uint64{
-				"Deployment:1": 76543,
-				"Deployment:2": 76543,
+			dstate: map[Key]uint64{
+				makeKey("1", TypeDeployment): 76543,
+				makeKey("2", TypeDeployment): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Deployment": {
-			dstate: map[string]uint64{
-				"Deployment:99": 87654,
-				"Deployment:1":  76543,
+			dstate: map[Key]uint64{
+				makeKey("99", TypeDeployment): 87654,
+				makeKey("1", TypeDeployment):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Deployments": {
-			dstate: map[string]uint64{
-				"Deployment:99": 87654,
-				"Deployment:98": 88888,
-				"Deployment:97": 77777,
-				"Deployment:1":  76543,
+			dstate: map[Key]uint64{
+				makeKey("99", TypeDeployment): 87654,
+				makeKey("98", TypeDeployment): 88888,
+				makeKey("97", TypeDeployment): 77777,
+				makeKey("1", TypeDeployment):  76543,
 			},
 			deletedIDs: []string{"99", "98", "97"},
 		},
 		"No Pod": {
-			dstate: map[string]uint64{
-				"Pod:3": 76543,
-				"Pod:4": 76543,
+			dstate: map[Key]uint64{
+				makeKey("3", TypePod): 76543,
+				makeKey("4", TypePod): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Pod": {
-			dstate: map[string]uint64{
-				"Pod:99": 87654,
-				"Pod:3":  76543,
+			dstate: map[Key]uint64{
+				makeKey("99", TypePod): 87654,
+				makeKey("3", TypePod):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Pods": {
-			dstate: map[string]uint64{
-				"Pod:99":  87654,
-				"Pod:100": 87654,
-				"Pod:101": 87654,
-				"Pod:3":   76543,
+			dstate: map[Key]uint64{
+				makeKey("99", TypePod):  87654,
+				makeKey("100", TypePod): 87654,
+				makeKey("101", TypePod): 87654,
+				makeKey("3", TypePod):   76543,
 			},
 			deletedIDs: []string{"99", "100", "101"},
 		},
@@ -140,7 +144,7 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			rc := NewResourceStoreReconciler(initStore())
 			msgs := rc.ProcessHashes(c.dstate)
 
-			s.Len(c.deletedIDs, len(msgs))
+			s.Len(msgs, len(c.deletedIDs))
 
 			ids := make([]string, 0)
 			for _, m := range msgs {

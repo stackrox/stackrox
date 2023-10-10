@@ -24,7 +24,7 @@ type DeploymentStore struct {
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
 func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != "Deployment" {
+	if resType != TypeDeployment.String() {
 		return "", nil
 	}
 	depl := ds.Get(resID)
