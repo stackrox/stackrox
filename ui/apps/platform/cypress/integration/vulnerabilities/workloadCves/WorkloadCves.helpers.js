@@ -141,7 +141,11 @@ export function watchImageFlowFromModal(imageFullName, imageNameAndTag) {
     cy.get(selectors.closeWatchedImageDialogButton).click();
 
     // check that the table row containing the image name has a watched image label
-    cy.get(`${selectors.watchedImageCellWithName(imageNameAndTag)} ${selectors.watchedImageLabel}`);
+    cy.get(
+        `${selectors.watchedImageCellWithName(imageNameAndTag)}:first ${
+            selectors.watchedImageLabel
+        }`
+    );
 }
 
 /**
