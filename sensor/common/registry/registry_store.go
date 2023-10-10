@@ -62,7 +62,7 @@ type Store struct {
 // shall be deleted from Central.
 func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
-	// TODO implement me
+	// TODO(ROX-20074): Implement me
 	return "", errors.New("Not implemented")
 }
 

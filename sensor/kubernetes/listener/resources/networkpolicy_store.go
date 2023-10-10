@@ -88,7 +88,7 @@ type networkPolicyStoreImpl struct {
 // shall be deleted from Central.
 func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
-	// TODO implement me
+	// TODO(ROX-20073): Implement me
 	return "", errors.New("Not implemented")
 }
 

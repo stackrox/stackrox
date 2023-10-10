@@ -56,7 +56,7 @@ type nodeStoreImpl struct {
 // shall be deleted from Central.
 func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
 	_, _, _ = resType, resID, resHash
-	// TODO implement me
+	// TODO(ROX-20072): Implement me
 	return "", errors.New("Not implemented")
 }
 
