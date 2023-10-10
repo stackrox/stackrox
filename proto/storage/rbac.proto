@@ -30,7 +30,7 @@ message K8sRole {
     map<string, string> annotations         = 8 [(gogoproto.moretags) = 'search:"Role Annotation"'];
     google.protobuf.Timestamp created_at    = 9;
 
-    repeated PolicyRule rules               = 10 [(gogoproto.moretags) = 'sensorhash:"Role Annotation"'];
+    repeated PolicyRule rules               = 10 [(gogoproto.moretags) = 'sensorhash:"ignore"'];
 }
 
 // Properties of an individual rules that grant permissions to resources.
