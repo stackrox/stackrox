@@ -26,46 +26,43 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:nginx-1.14-alpine")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:nginx-1-14-alpine")
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
-                .setImage("quay.io/rhacs-eng/qa:struts-app")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:centos-"+
-                           "fc2476ccae2a5186313f2d1dadb4a969d6d2d4c6b23fa98b6c7b0a1faad67685")
+                .setImage ("quay.io/centos/centos:stream9")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (FEDORADEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:fedora-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:fedora-"+
                            "6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187")
                 .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ELASTICDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:elasticsearch-"+
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (REDISDEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:redis-"+
-                           "96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-4.0.11")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:mongo-"+
-                           "dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4751DEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:ROX4751")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4751")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (ROX4979DEPLOYMENT)
-                .setImage ("quay.io/rhacs-eng/qa:ROX4979")
+                .setImage ("quay.io/rhacs-eng/qa-multi-arch:ROX4979")
                 .addLabel ("app", "test" ),
      ]
 
@@ -145,8 +142,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         ["/usr/sbin/nginx"] as Set | NGINXDEPLOYMENT
 
-        ["/docker-java-home/jre/bin/java",
-         "/usr/bin/tty", "/bin/uname",
+        ["/usr/bin/bash", "/usr/bin/uname",
          "/usr/local/tomcat/bin/catalina.sh",
          "/usr/bin/dirname"] as Set | STRUTSDEPLOYMENT
 
@@ -154,18 +150,18 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         ["/bin/sh", "/bin/sleep"] as Set | FEDORADEPLOYMENT
 
-        ["/usr/bin/tr", "/bin/chown", "/bin/egrep", "/bin/grep",
-         "/usr/local/bin/gosu", "/bin/hostname",
+        ["/usr/bin/tr", "/usr/bin/egrep", "/usr/bin/grep",
+         "/usr/bin/hostname",
          "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig",
-         "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
-         "/docker-java-home/jre/bin/java", "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
+         "/usr/bin/cut",
+         "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
 
         ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
-         "/usr/local/bin/gosu", "/usr/local/bin/redis-server"] as Set | REDISDEPLOYMENT
+         "/usr/local/bin/gosu"] as Set | REDISDEPLOYMENT
 
-        ["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
-         "/bin/rm", "/usr/bin/id", "/usr/bin/find",
-         "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
+        ["/usr/local/bin/docker-entrypoint.sh",
+         "/usr/bin/id",
+         "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
 
         ["/test/bin/exec.sh", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
 
@@ -208,9 +204,8 @@ class ProcessVisualizationTest extends BaseSpecification {
         [ "/usr/sbin/nginx":[[0, 0]],
         ] | NGINXDEPLOYMENT
 
-        [ "/docker-java-home/jre/bin/java": [[0, 0]],
-          "/usr/bin/tty":[[0, 0]],
-          "/bin/uname":[[0, 0]],
+        [ "/opt/java/openjdk/bin/java": [[0, 0]],
+          "/usr/bin/uname":[[0, 0]],
           "/usr/local/tomcat/bin/catalina.sh":[[0, 0]],
           "/usr/bin/dirname":[[0, 0]],
         ] | STRUTSDEPLOYMENT
@@ -223,19 +218,14 @@ class ProcessVisualizationTest extends BaseSpecification {
           "/bin/sleep":[[0, 0]],
         ] | FEDORADEPLOYMENT
 
-        [ "/usr/bin/tr":[[101, 101]],
-          "/bin/chown":[[0, 0]],
-          "/bin/egrep":[[101, 101]],
-          "/bin/grep":[[101, 101]],
-          "/usr/local/bin/gosu":[[0, 0]],
-          "/bin/hostname":[[101, 101]],
-          "/usr/share/elasticsearch/bin/elasticsearch":[[101, 101]],
-          "/sbin/ldconfig":[[101, 101]],
-          "/docker-entrypoint.sh":[[0, 0]],
-          "/usr/bin/cut":[[101, 101]],
-          "/usr/bin/id":[[0, 0]],
-          "/docker-java-home/jre/bin/java":[[101, 101]],
-          "/usr/bin/dirname":[[101, 101]],
+        [ "/usr/bin/tr":[[1000, 1000]],
+          "/usr/bin/egrep":[[1000, 1000]],
+          "/usr/bin/grep":[[1000, 1000]],
+          "/usr/share/elasticsearch/bin/elasticsearch":[[1000, 1000]],
+          "/sbin/ldconfig":[[1000, 1000]],
+          "/usr/bin/cut":[[1000, 1000]],
+          "/bin/java":[[1000, 1000]],
+          "/usr/bin/dirname":[[1000, 1000]],
         ] | ELASTICDEPLOYMENT
 
         [ "/test/bin/exec.sh":[[0, 0]],
@@ -305,11 +295,11 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         [
             ["/bin/sh", "-c /bin/sleep 600"],
-            ["/bin/sleep", "600"],
+            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
         ] | CENTOSDEPLOYMENT
 
         [
-            ["/bin/sleep", "--coreutils-prog-shebang=sleep /bin/sleep 600"],
+            ["/bin/sleep", "600"],
             ["/bin/sh", "-c /bin/sleep 600"],
         ] | FEDORADEPLOYMENT
 
@@ -319,18 +309,13 @@ class ProcessVisualizationTest extends BaseSpecification {
         [
             ["/usr/bin/dirname", "/usr/share/elasticsearch/bin/elasticsearch"],
             ["/usr/bin/tr", "\\n  "],
-            ["/bin/grep", "project.name"],
+            ["/usr/bin/grep", "project.name"],
             ["/usr/bin/cut", "-d. -f1"],
-            ["/usr/local/bin/gosu", "elasticsearch elasticsearch"],
-            ["/bin/egrep", "/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
-            ["/bin/hostname", ""],
-            ["/docker-entrypoint.sh", "/docker-entrypoint.sh elasticsearch"],
-            ["/bin/grep", "-E -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
-            ["/bin/grep", "^- /etc/elasticsearch/jvm.options"],
-            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/data"],
-            ["/bin/chown", "-R elasticsearch:elasticsearch /usr/share/elasticsearch/logs"],
+            ["/usr/bin/egrep", "/usr/bin/egrep -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/usr/bin/hostname", ""],
+            ["/usr/bin/grep", "-E -- (^-d |-d\$| -d |--daemonize\$|--daemonize )"],
+            ["/usr/bin/grep", "^- /etc/elasticsearch/jvm.options"],
             ["/sbin/ldconfig", "-p"],
-            ["/usr/bin/id", "-u"],
         ] | ELASTICDEPLOYMENT
     }
 

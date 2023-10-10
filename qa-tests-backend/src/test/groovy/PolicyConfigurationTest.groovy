@@ -92,7 +92,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
-                    .setCreateLoadBalancer(true).setExposeAsService(true),
+                    .setCreateLoadBalancer(
+                        !(Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
+                    .setExposeAsService(true),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_NP)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.12")
