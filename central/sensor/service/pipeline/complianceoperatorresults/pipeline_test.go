@@ -21,13 +21,14 @@ import (
 const (
 	mockScanName      = "mock-scan"
 	mockCheckRuleName = "mock-rule"
+	mockSuiteName     = "mock-suite"
 )
 
 var (
-	createdTime = types.TimestampNow()
-	id          = uuid.NewV4().String()
-	scanID      = uuid.NewV4().String()
-	checkID     = uuid.NewV4().String()
+	createdTime  = types.TimestampNow()
+	id           = uuid.NewV4().String()
+	scanConfigID = uuid.NewV4().String()
+	checkID      = uuid.NewV4().String()
 )
 
 func TestPipeline(t *testing.T) {
@@ -66,9 +67,9 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
 	suite.v2ConfigDS.EXPECT().GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, mockScanName).ProtoQuery()).Return([]*storage.ComplianceOperatorScanConfigurationV2{
+		AddExactMatches(search.ComplianceOperatorScanName, mockSuiteName).ProtoQuery()).Return([]*storage.ComplianceOperatorScanConfigurationV2{
 		{
-			Id: scanID,
+			Id: scanConfigID,
 		},
 	}, nil)
 	suite.v2ResultDS.EXPECT().UpsertResults(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
@@ -93,6 +94,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 						Annotations:  nil,
 						CreatedTime:  createdTime,
 						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
 					},
 				},
 			},
@@ -128,6 +130,7 @@ func (suite *PipelineTestSuite) TestRunDelete() {
 						Annotations:  nil,
 						CreatedTime:  createdTime,
 						ScanName:     mockScanName,
+						SuiteName:    mockSuiteName,
 					},
 				},
 			},
@@ -215,7 +218,7 @@ func getTestRec(clusterID string) *storage.ComplianceOperatorCheckResultV2 {
 		Labels:       nil,
 		Annotations:  nil,
 		CreatedTime:  createdTime,
-		ScanId:       scanID,
+		ScanConfigId: scanConfigID,
 	}
 }
 

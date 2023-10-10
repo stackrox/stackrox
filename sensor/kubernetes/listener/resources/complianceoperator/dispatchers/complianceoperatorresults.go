@@ -121,9 +121,6 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 
 	id := string(complianceCheckResult.UID)
 	if features.ComplianceEnhancements.Enabled() {
-		log.Infof("SHREWS -- labels %v", complianceCheckResult.GetLabels())
-		log.Infof("SHREWS -- annotations %v", complianceCheckResult.GetAnnotations())
-		log.Infof("SHREWS -- meta labels %v", complianceCheckResult.GetObjectMeta().GetLabels())
 		events := []*central.SensorEvent{
 			{
 				Id:     id,
