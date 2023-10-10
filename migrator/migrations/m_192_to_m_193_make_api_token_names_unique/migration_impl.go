@@ -7,8 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	newApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/new"
-	oldApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
+	newAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/new"
+	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
 	midPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/mid"
 	newPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/new"
 	"github.com/stackrox/rox/migrator/types"
@@ -24,19 +24,19 @@ var (
 )
 
 func migrate(database *types.Databases) error {
-	oldApiTokenStorage := oldApiTokenStore.New(database.PostgresDB)
-	newApiTokenStorage := newApiTokenStore.New(database.PostgresDB)
+	oldAPITokenStorage := oldAPITokenStore.New(database.PostgresDB)
+	newAPITokenStorage := newAPITokenStore.New(database.PostgresDB)
 	// Create name column
 	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, midPkgSchema.CreateTableAPITokensStmt)
 	migratedTokens := make([]*storage.TokenMetadata, 0, batchSize)
-	walkErr := oldApiTokenStorage.Walk(database.DBCtx, func(obj *storage.TokenMetadata) error {
+	walkErr := oldAPITokenStorage.Walk(database.DBCtx, func(obj *storage.TokenMetadata) error {
 		seenTokenNames[obj.GetName()]++
 		migratedObj := obj.Clone()
 		migratedName := getNewTokenName(obj.GetName())
 		migratedObj.Name = migratedName
 		migratedTokens = append(migratedTokens, migratedObj)
 		if len(migratedTokens) >= batchSize {
-			upsertErr := upsertBatch(database.DBCtx, newApiTokenStorage, migratedTokens)
+			upsertErr := upsertBatch(database.DBCtx, newAPITokenStorage, migratedTokens)
 			migratedTokens = migratedTokens[:0]
 			return upsertErr
 		}
@@ -62,7 +62,7 @@ func getNewTokenName(tokenName string) string {
 
 func upsertBatch(
 	ctx context.Context,
-	storage newApiTokenStore.Store,
+	storage newAPITokenStore.Store,
 	batch []*storage.TokenMetadata,
 ) error {
 	upsertErr := storage.UpsertMany(ctx, batch)
