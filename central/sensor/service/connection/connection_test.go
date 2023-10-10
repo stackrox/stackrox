@@ -76,6 +76,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 		givenSensorCapabilities       []centralsensor.SensorCapability
 		givenSensorState              central.SensorHello_SensorState
 		givenSendError                error
+		expectError                   bool
 		expectReconciliationMapClosed bool
 		expectDeduperStateSent        bool
 		expectDeduperStateContents    map[string]uint64
@@ -127,11 +128,11 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 			expectDeduperStateSent:        false,
 		},
 		"Central reconciles: failed to send message": {
-			givenSensorCapabilities:       []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
-			givenSensorState:              central.SensorHello_RECONNECT,
-			givenSendError:                errors.New("gRPC error"),
-			expectReconciliationMapClosed: false,
-			expectDeduperStateSent:        true,
+			givenSensorCapabilities: []centralsensor.SensorCapability{centralsensor.SensorReconciliationOnReconnect},
+			givenSensorState:        central.SensorHello_RECONNECT,
+			givenSendError:          errors.New("gRPC error"),
+			expectError:             true,
+			expectDeduperStateSent:  true,
 		},
 	}
 
@@ -173,7 +174,12 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				deduper.EXPECT().GetSuccessfulHashes().Times(0)
 			}
 
-			s.NoError(sensorMockConn.Run(ctx, server, caps))
+			err := sensorMockConn.Run(ctx, server, caps)
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
 
 			var deduperState *central.DeduperState
 			for _, msg := range server.sentList {
