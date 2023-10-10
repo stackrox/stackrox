@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	ocpControlLabelsKey = "control.compliance.openshift.io/"
+	ocpComplianceLabelsKey = "compliance.openshift.io/"
 )
 
 var (
-	scanNameKey = ocpControlLabelsKey + "scan-name"
+	scanNameKey = ocpComplianceLabelsKey + "scan-name"
 )
 
 // ResultDispatcher handles compliance check result objects
