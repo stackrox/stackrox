@@ -41,7 +41,6 @@ type centralCommunicationSuite struct {
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
 
 func (c *centralCommunicationSuite) SetupTest() {
-	fmt.Println("setup test")
 	mockCtrl := gomock.NewController(c.T())
 
 	c.controller = mockCtrl
