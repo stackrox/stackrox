@@ -7,8 +7,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	apiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore"
+	newApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/new"
+	oldApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
+	midPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/mid"
+	newPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/new"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
 const (
@@ -20,31 +24,33 @@ var (
 )
 
 func migrate(database *types.Databases) error {
-	apiTokenStorage := apiTokenStore.New(database.PostgresDB)
+	oldApiTokenStorage := oldApiTokenStore.New(database.PostgresDB)
+	newApiTokenStorage := newApiTokenStore.New(database.PostgresDB)
+	// Create name column
+	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, midPkgSchema.CreateTableAPITokensStmt)
 	migratedTokens := make([]*storage.TokenMetadata, 0, batchSize)
-	walkErr := apiTokenStorage.Walk(database.DBCtx, func(obj *storage.TokenMetadata) error {
+	walkErr := oldApiTokenStorage.Walk(database.DBCtx, func(obj *storage.TokenMetadata) error {
 		seenTokenNames[obj.GetName()]++
-		seenCount := seenTokenNames[obj.GetName()]
-		if seenCount <= 1 {
-			// No need to migrate, exit early
-			return nil
-		}
 		migratedObj := obj.Clone()
 		migratedName := getNewTokenName(obj.GetName())
 		migratedObj.Name = migratedName
 		migratedTokens = append(migratedTokens, migratedObj)
 		if len(migratedTokens) >= batchSize {
-			upsertErr := upsertBatch(database.DBCtx, apiTokenStorage, migratedTokens)
+			upsertErr := upsertBatch(database.DBCtx, newApiTokenStorage, migratedTokens)
 			migratedTokens = migratedTokens[:0]
 			return upsertErr
 		}
 		return nil
 	})
+	pgutils.CreateTableFromModel(database.DBCtx, database.GormDB, newPkgSchema.CreateTableAPITokensStmt)
 
 	return walkErr
 }
 
 func getNewTokenName(tokenName string) string {
+	if seenTokenNames[tokenName] <= 1 {
+		return tokenName
+	}
 	migratedName := fmt.Sprintf("%s (%d)", tokenName, seenTokenNames[tokenName])
 	for seenTokenNames[migratedName] > 0 {
 		seenTokenNames[tokenName]++
@@ -56,7 +62,7 @@ func getNewTokenName(tokenName string) string {
 
 func upsertBatch(
 	ctx context.Context,
-	storage apiTokenStore.Store,
+	storage newApiTokenStore.Store,
 	batch []*storage.TokenMetadata,
 ) error {
 	upsertErr := storage.UpsertMany(ctx, batch)

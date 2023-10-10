@@ -8,8 +8,8 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	apiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema"
+	oldApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
+	oldPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/old"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -31,7 +31,7 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), pkgSchema.CreateTableAPITokensStmt)
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldPkgSchema.CreateTableAPITokensStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
@@ -176,7 +176,7 @@ var (
 )
 
 func (s *migrationTestSuite) TestMigration() {
-	store := apiTokenStore.New(s.db)
+	store := oldApiTokenStore.New(s.db)
 
 	s.Require().NoError(store.UpsertMany(s.ctx, preMigrationTokens))
 
