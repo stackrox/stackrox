@@ -11,7 +11,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { useApolloClient, useQuery } from '@apollo/client';
 
@@ -22,8 +21,9 @@ import useURLPagination from 'hooks/useURLPagination';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { VulnMgmtLocalStorage, cveStatusTabValues, entityTabValues } from '../types';
-import { parseQuerySearchFilter, getCveStatusScopedQueryString } from '../searchUtils';
+import { vulnerabilityStates } from 'types/cve.proto';
+import { VulnMgmtLocalStorage, entityTabValues } from '../types';
+import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
@@ -48,11 +48,11 @@ function WorkloadCvesOverviewPage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isUnifiedDeferralsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL');
 
-    const [activeCVEStatusKey, setActiveCVEStatusKey] = useURLStringUnion(
-        'cveStatus',
-        cveStatusTabValues
+    const [vulnerabilityStateKey, setVulnerabilityStateKey] = useURLStringUnion(
+        'vulnerabilityState',
+        vulnerabilityStates
     );
-    const currentCveStatus = isUnifiedDeferralsEnabled ? activeCVEStatusKey : undefined;
+    const currentVulnerabilityState = isUnifiedDeferralsEnabled ? vulnerabilityStateKey : undefined;
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -61,7 +61,7 @@ function WorkloadCvesOverviewPage() {
     const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 }, loading } =
         useQuery(entityTypeCountsQuery, {
             variables: {
-                query: getCveStatusScopedQueryString(querySearchFilter, currentCveStatus),
+                query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             },
         });
 
@@ -78,7 +78,7 @@ function WorkloadCvesOverviewPage() {
     }
 
     function handleTabClick(e, tab) {
-        setActiveCVEStatusKey(tab);
+        setVulnerabilityStateKey(tab);
     }
 
     return (
@@ -113,18 +113,18 @@ function WorkloadCvesOverviewPage() {
             <PageSection padding={{ default: 'noPadding' }}>
                 {isUnifiedDeferralsEnabled && (
                     <Tabs
-                        activeKey={activeCVEStatusKey}
+                        activeKey={vulnerabilityStateKey}
                         onSelect={handleTabClick}
-                        component={TabsComponent.nav}
+                        component="nav"
                         className="pf-u-pl-lg pf-u-background-color-100"
                     >
                         <Tab
-                            eventKey="Observed"
+                            eventKey="OBSERVED"
                             title={<TabTitleText>Observed CVEs</TabTitleText>}
                         />
-                        <Tab eventKey="Deferred" title={<TabTitleText>Deferrals</TabTitleText>} />
+                        <Tab eventKey="DEFERRED" title={<TabTitleText>Deferrals</TabTitleText>} />
                         <Tab
-                            eventKey="False Positive"
+                            eventKey="FALSE_POSITIVE"
                             title={<TabTitleText>False positives</TabTitleText>}
                         />
                     </Tabs>
@@ -141,7 +141,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
-                                    cveStatusTab={currentCveStatus}
+                                    vulnerabilityState={currentVulnerabilityState}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
@@ -150,7 +150,7 @@ function WorkloadCvesOverviewPage() {
                                     countsData={countsData}
                                     pagination={pagination}
                                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
-                                    cveStatusTab={currentCveStatus}
+                                    vulnerabilityState={currentVulnerabilityState}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();
@@ -166,7 +166,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
-                                    cveStatusTab={currentCveStatus}
+                                    vulnerabilityState={currentVulnerabilityState}
                                 />
                             )}
                         </CardBody>

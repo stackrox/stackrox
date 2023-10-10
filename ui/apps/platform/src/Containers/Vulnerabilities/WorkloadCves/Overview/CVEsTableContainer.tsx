@@ -6,25 +6,26 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { VulnerabilityState } from 'types/cve.proto';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
-import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab?: CveStatusTab; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
 };
 
 function CVEsTableContainer({
     defaultFilters,
     countsData,
-    cveStatusTab,
+    vulnerabilityState,
     pagination,
 }: CVEsTableContainerProps) {
     const { searchFilter } = useURLSearch();
@@ -39,7 +40,7 @@ function CVEsTableContainer({
 
     const { error, loading, data, previousData } = useQuery(cveListQuery, {
         variables: {
-            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
+            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

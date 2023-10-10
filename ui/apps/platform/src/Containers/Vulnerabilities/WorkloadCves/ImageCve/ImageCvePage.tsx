@@ -56,7 +56,7 @@ import { Resource } from '../components/FilterResourceDropdown';
 import { VulnerabilitySeverityLabel } from '../types';
 
 const workloadCveOverviewCvePath = getOverviewCvesPath({
-    cveStatusTab: 'Observed',
+    vulnerabilityState: 'OBSERVED',
     entityTab: 'CVE',
 });
 
