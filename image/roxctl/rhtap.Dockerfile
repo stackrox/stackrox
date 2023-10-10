@@ -7,7 +7,10 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 COPY . .
 
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
-    make tag && \
+    echo "BRANCHES:" && \
+    git branch -l && \
+    echo "TAGS:" && \
+    git tag -l && \
     mkdir -p image/bin
 
 ENV CI=1 GOFLAGS="" GOTAGS="release"
