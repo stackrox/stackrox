@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -138,9 +140,32 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret
 	return nil
 }
 
+var (
+	lock sync.Mutex
+	m    = make(map[string]*storage.Secret)
+)
+
+func checkDiff(secret *storage.Secret) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	old, ok := m[secret.GetId()]
+	if !ok {
+		m[secret.GetId()] = secret
+		return
+	}
+	m[secret.GetId()] = secret
+	if proto.Equal(old, secret) {
+		log.Infof("Equal %+v %+v", old, secret)
+	} else {
+		log.Infof("Not equal %+v %+v", old, secret)
+	}
+}
+
 func (s *pipelineImpl) persistSecret(ctx context.Context, action central.ResourceAction, secret *storage.Secret) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+		checkDiff(secret)
 		return s.secrets.UpsertSecret(ctx, secret)
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.secrets.RemoveSecret(ctx, secret.GetId())
