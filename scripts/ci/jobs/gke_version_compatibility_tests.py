@@ -42,7 +42,7 @@ test_tuples = [Chart_versions(central_version=latest_tag, sensor_version=sensor_
 test_tuples.extend([Chart_versions(central_version=central_chart_version, sensor_version=latest_tag) for central_chart_version in central_chart_versions])
 
 # Support exception for latest central and sensor 3.74 as per https://issues.redhat.com/browse/ROX-18223
-support_exceptions = [Chart_versions(central_version=latest_tag, sensor_chart_version=get_latest_helm_chart_version_for_specific_release("stackrox-secured-cluster-services", Release(major=3, minor=74)))]
+support_exceptions = [Chart_versions(central_version=latest_tag, sensor_version=get_latest_helm_chart_version_for_specific_release("stackrox-secured-cluster-services", Release(major=3, minor=74)))]
 
 test_tuples.extend(support_exception for support_exception in support_exceptions if support_exception not in test_tuples)
 
