@@ -60,7 +60,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
+	c.comm = NewCentralCommunication(false, false, NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
