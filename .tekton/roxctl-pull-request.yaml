@@ -174,7 +174,7 @@ spec:
         - name: name
           value: git-clone
         - name: bundle
-          value: quay.io/tommartensen/rhtap-tasks@sha256:7db318d3a0d7895838ddd1713afd8da4bef797816d2d9b2a472427eb7dc72c2c
+          value: quay.io/tommartensen/rhtap-tasks@sha256:5b633a91332b7eb70d5a1f182664544252847977c4ce45faa4d96c34cabb0c9d
         - name: kind
           value: task
         resolver: bundles
