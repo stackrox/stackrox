@@ -7,7 +7,7 @@
 
 We are transitioning the StackRox Scanner to ClairCore as its primary scanning engine. To enrich vulnerabilities with CVSS information, ClairCore pulls CVSS scores from NVD during the Vulnerability Matching. However, Scanner V4 should not contact external endpoints other than registries and only contact Central for external data.
 
-Our goal then are:
+Our goal then are listed below:
 
 1. Fetch NVD CVSS data that only contains available CVSS v3 scores from NVD CPE api and store in the Stackrox definitions bucket
 2. Enable Central to retrieve NVD CVSS data from Stackrox definitions bucket.
@@ -15,15 +15,15 @@ Our goal then are:
 
 ## Decision
 
-Central will have a new NVD CVSS Updater equipped by a novel enricher, based on ClairCore. It will downloadthe NVD CVSS data from Stackrox definitions bucket and archive the files to one zip file. 
+Central will have a new NVD CVSS Updater equipped by a novel enricher, based on ClairCore. It will download the NVD CVSS data from Stackrox definitions bucket and archive the files to one zip file. 
 
-ClairCore will also be used in Scanner V4 CVSS data retriever (will be explained in detail below). It will require the archived NVD CVSS data bundle stored in Central. Central will handle the task of downloading,and updating the NVD CVSS data bundle for Scanner V4 using ClairCore.
+ClairCore will also be used in Scanner V4 CVSS data retriever (will be explained in detail below). It will require the archived NVD CVSS data bundle stored in Central. Central will handle the task of downloading and updating the NVD CVSS data bundle for Scanner V4 using ClairCore.
 
-The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each NVD data bundle categorized by CVSS severity such as "severity-low.json", with the lowest data severity, and highest data severity, which is CRITICAL in CVSS V3. 
+The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each NVD data bundle categorized by CVSS V3 severity and startIndex, from the lowest data severity, to highest data severity, which is CRITICAL in CVSS V3. 
 
-A GitHub workflow will keep the NVD data bundle in the Google Storage up-to-date. This Github workflow send http request to NVD CPE api to get data that only contains CVSS v3 metrics based on all levels of CVSS V3 severities. Such as "curl https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL > critical.json"
+A GitHub workflow will keep the NVD data bundle in the Google Storage up-to-date. This Github workflow send http request to NVD CPE api to get data that only contains CVSS v3 metrics based on all levels of CVSS V3 severities. Such as "curl 'https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0' > severity-critical-0.json". According to NVD site, the NVD CVE api does not contain CVSS v3 vector strings with a severity of NONE. So that makes sure we are only fetching data with valid CVSS V3 metrics.
 
-This Updater will store four json files in a zip file in Central's file system. This compressed file is typically around 50 MB in size.
+This updater will download zip files corresponding to four distinct severity levels. Then it will write each json file from these zipped archives to a single zip file in Central's file system. This compressed file is typically around 50 MB in size.
 
 The CVSS updater will operate as a GoRoutine, set to refresh the NVD CVSS data compressed file in Central at a configurable interval (default is 4 hours). By leveraging GoRoutine, this pipeline runs independently from Central, ensuring that any failures won't disrupt Central.
 
@@ -39,4 +39,4 @@ Within Scanner V4, there's a component named as 'data retriever', which in Scann
 
 This document focuses exclusively on the pipeline for updating CVSS enrichment data. 
 
-We are not making any decisions for the updating pipeline of other data (vulneralbility data and repo to cpe mapping data) at this moment.
+We are not making any decisions for the updating pipeline of other data (vulnerability data and repo to cpe mapping data) at this moment.
