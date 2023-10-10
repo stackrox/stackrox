@@ -7,13 +7,11 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 COPY . .
 
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
-    echo "BRANCHES:" && \
-    git branch -l && \
-    echo "TAGS:" && \
-    git tag -l && \
     mkdir -p image/bin
 
 ENV CI=1 GOFLAGS="" GOTAGS="release"
+
+RUN git status
 
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
