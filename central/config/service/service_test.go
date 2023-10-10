@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	defaultDeferralCfg = &storage.VulnerabilityDeferralConfig{
-		ExpiryOptions: &storage.VulnerabilityDeferralConfig_ExpiryOptions{
+	defaultExceptionCfg = &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
 			DayOptions: []*storage.DayOption{
 				{
 					NumDays: 14,
@@ -36,7 +36,7 @@ var (
 					Enabled: true,
 				},
 			},
-			FixableCveOptions: &storage.VulnerabilityDeferralConfig_FixableCVEOptions{
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: true,
 				AnyFixable: true,
 			},
@@ -78,16 +78,16 @@ func (s *configServiceTestSuite) TearDownSuite() {
 
 func (s *configServiceTestSuite) TestNotFound() {
 	// Not found because Singleton() was not called and default configuration was not initialize.
-	cfg, err := s.srv.GetVulnerabilityDeferralConfig(s.ctx, &v1.Empty{})
+	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(&v1.GetVulnerabilityDeferralConfigResponse{}, cfg)
+	s.EqualValues(&v1.GetVulnerabilityExceptionConfigResponse{}, cfg)
 }
 
-func (s *configServiceTestSuite) TestDeferralConfigOps() {
+func (s *configServiceTestSuite) TestexceptionConfigOps() {
 	initialCfg := &storage.Config{
 		PrivateConfig: &storage.PrivateConfig{
-			ImageRetentionDurationDays:  90,
-			VulnerabilityDeferralConfig: defaultDeferralCfg,
+			ImageRetentionDurationDays:   90,
+			VulnerabilityExceptionConfig: defaultExceptionCfg,
 		},
 	}
 	// Insert initial record.
@@ -95,25 +95,24 @@ func (s *configServiceTestSuite) TestDeferralConfigOps() {
 	s.NoError(err)
 
 	// Verify the initial record exists.
-	expected := VulnerabilityDeferralConfigStorageToV1(defaultDeferralCfg)
-	cfg, err := s.srv.GetVulnerabilityDeferralConfig(s.ctx, &v1.Empty{})
+	expected := VulnerabilityExceptionConfigStorageToV1(defaultExceptionCfg)
+	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
 	s.EqualValues(expected, cfg.GetConfig())
 
-	// Update.
-	updatedDeferralCfg := initialCfg.Clone().GetPrivateConfig().GetVulnerabilityDeferralConfig()
-	updatedDeferralCfg.ExpiryOptions.DayOptions = nil
-	req := &v1.UpdateVulnerabilityDeferralConfigRequest{
-		Config: VulnerabilityDeferralConfigStorageToV1(updatedDeferralCfg),
+	// Invalid Update.
+	updatedExceptionCfg := initialCfg.Clone().GetPrivateConfig().GetVulnerabilityExceptionConfig()
+	updatedExceptionCfg.ExpiryOptions.DayOptions = nil
+	req := &v1.UpdateVulnerabilityExceptionConfigRequest{
+		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
 	}
-	_, err = s.srv.UpdateVulnerabilityDeferralConfig(s.ctx, req)
-	s.NoError(err)
+	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
+	s.Error(err)
 
-	// Verify vulnerability deferral configuration was updated.
-	cfg, err = s.srv.GetVulnerabilityDeferralConfig(s.ctx, &v1.Empty{})
+	// Verify vulnerability exception configuration was not updated.
+	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(req.GetConfig(), cfg.GetConfig())
-
+	s.EqualValues(expected, cfg.GetConfig())
 	// Verify other config was undisturbed.
 	pCfg, err := s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
@@ -126,15 +125,50 @@ func (s *configServiceTestSuite) TestDeferralConfigOps() {
 		},
 	}
 	_, err = s.srv.PutConfig(s.ctx, &v1.PutConfigRequest{Config: updatedPrivateCfg})
-	s.NoError(err)
+	s.Error(err)
 
-	// Verify the config was updated.
+	// Verify the config was not updated.
 	pCfg, err = s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.Equal(updatedPrivateCfg.GetPrivateConfig(), pCfg)
+	s.Equal(initialCfg.GetPrivateConfig(), pCfg)
 
-	// Verify vulnerability deferral configuration was updated.
-	deferralCfg, err := s.srv.GetVulnerabilityDeferralConfig(s.ctx, &v1.Empty{})
+	// Verify vulnerability exception configuration was not updated.
+	exceptionCfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(&v1.GetVulnerabilityDeferralConfigResponse{}, deferralCfg)
+	s.EqualValues(expected, exceptionCfg.GetConfig())
+
+	// Valid Update.
+	updatedExceptionCfg = &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
+			DayOptions: []*storage.DayOption{
+				{
+					NumDays: 14,
+					Enabled: true,
+				},
+				{
+					NumDays: 0,
+					Enabled: false,
+				},
+			},
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
+				AllFixable: true,
+				AnyFixable: false,
+			},
+			CustomDate: true,
+		},
+	}
+	req = &v1.UpdateVulnerabilityExceptionConfigRequest{
+		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
+	}
+	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
+	s.NoError(err)
+
+	// Verify vulnerability exception configuration was updated.
+	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
+	s.NoError(err)
+	s.EqualValues(VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg), cfg.GetConfig())
+	// Verify other config was undisturbed.
+	pCfg, err = s.srv.GetPrivateConfig(s.ctx, &v1.Empty{})
+	s.NoError(err)
+	s.Equal(initialCfg.GetPrivateConfig().GetImageRetentionDurationDays(), pCfg.GetImageRetentionDurationDays())
 }
