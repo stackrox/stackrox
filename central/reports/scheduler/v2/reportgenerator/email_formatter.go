@@ -104,9 +104,7 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 	// Severities
 	// create a copy because severities will be sorted in descending order (critical, important, moderate, low)
 	severities := append([]storage.VulnerabilitySeverity{}, reportFilters.GetSeverities()...)
-	slices.SortFunc(severities, func(s1, s2 storage.VulnerabilitySeverity) bool {
-		return s1 > s2
-	})
+	slices.Sort(severities)
 	formatSingleDetail(&writer, "CVE severity", severities...)
 
 	// Fixability
