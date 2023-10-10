@@ -105,7 +105,7 @@ message ComplianceOperatorClusterScanConfigStatus {
     string                        cluster_name        = 5;
 }
 
-// Next Tag: 15
+// Next Tag: 16
 // This object has been flattened vs joining with rule.  The rationale is to spend the time to query rule
 // while processing results vs reporting them to the user.  Additionally, flattening it helps with the historical data
 // as the rules can change without impacting the historical result.
@@ -124,7 +124,8 @@ message ComplianceOperatorCheckResultV2 {
     string                    check_id     = 2;
     string                    check_name   = 3;
     string                    cluster_id   = 4 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"'];
-    CheckStatus               status       = 5  [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden,store"'];
+    string                    cluster_name = 15;
+    CheckStatus               status       = 5 [(gogoproto.moretags) = 'search:"Compliance Check Status,hidden,store"'];
     RuleSeverity              severity     = 6 [(gogoproto.moretags) = 'search:"Compliance Rule Severity,hidden,store"'];
     string                    description  = 7;
     string                    instructions = 8;
@@ -142,12 +143,13 @@ message ScanStatus {
     repeated string warnings = 3;
 }
 
-// Next Tag: 13
+// Next Tag: 14
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
     string                     id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
     string                     scan_config_id     = 2 [(gogoproto.moretags) = 'search:"Compliance Scan Config ID,hidden,store" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,index=category:unique;name:scan_unique_indicator"'];
     string                     cluster_id         = 3 [(gogoproto.moretags) = 'search:"Cluster ID,hidden,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator"'];
+    string                     cluster_name       = 13;
     repeated string            errors             = 4;
     repeated ProfileShim       profile            = 5;
     map<string, string>        labels             = 6;

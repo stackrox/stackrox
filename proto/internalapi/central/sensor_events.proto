@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
@@ -52,7 +53,7 @@ message Timing {
     int64  nanos      = 3;
 }
 
-// Next tag: 27.
+// Next tag: 28.
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string          id                           = 1;
@@ -89,6 +90,9 @@ message SensorEvent {
         storage.ComplianceOperatorRule               compliance_operator_rule                 = 22;
         storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
         storage.ComplianceOperatorScan               compliance_operator_scan                 = 24;
+
+        // V2 Compliance
+        ComplianceOperatorCheckResultV2              compliance_operator_result_v2            = 27;
     }
 }
 
