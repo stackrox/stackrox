@@ -31,8 +31,9 @@ var (
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorCheckResultV2)(nil)), "compliance_operator_check_result_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":                  ClustersSchema,
-			"storage.ComplianceOperatorScanV2": ComplianceOperatorScanV2Schema,
+			"storage.Cluster":                               ClustersSchema,
+			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
+			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -53,11 +54,12 @@ const (
 
 // ComplianceOperatorCheckResultV2 holds the Gorm model for Postgres table `compliance_operator_check_result_v2`.
 type ComplianceOperatorCheckResultV2 struct {
-	ID         string                                              `gorm:"column:id;type:varchar;primaryKey"`
-	ClusterID  string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:btree"`
-	Status     storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
-	Severity   storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
-	Standard   string                                              `gorm:"column:standard;type:varchar"`
-	ScanID     string                                              `gorm:"column:scanid;type:varchar"`
-	Serialized []byte                                              `gorm:"column:serialized;type:bytea"`
+	ID           string                                              `gorm:"column:id;type:varchar;primaryKey"`
+	ClusterID    string                                              `gorm:"column:clusterid;type:uuid;index:complianceoperatorcheckresultv2_sac_filter,type:btree"`
+	Status       storage.ComplianceOperatorCheckResultV2_CheckStatus `gorm:"column:status;type:integer"`
+	Severity     storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
+	Standard     string                                              `gorm:"column:standard;type:varchar"`
+	ScanID       string                                              `gorm:"column:scanid;type:varchar"`
+	ScanConfigID string                                              `gorm:"column:scanconfigid;type:varchar"`
+	Serialized   []byte                                              `gorm:"column:serialized;type:bytea"`
 }

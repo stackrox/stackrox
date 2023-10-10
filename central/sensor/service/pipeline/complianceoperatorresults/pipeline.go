@@ -171,7 +171,7 @@ func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorDa
 		return nil, err
 	}
 	if len(scanConfigs) != 1 {
-		return nil, errors.Errorf("Unable to find matching scan configuration for scan %q", sensorData.GetScanName())
+		return nil, errors.Errorf("Unable to find matching scan configuration for scan %q", sensorData.GetSuiteName())
 	}
 
 	return &storage.ComplianceOperatorCheckResultV2{
@@ -186,6 +186,6 @@ func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorDa
 		Labels:       sensorData.GetLabels(),
 		Annotations:  sensorData.GetAnnotations(),
 		CreatedTime:  sensorData.GetCreatedTime(),
-		ScanId:       scanConfigs[0].GetId(),
+		ScanConfigId: scanConfigs[0].GetId(),
 	}, nil
 }

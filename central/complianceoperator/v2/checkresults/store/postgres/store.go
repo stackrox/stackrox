@@ -102,10 +102,11 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetSeverity(),
 		obj.GetStandard(),
 		obj.GetScanId(),
+		obj.GetScanConfigId(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, ClusterId, Status, Severity, Standard, ScanId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, ClusterId, Status, Severity, Standard, ScanId, ScanConfigId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, Standard = EXCLUDED.Standard, ScanId = EXCLUDED.ScanId, ScanConfigId = EXCLUDED.ScanConfigId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -125,6 +126,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"severity",
 		"standard",
 		"scanid",
+		"scanconfigid",
 		"serialized",
 	}
 
@@ -146,6 +148,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetSeverity(),
 			obj.GetStandard(),
 			obj.GetScanId(),
+			obj.GetScanConfigId(),
 			serialized,
 		})
 
