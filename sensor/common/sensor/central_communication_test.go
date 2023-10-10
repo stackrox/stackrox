@@ -13,11 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -61,9 +61,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	storeProvider := resources.InitializeStore()
-	hashReconciliator := resources.NewResourceStoreReconciler(storeProvider)
-	c.comm = NewCentralCommunication(false, hashReconciliator, NewFakeSensorComponent(c.responsesC))
+	c.comm = NewCentralCommunication(false, fakeStoreReconciler{}, NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
@@ -77,6 +75,13 @@ func (c *centralCommunicationSuite) TearDownTest() {
 
 func Test_CentralCommunicationSuite(t *testing.T) {
 	suite.Run(t, new(centralCommunicationSuite))
+}
+
+type fakeStoreReconciler struct {
+}
+
+func (f fakeStoreReconciler) ProcessHashes(map[deduper.Key]uint64) []central.MsgFromSensor {
+	return []central.MsgFromSensor{}
 }
 
 type MockSensorServiceClient struct {
