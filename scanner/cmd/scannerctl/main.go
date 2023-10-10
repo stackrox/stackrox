@@ -19,7 +19,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var authEnvName = "SCANNERCTL_BASIC_AUTH"
+var authEnvName = "ROX_SCANNERCTL_BASIC_AUTH"
 
 func main() {
 	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
