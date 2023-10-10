@@ -30,6 +30,7 @@ func (hr *ResourceStoreReconciler) ProcessHashes(h map[string]uint64) []central.
 		toDeleteID, err := hr.storeProvider.ReconcileDelete(resType, resID, hashValue)
 		if err != nil {
 			log.Errorf("reconciliation error: %s", err)
+			continue
 		}
 		if toDeleteID == "" {
 			log.Debug("empty reconciliation result - not found on Sensor")

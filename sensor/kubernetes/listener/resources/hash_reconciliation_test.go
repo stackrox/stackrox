@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -46,10 +45,10 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 	}
 
 	for name, c := range cases {
-		s.T().Run(name, func(t *testing.T) {
+		s.Run(name, func() {
 			actual, err := resourceToMessage(c.resType, testResID)
 			if c.expectedError != nil {
-				require.Error(t, err)
+				s.Require().Error(err)
 				return
 			}
 			s.Equal(c.expectedMsg, actual.Msg)
@@ -83,24 +82,56 @@ func initStore() *InMemoryStoreProvider {
 	return s
 }
 
-func (s *HashReconciliationSuite) TestDeplProvider() {
+func (s *HashReconciliationSuite) TestProcessHashes() {
 	cases := map[string]struct {
 		dstate     map[string]uint64
 		deletedIDs []string
 	}{
-		"Deployment": {
+		"No Deployment": {
+			dstate: map[string]uint64{
+				"Deployment:1": 76543,
+				"Deployment:2": 76543,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Deployment": {
 			dstate: map[string]uint64{
 				"Deployment:99": 87654,
 				"Deployment:1":  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
-		"Pod": {
+		"Multiple Deployments": {
+			dstate: map[string]uint64{
+				"Deployment:99": 87654,
+				"Deployment:98": 88888,
+				"Deployment:97": 77777,
+				"Deployment:1":  76543,
+			},
+			deletedIDs: []string{"99", "98", "97"},
+		},
+		"No Pod": {
+			dstate: map[string]uint64{
+				"Pod:3": 76543,
+				"Pod:4": 76543,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Pod": {
 			dstate: map[string]uint64{
 				"Pod:99": 87654,
 				"Pod:3":  76543,
 			},
 			deletedIDs: []string{"99"},
+		},
+		"Multiple Pods": {
+			dstate: map[string]uint64{
+				"Pod:99":  87654,
+				"Pod:100": 87654,
+				"Pod:101": 87654,
+				"Pod:3":   76543,
+			},
+			deletedIDs: []string{"99", "100", "101"},
 		},
 	}
 
@@ -109,14 +140,14 @@ func (s *HashReconciliationSuite) TestDeplProvider() {
 			rc := NewResourceStoreReconciler(initStore())
 			msgs := rc.ProcessHashes(c.dstate)
 
-			s.Equal(len(c.deletedIDs), len(msgs))
+			s.Len(c.deletedIDs, len(msgs))
 
 			ids := make([]string, 0)
 			for _, m := range msgs {
 				s.Require().Equal(central.ResourceAction_REMOVE_RESOURCE, m.GetEvent().GetAction())
-				idfn, err := resourceTypeToFn(reflect.TypeOf(m.GetEvent().GetResource()).String())
+				getIdFn, err := resourceTypeToFn(reflect.TypeOf(m.GetEvent().GetResource()).String())
 				s.Require().NoError(err)
-				ids = append(ids, idfn(m.GetEvent()))
+				ids = append(ids, getIdFn(m.GetEvent()))
 			}
 			s.ElementsMatch(c.deletedIDs, ids)
 		})
