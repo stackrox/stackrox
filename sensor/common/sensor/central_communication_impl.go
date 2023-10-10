@@ -173,6 +173,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
+	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
 	s.sender.Start(stream, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")

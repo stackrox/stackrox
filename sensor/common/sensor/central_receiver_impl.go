@@ -35,7 +35,6 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		s.finished.Done()
 	}()
 
-	s.finished.Add(1)
 	for {
 		select {
 		case <-s.stopper.Flow().StopRequested():
