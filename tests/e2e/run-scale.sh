@@ -81,7 +81,7 @@ get_prometheus_metrics_parser() {
 
 compare_with_stored_metrics() {
     local debug_dump_dir="$1"
-    local gs_path="gs://stackrox-ci-metrics/${COMPARISON_METRICS}"
+    local gs_path="gs://stackrox-ci-scale-test-results/${COMPARISON_METRICS}"
     local baseline_source
     local baseline_dir="/tmp/scale-test-baseline-metrics"
     local baseline_metrics
