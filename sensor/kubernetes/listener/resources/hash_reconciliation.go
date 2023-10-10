@@ -9,31 +9,52 @@ import (
 )
 
 // FIXME(ROX-19696): This is a temporary test interface. Remove in favor of PR #8006
+
+// Key is a representation of Deduper entries
 type Key struct {
 	ID   string
 	Type reflect.Type
 }
 
 var (
-	TypeNetworkPolicy                        = reflect.TypeOf(&central.SensorEvent_NetworkPolicy{})
-	TypeDeployment                           = reflect.TypeOf(&central.SensorEvent_Deployment{})
-	TypePod                                  = reflect.TypeOf(&central.SensorEvent_Pod{})
-	TypeNamespace                            = reflect.TypeOf(&central.SensorEvent_Namespace{})
-	TypeSecret                               = reflect.TypeOf(&central.SensorEvent_Secret{})
-	TypeNode                                 = reflect.TypeOf(&central.SensorEvent_Node{})
-	TypeNodeInventory                        = reflect.TypeOf(&central.SensorEvent_NodeInventory{})
-	TypeServiceAccount                       = reflect.TypeOf(&central.SensorEvent_ServiceAccount{})
-	TypeRole                                 = reflect.TypeOf(&central.SensorEvent_Role{})
-	TypeBinding                              = reflect.TypeOf(&central.SensorEvent_Binding{})
-	TypeProcessIndicator                     = reflect.TypeOf(&central.SensorEvent_ProcessIndicator{})
-	TypeProviderMetadata                     = reflect.TypeOf(&central.SensorEvent_ProviderMetadata{})
-	TypeOrchestratorMetadata                 = reflect.TypeOf(&central.SensorEvent_OrchestratorMetadata{})
-	TypeImageIntegration                     = reflect.TypeOf(&central.SensorEvent_ImageIntegration{})
-	TypeComplianceOperatorResult             = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorResult{})
-	TypeComplianceOperatorProfile            = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorProfile{})
-	TypeComplianceOperatorRule               = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorRule{})
+	// TypeNetworkPolicy represents a NetworkPolicy Type
+	TypeNetworkPolicy = reflect.TypeOf(&central.SensorEvent_NetworkPolicy{})
+	// TypeDeployment represents a Deployment Type
+	TypeDeployment = reflect.TypeOf(&central.SensorEvent_Deployment{})
+	// TypePod represents a Pod Type
+	TypePod = reflect.TypeOf(&central.SensorEvent_Pod{})
+	// TypeNamespace represents a Namespace Type
+	TypeNamespace = reflect.TypeOf(&central.SensorEvent_Namespace{})
+	// TypeSecret represents a Secret Type
+	TypeSecret = reflect.TypeOf(&central.SensorEvent_Secret{})
+	// TypeNode represents a Node Type
+	TypeNode = reflect.TypeOf(&central.SensorEvent_Node{})
+	// TypeNodeInventory represents a NodeInventory Type
+	TypeNodeInventory = reflect.TypeOf(&central.SensorEvent_NodeInventory{})
+	// TypeServiceAccount represents a ServiceAccount Type
+	TypeServiceAccount = reflect.TypeOf(&central.SensorEvent_ServiceAccount{})
+	// TypeRole represents a Role Type
+	TypeRole = reflect.TypeOf(&central.SensorEvent_Role{})
+	// TypeBinding represents a Binding Type
+	TypeBinding = reflect.TypeOf(&central.SensorEvent_Binding{})
+	// TypeProcessIndicator represents a ProcessIndicator Type
+	TypeProcessIndicator = reflect.TypeOf(&central.SensorEvent_ProcessIndicator{})
+	// TypeProviderMetadata represents a ProviderMetadata Type
+	TypeProviderMetadata = reflect.TypeOf(&central.SensorEvent_ProviderMetadata{})
+	// TypeOrchestratorMetadata represents a OrchestratorMetadata Type
+	TypeOrchestratorMetadata = reflect.TypeOf(&central.SensorEvent_OrchestratorMetadata{})
+	// TypeImageIntegration represents a ImageIntegration Type
+	TypeImageIntegration = reflect.TypeOf(&central.SensorEvent_ImageIntegration{})
+	// TypeComplianceOperatorResult represents a ComplianceOperatorResult Type
+	TypeComplianceOperatorResult = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorResult{})
+	// TypeComplianceOperatorProfile represents a ComplianceOperatorProfile Type
+	TypeComplianceOperatorProfile = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorProfile{})
+	// TypeComplianceOperatorRule represents a ComplianceOperatorRule Type
+	TypeComplianceOperatorRule = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorRule{})
+	// TypeComplianceOperatorScanSettingBinding represents a ComplianceOperatorScanSettingBinding Type
 	TypeComplianceOperatorScanSettingBinding = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScanSettingBinding{})
-	TypeComplianceOperatorScan               = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScan{})
+	// TypeComplianceOperatorScan represents a ComplianceOperatorScan Type
+	TypeComplianceOperatorScan = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScan{})
 )
 
 // FIXME(ROX-19696)

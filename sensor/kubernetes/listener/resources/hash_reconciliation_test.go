@@ -149,9 +149,9 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			ids := make([]string, 0)
 			for _, m := range msgs {
 				s.Require().Equal(central.ResourceAction_REMOVE_RESOURCE, m.GetEvent().GetAction())
-				getIdFn, err := resourceTypeToFn(reflect.TypeOf(m.GetEvent().GetResource()).String())
+				getIDFn, err := resourceTypeToFn(reflect.TypeOf(m.GetEvent().GetResource()).String())
 				s.Require().NoError(err)
-				ids = append(ids, getIdFn(m.GetEvent()))
+				ids = append(ids, getIDFn(m.GetEvent()))
 			}
 			s.ElementsMatch(c.deletedIDs, ids)
 		})
