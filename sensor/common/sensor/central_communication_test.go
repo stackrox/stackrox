@@ -93,6 +93,7 @@ var centralSyncMessages = []*central.MsgToSensor{
 	debuggerMessage.ClusterConfig(),
 	debuggerMessage.PolicySync([]*storage.Policy{}),
 	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+	debuggerMessage.NetworkBaselineSync([]*storage.NetworkBaseline{}),
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
