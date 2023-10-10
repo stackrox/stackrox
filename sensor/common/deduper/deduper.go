@@ -15,16 +15,61 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// key is the key by which messages are deduped.
-type key struct {
-	id           string
-	resourceType reflect.Type
+// Key is the key by which messages are deduped.
+type Key struct {
+	ID           string
+	ResourceType reflect.Type
 }
+
+// FIXME(ROX-19696): This is a temporary fixture. Remove in favor of PR #8006
+
+var (
+	// TypeNetworkPolicy represents a NetworkPolicy Type
+	TypeNetworkPolicy = reflect.TypeOf(&central.SensorEvent_NetworkPolicy{})
+	// TypeDeployment represents a Deployment Type
+	TypeDeployment = reflect.TypeOf(&central.SensorEvent_Deployment{})
+	// TypePod represents a Pod Type
+	TypePod = reflect.TypeOf(&central.SensorEvent_Pod{})
+	// TypeNamespace represents a Namespace Type
+	TypeNamespace = reflect.TypeOf(&central.SensorEvent_Namespace{})
+	// TypeSecret represents a Secret Type
+	TypeSecret = reflect.TypeOf(&central.SensorEvent_Secret{})
+	// TypeNode represents a Node Type
+	TypeNode = reflect.TypeOf(&central.SensorEvent_Node{})
+	// TypeNodeInventory represents a NodeInventory Type
+	TypeNodeInventory = reflect.TypeOf(&central.SensorEvent_NodeInventory{})
+	// TypeServiceAccount represents a ServiceAccount Type
+	TypeServiceAccount = reflect.TypeOf(&central.SensorEvent_ServiceAccount{})
+	// TypeRole represents a Role Type
+	TypeRole = reflect.TypeOf(&central.SensorEvent_Role{})
+	// TypeBinding represents a Binding Type
+	TypeBinding = reflect.TypeOf(&central.SensorEvent_Binding{})
+	// TypeProcessIndicator represents a ProcessIndicator Type
+	TypeProcessIndicator = reflect.TypeOf(&central.SensorEvent_ProcessIndicator{})
+	// TypeProviderMetadata represents a ProviderMetadata Type
+	TypeProviderMetadata = reflect.TypeOf(&central.SensorEvent_ProviderMetadata{})
+	// TypeOrchestratorMetadata represents a OrchestratorMetadata Type
+	TypeOrchestratorMetadata = reflect.TypeOf(&central.SensorEvent_OrchestratorMetadata{})
+	// TypeImageIntegration represents a ImageIntegration Type
+	TypeImageIntegration = reflect.TypeOf(&central.SensorEvent_ImageIntegration{})
+	// TypeComplianceOperatorResult represents a ComplianceOperatorResult Type
+	TypeComplianceOperatorResult = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorResult{})
+	// TypeComplianceOperatorProfile represents a ComplianceOperatorProfile Type
+	TypeComplianceOperatorProfile = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorProfile{})
+	// TypeComplianceOperatorRule represents a ComplianceOperatorRule Type
+	TypeComplianceOperatorRule = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorRule{})
+	// TypeComplianceOperatorScanSettingBinding represents a ComplianceOperatorScanSettingBinding Type
+	TypeComplianceOperatorScanSettingBinding = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScanSettingBinding{})
+	// TypeComplianceOperatorScan represents a ComplianceOperatorScan Type
+	TypeComplianceOperatorScan = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScan{})
+)
+
+// FIXME(ROX-19696)
 
 // deduper takes care of deduping sensor events.
 type deduper struct {
 	stream   messagestream.SensorMessageStream
-	lastSent map[key]uint64
+	lastSent map[Key]uint64
 
 	hasher *hash.Hasher
 }
@@ -33,7 +78,7 @@ type deduper struct {
 func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
 	return &deduper{
 		stream:   stream,
-		lastSent: make(map[key]uint64),
+		lastSent: make(map[Key]uint64),
 		hasher:   hash.NewHasher(),
 	}
 }
@@ -49,9 +94,9 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
 		return nil
 	}
-	key := key{
-		id:           event.GetId(),
-		resourceType: reflect.TypeOf(event.GetResource()),
+	key := Key{
+		ID:           event.GetId(),
+		ResourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		priorLen := len(d.lastSent)

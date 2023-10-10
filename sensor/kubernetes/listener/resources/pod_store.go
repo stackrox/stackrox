@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
@@ -16,7 +17,7 @@ type PodStore struct {
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
 func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != TypePod.String() {
+	if resType != deduper.TypePod.String() {
 		return "", nil
 	}
 	ps.lock.RLock()

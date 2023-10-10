@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -77,8 +78,8 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.registryMirrorStore,
 	}
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
-		TypeDeployment.String(): p.deploymentStore,
-		TypePod.String():        p.podStore,
+		deduper.TypeDeployment.String(): p.deploymentStore,
+		deduper.TypePod.String():        p.podStore,
 	}
 
 	return p

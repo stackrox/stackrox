@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/imagecacheutils"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -24,7 +25,7 @@ type DeploymentStore struct {
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
 func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != TypeDeployment.String() {
+	if resType != deduper.TypeDeployment.String() {
 		return "", nil
 	}
 	ds.lock.RLock()

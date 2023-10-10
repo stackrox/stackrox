@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
@@ -79,7 +80,7 @@ type Sensor struct {
 }
 
 type reconciliationHandler interface {
-	ProcessHashes(map[string]uint64) []central.MsgFromSensor
+	ProcessHashes(map[deduper.Key]uint64) []central.MsgFromSensor
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.

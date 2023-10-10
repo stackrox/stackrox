@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -82,58 +83,58 @@ func initStore() *InMemoryStoreProvider {
 	return s
 }
 
-func makeKey(id string, t reflect.Type) Key {
-	return Key{id, t}
+func makeKey(id string, t reflect.Type) deduper.Key {
+	return deduper.Key{ID: id, ResourceType: t}
 }
 
 func (s *HashReconciliationSuite) TestProcessHashes() {
 	cases := map[string]struct {
-		dstate     map[Key]uint64
+		dstate     map[deduper.Key]uint64
 		deletedIDs []string
 	}{
 		"No Deployment": {
-			dstate: map[Key]uint64{
-				makeKey("1", TypeDeployment): 76543,
-				makeKey("2", TypeDeployment): 76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeDeployment): 76543,
+				makeKey("2", deduper.TypeDeployment): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Deployment": {
-			dstate: map[Key]uint64{
-				makeKey("99", TypeDeployment): 87654,
-				makeKey("1", TypeDeployment):  76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeDeployment): 87654,
+				makeKey("1", deduper.TypeDeployment):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Deployments": {
-			dstate: map[Key]uint64{
-				makeKey("99", TypeDeployment): 87654,
-				makeKey("98", TypeDeployment): 88888,
-				makeKey("97", TypeDeployment): 77777,
-				makeKey("1", TypeDeployment):  76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeDeployment): 87654,
+				makeKey("98", deduper.TypeDeployment): 88888,
+				makeKey("97", deduper.TypeDeployment): 77777,
+				makeKey("1", deduper.TypeDeployment):  76543,
 			},
 			deletedIDs: []string{"99", "98", "97"},
 		},
 		"No Pod": {
-			dstate: map[Key]uint64{
-				makeKey("3", TypePod): 76543,
-				makeKey("4", TypePod): 76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("3", deduper.TypePod): 76543,
+				makeKey("4", deduper.TypePod): 76543,
 			},
 			deletedIDs: []string{},
 		},
 		"Single Pod": {
-			dstate: map[Key]uint64{
-				makeKey("99", TypePod): 87654,
-				makeKey("3", TypePod):  76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypePod): 87654,
+				makeKey("3", deduper.TypePod):  76543,
 			},
 			deletedIDs: []string{"99"},
 		},
 		"Multiple Pods": {
-			dstate: map[Key]uint64{
-				makeKey("99", TypePod):  87654,
-				makeKey("100", TypePod): 87654,
-				makeKey("101", TypePod): 87654,
-				makeKey("3", TypePod):   76543,
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypePod):  87654,
+				makeKey("100", deduper.TypePod): 87654,
+				makeKey("101", deduper.TypePod): 87654,
+				makeKey("3", deduper.TypePod):   76543,
 			},
 			deletedIDs: []string{"99", "100", "101"},
 		},
