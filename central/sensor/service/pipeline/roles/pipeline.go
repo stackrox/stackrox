@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -72,6 +74,28 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetRole() != nil
 }
 
+var (
+	lock sync.Mutex
+	m    = make(map[string]*storage.K8SRole)
+)
+
+func checkDiff(role *storage.K8SRole) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	old, ok := m[role.GetId()]
+	if !ok {
+		m[role.GetId()] = role
+		return
+	}
+	m[role.GetId()] = role
+	if proto.Equal(old, role) {
+		log.Infof("Equal %+v %+v", old, role)
+	} else {
+		log.Infof("Not equal %+v %+v", old, role)
+	}
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Role)
@@ -84,6 +108,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, event.GetAction(), role)
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
+		checkDiff(role)
 		return s.runGeneralPipeline(ctx, event.GetAction(), role)
 	default:
 		return fmt.Errorf("event action '%s' for k8s role does not exist", event.GetAction())

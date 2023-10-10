@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -81,6 +83,28 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetServiceAccount() != nil
 }
 
+var (
+	lock sync.Mutex
+	m    = make(map[string]*storage.ServiceAccount)
+)
+
+func checkDiff(sa *storage.ServiceAccount) {
+	lock.Lock()
+	defer lock.Unlock()
+
+	old, ok := m[sa.GetId()]
+	if !ok {
+		m[sa.GetId()] = sa
+		return
+	}
+	m[sa.GetId()] = sa
+	if proto.Equal(old, sa) {
+		log.Infof("Equal %+v %+v", old, sa)
+	} else {
+		log.Infof("Not equal %+v %+v", old, sa)
+	}
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ServiceAccount)
@@ -93,6 +117,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, sa)
 	default:
+		checkDiff(sa)
 		return s.runGeneralPipeline(ctx, event.GetAction(), sa)
 	}
 }
