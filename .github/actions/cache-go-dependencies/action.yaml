@@ -22,5 +22,3 @@ runs:
         key: go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
         restore-keys: |
           go-v2-${{ hashFiles('**/go.sum') }}-${{ github.job }}
-          go-v2-${{ hashFiles('**/go.sum') }}-
-          go-v2-
