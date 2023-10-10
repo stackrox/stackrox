@@ -42,5 +42,9 @@ var (
 	// ServerError is a generic server error.
 	ServerError = makeSentinel("server error")
 
+	// ResourceExhausted indicates that service is unable to respond because
+	// a quota is reached. i.e., max number of connections, etc.
+	ResourceExhausted = makeSentinel("resource exhausted")
+
 	// When adding a new error please update the translators in this package (gRPC, etc.).
 )

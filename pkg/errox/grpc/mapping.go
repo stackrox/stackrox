@@ -29,6 +29,8 @@ func RoxErrorToGRPCCode(err error) codes.Code {
 		return codes.PermissionDenied
 	case errors.Is(err, errox.NoAuthzConfigured):
 		return codes.Unimplemented
+	case errors.Is(err, errox.ResourceExhausted):
+		return codes.ResourceExhausted
 	case errors.Is(err, context.Canceled):
 		return codes.Canceled
 	case errors.Is(err, context.DeadlineExceeded):

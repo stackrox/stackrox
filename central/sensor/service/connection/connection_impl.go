@@ -82,6 +82,7 @@ func newConnection(ctx context.Context,
 	imageIntegrationMgr common.ImageIntegrationManager,
 	hashMgr hashManager.Manager,
 	complianceOperatorMgr common.ComplianceOperatorManager,
+	initSyncMgr *initSyncManager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -110,7 +111,7 @@ func newConnection(ctx context.Context,
 	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
 	deduper.StartSync()
 
-	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper)
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
