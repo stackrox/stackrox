@@ -166,7 +166,7 @@ spec:
       - name: depth
         value: 0
       - name: fetchTags
-        value: "false"
+        value: "true"
       runAfter:
       - init
       taskRef:
