@@ -60,6 +60,6 @@ type ComplianceOperatorCheckResultV2 struct {
 	Severity     storage.RuleSeverity                                `gorm:"column:severity;type:integer"`
 	Standard     string                                              `gorm:"column:standard;type:varchar"`
 	ScanID       string                                              `gorm:"column:scanid;type:varchar"`
-	ScanConfigID string                                              `gorm:"column:scanconfigid;type:varchar"`
+	ScanConfigID string                                              `gorm:"column:scanconfigid;type:uuid"`
 	Serialized   []byte                                              `gorm:"column:serialized;type:bytea"`
 }

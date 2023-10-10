@@ -102,7 +102,7 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetSeverity(),
 		obj.GetStandard(),
 		obj.GetScanId(),
-		obj.GetScanConfigId(),
+		pgutils.NilOrUUID(obj.GetScanConfigId()),
 		serialized,
 	}
 
@@ -148,7 +148,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetSeverity(),
 			obj.GetStandard(),
 			obj.GetScanId(),
-			obj.GetScanConfigId(),
+			pgutils.NilOrUUID(obj.GetScanConfigId()),
 			serialized,
 		})
 
