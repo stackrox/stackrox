@@ -48,7 +48,7 @@ func Export(ctx context.Context, outputDir string) error {
 	defer func() {
 		closeErr := zstdWriter.Close()
 		if closeErr != nil {
-			zlog.Error(ctx).Err(closeErr).Msg("Failed to closing zstdWriter")
+			zlog.Error(ctx).Err(closeErr).Msg("Failed to closing zstd Writer")
 		}
 	}()
 
@@ -62,18 +62,23 @@ func Export(ctx context.Context, outputDir string) error {
 	outOfTree = append(outOfTree, updaterSet.Updaters())
 
 	for i, uSet := range [][]string{
-		{"oracle", "photon", "suse", "aws", "rhcc"},
-		{"alpine", "rhel", "ubuntu", "osv", "debian"},
+		{"oracle", "aws", "rhcc"},
+		{"alpine", "rhel", "debian"},
+		{"ubuntu", "suse", "photon"},
+		{"osv"},
 	} {
 		jsonStore, err := jsonblob.New()
 		if err != nil {
 			return err
 		}
 
-		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+		options := []updates.ManagerOption{
 			updates.WithEnabled(uSet),
-			updates.WithOutOfTree(outOfTree[i]),
-		)
+		}
+		if i < len(outOfTree) {
+			options = append(options, updates.WithOutOfTree(outOfTree[i]))
+		}
+		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient, options...)
 		if err != nil {
 			return err
 		}
