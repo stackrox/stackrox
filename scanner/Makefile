@@ -36,10 +36,8 @@ EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 BUILD_CMD := $(BUILD_FLAGS) go build \
-		 -trimpath \
-		 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" \
-		 -o image/scanner/bin/scanner \
-		 ./cmd/scanner
+                 -trimpath \
+                 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)"
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
@@ -72,6 +70,27 @@ endif
 tag:
 	@echo $(TAG)
 
+###############
+## Go Builds ##
+###############
+
+build-cmd := $(BUILD_CMD)
+build-d   := bin
+build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
+
+.PHONY: build
+build: $(build-t)
+
+.PHONY: $(build-t)
+$(build-t): deps
+	@echo "+ $@"
+	$(SILENT)$(build-cmd) -o $@ ./cmd/$(@F)
+
+.PHONY: clean-build
+clean-build:
+	@echo "+ $@"
+	$(SILENT)rm -rf bin/
+
 ############
 ## Images ##
 ############
@@ -81,21 +100,21 @@ image-prefix := scanner-v4
 .PHONY: images
 images: scanner-image db-image
 
-scanner-go-build: deps
+image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
-	$(BUILD_CMD)
+	$(SILENT)cp $< $@
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
 	@echo "+ $@"
-	$(SILENT)$(MAKE) GOOS=${HOST_OS} scanner-go-build
+	$(SILENT)$(MAKE) GOOS=${HOST_OS} image/scanner/bin/scanner
 
 OSSLS_NOTICE_DEP := ossls-notice
 ifdef CI
 	OSSLS_NOTICE_DEP := ossls-notice-no-download
 endif
 .PHONY: scanner-image
-scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
+scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 	@echo "+ $@"
 	@echo "Building $(image-prefix):$(TAG)"
 	$(SILENT)$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
@@ -330,7 +349,7 @@ $(e2e-files-d)/ca.pem: $(certs-d)/ca/root.pem
 ###########
 
 .PHONY: clean
-clean: clean-image clean-gobin clean-deps clean-e2e clean-certs
+clean: clean-image clean-gobin clean-deps clean-e2e clean-certs clean-build
 	@echo "+ $@"
 
 .PHONY: clean-image
