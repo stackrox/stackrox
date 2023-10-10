@@ -166,7 +166,7 @@ spec:
       - name: depth
         value: 0
       - name: fetchTags
-        value: "true"
+        value: "false"
       runAfter:
       - init
       taskRef:
@@ -174,7 +174,7 @@ spec:
         - name: name
           value: git-clone
         - name: bundle
-          value: quay.io/tommartensen/rhtap-tasks@sha256:5b633a91332b7eb70d5a1f182664544252847977c4ce45faa4d96c34cabb0c9d
+          value: quay.io/tommartensen/rhtap-tasks@sha256:ef654a844229430de11861c9f16de8ebf79fe4531217dd9356c5e5fe2546b92c
         - name: kind
           value: task
         resolver: bundles
