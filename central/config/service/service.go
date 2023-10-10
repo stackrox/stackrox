@@ -195,24 +195,35 @@ func validateExceptionConfigReq(config *storage.VulnerabilityExceptionConfig) er
 	}
 	expiryOptions := config.GetExpiryOptions()
 	if len(expiryOptions.GetDayOptions()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "number of days based expiry options must be specified")
+		return errors.Wrap(errox.InvalidArgs, "number of days based vulnerability exception expiry options must be specified")
 	}
 
+	var atLeastOneEnabled bool
 	seenDays := set.NewIntSet()
 	for _, dayOption := range expiryOptions.GetDayOptions() {
 		if !dayOption.GetEnabled() {
 			continue
 		}
+		atLeastOneEnabled = true
 		if dayOption.GetNumDays() <= 0 {
-			return errors.Wrap(errox.InvalidArgs, "enabled number of days based expiry option must be least one day")
+			return errors.Wrap(errox.InvalidArgs, "enabled number of days based vulnerability exception expiry option must be least one day")
 		}
 		if !seenDays.Add(int(dayOption.GetNumDays())) {
-			return errors.Wrap(errox.InvalidArgs, "enabled number of days based expiry options must be unique")
+			return errors.Wrap(errox.InvalidArgs, "all enabled number of days based vulnerability exception expiry options must be unique")
 		}
 	}
 
 	if expiryOptions.GetFixableCveOptions() == nil {
-		return errors.Wrap(errox.InvalidArgs, "fixable based day options must be specified")
+		return errors.Wrap(errox.InvalidArgs, "fixability based vulnerability exception expiry options must be specified")
+	}
+
+	atLeastOneEnabled = atLeastOneEnabled ||
+		expiryOptions.GetFixableCveOptions().GetAllFixable() ||
+		expiryOptions.GetFixableCveOptions().GetAnyFixable() ||
+		expiryOptions.GetCustomDate() ||
+		expiryOptions.GetIndefinite()
+	if !atLeastOneEnabled {
+		return errors.Wrap(errox.InvalidArgs, "at least one vulnerability exception expiry option must be enabled")
 	}
 	return nil
 }

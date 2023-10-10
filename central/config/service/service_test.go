@@ -109,6 +109,32 @@ func (s *configServiceTestSuite) TestexceptionConfigOps() {
 	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
 	s.Error(err)
 
+	// Invalid Update. All options are false.
+	updatedExceptionCfg = &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
+			DayOptions: []*storage.DayOption{
+				{
+					NumDays: 14,
+					Enabled: false,
+				},
+				{
+					NumDays: 0,
+					Enabled: false,
+				},
+			},
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
+				AllFixable: false,
+				AnyFixable: false,
+			},
+			CustomDate: false,
+		},
+	}
+	req = &v1.UpdateVulnerabilityExceptionConfigRequest{
+		Config: VulnerabilityExceptionConfigStorageToV1(updatedExceptionCfg),
+	}
+	_, err = s.srv.UpdateVulnerabilityExceptionConfig(s.ctx, req)
+	s.Error(err)
+
 	// Verify vulnerability exception configuration was not updated.
 	cfg, err = s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
 	s.NoError(err)
