@@ -148,4 +148,5 @@ message ComplianceOperatorCheckResultV2 {
     string                    standard     = 12;
     string                    control      = 13;
     string                    scan_name    = 14;
+    string                    suite_name   = 15;
 }

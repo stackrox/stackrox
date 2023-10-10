@@ -166,7 +166,7 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 
 func (s *pipelineImpl) convertSensorMsgToV2Storage(ctx context.Context, sensorData *central.ComplianceOperatorCheckResultV2, clusterID string) (*storage.ComplianceOperatorCheckResultV2, error) {
 	scanConfigs, err := s.scanConfigDatastore.GetScanConfigurations(ctx, search.NewQueryBuilder().
-		AddExactMatches(search.ComplianceOperatorScanName, sensorData.GetScanName()).ProtoQuery())
+		AddExactMatches(search.ComplianceOperatorScanName, sensorData.GetSuiteName()).ProtoQuery())
 	if err != nil {
 		return nil, err
 	}

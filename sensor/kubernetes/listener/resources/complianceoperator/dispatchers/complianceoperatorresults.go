@@ -16,7 +16,8 @@ const (
 )
 
 var (
-	scanNameKey = ocpComplianceLabelsKey + "scan-name"
+	scanNameKey  = ocpComplianceLabelsKey + "scan-name"
+	suiteNameKey = ocpComplianceLabelsKey + "suite"
 )
 
 // ResultDispatcher handles compliance check result objects
@@ -95,6 +96,14 @@ func getScanName(labels map[string]string) string {
 	return ""
 }
 
+func getSuiteName(labels map[string]string) string {
+	if value, ok := labels[suiteNameKey]; ok {
+		return value
+	}
+
+	return ""
+}
+
 // ProcessEvent processes a compliance operator check result
 func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	var complianceCheckResult v1alpha1.ComplianceCheckResult
@@ -131,7 +140,8 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 						Labels:       complianceCheckResult.GetLabels(),
 						Annotations:  complianceCheckResult.GetAnnotations(),
 						CreatedTime:  protoconv.ConvertTimeToTimestamp(complianceCheckResult.GetCreationTimestamp().Time),
-						ScanName:     getScanName(complianceCheckResult.GetObjectMeta().GetLabels()),
+						ScanName:     getScanName(complianceCheckResult.GetLabels()),
+						SuiteName:    getSuiteName(complianceCheckResult.GetLabels()),
 					},
 				},
 			},
