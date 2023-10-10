@@ -9,6 +9,7 @@ import (
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	oldApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
+	midPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/mid"
 	oldPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/old"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
@@ -31,7 +32,8 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldPkgSchema.CreateTableAPITokensStmt)
+	_ = oldPkgSchema.CreateTableAPITokensStmt
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), midPkgSchema.CreateTableAPITokensStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
