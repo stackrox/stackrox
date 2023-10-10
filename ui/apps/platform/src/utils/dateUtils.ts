@@ -32,6 +32,15 @@ export function getTime(timestamp: DateLike) {
     return format(timestamp, timeFormat);
 }
 
+/**
+ * Returns a formatted time with hours and minutes but without seconds.
+ * @param {DateLike} timestamp - The timestamp for the date
+ * @returns {string} - returns a formatted string for the time
+ */
+export function getTimeHoursMinutes(timestamp: DateLike) {
+    return format(timestamp, 'h:mmA');
+}
+
 export function getLatestDatedItemByKey<T>(key: string | null, list: T[] = []): T | null {
     if (!key || !list.length || !list[0][key]) {
         return null;
