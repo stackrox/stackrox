@@ -41,24 +41,38 @@ var (
 	}
 )
 
-// Key is the key by which messages are deduped.
-type Key struct {
-	Id           string
-	ResourceType reflect.Type
+// Key is an interface to the key by which the messages are deduped.
+type Key interface {
+	GetID() string
+	GetType() reflect.Type
+}
+
+// key is the key by which messages are deduped.
+type key struct {
+	id           string
+	resourceType reflect.Type
+}
+
+func (k key) GetID() string {
+	return k.id
+}
+
+func (k key) GetType() reflect.Type {
+	return k.resourceType
 }
 
 func keyFrom(v string) (Key, error) {
 	parts := strings.Split(v, ":")
 	if len(parts) != 2 {
-		return Key{}, fmt.Errorf("invalid Key format: %s", v)
+		return key{}, fmt.Errorf("invalid Key format: %s", v)
 	}
 	t, err := mapType(parts[0])
 	if err != nil {
-		return Key{}, errors.Wrap(err, "map type")
+		return key{}, errors.Wrap(err, "map type")
 	}
-	return Key{
-		Id:           parts[1],
-		ResourceType: t,
+	return key{
+		id:           parts[1],
+		resourceType: t,
 	}, nil
 }
 
@@ -121,9 +135,9 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		return nil
 	}
 
-	key := Key{
-		Id:           event.GetId(),
-		ResourceType: reflect.TypeOf(event.GetResource()),
+	key := key{
+		id:           event.GetId(),
+		resourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		priorLen := len(d.lastSent)
