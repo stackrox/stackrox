@@ -8,6 +8,7 @@
 # Makefile cruft
 deps
 /.gobin/
+/certs
 
 # nohup output when running port-forwards
 nohup.out
