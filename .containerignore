@@ -3,8 +3,8 @@
 # To regenerate, copy the contents of .dockerignore, remove /.git/ and reproduce these comments.
 **/node_modules/
 /bin/
-/image/bin/
-/image/rhel/bin/
+# /image/bin/
+# /image/rhel/bin/
 /linux-gocache/
 /operator/*/bin/
-/qa-tests-backend/
+# /qa-tests-backend/
