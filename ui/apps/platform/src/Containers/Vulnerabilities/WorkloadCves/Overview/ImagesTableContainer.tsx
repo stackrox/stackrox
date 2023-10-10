@@ -21,6 +21,7 @@ type ImagesTableContainerProps = {
     countsData: EntityCounts;
     cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
     pagination: ReturnType<typeof useURLPagination>;
+    hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
     onUnwatchImage: ImagesTableProps['onUnwatchImage'];
 };
@@ -30,6 +31,7 @@ function ImagesTableContainer({
     countsData,
     cveStatusTab,
     pagination,
+    hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
 }: ImagesTableContainerProps) {
@@ -82,6 +84,7 @@ function ImagesTableContainer({
                         getSortParams={getSortParams}
                         isFiltered={isFiltered}
                         filteredSeverities={searchFilter.Severity as VulnerabilitySeverityLabel[]}
+                        hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                         onWatchImage={onWatchImage}
                         onUnwatchImage={onUnwatchImage}
                     />
