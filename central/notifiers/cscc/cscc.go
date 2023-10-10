@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.CSCCType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		j, err := newCSCC(notifier)
 		return j, err
 	})

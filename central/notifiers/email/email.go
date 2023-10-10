@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		e, err := email.NewEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return e, err
 	})

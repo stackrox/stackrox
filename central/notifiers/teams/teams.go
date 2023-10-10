@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	notifiers.Add("teams", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.TeamsType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := teams.NewTeams(notifier, metadatagetter.Singleton())
 		return s, err
 	})

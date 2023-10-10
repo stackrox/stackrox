@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	notifiers.Add("syslog", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.SyslogType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return syslog.NewSyslog(notifier, metadatagetter.Singleton())
 	})
 }
