@@ -2,7 +2,6 @@ package k8sobject
 
 import (
 	"context"
-	"encoding/base64"
 	"time"
 
 	"github.com/pkg/errors"
@@ -108,11 +107,7 @@ func readSecret(ctx context.Context, client kubernetes.Interface, secretName str
 	}
 	contents := make([][]byte, 0, len(s.Data))
 	for _, data := range s.Data {
-		out, err := base64.StdEncoding.DecodeString(string(data))
-		if err != nil {
-			return nil, errors.Wrap(err, "decoding base64 input")
-		}
-		contents = append(contents, out)
+		contents = append(contents, data)
 	}
 	return contents, nil
 }
