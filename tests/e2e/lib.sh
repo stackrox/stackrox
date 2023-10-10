@@ -754,7 +754,7 @@ restore_56_1_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    gsutil cp gs://acs-stackrox-ci/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }
