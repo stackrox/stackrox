@@ -22,6 +22,7 @@ class RoutesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify that routes are detected correctly"() {
         given:
         Assume.assumeTrue(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)

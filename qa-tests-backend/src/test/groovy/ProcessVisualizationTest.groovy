@@ -84,6 +84,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     // TODO(ROX-16461): Fails under AKS
     @IgnoreIf({ Env.CI_JOB_NAME.contains("aks-qa-e2e") })
     def "Verify process visualization on kube-proxy"() {
@@ -111,6 +112,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     @Unroll
     def "Verify process visualization on default: #depName"()  {
         when:
@@ -170,6 +172,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     @Unroll
     def "Verify process paths, UIDs, and GIDs on #depName"()  {
         when:
@@ -261,6 +264,7 @@ class ProcessVisualizationTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("RUNTIME")
+    @Tag("PZ")
     @Unroll
     def "Verify process arguments on #depName"() {
         when:

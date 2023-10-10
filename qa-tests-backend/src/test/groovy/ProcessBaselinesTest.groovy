@@ -140,6 +140,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify processes risk indicators for the given key after lock on #deploymentName"() {
         when:
         "exec into the container and run a process and wait for lock to kick in"
@@ -238,6 +239,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("COMPATIBILITY")
+    @Tag("PZ")
     def "Verify baseline process violation after resolve baseline on #deploymentName"() {
                /*
                     a)Lock the processes in the baseline for the key
@@ -338,6 +340,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify baselines are deleted when their deployment is deleted"() {
         /*
                 a)get all baselines
@@ -374,6 +377,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify removed baseline process not getting added back to baseline after rerun on #deploymentName"() {
         /*
                 1.run a process and verify if it exists in the baseline
@@ -438,6 +442,7 @@ class ProcessBaselinesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Delete process baselines via API"() {
         given:
         "a baseline is deleted"
@@ -469,6 +474,7 @@ class ProcessBaselinesTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Processes come in after baseline deleted by API for #deploymentName"() {
         when:
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }

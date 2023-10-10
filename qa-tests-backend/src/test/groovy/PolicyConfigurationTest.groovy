@@ -157,6 +157,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify name violations with same ID as existing image are still triggered"() {
         given:
         "Create a busybox deployment has same ID as latest"
@@ -187,6 +188,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify lastUpdated field is updated correctly for policy - ROX-3971 production bug"() {
         given:
         "Create a copy of a Latest Tag"
@@ -221,6 +223,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("SMOKE")
+    @Tag("PZ")
     def "Verify policy configuration #policyName can be triggered"() {
         Assume.assumeTrue(canRun == null || canRun())
 
@@ -721,6 +724,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify policy scopes are triggered appropriately: #policyName"() {
         when:
         "Create a Policy"
@@ -892,6 +896,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZ")
     def "Verify dryRun on a disabled policy generates violations for matching deployments"() {
         when:
         "Initialize a new disabled policy that will match an existing deployment"

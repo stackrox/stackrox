@@ -66,7 +66,6 @@ class VulnReportingTest extends BaseSpecification {
     }
 
     @Tag("BAT")
-    @Tag("PZ")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
         "Central is using postgres"
