@@ -165,6 +165,8 @@ spec:
         value: $(params.revision)
       - name: depth
         value: 0
+      - name: fetchTags
+        value: "false"
       runAfter:
       - init
       taskRef:
@@ -172,7 +174,7 @@ spec:
         - name: name
           value: git-clone
         - name: bundle
-          value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1@sha256:1f84973a21aabea38434b1f663abc4cb2d86565a9c7aae1f90decb43a8fa48eb
+          value: quay.io/tommartensen/rhtap-tasks@sha256:7db318d3a0d7895838ddd1713afd8da4bef797816d2d9b2a472427eb7dc72c2c
         - name: kind
           value: task
         resolver: bundles

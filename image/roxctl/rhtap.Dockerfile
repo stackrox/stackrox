@@ -7,10 +7,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 COPY . .
 
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
-    # We could add tag fetching to: https://github.com/redhat-appstudio/build-definitions/blob/main/task/git-clone/0.1/git-clone.yaml
-    # TODO: if git fetch fails, check if privileges/file owners are OK, usually only on local build because repo might have moved further.
-    # TODO: this prevents hermetic builds
-    git fetch --tags --force && \
+    make tag && \
     mkdir -p image/bin
 
 ENV CI=1 GOFLAGS="" GOTAGS="release"
