@@ -149,7 +149,7 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
 	service.client.EXPECT().Send(gomock.Any()).Return(nil)
 	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
-	var orderedCalls []*gomock.Call
+	var orderedCalls []any
 	for _, m := range messages {
 		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
 	}
