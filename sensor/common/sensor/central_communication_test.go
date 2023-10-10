@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -38,9 +39,9 @@ type centralCommunicationSuite struct {
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
-var _ suite.TearDownTestSuite = (*centralCommunicationSuite)(nil)
 
 func (c *centralCommunicationSuite) SetupTest() {
+	fmt.Println("setup test")
 	mockCtrl := gomock.NewController(c.T())
 
 	c.controller = mockCtrl
@@ -60,19 +61,6 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-
-	// Create a fake SensorComponent
-	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(true, false, NewFakeSensorComponent(c.responsesC))
-
-	c.mockService = &MockSensorServiceClient{
-		connected: concurrency.NewSignal(),
-		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
-	}
-}
-
-func (c *centralCommunicationSuite) TearDownTest() {
-	defer close(c.responsesC)
 }
 
 func Test_CentralCommunicationSuite(t *testing.T) {
@@ -99,6 +87,8 @@ var centralSyncMessages = []*central.MsgToSensor{
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
+	responsesC, closeFn := c.createCentralCommunication(false)
+	defer closeFn()
 	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
@@ -113,7 +103,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	c.mockService.connected.Wait()
 
 	// Pretend that a component (listener) is sending the sync event
-	c.responsesC <- message.New(syncMessage())
+	responsesC <- message.New(syncMessage())
 	select {
 	case <-ch:
 		break
@@ -123,6 +113,8 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
+	_, closeFn := c.createCentralCommunication(false)
+	defer closeFn()
 	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
@@ -143,21 +135,6 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	case <-time.After(5 * time.Second):
 		c.Fail("timeout reached waiting for the communication to stop")
 	}
-}
-
-func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
-	md := metadata.MD{
-		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
-	}
-	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
-	service.client.EXPECT().Send(gomock.Any()).Return(nil)
-	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
-	var orderedCalls []*gomock.Call
-	for _, m := range messages {
-		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
-	}
-	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
-	gomock.InOrder(orderedCalls...)
 }
 
 func (c *centralCommunicationSuite) Test_ClientReconciliation() {
@@ -198,14 +175,20 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 
 	for name, tc := range testCases {
 		c.Run(name, func() {
+			responsesC, closeFn := c.createCentralCommunication(true)
+			defer closeFn()
 			syncMessages := append(centralSyncMessages, debuggerMessage.DeduperState(tc.deduperState))
 			expectSyncMessages(syncMessages, c.mockService)
 
 			var sentMessages []*central.MsgFromSensor
+			mu := &sync.Mutex{}
 			c.mockService.client.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(msg *central.MsgFromSensor) error {
+				mu.Lock()
+				defer mu.Unlock()
 				sentMessages = append(sentMessages, msg)
 				return nil
 			})
+			c.mockService.client.EXPECT().CloseSend().AnyTimes()
 
 			reachable := concurrency.Flag{}
 			// Start the go routine with the mocked client
@@ -213,22 +196,59 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 			c.mockService.connected.Wait()
 
 			for _, msg := range tc.componentMessages {
-				c.responsesC <- message.New(msg)
+				responsesC <- message.New(msg)
 			}
 
 			if tc.eventuallyMatchesState != nil {
 				c.Assert().Eventually(func() bool {
-					return tc.eventuallyMatchesState(sentMessages)
+					mu.Lock()
+					defer mu.Unlock()
+					return tc.eventuallyMatchesState(copySentMessages(sentMessages))
 				}, 3*time.Second, 100*time.Millisecond)
 			}
 
 			if tc.neverMatchesState != nil {
 				c.Assert().Never(func() bool {
-					return tc.neverMatchesState(sentMessages)
+					mu.Lock()
+					defer mu.Unlock()
+					return tc.neverMatchesState(copySentMessages(sentMessages))
 				}, 3*time.Second, 100*time.Millisecond)
 			}
 		})
 	}
+}
+
+func copySentMessages(messages []*central.MsgFromSensor) []*central.MsgFromSensor {
+	var ret []*central.MsgFromSensor
+	ret = append(ret, messages...)
+	return ret
+}
+
+func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
+	// Create a CentralCommunication with a fake SensorComponent
+	ret := make(chan *message.ExpiringMessage)
+	c.comm = NewCentralCommunication(clientReconcile, false, NewFakeSensorComponent(ret))
+	// Initialize the gRPC mocked service
+	c.mockService = &MockSensorServiceClient{
+		connected: concurrency.NewSignal(),
+		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
+	}
+	return ret, func() { close(ret) }
+}
+
+func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
+	md := metadata.MD{
+		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
+	}
+	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
+	service.client.EXPECT().Send(gomock.Any()).Return(nil)
+	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
+	var orderedCalls []*gomock.Call
+	for _, m := range messages {
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
+	}
+	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
+	gomock.InOrder(orderedCalls...)
 }
 
 func deploymentIDSent(id string, hash uint64) func([]*central.MsgFromSensor) bool {
