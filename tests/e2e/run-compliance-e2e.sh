@@ -22,10 +22,9 @@ test_compliance_e2e() {
 
     export DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
 
+    export_test_environment
     # TODO(ROX-18827) turn off new compliance for now
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "false"
-
-    export_test_environment
 
     setup_deployment_env false false
     remove_existing_stackrox_resources
