@@ -39,7 +39,7 @@ const emptyStorage: VulnMgmtLocalStorage = {
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { hasReadWriteAccess } = usePermissions();
-    const canWriteWatchedImages = hasReadWriteAccess('WatchedImage');
+    const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -72,19 +72,15 @@ function WorkloadCvesOverviewPage() {
             <PageSection
                 className="pf-u-display-flex pf-u-flex-direction-row pf-u-align-items-center"
                 variant="light"
-                padding={{ default: 'noPadding' }}
             >
-                <Flex
-                    direction={{ default: 'column' }}
-                    className="pf-u-py-lg pf-u-pl-lg pf-u-flex-grow-1"
-                >
+                <Flex direction={{ default: 'column' }} className="pf-u-flex-grow-1">
                     <Title headingLevel="h1">Workload CVEs</Title>
                     <FlexItem>
                         Prioritize and manage scanned CVEs across images and deployments
                     </FlexItem>
                 </Flex>
-                {canWriteWatchedImages && (
-                    <FlexItem className="pf-u-pr-lg">
+                {hasWriteAccessForWatchedImage && (
+                    <FlexItem>
                         <Button
                             variant="secondary"
                             onClick={() => {
@@ -117,7 +113,7 @@ function WorkloadCvesOverviewPage() {
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
-                                    canWriteWatchedImages={canWriteWatchedImages}
+                                    hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                                     onWatchImage={(imageName) => {
                                         setDefaultWatchedImageName(imageName);
                                         watchedImagesModalToggle.openSelect();

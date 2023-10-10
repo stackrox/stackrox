@@ -79,7 +79,7 @@ export type ImagesTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
-    canWriteWatchedImages: boolean;
+    hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
 };
@@ -89,11 +89,11 @@ function ImagesTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
-    canWriteWatchedImages,
+    hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
 }: ImagesTableProps) {
-    const colSpan = canWriteWatchedImages ? 7 : 6;
+    const colSpan = hasWriteAccessForWatchedImage ? 7 : 6;
 
     return (
         <TableComposable borders={false} variant="compact">
@@ -112,7 +112,7 @@ function ImagesTable({
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
-                    {canWriteWatchedImages && <Th aria-label="Image action menu" />}
+                    {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
                 </Tr>
             </Thead>
             {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
@@ -192,7 +192,7 @@ function ImagesTable({
                                 <Td>
                                     <DateDistanceTd date={scanTime} />
                                 </Td>
-                                {canWriteWatchedImages && (
+                                {hasWriteAccessForWatchedImage && (
                                     <Td isActionCell>
                                         {name?.tag && (
                                             <ActionsColumn
