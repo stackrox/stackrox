@@ -43,8 +43,8 @@ var (
 
 // Key is the key by which messages are deduped.
 type Key struct {
-	id           string
-	resourceType reflect.Type
+	Id           string
+	ResourceType reflect.Type
 }
 
 func keyFrom(v string) (Key, error) {
@@ -57,8 +57,8 @@ func keyFrom(v string) (Key, error) {
 		return Key{}, errors.Wrap(err, "map type")
 	}
 	return Key{
-		id:           parts[1],
-		resourceType: t,
+		Id:           parts[1],
+		ResourceType: t,
 	}, nil
 }
 
@@ -81,6 +81,9 @@ type deduper struct {
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
 func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[Key]uint64) messagestream.SensorMessageStream {
+	if deduperState == nil {
+		deduperState = make(map[Key]uint64)
+	}
 	return &deduper{
 		stream:   stream,
 		lastSent: deduperState,
@@ -119,8 +122,8 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	key := Key{
-		id:           event.GetId(),
-		resourceType: reflect.TypeOf(event.GetResource()),
+		Id:           event.GetId(),
+		ResourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		priorLen := len(d.lastSent)
