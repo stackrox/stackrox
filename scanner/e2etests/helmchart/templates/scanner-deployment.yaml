@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.scanner.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.app.scanner.name }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: {{ .Values.app.scanner.name }}
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: {{ .Values.app.scanner.name }}
+    spec:
+      securityContext:
+        fsGroup: 65534  # Set the group ownership to the `nobody` group, see dockerfile.
+      containers:
+      - name: scanner
+        image: "{{ ( printf "%s/%s:%s" .Values.image.repository .Values.app.scanner.name .Values.image.tag ) }}"
+        imagePullPolicy: IfNotPresent
+        command:
+          - /entrypoint.sh
+        args:
+          - -conf
+          - /etc/stackrox.d/scanner/config.yaml
+        resources:
+          limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/stackrox.d/scanner
+          readOnly: true
+        - name: tls-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: db-password
+          mountPath: /run/secrets/stackrox.io/postgresql
+          readOnly: true
+        - name: etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.app.scanner.name }}-config
+      - name: tls-volume
+        secret:
+          secretName: {{ .Values.app.scanner.name }}-tls
+          defaultMode: 0640
+      - name: db-password
+        secret:
+          secretName: {{ .Values.app.db.name }}-password
+          defaultMode: 0640
+      - name: etc-ssl-volume
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}

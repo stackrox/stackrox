@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.db.name }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  postgresql.conf: |
+{{ .Files.Get "files/db-postgresql.conf" | indent 4 }}
+  pg_hba.conf: |
+{{ .Files.Get "files/db-pg_hba.conf" | indent 4 }}
