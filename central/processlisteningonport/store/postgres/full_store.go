@@ -31,7 +31,7 @@ type fullStoreImpl struct {
 // process_indicators. Used to provide information for queries like 'give
 // me all PLOP by this deployment'.
 // XXX: Verify the query plan to make sure needed indexes are in use.
-const getByDeploymentStmt = "SELECT plop.id, plop.poduid, plop.serialized, " +
+const getByDeploymentStmt = "SELECT plop.serialized, " +
 	"proc.serialized as proc_serialized " +
 	"FROM listening_endpoints plop " +
 	"LEFT OUTER JOIN process_indicators proc " +
@@ -89,7 +89,6 @@ func (s *fullStoreImpl) readRows(
 	var plops []*storage.ProcessListeningOnPort
 
 	for rows.Next() {
-		var id string
 		var serialized []byte
 		var procSerialized []byte
 		var podID string
@@ -101,7 +100,7 @@ func (s *fullStoreImpl) readRows(
 
 		// We're getting ProcessIndicator directly from the SQL query, PLOP
 		// parts have to be extra deserialized.
-		if err := rows.Scan(&id, &podUID, &serialized, &procSerialized); err != nil {
+		if err := rows.Scan(&serialized, &procSerialized); err != nil {
 			return nil, pgutils.ErrNilIfNoRows(err)
 		}
 
@@ -114,6 +113,8 @@ func (s *fullStoreImpl) readRows(
 		if err := proto.Unmarshal(procSerialized, &procMsg); err != nil {
 			return nil, err
 		}
+
+		podUID = msg.GetPodUid()
 
 		if procMsg.GetPodId() != "" {
 			podID = procMsg.GetPodId()
