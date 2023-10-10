@@ -181,7 +181,7 @@ func TestReadFromK8sObject_Secret(t *testing.T) {
 					Namespace: "testing",
 				},
 				Data: map[string][]byte{
-					"some-key": []byte("dGVzdGluZw=="),
+					"some-key": []byte("testing"),
 				},
 			},
 			secret:    "test-secret",
@@ -244,7 +244,7 @@ func TestWriteToK8sObject_Secret(t *testing.T) {
 					Namespace: "testing",
 				},
 				Data: map[string][]byte{
-					"some-key": []byte("dGVzdGluZw=="),
+					"some-key": []byte("testing"),
 				},
 			},
 			secret:    "test-secret",
@@ -260,7 +260,7 @@ func TestWriteToK8sObject_Secret(t *testing.T) {
 					Namespace: "testing",
 				},
 				Data: map[string][]byte{
-					"test-key": []byte("dGVzdGluZw=="),
+					"test-key": []byte("testing"),
 				},
 			},
 			secret:    "test-secret",

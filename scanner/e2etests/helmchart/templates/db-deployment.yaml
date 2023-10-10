@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.db.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.app.db.name }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: {{ .Values.app.db.name }}
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: {{ .Values.app.db.name }}
+    spec:
+      securityContext:
+        fsGroup: 70  # Set the group ownership to the `postgres` group, see dockerfile.
+      initContainers:
+      - name: init-db
+        image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
+        imagePullPolicy: IfNotPresent
+        command:
+        - init-entrypoint.sh
+        resources:
+          limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: config
+          mountPath: /etc/stackrox.d/config/
+          readOnly: true
+        - name: password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+      containers:
+      - name: db
+        image: "{{ (printf "%s/%s:%s" .Values.image.repository .Values.app.db.name .Values.image.tag ) }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: postgresql
+          protocol: TCP
+          containerPort: 5432
+        resources:
+          limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+        - name: disk
+          mountPath: /var/lib/postgresql/data
+        - name: config
+          mountPath: /etc/stackrox.d/config
+          readOnly: true
+        - name: tls-volume
+          mountPath: /run/secrets/stackrox.io/certs
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.app.db.name }}-config
+      - name: disk
+        emptyDir: {}
+      - name: tls-volume
+        secret:
+          secretName: {{ .Values.app.db.name }}-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: password
+        secret:
+          secretName: {{ .Values.app.db.name }}-password

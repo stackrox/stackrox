@@ -10,8 +10,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -131,8 +131,8 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 
 // GetVulnerabilityDeferralConfig returns Central's vulnerability deferral configuration.
 func (s *serviceImpl) GetVulnerabilityDeferralConfig(ctx context.Context, _ *v1.Empty) (*v1.GetVulnerabilityDeferralConfigResponse, error) {
-	if !env.UnifiedCVEDeferral.BooleanSetting() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", env.UnifiedCVEDeferral.EnvVar())
+	if !features.UnifiedCVEDeferral.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
 	}
 	privateConfig, err := s.datastore.GetPrivateConfig(ctx)
 	if err != nil {
@@ -145,8 +145,8 @@ func (s *serviceImpl) GetVulnerabilityDeferralConfig(ctx context.Context, _ *v1.
 
 // UpdateVulnerabilityDeferralConfig updates Central's vulnerability deferral configuration.
 func (s *serviceImpl) UpdateVulnerabilityDeferralConfig(ctx context.Context, req *v1.UpdateVulnerabilityDeferralConfigRequest) (*v1.UpdateVulnerabilityDeferralConfigResponse, error) {
-	if !env.UnifiedCVEDeferral.BooleanSetting() {
-		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", env.UnifiedCVEDeferral.EnvVar())
+	if !features.UnifiedCVEDeferral.Enabled() {
+		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
 	}
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "vulnerability deferral config must be specified")

@@ -27,8 +27,6 @@ import (
 )
 
 const (
-	integrationType = "splunk"
-
 	source                    = "stackrox"
 	splunkHECDefaultDataLimit = 10000
 	splunkHECHealthEndpoint   = "/services/collector/health/1.0"
@@ -186,7 +184,7 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 }
 
 func init() {
-	notifiers.Add(integrationType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.SplunkType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newSplunk(notifier)
 		return s, err
 	})
@@ -242,7 +240,7 @@ func validate(conf *storage.Splunk) error {
 
 // UpgradeNotifierConfig applies changes to the current notifier to make it backwards compatible
 func UpgradeNotifierConfig(notifier *storage.Notifier) {
-	if notifier.GetType() == integrationType {
+	if notifier.GetType() == notifiers.SplunkType {
 		if notifier.GetSplunk().GetDerivedSourceTypeDeprecated() != nil {
 			splunk := notifier.GetSplunk()
 			// Handle backwards compatibility for derived source type field

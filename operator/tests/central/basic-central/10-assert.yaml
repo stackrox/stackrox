@@ -22,7 +22,7 @@ collectors:
 - command: kubectl describe pod -n $NAMESPACE -l app=central-db
 - command: kubectl describe pod -n $NAMESPACE -l app=scanner
 - command: kubectl describe pod -n $NAMESPACE -l app=scanner-db
-timeout: 900
+timeout: 1500
 ---
 apiVersion: platform.stackrox.io/v1alpha1
 kind: Central

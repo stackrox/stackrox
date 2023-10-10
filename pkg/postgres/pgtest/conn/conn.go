@@ -42,6 +42,7 @@ func OpenGormDB(t testing.TB, source string, disableConstraint bool) *gorm.DB {
 			NamingStrategy:                           pgutils.NamingStrategy,
 			DisableForeignKeyConstraintWhenMigrating: disableConstraint,
 			Logger:                                   logger.Discard,
+			QueryFields:                              true,
 		},
 	)
 	require.NoError(t, err, "failed to connect to connect with gorm db")

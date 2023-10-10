@@ -14,6 +14,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
   - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
 
+- ROX-19561: A new environment variable, `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS`, has been introduced in Central, with a default value of `0` (unlimited).
+  When a value greater than `0` is assigned to it, it serves as a limit on the number of sensors performing initial synchronization.
+  This synchronization occurs once sensors establish a connection with Central. It is recommended to set this limit when a significant
+  number of secured clusters are connected to a single Central instance.
+
 ### Removed Features
 
 - ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
@@ -25,6 +30,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19738: Previously categories passed to the detection service's APIs `v1/detect/build, v1/detect/deploy, v1/detect/deploy/yaml`
   have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
   are required to be title-cased.
+- ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 
 ## [4.2.0]

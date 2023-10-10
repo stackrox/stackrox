@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -59,6 +60,7 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	}
 
 	if err != nil {
+		log.Warnw("Error pulling kubernetes info from sensor", logging.Err(err))
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),
@@ -85,6 +87,7 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string, sensorConn c
 	}
 
 	if err != nil {
+		log.Warnw("Error pulling metrics from sensor", logging.Err(err))
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),
