@@ -102,10 +102,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("scanning: %v", err)
 	}
-	vrJson, err := json.MarshalIndent(vr, "", "  ")
+	vrJSON, err := json.MarshalIndent(vr, "", "  ")
 	if err != nil {
 		log.Fatalf("decoding report: %s", err)
 	}
 
-	fmt.Println(string(vrJson))
+	fmt.Println(string(vrJSON))
 }
