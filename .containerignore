@@ -1,10 +1,7 @@
-# This file is the same as the .dockerignore, minus /.git/
+# This file is the same as the .dockerignore, minus /.git/, **/bin/ and /qa-tests-backend/
 # It is required to pass .git to the builder containers on RHTAP so we can bake build information into the binary
-# To regenerate, copy the contents of .dockerignore, remove /.git/ and reproduce these comments.
+# To regenerate, copy the contents of .dockerignore, remove /.git/, /image/bin/, /image/**/bin/, /qa-tests-backend/ and reproduce these comments.
 **/node_modules/
 /bin/
-# /image/bin/
-# /image/rhel/bin/
 /linux-gocache/
 /operator/*/bin/
-# /qa-tests-backend/

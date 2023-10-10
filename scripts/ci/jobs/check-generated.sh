@@ -66,6 +66,8 @@ function check-container-ignore-files-up-to-date() {
         --unified \
         --ignore-matching-lines '^\#.*' \
         --ignore-matching-lines '^\/\.git\/' \
+        --ignore-matching-lines '^\/image(\/.*)?\/bin\/' \
+        --ignore-matching-lines '^\/qa-tests-backend\/' \
     .containerignore .dockerignore > diff.txt
 }
 check-container-ignore-files-up-to-date || {
