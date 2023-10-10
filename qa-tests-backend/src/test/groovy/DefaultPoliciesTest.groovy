@@ -60,7 +60,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
-    //static final private String CVE_COUNT = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? 537:139)
     static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         " apt, bash, curl, wget":" apt, bash, curl")
 
