@@ -456,10 +456,10 @@ replace (
 	github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
 
 	// The version of github.com/opencontainers/runc needs to be aligned with the version used in
-	// github.com/docker/docker. As of github.com/docker/docker v23.0.5+incompatible,
-	// the version of github.com/opencontainers/runc is v1.1.5 (https://github.com/moby/moby/blob/v23.0.5/vendor.mod#L68).
+	// github.com/docker/docker. As of github.com/docker/docker v24.0.6+incompatible,
+	// the version of github.com/opencontainers/runc is v1.1.7 (https://github.com/moby/moby/blob/v24.0.6/vendor.mod#L74).
 	// Any time github.com/docker/docker is updated, we should check if github.com/opencontainers/runc should be updated, too.
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.5
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.7
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
