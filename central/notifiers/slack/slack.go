@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.SlackType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := slack.NewSlack(notifier, metadatagetter.Singleton(), mitreDS.Singleton())
 		return s, err
 	})

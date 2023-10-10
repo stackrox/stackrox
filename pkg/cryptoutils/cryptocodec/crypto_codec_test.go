@@ -1,4 +1,4 @@
-package cryptoutils
+package cryptocodec
 
 import (
 	"encoding/base64"

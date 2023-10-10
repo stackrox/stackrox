@@ -134,7 +134,7 @@ func (s *sumologic) Test(ctx context.Context) error {
 }
 
 func init() {
-	notifiers.Add("sumologic", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.SumoLogicType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSumoLogic(notifier)
 	})
 }
