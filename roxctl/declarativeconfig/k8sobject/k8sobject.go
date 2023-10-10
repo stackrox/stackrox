@@ -63,7 +63,7 @@ func writeSecret(ctx context.Context, client kubernetes.Interface, secretName, n
 	if s.Data == nil {
 		s.Data = map[string][]byte{}
 	}
-	s.Data[key] = []byte(base64.StdEncoding.EncodeToString(yaml))
+	s.Data[key] = yaml
 	if _, err := client.CoreV1().Secrets(namespace).Update(ctx, s, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(err, "updating secret %s/%s", namespace, secretName)
 	}
