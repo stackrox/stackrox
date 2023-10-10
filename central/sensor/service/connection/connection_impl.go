@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -34,13 +33,10 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	ridiculousPayload = env.RegisterIntegerSetting("FAKE_DEDUPER_PAYLOAD", 0)
 )
 
 type sensorConnection struct {
@@ -552,7 +548,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get policy sync msg for %q", c.clusterID)
 		}
-		log.Infof("[cluster=%s] initial policies message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial policies to cluster %q", c.clusterID)
 		}
@@ -561,7 +556,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get process baseline sync msg for %q", c.clusterID)
 		}
-		log.Infof("[cluster=%s] initial process baseline message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial process baselines to cluster %q", c.clusterID)
 		}
@@ -570,7 +564,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		if err != nil {
 			return errors.Wrapf(err, "unable to get network baseline sync msg for %q", c.clusterID)
 		}
-		log.Infof("[cluster=%s] initial network baseline message size: %d", c.clusterID, msg.Size())
 		if err := server.Send(msg); err != nil {
 			return errors.Wrapf(err, "unable to sync initial network baselines to cluster %q", c.clusterID)
 		}
@@ -611,16 +604,6 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 
 		// Send hashes to sensor
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
-
-		// TODO: Remove. This is debugging code
-		if ridiculousPayload.IntegerSetting() > 0 {
-			log.Infof("Increasing deduper payload artificially to load test communication: increased by %d\n", ridiculousPayload.IntegerSetting())
-			for i := 0; i < ridiculousPayload.IntegerSetting(); i++ {
-				newUUID := uuid.NewV4()
-				successfulHashes[fmt.Sprintf("Deployment:%s", newUUID)] = 10101010101010101010
-			}
-		}
-
 		deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
 			DeduperState: &central.DeduperState{
 				ResourceHashes: successfulHashes,
