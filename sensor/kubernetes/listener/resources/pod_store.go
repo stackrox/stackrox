@@ -19,19 +19,16 @@ func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (string, er
 	if resType != TypePod.String() {
 		return "", nil
 	}
-	var pod *storage.Pod
-	for _, p := range ps.GetAll() {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	for _, p := range ps.getAllNoLock() {
 		if p.GetId() == resID {
-			pod = p
-			break
+			// Resource exists on central and Sensor, nothing to do
+			return "", nil
 		}
 	}
 	// Resource exists on central but not on Sensor, send delete event
-	if pod == nil {
-		return resID, nil
-
-	}
-	return "", nil
+	return resID, nil
 }
 
 // Cleanup deletes all entries from store
@@ -120,10 +117,18 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	defer ps.lock.RUnlock()
 
 	var ret []*storage.Pod
+	for _, pod := range ps.getAllNoLock() {
+		ret = append(ret, pod.Clone())
+	}
+	return ret
+}
+
+func (ps *PodStore) getAllNoLock() []*storage.Pod {
+	var ret []*storage.Pod
 	for _, depMap := range ps.pods {
 		for _, podMap := range depMap {
 			for _, pod := range podMap {
-				ret = append(ret, pod.Clone())
+				ret = append(ret, pod)
 			}
 		}
 	}

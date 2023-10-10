@@ -27,8 +27,10 @@ func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (str
 	if resType != TypeDeployment.String() {
 		return "", nil
 	}
-	depl := ds.Get(resID)
-	if depl == nil {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+	_, exists := ds.deployments[resID]
+	if !exists {
 		// found on Central, not found on Sensor - need to send a Delete message
 		return resID, nil
 	}
