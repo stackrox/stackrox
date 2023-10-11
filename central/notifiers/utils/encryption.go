@@ -23,7 +23,8 @@ func GetNotifierSecretEncryptionKey() (string, error) {
 	return string(key), nil
 }
 
-// SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified, false otherwise	
+// SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified,
+// false otherwise
 func SecureNotifier(notifier *storage.Notifier, key string) (bool, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return false, nil
