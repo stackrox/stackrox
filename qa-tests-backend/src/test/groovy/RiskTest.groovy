@@ -25,8 +25,8 @@ import spock.lang.Stepwise
 // - CountDeployments
 // - GetGroupedProcessByDeploymentAndContainer
 
-@Stepwise // tests are ordered and dependent
 @Tag("PZ")
+@Stepwise // tests are ordered and dependent
 class RiskTest extends BaseSpecification {
     @Shared
     private String clusterId
