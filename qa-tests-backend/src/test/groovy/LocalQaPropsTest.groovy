@@ -12,7 +12,7 @@ import spock.lang.Specification
 // few predefined expectations, but unfortunately the values drift and that test does not run.
 // these predefined values are probably out of date & the test doesn't verify any functionality
 // and hence skipped
-@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+// @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class LocalQaPropsTest extends Specification {
 
     def "CheckPropertyFileInputValue > GOOGLE_CREDENTIALS_GCR_SCANNER"() {

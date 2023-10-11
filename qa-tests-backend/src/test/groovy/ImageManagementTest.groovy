@@ -321,7 +321,7 @@ class ImageManagementTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("Integration")
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Clone and scope the policy for test"
@@ -346,7 +346,7 @@ class ImageManagementTest extends BaseSpecification {
 
         and:
         "Request Image Scan with sendNotifications"
-        def scanResults = Services.requestBuildImageScan("quay.io", "quay/busybox", "latest", true)
+        def scanResults = Services.requestBuildImageScan("quay.io", "rhacs-eng/qa-multi-arch-busybox", "latest", true)
 
         then:
         "verify violation matches expected violation status and notification sent"
@@ -359,9 +359,9 @@ class ImageManagementTest extends BaseSpecification {
             assert alert["policy"]["name"] == clone.name
             assert alert["image"] != null
             assert alert["deployment"] == null
-            assert alert["image"]["name"]["fullName"] == "quay.io/quay/busybox:latest"
+            assert alert["image"]["name"]["fullName"] == "quay.io/rhacs-eng/qa-multi-arch-busybox:latest"
             assert alert["image"]["name"]["registry"] == "quay.io"
-            assert alert["image"]["name"]["remote"] == "quay/busybox"
+            assert alert["image"]["name"]["remote"] == "rhacs-eng/qa-multi-arch-busybox"
             assert alert["image"]["name"]["tag"] == "latest"
         }
 
