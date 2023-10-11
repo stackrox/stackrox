@@ -11,5 +11,6 @@ from clusters import AutomationFlavorsCluster
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
+os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
