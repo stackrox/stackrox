@@ -52,7 +52,7 @@ type centralCommunicationImpl struct {
 
 var (
 	errCantReconcile                 = errors.New("unable to reconcile due to deduper payload too large")
-	errTimeoutWaitingForDeduperState = errors.Wrapf(errCantReconcile, "timeout reached while waiting for the DeduperState")
+	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
 )
 
 func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
