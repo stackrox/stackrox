@@ -155,7 +155,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				SensorState:   tc.givenSensorState,
 			}
 
-			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper)
+			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
 
 			sensorMockConn := &sensorConnection{
 				clusterMgr:         mgrMock,
