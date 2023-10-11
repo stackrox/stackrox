@@ -62,6 +62,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
+@Tag("PZ")
 class ComplianceTest extends BaseSpecification {
     @Shared
     private static final PCI_ID = "PCI_DSS_3_2"
