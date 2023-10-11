@@ -72,7 +72,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 			Id: scanConfigID,
 		},
 	}, nil)
-	suite.v2ResultDS.EXPECT().UpsertResults(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
+	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
 
 	msg := &central.MsgFromSensor{
@@ -108,7 +108,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 func (suite *PipelineTestSuite) TestRunDelete() {
 	ctx := context.Background()
 
-	suite.v2ResultDS.EXPECT().DeleteResults(ctx, id).Return(nil).Times(1)
+	suite.v2ResultDS.EXPECT().DeleteResult(ctx, id).Return(nil).Times(1)
 	pipeline := NewPipeline(suite.v1ResultDS, suite.v2ResultDS, suite.v2ConfigDS)
 
 	msg := &central.MsgFromSensor{

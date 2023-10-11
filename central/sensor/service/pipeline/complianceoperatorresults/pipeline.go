@@ -154,13 +154,13 @@ func (s *pipelineImpl) processV2ComplianceResult(ctx context.Context, event *cen
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		// use V2 datastore
-		return s.v2Datastore.DeleteResults(ctx, event.GetId())
+		return s.v2Datastore.DeleteResult(ctx, event.GetId())
 	default:
 		convertedResult, err := s.convertSensorMsgToV2Storage(ctx, checkResult, clusterID)
 		if err != nil {
 			return err
 		}
-		return s.v2Datastore.UpsertResults(ctx, convertedResult)
+		return s.v2Datastore.UpsertResult(ctx, convertedResult)
 	}
 }
 
