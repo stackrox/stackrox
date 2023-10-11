@@ -187,6 +187,7 @@ function ApiTokenIntegrationForm({
                                 selectedRoles={values.roles}
                                 isEditable={isEditable}
                                 isGenerated={isGenerated}
+                                isRolesLoading={isRolesLoading}
                                 onRoleSelect={onRoleSelect}
                                 onRoleSelectionClear={onClearRoleSelections}
                             />
