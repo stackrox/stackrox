@@ -61,7 +61,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, fakeStoreReconciler{}, NewFakeSensorComponent(c.responsesC))
+	c.comm = NewCentralCommunication(false, NewMockStoreReconciler(), NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
@@ -77,11 +77,15 @@ func Test_CentralCommunicationSuite(t *testing.T) {
 	suite.Run(t, new(centralCommunicationSuite))
 }
 
-type fakeStoreReconciler struct {
+type mockStoreReconciler struct {
 }
 
-func (f fakeStoreReconciler) ProcessHashes(map[deduper.Key]uint64) []central.MsgFromSensor {
+func (m mockStoreReconciler) ProcessHashes(map[deduper.Key]uint64) []central.MsgFromSensor {
 	return []central.MsgFromSensor{}
+}
+
+func NewMockStoreReconciler() reconciliationHandler {
+	return mockStoreReconciler{}
 }
 
 type MockSensorServiceClient struct {

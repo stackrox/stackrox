@@ -21,8 +21,6 @@ type Key struct {
 	ResourceType reflect.Type
 }
 
-// FIXME(ROX-19696): This is a temporary fixture. Remove in favor of PR #8006
-
 var (
 	// TypeNetworkPolicy represents a NetworkPolicy Type
 	TypeNetworkPolicy = reflect.TypeOf(&central.SensorEvent_NetworkPolicy{})
@@ -63,8 +61,6 @@ var (
 	// TypeComplianceOperatorScan represents a ComplianceOperatorScan Type
 	TypeComplianceOperatorScan = reflect.TypeOf(&central.SensorEvent_ComplianceOperatorScan{})
 )
-
-// FIXME(ROX-19696)
 
 // deduper takes care of deduping sensor events.
 type deduper struct {

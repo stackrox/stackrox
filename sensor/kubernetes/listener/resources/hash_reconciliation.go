@@ -17,7 +17,7 @@ func NewResourceStoreReconciler(storeProvider *InMemoryStoreProvider) *ResourceS
 	return &ResourceStoreReconciler{storeProvider: storeProvider}
 }
 
-// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of resource IDs that
+// ProcessHashes orchestrates the sensor-side reconciliation after a reconnect. It returns a slice of Sensor messages that
 // should be deleted in Central to keep the state of Sensor and Central in sync.
 func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
 	events := make([]central.MsgFromSensor, 0)

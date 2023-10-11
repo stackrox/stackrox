@@ -119,7 +119,7 @@ func (m *MockStore) ReconcileDelete(resType, resID string, resHash uint64) (stri
 }
 
 // ReconcileDelete indicates an expected call of ReconcileDelete.
-func (mr *MockStoreMockRecorder) ReconcileDelete(resType, resID, resHash interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) ReconcileDelete(resType, resID, resHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDelete", reflect.TypeOf((*MockStore)(nil).ReconcileDelete), resType, resID, resHash)
 }
