@@ -8,16 +8,13 @@ import { getLevelText } from './AdministrationEvent';
 const optionAll = 'All';
 
 type SearchFilterLevelProps = {
+    isDisabled: boolean;
     level: AdministrationEventLevel | undefined;
     setLevel: (level: AdministrationEventLevel) => void;
 };
 
-function SearchFilterLevel({ level, setLevel }: SearchFilterLevelProps) {
+function SearchFilterLevel({ isDisabled, level, setLevel }: SearchFilterLevelProps) {
     const [isOpen, setIsOpen] = useState(false);
-
-    function onToggle(isOpenArg: boolean) {
-        setIsOpen(isOpenArg);
-    }
 
     function onSelect(_event, selection) {
         setLevel(selection === optionAll ? undefined : selection);
@@ -41,9 +38,10 @@ function SearchFilterLevel({ level, setLevel }: SearchFilterLevelProps) {
             variant="single"
             aria-label="Level filter menu items"
             toggleAriaLabel="Level filter menu toggle"
-            onToggle={onToggle}
+            onToggle={setIsOpen}
             onSelect={onSelect}
             selections={level ?? optionAll}
+            isDisabled={isDisabled}
             isOpen={isOpen}
         >
             {options}

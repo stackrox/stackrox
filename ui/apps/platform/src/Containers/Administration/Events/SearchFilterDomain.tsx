@@ -7,15 +7,12 @@ const optionAll = 'All';
 
 type SearchFilterDomainProps = {
     domain: string | undefined;
+    isDisabled: boolean;
     setDomain: (domain: string | undefined) => void;
 };
 
-function SearchFilterDomain({ domain, setDomain }: SearchFilterDomainProps) {
+function SearchFilterDomain({ domain, isDisabled, setDomain }: SearchFilterDomainProps) {
     const [isOpen, setIsOpen] = useState(false);
-
-    function onToggle(isOpenArg: boolean) {
-        setIsOpen(isOpenArg);
-    }
 
     function onSelect(_event, selection) {
         setDomain(selection === optionAll ? undefined : selection);
@@ -39,9 +36,10 @@ function SearchFilterDomain({ domain, setDomain }: SearchFilterDomainProps) {
             variant="single"
             aria-label="Domain filter menu items"
             toggleAriaLabel="Domain filter menu toggle"
-            onToggle={onToggle}
+            onToggle={setIsOpen}
             onSelect={onSelect}
             selections={domain ?? optionAll}
+            isDisabled={isDisabled}
             isOpen={isOpen}
         >
             {options}
