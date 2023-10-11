@@ -21,6 +21,7 @@ type RoleSelectorProps = {
     selectedRoles?: string[];
     isEditable: boolean;
     isGenerated: boolean;
+    isRolesLoading: boolean;
     onRoleSelect: (id, value) => void;
     onRoleSelectionClear: () => void;
 };
@@ -30,6 +31,7 @@ function RoleSelector({
     selectedRoles = [],
     isEditable,
     isGenerated,
+    isRolesLoading,
     onRoleSelect,
     onRoleSelectionClear,
 }: RoleSelectorProps) {
@@ -41,7 +43,7 @@ function RoleSelector({
     };
 
     const filteredRoleSelectMenuItems = useMemo(() => {
-        const roleSelectMenuItems = roles
+        return roles
             .filter((roleName) => roleName.toLowerCase().includes(input.toString().toLowerCase()))
             .map((roleName) => {
                 return (
@@ -50,7 +52,7 @@ function RoleSelector({
                         hasCheck
                         itemId={roleName}
                         isSelected={selectedRoles.includes(roleName)}
-                        isDisabled={!isEditable || isGenerated}
+                        isDisabled={!isEditable || isRolesLoading || isGenerated}
                     >
                         <span className="pf-u-mx-xs" data-testid="namespace-name">
                             {roleName}
@@ -58,9 +60,7 @@ function RoleSelector({
                     </MenuItem>
                 );
             });
-
-        return roleSelectMenuItems;
-    }, [roles, input, isEditable, isGenerated, selectedRoles]);
+    }, [roles, input, isEditable, isGenerated, isRolesLoading, selectedRoles]);
 
     const roleSelectMenu = (
         <Menu onSelect={onRoleSelect} selected={selectedRoles} isScrollable>
