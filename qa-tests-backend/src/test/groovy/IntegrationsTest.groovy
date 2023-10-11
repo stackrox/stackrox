@@ -153,6 +153,8 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    // "http://webhookserver.stackrox:8080": dial tcp: lookup webhookserver.stackrox on 172.30.0.10:53: no such host on P/Z
+    //@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
         "the integration is tested"
@@ -247,8 +249,6 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
-    // slack notifications are not supported on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -392,6 +392,8 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
+    // connection refused to "http://localhost:8080" on P/Z
+    //@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
         "Create notifications(s)"
@@ -534,8 +536,6 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
-    // slack notifications are not supported on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -763,6 +763,8 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     @Tag("BAT")
     // syslog test image is not multi-arch, docker files have x86 only dependencies
+    // https://hub.docker.com/r/rsyslog/syslog_appliance_alpine
+    // https://github.com/rsyslog/rsyslog-docker/tree/master/appliance/alpine
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify syslog notifier"() {
         given:
