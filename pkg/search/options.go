@@ -437,9 +437,8 @@ var (
 	GroupValue        = newFieldLabel("Group Value")
 
 	// API Token fields
-	APITokenName = newFieldLabel("API Token Name")
-	Expiration   = newFieldLabel("Expiration")
-	Revoked      = newFieldLabel("Revoked")
+	Expiration = newFieldLabel("Expiration")
+	Revoked    = newFieldLabel("Revoked")
 
 	// Version fields
 	Version               = newFieldLabel("Version")

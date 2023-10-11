@@ -101,7 +101,6 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
-            { accessor: 'expiration', Header: 'Expiration' },
         ],
         machineAccess: [
             {
