@@ -207,6 +207,29 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_TimeoutWaitingForDeduperState() {
+	_, closeFn := c.createCentralCommunication(true)
+	defer closeFn()
+	expectSyncMessages(centralSyncMessages, c.mockService)
+	ch := make(chan struct{})
+	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
+		defer close(ch)
+		return nil
+	})
+
+	reachable := concurrency.Flag{}
+	// Start the go routine with the mocked client
+	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+	c.mockService.connected.Wait()
+
+	select {
+	case <-ch:
+		break
+	case <-time.After(5 * time.Second):
+		c.Fail("timeout reached waiting for the connection to timeout if the deduper state is not received")
+	}
+}
+
 type messagesMatcher struct {
 	messagesToMatch map[string]*central.MsgFromSensor
 	cmpFn           func(x, y *central.MsgFromSensor) bool
