@@ -36,18 +36,18 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
-// DeleteResults mocks base method.
-func (m *MockDataStore) DeleteResults(ctx context.Context, id string) error {
+// DeleteResult mocks base method.
+func (m *MockDataStore) DeleteResult(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteResults", ctx, id)
+	ret := m.ctrl.Call(m, "DeleteResult", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteResults indicates an expected call of DeleteResults.
-func (mr *MockDataStoreMockRecorder) DeleteResults(ctx, id interface{}) *gomock.Call {
+// DeleteResult indicates an expected call of DeleteResult.
+func (mr *MockDataStoreMockRecorder) DeleteResult(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResults", reflect.TypeOf((*MockDataStore)(nil).DeleteResults), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteResult", reflect.TypeOf((*MockDataStore)(nil).DeleteResult), ctx, id)
 }
 
 // SearchCheckResults mocks base method.
@@ -65,16 +65,16 @@ func (mr *MockDataStoreMockRecorder) SearchCheckResults(ctx, query interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCheckResults", reflect.TypeOf((*MockDataStore)(nil).SearchCheckResults), ctx, query)
 }
 
-// UpsertResults mocks base method.
-func (m *MockDataStore) UpsertResults(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
+// UpsertResult mocks base method.
+func (m *MockDataStore) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertResults", ctx, result)
+	ret := m.ctrl.Call(m, "UpsertResult", ctx, result)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertResults indicates an expected call of UpsertResults.
-func (mr *MockDataStoreMockRecorder) UpsertResults(ctx, result interface{}) *gomock.Call {
+// UpsertResult indicates an expected call of UpsertResult.
+func (mr *MockDataStoreMockRecorder) UpsertResult(ctx, result interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertResults", reflect.TypeOf((*MockDataStore)(nil).UpsertResults), ctx, result)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertResult", reflect.TypeOf((*MockDataStore)(nil).UpsertResult), ctx, result)
 }

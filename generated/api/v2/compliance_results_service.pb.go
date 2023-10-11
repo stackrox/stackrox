@@ -1121,18 +1121,22 @@ type ComplianceResultsServiceClient interface {
 	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceScanResults(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanResultsResponse, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
@@ -1192,18 +1196,22 @@ type ComplianceResultsServiceServer interface {
 	// - profile: id(s) of the profile
 	GetComplianceScanResultsOverview(context.Context, *RawQuery) (*ListComplianceScanResultsOverviewResponse, error)
 	// GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceScanResults(context.Context, *RawQuery) (*ListComplianceScanResultsResponse, error)
 	// GetComplianceProfileScanStats lists current scan stats grouped by profile
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
 	GetComplianceProfileScanStats(context.Context, *RawQuery) (*ListComplianceProfileScanStatsResponse, error)
 	// GetComplianceClusterScanStats lists current scan stats grouped by cluster
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile

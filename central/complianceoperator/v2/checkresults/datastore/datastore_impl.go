@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -19,12 +18,12 @@ type datastoreImpl struct {
 	store store.Store
 }
 
-// UpsertResults adds the results to the database
-func (d *datastoreImpl) UpsertResults(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
+// UpsertResult adds the result to the database
+func (d *datastoreImpl) UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator check results write")
+		return sac.ErrResourceAccessDenied
 	}
 
 	// TODO (ROX-18102): populate the standard and control from the rule so that lookup only happens
@@ -33,12 +32,12 @@ func (d *datastoreImpl) UpsertResults(ctx context.Context, result *storage.Compl
 	return d.store.Upsert(ctx, result)
 }
 
-// DeleteResults removes a result from the database
-func (d *datastoreImpl) DeleteResults(ctx context.Context, id string) error {
+// DeleteResult removes a result from the database
+func (d *datastoreImpl) DeleteResult(ctx context.Context, id string) error {
 	if ok, err := complianceOperatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator check results write")
+		return sac.ErrResourceAccessDenied
 	}
 	return d.store.Delete(ctx, id)
 }
@@ -48,7 +47,7 @@ func (d *datastoreImpl) SearchCheckResults(ctx context.Context, query *v1.Query)
 	if ok, err := complianceOperatorSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.Wrap(sac.ErrResourceAccessDenied, "compliance operator check results read")
+		return nil, sac.ErrResourceAccessDenied
 	}
 
 	return d.store.GetByQuery(ctx, query)

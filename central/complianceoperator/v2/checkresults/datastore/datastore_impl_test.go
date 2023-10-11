@@ -68,7 +68,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
 	s.db.Teardown(s.T())
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResults() {
+func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	// make sure we have nothing
 	checkResults, err := s.storage.GetAll(s.hasReadCtx)
 	s.Require().NoError(err)
@@ -78,15 +78,15 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResults() {
 	rec2 := getTestRec(fixtureconsts.Cluster2)
 	ids := []string{rec1.GetId(), rec2.GetId()}
 
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec1))
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
 	count, err := s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
 	// upsert with read context
-	s.Require().Error(s.dataStore.UpsertResults(s.hasReadCtx, rec2))
+	s.Require().Error(s.dataStore.UpsertResult(s.hasReadCtx, rec2))
 
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
@@ -94,7 +94,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResults() {
 	s.Require().Equal(rec1, retrieveRec1)
 }
 
-func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResults() {
+func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 	// make sure we have nothing
 	checkResults, err := s.storage.GetAll(s.hasReadCtx)
 	s.Require().NoError(err)
@@ -104,18 +104,18 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResults() {
 	rec2 := getTestRec(fixtureconsts.Cluster2)
 	ids := []string{rec1.GetId(), rec2.GetId()}
 
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec1))
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
 
 	count, err := s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)
 	s.Require().Equal(len(ids), count)
 
 	// Try to delete with wrong context
-	s.Require().Error(s.dataStore.DeleteResults(s.hasReadCtx, rec1.GetId()))
+	s.Require().Error(s.dataStore.DeleteResult(s.hasReadCtx, rec1.GetId()))
 
 	// Now delete rec1
-	s.Require().NoError(s.dataStore.DeleteResults(s.hasWriteCtx, rec1.GetId()))
+	s.Require().NoError(s.dataStore.DeleteResult(s.hasWriteCtx, rec1.GetId()))
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().False(found)
@@ -134,10 +134,10 @@ func (s *complianceCheckResultDataStoreTestSuite) TestSearchCheckResults() {
 	rec4 := getTestRec(fixtureconsts.Cluster2)
 	ids := []string{rec1.GetId(), rec2.GetId(), rec3.GetId(), rec4.GetId()}
 
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec1))
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec2))
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec3))
-	s.Require().NoError(s.dataStore.UpsertResults(s.hasWriteCtx, rec4))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec3))
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec4))
 
 	count, err := s.storage.Count(s.hasReadCtx)
 	s.Require().NoError(err)

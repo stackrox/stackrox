@@ -12,11 +12,11 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	// UpsertResults adds the results to the database
-	UpsertResults(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
+	// UpsertResult adds the result to the database
+	UpsertResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 
-	// DeleteResults removes a result from the database
-	DeleteResults(ctx context.Context, id string) error
+	// DeleteResult removes a result from the database
+	DeleteResult(ctx context.Context, id string) error
 
 	// SearchCheckResults retrieves the scan results specified by query
 	SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
