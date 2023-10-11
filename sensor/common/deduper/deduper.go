@@ -15,16 +15,10 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// key is the key by which messages are deduped.
-type key struct {
-	id           string
-	resourceType reflect.Type
-}
-
 // deduper takes care of deduping sensor events.
 type deduper struct {
 	stream   messagestream.SensorMessageStream
-	lastSent map[key]uint64
+	lastSent map[Key]uint64
 
 	hasher *hash.Hasher
 }
@@ -33,7 +27,7 @@ type deduper struct {
 func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
 	return &deduper{
 		stream:   stream,
-		lastSent: make(map[key]uint64),
+		lastSent: make(map[Key]uint64),
 		hasher:   hash.NewHasher(),
 	}
 }
@@ -49,9 +43,9 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	if managedcentral.IsCentralManaged() && event.GetImageIntegration() != nil {
 		return nil
 	}
-	key := key{
-		id:           event.GetId(),
-		resourceType: reflect.TypeOf(event.GetResource()),
+	key := Key{
+		ID:           event.GetId(),
+		ResourceType: reflect.TypeOf(event.GetResource()),
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		priorLen := len(d.lastSent)
