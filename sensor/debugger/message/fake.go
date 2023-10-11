@@ -3,15 +3,28 @@ package message
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 )
 
 // SensorHello returns a fake SensorHello message
-func SensorHello(clsuterID string) *central.MsgToSensor {
+func SensorHello(clusterID string) *central.MsgToSensor {
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_Hello{
 			Hello: &central.CentralHello{
-				ClusterId:  clsuterID,
-				CertBundle: map[string]string{},
+				ClusterId:    clusterID,
+				CertBundle:   map[string]string{},
+				Capabilities: []string{centralsensor.SensorReconciliationOnReconnect},
+			},
+		},
+	}
+}
+
+// DeduperState returns as fake DeduperState message
+func DeduperState(state map[string]uint64) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_DeduperState{
+			DeduperState: &central.DeduperState{
+				ResourceHashes: state,
 			},
 		},
 	}
