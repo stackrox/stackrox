@@ -27,7 +27,7 @@ function AdministrationEventsEmptyState({
                     <Bullseye>
                         {hasFilter ? (
                             <EmptyState>
-                                {hasFilter && <EmptyStateIcon icon={SearchIcon} />}
+                                <EmptyStateIcon icon={SearchIcon} />
                                 <EmptyStateBody>
                                     <Flex direction={{ default: 'column' }}>
                                         <Title headingLevel="h2">
