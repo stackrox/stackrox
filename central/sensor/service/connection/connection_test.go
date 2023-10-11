@@ -72,7 +72,7 @@ func (s *testSuite) TestGetPolicySyncMsgFromPoliciesDoesntDowngradeBelowMinimumV
 }
 
 func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
-	s.T().Setenv("ROX_SENSOR_RECONCILIATION", "true")
+	s.T().Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
 	if !features.SensorReconciliationOnReconnect.Enabled() {
 		s.T().Skip("Test skipped if ROX_SENSOR_RECONCILIATION feature flag isn't set")
 	}

@@ -278,7 +278,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		return errors.Wrap(err, "receiving initial deduper sync")
 	}
 	if msg.GetDeduperState() == nil {
-		return errors.Errorf("expected DeduperState but received: %t", msg.Msg)
+		return errors.Wrapf(errCantReconcile, "central sent incorrect order of events: expected DeduperState but received %t instead", msg.GetMsg())
 	}
 
 	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
