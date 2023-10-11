@@ -310,6 +310,26 @@ export function saveUpdatedAuthProvider(entityId, staticResponseMap) {
     );
 }
 
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function inviteNewGroupsBatch(staticResponseMap) {
+    const routeMatcherMap = {
+        [groupsBatchAliasForPOST]: {
+            method: 'POST',
+            url: '/v1/groupsbatch',
+        },
+    };
+
+    return interactAndWaitForResponses(
+        () => {
+            cy.get('.pf-c-modal-box__footer button:contains("Invite users")').click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
+
 // Roles
 
 export function saveCreatedRole(entityName) {
