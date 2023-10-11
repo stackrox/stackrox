@@ -284,7 +284,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	}
 
 	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
-	s.initialDeduperState = deduper.CopyDeduperState(msg.GetDeduperState().GetResourceHashes())
+	s.initialDeduperState = deduper.ParseDeduperState(msg.GetDeduperState().GetResourceHashes())
 	return nil
 }
 
