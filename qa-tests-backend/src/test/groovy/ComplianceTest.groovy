@@ -60,7 +60,6 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 class ComplianceTest extends BaseSpecification {
     @Shared
