@@ -45,7 +45,6 @@ const (
 // APITokens holds the Gorm model for Postgres table `api_tokens`.
 type APITokens struct {
 	ID         string     `gorm:"column:id;type:varchar;primaryKey"`
-	Name       string     `gorm:"column:name;type:varchar;uniqueIndex:apitokens_name"`
 	Expiration *time.Time `gorm:"column:expiration;type:timestamp"`
 	Revoked    bool       `gorm:"column:revoked;type:bool"`
 	Serialized []byte     `gorm:"column:serialized;type:bytea"`
