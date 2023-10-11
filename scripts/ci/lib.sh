@@ -1313,7 +1313,7 @@ __EOM__
       "$body")"
     echo -e "About to post:\n$payload"
 
-    echo "$payload" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+    echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url" || {
         slack_error "Error posting to Slack"
         return 1
     }
