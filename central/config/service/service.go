@@ -163,7 +163,7 @@ func (s *serviceImpl) UpdateVulnerabilityExceptionConfig(ctx context.Context, re
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "request cannot be nil")
 	}
-	exceptionCfg := VulnerabilityDeferralConfigV1ToStorage(req.GetConfig())
+	exceptionCfg := VulnerabilityExceptionConfigV1ToStorage(req.GetConfig())
 	if err := validateExceptionConfigReq(exceptionCfg); err != nil {
 		return nil, err
 	}

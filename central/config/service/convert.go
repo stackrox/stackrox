@@ -5,9 +5,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// VulnerabilityDeferralConfigV1ToStorage returns a new instance of *storage.VulnerabilityExceptionConfig
+// VulnerabilityExceptionConfigV1ToStorage returns a new instance of *storage.VulnerabilityExceptionConfig
 // based on input *v1.VulnerabilityExceptionConfig.
-func VulnerabilityDeferralConfigV1ToStorage(config *v1.VulnerabilityExceptionConfig) *storage.VulnerabilityExceptionConfig {
+func VulnerabilityExceptionConfigV1ToStorage(config *v1.VulnerabilityExceptionConfig) *storage.VulnerabilityExceptionConfig {
 	if config == nil {
 		return nil
 	}
