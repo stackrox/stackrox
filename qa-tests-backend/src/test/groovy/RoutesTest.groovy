@@ -11,7 +11,6 @@ import util.Env
 import org.junit.Assume
 import spock.lang.Tag
 
-@Tag("PZ")
 class RoutesTest extends BaseSpecification {
 
     def getRoutes(String uuid) {

@@ -20,7 +20,6 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("PZ")
 class Enforcement extends BaseSpecification {
 
     // Test labels - each test has its own unique label space. This is also used to name

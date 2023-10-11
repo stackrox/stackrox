@@ -32,7 +32,6 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-@Tag("PZ")
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
     static final private String DNS = "qaapachedns"
