@@ -23,6 +23,10 @@ type DataStore interface {
 
 	GetNotificationSchedule(ctx context.Context) (*storage.NotificationSchedule, bool, error)
 	UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error
+
+	DeleteTokens(ctx context.Context, tokenIDs []string) error
+
+	Walk(ctx context.Context, fn func(*storage.TokenMetadata) error) error
 }
 
 // New returns a ready-to-use DataStore instance.

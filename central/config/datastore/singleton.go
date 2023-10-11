@@ -38,6 +38,8 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
+	// DefaultExpiredAPITokensRetention is the number of days to retain expired API tokens.
+	DefaultExpiredAPITokensRetention = 7
 )
 
 var (
@@ -56,7 +58,8 @@ var (
 				AttemptedRuntimeRetentionDurationDays: DefaultAttemptedRuntimeAlertRetention,
 			},
 		},
-		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
+		ExpiredVulnReqRetentionDurationDays:  DefaultExpiredVulnReqRetention,
+		ExpiredApiTokenRetentionDurationDays: DefaultExpiredAPITokensRetention,
 	}
 
 	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityDeferralConfig{

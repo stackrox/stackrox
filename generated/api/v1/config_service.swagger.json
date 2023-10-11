@@ -352,6 +352,10 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "expiredApiTokenRetentionDurationDays": {
+          "type": "integer",
+          "format": "int32"
         }
       },
       "title": "next available tag:9"

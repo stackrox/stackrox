@@ -17,4 +17,5 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.TokenMetadata, error)
 	Walk(context.Context, func(*storage.TokenMetadata) error) error
 	Upsert(context.Context, *storage.TokenMetadata) error
+	DeleteMany(context.Context, []string) error
 }

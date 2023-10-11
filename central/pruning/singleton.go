@@ -2,6 +2,7 @@ package pruning
 
 import (
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
+	apiTokenDatastore "github.com/stackrox/rox/central/apitoken/datastore"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
@@ -32,6 +33,7 @@ var (
 func Singleton() GarbageCollector {
 	once.Do(func() {
 		gc = newGarbageCollector(alertDatastore.Singleton(),
+			apiTokenDatastore.Singleton(),
 			nodeDatastore.Singleton(),
 			imagesDatastore.Singleton(),
 			clusterDatastore.Singleton(),

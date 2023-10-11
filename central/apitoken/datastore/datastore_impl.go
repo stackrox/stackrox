@@ -151,3 +151,11 @@ func (b *datastoreImpl) GetNotificationSchedule(ctx context.Context) (*storage.N
 func (b *datastoreImpl) UpsertNotificationSchedule(ctx context.Context, schedule *storage.NotificationSchedule) error {
 	return b.scheduleStorage.Upsert(ctx, schedule)
 }
+
+func (b *datastoreImpl) Walk(ctx context.Context, fn func(*storage.TokenMetadata) error) error {
+	return b.storage.Walk(ctx, fn)
+}
+
+func (b *datastoreImpl) DeleteTokens(ctx context.Context, tokenIDs []string) error {
+	return b.storage.DeleteMany(ctx, tokenIDs)
+}
