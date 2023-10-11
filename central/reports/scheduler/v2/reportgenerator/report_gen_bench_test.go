@@ -16,7 +16,6 @@ import (
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -42,10 +41,10 @@ type ReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkReportGenerator(b *testing.B) {
-	b.Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
-		b.Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		b.SkipNow()
+	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
+	if !features.VulnReportingEnhancements.Enabled() {
+		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
+		s.T().SkipNow()
 	}
 
 	bts := &ReportGeneratorBenchmarkTestSuite{b: b}
