@@ -203,7 +203,7 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 					mu.Lock()
 					defer mu.Unlock()
 					return tc.eventuallyMatchesState(copySentMessages(sentMessages))
-				}, 3*time.Second, 100*time.Millisecond)
+				}, 300*time.Millisecond, 10*time.Millisecond)
 			}
 
 			if tc.neverMatchesState != nil {
@@ -211,7 +211,7 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 					mu.Lock()
 					defer mu.Unlock()
 					return tc.neverMatchesState(copySentMessages(sentMessages))
-				}, 3*time.Second, 100*time.Millisecond)
+				}, 300*time.Millisecond, 10*time.Millisecond)
 			}
 		})
 	}
