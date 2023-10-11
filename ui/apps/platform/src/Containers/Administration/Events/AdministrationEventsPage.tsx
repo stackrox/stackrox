@@ -25,15 +25,13 @@ function AdministrationEventsPage(): ReactElement {
     const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [count, setCount] = useState(0);
+    const [countAvailable, setCountAvailable] = useState(0);
     const [errorMessage, setErrorMessage] = useState('');
     const [events, setEvents] = useState<AdministrationEvent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [lastUpdatedEventIds, setLastUpdatedEventIds] = useState<Set<string>>(new Set());
     const [lastUpdatedTime, setLastUpdatedTime] = useState('');
     const [updatedCount, setUpdatedCount] = useState(0);
-
-    const [countAvailable, setCountAvailable] = useState(0);
-    const [pollingCount, setPollingCount] = useState(0);
 
     /*
      * Request count and events at initial page load or after user action:
@@ -76,29 +74,21 @@ function AdministrationEventsPage(): ReactElement {
     /*
      * Request events every minute to compute count of events available.
      */
-    useEffect(() => {
-        if (pollingCount !== 0) {
-            const arg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
-            listAdministrationEvents(arg)
-                .then((eventsArg) => {
-                    let nAvailable = 0;
-
-                    eventsArg.forEach(({ id }) => {
-                        if (!lastUpdatedEventIds.has(id)) {
-                            nAvailable += 1;
-                        }
-                    });
-
-                    setCountAvailable(nAvailable);
-                })
-                .catch(() => {});
-        }
-    }, [pollingCount]); // eslint-disable-line react-hooks/exhaustive-deps
-    // Why disable the rule for the following hook dependencies: lastUpdatedEventIds, page, perPage, searchFilter, sortOption?
-    // So polling continues on its schedule instead of immediately making a redundant request.
-
     useInterval(() => {
-        setPollingCount(pollingCount + 1);
+        const arg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
+        listAdministrationEvents(arg)
+            .then((eventsArg) => {
+                setCountAvailable(
+                    eventsArg.reduce(
+                        (countAvailableAccumulator, { id }) =>
+                            lastUpdatedEventIds.has(id)
+                                ? countAvailableAccumulator
+                                : countAvailableAccumulator + 1,
+                        0
+                    )
+                );
+            })
+            .catch(() => {});
     }, 60000); // 60 seconds corresponds to backend reprocessing events.
 
     /* eslint-disable no-nested-ternary */
