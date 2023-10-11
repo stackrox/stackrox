@@ -33,6 +33,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
 			"storage.Deployment":       DeploymentsSchema,
+			"storage.Pod":              PodsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
