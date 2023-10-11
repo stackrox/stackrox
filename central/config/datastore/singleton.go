@@ -59,8 +59,8 @@ var (
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
 
-	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityDeferralConfig{
-		ExpiryOptions: &storage.VulnerabilityDeferralConfig_ExpiryOptions{
+	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
 			DayOptions: []*storage.DayOption{
 				{
 					NumDays: 14,
@@ -79,11 +79,12 @@ var (
 					Enabled: true,
 				},
 			},
-			FixableCveOptions: &storage.VulnerabilityDeferralConfig_FixableCVEOptions{
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: true,
 				AnyFixable: true,
 			},
 			CustomDate: false,
+			Indefinite: false,
 		},
 	}
 )
@@ -131,9 +132,10 @@ func initialize() {
 	}
 
 	if features.UnifiedCVEDeferral.Enabled() {
-		if privateConfig.GetVulnerabilityDeferralConfig() == nil {
-			privateConfig.VulnerabilityDeferralConfig = defaultVulnerabilityDeferralConfig
+		if privateConfig.GetVulnerabilityExceptionConfig() == nil {
+			privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
 		}
+		needsUpsert = true
 	}
 
 	if features.AdministrationEvents.Enabled() {
