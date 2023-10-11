@@ -29,12 +29,12 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 		expectedError error
 	}{
 		"Pod": {
-			resType:       "Pod",
+			resType:       deduper.TypePod.String(),
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Pod{Pod: &storage.Pod{Id: testResID}}}},
 			expectedError: nil,
 		},
 		"Deployment": {
-			resType:       "Deployment",
+			resType:       deduper.TypeDeployment.String(),
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Deployment{Deployment: &storage.Deployment{Id: testResID}}}},
 			expectedError: nil,
 		},
@@ -60,11 +60,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 
 func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error) {
 	switch resType {
-	case "*central.SensorEvent_Deployment":
+	case deduper.TypeDeployment.String():
 		return func(event *central.SensorEvent) string {
 			return event.GetDeployment().GetId()
 		}, nil
-	case "*central.SensorEvent_Pod":
+	case deduper.TypePod.String():
 		return func(event *central.SensorEvent) string {
 			return event.GetPod().GetId()
 		}, nil
