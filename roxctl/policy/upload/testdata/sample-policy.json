@@ -1,0 +1,32 @@
+{
+  "id": "c19c0cea-b5df-40c4-80e7-836a1b0785e6",
+  "name": "First pushed policy",
+  "description": "This is the first pushed policy",
+  "rationale": "Because",
+  "remediation": "Because",
+  "categories": [
+    "Anomalous Activity"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "SORTName": "First pushed policy",
+  "SORTLifecycleStage": "DEPLOY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Policy Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Disallowed Annotation",
+          "values": [
+            {
+              "value": "foo=bar"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -307,7 +307,8 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 
 	policyutils.FillSortHelperFields(importPolicies...)
 	// All imported policies must be marked custom policy even if they were exported default policies.
-	markPoliciesAsCustom(importPolicies...)
+	// TODO(dhaus): Skip this, we want the default policies to stay default when importing via OCI registries.
+	// markPoliciesAsCustom(importPolicies...)
 
 	// Store the policies and report any errors
 	ds.policyMutex.Lock()

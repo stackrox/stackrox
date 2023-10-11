@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "api/v1/common.proto";
+
+package v1;
+
+message PolicySync {
+    string name                  = 1;
+    message Registry {
+        string hostname          = 1;
+        string repository        = 2;
+    }
+    repeated Registry registries = 2;
+}
+
+message PostPolicySyncRequest {
+    PolicySync policy_sync = 1;
+}
+
+message GetPolicySyncResponse {
+    PolicySync sync = 1;
+}
+
+message GetPolicySyncsResponse {
+    repeated PolicySync syncs = 1;
+}
+
+service PolicySyncService {
+    rpc GetPolicyRequest(Empty) returns (GetPolicySyncResponse) {
+        option(google.api.http) = {
+            get: "/v1/policy/sync"
+        };
+    }
+
+    rpc PostPolicyRequest(PostPolicySyncRequest) returns (Empty) {
+        option(google.api.http) = {
+            post: "/v1/policy/sync"
+            body: "*"
+        };
+    }
+}
