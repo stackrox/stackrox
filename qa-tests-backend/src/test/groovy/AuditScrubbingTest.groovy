@@ -12,7 +12,6 @@ import util.Timer
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
-import spock.lang.IgnoreIf
 
 @Tag("BAT")
 @Tag("PZ")
