@@ -49,7 +49,7 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParams = &ReportQueryParams{
-		Schema: schema.ImageCvesSchema,
+		Schema: schema.ImageComponentsSchema,
 		Selects: []*v1.QuerySelect{
 			search.NewQuerySelect(search.ImageName).Proto(),
 			search.NewQuerySelect(search.Component).Proto(),
