@@ -39,9 +39,7 @@ function AdministrationEventsPage(): ReactElement {
      * click events available button
      */
     useEffect(() => {
-        if (updatedCount === 0) {
-            setIsLoading(true);
-        }
+        setIsLoading(true);
 
         const listArg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
         const { filter } = listArg;
@@ -61,9 +59,7 @@ function AdministrationEventsPage(): ReactElement {
                 setEvents([]);
             })
             .finally(() => {
-                if (updatedCount === 0) {
-                    setIsLoading(false);
-                }
+                setIsLoading(false);
             });
     }, [page, perPage, searchFilter, setIsLoading, sortOption, updatedCount]);
 
@@ -103,7 +99,7 @@ function AdministrationEventsPage(): ReactElement {
                 </Text>
             </PageSection>
             <PageSection component="div">
-                {isLoading ? (
+                {isLoading && !lastUpdatedTime ? (
                     <Bullseye>
                         <Spinner isSVG />
                     </Bullseye>
@@ -121,6 +117,7 @@ function AdministrationEventsPage(): ReactElement {
                         <AdministrationEventsToolbar
                             count={count}
                             countAvailable={countAvailable}
+                            isDisabled={isLoading}
                             lastUpdatedTime={lastUpdatedTime}
                             page={page}
                             perPage={perPage}

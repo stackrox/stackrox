@@ -7,6 +7,7 @@ import { getTimeHoursMinutes } from 'utils/dateUtils';
 type UpdatedTimeOrUpdateButtonProps = {
     countAvailable: number;
     isAvailableEqualToPerPage: boolean;
+    isDisabled: boolean;
     lastUpdatedTime: string; // ISO 8601
     updateEvents: () => void;
 };
@@ -14,6 +15,7 @@ type UpdatedTimeOrUpdateButtonProps = {
 const UpdatedTimeOrUpdateButton = ({
     countAvailable,
     isAvailableEqualToPerPage,
+    isDisabled,
     lastUpdatedTime,
     updateEvents,
 }: UpdatedTimeOrUpdateButtonProps): ReactElement => {
@@ -22,7 +24,7 @@ const UpdatedTimeOrUpdateButton = ({
             lastUpdatedTime
         )}`}</em>
     ) : (
-        <Button isSmall onClick={updateEvents} variant="secondary">
+        <Button isDisabled={isDisabled} isSmall onClick={updateEvents} variant="secondary">
             {`${countAvailable}${isAvailableEqualToPerPage ? '+' : ''} ${pluralize(
                 'event',
                 countAvailable

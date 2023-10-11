@@ -24,6 +24,7 @@ import UpdatedTimeOrUpdateButton from './UpdatedTimeOrUpdateButton';
 export type AdministrationEventsToolbarProps = {
     count: number;
     countAvailable: number;
+    isDisabled: boolean;
     lastUpdatedTime: string;
     page: number;
     perPage: number;
@@ -37,6 +38,7 @@ export type AdministrationEventsToolbarProps = {
 function AdministrationEventsToolbar({
     count,
     countAvailable,
+    isDisabled,
     lastUpdatedTime,
     page,
     perPage,
@@ -65,16 +67,25 @@ function AdministrationEventsToolbar({
             <ToolbarContent>
                 <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
-                        <SearchFilterDomain domain={domain && domain[0]} setDomain={setDomain} />
+                        <SearchFilterDomain
+                            domain={domain && domain[0]}
+                            isDisabled={isDisabled}
+                            setDomain={setDomain}
+                        />
                     </ToolbarItem>
                     <ToolbarItem>
                         <SearchFilterResourceType
+                            isDisabled={isDisabled}
                             resourceType={resourceType && resourceType[0]}
                             setResourceType={setResourceType}
                         />
                     </ToolbarItem>
                     <ToolbarItem>
-                        <SearchFilterLevel level={level && level[0]} setLevel={setLevel} />
+                        <SearchFilterLevel
+                            isDisabled={isDisabled}
+                            level={level && level[0]}
+                            setLevel={setLevel}
+                        />
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
@@ -83,6 +94,7 @@ function AdministrationEventsToolbar({
                             <UpdatedTimeOrUpdateButton
                                 countAvailable={countAvailable}
                                 isAvailableEqualToPerPage={countAvailable === perPage}
+                                isDisabled={isDisabled}
                                 lastUpdatedTime={lastUpdatedTime}
                                 updateEvents={updateEvents}
                             />
@@ -91,6 +103,7 @@ function AdministrationEventsToolbar({
                     <ToolbarItem variant="pagination">
                         <Pagination
                             isCompact
+                            isDisabled={isDisabled}
                             itemCount={count}
                             page={page}
                             perPage={perPage}
