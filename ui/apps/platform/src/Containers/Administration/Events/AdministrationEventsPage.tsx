@@ -1,4 +1,4 @@
-import React, { ReactElement, useEffect, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useState } from 'react';
 import { Alert, Bullseye, PageSection, Spinner, Text, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -31,14 +31,16 @@ function AdministrationEventsPage(): ReactElement {
     const [isLoading, setIsLoading] = useState(false);
     const [lastUpdatedEventIds, setLastUpdatedEventIds] = useState<Set<string>>(new Set());
     const [lastUpdatedTime, setLastUpdatedTime] = useState('');
-    const [updatedCount, setUpdatedCount] = useState(0);
 
     /*
      * Request count and events at initial page load or after user action:
-     * change pagination, searchFilter, sortOptions
-     * click events available button
+     * 1. change pagination, searchFilter, sortOptions:
+     *    * because useCallback hook dependencies change,
+     *    * it returns a new updateEvents callback function,
+     *    * which is the useEffect hook dependency.
+     * 2. click events available button which has `onClick={updateEvents}` prop.
      */
-    useEffect(() => {
+    const updateEvents = useCallback(() => {
         setIsLoading(true);
 
         const listArg = getListAdministrationEventsArg({ page, perPage, searchFilter, sortOption });
@@ -61,11 +63,11 @@ function AdministrationEventsPage(): ReactElement {
             .finally(() => {
                 setIsLoading(false);
             });
-    }, [page, perPage, searchFilter, setIsLoading, sortOption, updatedCount]);
+    }, [page, perPage, searchFilter, setIsLoading, sortOption]);
 
-    function updateEvents() {
-        setUpdatedCount(updatedCount + 1);
-    }
+    useEffect(() => {
+        updateEvents();
+    }, [updateEvents]);
 
     /*
      * Request events every minute to compute count of events available.
