@@ -63,19 +63,18 @@ func initialize() {
 	// Create actionable notifiers from the loaded protos.
 	for _, protoNotifier := range protoNotifiers {
 		// Check if the notifier creds are need to be encrypted
-		if protoNotifier.GetNotifierSecret() == "" {
-			err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
-			if err != nil {
-				// Don't send out error from crypto lib
-				utils.CrashOnError(fmt.Errorf("Error securing notifier %s", protoNotifier.GetId()))
-			}
+		encCredsModified, err := notifierUtils.SecureNotifier(protoNotifier, cryptoKey)
+		if err != nil {
+			// Don't send out error from crypto lib
+			utils.CrashOnError(fmt.Errorf("Error securing notifier %s", protoNotifier.GetId()))
+		}
+		if encCredsModified {
 			_, err = datastore.Singleton().UpsertNotifier(ctx, protoNotifier)
 			if err != nil {
 				utils.Should(errors.Wrapf(err, "error upserting secured notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
 				continue
 			}
 		}
-
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
 			utils.Should(errors.Wrapf(err, "error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType()))
