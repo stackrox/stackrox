@@ -12,6 +12,7 @@ import (
 	midPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/mid"
 	newPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/new"
 	"github.com/stackrox/rox/migrator/types"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 )
 
@@ -21,6 +22,7 @@ const (
 
 var (
 	seenTokenNames = make(map[string]int)
+	log            = logging.LoggerForModule()
 )
 
 func migrate(database *types.Databases) error {
@@ -37,6 +39,7 @@ func migrate(database *types.Databases) error {
 		migratedTokens = append(migratedTokens, migratedObj)
 		if len(migratedTokens) >= batchSize {
 			upsertErr := upsertBatch(database.DBCtx, newAPITokenStorage, migratedTokens)
+			log.Infof("Upsert error: %v", upsertErr)
 			migratedTokens = migratedTokens[:0]
 			return upsertErr
 		}
@@ -49,6 +52,7 @@ func migrate(database *types.Databases) error {
 
 func getNewTokenName(tokenName string) string {
 	if seenTokenNames[tokenName] <= 1 {
+		log.Infof("Name change %q => %q", tokenName, tokenName)
 		return tokenName
 	}
 	migratedName := fmt.Sprintf("%s (%d)", tokenName, seenTokenNames[tokenName])
@@ -57,6 +61,7 @@ func getNewTokenName(tokenName string) string {
 		migratedName = fmt.Sprintf("%s (%d)", tokenName, seenTokenNames[tokenName])
 	}
 	seenTokenNames[migratedName]++
+	log.Infof("Name change %q => %q", tokenName, migratedName)
 	return migratedName
 }
 

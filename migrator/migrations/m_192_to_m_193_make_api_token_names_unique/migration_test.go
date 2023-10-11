@@ -34,7 +34,8 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
 	_ = oldPkgSchema.CreateTableAPITokensStmt
-	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), midPkgSchema.CreateTableAPITokensStmt)
+	_ = midPkgSchema.CreateTableAPITokensStmt
+	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldPkgSchema.CreateTableAPITokensStmt)
 }
 
 func (s *migrationTestSuite) TearDownSuite() {
@@ -179,8 +180,8 @@ var (
 )
 
 func (s *migrationTestSuite) TestMigration() {
-	_ = oldApiTokenStore.New(s.db)
-	store := newApiTokenStore.New(s.db)
+	store := oldApiTokenStore.New(s.db)
+	_ = newApiTokenStore.New(s.db)
 
 	s.Require().NoError(store.UpsertMany(s.ctx, preMigrationTokens))
 
