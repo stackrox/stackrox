@@ -5,9 +5,9 @@ var (
 	// Default to 0 (no limit).
 	CentralMaxInitSyncSensors = RegisterIntegerSetting("ROX_CENTRAL_MAX_INIT_SYNC_SENSORS", 0)
 
-	// CentralApiRateLimitPerSecond defines number of allowed API requests
+	// CentralAPIRateLimitPerSecond defines number of allowed API requests
 	// per second to central from all sources. Default 0 (no limit).
-	CentralApiRateLimitPerSecond = RegisterIntegerSetting("ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND", 0)
+	CentralAPIRateLimitPerSecond = RegisterIntegerSetting("ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND", 0)
 
 	// CentralSensorMaxEventsPerSecond defines number of maximum number of
 	// allowed Sensor events sent from all connected sensors to Central/

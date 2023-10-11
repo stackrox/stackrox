@@ -70,3 +70,7 @@ func (m *rateLimitManager) Remove(clusterID string) {
 		m.eventRateLimiter.DecreaseLimit(boostInitSyncRateLimit)
 	}
 }
+
+func (m *rateLimitManager) LimitMsg() bool {
+	return m.eventRateLimiter.Limit()
+}

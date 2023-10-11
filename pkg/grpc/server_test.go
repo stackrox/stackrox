@@ -196,7 +196,7 @@ func (s *pingServiceTestImpl) AuthFuncOverride(ctx context.Context, fullMethodNa
 }
 
 func (s *pingServiceTestImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
-	s.RequestCount += 1
+	s.RequestCount++
 
 	result := &v1.PongMessage{
 		Status: "test",
@@ -258,7 +258,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 		hitLimit := false
 		requestCount := 0
 		for requestCount < 30 {
-			requestCount += 1
+			requestCount++
 			resp, err := http.Get("https://localhost:8080/v1/ping")
 			a.Require().NoError(err)
 
@@ -272,7 +272,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 				hitLimit = true
 
 				// Request was rejected because of rate limit.
-				requestCount -= 1
+				requestCount--
 				break
 			}
 		}
@@ -282,7 +282,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 		// Wait for rate limit to refill.
 		time.Sleep(2 * time.Second)
 
-		requestCount += 1
+		requestCount++
 		resp, err := http.Get("https://localhost:8080/v1/ping")
 		a.Assert().NoError(err)
 		a.Assert().Equal(http.StatusOK, resp.StatusCode)
