@@ -62,5 +62,5 @@ message ProcessListeningOnPortStorage {
 
     string deployment_id              = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
 
-    string pod_uid                    = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"index=hash,type(uuid)"'];
+    string pod_uid                    = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"'];
 }
