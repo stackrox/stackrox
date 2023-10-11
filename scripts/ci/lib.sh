@@ -1362,7 +1362,10 @@ junit_contains_failure() {
     if [[ ! -d $dir ]]; then
         return 1
     fi
-    for f in $(find "$dir" -type f -iname '*.xml'); do # shellcheck disable=SC2044
+    # There should be few files in such dir, and they should have well-behaved names,
+    # and "return" does not mix with piping to "while read", so we use a "for" over find.
+    # shellcheck disable=SC2044
+    for f in $(find "$dir" -type f -iname '*.xml'); do
         if grep -q '<failure ' "$f"; then
             return 0
         fi
