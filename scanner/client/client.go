@@ -30,6 +30,8 @@ import (
 //     report.
 //
 //   - Close cleans up any resources used by the implementation.
+//
+//go:generate mockgen-wrapper
 type ScannerClient interface {
 	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error)
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator) (*v4.VulnerabilityReport, error)
