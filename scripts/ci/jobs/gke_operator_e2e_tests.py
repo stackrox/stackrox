@@ -11,7 +11,7 @@ from post_tests import PostClusterTest, FinalPost
 
 
 ClusterTestRunner(
-    cluster=GKECluster("operator-e2e-test"),
+    cluster=GKECluster("operator-e2e-test", disk_gb=400),
     pre_test=PreSystemTests(),
     test=OperatorE2eTest(operator_cluster_type="gke"),
     post_test=PostClusterTest(collect_central_artifacts=False),
