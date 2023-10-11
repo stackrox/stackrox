@@ -153,7 +153,6 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    // "http://webhookserver.stackrox:8080": dial tcp: lookup webhookserver.stackrox on 172.30.0.10:53: no such host on P/Z
     //@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
         when:
@@ -392,7 +391,6 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
-    // connection refused to "http://localhost:8080" on P/Z
     //@IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Attempted Policy Violation Notifications: #type"() {
         when:
