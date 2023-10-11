@@ -251,12 +251,17 @@ task runSampleScript(dependsOn: 'classes', type: JavaExec) {
         classpath = sourceSets.main.runtimeClasspath
     }
 }
+
 task testPZ(type: Test) {
     useJUnitPlatform {
         includeTags "PZ"
     }
 }
-
+task testPZDebug(type: Test) {
+    useJUnitPlatform {
+        includeTags "PZDebug"
+    }
+}
 test {
     useJUnitPlatform()
 }
