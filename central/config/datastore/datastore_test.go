@@ -82,7 +82,7 @@ var (
 			ExpiredVulnReqRetentionDurationDays: 7,
 			DecommissionedClusterRetention:      nil,
 			ReportRetentionConfig:               nil,
-			VulnerabilityDeferralConfig:         nil,
+			VulnerabilityExceptionConfig:        nil,
 		},
 	}
 )
