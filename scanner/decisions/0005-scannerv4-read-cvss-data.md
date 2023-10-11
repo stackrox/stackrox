@@ -18,7 +18,7 @@ Central will have a new NVD CVSS Updater. It will download the NVD CVSS data fro
 
 ClairCore will also be used in Scanner V4 CVSS data retriever (will be explained in detail below). It will require the archived NVD CVSS data bundle stored in Central. Central will handle the task of downloading and updating the NVD CVSS data bundle for Scanner V4 using ClairCore.
 
-The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each NVD data bundle categorized by CVSS V3 severity. As an illustration, all CVE data with a CVSS V3 severity of 'low' will be archived into 'severity-low.zip' in Google storage and then being downloaded by the updater.
+The NVD CVSS Updater will retrieve CVSS data from Google storage at a configurable interval. It will make a single HTTP call for each NVD data bundle categorized by CVSS V3 severity. As an illustration, all CVE data with a CVSS V3 severity of 'low' will be archived into 'severity-low.zip' in Google storage and then being fetched by the updater.
 
 A GitHub workflow will keep the NVD data bundle in the Google Storage up-to-date. This Github workflow send http request to NVD CVE api to get data based on each level of CVSS V3 severities. Such as "curl 'https://services.nvd.nist.gov/rest/json/cves/2.0?cvssV3Severity=CRITICAL&startIndex=0' > severity-critical-0.json".  Per the NVD's documentation, the NVD CVE API omits CVSS v3 vector strings with a 'NONE' severity. This ensures we only obtain data bearing valid CVSS V3 metrics. For JSON files of a singular severity, we compress them into a single zip file, such as severity-low.zip.
 
