@@ -11,7 +11,7 @@ import (
 // New instantiates a an output Queue component
 func New(detector detector.Detector, queueSize int) component.OutputQueue {
 	ch := make(chan *component.ResourceEvent, queueSize)
-	forwardQueue := make(chan *message.ExpiringMessage)
+	forwardQueue := make(chan *message.ExpiringMessage, queueSize)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,
 		innerQueue:   ch,
