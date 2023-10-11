@@ -60,7 +60,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
+	c.comm = NewCentralCommunication(false, false, NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
@@ -93,6 +93,7 @@ var centralSyncMessages = []*central.MsgToSensor{
 	debuggerMessage.ClusterConfig(),
 	debuggerMessage.PolicySync([]*storage.Policy{}),
 	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+	debuggerMessage.NetworkBaselineSync([]*storage.NetworkBaseline{}),
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {

@@ -88,7 +88,8 @@ func Benchmark_Pipeline(b *testing.B) {
 			message.SensorHello("00000000-0000-4000-A000-000000000000"),
 			message.ClusterConfig(),
 			message.PolicySync([]*storage.Policy{}),
-			message.BaselineSync([]*storage.ProcessBaseline{}))
+			message.BaselineSync([]*storage.ProcessBaseline{}),
+			message.NetworkBaselineSync([]*storage.NetworkBaseline{}))
 
 		// No resync, we just want to test how long it takes for messages to go through the pipeline
 		setupSensor(fakeCentral, fakeClient, 0)

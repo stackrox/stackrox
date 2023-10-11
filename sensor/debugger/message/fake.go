@@ -32,6 +32,17 @@ func ClusterConfig() *central.MsgToSensor {
 	}
 }
 
+// NetworkBaselineSync returns a fake NetworkBaselineSync message
+func NetworkBaselineSync(baseline []*storage.NetworkBaseline) *central.MsgToSensor {
+	return &central.MsgToSensor{
+		Msg: &central.MsgToSensor_NetworkBaselineSync{
+			NetworkBaselineSync: &central.NetworkBaselineSync{
+				NetworkBaselines: baseline,
+			},
+		},
+	}
+}
+
 // BaselineSync returns a fake BaselineSync message
 func BaselineSync(baseline []*storage.ProcessBaseline) *central.MsgToSensor {
 	return &central.MsgToSensor{
