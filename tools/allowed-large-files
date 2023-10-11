@@ -47,3 +47,5 @@ tests/performance/package-lock.json
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
+scanner/e2etests/testdata/image_tests.json
+scanner/e2etests/testdata/image_tests.orig.json
