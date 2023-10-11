@@ -13,7 +13,7 @@ import (
 )
 
 type rateLimiter struct {
-	mu                 sync.Mutex
+	mutex              sync.Mutex
 	tokenBucketLimiter *rate.Limiter
 }
 
@@ -27,8 +27,8 @@ func (limiter *rateLimiter) IncreaseLimit(limit int) {
 		return
 	}
 
-	limiter.mu.Lock()
-	defer limiter.mu.Unlock()
+	limiter.mutex.Lock()
+	defer limiter.mutex.Unlock()
 
 	newBurst := limiter.tokenBucketLimiter.Burst() + limit
 	if 0 < newBurst {
@@ -46,8 +46,8 @@ func (limiter *rateLimiter) DecreaseLimit(limit int) {
 		return
 	}
 
-	limiter.mu.Lock()
-	defer limiter.mu.Unlock()
+	limiter.mutex.Lock()
+	defer limiter.mutex.Unlock()
 
 	newBurst := limiter.tokenBucketLimiter.Burst() - limit
 	if 0 < newBurst {

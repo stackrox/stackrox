@@ -179,7 +179,7 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 		}
 
 		if c.sensorEventHandler.rateLimitMgr.eventRateLimiter.Limit() {
-			c.stopSig.SignalWithError(errors.Wrap(status.Errorf(codes.ResourceExhausted, "Stream message is rejected by sensor event rate limiter."), "recv error"))
+			c.stopSig.SignalWithError(errors.Wrap(status.Errorf(codes.ResourceExhausted, "Stream message is rejected by sensor event rate limiter"), "recv error"))
 			return
 		}
 

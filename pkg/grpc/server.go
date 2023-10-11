@@ -153,7 +153,7 @@ func NewAPI(config Config) API {
 func (a *apiImpl) Start() *concurrency.ErrorSignal {
 	startedSig := concurrency.NewErrorSignal()
 	if a.shutdownInProgress.Load() {
-		startedSig.SignalWithError(errors.New("cannot start gRPC APIRateLimiter after Stop was called"))
+		startedSig.SignalWithError(errors.New("cannot start gRPC API after Stop was called"))
 	} else {
 		go a.run(&startedSig)
 	}
@@ -240,6 +240,9 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 		s = append(s, a.config.RateLimiter.GetStreamServerInterceptor())
 	}
 
+	s = append(s, contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
+	s = append(s, contextutil.StreamServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
+
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		s = append(s, contextutil.StreamServerInterceptor(a.config.PreAuthContextEnrichers...))
 	}
@@ -267,7 +270,7 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 		}
 
 		if !a.shutdownInProgress.Load() {
-			log.Fatal("Unexpected local APIRateLimiter server termination.")
+			log.Fatal("Unexpected local API server termination.")
 		}
 	}()
 	return dialContext
@@ -374,7 +377,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	if localConn != nil {
 		for _, service := range a.apiServices {
 			if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
-				log.Panicf("failed to register APIRateLimiter service: %v", err)
+				log.Panicf("failed to register API service: %v", err)
 			}
 		}
 	}
