@@ -78,7 +78,7 @@ func BenchmarkWithLimitHit(b *testing.B) {
 	}
 }
 
-func BenchmarkWithNoLimit(b *testing.B) {
+func BenchmarkWithLimitNoHit(b *testing.B) {
 	l := NewRateLimiter(b.N + 1000)
 	for i := 0; i < b.N; i++ {
 		l.Limit()
