@@ -40,6 +40,10 @@ _EO_KUTTL_HELP_
                "${kuttl_help}" \
                "make" "-C" "operator" "test-upgrade" || FAILED=1
     store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
+    if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
+        # Prevent double-reporting
+        remove_junit_record test-upgrade
+    fi
     [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
 
     info "Executing operator e2e tests"
@@ -48,6 +52,10 @@ _EO_KUTTL_HELP_
                "${kuttl_help}" \
                "make" "-C" "operator" "test-e2e-deployed" || FAILED=1
     store_test_results "operator/build/kuttl-test-artifacts" "kuttl-test-artifacts"
+    if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts")"; then
+        # Prevent double-reporting
+        remove_junit_record test-e2e
+    fi
     [[ $FAILED = 0 ]] || die "operator e2e tests failed"
 
     info "Executing Operator Bundle Scorecard tests"

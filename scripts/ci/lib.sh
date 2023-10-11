@@ -1073,6 +1073,10 @@ store_qa_test_results() {
     done
 }
 
+stored_test_results() {
+    echo "${ARTIFACT_DIR}/junit-$1"
+}
+
 store_test_results() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: store_test_results <from> <to>"
@@ -1087,7 +1091,7 @@ store_test_results() {
 
     info "Copying test results from $from to $to"
 
-    local dest="${ARTIFACT_DIR}/junit-$to"
+    local dest="$(stored_test_results "$to")"
 
     cp -a "$from" "$dest" || true # (best effort)
 }
@@ -1352,6 +1356,19 @@ junit_wrap() {
     fi
 }
 
+junit_contains_failure() {
+    local dir="$1"
+    if [[ ! -d $dir ]]; then
+        return 1
+    fi
+    for f in $(find "$dir" -type f -iname '*.xml'); do
+        if grep -q '<failure ' "$f"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
@@ -1380,6 +1397,14 @@ save_junit_failure() {
     fi
 
     save_junit_record "$@"
+}
+
+remove_junit_record() {
+    local class="$1"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    local junit_file="${junit_dir}/junit-${class}.xml"
+    rm -f "${junit_file}"
 }
 
 save_junit_record() {
