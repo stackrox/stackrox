@@ -35,14 +35,14 @@ var (
 	}
 )
 
-// Key is the Key by which messages are deduped.
+// Key by which messages are deduped.
 type Key struct {
 	ID           string
 	ResourceType reflect.Type
 }
 
-// CopyDeduperState makes a copy of the deduper state.
-func CopyDeduperState(state map[string]uint64) map[Key]uint64 {
+// ParseDeduperState makes a copy of the deduper state.
+func ParseDeduperState(state map[string]uint64) map[Key]uint64 {
 	if state == nil {
 		return make(map[Key]uint64)
 	}
@@ -51,7 +51,7 @@ func CopyDeduperState(state map[string]uint64) map[Key]uint64 {
 	for k, v := range state {
 		parsedKey, err := keyFrom(k)
 		if err != nil {
-			log.Warnf("Deduper state received from central has malformed entry: %s->%d: %s", k, v, err)
+			log.Warnf("Deduper state has malformed entry: %s->%d: %s", k, v, err)
 			continue
 		}
 		result[parsedKey] = v
