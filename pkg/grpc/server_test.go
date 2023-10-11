@@ -11,7 +11,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -120,10 +119,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 
 	a.Run("default unlimited", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
-			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
-			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
-		}
+		cfg.RateLimiter = ratelimit.NewRateLimiter(0)
 
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
@@ -141,13 +137,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 	})
 
 	a.Run("hit rate limit", func() {
-		a.T().Setenv(env.CentralApiRateLimitPerSecond.EnvVar(), "10")
-
 		cfg, endpointReached := configWithCustomRoute()
-		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
-			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
-			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
-		}
+		cfg.RateLimiter = ratelimit.NewRateLimiter(10)
 
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
@@ -237,10 +228,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 
 	a.Run("default unlimited", func() {
 		cfg := defaultConf()
-		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
-			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
-			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
-		}
+		cfg.RateLimiter = ratelimit.NewRateLimiter(0)
 
 		api := NewAPI(cfg)
 		pingService := &pingServiceTestImpl{}
@@ -258,13 +246,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 	})
 
 	a.Run("hit rate limit", func() {
-		a.T().Setenv(env.CentralApiRateLimitPerSecond.EnvVar(), "10")
-
 		cfg := defaultConf()
-		cfg.RateLimiterRegistry = ratelimit.RateLimiterRegistry{
-			ratelimit.APIRateLimiter:    ratelimit.NewAPIRateLimiter(),
-			ratelimit.SensorRateLimiter: ratelimit.NewSensorRateLimiter(),
-		}
+		cfg.RateLimiter = ratelimit.NewRateLimiter(10)
 
 		api := NewAPI(cfg)
 		pingService := &pingServiceTestImpl{}

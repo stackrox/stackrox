@@ -32,16 +32,16 @@ type sensorEventHandler struct {
 	workerQueues      map[string]*workerQueue
 	workerQueuesMutex sync.RWMutex
 
-	deduper     hashManager.Deduper
-	initSyncMgr *initSyncManager
-	pipeline    pipeline.ClusterPipeline
-	injector    common.MessageInjector
-	stopSig     *concurrency.ErrorSignal
+	deduper      hashManager.Deduper
+	rateLimitMgr *rateLimitManager
+	pipeline     pipeline.ClusterPipeline
+	injector     common.MessageInjector
+	stopSig      *concurrency.ErrorSignal
 
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, initSyncMgr *initSyncManager) *sensorEventHandler {
+func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, rateLimitMgr *rateLimitManager) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
 		sensorVersion: sensorVersion,
@@ -49,11 +49,11 @@ func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipel
 		workerQueues:      make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
 
-		deduper:     deduper,
-		initSyncMgr: initSyncMgr,
-		pipeline:    pipeline,
-		injector:    injector,
-		stopSig:     stopSig,
+		deduper:      deduper,
+		rateLimitMgr: rateLimitMgr,
+		pipeline:     pipeline,
+		injector:     injector,
+		stopSig:      stopSig,
 	}
 }
 
@@ -93,7 +93,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
-		s.initSyncMgr.Remove(s.cluster.GetId())
+		s.rateLimitMgr.Remove(s.cluster.GetId())
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return

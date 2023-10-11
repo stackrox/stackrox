@@ -119,11 +119,11 @@ type apiImpl struct {
 
 // A Config configures the server.
 type Config struct {
-	CustomRoutes        []routes.CustomRoute
-	IdentityExtractors  []authn.IdentityExtractor
-	AuthProviders       authproviders.Registry
-	Auditor             audit.Auditor
-	RateLimiterRegistry ratelimit.RateLimiterRegistry
+	CustomRoutes       []routes.CustomRoute
+	IdentityExtractors []authn.IdentityExtractor
+	AuthProviders      authproviders.Registry
+	Auditor            audit.Auditor
+	RateLimiter        ratelimit.RateLimiter
 
 	PreAuthContextEnrichers  []contextutil.ContextUpdater
 	PostAuthContextEnrichers []contextutil.ContextUpdater
@@ -189,8 +189,8 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u = append(u, grpc_prometheus.UnaryServerInterceptor)
 	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
 
-	if a.config.RateLimiterRegistry != nil {
-		u = append(u, a.config.RateLimiterRegistry.Get(ratelimit.APIRateLimiter).GetUnaryServerInterceptor())
+	if a.config.RateLimiter != nil {
+		u = append(u, a.config.RateLimiter.GetUnaryServerInterceptor())
 	}
 
 	u = append(u, contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
@@ -236,12 +236,9 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s = append(s, grpc_prometheus.StreamServerInterceptor)
 	s = append(s, grpc_errors.ErrorToGrpcCodeStreamInterceptor)
 
-	if a.config.RateLimiterRegistry != nil {
-		s = append(s, a.config.RateLimiterRegistry.Get(ratelimit.SensorRateLimiter).GetStreamServerInterceptor())
+	if a.config.RateLimiter != nil {
+		s = append(s, a.config.RateLimiter.GetStreamServerInterceptor())
 	}
-
-	s = append(s, contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
-	s = append(s, contextutil.StreamServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
 
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		s = append(s, contextutil.StreamServerInterceptor(a.config.PreAuthContextEnrichers...))
@@ -309,8 +306,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	var preAuthHTTPInterceptors []httputil.HTTPInterceptor
 	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.requestInfoHandler.HTTPIntercept)
 
-	if a.config.RateLimiterRegistry != nil {
-		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiterRegistry.Get(ratelimit.APIRateLimiter).GetHTTPInterceptor())
+	if a.config.RateLimiter != nil {
+		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
 	}
 
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}

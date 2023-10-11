@@ -33,6 +33,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -85,7 +87,7 @@ func newConnection(ctx context.Context,
 	imageIntegrationMgr common.ImageIntegrationManager,
 	hashMgr hashManager.Manager,
 	complianceOperatorMgr common.ComplianceOperatorManager,
-	initSyncMgr *initSyncManager,
+	rateLimitMgr *rateLimitManager,
 ) *sensorConnection {
 
 	conn := &sensorConnection{
@@ -115,7 +117,7 @@ func newConnection(ctx context.Context,
 	deduper.StartSync()
 
 	conn.hashDeduper = deduper
-	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
+	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, rateLimitMgr)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	conn.networkEntitiesCtrl = networkentities.NewController(cluster.GetId(), networkEntityMgr, graph.Singleton(), conn, &conn.stopSig)
@@ -175,6 +177,12 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
+
+		if c.sensorEventHandler.rateLimitMgr.eventRateLimiter.Limit() {
+			c.stopSig.SignalWithError(errors.Wrap(status.Errorf(codes.ResourceExhausted, "Stream message is rejected by sensor event rate limiter."), "recv error"))
+			return
+		}
+
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }

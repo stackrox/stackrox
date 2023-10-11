@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -471,6 +472,16 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 	}
 }
 
+// Returns API rate limiter for gRPC/HTTP/Stream requests made to central.
+func newAPIRateLimiter() ratelimit.RateLimiter {
+	apiRequestLimitPerSec := env.CentralApiRateLimitPerSecond.IntegerSetting()
+	if apiRequestLimitPerSec < 0 {
+		panic(fmt.Sprintf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralApiRateLimitPerSecond.EnvVar()))
+	}
+
+	return ratelimit.NewRateLimiter(apiRequestLimitPerSec)
+}
+
 func startGRPCServer() {
 	// Temporarily elevate permissions to modify auth providers.
 	authProviderRegisteringCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
@@ -533,14 +544,14 @@ func startGRPCServer() {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:        customRoutes(),
-		IdentityExtractors:  idExtractors,
-		AuthProviders:       registry,
-		Auditor:             audit.New(processor.Singleton()),
-		RateLimiterRegistry: ratelimit.GetRateLimiterRegistry(),
-		GRPCMetrics:         metrics.GRPCSingleton(),
-		HTTPMetrics:         metrics.HTTPSingleton(),
-		Endpoints:           endpointCfgs,
+		CustomRoutes:       customRoutes(),
+		IdentityExtractors: idExtractors,
+		AuthProviders:      registry,
+		Auditor:            audit.New(processor.Singleton()),
+		RateLimiter:        newAPIRateLimiter(),
+		GRPCMetrics:        metrics.GRPCSingleton(),
+		HTTPMetrics:        metrics.HTTPSingleton(),
+		Endpoints:          endpointCfgs,
 	}
 
 	if devbuild.IsEnabled() {

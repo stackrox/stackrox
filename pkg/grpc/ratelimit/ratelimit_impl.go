@@ -7,11 +7,13 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
 type rateLimiter struct {
+	mu                 sync.Mutex
 	tokenBucketLimiter *rate.Limiter
 }
 
@@ -20,18 +22,52 @@ func (limiter *rateLimiter) Limit() bool {
 	return !limiter.tokenBucketLimiter.Allow()
 }
 
-// NewRateLimiter defines rate limiter for gRPC/HTTP requests and stream events.
-// Note: Please be aware that we're currently employing a basic token bucket
-// rate limiting approach. Once the limit is reached, any additional request
-// will be declined. It's worth noting that a more effective solution would
-// involve implementing request throttling before reaching the hard limit.
-// However, this alternative would introduce a 1ms delay for each request
-// and necessitate the creation of timers for every throttled request.
-func NewRateLimiter(maxPerSec int) *rateLimiter {
-	if maxPerSec < 0 {
-		panic(fmt.Sprintf("Negative number is not allowed for rate limit."))
+func (limiter *rateLimiter) IncreaseLimit(limit int) {
+	if limiter.tokenBucketLimiter.Limit() == rate.Inf || limit <= 0 {
+		return
 	}
 
+	limiter.mu.Lock()
+	defer limiter.mu.Unlock()
+
+	newBurst := limiter.tokenBucketLimiter.Burst() + limit
+	if 0 < newBurst {
+		limiter.tokenBucketLimiter.SetBurst(newBurst)
+	}
+
+	newLimit := limiter.tokenBucketLimiter.Limit() + rate.Every(time.Second/time.Duration(limit))
+	if 0 < newLimit && newLimit < rate.Inf {
+		limiter.tokenBucketLimiter.SetLimit(newLimit)
+	}
+}
+
+func (limiter *rateLimiter) DecreaseLimit(limit int) {
+	if limiter.tokenBucketLimiter.Limit() == rate.Inf || limit <= 0 {
+		return
+	}
+
+	limiter.mu.Lock()
+	defer limiter.mu.Unlock()
+
+	newBurst := limiter.tokenBucketLimiter.Burst() - limit
+	if 0 < newBurst {
+		limiter.tokenBucketLimiter.SetBurst(newBurst)
+	}
+
+	newLimit := limiter.tokenBucketLimiter.Limit() - rate.Every(time.Second/time.Duration(limit))
+	if 0 < newLimit && newLimit < rate.Inf {
+		limiter.tokenBucketLimiter.SetLimit(newLimit)
+	}
+}
+
+// NewRateLimiter defines rate limiter any type of events.
+// Note: Please be aware that we're currently employing a basic token bucket
+// rate limiting approach. Once the limit is reached, any additional events
+// will be declined. It's worth noting that a more effective solution would
+// involve implementing event throttling before reaching the hard limit.
+// However, this alternative would introduce a 1ms delay for each event
+// and necessitate the creation of timers for every throttled event.
+func NewRateLimiter(maxPerSec int) *rateLimiter {
 	limit := rate.Inf
 	if maxPerSec > 0 {
 		limit = rate.Every(time.Second / time.Duration(maxPerSec))
