@@ -1091,7 +1091,8 @@ store_test_results() {
 
     info "Copying test results from $from to $to"
 
-    local dest="$(stored_test_results "$to")"
+    local dest
+    dest="$(stored_test_results "$to")"
 
     cp -a "$from" "$dest" || true # (best effort)
 }
@@ -1361,7 +1362,7 @@ junit_contains_failure() {
     if [[ ! -d $dir ]]; then
         return 1
     fi
-    for f in $(find "$dir" -type f -iname '*.xml'); do
+    for f in $(find "$dir" -type f -iname '*.xml'); do # shellcheck disable=SC2044
         if grep -q '<failure ' "$f"; then
             return 0
         fi
