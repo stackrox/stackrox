@@ -108,3 +108,8 @@ sensor-bounce-test: compile
 pz-test: compile
 	@echo "+ $@"
 	$(GRADLE) testPZ $(GRADLE_TEST_ARGS)
+
+.PHONY: pz-test-debug
+pz-test-debug: compile
+	@echo "+ $@"
+	$(GRADLE) testPZDebug $(GRADLE_TEST_ARGS)
