@@ -19,6 +19,7 @@ import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
+@Tag("PZ")
 class SummaryTest extends BaseSpecification {
 
     @Tag("BAT")

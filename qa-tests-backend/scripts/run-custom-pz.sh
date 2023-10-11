@@ -25,10 +25,12 @@ run_custom() {
 
     config_custom
     test_custom
+    #Remove the comment if you want to run particular tests.
+    #test_specific
 }
 
 config_custom() {
-    info "Configuring the cluster to custom tests for power and s390x"
+    info "Configuring the cluster to run custom tests for power and s390x"
 
     require_environment "ORCHESTRATOR_FLAVOR"
     require_environment "KUBECONFIG"
@@ -74,7 +76,7 @@ reuse_config_part_1() {
 }
 
 test_custom() {
-    info "Running custom tests"
+    info "Running custom tests for ppc64le/s390x"
 
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
         oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
@@ -82,37 +84,46 @@ test_custom() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    STACKROX_TESTNAMES=("AdmissionControllerNoImageScanTest")
-    STACKROX_TESTNAMES+=("AttemptedAlertsTest" "AuditLogAlertsTest" "AuthServiceTest" "AutocompleteTest")
-    STACKROX_TESTNAMES+=("CertExpiryTest" "CertRotationTest" "ClusterInitBundleTest" "ClustersTest")
-    STACKROX_TESTNAMES+=("DeploymentEventGraphQLTest" "DiagnosticBundleTest")
-    #STACKROX_TESTNAMES+=("Enforcement")
-    STACKROX_TESTNAMES+=("GlobalSearch" "GroupsTest")
-    STACKROX_TESTNAMES+=("IntegrationHealthTest")
-    STACKROX_TESTNAMES+=("K8sRbacTest")
-    STACKROX_TESTNAMES+=("NetworkBaselineTest" "NetworkSimulator" "NodeInventoryTest")
-    STACKROX_TESTNAMES+=("PaginationTest" "ProcessesListeningOnPortsTest")
-    STACKROX_TESTNAMES+=("RbacAuthTest" "RuntimePolicyTest" "RuntimeViolationLifecycleTest")
-    STACKROX_TESTNAMES+=("SecretsTest" "SummaryTest")
-    STACKROX_TESTNAMES+=("TLSChallengeTest")
-    STACKROX_TESTNAMES+=("VulnMgmtSACTest" "VulnMgmtTest" "VulnMgmtWorkflowTest")
+    rm -f FAIL
+    local test_target="pz-test"
 
+    update_job_record "test_target" "${test_target}"
+
+    make -C qa-tests-backend "${test_target}" || touch FAIL
+
+    store_qa_test_results "pz-tests"
+    [[ ! -f FAIL ]] || die "PZ tests failed"
+}
+
+#This function is for quickly running particular tests and avoid execution of all the other PZ tests.
+#For debugging purposes
+test_specific() {
+    info "Running specific set of tests for ppc64le/s390x"
+
+    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
+        oc get scc qatest-anyuid || oc create -f "${ROOT}/qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+    fi
+
+    export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+    #Specify the particular tests inside this array
+    declare -a STACKROX_TESTNAMES=()
+    update_job_record "test_target" "PZ-specific-tests"
     #Initialize variables
     interval_sec=20
-
     #Generate srcs
     make -C qa-tests-backend compile
     #Change directory into qa-tests-backend
     cd qa-tests-backend
-    #fetch list of tests
+
+    #fetch and execute tests
    for testName in "${STACKROX_TESTNAMES[@]}";
    do
-    #execute test
       ./gradlew test --tests "$testName" || true
-
-    #allow previous test data to cleanup
+      #allow previous test data to cleanup
       sleep $interval_sec
     done
+
+    store_qa_test_results "pz-specific-tests"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

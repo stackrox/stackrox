@@ -15,6 +15,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class NetworkSimulator extends BaseSpecification {
 
     // Deployment names
