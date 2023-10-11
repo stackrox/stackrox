@@ -16,9 +16,9 @@ export type VulnerabilitiesExceptionConfig = {
     };
 };
 
-export function fetchVulnerabilitiesExceptionConfig(): Promise<VulnerabilitiesExceptionConfig | null> {
+export function fetchVulnerabilitiesExceptionConfig(): Promise<VulnerabilitiesExceptionConfig> {
     return axios
-        .get<{ config: VulnerabilitiesExceptionConfig | null }>(vulnBaseUrl)
+        .get<{ config: VulnerabilitiesExceptionConfig }>(vulnBaseUrl)
         .then(({ data }) => data.config);
 }
 

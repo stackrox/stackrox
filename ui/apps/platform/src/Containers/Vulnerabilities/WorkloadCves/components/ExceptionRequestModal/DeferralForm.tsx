@@ -14,15 +14,46 @@ import {
     Text,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import { useFormik } from 'formik';
+import { addDays } from 'date-fns';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
 import { fetchVulnerabilitiesExceptionConfig } from 'services/ExceptionConfigService';
 import useRestQuery from 'hooks/useRestQuery';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { ScopeContext } from './utils';
+import {
+    DeferralValues,
+    ScopeContext,
+    deferralValidationSchema,
+    futureDateValidator,
+} from './utils';
 import ExceptionScopeField from './ExceptionScopeField';
 import CveSelections from './CveSelections';
+
+function getDefaultValues(cves: string[], scopeContext: ScopeContext): DeferralValues {
+    const imageScope =
+        scopeContext === 'GLOBAL'
+            ? { registry: '.*', remote: '.*', tag: '.*' }
+            : { registry: '.*', remote: scopeContext.image.name, tag: '.*' };
+
+    return {
+        cves,
+        comment: '',
+        scope: {
+            imageScope,
+        },
+    };
+}
+
+/**
+ * Returns the date portion of an ISO date string
+ * @param date - ISO date string
+ * @returns Date portion of the ISO date string, or an empty string if the date is falsy
+ */
+function prettifyDate(date = ''): string {
+    return date.substring(0, 10);
+}
 
 export type DeferralFormProps = {
     cves: string[];
@@ -32,6 +63,13 @@ export type DeferralFormProps = {
 
 function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
     const { data: config, loading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
+
+    const formik = useFormik({
+        initialValues: getDefaultValues(cves, scopeContext),
+        onSubmit: () => {},
+        validationSchema: deferralValidationSchema,
+    });
+    const { values, setValues, setFieldValue, handleBlur, touched, errors } = formik;
 
     if (loading) {
         return (
@@ -56,6 +94,10 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
         );
     }
 
+    function setExpiry(expiry: DeferralValues['expiry']) {
+        setValues((prev) => ({ ...prev, expiry })).catch(() => {});
+    }
+
     return (
         <>
             <Form>
@@ -76,8 +118,12 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                             <Radio
                                                 id="any-cve-fixable"
                                                 name="any-cve-fixable"
-                                                isChecked={false}
-                                                onChange={() => {}}
+                                                isChecked={
+                                                    values.expiry?.type === 'ANY_CVE_FIXABLE'
+                                                }
+                                                onChange={() => {
+                                                    setExpiry({ type: 'ANY_CVE_FIXABLE' });
+                                                }}
                                                 label="When any CVE is fixable"
                                             />
                                         )}
@@ -85,8 +131,12 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                             <Radio
                                                 id="all-cve-fixable"
                                                 name="all-cve-fixable"
-                                                isChecked={false}
-                                                onChange={() => {}}
+                                                isChecked={
+                                                    values.expiry?.type === 'ALL_CVE_FIXABLE'
+                                                }
+                                                onChange={() => {
+                                                    setExpiry({ type: 'ALL_CVE_FIXABLE' });
+                                                }}
                                                 label="When all CVEs are fixable"
                                             />
                                         )}
@@ -97,8 +147,13 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                                     id={`fixed-duration-${numDays}`}
                                                     name={`fixed-duration-${numDays}`}
                                                     key={`fixed-duration-${numDays}`}
-                                                    isChecked={false}
-                                                    onChange={() => {}}
+                                                    isChecked={
+                                                        values.expiry?.type === 'TIME' &&
+                                                        values.expiry?.days === numDays
+                                                    }
+                                                    onChange={() => {
+                                                        setExpiry({ type: 'TIME', days: numDays });
+                                                    }}
                                                     label={`For ${numDays} days`}
                                                 />
                                             ))}
@@ -106,8 +161,8 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                          config.expiryOptions.indefinite && (
                                             <Radio
                                                 id="indefinite"
-                                                name="duration"
-                                                isChecked={false}
+                                                name="indefinite"
+                                                isChecked={values.expiryType === 'INDEFINITE'}
                                                 onChange={() => {}}
                                                 label="Indefinitely"
                                             />
@@ -117,26 +172,53 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                             <Radio
                                                 id="custom-date"
                                                 name="custom-date"
-                                                isChecked={false}
-                                                onChange={() => {}}
+                                                isChecked={values.expiry?.type === 'CUSTOM_DATE'}
+                                                onChange={() =>
+                                                    setExpiry({
+                                                        type: 'CUSTOM_DATE',
+                                                        date: addDays(new Date(), 1).toISOString(),
+                                                    })
+                                                }
                                                 label="Until a specific date"
                                             />
                                         )}
-                                        {config.expiryOptions.customDate && false && (
-                                            <div>
-                                                <DatePicker name="custom-date-picker" />
-                                            </div>
-                                        )}
+
+                                        {config.expiryOptions.customDate &&
+                                            values.expiry?.type === 'CUSTOM_DATE' && (
+                                                <div>
+                                                    <DatePicker
+                                                        name="custom-date-picker"
+                                                        value={prettifyDate(values.expiry?.date)}
+                                                        onChange={(_, value) => {
+                                                            setExpiry({
+                                                                type: 'CUSTOM_DATE',
+                                                                date: value,
+                                                            });
+                                                        }}
+                                                        validators={[futureDateValidator]}
+                                                    />
+                                                </div>
+                                            )}
                                     </Flex>
                                 </FormGroup>
                             )}
                             <ExceptionScopeField
                                 fieldId="scope"
                                 label="Scope"
+                                formik={formik}
                                 scopeContext={scopeContext}
                             />
                             <FormGroup fieldId="comment" label="Deferral rationale" isRequired>
-                                <TextArea id="comment" name="comment" isRequired />
+                                <TextArea
+                                    id="comment"
+                                    name="comment"
+                                    isRequired
+                                    onBlur={handleBlur('comment')}
+                                    onChange={(value) => setFieldValue('comment', value)}
+                                    validated={
+                                        touched.comment && errors.comment ? 'error' : 'default'
+                                    }
+                                />
                             </FormGroup>
                         </Flex>
                     </Tab>
