@@ -63,6 +63,7 @@ type Sensor struct {
 	apiServices   []pkgGRPC.APIService
 
 	server          pkgGRPC.API
+	webhookServer   pkgGRPC.API
 	profilingServer *http.Server
 
 	currentState    common.SensorComponentEvent
@@ -241,8 +242,8 @@ func (s *Sensor) Start() {
 		},
 	}
 
-	webhookServer := pkgGRPC.NewAPI(webhookConfig)
-	webhookServer.Start()
+	s.webhookServer = pkgGRPC.NewAPI(webhookConfig)
+	s.webhookServer.Start()
 
 	for _, component := range s.components {
 		if err := component.Start(); err != nil {
@@ -306,9 +307,23 @@ func (s *Sensor) Stop() {
 		c.Stop(nil)
 	}
 
+	log.Infof("Sensor stop was called. Stopping all listeners")
+
 	if s.profilingServer != nil {
 		if err := s.profilingServer.Close(); err != nil {
 			log.Errorf("Error closing profiling server: %v", err)
+		}
+	}
+
+	if s.server != nil {
+		if !s.server.Stop() {
+			log.Warnf("Sensor gRPC server stop was called more than once")
+		}
+	}
+
+	if s.webhookServer != nil {
+		if !s.webhookServer.Stop() {
+			log.Warnf("Sensor webhook server stop was called more than once")
 		}
 	}
 
@@ -413,6 +428,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
+			s.centralCommunication.Stop(nil)
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
