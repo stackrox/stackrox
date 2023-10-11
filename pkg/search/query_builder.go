@@ -178,6 +178,7 @@ func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
 	return p
 }
 
+// Proto returns the pagination as *v1.QueryPagination
 func (p *Pagination) Proto() *v1.QueryPagination {
 	return p.qp
 }

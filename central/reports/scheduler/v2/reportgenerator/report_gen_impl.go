@@ -153,6 +153,9 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 
 	// Format results into CSV
 	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, req.ReportSnapshot.Name)
+	if err != nil {
+		return err
+	}
 
 	req.ReportSnapshot.ReportStatus.CompletedAt = types.TimestampNow()
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
