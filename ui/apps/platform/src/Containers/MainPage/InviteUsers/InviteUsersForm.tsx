@@ -39,6 +39,7 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
                     handleSelect={onChange}
                     direction="up"
                     placeholderText="Select an auth provider"
+                    menuAppendTo={() => document.body}
                 >
                     {providers.map(({ name }) => (
                         <SelectOption key={name} value={name} />
@@ -58,6 +59,7 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
                     handleSelect={onChange}
                     direction="up"
                     placeholderText="Select a role"
+                    menuAppendTo={() => document.body}
                 >
                     {roles.map(({ name }) => (
                         <SelectOption key={name} value={name} />

@@ -60,7 +60,7 @@ export type Group = {
         key?: string;
         value?: string;
         id?: string;
-        traits?: Traits;
+        traits?: Traits | null;
     };
 };
 
@@ -78,6 +78,8 @@ export type AuthProvider = {
     defaultRole?: string;
     requiredAttributes: AuthProviderRequiredAttributes[];
     traits?: Traits;
+    claimMappings: Record<string, string>;
+    lastUpdated: string;
 };
 
 export type AuthProviderInfo = {

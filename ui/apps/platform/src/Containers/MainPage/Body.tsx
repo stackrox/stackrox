@@ -47,7 +47,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
-import InviteUsersModal from './InviteUsersModal';
+import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
