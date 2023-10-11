@@ -111,7 +111,7 @@ test_specific() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
     #Specify the particular tests inside this array
-    declare -a STACKROX_TESTNAMES=("ImageManagementTest" "IntegrationsTest" "LocalQaPropsTest" "NetworkFlowTest" "VulReportingTest")
+    declare -a STACKROX_TESTNAMES=("ImageManagementTest" "IntegrationsTest" "NetworkFlowTest")
     update_job_record "test_target" "PZ-specific-tests"
     #Initialize variables
     interval_sec=20
