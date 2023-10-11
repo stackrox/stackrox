@@ -159,6 +159,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			},
 			deletedIDs: []string{"99", "100", "101"},
 		},
+		"No ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("5", deduper.TypeServiceAccount): 76543,
+				makeKey("6", deduper.TypeServiceAccount): 65432,
+			},
+			deletedIDs: []string{},
+		},
+		"Single ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):  76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple ServiceAccounts": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount):  87654,
+				makeKey("100", deduper.TypeServiceAccount): 87654,
+				makeKey("101", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):   76543,
+			},
+			deletedIDs: []string{"99", "100", "101"},
+		},
 	}
 
 	for n, c := range cases {
