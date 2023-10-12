@@ -108,7 +108,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         //     .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(TRIGGER_MOST)
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
