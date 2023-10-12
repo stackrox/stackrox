@@ -4,7 +4,7 @@
 # RHTAP uses Buildah which first looks up for `.containerignore`, then, if absent, - `.dockerignore`.
 # Having this file enables us to have different exclusion list for RHTAP builds than in GHA.
 # To regenerate, replace the below contents with the output of the following command (please keep these comments).
-#  grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore
+#  grep -v -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore
 
 **/node_modules/
 /bin/
