@@ -65,6 +65,17 @@ func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, er
 			},
 		}
 		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeNode.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Node{
+					Node: &storage.Node{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
 	default:
 		return nil, errors.Errorf("Not implemented for resource type %v", resType)
 	}

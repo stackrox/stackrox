@@ -80,6 +80,7 @@ func InitializeStore() *InMemoryStoreProvider {
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
 		deduper.TypeDeployment.String(): p.deploymentStore,
 		deduper.TypePod.String():        p.podStore,
+		deduper.TypeNode.String():       p.nodeStore,
 	}
 
 	return p
