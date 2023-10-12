@@ -48,7 +48,6 @@ LABEL \
     summary="The CLI for ACS"
 
     # TODO: what are these for & if they're required, how can we provide them?
-    # version="${CI_VERSION}" \
     # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \ --> vcs-ref on RHTAP
     # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
     # "git-tag:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_TAG}"
