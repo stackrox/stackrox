@@ -33,16 +33,18 @@ import org.junit.AssumptionViolatedException
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
+@Tag("PZDebug")
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
 
     static final private String UBI8_0_IMAGE = "registry.access.redhat.com/ubi8:8.0-208"
     static final private String RHEL7_IMAGE =
-            "richxsl/rhel7@sha256:8f3aae325d2074d2dc328cb532d6e7aeb0c588e15ddf847347038fe0566364d6"
+            "registry.redhat.io/rhel7-minimal@sha256:fb1f7f9f331eb01808224e003552dcfe03102694b4cc08a9f9e821031312f1b4"
     static final private String QUAY_IMAGE_WITH_CLAIR_SCAN_DATA = "quay.io/rhacs-eng/qa:struts-app"
-    static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa/registry-image:0.2"
+    static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa-multi-arch/registry-image:0.2"
     static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
     static final private String OCI_IMAGE   = "quay.io/rhacs-eng/qa:oci-manifest"
     static final private String LIST_IMAGE_OCI_MANIFEST = "quay.io/rhacs-eng/qa:list-image-oci-manifest"
@@ -203,6 +205,8 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    // GCR doesn't have MA images to verify the GCR-image-integrations on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Image Registry+Scanner Integrations: #testName"() {
         given:
         "Get deployment details used to test integration"
@@ -424,6 +428,10 @@ class ImageScanningTest extends BaseSpecification {
                 img.scan.componentsList.find {
                     c -> c.name == component && c.version == version && c.layerIndex == idx
                 }
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            // some breather for few arches
+            sleep(10000)
+        }
         foundComponent != null
 
         Vulnerability.EmbeddedVulnerability vuln =
@@ -440,8 +448,8 @@ class ImageScanningTest extends BaseSpecification {
         "Data inputs are: "
 
         scanner                          | component      | version            | idx | cve              | image        | registry
-        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "RHSA-2014:1052" | RHEL7_IMAGE  | ""
-        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.1e-34.el7"  | 1   | "CVE-2014-3509"  | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 1   | "RHSA-2019:0483" | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 1   | "CVE-2018-0735"  | RHEL7_IMAGE  | ""
         new StackroxScannerIntegration() | "systemd"             | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
         new StackroxScannerIntegration() | "glibc"               | "2.35-0ubuntu3.1"  | 4   | "CVE-2016-20013" | LIST_IMAGE_OCI_MANIFEST | ""
         new ClairScannerIntegration()    | "apt"                 | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
@@ -545,6 +553,8 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Integration")
+    // ACR, ECR, GCR don't have MA images to verify the the integrations on P/Z
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Image metadata from registry test - #testName"() {
         Assume.assumeTrue(testName != "ecr-iam" || ClusterService.isEKS())
 
