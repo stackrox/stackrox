@@ -112,7 +112,7 @@ class NetworkGraphUtil {
     }
 
     static checkForEdge(String sourceId, String targetId, Timestamp since = null,
-                        int timeoutSeconds = 90, String query = null) {
+                        int timeoutSeconds = 120, String query = null) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
