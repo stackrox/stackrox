@@ -2,7 +2,9 @@
 # It is required to pass .git to the builder containers on RHTAP so we can bake build information into the binary.
 # RHTAP uses Buildah which first looks up for `.containerignore`, then, if absent, - `.dockerignore`.
 # Having this file enables us to have different exclusion list for RHTAP builds than in GHA.
-# To regenerate, copy the contents of .dockerignore, remove /.git/ and reproduce these comments.
+# To regenerate, replace the below contents with the output of the following command (please keep these comments).
+#  grep -vF '/.git/' .dockerignore
+
 **/node_modules/
 /bin/
 /image/bin/
