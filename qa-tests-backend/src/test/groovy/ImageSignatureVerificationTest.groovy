@@ -96,7 +96,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
             .setName("with-signature-unverifiable")
             // quay.io/rhacs-eng/qa-signatures:centos9-multiarch
             .setImage("quay.io/rhacs-eng/qa-signatures:centos9-multiarch"+
-                  "@sha256:fe1c35f31d6a20194a5d6e1821c24756210d6df0b42ce0da10da20f18a29cc83")
+                  "@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7")
             .addLabel("app", "image-with-unverifiable-signature-test")
             .setCommand(["/bin/sh", "-c", "/bin/sleep 600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
