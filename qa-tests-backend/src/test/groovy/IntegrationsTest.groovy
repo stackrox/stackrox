@@ -247,8 +247,6 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
-    // slack notifications are not supported on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Network Simulator Notifications: #type"() {
         when:
         "create notifier"
@@ -534,8 +532,6 @@ class IntegrationsTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Notifiers")
-    // slack notifications are not supported on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify Policy Violation Notifications Destination Overrides: #type"() {
         when:
         "Create notifier"
@@ -763,6 +759,8 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     @Tag("BAT")
     // syslog test image is not multi-arch, docker files have x86 only dependencies
+    // https://hub.docker.com/r/rsyslog/syslog_appliance_alpine
+    // https://github.com/rsyslog/rsyslog-docker/tree/master/appliance/alpine
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify syslog notifier"() {
         given:
