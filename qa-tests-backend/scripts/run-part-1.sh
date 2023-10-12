@@ -101,6 +101,7 @@ test_part_1() {
 
     update_job_record "test_target" "${test_target}"
 
+    test_target="pz-test-debug"
     make -C qa-tests-backend "${test_target}" || touch FAIL
 
     store_qa_test_results "part-1-tests"
