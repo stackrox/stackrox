@@ -13,7 +13,6 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import util.Env
 
-@Tag("PZDebug")
 class BuiltinPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "trigger-most"
     static final private String TRIGGER_ALPINE = "trigger-alpine"

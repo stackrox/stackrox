@@ -16,7 +16,6 @@ import spock.lang.Unroll
 import spock.lang.IgnoreIf
 import util.Env
 
-@Tag("PZDebug")
 @Tag("Parallel")
 class ImageManagementTest extends BaseSpecification {
 
