@@ -19,22 +19,21 @@ import (
 
 // ScannerClient is the interface that contains the StackRox Scanner
 // application-oriented methods. It's offered to simplify application code to
-// call StackRox Scanner:
-//
-//   - GetOrCreateImageIndex first attempts to get an existing index report for the
-//     image reference, and if not found or invalid, it then attempts to index the
-//     image and return the generated index report if successful, or error.
-//
-//   - IndexAndScanImage scans an image for vulnerabilities. If the index report
-//     for that image does not exist, it is created. It returns the vulnerability
-//     report.
-//
-//   - Close cleans up any resources used by the implementation.
+// call StackRox Scanner.
 //
 //go:generate mockgen-wrapper
 type ScannerClient interface {
+	// GetOrCreateImageIndex first attempts to get an existing index report for the
+	// image reference, and if not found or invalid, it then attempts to index the
+	// image and return the generated index report if successful, or error.
 	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error)
+
+	// IndexAndScanImage scans an image for vulnerabilities. If the index report
+	// for that image does not exist, it is created. It returns the vulnerability
+	// report.
 	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator) (*v4.VulnerabilityReport, error)
+
+	// Close cleans up any resources used by the implementation.
 	Close() error
 }
 
