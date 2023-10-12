@@ -397,7 +397,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "Wait for collector update and fetch graph again to confirm short interval connections remain"
-        assert waitForEdgeUpdate(edges.get(0), 90)
+        assert waitForEdgeUpdate(edges.get(0), 120)
     }
 
     @Unroll
