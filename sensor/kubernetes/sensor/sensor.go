@@ -67,8 +67,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	storeProvider := resources.InitializeStore()
-	hashReconciliator := resources.NewResourceStoreReconciler(storeProvider)
-
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
 
 	var helmManagedConfig *central.HelmManagedConfigInit
@@ -203,7 +201,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
-		hashReconciliator,
 		components...,
 	)
 
