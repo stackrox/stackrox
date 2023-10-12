@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stretchr/testify/suite"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestHashReconciliation(t *testing.T) {
@@ -36,6 +40,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 		"Deployment": {
 			resType:       deduper.TypeDeployment.String(),
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Deployment{Deployment: &storage.Deployment{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"Node": {
+			resType:       deduper.TypeNode.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Node{Node: &storage.Node{Id: testResID}}}},
 			expectedError: nil,
 		},
 		"ServiceAccount": {
@@ -86,6 +95,10 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetSecret().GetId()
 		}, nil
+	case deduper.TypeNode.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetNode().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -98,6 +111,8 @@ func initStore() *InMemoryStoreProvider {
 	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("2"))
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "3"})
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
+	s.nodeStore.addOrUpdateNode(makeNode("42"))
+	s.nodeStore.addOrUpdateNode(makeNode("43"))
 	s.serviceAccountStore.Add(&storage.ServiceAccount{
 		Id:               "5",
 		Name:             "Acc1",
@@ -113,6 +128,17 @@ func initStore() *InMemoryStoreProvider {
 	s.registryStore.AddSecretID("5000")
 	s.registryStore.AddSecretID("5001")
 	return s
+}
+
+func makeNode(id types.UID) *nodeWrap {
+	return &nodeWrap{
+		Node: &v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("Node-%s", id),
+				UID:  id,
+			},
+		},
+	}
 }
 
 func makeKey(id string, t reflect.Type) deduper.Key {
@@ -215,6 +241,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("5000", deduper.TypeSecret): 76543,
 			},
 			deletedIDs: []string{"99", "100", "101"},
+		},
+		"No Node": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("42", deduper.TypeNode): 87654,
+				makeKey("43", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Node": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNode): 87654,
+				makeKey("42", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Nodes": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNode): 87654,
+				makeKey("98", deduper.TypeNode): 33333,
+				makeKey("97", deduper.TypeNode): 76654,
+				makeKey("42", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{"99", "98", "97"},
 		},
 	}
 
