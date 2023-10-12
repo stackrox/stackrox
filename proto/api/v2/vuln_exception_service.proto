@@ -1,0 +1,261 @@
+syntax = "proto3";
+
+option go_package = "v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "api/v2/common.proto";
+import "api/v2/search_query.proto";
+import "api/v2/user.proto";
+import "api/v2/vuln_state.proto";
+
+package v2;
+
+
+//// begin request and response messages
+
+message RequestComment {
+    string                    id         = 1;
+    string                    message    = 2;
+    SlimUser                  user       = 3;
+    google.protobuf.Timestamp created_at = 4;
+}
+
+// Indicates the status of a request.
+enum RequestStatus {
+    // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+    PENDING    = 0;
+    // Indicates that the request has been approved by the approver.
+    APPROVED   = 1;
+    // Indicates that the request has been denied by the approver.
+    DENIED     = 2;
+    // Indicates that the original request was approved, but an update is still pending an approval or denial.
+    APPROVED_PENDING_UPDATE = 3;
+}
+
+message RequestExpiry {
+    enum ExpiryType {
+        TIME            = 0;
+        ALL_CVE_FIXABLE = 1;
+        ANY_CVE_FIXABLE = 2;
+    }
+
+    // This field can be used only for deferral requests. It indicates the type of expiry set for the request.
+    // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
+    // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
+    // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
+    ExpiryType                  expiry_type = 1;
+    // Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
+    google.protobuf.Timestamp   expires_on  = 2;
+}
+
+message DeferralRequest {
+    RequestExpiry expiry = 1;
+}
+
+message FalsePositiveRequest { }
+
+// Next available tag: 16
+// VulnerabilityException represents an vulnerability exception such as deferral and false-positive.
+message VulnerabilityException {
+    message Scope {
+        message Image {
+            string registry  = 1;
+            string remote    = 2;
+            string tag       = 3;
+        }
+
+        // This field can be used to apply the request to selected images.
+        Image  image_scope  = 1;
+    }
+    string                           id                 = 1;
+    // Auto-generated display name of the exception.
+    string                           name               = 2;
+    // Indicates the state that the vulnerabilities will move to once the exception is enforced.
+    VulnerabilityState               target_state       = 3;
+    // Indicates the status of a exception request.
+    RequestStatus                    status             = 4;
+    // If set to `true`, this field indicates that the request that is no longer enforced.
+    bool                             expired            = 5;
+    SlimUser                         requester          = 6;
+    repeated SlimUser                approvers          = 7;
+    google.protobuf.Timestamp        created_at         = 8;
+    google.protobuf.Timestamp        last_updated       = 9;
+    repeated RequestComment          comments           = 10;
+    // Indicates the scope of enforcement of this exception.
+    Scope                            scope              = 11;
+
+    oneof req {
+        DeferralRequest              deferral_req       = 12;
+        FalsePositiveRequest         fp_request         = 13;
+    }
+
+    // Indicates the CVEs that to which this exception applies.
+    repeated string                  cves               = 14;
+
+    oneof updated_req {
+        // If set, indicates the update to be applied to the original exception. The update must be approved to be enforced on the system.
+        DeferralRequest              deferral_req_update = 15;
+    }
+}
+
+message GetVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message ListVulnerabilityExceptionsResponse {
+    repeated VulnerabilityException request_infos = 1;
+}
+
+// next available tag: 8
+message CreateDeferVulnerabilityExceptionRequest {
+    enum ExpiryType {
+        TIME            = 0;
+        ALL_CVE_FIXABLE = 1;
+        ANY_CVE_FIXABLE = 2;
+    }
+
+    // Indicates the CVEs to the exception should be applied.
+    repeated string                     cves        = 1;
+    string                              comment     = 2;
+    VulnerabilityException.Scope        scope       = 3;
+    // This field can be used only for deferral requests. It indicates the type of expiry set for the request.
+    // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
+    // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
+    // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
+    ExpiryType                         expiry_type  = 4;
+    // Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
+    google.protobuf.Timestamp          expires_on   = 5;
+}
+
+message CreateDeferVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message CreateFalsePositiveVulnerabilityExceptionRequest {
+    // This field is under development. This field indicates the CVEs requested to be marked as false-positive.
+    // Only one field, `cve` or `cves`, can be set in the request.
+    repeated string                     cves    = 1;
+    VulnerabilityException.Scope        scope   = 2;
+    string                              comment = 3;
+}
+
+message CreateFalsePositiveVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message ApproveVulnerabilityExceptionRequest {
+    string id      = 1;
+    string comment = 2;
+}
+
+message ApproveVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message DenyVulnerabilityExceptionRequest {
+    string id      = 1;
+    string comment = 2;
+}
+
+message DenyVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message UpdateVulnerabilityExceptionRequest {
+    string          id      = 1;
+    string          comment = 2;
+    RequestExpiry   expiry  = 3;
+    repeated string cves    = 4;
+}
+
+message UpdateVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+message CancelVulnerabilityExceptionResponse {
+    VulnerabilityException request_info = 1;
+}
+
+//// end request and response messages
+
+
+// VulnerabilityExceptionService APIs can be used to manage create and manage vulnerability exceptions.
+service VulnerabilityExceptionService {
+
+    // GetVulnerabilityException returns the vulnerability exception with specified ID.
+    rpc GetVulnerabilityException (ResourceByID) returns (GetVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            get: "/v2/vulnerability-exceptions/{id}"
+        };
+    }
+
+    // ListVulnerabilityExceptions returns a list of vulnerability exceptions.
+    rpc ListVulnerabilityExceptions (RawQuery) returns (ListVulnerabilityExceptionsResponse) {
+        option (google.api.http) = {
+            get: "/v2/vulnerability-exceptions"
+        };
+    }
+
+    // CreateDeferVulnerabilityException creates an exception request to deferral specified vulnerabilities.
+    // Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
+    rpc CreateDeferVulnerabilityException (CreateDeferVulnerabilityExceptionRequest) returns (CreateDeferVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            post: "/v2/vulnerability-exceptions/deferral"
+            body: "*"
+        };
+    }
+
+    // CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.
+    // Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
+    rpc CreateFalsePositiveVulnerabilityException (CreateFalsePositiveVulnerabilityExceptionRequest) returns (CreateFalsePositiveVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            post: "/v2/vulnerability-exceptions/false-positive"
+            body: "*"
+        };
+    }
+
+    // ApproveVulnerabilityException approves a vulnerability exception. Once approved, the exception is enforced.
+    // The associated vulnerabilities are excluded from policy evaluation and risk evaluation, and the vulnerabilities
+    // may not appear in certain APIs responses by default.
+    rpc ApproveVulnerabilityException (ApproveVulnerabilityExceptionRequest) returns (ApproveVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            post: "/v2/vulnerability-exceptions/{id}/approve"
+            body: "*"
+        };
+    }
+
+    // DenyVulnerabilityException denies a vulnerability exception.
+    rpc DenyVulnerabilityException (DenyVulnerabilityExceptionRequest) returns (DenyVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            post: "/v2/vulnerability-exceptions/{id}/deny"
+            body: "*"
+        };
+    }
+
+    // UpdateVulnerabilityException updates an existing vulnerability exception. Currently only the following can be updated:
+    // - CVEs and expiration time of the deferral exceptions
+    // - CVEs of the false positive requests
+    rpc UpdateVulnerabilityException (UpdateVulnerabilityExceptionRequest) returns (UpdateVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            patch: "/v2/vulnerability-exceptions/{id}"
+            body: "*"
+        };
+    }
+
+    // CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, the exception is no longer
+    // enforced if it was in APPROVED state.
+    rpc CancelVulnerabilityException (ResourceByID) returns (CancelVulnerabilityExceptionResponse) {
+        option (google.api.http) = {
+            post: "/v2/vulnerability-exceptions/{id}/cancel"
+        };
+    }
+
+    // DeleteVulnerabilityException deletes a vulnerability exception.
+    rpc DeleteVulnerabilityException (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v2/vulnerability-exceptions/{id}"
+        };
+    }
+}
