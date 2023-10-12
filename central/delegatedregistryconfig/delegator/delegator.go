@@ -22,6 +22,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	inferNamespacePermissions = []string{"Image"}
 )
 
 // New creates a new delegator.
@@ -125,7 +127,7 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorInferNamespace")
 
-	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, nil)
+	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
 	if err != nil {
 		log.Warnf("Skipping namespace inference for %q (%s) and cluster %q due to error: %v", imgName.GetFullName(), namespace, clusterID, err)
 		return ""

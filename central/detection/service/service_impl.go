@@ -66,6 +66,8 @@ var (
 	workloadScheme = k8sRuntime.NewScheme()
 
 	workloadDeserializer = k8sSerializer.NewCodecFactory(workloadScheme).UniversalDeserializer()
+
+	delegateScanPermissions = []string{"Image"}
 )
 
 func init() {
@@ -147,7 +149,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	if req.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), nil)
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}
@@ -326,7 +328,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	if req.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), nil)
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}

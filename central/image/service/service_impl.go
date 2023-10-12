@@ -84,6 +84,8 @@ var (
 	})
 
 	reprocessInterval = env.ReprocessInterval.DurationSetting()
+
+	delegateScanPermissions = []string{"Image"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -311,7 +313,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	if request.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, request.GetCluster(), nil)
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, request.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}
