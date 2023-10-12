@@ -250,7 +250,10 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < "${CENTRAL_YAML_PATH}" | kubectl apply -n stackrox -f -
+      < "${CENTRAL_YAML_PATH}" > cr.yaml
+
+    cat cr.yaml
+    kubectl apply -n stackrox -f cr.yaml
 
     wait_for_object_to_appear stackrox deploy/central 300
 }
