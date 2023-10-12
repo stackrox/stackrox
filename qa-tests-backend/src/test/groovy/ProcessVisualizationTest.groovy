@@ -11,7 +11,6 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("PZ")
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
     static final private String NGINXDEPLOYMENT = "qanginx"
