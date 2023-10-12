@@ -97,7 +97,7 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetScanConfigId(),
+		pgutils.NilOrUUID(obj.GetScanConfigId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
@@ -160,7 +160,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetScanConfigId(),
+			pgutils.NilOrUUID(obj.GetScanConfigId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})
