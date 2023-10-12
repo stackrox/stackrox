@@ -16,6 +16,7 @@ import spock.lang.Unroll
 import spock.lang.IgnoreIf
 import util.Env
 
+@Tag("PZDebug")
 @Tag("Parallel")
 class ImageManagementTest extends BaseSpecification {
 
@@ -321,7 +322,6 @@ class ImageManagementTest extends BaseSpecification {
 
     @Tag("BAT")
     @Tag("Integration")
-    // @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify CI/CD Integration Endpoint with notifications"() {
         when:
         "Clone and scope the policy for test"

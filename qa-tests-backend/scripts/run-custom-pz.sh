@@ -88,9 +88,9 @@ test_custom() {
     local test_target
 
     #Runs all the tests supported on ppc64le/s390x
-    test_target="pz-test"
+    #test_target="pz-test"
     #Used to run tests with "PZDebug" tag.Convenient for executing only desirable tests in CI.
-    #test_target="pz-test-debug"
+    test_target="pz-test-debug"
 
     update_job_record "test_target" "${test_target}"
 
