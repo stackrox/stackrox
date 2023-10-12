@@ -1115,7 +1115,8 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConnInterface.NewStream.
 type ComplianceResultsServiceClient interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
@@ -1190,7 +1191,8 @@ func (c *complianceResultsServiceClient) GetComplianceClusterScanStats(ctx conte
 // ComplianceResultsServiceServer is the server API for ComplianceResultsService service.
 type ComplianceResultsServiceServer interface {
 	// GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
-	// Supported optional RawQuery query fields which can be combined
+	// Optional RawQuery query fields can be combined.
+	// Commonly used ones include but are not limited to
 	// - scan: id(s) of the compliance scan
 	// - cluster: id(s) of the cluster
 	// - profile: id(s) of the profile
