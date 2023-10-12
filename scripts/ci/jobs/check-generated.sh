@@ -63,6 +63,7 @@ check-operator-generated-files-up-to-date || {
 info 'Check .containerignore file is in sync with .dockerignore (If this fails, follow instructions in .containerignore to update it.)'
 function check-containerignore-is-in-sync() {
     diff \
+        --unified \
         --ignore-blank-lines \
         <(grep -v -e '^#' .containerignore) \
         <(grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore) \
