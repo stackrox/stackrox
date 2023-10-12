@@ -15,7 +15,7 @@ package v2;
 
 //// begin request and response messages
 
-message RequestComment {
+message Comment {
     string                    id         = 1;
     string                    message    = 2;
     SlimUser                  user       = 3;
@@ -23,7 +23,7 @@ message RequestComment {
 }
 
 // Indicates the status of a request.
-enum RequestStatus {
+enum ExceptionStatus {
     // Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
     PENDING    = 0;
     // Indicates that the request has been approved by the approver.
@@ -34,7 +34,7 @@ enum RequestStatus {
     APPROVED_PENDING_UPDATE = 3;
 }
 
-message RequestExpiry {
+message ExceptionExpiry {
     enum ExpiryType {
         TIME            = 0;
         ALL_CVE_FIXABLE = 1;
@@ -46,18 +46,18 @@ message RequestExpiry {
     // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
     // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
     ExpiryType                  expiry_type = 1;
-    // Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
+    // Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
     google.protobuf.Timestamp   expires_on  = 2;
 }
 
 message DeferralRequest {
-    RequestExpiry expiry = 1;
+    ExceptionExpiry expiry = 1;
 }
 
 message FalsePositiveRequest { }
 
 // Next available tag: 16
-// VulnerabilityException represents an vulnerability exception such as deferral and false-positive.
+// VulnerabilityException represents a vulnerability exception such as deferral and false-positive.
 message VulnerabilityException {
     message Scope {
         message Image {
@@ -66,7 +66,7 @@ message VulnerabilityException {
             string tag       = 3;
         }
 
-        // This field can be used to apply the request to selected images.
+        // This field can be used to apply the exception to selected images.
         Image  image_scope  = 1;
     }
     string                           id                 = 1;
@@ -74,16 +74,16 @@ message VulnerabilityException {
     string                           name               = 2;
     // Indicates the state that the vulnerabilities will move to once the exception is enforced.
     VulnerabilityState               target_state       = 3;
-    // Indicates the status of a exception request.
-    RequestStatus                    status             = 4;
-    // If set to `true`, this field indicates that the request that is no longer enforced.
+    // Indicates the status of the exception.
+    ExceptionStatus                    status             = 4;
+    // If set to `true`, this field indicates that the exception is no longer enforced.
     bool                             expired            = 5;
     SlimUser                         requester          = 6;
     repeated SlimUser                approvers          = 7;
     google.protobuf.Timestamp        created_at         = 8;
     google.protobuf.Timestamp        last_updated       = 9;
-    repeated RequestComment          comments           = 10;
-    // Indicates the scope of enforcement of this exception.
+    repeated Comment                 comments           = 10;
+    // Indicates the scope of enforcement of the exception.
     Scope                            scope              = 11;
 
     oneof req {
@@ -91,7 +91,7 @@ message VulnerabilityException {
         FalsePositiveRequest         fp_request         = 13;
     }
 
-    // Indicates the CVEs that to which this exception applies.
+    // Indicates the CVEs to which the exception applies.
     repeated string                  cves               = 14;
 
     oneof updated_req {
@@ -101,81 +101,79 @@ message VulnerabilityException {
 }
 
 message GetVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message ListVulnerabilityExceptionsResponse {
-    repeated VulnerabilityException request_infos = 1;
+    repeated VulnerabilityException exceptions = 1;
 }
 
-// next available tag: 8
+// next available tag: 6
 message CreateDeferVulnerabilityExceptionRequest {
-    enum ExpiryType {
-        TIME            = 0;
-        ALL_CVE_FIXABLE = 1;
-        ANY_CVE_FIXABLE = 2;
-    }
-
-    // Indicates the CVEs to the exception should be applied.
-    repeated string                     cves        = 1;
-    string                              comment     = 2;
-    VulnerabilityException.Scope        scope       = 3;
-    // This field can be used only for deferral requests. It indicates the type of expiry set for the request.
-    // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
-    // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
-    // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-    ExpiryType                         expiry_type  = 4;
-    // Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
-    google.protobuf.Timestamp          expires_on   = 5;
+    // REQUIRED. The CVEs to which the exception should be applied.
+    repeated string                     cves             = 1;
+    // REQUIRED. The rationale for creating the exception.
+    string                              comment          = 2;
+    // REQUIRED. The scope of enforcement of the exception.
+    VulnerabilityException.Scope        scope            = 3;
+    // REQUIRED. The type of expiry to be enforced for the request.
+    ExceptionExpiry                     exception_expiry = 4;
 }
 
 message CreateDeferVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message CreateFalsePositiveVulnerabilityExceptionRequest {
-    // This field is under development. This field indicates the CVEs requested to be marked as false-positive.
-    // Only one field, `cve` or `cves`, can be set in the request.
+    // REQUIRED. The CVEs to which the exception should be applied.
     repeated string                     cves    = 1;
+    // REQUIRED. The scope of enforcement of the exception.
     VulnerabilityException.Scope        scope   = 2;
+    // REQUIRED. The rationale for creating the exception.
     string                              comment = 3;
 }
 
 message CreateFalsePositiveVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message ApproveVulnerabilityExceptionRequest {
+    // REQUIRED. The ID of vulnerability exception to be approved.
     string id      = 1;
+    // REQUIRED. The rationale for approving the exception.
     string comment = 2;
 }
 
 message ApproveVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message DenyVulnerabilityExceptionRequest {
+    // REQUIRED. The ID of vulnerability exception to be denied.
     string id      = 1;
+    // REQUIRED. The rationale for denying the exception.
     string comment = 2;
 }
 
 message DenyVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message UpdateVulnerabilityExceptionRequest {
+    // REQUIRED. The ID of vulnerability exception to be updated.
     string          id      = 1;
+    // REQUIRED. The rationale for updating the exception.
     string          comment = 2;
-    RequestExpiry   expiry  = 3;
+    ExceptionExpiry expiry  = 3;
     repeated string cves    = 4;
 }
 
 message UpdateVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 message CancelVulnerabilityExceptionResponse {
-    VulnerabilityException request_info = 1;
+    VulnerabilityException exception = 1;
 }
 
 //// end request and response messages
@@ -198,7 +196,7 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // CreateDeferVulnerabilityException creates an exception request to deferral specified vulnerabilities.
+    // CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.
     // Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
     rpc CreateDeferVulnerabilityException (CreateDeferVulnerabilityExceptionRequest) returns (CreateDeferVulnerabilityExceptionResponse) {
         option (google.api.http) = {
@@ -235,8 +233,8 @@ service VulnerabilityExceptionService {
     }
 
     // UpdateVulnerabilityException updates an existing vulnerability exception. Currently only the following can be updated:
-    // - CVEs and expiration time of the deferral exceptions
-    // - CVEs of the false positive requests
+    // - CVEs and expiry of the deferral exceptions
+    // - CVEs of the false positive exception
     rpc UpdateVulnerabilityException (UpdateVulnerabilityExceptionRequest) returns (UpdateVulnerabilityExceptionResponse) {
         option (google.api.http) = {
             patch: "/v2/vulnerability-exceptions/{id}"

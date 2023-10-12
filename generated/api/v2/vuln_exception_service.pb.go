@@ -28,98 +28,70 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Indicates the status of a request.
-type RequestStatus int32
+type ExceptionStatus int32
 
 const (
 	// Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
-	RequestStatus_PENDING RequestStatus = 0
+	ExceptionStatus_PENDING ExceptionStatus = 0
 	// Indicates that the request has been approved by the approver.
-	RequestStatus_APPROVED RequestStatus = 1
+	ExceptionStatus_APPROVED ExceptionStatus = 1
 	// Indicates that the request has been denied by the approver.
-	RequestStatus_DENIED RequestStatus = 2
+	ExceptionStatus_DENIED ExceptionStatus = 2
 	// Indicates that the original request was approved, but an update is still pending an approval or denial.
-	RequestStatus_APPROVED_PENDING_UPDATE RequestStatus = 3
+	ExceptionStatus_APPROVED_PENDING_UPDATE ExceptionStatus = 3
 )
 
-var RequestStatus_name = map[int32]string{
+var ExceptionStatus_name = map[int32]string{
 	0: "PENDING",
 	1: "APPROVED",
 	2: "DENIED",
 	3: "APPROVED_PENDING_UPDATE",
 }
 
-var RequestStatus_value = map[string]int32{
+var ExceptionStatus_value = map[string]int32{
 	"PENDING":                 0,
 	"APPROVED":                1,
 	"DENIED":                  2,
 	"APPROVED_PENDING_UPDATE": 3,
 }
 
-func (x RequestStatus) String() string {
-	return proto.EnumName(RequestStatus_name, int32(x))
+func (x ExceptionStatus) String() string {
+	return proto.EnumName(ExceptionStatus_name, int32(x))
 }
 
-func (RequestStatus) EnumDescriptor() ([]byte, []int) {
+func (ExceptionStatus) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_915f69594385714b, []int{0}
 }
 
-type RequestExpiry_ExpiryType int32
+type ExceptionExpiry_ExpiryType int32
 
 const (
-	RequestExpiry_TIME            RequestExpiry_ExpiryType = 0
-	RequestExpiry_ALL_CVE_FIXABLE RequestExpiry_ExpiryType = 1
-	RequestExpiry_ANY_CVE_FIXABLE RequestExpiry_ExpiryType = 2
+	ExceptionExpiry_TIME            ExceptionExpiry_ExpiryType = 0
+	ExceptionExpiry_ALL_CVE_FIXABLE ExceptionExpiry_ExpiryType = 1
+	ExceptionExpiry_ANY_CVE_FIXABLE ExceptionExpiry_ExpiryType = 2
 )
 
-var RequestExpiry_ExpiryType_name = map[int32]string{
+var ExceptionExpiry_ExpiryType_name = map[int32]string{
 	0: "TIME",
 	1: "ALL_CVE_FIXABLE",
 	2: "ANY_CVE_FIXABLE",
 }
 
-var RequestExpiry_ExpiryType_value = map[string]int32{
+var ExceptionExpiry_ExpiryType_value = map[string]int32{
 	"TIME":            0,
 	"ALL_CVE_FIXABLE": 1,
 	"ANY_CVE_FIXABLE": 2,
 }
 
-func (x RequestExpiry_ExpiryType) String() string {
-	return proto.EnumName(RequestExpiry_ExpiryType_name, int32(x))
+func (x ExceptionExpiry_ExpiryType) String() string {
+	return proto.EnumName(ExceptionExpiry_ExpiryType_name, int32(x))
 }
 
-func (RequestExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
+func (ExceptionExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_915f69594385714b, []int{1, 0}
 }
 
-type CreateDeferVulnerabilityExceptionRequest_ExpiryType int32
-
-const (
-	CreateDeferVulnerabilityExceptionRequest_TIME            CreateDeferVulnerabilityExceptionRequest_ExpiryType = 0
-	CreateDeferVulnerabilityExceptionRequest_ALL_CVE_FIXABLE CreateDeferVulnerabilityExceptionRequest_ExpiryType = 1
-	CreateDeferVulnerabilityExceptionRequest_ANY_CVE_FIXABLE CreateDeferVulnerabilityExceptionRequest_ExpiryType = 2
-)
-
-var CreateDeferVulnerabilityExceptionRequest_ExpiryType_name = map[int32]string{
-	0: "TIME",
-	1: "ALL_CVE_FIXABLE",
-	2: "ANY_CVE_FIXABLE",
-}
-
-var CreateDeferVulnerabilityExceptionRequest_ExpiryType_value = map[string]int32{
-	"TIME":            0,
-	"ALL_CVE_FIXABLE": 1,
-	"ANY_CVE_FIXABLE": 2,
-}
-
-func (x CreateDeferVulnerabilityExceptionRequest_ExpiryType) String() string {
-	return proto.EnumName(CreateDeferVulnerabilityExceptionRequest_ExpiryType_name, int32(x))
-}
-
-func (CreateDeferVulnerabilityExceptionRequest_ExpiryType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_915f69594385714b, []int{7, 0}
-}
-
-type RequestComment struct {
+type Comment struct {
 	Id                   string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Message              string           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	User                 *SlimUser        `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty"`
@@ -129,18 +101,18 @@ type RequestComment struct {
 	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *RequestComment) Reset()         { *m = RequestComment{} }
-func (m *RequestComment) String() string { return proto.CompactTextString(m) }
-func (*RequestComment) ProtoMessage()    {}
-func (*RequestComment) Descriptor() ([]byte, []int) {
+func (m *Comment) Reset()         { *m = Comment{} }
+func (m *Comment) String() string { return proto.CompactTextString(m) }
+func (*Comment) ProtoMessage()    {}
+func (*Comment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_915f69594385714b, []int{0}
 }
-func (m *RequestComment) XXX_Unmarshal(b []byte) error {
+func (m *Comment) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RequestComment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Comment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RequestComment.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Comment.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -150,54 +122,54 @@ func (m *RequestComment) XXX_Marshal(b []byte, deterministic bool) ([]byte, erro
 		return b[:n], nil
 	}
 }
-func (m *RequestComment) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RequestComment.Merge(m, src)
+func (m *Comment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Comment.Merge(m, src)
 }
-func (m *RequestComment) XXX_Size() int {
+func (m *Comment) XXX_Size() int {
 	return m.Size()
 }
-func (m *RequestComment) XXX_DiscardUnknown() {
-	xxx_messageInfo_RequestComment.DiscardUnknown(m)
+func (m *Comment) XXX_DiscardUnknown() {
+	xxx_messageInfo_Comment.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RequestComment proto.InternalMessageInfo
+var xxx_messageInfo_Comment proto.InternalMessageInfo
 
-func (m *RequestComment) GetId() string {
+func (m *Comment) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *RequestComment) GetMessage() string {
+func (m *Comment) GetMessage() string {
 	if m != nil {
 		return m.Message
 	}
 	return ""
 }
 
-func (m *RequestComment) GetUser() *SlimUser {
+func (m *Comment) GetUser() *SlimUser {
 	if m != nil {
 		return m.User
 	}
 	return nil
 }
 
-func (m *RequestComment) GetCreatedAt() *types.Timestamp {
+func (m *Comment) GetCreatedAt() *types.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
 	return nil
 }
 
-func (m *RequestComment) MessageClone() proto.Message {
+func (m *Comment) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *RequestComment) Clone() *RequestComment {
+func (m *Comment) Clone() *Comment {
 	if m == nil {
 		return nil
 	}
-	cloned := new(RequestComment)
+	cloned := new(Comment)
 	*cloned = *m
 
 	cloned.User = m.User.Clone()
@@ -205,31 +177,31 @@ func (m *RequestComment) Clone() *RequestComment {
 	return cloned
 }
 
-type RequestExpiry struct {
+type ExceptionExpiry struct {
 	// This field can be used only for deferral requests. It indicates the type of expiry set for the request.
 	// `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
 	// `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
 	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-	ExpiryType RequestExpiry_ExpiryType `protobuf:"varint,1,opt,name=expiry_type,json=expiryType,proto3,enum=v2.RequestExpiry_ExpiryType" json:"expiry_type,omitempty"`
-	// Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
+	ExpiryType ExceptionExpiry_ExpiryType `protobuf:"varint,1,opt,name=expiry_type,json=expiryType,proto3,enum=v2.ExceptionExpiry_ExpiryType" json:"expiry_type,omitempty"`
+	// Indicates the timestamp when the exception expires. This field is REQUIRED only if the expiry type is set to TIME.
 	ExpiresOn            *types.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *RequestExpiry) Reset()         { *m = RequestExpiry{} }
-func (m *RequestExpiry) String() string { return proto.CompactTextString(m) }
-func (*RequestExpiry) ProtoMessage()    {}
-func (*RequestExpiry) Descriptor() ([]byte, []int) {
+func (m *ExceptionExpiry) Reset()         { *m = ExceptionExpiry{} }
+func (m *ExceptionExpiry) String() string { return proto.CompactTextString(m) }
+func (*ExceptionExpiry) ProtoMessage()    {}
+func (*ExceptionExpiry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_915f69594385714b, []int{1}
 }
-func (m *RequestExpiry) XXX_Unmarshal(b []byte) error {
+func (m *ExceptionExpiry) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *RequestExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ExceptionExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_RequestExpiry.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ExceptionExpiry.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -239,40 +211,40 @@ func (m *RequestExpiry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error
 		return b[:n], nil
 	}
 }
-func (m *RequestExpiry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RequestExpiry.Merge(m, src)
+func (m *ExceptionExpiry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ExceptionExpiry.Merge(m, src)
 }
-func (m *RequestExpiry) XXX_Size() int {
+func (m *ExceptionExpiry) XXX_Size() int {
 	return m.Size()
 }
-func (m *RequestExpiry) XXX_DiscardUnknown() {
-	xxx_messageInfo_RequestExpiry.DiscardUnknown(m)
+func (m *ExceptionExpiry) XXX_DiscardUnknown() {
+	xxx_messageInfo_ExceptionExpiry.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_RequestExpiry proto.InternalMessageInfo
+var xxx_messageInfo_ExceptionExpiry proto.InternalMessageInfo
 
-func (m *RequestExpiry) GetExpiryType() RequestExpiry_ExpiryType {
+func (m *ExceptionExpiry) GetExpiryType() ExceptionExpiry_ExpiryType {
 	if m != nil {
 		return m.ExpiryType
 	}
-	return RequestExpiry_TIME
+	return ExceptionExpiry_TIME
 }
 
-func (m *RequestExpiry) GetExpiresOn() *types.Timestamp {
+func (m *ExceptionExpiry) GetExpiresOn() *types.Timestamp {
 	if m != nil {
 		return m.ExpiresOn
 	}
 	return nil
 }
 
-func (m *RequestExpiry) MessageClone() proto.Message {
+func (m *ExceptionExpiry) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *RequestExpiry) Clone() *RequestExpiry {
+func (m *ExceptionExpiry) Clone() *ExceptionExpiry {
 	if m == nil {
 		return nil
 	}
-	cloned := new(RequestExpiry)
+	cloned := new(ExceptionExpiry)
 	*cloned = *m
 
 	cloned.ExpiresOn = m.ExpiresOn.Clone()
@@ -280,10 +252,10 @@ func (m *RequestExpiry) Clone() *RequestExpiry {
 }
 
 type DeferralRequest struct {
-	Expiry               *RequestExpiry `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	Expiry               *ExceptionExpiry `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *DeferralRequest) Reset()         { *m = DeferralRequest{} }
@@ -319,7 +291,7 @@ func (m *DeferralRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeferralRequest proto.InternalMessageInfo
 
-func (m *DeferralRequest) GetExpiry() *RequestExpiry {
+func (m *DeferralRequest) GetExpiry() *ExceptionExpiry {
 	if m != nil {
 		return m.Expiry
 	}
@@ -393,29 +365,29 @@ func (m *FalsePositiveRequest) Clone() *FalsePositiveRequest {
 }
 
 // Next available tag: 16
-// VulnerabilityException represents an vulnerability exception such as deferral and false-positive.
+// VulnerabilityException represents a vulnerability exception such as deferral and false-positive.
 type VulnerabilityException struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Auto-generated display name of the exception.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Indicates the state that the vulnerabilities will move to once the exception is enforced.
 	TargetState VulnerabilityState `protobuf:"varint,3,opt,name=target_state,json=targetState,proto3,enum=v2.VulnerabilityState" json:"target_state,omitempty"`
-	// Indicates the status of a exception request.
-	Status RequestStatus `protobuf:"varint,4,opt,name=status,proto3,enum=v2.RequestStatus" json:"status,omitempty"`
-	// If set to `true`, this field indicates that the request that is no longer enforced.
-	Expired     bool              `protobuf:"varint,5,opt,name=expired,proto3" json:"expired,omitempty"`
-	Requester   *SlimUser         `protobuf:"bytes,6,opt,name=requester,proto3" json:"requester,omitempty"`
-	Approvers   []*SlimUser       `protobuf:"bytes,7,rep,name=approvers,proto3" json:"approvers,omitempty"`
-	CreatedAt   *types.Timestamp  `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUpdated *types.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	Comments    []*RequestComment `protobuf:"bytes,10,rep,name=comments,proto3" json:"comments,omitempty"`
-	// Indicates the scope of enforcement of this exception.
+	// Indicates the status of the exception.
+	Status ExceptionStatus `protobuf:"varint,4,opt,name=status,proto3,enum=v2.ExceptionStatus" json:"status,omitempty"`
+	// If set to `true`, this field indicates that the exception is no longer enforced.
+	Expired     bool             `protobuf:"varint,5,opt,name=expired,proto3" json:"expired,omitempty"`
+	Requester   *SlimUser        `protobuf:"bytes,6,opt,name=requester,proto3" json:"requester,omitempty"`
+	Approvers   []*SlimUser      `protobuf:"bytes,7,rep,name=approvers,proto3" json:"approvers,omitempty"`
+	CreatedAt   *types.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUpdated *types.Timestamp `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Comments    []*Comment       `protobuf:"bytes,10,rep,name=comments,proto3" json:"comments,omitempty"`
+	// Indicates the scope of enforcement of the exception.
 	Scope *VulnerabilityException_Scope `protobuf:"bytes,11,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Types that are valid to be assigned to Req:
 	//	*VulnerabilityException_DeferralReq
 	//	*VulnerabilityException_FpRequest
 	Req isVulnerabilityException_Req `protobuf_oneof:"req"`
-	// Indicates the CVEs that to which this exception applies.
+	// Indicates the CVEs to which the exception applies.
 	Cves []string `protobuf:"bytes,14,rep,name=cves,proto3" json:"cves,omitempty"`
 	// Types that are valid to be assigned to UpdatedReq:
 	//	*VulnerabilityException_DeferralReqUpdate
@@ -549,11 +521,11 @@ func (m *VulnerabilityException) GetTargetState() VulnerabilityState {
 	return VulnerabilityState_OBSERVED
 }
 
-func (m *VulnerabilityException) GetStatus() RequestStatus {
+func (m *VulnerabilityException) GetStatus() ExceptionStatus {
 	if m != nil {
 		return m.Status
 	}
-	return RequestStatus_PENDING
+	return ExceptionStatus_PENDING
 }
 
 func (m *VulnerabilityException) GetExpired() bool {
@@ -591,7 +563,7 @@ func (m *VulnerabilityException) GetLastUpdated() *types.Timestamp {
 	return nil
 }
 
-func (m *VulnerabilityException) GetComments() []*RequestComment {
+func (m *VulnerabilityException) GetComments() []*Comment {
 	if m != nil {
 		return m.Comments
 	}
@@ -662,7 +634,7 @@ func (m *VulnerabilityException) Clone() *VulnerabilityException {
 	cloned.CreatedAt = m.CreatedAt.Clone()
 	cloned.LastUpdated = m.LastUpdated.Clone()
 	if m.Comments != nil {
-		cloned.Comments = make([]*RequestComment, len(m.Comments))
+		cloned.Comments = make([]*Comment, len(m.Comments))
 		for idx, v := range m.Comments {
 			cloned.Comments[idx] = v.Clone()
 		}
@@ -682,7 +654,7 @@ func (m *VulnerabilityException) Clone() *VulnerabilityException {
 }
 
 type VulnerabilityException_Scope struct {
-	// This field can be used to apply the request to selected images.
+	// This field can be used to apply the exception to selected images.
 	ImageScope           *VulnerabilityException_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,proto3" json:"image_scope,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
 	XXX_unrecognized     []byte                              `json:"-"`
@@ -820,7 +792,7 @@ func (m *VulnerabilityException_Scope_Image) Clone() *VulnerabilityException_Sco
 }
 
 type GetVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -859,9 +831,9 @@ func (m *GetVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *GetVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *GetVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -876,12 +848,12 @@ func (m *GetVulnerabilityExceptionResponse) Clone() *GetVulnerabilityExceptionRe
 	cloned := new(GetVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type ListVulnerabilityExceptionsResponse struct {
-	RequestInfos         []*VulnerabilityException `protobuf:"bytes,1,rep,name=request_infos,json=requestInfos,proto3" json:"request_infos,omitempty"`
+	Exceptions           []*VulnerabilityException `protobuf:"bytes,1,rep,name=exceptions,proto3" json:"exceptions,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
 	XXX_sizecache        int32                     `json:"-"`
@@ -920,9 +892,9 @@ func (m *ListVulnerabilityExceptionsResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ListVulnerabilityExceptionsResponse proto.InternalMessageInfo
 
-func (m *ListVulnerabilityExceptionsResponse) GetRequestInfos() []*VulnerabilityException {
+func (m *ListVulnerabilityExceptionsResponse) GetExceptions() []*VulnerabilityException {
 	if m != nil {
-		return m.RequestInfos
+		return m.Exceptions
 	}
 	return nil
 }
@@ -937,28 +909,25 @@ func (m *ListVulnerabilityExceptionsResponse) Clone() *ListVulnerabilityExceptio
 	cloned := new(ListVulnerabilityExceptionsResponse)
 	*cloned = *m
 
-	if m.RequestInfos != nil {
-		cloned.RequestInfos = make([]*VulnerabilityException, len(m.RequestInfos))
-		for idx, v := range m.RequestInfos {
-			cloned.RequestInfos[idx] = v.Clone()
+	if m.Exceptions != nil {
+		cloned.Exceptions = make([]*VulnerabilityException, len(m.Exceptions))
+		for idx, v := range m.Exceptions {
+			cloned.Exceptions[idx] = v.Clone()
 		}
 	}
 	return cloned
 }
 
-// next available tag: 8
+// next available tag: 6
 type CreateDeferVulnerabilityExceptionRequest struct {
-	// Indicates the CVEs to the exception should be applied.
-	Cves    []string                      `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
-	Comment string                        `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	Scope   *VulnerabilityException_Scope `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
-	// This field can be used only for deferral requests. It indicates the type of expiry set for the request.
-	// `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
-	// `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.
-	// `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-	ExpiryType CreateDeferVulnerabilityExceptionRequest_ExpiryType `protobuf:"varint,4,opt,name=expiry_type,json=expiryType,proto3,enum=v2.CreateDeferVulnerabilityExceptionRequest_ExpiryType" json:"expiry_type,omitempty"`
-	// Indicates the timestamp when this request expires. This field must be set only if the expiry type is set to TIME.
-	ExpiresOn            *types.Timestamp `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,proto3" json:"expires_on,omitempty"`
+	// REQUIRED. The CVEs to which the exception should be applied.
+	Cves []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
+	// REQUIRED. The rationale for creating the exception.
+	Comment string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	// REQUIRED. The scope of enforcement of the exception.
+	Scope *VulnerabilityException_Scope `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	// REQUIRED. The type of expiry to be enforced for the request.
+	ExceptionExpiry      *ExceptionExpiry `protobuf:"bytes,4,opt,name=exception_expiry,json=exceptionExpiry,proto3" json:"exception_expiry,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -1020,16 +989,9 @@ func (m *CreateDeferVulnerabilityExceptionRequest) GetScope() *VulnerabilityExce
 	return nil
 }
 
-func (m *CreateDeferVulnerabilityExceptionRequest) GetExpiryType() CreateDeferVulnerabilityExceptionRequest_ExpiryType {
+func (m *CreateDeferVulnerabilityExceptionRequest) GetExceptionExpiry() *ExceptionExpiry {
 	if m != nil {
-		return m.ExpiryType
-	}
-	return CreateDeferVulnerabilityExceptionRequest_TIME
-}
-
-func (m *CreateDeferVulnerabilityExceptionRequest) GetExpiresOn() *types.Timestamp {
-	if m != nil {
-		return m.ExpiresOn
+		return m.ExceptionExpiry
 	}
 	return nil
 }
@@ -1049,12 +1011,12 @@ func (m *CreateDeferVulnerabilityExceptionRequest) Clone() *CreateDeferVulnerabi
 		copy(cloned.Cves, m.Cves)
 	}
 	cloned.Scope = m.Scope.Clone()
-	cloned.ExpiresOn = m.ExpiresOn.Clone()
+	cloned.ExceptionExpiry = m.ExceptionExpiry.Clone()
 	return cloned
 }
 
 type CreateDeferVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1097,9 +1059,9 @@ func (m *CreateDeferVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateDeferVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *CreateDeferVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *CreateDeferVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1114,19 +1076,20 @@ func (m *CreateDeferVulnerabilityExceptionResponse) Clone() *CreateDeferVulnerab
 	cloned := new(CreateDeferVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type CreateFalsePositiveVulnerabilityExceptionRequest struct {
-	// This field is under development. This field indicates the CVEs requested to be marked as false-positive.
-	// Only one field, `cve` or `cves`, can be set in the request.
-	Cves                 []string                      `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
-	Scope                *VulnerabilityException_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
-	Comment              string                        `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
-	XXX_unrecognized     []byte                        `json:"-"`
-	XXX_sizecache        int32                         `json:"-"`
+	// REQUIRED. The CVEs to which the exception should be applied.
+	Cves []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
+	// REQUIRED. The scope of enforcement of the exception.
+	Scope *VulnerabilityException_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	// REQUIRED. The rationale for creating the exception.
+	Comment              string   `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *CreateFalsePositiveVulnerabilityExceptionRequest) Reset() {
@@ -1206,7 +1169,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionRequest) Clone() *CreateFalseP
 }
 
 type CreateFalsePositiveVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1249,9 +1212,9 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) XXX_DiscardUnknown()
 
 var xxx_messageInfo_CreateFalsePositiveVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *CreateFalsePositiveVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *CreateFalsePositiveVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1266,12 +1229,14 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) Clone() *CreateFalse
 	cloned := new(CreateFalsePositiveVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type ApproveVulnerabilityExceptionRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// REQUIRED. The ID of vulnerability exception to be approved.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// REQUIRED. The rationale for approving the exception.
 	Comment              string   `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1339,7 +1304,7 @@ func (m *ApproveVulnerabilityExceptionRequest) Clone() *ApproveVulnerabilityExce
 }
 
 type ApproveVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1378,9 +1343,9 @@ func (m *ApproveVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ApproveVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *ApproveVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *ApproveVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1395,12 +1360,14 @@ func (m *ApproveVulnerabilityExceptionResponse) Clone() *ApproveVulnerabilityExc
 	cloned := new(ApproveVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type DenyVulnerabilityExceptionRequest struct {
-	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// REQUIRED. The ID of vulnerability exception to be denied.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// REQUIRED. The rationale for denying the exception.
 	Comment              string   `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1468,7 +1435,7 @@ func (m *DenyVulnerabilityExceptionRequest) Clone() *DenyVulnerabilityExceptionR
 }
 
 type DenyVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1507,9 +1474,9 @@ func (m *DenyVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DenyVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *DenyVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *DenyVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1524,18 +1491,20 @@ func (m *DenyVulnerabilityExceptionResponse) Clone() *DenyVulnerabilityException
 	cloned := new(DenyVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type UpdateVulnerabilityExceptionRequest struct {
-	Id                   string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Comment              string         `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	Expiry               *RequestExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
-	Cves                 []string       `protobuf:"bytes,4,rep,name=cves,proto3" json:"cves,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	// REQUIRED. The ID of vulnerability exception to be updated.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// REQUIRED. The rationale for updating the exception.
+	Comment              string           `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	Expiry               *ExceptionExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	Cves                 []string         `protobuf:"bytes,4,rep,name=cves,proto3" json:"cves,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
 func (m *UpdateVulnerabilityExceptionRequest) Reset()         { *m = UpdateVulnerabilityExceptionRequest{} }
@@ -1585,7 +1554,7 @@ func (m *UpdateVulnerabilityExceptionRequest) GetComment() string {
 	return ""
 }
 
-func (m *UpdateVulnerabilityExceptionRequest) GetExpiry() *RequestExpiry {
+func (m *UpdateVulnerabilityExceptionRequest) GetExpiry() *ExceptionExpiry {
 	if m != nil {
 		return m.Expiry
 	}
@@ -1618,7 +1587,7 @@ func (m *UpdateVulnerabilityExceptionRequest) Clone() *UpdateVulnerabilityExcept
 }
 
 type UpdateVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1657,9 +1626,9 @@ func (m *UpdateVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UpdateVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *UpdateVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *UpdateVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1674,12 +1643,12 @@ func (m *UpdateVulnerabilityExceptionResponse) Clone() *UpdateVulnerabilityExcep
 	cloned := new(UpdateVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 type CancelVulnerabilityExceptionResponse struct {
-	RequestInfo          *VulnerabilityException `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
+	Exception            *VulnerabilityException `protobuf:"bytes,1,opt,name=exception,proto3" json:"exception,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -1718,9 +1687,9 @@ func (m *CancelVulnerabilityExceptionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CancelVulnerabilityExceptionResponse proto.InternalMessageInfo
 
-func (m *CancelVulnerabilityExceptionResponse) GetRequestInfo() *VulnerabilityException {
+func (m *CancelVulnerabilityExceptionResponse) GetException() *VulnerabilityException {
 	if m != nil {
-		return m.RequestInfo
+		return m.Exception
 	}
 	return nil
 }
@@ -1735,16 +1704,15 @@ func (m *CancelVulnerabilityExceptionResponse) Clone() *CancelVulnerabilityExcep
 	cloned := new(CancelVulnerabilityExceptionResponse)
 	*cloned = *m
 
-	cloned.RequestInfo = m.RequestInfo.Clone()
+	cloned.Exception = m.Exception.Clone()
 	return cloned
 }
 
 func init() {
-	proto.RegisterEnum("v2.RequestStatus", RequestStatus_name, RequestStatus_value)
-	proto.RegisterEnum("v2.RequestExpiry_ExpiryType", RequestExpiry_ExpiryType_name, RequestExpiry_ExpiryType_value)
-	proto.RegisterEnum("v2.CreateDeferVulnerabilityExceptionRequest_ExpiryType", CreateDeferVulnerabilityExceptionRequest_ExpiryType_name, CreateDeferVulnerabilityExceptionRequest_ExpiryType_value)
-	proto.RegisterType((*RequestComment)(nil), "v2.RequestComment")
-	proto.RegisterType((*RequestExpiry)(nil), "v2.RequestExpiry")
+	proto.RegisterEnum("v2.ExceptionStatus", ExceptionStatus_name, ExceptionStatus_value)
+	proto.RegisterEnum("v2.ExceptionExpiry_ExpiryType", ExceptionExpiry_ExpiryType_name, ExceptionExpiry_ExpiryType_value)
+	proto.RegisterType((*Comment)(nil), "v2.Comment")
+	proto.RegisterType((*ExceptionExpiry)(nil), "v2.ExceptionExpiry")
 	proto.RegisterType((*DeferralRequest)(nil), "v2.DeferralRequest")
 	proto.RegisterType((*FalsePositiveRequest)(nil), "v2.FalsePositiveRequest")
 	proto.RegisterType((*VulnerabilityException)(nil), "v2.VulnerabilityException")
@@ -1770,95 +1738,94 @@ func init() {
 }
 
 var fileDescriptor_915f69594385714b = []byte{
-	// 1400 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x57, 0x4f, 0x6f, 0x1b, 0x45,
-	0x14, 0xcf, 0xda, 0xf9, 0xe7, 0x67, 0x27, 0x75, 0x27, 0x28, 0xdd, 0x6e, 0xd3, 0xe0, 0x6c, 0xfe,
-	0xe0, 0xa4, 0xed, 0xa6, 0x35, 0xa5, 0x50, 0x44, 0x05, 0x49, 0xec, 0xb6, 0x96, 0xd2, 0x34, 0x6c,
-	0xd2, 0xaa, 0x70, 0x59, 0x6d, 0xd6, 0x63, 0xb3, 0x60, 0xef, 0x6e, 0x76, 0xc6, 0xa6, 0x06, 0x21,
-	0x24, 0xae, 0x20, 0x2e, 0x1c, 0xe8, 0x89, 0xde, 0x39, 0xf2, 0x29, 0x90, 0xb8, 0x54, 0xe2, 0x0b,
-	0xa0, 0x82, 0xc4, 0xb7, 0x40, 0x68, 0x66, 0x67, 0xfd, 0xa7, 0xb1, 0xbd, 0xb6, 0x64, 0x38, 0xd9,
-	0xf3, 0xe6, 0x37, 0xf3, 0x7e, 0xef, 0xcd, 0x6f, 0xde, 0x9b, 0x85, 0x55, 0xd3, 0xb3, 0xb7, 0x1b,
-	0xb9, 0xed, 0x46, 0xbd, 0xea, 0x18, 0xf8, 0xa9, 0x85, 0x3d, 0x6a, 0xbb, 0x8e, 0x41, 0xb0, 0xdf,
-	0xb0, 0x2d, 0xac, 0x79, 0xbe, 0x4b, 0x5d, 0x14, 0x6b, 0xe4, 0x94, 0xa5, 0x8a, 0xeb, 0x56, 0xaa,
-	0x78, 0x9b, 0xe1, 0x4d, 0xc7, 0x71, 0xa9, 0xc9, 0x80, 0x24, 0x40, 0x28, 0xaf, 0x8b, 0x59, 0x3e,
-	0x3a, 0xa9, 0x97, 0xb7, 0xa9, 0x5d, 0xc3, 0x84, 0x9a, 0x35, 0x4f, 0x00, 0x16, 0x84, 0x1f, 0xcb,
-	0xad, 0xd5, 0x5c, 0x47, 0x18, 0x2f, 0x0a, 0x23, 0xc1, 0xa6, 0x6f, 0x7d, 0x62, 0x9c, 0xd6, 0xb1,
-	0xdf, 0x14, 0x53, 0xe7, 0xc5, 0x54, 0x9d, 0x60, 0x5f, 0x98, 0x2e, 0x74, 0x52, 0x25, 0xd4, 0xa4,
-	0x82, 0x9e, 0xfa, 0xa3, 0x04, 0xf3, 0x3a, 0x3e, 0xad, 0x63, 0x42, 0xf7, 0xdc, 0x5a, 0x0d, 0x3b,
-	0x14, 0xcd, 0x43, 0xcc, 0x2e, 0xc9, 0x52, 0x46, 0xca, 0x26, 0xf4, 0x98, 0x5d, 0x42, 0x32, 0xcc,
-	0xd4, 0x30, 0x21, 0x66, 0x05, 0xcb, 0x31, 0x6e, 0x0c, 0x87, 0x28, 0x03, 0x93, 0xcc, 0x87, 0x1c,
-	0xcf, 0x48, 0xd9, 0x64, 0x2e, 0xa5, 0x35, 0x72, 0xda, 0x51, 0xd5, 0xae, 0x3d, 0x22, 0xd8, 0xd7,
-	0xf9, 0x0c, 0xba, 0x0d, 0x60, 0xf9, 0xd8, 0xa4, 0xb8, 0x64, 0x98, 0x54, 0x9e, 0xe4, 0x38, 0x45,
-	0x0b, 0x02, 0xd6, 0xc2, 0x80, 0xb5, 0xe3, 0x30, 0x60, 0x3d, 0x21, 0xd0, 0x3b, 0x54, 0xfd, 0x4d,
-	0x82, 0x39, 0xc1, 0xac, 0xf0, 0xd4, 0xb3, 0xfd, 0x26, 0xba, 0x03, 0x49, 0xcc, 0xff, 0x19, 0xb4,
-	0xe9, 0x61, 0xce, 0x70, 0x3e, 0xb7, 0xc4, 0xbc, 0x76, 0xe1, 0xb4, 0xe0, 0xe7, 0xb8, 0xe9, 0x61,
-	0x1d, 0x70, 0xeb, 0x3f, 0xe3, 0xc2, 0x47, 0x98, 0x18, 0xae, 0xc3, 0x43, 0x89, 0xe0, 0x22, 0xd0,
-	0x0f, 0x1d, 0xf5, 0x03, 0x80, 0xf6, 0xa6, 0x68, 0x16, 0x26, 0x8f, 0x8b, 0x0f, 0x0a, 0xe9, 0x09,
-	0xb4, 0x00, 0xe7, 0x76, 0xf6, 0xf7, 0x8d, 0xbd, 0xc7, 0x05, 0xe3, 0x6e, 0xf1, 0xc9, 0xce, 0xee,
-	0x7e, 0x21, 0x2d, 0x71, 0xe3, 0xc1, 0x47, 0x5d, 0xc6, 0x98, 0xfa, 0x1e, 0x9c, 0xcb, 0xe3, 0x32,
-	0xf6, 0x7d, 0xb3, 0x2a, 0xc8, 0xa2, 0x4d, 0x98, 0x0e, 0xd8, 0xf1, 0x48, 0x92, 0xb9, 0xf3, 0x67,
-	0x22, 0xd1, 0x05, 0x40, 0x5d, 0x84, 0xd7, 0xee, 0x9a, 0x55, 0x82, 0x0f, 0x5d, 0x62, 0x53, 0xbb,
-	0x81, 0x05, 0x4a, 0xfd, 0x67, 0x1a, 0x16, 0x1f, 0xd7, 0xab, 0x0e, 0xf6, 0xcd, 0x13, 0xbb, 0x6a,
-	0xd3, 0x66, 0x21, 0x54, 0xe1, 0x99, 0x53, 0x44, 0x30, 0xe9, 0x98, 0xb5, 0xf0, 0x08, 0xf9, 0x7f,
-	0x74, 0x1b, 0x52, 0xd4, 0xf4, 0x2b, 0x98, 0x06, 0x92, 0xe0, 0xe7, 0x38, 0x9f, 0x5b, 0x64, 0x3c,
-	0xba, 0x76, 0x3d, 0x62, 0xb3, 0x7a, 0x32, 0xc0, 0xf2, 0x01, 0x23, 0xcf, 0xd6, 0xd4, 0x09, 0x3f,
-	0xd4, 0xf9, 0x2e, 0xf2, 0x47, 0x7c, 0x42, 0x17, 0x00, 0xa6, 0x9f, 0x20, 0x93, 0x25, 0x79, 0x2a,
-	0x23, 0x65, 0x67, 0xf5, 0x70, 0x88, 0xb6, 0x20, 0xe1, 0x07, 0x4b, 0xb0, 0x2f, 0x4f, 0xf7, 0x10,
-	0x51, 0x7b, 0x9a, 0x61, 0x4d, 0xcf, 0xf3, 0xdd, 0x06, 0xf6, 0x89, 0x3c, 0x93, 0x89, 0x9f, 0xc5,
-	0xb6, 0xa6, 0x5f, 0x51, 0xdd, 0xec, 0x08, 0xaa, 0x43, 0x77, 0x20, 0x55, 0x35, 0x09, 0x35, 0xea,
-	0x5e, 0x89, 0x59, 0xe4, 0x44, 0xe4, 0xe2, 0x24, 0xc3, 0x3f, 0x0a, 0xe0, 0x48, 0x83, 0x59, 0x2b,
-	0xb8, 0x46, 0x44, 0x06, 0x4e, 0x12, 0x75, 0x24, 0x46, 0xdc, 0x30, 0xbd, 0x85, 0x41, 0xb7, 0x60,
-	0x8a, 0x58, 0xae, 0x87, 0xe5, 0x24, 0xf7, 0x93, 0x39, 0x93, 0xfa, 0xd6, 0x81, 0x6a, 0x47, 0x0c,
-	0xa7, 0x07, 0x70, 0xf4, 0x0e, 0xa4, 0x4a, 0x42, 0x4e, 0x86, 0x8f, 0x4f, 0xe5, 0x14, 0x5f, 0xbe,
-	0xc0, 0x96, 0xbf, 0x22, 0xb3, 0xfb, 0x13, 0x7a, 0xb2, 0xd4, 0x36, 0xb1, 0xdc, 0x94, 0x3d, 0x43,
-	0xe4, 0x55, 0x9e, 0xe3, 0xeb, 0x64, 0xb6, 0xae, 0x97, 0xc0, 0xee, 0x4f, 0xe8, 0x89, 0xb2, 0x17,
-	0x0a, 0x16, 0xc1, 0xa4, 0xd5, 0xc0, 0x44, 0x9e, 0xcf, 0xc4, 0x99, 0x84, 0xd8, 0x7f, 0x54, 0x80,
-	0x85, 0x4e, 0x22, 0x22, 0x6f, 0xf2, 0xb9, 0xfe, 0x7c, 0x24, 0xfd, 0x7c, 0x07, 0x9f, 0x20, 0x71,
-	0xca, 0x73, 0x09, 0xa6, 0x78, 0x80, 0xe8, 0x1e, 0x24, 0xed, 0x9a, 0x59, 0xc1, 0x46, 0x90, 0x97,
-	0xe0, 0x6a, 0x6c, 0x44, 0xe5, 0x45, 0x2b, 0xb2, 0x35, 0x3a, 0xf0, 0xa5, 0xdc, 0xa2, 0x3c, 0x80,
-	0x29, 0x6e, 0x44, 0x0a, 0xcc, 0xfa, 0xb8, 0x62, 0x13, 0x2a, 0x6e, 0x5a, 0x42, 0x6f, 0x8d, 0xd1,
-	0x22, 0x4c, 0xfb, 0xb8, 0xe6, 0xd2, 0xf0, 0x5e, 0x88, 0x11, 0x4a, 0x43, 0x9c, 0x9a, 0x15, 0x7e,
-	0x21, 0x12, 0x3a, 0xfb, 0xbb, 0x3b, 0x05, 0x71, 0x1f, 0x9f, 0xee, 0xce, 0x41, 0x52, 0x48, 0x83,
-	0x85, 0xab, 0x9e, 0xc0, 0xca, 0x3d, 0x4c, 0x7b, 0x33, 0xd3, 0x31, 0xf1, 0x5c, 0x87, 0x60, 0xa6,
-	0x29, 0x91, 0x6f, 0xc3, 0x76, 0xca, 0xae, 0x88, 0x49, 0xe9, 0x1f, 0x93, 0x9e, 0x14, 0xf8, 0xa2,
-	0x53, 0x76, 0xd5, 0x32, 0xac, 0xee, 0xdb, 0xa4, 0x8f, 0x13, 0xd2, 0xf2, 0xf2, 0x3e, 0xcc, 0x75,
-	0x7a, 0x21, 0xb2, 0xc4, 0xf5, 0x37, 0xc8, 0x4d, 0xaa, 0xc3, 0x0d, 0x51, 0xff, 0x8e, 0x41, 0x76,
-	0x8f, 0x5f, 0x04, 0x7e, 0x64, 0xfd, 0x82, 0xea, 0xd6, 0x82, 0xd4, 0xa1, 0x05, 0x19, 0x66, 0x84,
-	0xb0, 0xc3, 0x46, 0x21, 0x86, 0x6d, 0x99, 0xc7, 0x47, 0x93, 0xf9, 0x93, 0xee, 0x8a, 0x1f, 0x94,
-	0x9a, 0xb7, 0xd9, 0xea, 0x61, 0x89, 0x0e, 0xd7, 0x0c, 0xa6, 0xfe, 0xdf, 0x66, 0xf0, 0x29, 0x6c,
-	0x0e, 0xc1, 0x7f, 0x3c, 0xea, 0x79, 0x26, 0xc1, 0xf5, 0xc0, 0x59, 0xd7, 0x05, 0x1f, 0xfd, 0x74,
-	0x5b, 0x67, 0x18, 0x1b, 0xed, 0x0c, 0x3b, 0x54, 0x11, 0xef, 0x52, 0x85, 0xea, 0xc3, 0x8d, 0x11,
-	0x98, 0x8d, 0x27, 0x1d, 0x87, 0xb0, 0xb6, 0x13, 0xf4, 0x89, 0xc1, 0x19, 0xe8, 0xf1, 0x08, 0xea,
-	0xad, 0x6d, 0xb5, 0x0c, 0xeb, 0x11, 0x3b, 0x8e, 0x87, 0xf9, 0x03, 0x58, 0xc9, 0x63, 0xa7, 0x39,
-	0x2e, 0xda, 0x16, 0xa8, 0x83, 0xb6, 0x1b, 0x0f, 0xe7, 0xef, 0x25, 0x58, 0x0d, 0x2a, 0xfc, 0x98,
-	0x68, 0x77, 0x3c, 0x9a, 0xe2, 0x11, 0x8f, 0xa6, 0x96, 0x88, 0x27, 0xdb, 0x22, 0x56, 0x31, 0xac,
-	0x0d, 0xe6, 0x33, 0x9e, 0xb8, 0x31, 0xac, 0xed, 0x99, 0x8e, 0x85, 0xab, 0xff, 0xa9, 0x9b, 0xad,
-	0xa3, 0xd6, 0x0b, 0x39, 0x78, 0x72, 0xa1, 0x24, 0xcc, 0x1c, 0x16, 0x0e, 0xf2, 0xc5, 0x83, 0x7b,
-	0xe9, 0x09, 0x94, 0x82, 0xd9, 0x9d, 0xc3, 0x43, 0xfd, 0xe1, 0xe3, 0x42, 0x3e, 0x2d, 0x21, 0x80,
-	0xe9, 0x7c, 0xe1, 0xa0, 0x58, 0xc8, 0xa7, 0x63, 0xe8, 0x12, 0x5c, 0x08, 0x67, 0x0c, 0x81, 0x37,
-	0x1e, 0x1d, 0xe6, 0x77, 0x8e, 0x0b, 0xe9, 0x78, 0xee, 0xdb, 0x24, 0x5c, 0xee, 0xed, 0xfc, 0x28,
-	0xf8, 0xb0, 0x41, 0x5f, 0xc3, 0xc5, 0xbe, 0x4d, 0x0f, 0xa5, 0x83, 0x03, 0x21, 0x6e, 0xdd, 0xb7,
-	0xf0, 0x6e, 0xb3, 0x98, 0x57, 0xd6, 0x99, 0x25, 0xb2, 0x4b, 0xaa, 0x9b, 0xdf, 0xfc, 0xfe, 0xd7,
-	0x0f, 0xb1, 0x55, 0xb4, 0x12, 0x7e, 0xa7, 0xb4, 0xb0, 0xd7, 0x5a, 0xdf, 0x56, 0x64, 0xfb, 0x4b,
-	0xbb, 0xf4, 0x15, 0xfa, 0x02, 0x2e, 0x0d, 0xe8, 0x88, 0x88, 0xbf, 0x0b, 0x75, 0xf3, 0xf3, 0x0f,
-	0xd9, 0x37, 0x91, 0xf2, 0x06, 0x1b, 0x0d, 0xd1, 0x40, 0xd5, 0x35, 0x4e, 0x60, 0x19, 0x2d, 0x0d,
-	0x22, 0x80, 0x7e, 0x91, 0x60, 0x25, 0xb2, 0x78, 0xa3, 0xab, 0xa3, 0xf4, 0x28, 0xe5, 0xda, 0x90,
-	0x68, 0x41, 0xf4, 0x3a, 0x27, 0xba, 0xa5, 0xae, 0x0f, 0xcc, 0x54, 0xf8, 0xc8, 0x7a, 0x57, 0xda,
-	0x42, 0x2f, 0xa4, 0xb0, 0xe3, 0x0c, 0x51, 0x6a, 0xd1, 0xcd, 0x36, 0x9d, 0xe1, 0x7b, 0x86, 0xf2,
-	0xd6, 0x88, 0xab, 0x44, 0x30, 0xb7, 0x78, 0x30, 0xd7, 0xd5, 0x2b, 0x03, 0x83, 0x29, 0xb3, 0x1d,
-	0xaf, 0x79, 0x62, 0x4b, 0x16, 0xd2, 0xcf, 0x12, 0x5c, 0x1e, 0x58, 0x77, 0x51, 0x96, 0x11, 0x1a,
-	0xa6, 0xd8, 0x2b, 0x9b, 0x43, 0x20, 0x05, 0xdd, 0x9b, 0x9c, 0xae, 0xa6, 0x6e, 0x46, 0xaa, 0x74,
-	0x5b, 0x7c, 0x8f, 0x30, 0xb2, 0x3f, 0x49, 0xa0, 0xf4, 0xaf, 0xb6, 0x68, 0x3d, 0x78, 0x27, 0x47,
-	0x14, 0x77, 0x65, 0x23, 0x0a, 0x26, 0x38, 0xde, 0xe0, 0x1c, 0xaf, 0xa8, 0x1b, 0xd1, 0x1c, 0x4b,
-	0xd8, 0x69, 0x32, 0x82, 0xcf, 0x25, 0x58, 0x1a, 0x54, 0x18, 0x11, 0xbf, 0x45, 0x43, 0x94, 0x72,
-	0x25, 0x1b, 0x0d, 0x14, 0x34, 0xaf, 0x72, 0x9a, 0x1b, 0xb9, 0xe8, 0x0b, 0xcf, 0x18, 0x7e, 0x27,
-	0xc1, 0xd2, 0xa0, 0x9a, 0xda, 0xa3, 0xf0, 0x70, 0x2a, 0xc3, 0xd4, 0xe1, 0xd6, 0x8d, 0xca, 0x46,
-	0x67, 0xcc, 0xe2, 0xfb, 0xa1, 0x32, 0x2c, 0xe5, 0x71, 0x15, 0xf7, 0xcd, 0xd7, 0x59, 0x36, 0x09,
-	0x66, 0x29, 0xd4, 0x3c, 0xda, 0x0c, 0x4b, 0xdd, 0x56, 0x74, 0xe4, 0xbb, 0xda, 0xaf, 0x2f, 0x97,
-	0xa5, 0x17, 0x2f, 0x97, 0xa5, 0x3f, 0x5e, 0x2e, 0x4b, 0xcf, 0xfe, 0x5c, 0x9e, 0x00, 0xd9, 0x76,
-	0x35, 0x42, 0x4d, 0xeb, 0x33, 0xdf, 0x7d, 0x1a, 0xbc, 0x54, 0x35, 0xd3, 0xb3, 0xb5, 0x46, 0xee,
-	0xe3, 0x58, 0x23, 0xf7, 0x64, 0xe2, 0x64, 0x9a, 0xdb, 0xde, 0xfc, 0x37, 0x00, 0x00, 0xff, 0xff,
-	0x8d, 0xb0, 0xb6, 0x73, 0x9e, 0x12, 0x00, 0x00,
+	// 1387 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x57, 0x4f, 0x6f, 0x1b, 0x45,
+	0x14, 0xcf, 0xd8, 0xce, 0x1f, 0x3f, 0xa7, 0x89, 0x3b, 0x41, 0xe9, 0x76, 0x9b, 0x06, 0x67, 0xf3,
+	0xa7, 0x4e, 0xda, 0x6e, 0x5a, 0x53, 0x2a, 0x5a, 0x89, 0x42, 0x12, 0xbb, 0x6d, 0xa4, 0x34, 0x0d,
+	0x9b, 0xa4, 0x2a, 0x48, 0xb0, 0xdd, 0xda, 0x13, 0xb3, 0xc2, 0xfb, 0x27, 0x3b, 0x6b, 0x53, 0x83,
+	0x10, 0x12, 0x57, 0x38, 0x54, 0xe2, 0xd2, 0x13, 0xbd, 0x73, 0xe4, 0x53, 0x70, 0xa3, 0x12, 0x5f,
+	0x00, 0x05, 0xbe, 0x04, 0x37, 0x34, 0xb3, 0xb3, 0x6b, 0x27, 0xb1, 0xbd, 0xb6, 0x52, 0x4e, 0xde,
+	0x79, 0xf3, 0x9b, 0x99, 0xdf, 0x7b, 0xf3, 0x9b, 0xf7, 0x9e, 0x61, 0xde, 0x70, 0xcd, 0xd5, 0x46,
+	0x61, 0xb5, 0x51, 0xaf, 0xd9, 0x3a, 0x79, 0x51, 0x26, 0xae, 0x6f, 0x3a, 0xb6, 0x4e, 0x89, 0xd7,
+	0x30, 0xcb, 0x44, 0x75, 0x3d, 0xc7, 0x77, 0x70, 0xa2, 0x51, 0x90, 0x67, 0xaa, 0x8e, 0x53, 0xad,
+	0x91, 0x55, 0x86, 0x37, 0x6c, 0xdb, 0xf1, 0x0d, 0x06, 0xa4, 0x01, 0x42, 0x7e, 0x57, 0xcc, 0xf2,
+	0xd1, 0xf3, 0xfa, 0xc1, 0xaa, 0x6f, 0x5a, 0x84, 0xfa, 0x86, 0xe5, 0x0a, 0xc0, 0x94, 0x38, 0xa7,
+	0xec, 0x58, 0x96, 0x63, 0x0b, 0xe3, 0x45, 0x61, 0xa4, 0xc4, 0xf0, 0xca, 0x5f, 0xea, 0x87, 0x75,
+	0xe2, 0x35, 0xc5, 0xd4, 0x79, 0x31, 0x55, 0xa7, 0xc4, 0x13, 0xa6, 0x0b, 0xed, 0x54, 0xa9, 0x6f,
+	0xf8, 0x82, 0x9e, 0xf2, 0x12, 0xc1, 0xe8, 0x86, 0x63, 0x59, 0xc4, 0xf6, 0xf1, 0x04, 0x24, 0xcc,
+	0x8a, 0x84, 0x72, 0x28, 0x9f, 0xd6, 0x12, 0x66, 0x05, 0x4b, 0x30, 0x6a, 0x11, 0x4a, 0x8d, 0x2a,
+	0x91, 0x12, 0xdc, 0x18, 0x0e, 0x71, 0x0e, 0x52, 0x6c, 0x73, 0x29, 0x99, 0x43, 0xf9, 0x4c, 0x61,
+	0x5c, 0x6d, 0x14, 0xd4, 0xdd, 0x9a, 0x69, 0xed, 0x53, 0xe2, 0x69, 0x7c, 0x06, 0xdf, 0x01, 0x28,
+	0x7b, 0xc4, 0xf0, 0x49, 0x45, 0x37, 0x7c, 0x29, 0xc5, 0x71, 0xb2, 0x1a, 0x78, 0xaa, 0x86, 0x9e,
+	0xaa, 0x7b, 0xa1, 0xa7, 0x5a, 0x5a, 0xa0, 0xd7, 0x7c, 0xe5, 0x0f, 0x04, 0x93, 0xa5, 0x30, 0x9a,
+	0xa5, 0x17, 0xae, 0xe9, 0x35, 0xf1, 0x47, 0x90, 0x21, 0xfc, 0x4b, 0xf7, 0x9b, 0x2e, 0xe1, 0x1c,
+	0x27, 0x0a, 0xb3, 0xec, 0xdc, 0x13, 0x48, 0x35, 0xf8, 0xd9, 0x6b, 0xba, 0x44, 0x03, 0x12, 0x7d,
+	0x33, 0x3e, 0x7c, 0x44, 0xa8, 0xee, 0xd8, 0xdc, 0x9d, 0x18, 0x3e, 0x02, 0xfd, 0xd8, 0x56, 0x3e,
+	0x06, 0x68, 0x6d, 0x8a, 0xc7, 0x20, 0xb5, 0xb7, 0xf9, 0xa8, 0x94, 0x1d, 0xc2, 0x53, 0x30, 0xb9,
+	0xb6, 0xb5, 0xa5, 0x6f, 0x3c, 0x29, 0xe9, 0xf7, 0x37, 0x9f, 0xae, 0xad, 0x6f, 0x95, 0xb2, 0x88,
+	0x1b, 0xb7, 0x3f, 0x3d, 0x66, 0x4c, 0x28, 0xf7, 0x60, 0xb2, 0x48, 0x0e, 0x88, 0xe7, 0x19, 0x35,
+	0x8d, 0x1c, 0xd6, 0x09, 0xf5, 0xf1, 0x55, 0x18, 0x09, 0xd8, 0x71, 0x5f, 0x32, 0x85, 0xa9, 0x0e,
+	0xbe, 0x68, 0x02, 0xa2, 0x4c, 0xc3, 0x3b, 0xf7, 0x8d, 0x1a, 0x25, 0x3b, 0x0e, 0x35, 0x7d, 0xb3,
+	0x41, 0xc4, 0x26, 0xca, 0xbf, 0x23, 0x30, 0xfd, 0xa4, 0x5e, 0xb3, 0x89, 0x67, 0x3c, 0x37, 0x6b,
+	0xa6, 0xdf, 0x8c, 0x36, 0x38, 0x75, 0x97, 0x18, 0x52, 0xb6, 0x61, 0x85, 0x17, 0xc9, 0xbf, 0xf1,
+	0x1d, 0x18, 0xf7, 0x0d, 0xaf, 0x4a, 0xfc, 0x40, 0x11, 0xfc, 0x36, 0x27, 0x0a, 0xd3, 0x8c, 0xc9,
+	0xb1, 0x5d, 0x77, 0xd9, 0xac, 0x96, 0x09, 0xb0, 0x7c, 0xc0, 0xe8, 0xb3, 0x35, 0x75, 0xca, 0xaf,
+	0x76, 0xe2, 0x04, 0xfd, 0x5d, 0x3e, 0xa5, 0x09, 0x08, 0xd3, 0x51, 0x10, 0xcd, 0x8a, 0x34, 0x9c,
+	0x43, 0xf9, 0x31, 0x2d, 0x1c, 0xe2, 0x15, 0x48, 0x7b, 0x81, 0x2f, 0xc4, 0x93, 0x46, 0x3a, 0x88,
+	0xa9, 0x35, 0xcd, 0xb0, 0x86, 0xeb, 0x7a, 0x4e, 0x83, 0x78, 0x54, 0x1a, 0xcd, 0x25, 0x4f, 0x63,
+	0xa3, 0xe9, 0x13, 0xea, 0x1b, 0x1b, 0x40, 0x7d, 0xf8, 0x43, 0x18, 0xaf, 0x19, 0xd4, 0xd7, 0xeb,
+	0x6e, 0x85, 0x59, 0xa4, 0x74, 0xec, 0xe2, 0x0c, 0xc3, 0xef, 0x07, 0x70, 0x7c, 0x05, 0xc6, 0xca,
+	0xc1, 0x73, 0xa2, 0x12, 0x70, 0x92, 0x19, 0x46, 0x52, 0x3c, 0x31, 0x2d, 0x9a, 0xc4, 0xb7, 0x61,
+	0x98, 0x96, 0x1d, 0x97, 0x48, 0x19, 0x7e, 0x40, 0xee, 0x54, 0xd4, 0xa3, 0x68, 0xaa, 0xbb, 0x0c,
+	0xa7, 0x05, 0x70, 0xfc, 0x01, 0x8c, 0x57, 0x84, 0x96, 0x74, 0x8f, 0x1c, 0x4a, 0xe3, 0x2d, 0xf9,
+	0x9c, 0xd0, 0xd8, 0xc3, 0x21, 0x2d, 0x53, 0x69, 0x99, 0x58, 0x50, 0x0e, 0x5c, 0x5d, 0x04, 0x54,
+	0x3a, 0xc7, 0xd7, 0x49, 0x6c, 0x5d, 0x27, 0x6d, 0x3d, 0x1c, 0xd2, 0xd2, 0x07, 0x6e, 0xa8, 0x56,
+	0x0c, 0xa9, 0x72, 0x83, 0x50, 0x69, 0x22, 0x97, 0x64, 0xea, 0x61, 0xdf, 0xb8, 0x04, 0x53, 0xed,
+	0x44, 0x44, 0xc0, 0xa4, 0xc9, 0xee, 0x7c, 0x90, 0x76, 0xbe, 0x8d, 0x4f, 0x10, 0x31, 0xf9, 0x35,
+	0x82, 0x61, 0xee, 0x20, 0x7e, 0x00, 0x19, 0xd3, 0x32, 0xaa, 0x44, 0x0f, 0xe2, 0x12, 0xbc, 0x8b,
+	0xa5, 0xb8, 0xb8, 0xa8, 0x9b, 0x6c, 0x8d, 0x06, 0x7c, 0x29, 0xb7, 0xc8, 0x8f, 0x60, 0x98, 0x1b,
+	0xb1, 0x0c, 0x63, 0x1e, 0xa9, 0x9a, 0xd4, 0x17, 0xcf, 0x2c, 0xad, 0x45, 0x63, 0x3c, 0x0d, 0x23,
+	0x1e, 0xb1, 0x1c, 0x3f, 0x7c, 0x12, 0x62, 0x84, 0xb3, 0x90, 0xf4, 0x8d, 0x2a, 0x7f, 0x0b, 0x69,
+	0x8d, 0x7d, 0xae, 0x0f, 0x43, 0xd2, 0x23, 0x87, 0xeb, 0xe7, 0x20, 0x23, 0x34, 0xc1, 0xdc, 0x55,
+	0x3e, 0x87, 0xb9, 0x07, 0xc4, 0xef, 0xcc, 0x4c, 0x23, 0xd4, 0x75, 0x6c, 0xca, 0x2e, 0x2b, 0x1d,
+	0xd5, 0x05, 0xe1, 0x90, 0xdc, 0xdd, 0x21, 0xad, 0x05, 0x56, 0x0c, 0x98, 0xdf, 0x32, 0x69, 0x97,
+	0xfd, 0x69, 0x74, 0xc0, 0x5d, 0x96, 0xd6, 0x42, 0xab, 0x84, 0xb8, 0xe0, 0x7a, 0x9d, 0xd0, 0x86,
+	0x56, 0xde, 0x20, 0xc8, 0x6f, 0x70, 0xdd, 0xf3, 0x8b, 0xea, 0xe6, 0xca, 0x71, 0x05, 0xa0, 0x36,
+	0x05, 0x48, 0x30, 0x2a, 0xe4, 0x1c, 0xd6, 0x07, 0x31, 0x6c, 0x89, 0x3b, 0x39, 0x98, 0xb8, 0xef,
+	0x41, 0xb6, 0x55, 0x47, 0x45, 0x7e, 0x4c, 0x75, 0xcf, 0x8f, 0x93, 0xe4, 0xb8, 0x41, 0x21, 0xb0,
+	0xdc, 0x87, 0x47, 0x67, 0xbe, 0x9c, 0x57, 0x08, 0x6e, 0x04, 0xe7, 0x1c, 0x7b, 0x3a, 0x83, 0x47,
+	0x30, 0x8a, 0x53, 0x62, 0xb0, 0x38, 0xb5, 0x45, 0x3e, 0x79, 0x2c, 0xf2, 0x8a, 0x05, 0x37, 0x07,
+	0x60, 0x76, 0xe6, 0x48, 0xec, 0xc0, 0xc2, 0x5a, 0x90, 0x75, 0x7b, 0x3b, 0xdf, 0xa1, 0xb5, 0xe8,
+	0x2c, 0x1d, 0xc5, 0x80, 0xc5, 0x98, 0x1d, 0xcf, 0x4c, 0xfa, 0x11, 0xcc, 0x15, 0x89, 0xdd, 0x7c,
+	0x5b, 0x8c, 0xbf, 0x00, 0xa5, 0xd7, 0x76, 0x67, 0xa6, 0xfb, 0x12, 0xc1, 0x7c, 0x90, 0x2c, 0xdf,
+	0x12, 0xe3, 0xb6, 0xe6, 0x23, 0x19, 0xdb, 0x7c, 0x44, 0xba, 0x4d, 0xb5, 0x74, 0xab, 0x3c, 0x83,
+	0x85, 0xde, 0x8c, 0xce, 0xec, 0xf4, 0x33, 0x58, 0xd8, 0x30, 0xec, 0x32, 0xa9, 0xfd, 0x5f, 0x27,
+	0xac, 0xec, 0xb7, 0x75, 0x99, 0x41, 0xc3, 0x82, 0x33, 0x30, 0xba, 0x53, 0xda, 0x2e, 0x6e, 0x6e,
+	0x3f, 0xc8, 0x0e, 0xe1, 0x71, 0x18, 0x5b, 0xdb, 0xd9, 0xd1, 0x1e, 0x3f, 0x29, 0x15, 0xb3, 0x08,
+	0x03, 0x8c, 0x14, 0x4b, 0xdb, 0x9b, 0xa5, 0x62, 0x36, 0x81, 0x2f, 0xc1, 0x85, 0x70, 0x46, 0x17,
+	0x78, 0x7d, 0x7f, 0xa7, 0xb8, 0xb6, 0x57, 0xca, 0x26, 0x0b, 0x3f, 0x66, 0xe0, 0x72, 0xe7, 0xc3,
+	0x77, 0x83, 0xff, 0x05, 0xf8, 0x7b, 0xb8, 0xd8, 0xb5, 0x72, 0xe0, 0x2c, 0x23, 0xaf, 0x11, 0xea,
+	0xd4, 0xbd, 0x32, 0x59, 0x6f, 0x6e, 0x16, 0xe5, 0x45, 0x66, 0x89, 0x2d, 0x35, 0xca, 0xf2, 0x0f,
+	0x7f, 0xfe, 0xf3, 0x73, 0x62, 0x1e, 0xcf, 0x85, 0x6d, 0x7e, 0x84, 0xbd, 0xde, 0xca, 0xf9, 0xab,
+	0xdf, 0x9a, 0x95, 0xef, 0xf0, 0x37, 0x70, 0xa9, 0x47, 0x6d, 0xc1, 0xbc, 0xab, 0xd2, 0x8c, 0xaf,
+	0x3f, 0x61, 0x7f, 0x29, 0xe4, 0x2b, 0x6c, 0xd4, 0x47, 0x29, 0x52, 0x16, 0x38, 0x81, 0x59, 0x3c,
+	0xd3, 0x8b, 0x00, 0xfe, 0x0d, 0xc1, 0x5c, 0x6c, 0x8a, 0xc6, 0xd7, 0x78, 0xcf, 0xd4, 0x67, 0x6d,
+	0x92, 0xaf, 0xf7, 0x89, 0x16, 0x44, 0x6f, 0x70, 0xa2, 0x2b, 0xca, 0x62, 0xcf, 0x48, 0x85, 0x9d,
+	0xca, 0x5d, 0xb4, 0x82, 0xdf, 0xa0, 0xb0, 0xae, 0xf4, 0x91, 0x55, 0xf1, 0xad, 0x16, 0x9d, 0xfe,
+	0xcb, 0x83, 0xfc, 0xfe, 0x80, 0xab, 0x84, 0x33, 0xb7, 0xb9, 0x33, 0x37, 0x94, 0xab, 0x3d, 0x9d,
+	0x39, 0x60, 0x3b, 0x5e, 0x77, 0xc5, 0x96, 0xcc, 0xa5, 0x5f, 0x11, 0x5c, 0xee, 0x99, 0x67, 0x71,
+	0x9e, 0x11, 0xea, 0x27, 0xb9, 0xcb, 0xcb, 0x7d, 0x20, 0x05, 0xdd, 0x5b, 0x9c, 0xae, 0xaa, 0x2c,
+	0xc7, 0xaa, 0x74, 0x55, 0x74, 0xf3, 0x8c, 0xec, 0x2f, 0x08, 0xe4, 0xee, 0x29, 0x16, 0x2f, 0x06,
+	0xcd, 0x66, 0x4c, 0x46, 0x97, 0x97, 0xe2, 0x60, 0x82, 0xe3, 0x4d, 0xce, 0xf1, 0xaa, 0xb2, 0x14,
+	0xcf, 0xb1, 0x42, 0xec, 0x26, 0x23, 0xf8, 0x1a, 0xc1, 0x4c, 0xaf, 0x84, 0x88, 0xf9, 0x2b, 0xea,
+	0x23, 0x89, 0xcb, 0xf9, 0x78, 0xa0, 0xa0, 0x79, 0x8d, 0xd3, 0x5c, 0x2a, 0xc4, 0x3f, 0x78, 0xc6,
+	0xf0, 0x27, 0x04, 0x33, 0xbd, 0x12, 0x6a, 0x87, 0xc4, 0xc3, 0xa9, 0xf4, 0x93, 0x84, 0xa3, 0x17,
+	0x95, 0x8f, 0x8f, 0x58, 0x99, 0xef, 0x87, 0x0f, 0x60, 0xa6, 0x48, 0x6a, 0xa4, 0x6b, 0xbc, 0x4e,
+	0xb3, 0x49, 0xf3, 0x1a, 0x65, 0xb9, 0x7e, 0x33, 0x4c, 0x75, 0x2b, 0xf1, 0x9e, 0xaf, 0xab, 0xbf,
+	0x1f, 0xcd, 0xa2, 0x37, 0x47, 0xb3, 0xe8, 0xaf, 0xa3, 0x59, 0xf4, 0xea, 0xef, 0xd9, 0x21, 0x90,
+	0x4c, 0x47, 0xa5, 0xbe, 0x51, 0xfe, 0xca, 0x73, 0x5e, 0x04, 0xff, 0xe6, 0x54, 0xc3, 0x35, 0xd5,
+	0x46, 0xe1, 0xb3, 0x44, 0xa3, 0xf0, 0x74, 0xe8, 0xf9, 0x08, 0xb7, 0xbd, 0xf7, 0x5f, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0xdc, 0x07, 0x1e, 0x04, 0xdd, 0x11, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1877,7 +1844,7 @@ type VulnerabilityExceptionServiceClient interface {
 	GetVulnerabilityException(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*GetVulnerabilityExceptionResponse, error)
 	// ListVulnerabilityExceptions returns a list of vulnerability exceptions.
 	ListVulnerabilityExceptions(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListVulnerabilityExceptionsResponse, error)
-	// CreateDeferVulnerabilityException creates an exception request to deferral specified vulnerabilities.
+	// CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.
 	// Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
 	CreateDeferVulnerabilityException(ctx context.Context, in *CreateDeferVulnerabilityExceptionRequest, opts ...grpc.CallOption) (*CreateDeferVulnerabilityExceptionResponse, error)
 	// CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.
@@ -1890,8 +1857,8 @@ type VulnerabilityExceptionServiceClient interface {
 	// DenyVulnerabilityException denies a vulnerability exception.
 	DenyVulnerabilityException(ctx context.Context, in *DenyVulnerabilityExceptionRequest, opts ...grpc.CallOption) (*DenyVulnerabilityExceptionResponse, error)
 	// UpdateVulnerabilityException updates an existing vulnerability exception. Currently only the following can be updated:
-	// - CVEs and expiration time of the deferral exceptions
-	// - CVEs of the false positive requests
+	// - CVEs and expiry of the deferral exceptions
+	// - CVEs of the false positive exception
 	UpdateVulnerabilityException(ctx context.Context, in *UpdateVulnerabilityExceptionRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityExceptionResponse, error)
 	// CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, the exception is no longer
 	// enforced if it was in APPROVED state.
@@ -1995,7 +1962,7 @@ type VulnerabilityExceptionServiceServer interface {
 	GetVulnerabilityException(context.Context, *ResourceByID) (*GetVulnerabilityExceptionResponse, error)
 	// ListVulnerabilityExceptions returns a list of vulnerability exceptions.
 	ListVulnerabilityExceptions(context.Context, *RawQuery) (*ListVulnerabilityExceptionsResponse, error)
-	// CreateDeferVulnerabilityException creates an exception request to deferral specified vulnerabilities.
+	// CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.
 	// Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
 	CreateDeferVulnerabilityException(context.Context, *CreateDeferVulnerabilityExceptionRequest) (*CreateDeferVulnerabilityExceptionResponse, error)
 	// CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.
@@ -2008,8 +1975,8 @@ type VulnerabilityExceptionServiceServer interface {
 	// DenyVulnerabilityException denies a vulnerability exception.
 	DenyVulnerabilityException(context.Context, *DenyVulnerabilityExceptionRequest) (*DenyVulnerabilityExceptionResponse, error)
 	// UpdateVulnerabilityException updates an existing vulnerability exception. Currently only the following can be updated:
-	// - CVEs and expiration time of the deferral exceptions
-	// - CVEs of the false positive requests
+	// - CVEs and expiry of the deferral exceptions
+	// - CVEs of the false positive exception
 	UpdateVulnerabilityException(context.Context, *UpdateVulnerabilityExceptionRequest) (*UpdateVulnerabilityExceptionResponse, error)
 	// CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, the exception is no longer
 	// enforced if it was in APPROVED state.
@@ -2261,7 +2228,7 @@ var _VulnerabilityExceptionService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "api/v2/vuln_exception_service.proto",
 }
 
-func (m *RequestComment) Marshal() (dAtA []byte, err error) {
+func (m *Comment) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2271,12 +2238,12 @@ func (m *RequestComment) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RequestComment) MarshalTo(dAtA []byte) (int, error) {
+func (m *Comment) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RequestComment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Comment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2326,7 +2293,7 @@ func (m *RequestComment) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *RequestExpiry) Marshal() (dAtA []byte, err error) {
+func (m *ExceptionExpiry) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -2336,12 +2303,12 @@ func (m *RequestExpiry) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *RequestExpiry) MarshalTo(dAtA []byte) (int, error) {
+func (m *ExceptionExpiry) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *RequestExpiry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ExceptionExpiry) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -2774,9 +2741,9 @@ func (m *GetVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte) (i
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2813,10 +2780,10 @@ func (m *ListVulnerabilityExceptionsResponse) MarshalToSizedBuffer(dAtA []byte) 
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if len(m.RequestInfos) > 0 {
-		for iNdEx := len(m.RequestInfos) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Exceptions) > 0 {
+		for iNdEx := len(m.Exceptions) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.RequestInfos[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Exceptions[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -2854,9 +2821,9 @@ func (m *CreateDeferVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []b
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.ExpiresOn != nil {
+	if m.ExceptionExpiry != nil {
 		{
-			size, err := m.ExpiresOn.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.ExceptionExpiry.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2864,12 +2831,7 @@ func (m *CreateDeferVulnerabilityExceptionRequest) MarshalToSizedBuffer(dAtA []b
 			i = encodeVarintVulnExceptionService(dAtA, i, uint64(size))
 		}
 		i--
-		dAtA[i] = 0x2a
-	}
-	if m.ExpiryType != 0 {
-		i = encodeVarintVulnExceptionService(dAtA, i, uint64(m.ExpiryType))
-		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x22
 	}
 	if m.Scope != nil {
 		{
@@ -2926,9 +2888,9 @@ func (m *CreateDeferVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3020,9 +2982,9 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) MarshalToSizedBuffer
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3100,9 +3062,9 @@ func (m *ApproveVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3180,9 +3142,9 @@ func (m *DenyVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte) (
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3281,9 +3243,9 @@ func (m *UpdateVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3320,9 +3282,9 @@ func (m *CancelVulnerabilityExceptionResponse) MarshalToSizedBuffer(dAtA []byte)
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.RequestInfo != nil {
+	if m.Exception != nil {
 		{
-			size, err := m.RequestInfo.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.Exception.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -3346,7 +3308,7 @@ func encodeVarintVulnExceptionService(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *RequestComment) Size() (n int) {
+func (m *Comment) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3374,7 +3336,7 @@ func (m *RequestComment) Size() (n int) {
 	return n
 }
 
-func (m *RequestExpiry) Size() (n int) {
+func (m *ExceptionExpiry) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3572,8 +3534,8 @@ func (m *GetVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3588,8 +3550,8 @@ func (m *ListVulnerabilityExceptionsResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.RequestInfos) > 0 {
-		for _, e := range m.RequestInfos {
+	if len(m.Exceptions) > 0 {
+		for _, e := range m.Exceptions {
 			l = e.Size()
 			n += 1 + l + sovVulnExceptionService(uint64(l))
 		}
@@ -3620,11 +3582,8 @@ func (m *CreateDeferVulnerabilityExceptionRequest) Size() (n int) {
 		l = m.Scope.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
-	if m.ExpiryType != 0 {
-		n += 1 + sovVulnExceptionService(uint64(m.ExpiryType))
-	}
-	if m.ExpiresOn != nil {
-		l = m.ExpiresOn.Size()
+	if m.ExceptionExpiry != nil {
+		l = m.ExceptionExpiry.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3639,8 +3598,8 @@ func (m *CreateDeferVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3681,8 +3640,8 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3717,8 +3676,8 @@ func (m *ApproveVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3753,8 +3712,8 @@ func (m *DenyVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3799,8 +3758,8 @@ func (m *UpdateVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3815,8 +3774,8 @@ func (m *CancelVulnerabilityExceptionResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.RequestInfo != nil {
-		l = m.RequestInfo.Size()
+	if m.Exception != nil {
+		l = m.Exception.Size()
 		n += 1 + l + sovVulnExceptionService(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
@@ -3831,7 +3790,7 @@ func sovVulnExceptionService(x uint64) (n int) {
 func sozVulnExceptionService(x uint64) (n int) {
 	return sovVulnExceptionService(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *RequestComment) Unmarshal(dAtA []byte) error {
+func (m *Comment) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3854,10 +3813,10 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RequestComment: wiretype end group for non-group")
+			return fmt.Errorf("proto: Comment: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RequestComment: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Comment: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4018,7 +3977,7 @@ func (m *RequestComment) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
+func (m *ExceptionExpiry) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4041,10 +4000,10 @@ func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: RequestExpiry: wiretype end group for non-group")
+			return fmt.Errorf("proto: ExceptionExpiry: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: RequestExpiry: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ExceptionExpiry: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4061,7 +4020,7 @@ func (m *RequestExpiry) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ExpiryType |= RequestExpiry_ExpiryType(b&0x7F) << shift
+				m.ExpiryType |= ExceptionExpiry_ExpiryType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4183,7 +4142,7 @@ func (m *DeferralRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expiry == nil {
-				m.Expiry = &RequestExpiry{}
+				m.Expiry = &ExceptionExpiry{}
 			}
 			if err := m.Expiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -4388,7 +4347,7 @@ func (m *VulnerabilityException) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Status |= RequestStatus(b&0x7F) << shift
+				m.Status |= ExceptionStatus(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4584,7 +4543,7 @@ func (m *VulnerabilityException) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Comments = append(m.Comments, &RequestComment{})
+			m.Comments = append(m.Comments, &Comment{})
 			if err := m.Comments[len(m.Comments)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -5049,7 +5008,7 @@ func (m *GetVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5076,10 +5035,10 @@ func (m *GetVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5136,7 +5095,7 @@ func (m *ListVulnerabilityExceptionsResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfos", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exceptions", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5163,8 +5122,8 @@ func (m *ListVulnerabilityExceptionsResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.RequestInfos = append(m.RequestInfos, &VulnerabilityException{})
-			if err := m.RequestInfos[len(m.RequestInfos)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Exceptions = append(m.Exceptions, &VulnerabilityException{})
+			if err := m.Exceptions[len(m.Exceptions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5320,27 +5279,8 @@ func (m *CreateDeferVulnerabilityExceptionRequest) Unmarshal(dAtA []byte) error 
 			}
 			iNdEx = postIndex
 		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiryType", wireType)
-			}
-			m.ExpiryType = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowVulnExceptionService
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.ExpiryType |= CreateDeferVulnerabilityExceptionRequest_ExpiryType(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ExpiresOn", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ExceptionExpiry", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5367,10 +5307,10 @@ func (m *CreateDeferVulnerabilityExceptionRequest) Unmarshal(dAtA []byte) error 
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.ExpiresOn == nil {
-				m.ExpiresOn = &types.Timestamp{}
+			if m.ExceptionExpiry == nil {
+				m.ExceptionExpiry = &ExceptionExpiry{}
 			}
-			if err := m.ExpiresOn.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ExceptionExpiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5427,7 +5367,7 @@ func (m *CreateDeferVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5454,10 +5394,10 @@ func (m *CreateDeferVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5665,7 +5605,7 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) Unmarshal(dAtA []byt
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5692,10 +5632,10 @@ func (m *CreateFalsePositiveVulnerabilityExceptionResponse) Unmarshal(dAtA []byt
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -5867,7 +5807,7 @@ func (m *ApproveVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5894,10 +5834,10 @@ func (m *ApproveVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6069,7 +6009,7 @@ func (m *DenyVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6096,10 +6036,10 @@ func (m *DenyVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6248,7 +6188,7 @@ func (m *UpdateVulnerabilityExceptionRequest) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Expiry == nil {
-				m.Expiry = &RequestExpiry{}
+				m.Expiry = &ExceptionExpiry{}
 			}
 			if err := m.Expiry.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -6339,7 +6279,7 @@ func (m *UpdateVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6366,10 +6306,10 @@ func (m *UpdateVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6426,7 +6366,7 @@ func (m *CancelVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RequestInfo", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Exception", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6453,10 +6393,10 @@ func (m *CancelVulnerabilityExceptionResponse) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.RequestInfo == nil {
-				m.RequestInfo = &VulnerabilityException{}
+			if m.Exception == nil {
+				m.Exception = &VulnerabilityException{}
 			}
-			if err := m.RequestInfo.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Exception.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
