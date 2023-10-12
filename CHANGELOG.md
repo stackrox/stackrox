@@ -27,7 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
-- The `/v1/cves/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
+- The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
 
 ### Technical Changes
 - Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
