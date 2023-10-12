@@ -247,7 +247,6 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 
 	a.Run("hit rate limit", func() {
 		cfg := defaultConf()
-		//cfg.Endpoints[0].ListenEndpoint = ''
 		cfg.RateLimiter = ratelimit.NewRateLimiter(3)
 
 		api := NewAPI(cfg)
