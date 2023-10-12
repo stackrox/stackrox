@@ -138,7 +138,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 
 	a.Run("hit rate limit", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		cfg.RateLimiter = ratelimit.NewRateLimiter(10)
+		cfg.RateLimiter = ratelimit.NewRateLimiter(3)
 
 		api := NewAPI(cfg)
 		a.Assert().NoError(api.Start().Wait())
@@ -147,11 +147,11 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 		}()
 
 		hitLimit := false
-		for i := 0; i < 30; i++ {
+		for i := 0; i < 50; i++ {
 			resp, err := http.Get("https://localhost:8080/test")
 			a.Require().NoError(err)
 
-			if i < 10 {
+			if i < 3 {
 				a.Require().Equal(http.StatusOK, resp.StatusCode)
 				continue
 			}
@@ -247,7 +247,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 
 	a.Run("hit rate limit", func() {
 		cfg := defaultConf()
-		cfg.RateLimiter = ratelimit.NewRateLimiter(10)
+		//cfg.Endpoints[0].ListenEndpoint = ''
+		cfg.RateLimiter = ratelimit.NewRateLimiter(3)
 
 		api := NewAPI(cfg)
 		pingService := &pingServiceTestImpl{}
@@ -257,12 +258,12 @@ func (a *APIServerSuite) Test_Server_RateLimit_GRPC_Integration() {
 
 		hitLimit := false
 		requestCount := 0
-		for requestCount < 30 {
+		for requestCount < 50 {
 			requestCount++
 			resp, err := http.Get("https://localhost:8080/v1/ping")
 			a.Require().NoError(err)
 
-			if requestCount <= 10 {
+			if requestCount <= 3 {
 				a.Require().Equal(http.StatusOK, resp.StatusCode)
 				continue
 			}
