@@ -9,6 +9,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
+import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
@@ -20,6 +21,7 @@ import ExceptionRequestModal, {
     ExceptionRequestModalOptions,
     ExceptionRequestModalProps,
 } from '../components/ExceptionRequestModal/ExceptionRequestModal';
+import CompletedExceptionRequestModal from '../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
@@ -63,6 +65,10 @@ function CVEsTableContainer({
     const [exceptionRequestModalOptions, setExceptionRequestModalOptions] =
         useState<ExceptionRequestModalOptions>(null);
 
+    const [completedException, setCompletedException] = useState<VulnerabilityException | null>(
+        null
+    );
+
     function openDeferralModal() {
         setExceptionRequestModalOptions({
             type: 'DEFERRAL',
@@ -85,7 +91,18 @@ function CVEsTableContainer({
                     cves={exceptionRequestModalOptions.cves}
                     type={exceptionRequestModalOptions.type}
                     scopeContext="GLOBAL"
+                    onExceptionRequestSuccess={(vulnerabilityException) => {
+                        setExceptionRequestModalOptions(null);
+                        selectedCves.clear();
+                        setCompletedException(vulnerabilityException);
+                    }}
                     onClose={() => setExceptionRequestModalOptions(null)}
+                />
+            )}
+            {completedException && (
+                <CompletedExceptionRequestModal
+                    exceptionRequest={completedException}
+                    onClose={() => setCompletedException(null)}
                 />
             )}
             <TableEntityToolbar
