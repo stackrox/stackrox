@@ -1,8 +1,8 @@
 package postgres
 
 import (
-	"math/rand"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -29,44 +29,44 @@ func makeRandomString(length int) string {
 }
 
 func makeRandomPlops(nport int, nprocess int, npod int) []*storage.ProcessListeningOnPort {
-	deploymentId := makeRandomString(10)
+	deploymentID := makeRandomString(10)
 	count := 0
 
 	plops := make([]*storage.ProcessListeningOnPort, 2*nport*nprocess*npod)
 	for podIdx := 0; podIdx < npod; podIdx++ {
-		podId := makeRandomString(10)
-		podUid := makeRandomString(10)
+		podID := makeRandomString(10)
+		podUID := makeRandomString(10)
 		for processIdx := 0; processIdx < nprocess; processIdx++ {
 			execFilePath := makeRandomString(10)
 			for port := 0; port < nport; port++ {
 
-				plopTcp := &storage.ProcessListeningOnPort{
+				plopTCP := &storage.ProcessListeningOnPort{
 					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 						Port:     uint32(port),
 						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					},
-					DeploymentId:  deploymentId,
-					PodId:         podId,
-					PodUid:        podUid,
+					DeploymentId: deploymentID,
+					PodId:        podID,
+					PodUid:       podUID,
 					Signal: &storage.ProcessSignal{
 						ExecFilePath: execFilePath,
 					},
 				}
-				plopUdp := &storage.ProcessListeningOnPort{
+				plopUDP := &storage.ProcessListeningOnPort{
 					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 						Port:     uint32(port),
 						Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
 					},
-					DeploymentId:  deploymentId,
-					PodId:         podId,
-					PodUid:        podUid,
+					DeploymentId: deploymentID,
+					PodId:        podID,
+					PodUid:       podUID,
 					Signal: &storage.ProcessSignal{
 						ExecFilePath: execFilePath,
 					},
 				}
-				plops[count] = plopTcp
+				plops[count] = plopTCP
 				count++
-				plops[count] = plopUdp
+				plops[count] = plopUDP
 				count++
 			}
 		}
@@ -74,7 +74,6 @@ func makeRandomPlops(nport int, nprocess int, npod int) []*storage.ProcessListen
 
 	return plops
 }
-
 
 func (suite *SortSuite) TestSort1000() {
 	nport := 10
@@ -85,7 +84,6 @@ func (suite *SortSuite) TestSort1000() {
 	startTime := time.Now()
 	sortPlops(plops)
 	duration := time.Since(startTime)
-
 
 	fmt.Printf("Sorting %d took %s\n", len(plops), duration)
 
@@ -101,7 +99,6 @@ func (suite *SortSuite) TestSort8000() {
 	sortPlops(plops)
 	duration := time.Since(startTime)
 
-
 	fmt.Printf("Sorting %d took %s\n", len(plops), duration)
 
 }
@@ -115,7 +112,6 @@ func (suite *SortSuite) TestSort125000() {
 	startTime := time.Now()
 	sortPlops(plops)
 	duration := time.Since(startTime)
-
 
 	fmt.Printf("Sorting %d took %s\n", len(plops), duration)
 
@@ -131,23 +127,9 @@ func (suite *SortSuite) TestSort1000000() {
 	sortPlops(plops)
 	duration := time.Since(startTime)
 
-
 	fmt.Printf("Sorting %d took %s\n", len(plops), duration)
 
 }
-
-// func plopComparison(plop1 *storage.ProcessListeningOnPort, plop2 *storage.ProcessListeningOnPort) bool {
-// 	if plop1.PodId != plop2.PodId {
-// 		return plop1.PodId < plop2.PodId
-// 	}
-// 	if plop1.Signal.ExecFilePath != plop2.Signal.ExecFilePath {
-// 		return plop1.Signal.ExecFilePath < plop2.Signal.ExecFilePath
-// 	}
-// 	if plop1.Endpoint.Port != plop2.Endpoint.Port {
-// 		return plop1.Endpoint.Port < plop2.Endpoint.Port
-// 	}
-// 	return plop1.Endpoint.Protocol < plop2.Endpoint.Protocol
-// }
 
 func (suite *SortSuite) TestSortVarious() {
 
@@ -159,9 +141,9 @@ func (suite *SortSuite) TestSortVarious() {
 			Port:     80,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		DeploymentId:  fixtureconsts.Deployment1,
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath1,
 		},
@@ -172,9 +154,9 @@ func (suite *SortSuite) TestSortVarious() {
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		DeploymentId:  fixtureconsts.Deployment1,
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath1,
 		},
@@ -185,9 +167,9 @@ func (suite *SortSuite) TestSortVarious() {
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
 		},
-		DeploymentId:  fixtureconsts.Deployment1,
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath1,
 		},
@@ -198,9 +180,9 @@ func (suite *SortSuite) TestSortVarious() {
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		DeploymentId:  fixtureconsts.Deployment1,
-		PodId:         fixtureconsts.PodName1,
-		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath2,
 		},
@@ -211,9 +193,9 @@ func (suite *SortSuite) TestSortVarious() {
 			Port:     1234,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		DeploymentId:  fixtureconsts.Deployment1,
-		PodId:         fixtureconsts.PodName2,
-		PodUid:        fixtureconsts.PodUID2,
+		DeploymentId: fixtureconsts.Deployment1,
+		PodId:        fixtureconsts.PodName2,
+		PodUid:       fixtureconsts.PodUID2,
 		Signal: &storage.ProcessSignal{
 			ExecFilePath: execFilePath1,
 		},
