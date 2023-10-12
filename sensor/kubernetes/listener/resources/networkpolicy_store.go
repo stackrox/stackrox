@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -80,6 +81,15 @@ type networkPolicyStoreImpl struct {
 	lock sync.RWMutex
 	// data: namespace -> result (map: policyID -> policy object ref)
 	data map[string]map[string]*storage.NetworkPolicy
+}
+
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO(ROX-20073): Implement me
+	return "", errors.New("Not implemented")
 }
 
 func newNetworkPoliciesStore() *networkPolicyStoreImpl {

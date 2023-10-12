@@ -4,12 +4,32 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
 )
 
 // PodStore stores pods (by namespace, deploymentID, and id).
 type PodStore struct {
 	lock sync.RWMutex
 	pods map[string]map[string]map[string]*storage.Pod
+}
+
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (ps *PodStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+	if resType != deduper.TypePod.String() {
+		return "", nil
+	}
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+	for _, p := range ps.getAllNoLock() {
+		if p.GetId() == resID {
+			// Resource exists on central and Sensor, nothing to do
+			return "", nil
+		}
+	}
+	// Resource exists on central but not on Sensor, send delete event
+	return resID, nil
 }
 
 // Cleanup deletes all entries from store
@@ -98,10 +118,18 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 	defer ps.lock.RUnlock()
 
 	var ret []*storage.Pod
+	for _, pod := range ps.getAllNoLock() {
+		ret = append(ret, pod.Clone())
+	}
+	return ret
+}
+
+func (ps *PodStore) getAllNoLock() []*storage.Pod {
+	var ret []*storage.Pod
 	for _, depMap := range ps.pods {
 		for _, podMap := range depMap {
 			for _, pod := range podMap {
-				ret = append(ret, pod.Clone())
+				ret = append(ret, pod)
 			}
 		}
 	}
