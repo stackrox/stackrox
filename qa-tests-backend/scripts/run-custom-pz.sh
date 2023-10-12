@@ -24,9 +24,9 @@ run_custom() {
     info "Starting test (Custom tests for power/s390x)"
 
     config_custom
-    #test_custom
+    test_custom
     #Remove the comment if you want to run particular tests.
-    test_specific
+    #test_specific
 }
 
 config_custom() {
@@ -111,7 +111,7 @@ test_specific() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
     #Specify the particular tests inside this array
-    declare -a STACKROX_TESTNAMES=("ImageManagementTest" "IntegrationsTest" "NetworkFlowTest")
+    declare -a STACKROX_TESTNAMES=()
     update_job_record "test_target" "PZ-specific-tests"
     #Initialize variables
     interval_sec=20
