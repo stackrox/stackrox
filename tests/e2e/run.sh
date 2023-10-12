@@ -22,6 +22,8 @@ test_e2e() {
     require_environment "KUBECONFIG"
 
     export_test_environment
+    # TODO(ROX-18827) turn off new compliance for now
+    ci_export ROX_COMPLIANCE_ENHANCEMENTS "false"
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
