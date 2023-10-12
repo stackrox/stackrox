@@ -139,7 +139,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	}
 	upgradeNotifierConfig(request.GetNotifier())
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
@@ -165,7 +165,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
-	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
+	_, err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
 		// Don't send out error from crypto lib
 		return nil, errors.New("Error securing notifier")
@@ -201,7 +201,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		return nil, err
 	}
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
