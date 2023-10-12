@@ -41,6 +41,10 @@ func (s *migrationTestSuite) TearDownSuite() {
 	s.db.Teardown(s.T())
 }
 
+func (s *migrationTestSuite) SetupTest() {
+	seenTokenNames = make(map[string]int)
+}
+
 func renameToken(oldToken *storage.TokenMetadata, newName string) *storage.TokenMetadata {
 	newToken := oldToken.Clone()
 	newToken.Name = newName
@@ -264,6 +268,7 @@ func (s *mockedMigrationTestSuite) TearDownSuite() {
 }
 
 func (s *mockedMigrationTestSuite) SetupTest() {
+	seenTokenNames = make(map[string]int)
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.oldStore = &mockOldStore{}
