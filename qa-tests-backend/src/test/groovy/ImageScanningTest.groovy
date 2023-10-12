@@ -448,8 +448,8 @@ class ImageScanningTest extends BaseSpecification {
         "Data inputs are: "
 
         scanner                          | component      | version            | idx | cve              | image        | registry
-        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 1   | "RHSA-2019:0483" | RHEL7_IMAGE  | ""
-        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 1   | "CVE-2018-0735"  | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 0   | "RHSA-2019:0483" | RHEL7_IMAGE  | ""
+        new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 0   | "CVE-2018-0735"  | RHEL7_IMAGE  | ""
         new StackroxScannerIntegration() | "systemd"             | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
         new StackroxScannerIntegration() | "glibc"               | "2.35-0ubuntu3.1"  | 4   | "CVE-2016-20013" | LIST_IMAGE_OCI_MANIFEST | ""
         new ClairScannerIntegration()    | "apt"                 | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
