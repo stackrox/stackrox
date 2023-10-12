@@ -36,6 +36,7 @@ import {
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    complianceEnhancedScanConfigsPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -104,9 +105,15 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Compliance/Page')),
         path: compliancePath,
     },
+    'compliance-enhanced/scan-configs': {
+        component: asyncComponent(
+            () => import('Containers/ComplianceEnhanced/Scheduling/SchedulingPage')
+        ),
+        path: complianceEnhancedScanConfigsPath,
+    },
     'compliance-enhanced': {
         component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Status/ComplianceStatusPage')
+            () => import('Containers/ComplianceEnhanced/ComplianceEnhancedPage')
         ),
         path: complianceEnhancedBasePath,
     },

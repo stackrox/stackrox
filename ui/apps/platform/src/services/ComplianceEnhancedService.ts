@@ -1,9 +1,56 @@
+import axios from 'services/instance';
 import qs from 'qs';
 
 import { SearchFilter, ApiSortOption } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/Status/MockData/complianceScanResultsOverview';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+
+const scanScheduleUrl = '/v2/compliance/scan/configurations';
+
+type Schedule = UnsetSchedule | DailySchedule | WeeklySchedule | MonthlySchedule;
+
+type ScheduleIntervalType = 'UNSET' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+
+type UnsetSchedule = {
+    intervalType: 'UNSET';
+} & BaseSchedule;
+
+type DailySchedule = {
+    intervalType: 'DAILY';
+} & BaseSchedule;
+
+type WeeklySchedule = {
+    intervalType: 'WEEKLY';
+    // Sunday = 0, Monday = 1, .... Saturday =  6
+    daysOfWeek: {
+        day: number[]; // int32
+    };
+} & BaseSchedule;
+
+type MonthlySchedule = {
+    intervalType: 'WEEKLY';
+    // Sunday = 0, Monday = 1, .... Saturday =  6
+    daysOfMonth: {
+        day: number[]; // int32
+    };
+} & BaseSchedule;
+
+type BaseSchedule = {
+    intervalType: ScheduleIntervalType;
+    hour: number;
+    minute: number;
+};
+
+export type ScanSchedule = {
+    scanName: string;
+    clusters: string[];
+    scanConfig: {
+        profiles: string[];
+        oneTimeScan: boolean;
+        scanSchedule: Schedule | null;
+    };
+};
 
 interface ComplianceScanStatsShim {
     id: string; // TODO: id should be included in api response/proto
@@ -53,4 +100,23 @@ export function complianceResultsOverview(
             }
         });
     });
+}
+
+/*
+ * Get a Scan Schedule.
+ */
+export function getScanSchedule(policyId: string): Promise<ScanSchedule> {
+    return axios
+        .get<ScanSchedule>(`${scanScheduleUrl}/${policyId}`)
+        .then((response) => response.data);
+}
+
+/*
+ * Get policies filtered by an optional query string.
+ */
+export function getScanSchedules(query = ''): Promise<ScanSchedule[]> {
+    const params = qs.stringify({ query });
+    return axios
+        .get<{ scanSchedules: ScanSchedule[] }>(`${scanScheduleUrl}?${params}`)
+        .then((response) => response?.data?.scanSchedules ?? []);
 }
