@@ -188,6 +188,7 @@ class AdmissionControllerTest extends BaseSpecification {
     @Unroll
     @Tag("BAT")
     @Tag("Parallel")
+    @IgnoreIf({ Env.ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL == "true" })
     def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
         given:
         "Chaos monkey is prepared"
