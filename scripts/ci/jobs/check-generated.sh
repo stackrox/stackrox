@@ -60,20 +60,20 @@ check-operator-generated-files-up-to-date || {
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
 
-info 'Check .{docker,container}ignore files are up to date (If this fails, follow instructions in .containerignore to update the file.)'
-function check-container-ignore-files-up-to-date() {
+info 'Check .containerignore file is in sync with .dockerignore (If this fails, follow instructions in .containerignore to update it.)'
+function check-containerignore-is-in-sync() {
     diff \
         --unified \
         --ignore-matching-lines '^\#.*' \
         --ignore-matching-lines '^\/\.git\/' \
     .containerignore .dockerignore > diff.txt
 }
-check-container-ignore-files-up-to-date || {
-    save_junit_failure "Check_Container_Ignore_Files" \
-        "Container ignore files are not up to date" \
+check-containerignore-is-in-sync || {
+    save_junit_failure "Check_Containerignore_File" \
+        ".containerignore file is not in sync with .dockerignore" \
         "$(cat diff.txt)"
     git reset --hard HEAD
-    echo check-container-ignore-files-up-to-date >> "$FAIL_FLAG"
+    echo check-containerignore-is-in-sync >> "$FAIL_FLAG"
 }
 
 # shellcheck disable=SC2016
