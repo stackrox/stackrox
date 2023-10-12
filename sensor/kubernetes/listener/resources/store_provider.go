@@ -78,8 +78,9 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.registryMirrorStore,
 	}
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
-		deduper.TypeDeployment.String(): p.deploymentStore,
-		deduper.TypePod.String():        p.podStore,
+		deduper.TypeDeployment.String():     p.deploymentStore,
+		deduper.TypePod.String():            p.podStore,
+		deduper.TypeServiceAccount.String(): p.serviceAccountStore,
 	}
 
 	return p
