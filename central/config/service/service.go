@@ -126,8 +126,10 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		return nil, errors.Wrap(errox.InvalidArgs, "public config must be specified")
 	}
 
-	if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
-		return nil, err
+	if features.UnifiedCVEDeferral.Enabled() {
+		if err := validateExceptionConfigReq(req.GetConfig().GetPrivateConfig().GetVulnerabilityExceptionConfig()); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
