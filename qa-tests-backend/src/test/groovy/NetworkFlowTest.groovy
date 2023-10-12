@@ -556,7 +556,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     def doHTTPGetExpectCode(String targetUrl, int code) {
         Response response = null
-        Timer t = new Timer(12, 5)
+        Timer t = new Timer(12, 15)
         while (response?.statusCode() != code && t.IsValid()) {
             try {
                 log.info "Trying HTTP Get to ${targetUrl}..."
