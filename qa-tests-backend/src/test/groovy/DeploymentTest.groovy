@@ -12,6 +12,7 @@ import util.Timer
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZDebug")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
     // The image name in quay.io includes the SHA from the original image
@@ -48,7 +49,6 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZDebug")
     def "Verify deployment of type Job is deleted once it completes"() {
         given:
         def job = orchestrator.createJob(JOB)
@@ -67,7 +67,6 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZDebug")
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -98,7 +97,6 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZDebug")
     def "Verify image -> deployment links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -125,7 +123,6 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZDebug")
     def "Verify GKE orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(orchestrator.isGKE())
@@ -143,7 +140,6 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @Tag("PZDebug")
     def "Verify Openshift orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(ClusterService.isOpenShift4())
