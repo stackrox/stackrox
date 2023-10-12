@@ -17,9 +17,9 @@ class DeploymentTest extends BaseSpecification {
     // The image name in quay.io includes the SHA from the original image
     // imported from docker.io which is somewhat confusingly different.
     private static final String DEPLOYMENT_IMAGE_NAME =
-        "quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
+        "quay.io/rhacs-eng/qa-multi-arch:nginx"
     private static final String DEPLOYMENT_IMAGE_SHA =
-        "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
+        "a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
     private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
     private static final String STACKROX_DEPLOYMENT_NAME = "sensor"
@@ -48,6 +48,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZDebug")
     def "Verify deployment of type Job is deleted once it completes"() {
         given:
         def job = orchestrator.createJob(JOB)
@@ -66,6 +67,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZDebug")
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -96,6 +98,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZDebug")
     def "Verify image -> deployment links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -122,6 +125,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZDebug")
     def "Verify GKE orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(orchestrator.isGKE())
@@ -139,6 +143,7 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    @Tag("PZDebug")
     def "Verify Openshift orchestrator deployment is marked appropriately"() {
         when:
         assumeTrue(ClusterService.isOpenShift4())
