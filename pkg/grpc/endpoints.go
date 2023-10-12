@@ -179,7 +179,9 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
 		if !c.NoHTTP2 {
-			var h2Srv http2.Server
+			h2Srv := http2.Server{
+				MaxConcurrentStreams: 100,
+			}
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {

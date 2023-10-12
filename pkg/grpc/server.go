@@ -395,6 +395,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 			MinTime:             5 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxConcurrentStreams(100),
 	)
 
 	for _, service := range a.apiServices {
