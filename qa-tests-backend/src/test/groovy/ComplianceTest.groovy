@@ -60,7 +60,6 @@ import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
-import util.Env
 
 class ComplianceTest extends BaseSpecification {
     @Shared
@@ -625,7 +624,6 @@ class ComplianceTest extends BaseSpecification {
     */
 
     @Tag("BAT")
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify checks based on Integrations"() {
         def failureEvidence = ["No image scanners are being used in the cluster"]
         def controls = [
