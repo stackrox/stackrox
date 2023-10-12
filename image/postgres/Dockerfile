@@ -14,7 +14,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 LABEL name="central-db" \
       vendor="StackRox" \
-      maintainer="support@stackrox.com" \
+      maintainer="https://stackrox.io/" \
       summary="Stackrox Central Database for the StackRox Kubernetes Security Platform" \
       description="This image provides Database services to Stackrox Central in the StackRox Kubernetes Security Platform."
 
