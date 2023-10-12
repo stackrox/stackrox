@@ -18,7 +18,7 @@ The NVD JSON feed offers bundled data on a yearly basis, spanning from 2002 to t
 
 The current NVD CVSS GitHub Workflow will be updated to fetch data from the NVD CVE API instead of NVD Json feeds while maintaining the freshness of the NVD CVSS data bundle in Google Storage. It will categorize the downloaded data by CVSS V3 severity levels, and these categorized data will be archived into individual zip files, such as `severity-low.zip`. The format of the JSON is the same as before.  
 
-We've chosen to base our API requests on CVSS V3 severity to ensure all data integrated into Claircore possesses valid CVSS V3 metrics. Consequently, retrieving data without CVSS V3 information becomes redundant.
+We've chosen to base our API requests on CVSS V3 severity to ensure all data integrated into Claircore possesses valid CVSS V3 metrics. Consequently, retrieving data without CVSS V3 information becomes irrelevant.
 
 The CVSS Updater in Central will be modified to download zip files corresponding to four distinct severity levels and write them into a single zip file stored in Central's file system. This eliminates the need for JSON parsing in the updater. ScannerV4 will pull the zip bundle and populate the Matcher DB with the enrichment data.
 
