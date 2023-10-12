@@ -18,11 +18,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     This synchronization occurs once Sensor establishes a connection with Central. It is recommended to set this limit when a significant number of secured clusters are connected to a single Central instance to avoid resource exhaustion.
   - `ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND` setting functions as a global rate limiter for all API requests directed to Central. It is set to a default value `0` (unlimited).
     The primary objective of this configuration is to serve as a protective measure against Distributed Denial of Service (DDoS) attacks on Central.
+  - `ROX_CENTRAL_SENSOR_MAX_EVENTS_PER_SECOND` setting functions as a global rate limiter of Sensor messages to be sent from all connected secured clusters to Central. It is set to a default value `0` (unlimited).
+
+    **Important Notice:** This configuration is primarily intended to safeguard against incorrectly configured Sensor deployments. If set to a low value, it can result in rapid depletion of limits and the termination of Sensor connections, potentially causing instability throughout the entire RHACS stack.
 
 ### Removed Features
 
 - ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
-- The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`. 
+- The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`.
 - The `/v1/report` APIs have been removed. Please use `/v2/reports/` APIs.
 
 ### Deprecated Features
