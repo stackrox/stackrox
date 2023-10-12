@@ -15,4 +15,9 @@ var (
 	// duration when the rate limit is reached. If set under 1s (or 0),
 	// requests are immediately rejected. The default value is 10s.
 	CentralRateLimitThrottleDuration = registerDurationSetting("ROX_CENTRAL_RATE_LIMIT_THROTTLE_DURATION", 10*time.Second, WithDurationZeroAllowed())
+
+	// CentralSensorMaxEventsPerSecond defines number of maximum number of
+	// allowed Sensor events sent from all connected sensors to Central/
+	// Default 0 (no limit).
+	CentralSensorMaxEventsPerSecond = RegisterIntegerSetting("ROX_CENTRAL_SENSOR_MAX_EVENTS_PER_SECOND", 0)
 )
