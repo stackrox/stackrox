@@ -3,12 +3,10 @@
 package schema
 
 import (
-	"fmt"
 	"reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	referenceschema2 "github.com/stackrox/rox/migrator/migrations/m_190_to_m_191_plop_add_closed_time_column/referenceschema"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
