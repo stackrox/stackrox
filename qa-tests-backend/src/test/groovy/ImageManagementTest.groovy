@@ -25,7 +25,7 @@ class ImageManagementTest extends BaseSpecification {
     private static final String WGET_IMAGE_NS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "rhacs-eng/qa":"rhacs-eng/qa-multi-arch")
     private static final String WGET_IMAGE_TAG = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
-        "struts-app":"trigger-policy-violations-most")
+        "struts-app":"trigger-policy-violations-most-v1")
 
     def cleanupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
