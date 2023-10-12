@@ -10,7 +10,7 @@ var (
 	CentralAPIRateLimitPerSecond = RegisterIntegerSetting("ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND", 0)
 
 	// CentralSensorMaxEventsPerSecond defines number of maximum number of
-	// allowed Sensor events sent from all connected sensors to Central/
+	// allowed Sensor messages sent from all connected sensors to Central.
 	// Default 0 (no limit).
 	CentralSensorMaxEventsPerSecond = RegisterIntegerSetting("ROX_CENTRAL_SENSOR_MAX_EVENTS_PER_SECOND", 0)
 )
