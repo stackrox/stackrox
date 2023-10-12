@@ -32,10 +32,11 @@ class GKECluster:
     REFRESH_PATH = "scripts/ci/gke.sh"
     TEARDOWN_PATH = "scripts/ci/gke.sh"
 
-    def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4"):
+    def __init__(self, cluster_id, num_nodes=3, machine_type="e2-standard-4", disk_gb=40):
         self.cluster_id = cluster_id
         self.num_nodes = num_nodes
         self.machine_type = machine_type
+        self.disk_gb = disk_gb
         self.refresh_token_cmd = None
 
     def provision(self):

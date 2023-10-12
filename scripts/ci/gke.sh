@@ -28,6 +28,7 @@ assign_env_variables() {
     local cluster_id="$1"
     local num_nodes="${2:-3}"
     local machine_type="${3:-e2-standard-4}"
+    local disk_gb="${4:-40}"
 
     ensure_CI
 
@@ -52,6 +53,9 @@ assign_env_variables() {
 
     ci_export MACHINE_TYPE "$machine_type"
     echo "Machine type is set as to $machine_type"
+
+    ci_export DISK_SIZE_GB "$disk_gb"
+    echo "Disk size is set to $disk_gb"
 
     choose_release_channel
     choose_cluster_version
@@ -145,6 +149,7 @@ create_cluster() {
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
+    DISK_SIZE_GB=${DISK_SIZE_GB:-40}
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
@@ -173,7 +178,7 @@ create_cluster() {
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "${NUM_NODES}" \
             --disk-type=pd-standard \
-            --disk-size=40GB \
+            --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
             --cluster-ipv4-cidr=/20 \
             --services-ipv4-cidr=/24 \
