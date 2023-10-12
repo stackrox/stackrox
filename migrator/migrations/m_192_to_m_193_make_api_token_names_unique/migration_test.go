@@ -4,17 +4,20 @@ package m192tom193
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	oldApiTokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
+	mockAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/mocks"
+	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/apitokenstore/old"
 	oldPkgSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_make_api_token_names_unique/schema/old"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 type migrationTestSuite struct {
@@ -36,6 +39,12 @@ func (s *migrationTestSuite) SetupSuite() {
 
 func (s *migrationTestSuite) TearDownSuite() {
 	s.db.Teardown(s.T())
+}
+
+func renameToken(oldToken *storage.TokenMetadata, newName string) *storage.TokenMetadata {
+	newToken := oldToken.Clone()
+	newToken.Name = newName
+	return newToken
 }
 
 var (
@@ -176,7 +185,7 @@ var (
 )
 
 func (s *migrationTestSuite) TestMigration() {
-	store := oldApiTokenStore.New(s.db)
+	store := oldAPITokenStore.New(s.db)
 
 	s.Require().NoError(store.UpsertMany(s.ctx, preMigrationTokens))
 
@@ -225,4 +234,149 @@ func (s *migrationTestSuite) TestMigration() {
 	}
 
 	s.ElementsMatch(preMigrationTokens, renamedPostMigrationMappedBackTokens)
+}
+
+type mockedMigrationTestSuite struct {
+	suite.Suite
+
+	// db should not be used to run queries against.
+	// It is only there so gorm schema changes work.
+	db       *pghelper.TestPostgres
+	mockCtrl *gomock.Controller
+	ctx      context.Context
+
+	oldStore *mockOldStore
+	newStore *mockAPITokenStore.MockStore
+
+	migrator *migratorImpl
+}
+
+func TestMigrationWithMocks(t *testing.T) {
+	suite.Run(t, new(mockedMigrationTestSuite))
+}
+
+func (s *mockedMigrationTestSuite) SetupSuite() {
+	s.db = pghelper.ForT(s.T(), false)
+}
+
+func (s *mockedMigrationTestSuite) TearDownSuite() {
+	s.db.Teardown(s.T())
+}
+
+func (s *mockedMigrationTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.ctx = sac.WithAllAccess(context.Background())
+	s.oldStore = &mockOldStore{}
+	s.newStore = mockAPITokenStore.NewMockStore(s.mockCtrl)
+	s.migrator = newMigrator(s.oldStore, s.newStore)
+}
+
+func (s *mockedMigrationTestSuite) doTestMigration() {
+	// The databases are only there so the schema change parts
+	// of the migration do not break the test (end up in panic).
+	databases := &types.Databases{
+		GormDB:     s.db.GetGormDB(),
+		PostgresDB: s.db,
+		DBCtx:      sac.WithAllAccess(context.Background()),
+	}
+	s.NoError(s.migrator.doMigrate(databases))
+}
+
+// Test collision scenario 1 (X X X(2)) -> (X X(2) X(3))
+func (s *mockedMigrationTestSuite) TestMockedMigrationNoDoubleCollision() {
+	initialTokenSet := []*storage.TokenMetadata{
+		noCollisionToken,           // A    -> A
+		simpleCollisionToken1,      // B    -> B
+		simpleCollisionToken2,      // B    -> B(2)
+		simpleCollisionToken3,      // B    -> B(3)
+		collisionAfterRenameToken1, // C    -> C
+		collisionAfterRenameToken3, // C(2) -> C(2)
+		collisionAfterRenameToken2, // C    -> C(3)
+	}
+	expectedBatch := []*storage.TokenMetadata{
+		noCollisionToken,
+		simpleCollisionToken1,
+		renameToken(simpleCollisionToken2, simpleCollisionTokenName2),
+		renameToken(simpleCollisionToken3, simpleCollisionTokenName3),
+		collisionAfterRenameToken1,
+		collisionAfterRenameToken3,
+		renameToken(collisionAfterRenameToken2, collisionAfterRenameTokenName3),
+	}
+
+	s.oldStore.loadTokenSequence(initialTokenSet)
+	s.newStore.EXPECT().UpsertMany(gomock.Any(), expectedBatch).Times(1)
+
+	s.doTestMigration()
+}
+
+// Test collision scenario 3 (X X X(2)) -> (X X(2) X(2)(2))
+func (s *mockedMigrationTestSuite) TestMockedMigrationWithDoubleCollision() {
+	initialTokenSet := []*storage.TokenMetadata{
+		noCollisionToken,           // A    -> A
+		simpleCollisionToken1,      // B    -> B
+		simpleCollisionToken2,      // B    -> B(2)
+		simpleCollisionToken3,      // B    -> B(3)
+		collisionAfterRenameToken1, // C    -> C
+		collisionAfterRenameToken2, // C    -> C(2)
+		collisionAfterRenameToken3, // C(2) -> C(2)(2)
+	}
+	expectedBatch := []*storage.TokenMetadata{
+		noCollisionToken,
+		simpleCollisionToken1,
+		renameToken(simpleCollisionToken2, simpleCollisionTokenName2),
+		renameToken(simpleCollisionToken3, simpleCollisionTokenName3),
+		collisionAfterRenameToken1,
+		renameToken(collisionAfterRenameToken2, collisionAfterRenameTokenName2),
+		renameToken(collisionAfterRenameToken3, collisionAfterRenameTokenName22),
+	}
+
+	s.oldStore.loadTokenSequence(initialTokenSet)
+	s.newStore.EXPECT().UpsertMany(gomock.Any(), expectedBatch).Times(1)
+
+	s.doTestMigration()
+}
+
+func (s *mockedMigrationTestSuite) TestBatching() {
+	initialTokenSet := make([]*storage.TokenMetadata, 0, batchSize+batchSize/2)
+	batch1 := make([]*storage.TokenMetadata, 0, batchSize)
+	batch2 := make([]*storage.TokenMetadata, 0, batchSize/2)
+
+	for i := 0; i < batchSize+batchSize/2; i++ {
+		t := renameToken(noCollisionToken, fmt.Sprintf("%s %d", noCollisionTokenName, i+1))
+		initialTokenSet = append(initialTokenSet, t)
+		if i < batchSize {
+			batch1 = append(batch1, t)
+		} else {
+			batch2 = append(batch2, t)
+		}
+	}
+
+	s.oldStore.loadTokenSequence(initialTokenSet)
+	s.newStore.EXPECT().UpsertMany(gomock.Any(), batch1).Times(1).Return(nil)
+	s.newStore.EXPECT().UpsertMany(gomock.Any(), batch2).Times(2).Return(nil)
+
+	s.doTestMigration()
+}
+
+type mockOldStore struct {
+	tokenWalkSequence []*storage.TokenMetadata
+}
+
+func (m *mockOldStore) loadTokenSequence(sequence []*storage.TokenMetadata) {
+	m.tokenWalkSequence = sequence
+}
+
+func (m *mockOldStore) Walk(_ context.Context, fn func(metadata *storage.TokenMetadata) error) error {
+	for _, token := range m.tokenWalkSequence {
+		err := fn(token)
+		if err != nil {
+			return err
+		}
+	}
+	m.tokenWalkSequence = m.tokenWalkSequence[:0]
+	return nil
+}
+
+func (m *mockOldStore) UpsertMany(_ context.Context, _ []*storage.TokenMetadata) error {
+	return nil
 }
