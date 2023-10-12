@@ -55,22 +55,23 @@ func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
 	// TODO(ROX-14194): remove resyncingSif once all resources are adapted
 	var resyncingSif informers.SharedInformerFactory
+
+	resyncPeriod := k.resyncPeriod
 	if env.ResyncDisabled.BooleanSetting() {
-		resyncingSif = informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
-	} else {
-		resyncingSif = informers.NewSharedInformerFactory(k.client.Kubernetes(), k.resyncPeriod)
+		resyncPeriod = noResyncPeriod
 	}
+	resyncingSif = informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 
 	// Create informer factories for needed orchestrators.
 	var osAppsFactory osAppsExtVersions.SharedInformerFactory
 	if k.client.OpenshiftApps() != nil {
-		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), k.resyncPeriod)
+		osAppsFactory = osAppsExtVersions.NewSharedInformerFactory(k.client.OpenshiftApps(), resyncPeriod)
 	}
 
 	var osRouteFactory osRouteExtVersions.SharedInformerFactory
 	if k.client.OpenshiftRoute() != nil {
-		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), k.resyncPeriod)
+		osRouteFactory = osRouteExtVersions.NewSharedInformerFactory(k.client.OpenshiftRoute(), resyncPeriod)
 	}
 
 	// We want creates to be treated as updates while existing objects are loaded.
