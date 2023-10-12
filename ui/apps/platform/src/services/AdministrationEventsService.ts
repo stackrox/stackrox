@@ -1,6 +1,6 @@
 import qs from 'qs';
 
-import { SearchFilter } from 'types/search';
+import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 
 import axios from './instance';
@@ -137,6 +137,24 @@ export function listAdministrationEvents(
     return axios
         .get<ListAdministrationEventsResponse>(`${eventsUrl}?${params}`)
         .then((response) => response.data.events);
+}
+
+type GetAdministrationEventResponseArg = {
+    page: number;
+    perPage: number;
+    searchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+};
+
+export function getListAdministrationEventsArg({
+    page,
+    perPage,
+    searchFilter,
+    sortOption,
+}: GetAdministrationEventResponseArg): ListAdministrationEventsRequest {
+    const filter = getAdministrationEventsFilter(searchFilter);
+    const pagination: Pagination = { limit: perPage, offset: page - 1, sortOption };
+    return { filter, pagination };
 }
 
 // Given searchFilter from useURLSearch hook, return validated filter argument.

@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -74,6 +75,7 @@ type Sensor struct {
 
 	notifyList []common.Notifiable
 	reconnect  atomic.Bool
+	reconcile  atomic.Bool
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -313,7 +315,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(false, s.components...)
+	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
 
 	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 
@@ -359,8 +361,12 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
+	if features.SensorReconciliationOnReconnect.Enabled() {
+		s.reconcile.Store(true)
+	}
+
 	err := backoff.RetryNotify(func() error {
-		log.Info("Attempting connection setup")
+		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
 			// Connection is up, we can try to create a new central communication
@@ -374,14 +380,19 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.components...)
+		s.centralCommunication = NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 		// Reset the exponential back-off if the connection successes
 		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
-				log.Infof("Communication with Central stopped with error: %s. Retrying.", s.centralCommunication.Stopped().Err())
+				if errors.Is(err, errCantReconcile) {
+					log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+						"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+					s.reconcile.Store(false)
+				}
+				log.Infof("Communication with Central stopped with error: %s. Retrying.", err)
 			} else {
 				log.Info("Communication with Central stopped. Retrying.")
 			}

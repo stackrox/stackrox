@@ -21,6 +21,7 @@ import util.Env
 // Audit Log alerts are only supported on OpenShift 4
 @Requires({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
 @Stepwise
+@Tag("PZ")
 class AuditLogAlertsTest extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 60
 

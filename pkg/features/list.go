@@ -46,7 +46,7 @@ var (
 	ComplianceEnhancements = registerUnchangeableFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
-	AdministrationEvents = registerUnchangeableFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
 
 	// PostgresDatastore defines if PostgresSQL should be used
 	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)
@@ -59,4 +59,7 @@ var (
 
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", false)
+
+	// SensorReconciliationOnReconnect enables sensors to support reconciliation when reconnecting
+	SensorReconciliationOnReconnect = registerFeature("Enable Sensors to support reconciliation on reconnect", "ROX_SENSOR_RECONCILIATION", false)
 )

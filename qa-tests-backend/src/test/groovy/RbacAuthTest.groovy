@@ -18,6 +18,7 @@ import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class RbacAuthTest extends BaseSpecification {
 
     private static final NETPOL_YAML = """

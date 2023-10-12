@@ -67,7 +67,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	storeProvider := resources.InitializeStore()
-
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(storeProvider.Deployments(), storeProvider.Pods())
 
 	var helmManagedConfig *central.HelmManagedConfigInit

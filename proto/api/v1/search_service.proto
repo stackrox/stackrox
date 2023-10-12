@@ -68,9 +68,11 @@ enum SearchCategory {
     COMPLIANCE_SCAN                = 56;
     COMPLIANCE_CHECK_RESULTS       = 57;
     BLOB                           = 58;
-    PRODUCT_USAGE                  = 59;
+    // Was PRODUCT_USAGE previously, now replaced with ADMINISTRATION_USAGE
+    reserved                         59;
     ADMINISTRATION_EVENTS          = 60;
     COMPLIANCE_SCAN_CONFIG_STATUS  = 61;
+    ADMINISTRATION_USAGE           = 62;
 }
 
 enum SearchDataType {

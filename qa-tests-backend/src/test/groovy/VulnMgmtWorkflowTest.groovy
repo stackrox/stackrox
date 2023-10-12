@@ -7,6 +7,7 @@ import services.VulnRequestService
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class VulnMgmtWorkflowTest extends BaseSpecification {
 
     static final private NGINX_1_12_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"

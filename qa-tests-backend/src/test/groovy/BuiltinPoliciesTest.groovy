@@ -24,7 +24,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     // Arch specific test images
     static final private String TRIGGER_MOST_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19":
-        "quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
+        "quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
     static final private String TRIGGER_ALPINE_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "us.gcr.io/stackrox-ci/qa/trigger-policy-violations/alpine:0.6":
         "quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-alpine")

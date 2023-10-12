@@ -1,6 +1,6 @@
 import axios from './instance';
 
-const vulnBaseUrl = '/v1/config/private/deferral/vulnerabilities';
+const vulnBaseUrl = '/v1/config/private/exception/vulnerabilities';
 
 export type VulnerabilitiesExceptionConfig = {
     expiryOptions: {

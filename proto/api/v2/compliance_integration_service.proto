@@ -4,7 +4,6 @@ option go_package = "v2";
 option java_package = "io.stackrox.proto.api.v2";
 
 import weak "google/api/annotations.proto";
-import "api/v2/common.proto";
 import "api/v2/search_query.proto";
 
 package v2;

@@ -22,8 +22,12 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Removed Features
 
 - ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
+- The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`. 
+- The `/v1/report` APIs have been removed. Please use `/v2/reports/` APIs.
 
 ### Deprecated Features
+- The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
+- The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
 
 ### Technical Changes
 - Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
@@ -31,6 +35,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
   are required to be title-cased.
 - ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
+- The experimental API `/v1/product/usage` has been renamed to `/v1/administration/usage`.
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 
 ## [4.2.0]

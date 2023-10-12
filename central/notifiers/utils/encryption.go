@@ -23,89 +23,84 @@ func GetNotifierSecretEncryptionKey() (string, error) {
 	return string(key), nil
 }
 
-// SecureNotifier secures the secrets in the given notifier
-func SecureNotifier(notifier *storage.Notifier, key string) error {
+// SecureNotifier secures the secrets in the given notifier and returns true if the encrypted creds were modified,
+// false otherwise
+func SecureNotifier(notifier *storage.Notifier, key string) (bool, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
-		return nil
+		return false, nil
 	}
 	if notifier.GetConfig() == nil {
-		return nil
+		return false, nil
 	}
+	encCreds := notifier.GetNotifierSecret()
+
 	cryptoCodec := cryptocodec.Singleton()
 	var err error
 	switch notifier.GetType() {
 	case pkgNotifiers.JiraType:
 		jira := notifier.GetJira()
 		if jira == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, jira.GetPassword())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.EmailType:
 		email := notifier.GetEmail()
 		if email == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, email.GetPassword())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.CSCCType:
 		cscc := notifier.GetCscc()
 		if cscc == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, cscc.GetServiceAccount())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.SplunkType:
 		splunk := notifier.GetSplunk()
 		if splunk == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, splunk.GetHttpToken())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.PagerDutyType:
 		pagerDuty := notifier.GetPagerduty()
 		if pagerDuty == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, pagerDuty.GetApiKey())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.GenericType:
 		generic := notifier.GetGeneric()
 		if generic == nil {
-			return nil
+			return false, nil
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, generic.GetPassword())
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
+
 	case pkgNotifiers.AWSSecurityHubType:
 		awsSecurityHub := notifier.GetAwsSecurityHub()
 		if awsSecurityHub == nil {
-			return nil
+			return false, nil
 		}
 		creds := awsSecurityHub.GetCredentials()
 		if creds == nil {
-			return nil
+			return false, nil
 		}
 		marshalled, err := creds.Marshal()
 		if err != nil {
-			return err
+			return false, err
 		}
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, string(marshalled))
-		if err != nil {
-			return err
-		}
+		return notifier.NotifierSecret != encCreds, err
 	}
 	// TODO (ROX-19879): Cleanup creds if ROX_CLEANUP_NOTIFIER_CREDS is enabled
-	return nil
+	return false, nil
 }

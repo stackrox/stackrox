@@ -60,7 +60,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 
 	// Create a fake SensorComponent
 	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
+	c.comm = NewCentralCommunication(false, false, NewFakeSensorComponent(c.responsesC))
 
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
@@ -93,6 +93,7 @@ var centralSyncMessages = []*central.MsgToSensor{
 	debuggerMessage.ClusterConfig(),
 	debuggerMessage.PolicySync([]*storage.Policy{}),
 	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+	debuggerMessage.NetworkBaselineSync([]*storage.NetworkBaseline{}),
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
@@ -149,7 +150,7 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	service.client.EXPECT().Header().AnyTimes().Return(md, nil)
 	service.client.EXPECT().Send(gomock.Any()).Return(nil)
 	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
-	var orderedCalls []*gomock.Call
+	var orderedCalls []any
 	for _, m := range messages {
 		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
 	}

@@ -1,12 +1,20 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
+)
+
+var (
+	errUnableToReconcile                        = errors.New("unable to reconcile resource")
+	_                    reconcile.Reconcilable = (*InMemoryStoreProvider)(nil)
 )
 
 // InMemoryStoreProvider holds all stores used in sensor and exposes a public interface for each that can be used outside of the listeners.
@@ -24,7 +32,8 @@ type InMemoryStoreProvider struct {
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
 
-	cleanableStores []CleanableStore
+	cleanableStores    []CleanableStore
+	reconcilableStores map[string]reconcile.Reconcilable
 }
 
 // CleanableStore defines a store implementation that has a function for deleting all entries
@@ -67,6 +76,10 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.orchestratorNamespaces,
 		p.registryStore,
 		p.registryMirrorStore,
+	}
+	p.reconcilableStores = map[string]reconcile.Reconcilable{
+		deduper.TypeDeployment.String(): p.deploymentStore,
+		deduper.TypePod.String():        p.podStore,
 	}
 
 	return p
@@ -132,4 +145,14 @@ func (p *InMemoryStoreProvider) Nodes() store.NodeStore {
 // RegistryMirrors returns the RegistryMirror store public interface.
 func (p *InMemoryStoreProvider) RegistryMirrors() registrymirror.Store {
 	return p.registryMirrorStore
+}
+
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (p *InMemoryStoreProvider) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
+	if resStore, found := p.reconcilableStores[resType]; found {
+		return resStore.ReconcileDelete(resType, resID, resHash)
+	}
+	return "", errors.Wrapf(errUnableToReconcile, "Don't know how to reconcile resource type %q", resType)
 }
