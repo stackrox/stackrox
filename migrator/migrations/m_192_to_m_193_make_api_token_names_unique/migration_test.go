@@ -358,7 +358,7 @@ func (s *mockedMigrationTestSuite) TestBatching() {
 
 	s.oldStore.loadTokenSequence(initialTokenSet)
 	s.newStore.EXPECT().UpsertMany(gomock.Any(), batch1).Times(1).Return(nil)
-	s.newStore.EXPECT().UpsertMany(gomock.Any(), batch2).Times(2).Return(nil)
+	s.newStore.EXPECT().UpsertMany(gomock.Any(), batch2).Times(1).Return(nil)
 
 	s.doTestMigration()
 }
