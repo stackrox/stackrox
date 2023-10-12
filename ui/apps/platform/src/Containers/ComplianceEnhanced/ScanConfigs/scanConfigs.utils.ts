@@ -1,6 +1,6 @@
-import { ScanSchedule } from 'services/ComplianceEnhancedService';
+import { ScanConfig } from 'services/ComplianceEnhancedService';
 
-export const initialScanSchedule: ScanSchedule = {
+export const initialScanConfig: ScanConfig = {
     scanName: '',
     clusters: [],
     scanConfig: {

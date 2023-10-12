@@ -1,40 +1,41 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
-import { PageSection, Bullseye, Alert, Spinner, Divider } from '@patternfly/react-core';
+import { Alert, Divider, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
-import { complianceEnhancedBasePath } from 'routePaths';
-import { getScanSchedules, ScanSchedule } from 'services/ComplianceEnhancedService';
+import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import { getScanConfigs, ScanConfig } from 'services/ComplianceEnhancedService';
 import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import ScanConfigsHeader from '../ScanConfigsHeader';
 
-type ScanSchedulesTablePageProps = {
+type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
     searchFilter?: SearchFilter;
 };
 
-function ScanSchedulesTablePage({
+function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
     handleChangeSearchFilter,
     searchFilter,
-}: ScanSchedulesTablePageProps): React.ReactElement {
+}: ScanConfigsTablePageProps): React.ReactElement {
     const history = useHistory();
 
     const [isLoading, setIsLoading] = useState(false);
-    const [scanSchedules, setScanSchedules] = useState<ScanSchedule[]>([]);
+    const [scanSchedules, setScanSchedules] = useState<ScanConfig[]>([]);
     const [errorMessage, setErrorMessage] = useState('');
 
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
-    function onClickCreateScanScedule() {
-        history.push(`${complianceEnhancedBasePath}/?action=create`);
+    function onClickCreate() {
+        history.push(`${complianceEnhancedScanConfigsPath}/?action=create`);
     }
 
     function fetchScanSchedules(query: string) {
         setIsLoading(true);
-        getScanSchedules(query)
+        getScanConfigs(query)
             .then((data) => {
                 setScanSchedules(data);
                 setErrorMessage('');
@@ -76,11 +77,24 @@ function ScanSchedulesTablePage({
 
     return (
         <>
-            <div>header goes here</div>
+            <ScanConfigsHeader
+                actions={
+                    hasWriteAccessForCompliance ? (
+                        <>
+                            <Button variant="primary" onClick={onClickCreate}>
+                                Create scan schedule
+                            </Button>
+                        </>
+                    ) : (
+                        <></>
+                    )
+                }
+                description="Configure scan schedules bound to clusters and policies."
+            />
             <Divider component="div" />
             {pageContent}
         </>
     );
 }
 
-export default ScanSchedulesTablePage;
+export default ScanConfigsTablePage;

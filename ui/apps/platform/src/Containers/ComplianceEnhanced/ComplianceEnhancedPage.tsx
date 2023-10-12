@@ -7,7 +7,7 @@ import {
     complianceEnhancedScanConfigsPath,
 } from 'routePaths';
 import ComplianceStatusPage from 'Containers/ComplianceEnhanced/Status/ComplianceStatusPage';
-import SchedulingPage from 'Containers/ComplianceEnhanced/Scheduling/SchedulingPage';
+import ScanConfigsPage from 'Containers/ComplianceEnhanced/ScanConfigs/ScanConfigsPage';
 
 function ComplianceEnhancedPage() {
     return (
@@ -17,7 +17,7 @@ function ComplianceEnhancedPage() {
                 <ComplianceStatusPage />
             </Route>
             <Route path={complianceEnhancedScanConfigsPath}>
-                <SchedulingPage />
+                <ScanConfigsPage />
             </Route>
         </Switch>
     );

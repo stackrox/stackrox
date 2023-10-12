@@ -5,12 +5,12 @@ import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
 import { getQueryObject, BasePageAction } from 'utils/queryStringUtils';
 
-import ScanSchedulesTablePage from './Table/ScanSchedulesTablePage';
-import ScanSchedulePage from './ScanSchedulePage';
+import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
+import ScanConfigPage from './ScanConfigPage';
 
 function SchedulingPage() {
     /*
-     * Examples of urls for ScanSchedulePage:
+     * Examples of urls for ScanConfigPage:
      * /main/policymanagement/policies/:policyId
      * /main/policymanagement/policies/:policyId?action=edit
      * /main/policymanagement/policies?action=create
@@ -26,29 +26,28 @@ function SchedulingPage() {
     const { searchFilter, setSearchFilter } = useURLSearch();
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
-    const { scanScheduleId } = useParams();
+    const { scanConfigId } = useParams();
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
-    if (action || scanScheduleId) {
+    if (action || scanConfigId) {
         return (
-            <ScanSchedulePage
+            <ScanConfigPage
                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                 pageAction={action as BasePageAction}
-                scanScheduleId={scanScheduleId}
+                scanConfigId={scanConfigId}
             />
         );
     }
 
     return (
-        <ScanSchedulesTablePage
+        <ScanConfigsTablePage
             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
             handleChangeSearchFilter={setSearchFilter}
             searchFilter={searchFilter}
         />
     );
-    return <div />;
 }
 
 export default SchedulingPage;

@@ -107,7 +107,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     'compliance-enhanced/scan-configs': {
         component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Scheduling/SchedulingPage')
+            () => import('Containers/ComplianceEnhanced/ScanConfigs/ScanConfigsPage')
         ),
         path: complianceEnhancedScanConfigsPath,
     },

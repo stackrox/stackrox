@@ -42,7 +42,7 @@ type BaseSchedule = {
     minute: number;
 };
 
-export type ScanSchedule = {
+export type ScanConfig = {
     scanName: string;
     clusters: string[];
     scanConfig: {
@@ -105,18 +105,18 @@ export function complianceResultsOverview(
 /*
  * Get a Scan Schedule.
  */
-export function getScanSchedule(policyId: string): Promise<ScanSchedule> {
+export function getScanConfig(scanConfigId: string): Promise<ScanConfig> {
     return axios
-        .get<ScanSchedule>(`${scanScheduleUrl}/${policyId}`)
+        .get<ScanConfig>(`${scanScheduleUrl}/${scanConfigId}`)
         .then((response) => response.data);
 }
 
 /*
  * Get policies filtered by an optional query string.
  */
-export function getScanSchedules(query = ''): Promise<ScanSchedule[]> {
+export function getScanConfigs(query = ''): Promise<ScanConfig[]> {
     const params = qs.stringify({ query });
     return axios
-        .get<{ scanSchedules: ScanSchedule[] }>(`${scanScheduleUrl}?${params}`)
+        .get<{ scanSchedules: ScanConfig[] }>(`${scanScheduleUrl}?${params}`)
         .then((response) => response?.data?.scanSchedules ?? []);
 }
