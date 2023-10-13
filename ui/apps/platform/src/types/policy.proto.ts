@@ -11,7 +11,6 @@ export type ListPolicy = {
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
 };
 
-// TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export const policySeverities = [
     'LOW_SEVERITY',
     'MEDIUM_SEVERITY',
@@ -20,7 +19,6 @@ export const policySeverities = [
 ] as const;
 export type PolicySeverity = (typeof policySeverities)[number];
 
-// TODO supersedes src/Containers/Violations/PatternFly/types/violationTypes.ts
 export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
@@ -91,7 +89,6 @@ export type PolicyScopeLabel = {
     value: string;
 };
 
-// TODO supersedes apps/platform/src/Containers/Violations/PatternFly/types/violationTypes.ts
 // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
