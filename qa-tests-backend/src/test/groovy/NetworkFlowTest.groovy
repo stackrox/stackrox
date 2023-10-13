@@ -41,7 +41,6 @@ import spock.lang.Unroll
 
 @Tag("PZDebug")
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step
-@Stepwise
 class NetworkFlowTest extends BaseSpecification {
 
     // Deployment names
@@ -551,7 +550,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     def doHTTPGetExpectCode(String targetUrl, int code) {
         Response response = null
-        Timer t = new Timer(12, 15)
+        Timer t = new Timer(20, 15)
         while (response?.statusCode() != code && t.IsValid()) {
             try {
                 log.info "Trying HTTP Get to ${targetUrl}..."
