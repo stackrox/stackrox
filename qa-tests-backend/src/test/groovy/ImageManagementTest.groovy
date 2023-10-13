@@ -17,6 +17,7 @@ import spock.lang.IgnoreIf
 import util.Env
 
 @Tag("Parallel")
+@Tag("PZ")
 class ImageManagementTest extends BaseSpecification {
 
     private static final String TEST_NAMESPACE = "qa-image-management"
