@@ -57,6 +57,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Secret{Secret: &storage.Secret{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"NetworkPolicy": {
+			resType:       deduper.TypeNetworkPolicy.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_NetworkPolicy{NetworkPolicy: &storage.NetworkPolicy{Id: testResID, Namespace: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
@@ -65,8 +70,12 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 	}
 
 	for name, c := range cases {
+		st := InitializeStore()
+		st.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: testResID, Namespace: testResID})
+		r := NewResourceStoreReconciler(st)
+
 		s.Run(name, func() {
-			actual, err := resourceToMessage(c.resType, testResID)
+			actual, err := r.resourceToMessage(c.resType, testResID)
 			if c.expectedError != nil {
 				s.Require().Error(err)
 				return
@@ -99,6 +108,10 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetNode().GetId()
 		}, nil
+	case deduper.TypeNetworkPolicy.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetNetworkPolicy().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -113,6 +126,8 @@ func initStore() *InMemoryStoreProvider {
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
 	s.nodeStore.addOrUpdateNode(makeNode("42"))
 	s.nodeStore.addOrUpdateNode(makeNode("43"))
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "1", Namespace: "space"})
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "2", Namespace: "space"})
 	s.serviceAccountStore.Add(&storage.ServiceAccount{
 		Id:               "5",
 		Name:             "Acc1",
@@ -264,6 +279,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("42", deduper.TypeNode): 76543,
 			},
 			deletedIDs: []string{"99", "98", "97"},
+		},
+		"No Network Policy": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeNetworkPolicy): 12345,
+				makeKey("2", deduper.TypeNetworkPolicy): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Network Policy": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNetworkPolicy): 34567,
+				makeKey("1", deduper.TypeNetworkPolicy):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Network Policies": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNetworkPolicy): 34567,
+				makeKey("98", deduper.TypeNetworkPolicy): 34567,
+				makeKey("97", deduper.TypeNetworkPolicy): 34567,
+				makeKey("1", deduper.TypeNetworkPolicy):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
 		},
 	}
 
