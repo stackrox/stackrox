@@ -59,7 +59,7 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 		},
 		"NetworkPolicy": {
 			resType:       deduper.TypeNetworkPolicy.String(),
-			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_NetworkPolicy{NetworkPolicy: &storage.NetworkPolicy{Id: testResID, Namespace: testResID}}}},
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_NetworkPolicy{NetworkPolicy: &storage.NetworkPolicy{Id: testResID}}}},
 			expectedError: nil,
 		},
 		"Unknown should throw error": {
@@ -70,12 +70,8 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 	}
 
 	for name, c := range cases {
-		st := InitializeStore()
-		st.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: testResID, Namespace: testResID})
-		r := NewResourceStoreReconciler(st)
-
 		s.Run(name, func() {
-			actual, err := r.resourceToMessage(c.resType, testResID)
+			actual, err := resourceToMessage(c.resType, testResID)
 			if c.expectedError != nil {
 				s.Require().Error(err)
 				return

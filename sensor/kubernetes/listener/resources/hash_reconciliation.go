@@ -31,7 +31,7 @@ func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduper.Key]uint64) []cen
 			log.Debug("empty reconciliation result - not found on Sensor")
 			continue
 		}
-		delMsg, err := hr.resourceToMessage(hash.ResourceType.String(), toDeleteID)
+		delMsg, err := resourceToMessage(hash.ResourceType.String(), toDeleteID)
 		if err != nil {
 			log.Errorf("converting resource to MsgFromSensor: %s", err)
 			continue
@@ -41,7 +41,7 @@ func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduper.Key]uint64) []cen
 	return events
 }
 
-func (hr *ResourceStoreReconciler) resourceToMessage(resType string, resID string) (*central.MsgFromSensor, error) {
+func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, error) {
 	switch resType {
 	case deduper.TypeDeployment.String():
 		msg := central.MsgFromSensor_Event{
@@ -88,17 +88,12 @@ func (hr *ResourceStoreReconciler) resourceToMessage(resType string, resID strin
 		}
 		return &central.MsgFromSensor{Msg: &msg}, nil
 	case deduper.TypeNetworkPolicy.String():
-		pol := hr.storeProvider.networkPolicyStore.Get(resID)
-		if pol == nil {
-			return nil, errors.Errorf("could not find policy with ID %s in Network Policy store", resID)
-		}
 		msg := central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     resID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
 				Resource: &central.SensorEvent_NetworkPolicy{
-					NetworkPolicy: pol,
-				},
+					NetworkPolicy: &storage.NetworkPolicy{Id: resID}},
 			},
 		}
 		return &central.MsgFromSensor{Msg: &msg}, nil
