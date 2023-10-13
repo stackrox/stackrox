@@ -40,17 +40,13 @@ LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     name="rhacs-roxctl-rhel8" \
     maintainer="Red Hat, Inc." \
+    upstream-repo="github.com/stackrox/stackrox" \
     # These labels are added to override the base image values.
     description="The CLI for ACS" \
     io.k8s.description="The CLI for ACS" \
     io.k8s.display-name="roxctl" \
     io.openshift.tags="rhacs,roxctl,stackrox" \
     summary="The CLI for ACS"
-
-    # TODO: what are these for & if they're required, how can we provide them?
-    # "git-commit:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_COMMIT}" \ --> vcs-ref on RHTAP
-    # "git-branch:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_BRANCH}" \
-    # "git-tag:stackrox/stackrox"="${CI_STACKROX_UPSTREAM_TAG}"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
