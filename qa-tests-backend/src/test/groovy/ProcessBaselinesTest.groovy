@@ -25,6 +25,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("Parallel")
+@Tag("PZ")
 class ProcessBaselinesTest extends BaseSpecification {
     @Shared
     private String clusterId
