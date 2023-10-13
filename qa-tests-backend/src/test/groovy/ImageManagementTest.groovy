@@ -17,6 +17,7 @@ import util.Env
 
 @Tag("PZDebug")
 @Tag("Parallel")
+@Tag("PZ")
 class ImageManagementTest extends BaseSpecification {
 
     private static final String TEST_NAMESPACE = "qa-image-management"

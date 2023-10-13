@@ -33,6 +33,7 @@ import org.junit.rules.Timeout
 import spock.lang.Tag
 
 @Tag("Parallel")
+@Tag("PZ")
 class DeclarativeConfigTest extends BaseSpecification {
     static final private String DEFAULT_NAMESPACE = "stackrox"
 

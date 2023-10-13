@@ -6,12 +6,13 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { VulnerabilityState } from 'types/cve.proto';
 import ImagesTable, { ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultImageSortFields, imagesDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 
 export { imageListQuery } from '../Tables/ImagesTable';
@@ -19,7 +20,7 @@ export { imageListQuery } from '../Tables/ImagesTable';
 type ImagesTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImagesTableProps['onWatchImage'];
@@ -29,7 +30,7 @@ type ImagesTableContainerProps = {
 function ImagesTableContainer({
     defaultFilters,
     countsData,
-    cveStatusTab,
+    vulnerabilityState,
     pagination,
     hasWriteAccessForWatchedImage,
     onWatchImage,
@@ -48,7 +49,7 @@ function ImagesTableContainer({
 
     const { error, loading, data, previousData } = useQuery(imageListQuery, {
         variables: {
-            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
+            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,
