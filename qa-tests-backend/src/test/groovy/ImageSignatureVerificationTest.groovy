@@ -55,11 +55,12 @@ bXlAKIPDApWJ4LY9QBESP4xed+CsLkm1ErLFJXpp+AB2YpqP8KYpvAp3Xg==
 -----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> UNVERIFIABLE_COSIGN_PUBLIC_KEY = [
-            // Manually created cosing public key via `cosign generate-key-pair`.
+            // Manually created cosing public key via `cosign generate-key-pair`
+            // does not verify UNVERIFIABLE_DEPLOYMENT
             "Unverifiable": """\
 -----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE05wrWtdAd9jhbOrOFwbnVAQkMiGx
-oF3vIjezymDRnXrbIYOGx+QCe8Cbsbv8Tmk51veqhsGYrpVurfm9XE4n1g==
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUpphKrUYSHvrR+r82Jn7Evg/d3L9
+w9e2Azq1OYIh/pbeBMHARDrBaqqmuMR9+BfAaPAYdkNTU6f58M2zBbuL0A==
 -----END PUBLIC KEY-----""",
     ]
     static final private Map<String, String> SAME_DIGEST_COSIGN_PUBLIC_KEY = [
