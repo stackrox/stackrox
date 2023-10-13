@@ -128,9 +128,8 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	metrics.IncSensorEventsDeduper(false, msg)
 
 	// Lazily create the queue for a type when not found.
-	var queue *workerQueue
-	concurrency.WithRLock(&s.workerQueuesMutex, func() {
-		queue = s.workerQueues[workerType]
+	queue := concurrency.WithRLock1(&s.workerQueuesMutex, func() *workerQueue {
+		return s.workerQueues[workerType]
 	})
 	if queue == nil {
 		concurrency.WithLock(&s.workerQueuesMutex, func() {
