@@ -72,7 +72,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/moby/sys/mountinfo v0.6.2
-	github.com/np-guard/cluster-topology-analyzer v1.7.0
+	github.com/np-guard/cluster-topology-analyzer v1.9.0
 	github.com/np-guard/netpol-analyzer v0.4.3
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
