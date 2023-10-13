@@ -220,7 +220,7 @@ func (c *centralCommunicationSuite) Test_TimeoutWaitingForDeduperState() {
 	reachable := concurrency.Flag{}
 	c.comm.(*centralCommunicationImpl).syncTimeout = 10 * time.Millisecond
 	// Start the go routine with the mocked client
-	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	select {
