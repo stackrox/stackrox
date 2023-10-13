@@ -1205,8 +1205,8 @@ github.com/nelsam/hel/v2 v2.3.2/go.mod h1:1ZTGfU2PFTOd5mx22i5O0Lc2GY933lQ2wb/ggy
 github.com/nelsam/hel/v2 v2.3.3/go.mod h1:1ZTGfU2PFTOd5mx22i5O0Lc2GY933lQ2wb/ggy+rL3w=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nishanths/exhaustive v0.1.0/go.mod h1:S1j9110vxV1ECdCudXRkeMnFQ/DQk9ajLT0Uf2MYZQQ=
-github.com/np-guard/cluster-topology-analyzer v1.7.0 h1:MtXZ7XF8EFQbM8uJO+RCS6KnArk88Rn4U0CnuFWu7BM=
-github.com/np-guard/cluster-topology-analyzer v1.7.0/go.mod h1:WDOpAZdQcD4t61J4ZsG9BoXhlG04sqKTZgkohng0p3A=
+github.com/np-guard/cluster-topology-analyzer v1.9.0 h1:mzWFXHq2iKCeQ9iLXOq2GXzynfcTgSn+qK7YaxkW3j0=
+github.com/np-guard/cluster-topology-analyzer v1.9.0/go.mod h1:PKFvqqtlLtEMJQ0ZaBdlgRD535IwVLLBmXprFnqFKFc=
 github.com/np-guard/netpol-analyzer v0.4.3 h1:D8ad4TfQv3QIGKc+wfKb3T+ES8YX6fIJfnKAD7He8a8=
 github.com/np-guard/netpol-analyzer v0.4.3/go.mod h1:2MUl7DNbq01PGJLi7PJbzlEIcI72jwchzTGzazoIio8=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
