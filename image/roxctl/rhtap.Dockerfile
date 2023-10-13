@@ -44,7 +44,7 @@ LABEL \
     description="The CLI for ACS" \
     io.k8s.description="The CLI for ACS" \
     io.k8s.display-name="roxctl" \
-    io.openshift.tags="rhacs,roxctl" \
+    io.openshift.tags="rhacs,roxctl,stackrox" \
     summary="The CLI for ACS"
 
     # TODO: what are these for & if they're required, how can we provide them?
