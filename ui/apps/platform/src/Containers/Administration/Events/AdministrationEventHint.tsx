@@ -1,6 +1,12 @@
 import React, { ReactElement } from 'react';
 import { List, ListItem, Text } from '@patternfly/react-core';
 
+/*
+ * Split hint string for conditional rendering in component:
+ * Return adjacent lines which start with hyphen space as array for bulleted list.
+ * Return other lines as string for br element if empty else paragraph.
+ */
+
 const listItemRegExp = /^- /;
 
 type LineOrList = string | string[];
@@ -36,6 +42,7 @@ export type AdministrationEventHintProps = {
 function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactElement {
     /* eslint-disable no-nested-ternary */
     /* eslint-disable react/no-array-index-key */
+    // Remove default PatternFly margin-top for li + li to conserve vertical space.
     return (
         <div>
             {splitHint(hint).map((lineOrList, lineOrListIndex) =>
