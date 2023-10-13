@@ -38,6 +38,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Deployment{Deployment: &storage.Deployment{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"ServiceAccount": {
+			resType:       deduper.TypeServiceAccount.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ServiceAccount{ServiceAccount: &storage.ServiceAccount{Id: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
@@ -68,6 +73,10 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetPod().GetId()
 		}, nil
+	case deduper.TypeServiceAccount.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetServiceAccount().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -80,6 +89,18 @@ func initStore() *InMemoryStoreProvider {
 	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("2"))
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "3"})
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
+	s.serviceAccountStore.Add(&storage.ServiceAccount{
+		Id:               "5",
+		Name:             "Acc1",
+		Namespace:        "Test",
+		ImagePullSecrets: []string{},
+	})
+	s.serviceAccountStore.Add(&storage.ServiceAccount{
+		Id:               "6",
+		Name:             "Acc2",
+		Namespace:        "Test",
+		ImagePullSecrets: []string{},
+	})
 	return s
 }
 
@@ -135,6 +156,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("100", deduper.TypePod): 87654,
 				makeKey("101", deduper.TypePod): 87654,
 				makeKey("3", deduper.TypePod):   76543,
+			},
+			deletedIDs: []string{"99", "100", "101"},
+		},
+		"No ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("5", deduper.TypeServiceAccount): 76543,
+				makeKey("6", deduper.TypeServiceAccount): 65432,
+			},
+			deletedIDs: []string{},
+		},
+		"Single ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):  76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple ServiceAccounts": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount):  87654,
+				makeKey("100", deduper.TypeServiceAccount): 87654,
+				makeKey("101", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):   76543,
 			},
 			deletedIDs: []string{"99", "100", "101"},
 		},
