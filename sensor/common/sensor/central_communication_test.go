@@ -98,7 +98,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 
 	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Pretend that a component (listener) is sending the sync event
@@ -123,7 +123,7 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 
 	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Stop CentralCommunication
@@ -191,7 +191,7 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 
 			reachable := concurrency.Flag{}
 			// Start the go routine with the mocked client
-			go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 			c.mockService.connected.Wait()
 
 			for _, msg := range tc.componentMessages {
