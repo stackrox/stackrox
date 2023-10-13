@@ -52,6 +52,8 @@ type gcmCryptoCodecImpl struct {
 // bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
 func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string) (string, error) {
 	key, err := base64.StdEncoding.DecodeString(keyString)
+	// TODO: Added for debugging, remove before merging
+	log.Infof("crypto key is '%s'", keyString)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +92,7 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		// TODO: Added for debugging, remove before merging
-		log.Errorf("error creating cipher block: %s", err)
+		log.Errorf("error creating cipher block '%s': %s", keyString, err)
 		return "", err
 	}
 	aesgcm, err := cipher.NewGCMWithNonceSize(block, gcmNonceSizeBytes)
