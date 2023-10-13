@@ -1,7 +1,6 @@
 package migrationreferencedschema
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 	"strings"
@@ -47,8 +46,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		call := n.(*ast.CallExpr)
 		fn, ok := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
 		if ok && fn.Name() == resolveReferences {
-			fmt.Printf("function full name is: %q\n", fn.FullName())
-			fmt.Printf("function package is: %q\n", fn.Pkg())
 			pass.Report(analysis.Diagnostic{
 				Pos:     n.Pos(),
 				Message: "Cannot resolve references in a migration as it walks the most recent proto.",
