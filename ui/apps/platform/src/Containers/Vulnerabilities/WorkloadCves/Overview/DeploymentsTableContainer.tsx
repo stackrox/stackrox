@@ -6,25 +6,26 @@ import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getHasSearchApplied } from 'utils/searchUtils';
+import { VulnerabilityState } from 'types/cve.proto';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
-import { getCveStatusScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
+import { getVulnStateScopedQueryString, parseQuerySearchFilter } from '../searchUtils';
 import { defaultDeploymentSortFields, deploymentsDefaultSort } from '../sortUtils';
-import { DefaultFilters, VulnerabilitySeverityLabel, CveStatusTab } from '../types';
+import { DefaultFilters, VulnerabilitySeverityLabel } from '../types';
 
 type DeploymentsTableContainerProps = {
     defaultFilters: DefaultFilters;
     countsData: EntityCounts;
-    cveStatusTab?: CveStatusTab; // TODO Make this required once Observed/Deferred/FP states are re-implemented
+    vulnerabilityState?: VulnerabilityState; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     pagination: ReturnType<typeof useURLPagination>;
 };
 
 function DeploymentsTableContainer({
     defaultFilters,
     countsData,
-    cveStatusTab,
+    vulnerabilityState,
     pagination,
 }: DeploymentsTableContainerProps) {
     const { searchFilter } = useURLSearch();
@@ -41,7 +42,7 @@ function DeploymentsTableContainer({
         deployments: Deployment[];
     }>(deploymentListQuery, {
         variables: {
-            query: getCveStatusScopedQueryString(querySearchFilter, cveStatusTab),
+            query: getVulnStateScopedQueryString(querySearchFilter, vulnerabilityState),
             pagination: {
                 offset: (page - 1) * perPage,
                 limit: perPage,

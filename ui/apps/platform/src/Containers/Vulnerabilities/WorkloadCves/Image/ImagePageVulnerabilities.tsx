@@ -37,7 +37,7 @@ import { DynamicTableLabel } from '../components/DynamicIcon';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
-    getCveStatusScopedQueryString,
+    getVulnStateScopedQueryString,
     parseQuerySearchFilter,
 } from '../searchUtils';
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
@@ -103,7 +103,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getCveStatusScopedQueryString(querySearchFilter),
+            query: getVulnStateScopedQueryString(querySearchFilter),
             pagination,
         },
     });
