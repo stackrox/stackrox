@@ -110,7 +110,7 @@ spec:
       description: Java build
       name: java
       type: string
-    - default: ""
+    - default: "13w"
       description: Image tag expiration time, time values could be something like
         1h, 2d, 3w for hours, days, and weeks, respectively.
       name: image-expires-after
