@@ -17,9 +17,12 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -36,8 +39,10 @@ type podDatastoreSuite struct {
 	plopStorage plopStore.Store
 
 	postgres *pgtest.TestPostgres
+	filter       filter.Filter
 
 	hasWriteCtx context.Context
+	ctx context.Context
 }
 
 func (s *podDatastoreSuite) SetupSuite() {
@@ -56,14 +61,23 @@ func (s *podDatastoreSuite) SetupSuite() {
         s.indicatorDataStore, _ = processIndicatorDataStore.New(
                 indicatorStorage, s.plopStorage, indicatorSearcher, nil)
 
-        s.plopDS = plopDataStore.New(s.plopStorage, s.indicatorDataStore)
+        //s.plopDS = plopDataStore.New(s.plopStorage, s.indicatorDataStore)
+	s.plopDS = nil
 
-	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, nil)
+	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
-	s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-                sac.AllowFixedScopes(
-                        sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-                        sac.ResourceScopeKeys(resources.DeploymentExtension)))
+	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
+	podsSAC = sac.ForResource(resources.Deployment)
+
+	//s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+        //        sac.AllowFixedScopes(
+        //                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+	//	resources.Deployment)
+
+	testContexts := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
+		resources.Deployment)
+
+	s.ctx = testContexts[testutils.UnrestrictedReadWriteCtx]
 }
 
 func (s *podDatastoreSuite) TearDownSuite() {
@@ -104,14 +118,19 @@ var (
                 },
                 DeploymentId: fixtureconsts.Deployment1,
         }
+
 )
 
 // Add plops, process indicators, pods. Delete one of the pods.
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s *podDatastoreSuite) TestRemovePod() {
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
-	s.NoError(s.datastore.plops.AddProcessListeningOnPort(
-		s.hasWriteCtx, plopObjects...))
+	//plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+	//s.NoError(s.datastore.plops.AddProcessListeningOnPort(
+	//	s.hasWriteCtx, plopObjects...))
+
+
+	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
+//func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 
 
 }
