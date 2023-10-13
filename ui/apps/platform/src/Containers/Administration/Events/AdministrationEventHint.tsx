@@ -47,7 +47,7 @@ function AdministrationEventHint({ hint }: AdministrationEventHintProps): ReactE
                             </ListItem>
                         ))}
                     </List>
-                ) : lineOrList.length === 0 ? (
+                ) : lineOrList === '' ? (
                     <br key={lineOrListIndex} />
                 ) : (
                     <Text key={lineOrListIndex}>{lineOrList}</Text>
