@@ -53,13 +53,26 @@ export function selectResourceFilterType(entityType) {
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
  * @param {string} value
  */
-export function typeAndEnterResourceFilterValue(entityType, value) {
+export function typeAndSelectResourceFilterValue(entityType, value) {
     cy.get(selectors.resourceValueTypeahead(entityType)).click();
     cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
-    cy.get(selectors.resourceValueMenuItem(entityType, value)).click();
+    cy.get(selectors.resourceValueMenuItem(entityType))
+        .contains(new RegExp(`^${value}$`))
+        .click();
     cy.get(selectors.resourceValueTypeahead(entityType)).click();
 }
 
+/**
+ * Type a value into the resource filter typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * @param {string} value
+ */
+export function typeAndSelectCustomResourceFilterValue(entityType, value) {
+    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+    cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
+    cy.get(selectors.resourceValueMenuItem(entityType)).contains(`Add "${value}"`).click();
+    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+}
 /**
  * View a specific entity tab for a Workload CVE table
  *

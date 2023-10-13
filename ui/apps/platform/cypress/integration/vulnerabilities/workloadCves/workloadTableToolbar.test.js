@@ -25,7 +25,8 @@ describe('Workload table toolbar', () => {
         // Apply a namespace filter
         cy.get(selectors.resourceValueTypeahead('Namespace')).click();
         cy.get(selectors.resourceValueTypeahead('Namespace')).type('stackrox');
-        cy.get(selectors.resourceValueMenuItem('Namespace', 'stackrox')).click();
+        cy.get(selectors.resourceValueMenuItem('Namespace')).contains('stackrox').click();
+
         cy.get(selectors.resourceValueTypeahead('Namespace')).click();
 
         // Apply a severity filter
