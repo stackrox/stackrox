@@ -111,7 +111,7 @@ var (
 func (s *podDatastoreSuite) TestRemovePod() {
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 	s.NoError(s.datastore.plops.AddProcessListeningOnPort(
-	s.hasWriteCtx, plopObjects...))
+		s.hasWriteCtx, plopObjects...))
 
 
 }
