@@ -1118,16 +1118,22 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	resultsByID := make(map[string]*storage.Image)
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
-		if err := tx.Commit(ctx); err != nil {
-			return nil, nil, err
-		}
 		if err != nil {
+			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+			if err := tx.Commit(ctx); err != nil {
+				return nil, nil, err
+			}
 			return nil, nil, err
 		}
 		if !found {
 			continue
 		}
 		resultsByID[msg.GetId()] = msg
+	}
+
+	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+	if err := tx.Commit(ctx); err != nil {
+		return nil, nil, err
 	}
 
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))

@@ -872,11 +872,11 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	resultsByID := make(map[string]*storage.Node)
 	for _, id := range ids {
 		msg, found, err := s.getFullNode(ctx, tx, id)
-		// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
-		if err := tx.Commit(ctx); err != nil {
-			return nil, nil, err
-		}
 		if err != nil {
+			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+			if err := tx.Commit(ctx); err != nil {
+				return nil, nil, err
+			}
 			return nil, nil, err
 		}
 		if !found {
@@ -884,6 +884,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 		}
 		resultsByID[msg.GetId()] = msg
 	}
+	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, nil, err
 	}
