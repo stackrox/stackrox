@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stretchr/testify/suite"
@@ -67,7 +66,6 @@ func (s *podDatastoreSuite) SetupSuite() {
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
-	podsSAC = sac.ForResource(resources.Deployment)
 
 	//s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
         //        sac.AllowFixedScopes(
