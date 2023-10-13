@@ -22,6 +22,16 @@ We've chosen to base our API requests on CVSS V3 severity to ensure all data int
 
 The CVSS Updater in Central will be modified to download zip files corresponding to four distinct severity levels and write them into a single zip file stored in Central's file system. This eliminates the need for JSON parsing in the updater. ScannerV4 will pull the zip bundle and populate the Matcher DB with the enrichment data.
 
+The CVSS Updater will attempt to download each zip file from the Google bucket up to five times. If all five attempts fail, it will skip that particular file. For instance
+
+| Action                                                   | Result                                         | Next Step                               |
+|----------------------------------------------------------|------------------------------------------------|-----------------------------------------|
+| GET /bucket/1st-severity.zip                            | Success                                        | download to a tmp directory (disk)      |
+| GET /bucket/2nd-severity.zip                             | Success                                        | download to same tmp directory (disk)   |
+| GET /bucket/3rd-severity.zip                             | Failed (e.g. 401, 403, 505, Timeout)           | Retry 5 times and SKIP                  |
+| Create a final zip file from all jsons in downloaded zip files and save to store.Snapshot      | Success                                        | Wait 4 hours for another update         |
+
+
 ## Consequences
 
 One drawback of the NVD CVE API is its rate limit: only 5 requests are allowed per 30 seconds without an API Key. This restriction necessitates that our workflow fetch data at a slower pace. Additionally, transitioning from the NVD JSON feed to the NVD CVE API brings in pagination limitations. For example, when fetching data with a "low" severity, the API provides a maximum of 2000 CVEs per response. This means multiple requests are required to retrieve the complete dataset for "low" severity. The result is an increased number of smaller JSON files. Consequently, we need to compress all JSON files for a particular severity into a single zip archive.
