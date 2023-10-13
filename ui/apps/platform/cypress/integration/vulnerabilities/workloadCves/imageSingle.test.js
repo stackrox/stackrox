@@ -6,7 +6,7 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
     selectResourceFilterType,
-    typeAndEnterResourceFilterValue,
+    typeAndSelectResourceFilterValue,
     selectEntityTab,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
@@ -181,7 +181,7 @@ describe('Workload CVE Image Single page', () => {
                 // Select CVE from the entity dropdown
                 selectResourceFilterType('CVE');
                 // Enter the CVE name into the CVE filter
-                typeAndEnterResourceFilterValue('CVE', cveName);
+                typeAndSelectResourceFilterValue('CVE', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name
