@@ -806,7 +806,12 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	return s.getFullImage(ctx, tx, id)
+	image, found, err := s.getFullImage(ctx, tx, id)
+	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, err
+	}
+	return image, found, err
 }
 
 func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.Image, bool, error) {
@@ -1041,7 +1046,13 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 		return err
 	}
 
-	return s.deleteImageTree(ctx, tx, id)
+	if err := s.deleteImageTree(ctx, tx, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageID string) error {
@@ -1059,7 +1070,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageI
 	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+" where "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 // GetIDs returns all the IDs for the store
@@ -1107,6 +1118,9 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	resultsByID := make(map[string]*storage.Image)
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
+		if err := tx.Commit(ctx); err != nil {
+			return nil, nil, err
+		}
 		if err != nil {
 			return nil, nil, err
 		}

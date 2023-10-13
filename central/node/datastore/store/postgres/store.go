@@ -645,7 +645,12 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Node,
 	if err != nil {
 		return nil, false, err
 	}
-	return s.getFullNode(ctx, tx, id)
+	node, found, getErr := s.getFullNode(ctx, tx, id)
+	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, err
+	}
+	return node, found, getErr
 }
 
 func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID string) (*storage.Node, bool, error) {
@@ -813,9 +818,16 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 
 	tx, err := conn.Begin(ctx)
 	if err != nil {
-		return nil
+		return err
 	}
-	return s.deleteNodeTree(ctx, tx, id)
+
+	if err := s.deleteNodeTree(ctx, tx, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID string) error {
@@ -833,7 +845,7 @@ func (s *storeImpl) deleteNodeTree(ctx context.Context, tx *postgres.Tx, nodeID 
 	if _, err := tx.Exec(ctx, "delete from "+nodeCVEsTable+" where not exists (select "+componentCVEEdgesTable+".nodecveid FROM "+componentCVEEdgesTable+" where "+componentCVEEdgesTable+".nodecveid = "+nodeCVEsTable+".id)"); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice
@@ -860,6 +872,10 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	resultsByID := make(map[string]*storage.Node)
 	for _, id := range ids {
 		msg, found, err := s.getFullNode(ctx, tx, id)
+		// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+		if err := tx.Commit(ctx); err != nil {
+			return nil, nil, err
+		}
 		if err != nil {
 			return nil, nil, err
 		}
@@ -867,6 +883,9 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 			continue
 		}
 		resultsByID[msg.GetId()] = msg
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, nil, err
 	}
 
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))
