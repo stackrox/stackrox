@@ -36,7 +36,7 @@ type authServiceAccessControlTestSuite struct {
 }
 
 func (s *authServiceAccessControlTestSuite) SetupSuite() {
-	s.svc = New()
+	s.svc = &serviceImpl{}
 
 	authProvider, err := authproviders.NewProvider(
 		authproviders.WithEnabled(true),

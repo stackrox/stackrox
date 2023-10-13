@@ -7,6 +7,7 @@ import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 import "api/v1/empty.proto";
+import "api/v1/common.proto";
 import "storage/auth_provider.proto";
 import "storage/service_identity.proto";
 import "storage/user.proto";
@@ -20,21 +21,146 @@ message UserAttribute {
 
 message AuthStatus {
     oneof id {
-        string                user_id     = 1;
-        storage.ServiceIdentity       service_id  = 2;
+        string                  user_id         = 1;
+        storage.ServiceIdentity service_id      = 2;
     }
-    google.protobuf.Timestamp expires     = 3;
-    string                    refresh_url = 4;
+    google.protobuf.Timestamp   expires         = 3;
+    string                      refresh_url     = 4;
+    storage.AuthProvider        auth_provider   = 5;
+    storage.UserInfo            user_info       = 6;
+    repeated UserAttribute      user_attributes = 7;
+}
 
-    storage.AuthProvider   auth_provider   = 5;
-    storage.UserInfo       user_info       = 6;
-    repeated UserAttribute user_attributes = 7;
+// AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with
+// a Central access token. The M2M stands for machine to machine, as this is the intended use-case
+// for the config.
+message AuthMachineToMachineConfig {
+    // UUID of the config.
+    string id = 1;
+
+    // The type of the auth machine to machine config.
+    // Currently supports GitHub actions or any other generic OIDC provider to use for verifying and
+    // exchanging the token.
+    enum Type {
+        GITHUB_ACTIONS = 0;
+        GENERIC        = 1;
+    }
+    Type type          = 2;
+
+    // The expiration of the token annotated as a duration.
+    // Possible valid time units are: s, m, h.
+    // The maximum allowed expiration duration is 24h.
+    // As an example: 2h45m.
+    string token_expiration_duration = 3;
+
+   // Mappings map an identity token's claim values to a specific role within Central.
+    message Mapping {
+        // A key within the identity token's claim value to use.
+        string key            = 1;
+        // The value that should match to map the identity token to a specific role.
+        // This supports regular expressions of RE2 format, see more here:
+        // https://github.com/google/re2/wiki/Syntax.
+        string value          = 2;
+        // The role which should be issued when the key and value match for a particular identity token.
+        string role           = 3;
+    }
+    repeated Mapping mappings = 4;
+
+    // The issuer configuration for a generic OIDC issuer of the identity token.
+    // For the GitHub Action type, no additional configuration is required.
+    message GenericIssuer {
+        string issuer         = 1;
+    }
+    oneof IssuerConfig {
+        GenericIssuer generic = 5;
+    }
+}
+
+message ListAuthMachineToMachineConfigResponse {
+    repeated AuthMachineToMachineConfig configs = 1;
+}
+
+message GetAuthMachineToMachineConfigResponse {
+    AuthMachineToMachineConfig config = 1;
+}
+
+message AddAuthMachineToMachineConfigRequest {
+    AuthMachineToMachineConfig config = 1;
+}
+
+message AddAuthMachineToMachineConfigResponse {
+    AuthMachineToMachineConfig config = 1;
+}
+
+message UpdateAuthMachineToMachineConfigRequest {
+    AuthMachineToMachineConfig config = 1;
+}
+
+message UpdateAuthMachineToMachineConfigResponse {
+    AuthMachineToMachineConfig config = 1;
+}
+
+message ExchangeAuthMachineToMachineTokenRequest {
+    // Identity token that is supposed to be exchanged.
+    string id_token = 1;
+}
+
+message ExchangeAuthMachineToMachineTokenResponse {
+    // The exchanged access token.
+    string access_token = 1;
 }
 
 service AuthService {
+    // GetAuthStatus returns the status for the current client.
     rpc GetAuthStatus(Empty) returns (AuthStatus) {
         option (google.api.http) = {
             get: "/v1/auth/status"
+        };
+    }
+
+    // ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.
+    rpc ListAuthMachineToMachineConfigs(Empty) returns (ListAuthMachineToMachineConfigResponse) {
+        option (google.api.http) = {
+            get: "/v1/auth/m2m"
+        };
+    }
+
+    // GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.
+    rpc GetAuthMachineToMachineConfig(ResourceByID) returns (GetAuthMachineToMachineConfigResponse) {
+        option (google.api.http) = {
+            get: "/v1/auth/m2m/{id}"
+        };
+    }
+
+    // AddAuthMachineToMachineConfig creates a new auth machine to machine config.
+    rpc AddAuthMachineToMachineConfig(AddAuthMachineToMachineConfigRequest) returns (AddAuthMachineToMachineConfigResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/m2m"
+            body: "*"
+        };
+    }
+
+    // UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
+    rpc UpdateAuthMachineToMachineConfig(UpdateAuthMachineToMachineConfigRequest) returns (UpdateAuthMachineToMachineConfigResponse) {
+        option (google.api.http) = {
+            put: "/v1/auth/m2m"
+            body: "*"
+        };
+    }
+
+    // DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+    rpc DeleteAuthMachineToMachineConfig(ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/auth/m2m/{id}"
+        };
+    }
+
+    // ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on
+    // configured auth machine to machine configs.
+    rpc ExchangeAuthMachineToMachineToken(ExchangeAuthMachineToMachineTokenRequest) returns (ExchangeAuthMachineToMachineTokenResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/m2m/exchange"
+            body: "*"
         };
     }
 }

@@ -360,7 +360,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
-		authService.New(),
+		authService.Singleton(),
 		authProviderSvc.New(authProviderRegistry.Singleton(), groupDataStore.Singleton()),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
