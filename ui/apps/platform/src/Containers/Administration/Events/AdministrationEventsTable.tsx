@@ -23,10 +23,9 @@ import { SearchFilter } from 'types/search';
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
 import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
-import './AdministrationEventsTable.css';
 import AdministrationEventsEmptyState from './AdministrationEventsEmptyState';
 
-const colSpan = 6;
+const colSpan = 5;
 
 export type AdministrationEventsTableProps = {
     events: AdministrationEvent[];
@@ -40,13 +39,13 @@ function AdministrationEventsTable({
     searchFilter,
 }: AdministrationEventsTableProps): ReactElement {
     return (
-        <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
+        <TableComposable variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th>Domain</Th>
                     <Th modifier="nowrap">Resource type</Th>
                     <Th>Level</Th>
-                    <Th sort={getSortParams(lastOccurredAtField)}>Event last occurred at</Th>
+                    <Th sort={getSortParams(lastOccurredAtField)}>Last occurred</Th>
                     <Th sort={getSortParams(numOccurrencesField)}>Count</Th>
                 </Tr>
             </Thead>
@@ -81,12 +80,10 @@ function AdministrationEventsTable({
                                         text={getLevelText(level)}
                                     />
                                 </Td>
-                                <Td dataLabel="Event last occurred at" modifier="nowrap">
+                                <Td dataLabel="Last occurred" modifier="nowrap">
                                     {lastOccurredAt}
                                 </Td>
-                                <Td dataLabel="Count" className="pf-u-text-align-right">
-                                    {numOccurrences}
-                                </Td>
+                                <Td dataLabel="Count">{numOccurrences}</Td>
                             </Tr>
                             <Tr>
                                 <Td colSpan={colSpan}>

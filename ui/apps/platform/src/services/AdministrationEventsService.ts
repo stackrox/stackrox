@@ -203,7 +203,7 @@ function getDateTime(arg: SearchFilterValue): string | undefined {
 
 // 20yy-mm-ddThh:mm:ssZ (excludes some but not all invalid month-day combinations).
 const isDateTimeRegExp =
-    /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d:\d\d$/;
+    /^20\d\d-(?:0\d|1[012])-(?:0[123456789]|1\d|2\d|3[01])T(?:0\d|1\d|2[0123]):[012345]\d:\d\dZ$/;
 
 function isDateTime(arg: string) {
     return isDateTimeRegExp.test(arg);

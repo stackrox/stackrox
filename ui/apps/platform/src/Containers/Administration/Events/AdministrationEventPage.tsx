@@ -4,6 +4,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Divider,
     Flex,
     PageSection,
     Spinner,
@@ -50,33 +51,34 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
         <>
             <PageTitle title={`Administration events - ${h1}`} />
             <PageSection component="div" variant="light">
-                <Flex direction={{ default: 'column' }}>
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={administrationEventsBasePath}>
-                            Administration events
-                        </BreadcrumbItemLink>
-                        <BreadcrumbItem>{h1}</BreadcrumbItem>
-                    </Breadcrumb>
-                    <Title headingLevel="h1">{h1}</Title>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
+                    <Flex direction={{ default: 'column' }}>
+                        <Breadcrumb>
+                            <BreadcrumbItemLink to={administrationEventsBasePath}>
+                                Administration events
+                            </BreadcrumbItemLink>
+                            <BreadcrumbItem>{h1}</BreadcrumbItem>
+                        </Breadcrumb>
+                        <Divider component="div" />
+                        <Title headingLevel="h1">{h1}</Title>
+                    </Flex>
+                    {isLoading ? (
+                        <Bullseye>
+                            <Spinner isSVG />
+                        </Bullseye>
+                    ) : errorMessage ? (
+                        <Alert
+                            variant="warning"
+                            title="Unable to fetch administration event"
+                            component="div"
+                            isInline
+                        >
+                            {errorMessage}
+                        </Alert>
+                    ) : event ? (
+                        <AdministrationEventDescription event={event} />
+                    ) : null}
                 </Flex>
-            </PageSection>
-            <PageSection component="div" variant="light">
-                {isLoading ? (
-                    <Bullseye>
-                        <Spinner isSVG />
-                    </Bullseye>
-                ) : errorMessage ? (
-                    <Alert
-                        variant="warning"
-                        title="Unable to fetch administration event"
-                        component="div"
-                        isInline
-                    >
-                        {errorMessage}
-                    </Alert>
-                ) : event ? (
-                    <AdministrationEventDescription event={event} />
-                ) : null}
             </PageSection>
         </>
     );
