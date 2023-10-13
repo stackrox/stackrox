@@ -28,4 +28,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_191_to_m_192_vulnerability_requests_searchable_scope"
 	_ "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_report_config_migrations"
 	_ "github.com/stackrox/rox/migrator/migrations/m_193_to_m_194_policy_updates_for_4_3"
+	_ "github.com/stackrox/rox/migrator/migrations/m_194_to_m_195_vuln_request_global_scope"
 )
