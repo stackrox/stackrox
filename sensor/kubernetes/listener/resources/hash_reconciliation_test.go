@@ -122,8 +122,8 @@ func initStore() *InMemoryStoreProvider {
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
 	s.nodeStore.addOrUpdateNode(makeNode("42"))
 	s.nodeStore.addOrUpdateNode(makeNode("43"))
-	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "1", Namespace: "space"})
-	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "2", Namespace: "space"})
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "1"})
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "2"})
 	s.serviceAccountStore.Add(&storage.ServiceAccount{
 		Id:               "5",
 		Name:             "Acc1",
