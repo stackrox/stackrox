@@ -33,9 +33,9 @@ func (sas *ServiceAccountStore) ReconcileDelete(resType, resID string, _ uint64)
 }
 
 func newServiceAccountStore() *ServiceAccountStore {
-	return &ServiceAccountStore{
-		serviceAccountToPullSecrets: make(map[serviceAccountKey][]string),
-	}
+	sas := &ServiceAccountStore{}
+	sas.initMaps()
+	return sas
 }
 
 func key(namespace, name string) serviceAccountKey {
@@ -45,13 +45,17 @@ func key(namespace, name string) serviceAccountKey {
 	}
 }
 
+func (sas *ServiceAccountStore) initMaps() {
+	sas.serviceAccountToPullSecrets = make(map[serviceAccountKey][]string)
+	sas.serviceAccountIDs = set.NewStringSet()
+}
+
 // Cleanup deletes all entries from store
 func (sas *ServiceAccountStore) Cleanup() {
 	sas.lock.Lock()
 	defer sas.lock.Unlock()
 
-	sas.serviceAccountToPullSecrets = make(map[serviceAccountKey][]string)
-	sas.serviceAccountIDs = set.NewStringSet()
+	sas.initMaps()
 }
 
 // GetImagePullSecrets get the image pull secrets for a namespace and secret name pair
