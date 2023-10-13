@@ -9,17 +9,17 @@ import {
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { CveExceptionRequestType } from '../../types';
+import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
 import { DeferralValues, ScopeContext, formValuesToDeferralRequest } from './utils';
-import DeferralForm, { DeferralFormProps } from './DeferralForm';
 
 export type ExceptionRequestModalOptions = {
     type: CveExceptionRequestType;
-    cves: DeferralFormProps['cves'];
+    cves: ExceptionRequestFormProps['cves'];
 } | null;
 
 export type ExceptionRequestModalProps = {
     type: CveExceptionRequestType;
-    cves: DeferralFormProps['cves'];
+    cves: ExceptionRequestFormProps['cves'];
     scopeContext: ScopeContext;
     onExceptionRequestSuccess: (vulnerabilityException: BaseVulnerabilityException) => void;
     onClose: () => void;
@@ -67,7 +67,7 @@ function ExceptionRequestModal({
                     </Alert>
                 )}
                 {type === 'DEFERRAL' && (
-                    <DeferralForm
+                    <ExceptionRequestForm
                         cves={cves}
                         scopeContext={scopeContext}
                         onSubmit={onDeferralSubmit}
