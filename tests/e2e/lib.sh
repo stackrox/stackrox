@@ -223,19 +223,20 @@ deploy_central_via_operator() {
         customize_envVars+=$'\n      - name: MUTEX_WATCHDOG_TIMEOUT_SECS'
         customize_envVars+=$'\n        value: "15"'
     fi
-
-    # Add all ROX_ variables
-    export ROX_DEVELOPMENT_BUILD=true
-    export ROX_POSTGRES_DATASTORE=${ROX_POSTGRES_DATASTORE:-false}
-    export ROX_PROCESSES_LISTENING_ON_PORT=${ROX_PROCESSES_LISTENING_ON_PORT:-true}
-    export ROX_TELEMETRY_STORAGE_KEY_V1=${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}
-    for envvar in $(env | grep '^ROX_'); do
-        key=$(echo "$envvar" | awk -F '=' '{print $1}')
-        value=$(echo "$envvar" | awk -F '=' '{print $2}')
-
-        customize_envVars+=$'\n      - name: "'"${key}"'"'
-        customize_envVars+=$'\n        value: "'"${value}"'"'
-    done
+    customize_envVars+=$'\n      - name: ROX_BASELINE_GENERATION_DURATION'
+    customize_envVars+=$'\n        value: '"${ROX_BASELINE_GENERATION_DURATION}"
+    customize_envVars+=$'\n      - name: ROX_DEVELOPMENT_BUILD'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
+    customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
+    customize_envVars+=$'\n      - name: ROX_POSTGRES_DATASTORE'
+    customize_envVars+=$'\n        value: "'"${ROX_POSTGRES_DATASTORE:-false}"'"'
+    customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
+    customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
+    customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
+    customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
+    customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
+    customize_envVars+=$'\n        value: "15s"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
@@ -250,10 +251,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
     envsubst \
-      < "${CENTRAL_YAML_PATH}" > cr.yaml
-
-    cat cr.yaml
-    kubectl apply -n stackrox -f cr.yaml
+      < "${CENTRAL_YAML_PATH}" | kubectl apply -n stackrox -f -
 
     wait_for_object_to_appear stackrox deploy/central 300
 }
