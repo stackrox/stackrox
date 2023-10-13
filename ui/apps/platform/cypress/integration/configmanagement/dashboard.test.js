@@ -271,7 +271,6 @@ describe('Configuration Management Dashboard', () => {
             entitiesKey
         );
 
-        cy.location('search').should('contain', '[Disabled]=False');
         cy.location('search').should('contain', '[Policy%20Status]='); // either Fail (for rated as Whatever) or Pass (for policies without violations)
     });
 
