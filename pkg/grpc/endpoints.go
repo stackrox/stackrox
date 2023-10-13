@@ -24,19 +24,19 @@ import (
 )
 
 const (
-	defaultHttp2MaxConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
+	defaultHTTP2MaxConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
 )
 
 var (
-	maxHttp2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultHttp2MaxConcurrentStreams)
+	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultHTTP2MaxConcurrentStreams)
 )
 
-func maxHttp2ConcurrentStreams() uint32 {
-	if maxHttp2ConcurrentStreamsSetting.IntegerSetting() < 0 {
-		return defaultHttp2MaxConcurrentStreams
+func maxHTTP2ConcurrentStreams() uint32 {
+	if maxHTTP2ConcurrentStreamsSetting.IntegerSetting() < 0 {
+		return defaultHTTP2MaxConcurrentStreams
 	}
 
-	return uint32(maxHttp2ConcurrentStreamsSetting.IntegerSetting())
+	return uint32(maxHTTP2ConcurrentStreamsSetting.IntegerSetting())
 }
 
 // EndpointConfig configures an endpoint through which the server is exposed.
@@ -197,7 +197,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 		if !c.NoHTTP2 {
 			h2Srv := http2.Server{
-				MaxConcurrentStreams: maxHttp2ConcurrentStreams(),
+				MaxConcurrentStreams: maxHTTP2ConcurrentStreams(),
 			}
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
