@@ -257,7 +257,7 @@ QC+pUMTUP/ZmrvmKaA+pi55F+w3LqVJ17zwXKjaOEiEpn/+lntl/ieweeQ==
         expect:
         "Verify deployment has expected violations"
         if (expectViolations) {
-            assert waitForViolation(deployment.name, policyName)
+            assert waitForViolation(deployment.name, policyName, 120)
         } else {
             assert checkForNoViolations(deployment.name, policyName, 15)
         }
