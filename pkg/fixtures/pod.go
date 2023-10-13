@@ -113,7 +113,7 @@ func GetPod() *storage.Pod {
 	}
 }
 
-// GetPod returns a mock Pod
+// GetPod1 returns a mock Pod
 func GetPod1() *storage.Pod {
 	return &storage.Pod{
 		Id:           fixtureconsts.PodUID1,

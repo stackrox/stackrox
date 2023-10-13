@@ -30,13 +30,13 @@ func GetProcessIndicator() *storage.ProcessIndicator {
 	}
 }
 
-// GetProcessIndicator returns a mock ProcessIndicator.
+// GetProcessIndicator1 returns a mock ProcessIndicator.
 func GetProcessIndicator1() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
 		PodId:        fixtureconsts.PodName1,
-                PodUid:       fixtureconsts.PodUID1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
@@ -59,13 +59,13 @@ func GetProcessIndicator1() *storage.ProcessIndicator {
 	return pi
 }
 
-// GetProcessIndicator returns a mock ProcessIndicator.
+// GetProcessIndicator2 returns a mock ProcessIndicator.
 func GetProcessIndicator2() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
 		PodId:        fixtureconsts.PodName1,
-                PodUid:       fixtureconsts.PodUID1,
+		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
 			ContainerId:  "containerid",
 			Name:         "dnf",
@@ -88,13 +88,13 @@ func GetProcessIndicator2() *storage.ProcessIndicator {
 	return pi
 }
 
-// GetProcessIndicator returns a mock ProcessIndicator.
+// GetProcessIndicator3 returns a mock ProcessIndicator.
 func GetProcessIndicator3() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
 		PodId:        fixtureconsts.PodName2,
-                PodUid:       fixtureconsts.PodUID2,
+		PodUid:       fixtureconsts.PodUID2,
 		Signal: &storage.ProcessSignal{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
