@@ -46,7 +46,7 @@ import (
 const (
 	defaultMaxMsgSize               = 12 * 1024 * 1024
 	defaultMaxResponseMsgSize       = 256 * 1024 * 1024 // 256MB
-	defaultGrpcMaxConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
+	defaultMaxGrpcConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
 )
 
 func init() {
@@ -60,7 +60,7 @@ var (
 	// MaxMsgSizeSetting is the setting used for gRPC servers and clients to set maximum receive sizes.
 	MaxMsgSizeSetting               = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
 	maxResponseMsgSizeSetting       = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
-	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultGrpcMaxConcurrentStreams)
+	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultMaxGrpcConcurrentStreams)
 	enableRequestTracing            = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
@@ -69,8 +69,8 @@ func maxResponseMsgSize() int {
 }
 
 func maxGrpcConcurrentStreams() uint32 {
-	if maxGrpcConcurrentStreamsSetting.IntegerSetting() < 0 {
-		return defaultGrpcMaxConcurrentStreams
+	if maxGrpcConcurrentStreamsSetting.IntegerSetting() <= 0 {
+		return defaultMaxGrpcConcurrentStreams
 	}
 
 	return uint32(maxGrpcConcurrentStreamsSetting.IntegerSetting())

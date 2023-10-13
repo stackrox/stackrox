@@ -24,16 +24,16 @@ import (
 )
 
 const (
-	defaultHTTP2MaxConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
+	defaultMaxHTTP2ConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
 )
 
 var (
-	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultHTTP2MaxConcurrentStreams)
+	maxHTTP2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultMaxHTTP2ConcurrentStreams)
 )
 
 func maxHTTP2ConcurrentStreams() uint32 {
-	if maxHTTP2ConcurrentStreamsSetting.IntegerSetting() < 0 {
-		return defaultHTTP2MaxConcurrentStreams
+	if maxHTTP2ConcurrentStreamsSetting.IntegerSetting() <= 0 {
+		return defaultMaxHTTP2ConcurrentStreams
 	}
 
 	return uint32(maxHTTP2ConcurrentStreamsSetting.IntegerSetting())
