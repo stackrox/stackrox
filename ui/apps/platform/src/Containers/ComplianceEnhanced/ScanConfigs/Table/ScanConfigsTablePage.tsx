@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Alert, Divider, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
-import { complianceEnhancedScanConfigsPath } from 'routePaths';
+import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 import { getScanConfigs, ScanConfig } from 'services/ComplianceEnhancedService';
 import { SearchFilter } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -30,7 +30,7 @@ function ScanConfigsTablePage({
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
 
     function onClickCreate() {
-        history.push(`${complianceEnhancedScanConfigsPath}/?action=create`);
+        history.push(`${complianceEnhancedScanConfigsBasePath}/?action=create`);
     }
 
     function fetchScanSchedules(query: string) {

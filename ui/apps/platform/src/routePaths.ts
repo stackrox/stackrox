@@ -35,7 +35,8 @@ export const complianceEnhancedStatusPath = `${complianceEnhancedBasePath}/statu
 export const complianceEnhancedStatusClustersPath = `${complianceEnhancedStatusPath}/clusters/:id`;
 export const complianceEnhancedStatusProfilesPath = `${complianceEnhancedStatusPath}/profiles/:id`;
 export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
-export const complianceEnhancedScanConfigsPath = `${complianceEnhancedBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigsBasePath = `${complianceEnhancedBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigsPath = `${complianceEnhancedBasePath}/scan-configs/:scanConfigId`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
@@ -149,7 +150,6 @@ export type RouteKey =
     | 'clusters'
     | 'collections'
     | 'compliance'
-    | 'compliance-enhanced/scan-configs'
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
@@ -217,10 +217,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'Secret', // for Deployment and Namespace
             // 'ServiceAccount', // for Cluster and Deployment
         ]),
-    },
-    'compliance-enhanced/scan-configs': {
-        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
-        resourceAccessRequirements: everyResource(['Compliance']),
     },
     'compliance-enhanced': {
         featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),

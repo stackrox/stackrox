@@ -1,7 +1,7 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { Bullseye, Spinner } from '@patternfly/react-core';
 
-import { policiesBasePath } from 'routePaths';
+import { complianceEnhancedScanConfigsBasePath } from 'routePaths';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import { getScanConfig, ScanConfig } from 'services/ComplianceEnhancedService';
@@ -48,12 +48,14 @@ function ScanConfigPage({
                 })
                 .catch((error) => {
                     setScanConfig(initialScanConfig);
+                    // TODO: conditionally render specific or generic title string for actual status 404 or not
+                    // Something like hasStatusNotFound(error) seems worthwhile in responseErrorUtils.ts file.
                     setScanConfigError(
                         <NotFoundMessage
                             title="404: We couldn't find that page"
                             message={getAxiosErrorMessage(error)}
-                            actionText="Go to Policies"
-                            url={policiesBasePath}
+                            actionText="Go to Scheduling main page"
+                            url={complianceEnhancedScanConfigsBasePath}
                         />
                     );
                 })

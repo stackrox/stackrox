@@ -8,18 +8,18 @@ import { getQueryObject, BasePageAction } from 'utils/queryStringUtils';
 import ScanConfigsTablePage from './Table/ScanConfigsTablePage';
 import ScanConfigPage from './ScanConfigPage';
 
-function SchedulingPage() {
+function ScanConfigsPage() {
     /*
      * Examples of urls for ScanConfigPage:
-     * /main/policymanagement/policies/:policyId
-     * /main/policymanagement/policies/:policyId?action=edit
-     * /main/policymanagement/policies?action=create
+     * /main/compliance-enhanced/scan-configs/:policyId
+     * /main/compliance-enhanced/scan-configs/:policyId?action=edit
+     * /main/compliance-enhanced/scan-configs?action=create
      *
      * Examples of urls for PolicyTablePage:
-     * /main/policymanagement/policies
-     * /main/policymanagement/policies?s[Lifecycle Stage]=BUILD
-     * /main/policymanagement/policies?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
-     * /main/policymanagement/policies?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
+     * /main/compliance-enhanced/scan-configs
+     * /main/compliance-enhanced/scan-configs?s[Lifecycle Stage]=BUILD
+     * /main/compliance-enhanced/scan-configs?s[Lifecycle Stage]=BUILD&s[Lifecycle State]=DEPLOY
+     * /main/compliance-enhanced/scan-configs?s[Lifecycle State]=RUNTIME&s[Severity]=CRITICAL_SEVERITY
      */
     const location = useLocation();
     const { search } = location;
@@ -50,4 +50,4 @@ function SchedulingPage() {
     );
 }
 
-export default SchedulingPage;
+export default ScanConfigsPage;
