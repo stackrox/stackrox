@@ -29,7 +29,6 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	fmt.Printf("SHREWS -- package %q\n", pass.Pkg.Path())
 	root := strings.TrimPrefix(pass.Pkg.Path(), roxPrefix)
 
 	// If we are not the migrator, simply move along
