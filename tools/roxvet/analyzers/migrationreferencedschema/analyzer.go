@@ -13,7 +13,7 @@ import (
 const (
 	doc = `check for usages of ResolveReferences`
 
-	resolveReferences = `walker/schema.ResolveReferences`
+	resolveReferences = `ResolveReferences`
 )
 
 // Analyzer is the analyzer.
@@ -30,7 +30,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspectResult.Preorder(nodeFilter, func(n ast.Node) {
 		call := n.(*ast.CallExpr)
 		fn, ok := typeutil.Callee(pass.TypesInfo, call).(*types.Func)
-		if ok && fn.FullName() == resolveReferences {
+		if ok && fn.Name() == resolveReferences {
 			pass.Report(analysis.Diagnostic{
 				Pos:     n.Pos(),
 				Message: "Cannot resolve references in a migration as it walks the most recent proto.",
