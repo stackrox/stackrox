@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -21,6 +22,22 @@ import (
 	downgradingServer "golang.stackrox.io/grpc-http1/server"
 	"google.golang.org/grpc"
 )
+
+const (
+	defaultHttp2MaxConcurrentStreams = 100 // HTTP/2 spec recommendation for minimum value
+)
+
+var (
+	maxHttp2ConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_HTTP2_MAX_CONCURRENT_STREAMS", defaultHttp2MaxConcurrentStreams)
+)
+
+func maxHttp2ConcurrentStreams() uint32 {
+	if maxHttp2ConcurrentStreamsSetting.IntegerSetting() < 0 {
+		return defaultHttp2MaxConcurrentStreams
+	}
+
+	return uint32(maxHttp2ConcurrentStreamsSetting.IntegerSetting())
+}
 
 // EndpointConfig configures an endpoint through which the server is exposed.
 type EndpointConfig struct {
@@ -180,7 +197,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 		if !c.NoHTTP2 {
 			h2Srv := http2.Server{
-				MaxConcurrentStreams: 100,
+				MaxConcurrentStreams: maxHttp2ConcurrentStreams(),
 			}
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
 				log.Warnf("Failed to instantiate endpoint listening at %q for HTTP/2", c.ListenEndpoint)
