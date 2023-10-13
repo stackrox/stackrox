@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
-import { Alert, ListAlert } from 'Containers/Violations/types/violationTypes';
-
+import { Alert, ListAlert } from 'types/alert.proto';
+import { PolicySeverity } from 'types/policy.proto';
 import { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
@@ -11,36 +11,8 @@ import { Empty } from './types';
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
 
-// TODO import RestSearchOption and RestSortOption from searchUtils when it is TypeScript.
-export type RestSearchOption = {
-    label?: string;
-    type?: string; // for example, 'categoryOption'
-    value: string | string[];
-};
-
-// TODO import Severity from PoliciesService when it is TypeScript.
-export type Severity = 'LOW_SEVERITY' | 'MEDIUM_SEVERITY' | 'HIGH_SEVERITY' | 'CRITICAL_SEVERITY';
-
-export type AlertEventType = 'CREATED' | 'REMOVED';
-
-export type AlertEvent = {
-    time: string; // int64
-    type: AlertEventType;
-    id: string;
-};
-
-export type AlertEventsBySeverity = {
-    severity: Severity;
-    events: AlertEvent[];
-};
-
-export type ClusterAlert = {
-    cluster: string;
-    severities: AlertEventsBySeverity[];
-};
-
 export type AlertCountBySeverity = {
-    severity: Severity;
+    severity: PolicySeverity;
     count: string;
 };
 
