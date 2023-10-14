@@ -43,8 +43,9 @@ import (
 )
 
 const (
-	defaultMaxMsgSize         = 12 * 1024 * 1024
-	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
+	defaultMaxMsgSize               = 12 * 1024 * 1024
+	defaultMaxResponseMsgSize       = 256 * 1024 * 1024 // 256MB
+	defaultMaxGrpcConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
 )
 
 func init() {
@@ -55,9 +56,10 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
-	maxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
-	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
-	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
+	maxMsgSizeSetting               = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
+	maxResponseMsgSizeSetting       = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
+	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultMaxGrpcConcurrentStreams)
+	enableRequestTracing            = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
 func maxResponseMsgSize() int {
@@ -69,6 +71,14 @@ func maxResponseMsgSize() int {
 		log.Warnf("Invalid value %q for %s: %v", setting, maxResponseMsgSizeSetting.EnvVar(), err)
 	}
 	return defaultMaxResponseMsgSize
+}
+
+func maxGrpcConcurrentStreams() uint32 {
+	if maxGrpcConcurrentStreamsSetting.IntegerSetting() <= 0 {
+		return defaultMaxGrpcConcurrentStreams
+	}
+
+	return uint32(maxGrpcConcurrentStreamsSetting.IntegerSetting())
 }
 
 type server interface {
@@ -353,6 +363,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 			MinTime:             5 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxConcurrentStreams(maxGrpcConcurrentStreams()),
 	)
 
 	for _, service := range a.apiServices {
