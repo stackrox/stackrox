@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -17,6 +18,6 @@ type DataStore interface {
 }
 
 // New returns an instance of an auth machine to machine Datastore.
-func New(store store.Store) DataStore {
-	return &datastoreImpl{store: store}
+func New(store store.Store, set m2m.TokenExchangerSet) DataStore {
+	return &datastoreImpl{store: store, set: set}
 }

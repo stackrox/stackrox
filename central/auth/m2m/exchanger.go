@@ -1,0 +1,122 @@
+package m2m
+
+import (
+	"context"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/jwt"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+)
+
+var (
+	_ TokenExchanger = (*machineToMachineTokenExchanger)(nil)
+)
+
+// TokenExchanger will exchange a raw ID token to a Rox token (i.e. a Central access token).
+// This will be done based on a auth machine to machine config.
+type TokenExchanger interface {
+	ExchangeToken(ctx context.Context, rawIDToken string) (string, error)
+}
+
+type machineToMachineTokenExchanger struct {
+	config            *storage.AuthMachineToMachineConfig
+	verifier          tokenVerifier
+	provider          authproviders.Provider
+	issuer            tokens.Issuer
+	roleDS            roleDataStore.DataStore
+	roxClaimExtractor claimExtractor
+}
+
+// newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
+func newTokenExchanger(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore) (TokenExchanger, error) {
+	tokenTTL, err := time.ParseDuration(config.GetTokenExpirationDuration())
+	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
+	// data store).
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing token expiration duration")
+	}
+
+	verifier := tokenVerifierFromConfig(config)
+	provider := newProviderFromConfig(config, newRoleMapper(config, roleDS))
+	roxClaimExtractor := newClaimExtractorFromConfig(config)
+	issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(provider, tokens.WithTTL(tokenTTL))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating token issuer")
+	}
+
+	return &machineToMachineTokenExchanger{
+		config:            config,
+		issuer:            issuer,
+		verifier:          verifier,
+		provider:          provider,
+		roxClaimExtractor: roxClaimExtractor,
+		roleDS:            roleDS,
+	}, nil
+}
+
+func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawIDToken string) (string, error) {
+	idToken, err := m.verifier.VerifyIDToken(ctx, rawIDToken)
+	if err != nil {
+		return "", errox.NoCredentials.New("no valid ID token").CausedBy(err)
+	}
+
+	log.Debugf("Successfully validated ID token (sub=%q) for config %q", idToken.Subject, m.config.GetId())
+
+	var unstructured map[string]interface{}
+	if err := idToken.Claims(&unstructured); err != nil {
+		return "", errox.NoCredentials.New("extracting claims from ID token").CausedBy(err)
+	}
+
+	log.Debugf("Unstructured claims of the ID token(sub=%q): %+v", idToken.Subject, unstructured)
+
+	// We currently only support non-nested claims to be used within mappings.
+	claims := mapToStringClaims(unstructured)
+
+	log.Debugf("String claims of the ID token (sub=%q): %+v", idToken.Subject, claims)
+
+	// We attempt to resolve the roles for the claims here. In case no roles are given for the ID token, we reject it.
+	// Additionally, since the context will have no access, elevate it locally to fetch roles.
+	resolveRolesCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
+	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings())
+	if err != nil {
+		return "", errox.NoCredentials.New("resolving roles for id token").CausedBy(err)
+	}
+
+	roxClaims, err := m.roxClaimExtractor.ExtractRoxClaims(idToken)
+	if err != nil {
+		return "", errox.NoCredentials.New("creating claims for Central token").CausedBy(err)
+	}
+
+	log.Debugf("Rox claims for the ID token (sub=%q): %+v", idToken.Subject, roxClaims)
+
+	tokenInfo, err := m.issuer.Issue(ctx, roxClaims)
+	if err != nil {
+		return "", errox.NoCredentials.New("issuing Central token").CausedBy(err)
+	}
+
+	return tokenInfo.Token, nil
+}
+
+func mapToStringClaims(claims map[string]interface{}) map[string][]string {
+	stringClaims := make(map[string][]string, len(claims))
+	for key, value := range claims {
+		switch value := value.(type) {
+		case string:
+			stringClaims[key] = []string{value}
+		case []string:
+			stringClaims[key] = value
+		default:
+			log.Debugf("Dropping value %v for claim %s since its a nested claim or a non-string type %T", value, key, value)
+		}
+	}
+
+	return stringClaims
+}

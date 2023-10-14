@@ -12,11 +12,13 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/datastore"
+	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	userPkg "github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -68,7 +70,8 @@ var (
 )
 
 type serviceImpl struct {
-	authDataStore datastore.DataStore
+	authDataStore  datastore.DataStore
+	tokenExchanger m2m.TokenExchanger
 
 	v1.UnimplementedAuthServiceServer
 }
@@ -132,6 +135,10 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 }
 
 func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1.Empty) (*v1.ListAuthMachineToMachineConfigResponse, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
 	storageConfigs, err := s.authDataStore.ListAuthM2MConfigs(ctx)
 	if err != nil {
 		return nil, err
@@ -141,6 +148,10 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 }
 
 func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.GetAuthMachineToMachineConfigResponse, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
 	config, exists, err := s.authDataStore.GetAuthM2MConfig(ctx, id.GetId())
 	if err != nil {
 		return nil, err
@@ -152,6 +163,10 @@ func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.
 }
 
 func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
 	config := request.GetConfig()
 	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, true); err != nil {
@@ -167,6 +182,10 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 }
 
 func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
 	config := request.GetConfig()
 	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, false); err != nil {
@@ -181,6 +200,10 @@ func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, requ
 }
 
 func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
 	if err := s.authDataStore.RemoveAuthM2MConfig(ctx, id.GetId()); err != nil {
 		return nil, errox.InvalidArgs.
 			Newf("could not delete auth machine to machine config with id %q", id.GetId()).CausedBy(err)
@@ -188,8 +211,18 @@ func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) ExchangeAuthMachineToMachineToken(_ context.Context, _ *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
-	return nil, errox.NotImplemented.New("not yet implemented")
+func (s *serviceImpl) ExchangeAuthMachineToMachineToken(ctx context.Context,
+	req *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
+	if !env.AuthMachineToMachine.BooleanSetting() {
+		return nil, errox.InvariantViolation.New("auth machine to machine feature is not currently not " +
+			"enabled, set ROX_AUTH_MACHINE_TO_MACHINE=true to enable it")
+	}
+	accessToken, err := s.tokenExchanger.ExchangeToken(ctx, req.GetIdToken())
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ExchangeAuthMachineToMachineTokenResponse{AccessToken: accessToken}, nil
 }
 
 func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineToMachineConfig, skipIDCheck bool) error {
