@@ -112,7 +112,7 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	return result, nil
 }
 
-func (s *serviceImpl) ListAuthM2MConfigs(ctx context.Context, _ *v1.Empty) (*v1.ListAuthMachineToMachineConfigResponse, error) {
+func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1.Empty) (*v1.ListAuthMachineToMachineConfigResponse, error) {
 	storageConfigs, err := s.ds.ListAuthM2MConfigs(ctx)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (s *serviceImpl) ListAuthM2MConfigs(ctx context.Context, _ *v1.Empty) (*v1.
 	return &v1.ListAuthMachineToMachineConfigResponse{Configs: toV1Protos(storageConfigs)}, nil
 }
 
-func (s *serviceImpl) GetAuthM2MConfig(ctx context.Context, id *v1.ResourceByID) (*v1.GetAuthMachineToMachineConfigResponse, error) {
+func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.GetAuthMachineToMachineConfigResponse, error) {
 	config, exists, err := s.ds.GetAuthM2MConfig(ctx, id.GetId())
 	if !exists {
 		return nil, errox.NotFound.Newf("auth machine to machine config with id %q", id.GetId())
@@ -132,7 +132,7 @@ func (s *serviceImpl) GetAuthM2MConfig(ctx context.Context, id *v1.ResourceByID)
 	return &v1.GetAuthMachineToMachineConfigResponse{Config: toV1Proto(config)}, nil
 }
 
-func (s *serviceImpl) PostAuthM2MConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
+func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
 	storageConfig, err := s.ds.AddAuthM2MConfig(ctx, toStorageProto(request.GetConfig()))
 	if err != nil {
 		return nil, err
@@ -141,13 +141,22 @@ func (s *serviceImpl) PostAuthM2MConfig(ctx context.Context, request *v1.AddAuth
 	return &v1.AddAuthMachineToMachineConfigResponse{Config: toV1Proto(storageConfig)}, nil
 }
 
-func (s *serviceImpl) DeleteAuthM2MConfig(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.UpdateAuthMachineToMachineConfigResponse, error) {
+	storageConfig, err := s.ds.UpdateAuthM2MConfig(ctx, toStorageProto(request.GetConfig()))
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.UpdateAuthMachineToMachineConfigResponse{Config: toV1Proto(storageConfig)}, nil
+}
+
+func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	if err := s.ds.RemoveAuthM2MConfig(ctx, id.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) ExchangeAuthM2MToken(_ context.Context, _ *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
+func (s *serviceImpl) ExchangeAuthMachineToMachineToken(_ context.Context, _ *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
 	return nil, errox.InvariantViolation.New("not yet implemented")
 }

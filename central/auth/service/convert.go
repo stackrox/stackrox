@@ -14,29 +14,36 @@ func toV1Protos(configs []*storage.AuthMachineToMachineConfig) []*v1.AuthMachine
 }
 
 func toV1Proto(config *storage.AuthMachineToMachineConfig) *v1.AuthMachineToMachineConfig {
-	return &v1.AuthMachineToMachineConfig{
+	v1Proto := &v1.AuthMachineToMachineConfig{
 		Id:                      config.GetId(),
 		Type:                    toV1TypeEnum(config.GetType()),
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                toV1Mappings(config.GetMappings()),
-		IssuerConfig:            toV1IssuerConfig(config.GetGeneric()),
 	}
+
+	if config.GetIssuerConfig() != nil {
+		v1Proto.IssuerConfig = toV1IssuerConfig(config.GetGeneric())
+	}
+
+	return v1Proto
 }
 
 func toStorageProto(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineToMachineConfig {
-	return &storage.AuthMachineToMachineConfig{
+	storageProto := &storage.AuthMachineToMachineConfig{
 		Id:                      config.GetId(),
 		Type:                    toStorageTypeEnum(config.GetType()),
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                toStorageMappings(config.GetMappings()),
-		IssuerConfig:            toStorageIssuerConfig(config.GetGeneric()),
 	}
+
+	if config.GetIssuerConfig() != nil {
+		storageProto.IssuerConfig = toStorageIssuerConfig(config.GetGeneric())
+	}
+
+	return storageProto
 }
 
 func toV1IssuerConfig(config *storage.AuthMachineToMachineConfig_GenericIssuer) *v1.AuthMachineToMachineConfig_Generic {
-	if config == nil {
-		return nil
-	}
 	return &v1.AuthMachineToMachineConfig_Generic{Generic: &v1.AuthMachineToMachineConfig_GenericIssuer{
 		Issuer: config.GetIssuer(),
 	}}
@@ -59,9 +66,6 @@ func toV1Mappings(mappings []*storage.AuthMachineToMachineConfig_Mapping) []*v1.
 }
 
 func toStorageIssuerConfig(config *v1.AuthMachineToMachineConfig_GenericIssuer) *storage.AuthMachineToMachineConfig_Generic {
-	if config == nil {
-		return nil
-	}
 	return &storage.AuthMachineToMachineConfig_Generic{Generic: &storage.AuthMachineToMachineConfig_GenericIssuer{
 		Issuer: config.GetIssuer(),
 	}}
