@@ -203,6 +203,12 @@ func (s *Sensor) Start() {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
 		}
 		customRoutes = append(customRoutes, *route)
+
+		repoMappingRoute, err := s.newScannerRepoMappingRoute(s.centralEndpoint)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "Failed to create scanner v4 repository mapping data route"))
+		}
+		customRoutes = append(customRoutes, *repoMappingRoute)
 	}
 
 	// Create grpc server with custom routes

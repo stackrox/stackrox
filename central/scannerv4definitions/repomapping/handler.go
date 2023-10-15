@@ -112,6 +112,8 @@ func (h *httpHandler) fetchRepoMappingData(ctx context.Context) {
 
 			interval := nextInterval()
 			ticker.Reset(interval)
+		case <-h.updater.stopSig.Done():
+			return
 		}
 	}
 }
