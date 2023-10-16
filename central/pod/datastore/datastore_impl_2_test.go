@@ -111,6 +111,16 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s PodDatastoreSuite) TestRemovePod() {
 
+
+	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
+
+	indicator1 := fixtures.GetProcessIndicator1()
+	indicator2 := fixtures.GetProcessIndicator2()
+	indicator3 := fixtures.GetProcessIndicator3()
+	indicators := []*storage.ProcessIndicator{indicator1, indicator2, indicator3}
+
+	s.NoError(s.indicatorDataStore.AddProcessIndicators(s.processIndicatorCtx, indicators...))
+
 	openPlopObject1 := fixtures.GetOpenPlopObject1()
 	openPlopObject2 := fixtures.GetOpenPlopObject2()
 	openPlopObject3 := fixtures.GetOpenPlopObject3()
@@ -125,15 +135,6 @@ func (s PodDatastoreSuite) TestRemovePod() {
 	s.NoError(err)
 
 	s.Len(newPlops, 3)
-
-	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
-
-	indicator1 := fixtures.GetProcessIndicator1()
-	indicator2 := fixtures.GetProcessIndicator2()
-	indicator3 := fixtures.GetProcessIndicator3()
-	indicators := []*storage.ProcessIndicator{indicator1, indicator2, indicator3}
-
-	s.NoError(s.indicatorDataStore.AddProcessIndicators(s.processIndicatorCtx, indicators...))
 
 	s.NoError(s.datastore.RemovePod(s.ctx, fixtureconsts.PodUID1))
 

@@ -11,7 +11,8 @@ func GetProcessIndicator() *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
-                Namespace:    fixtureconsts.Namespace1,
+		Namespace:    fixtureconsts.Namespace1,
+		ClusterId:    fixtureconsts.Cluster1,
 		Signal: &storage.ProcessSignal{
 			ContainerId:  "containerid",
 			Name:         "apt-get",
@@ -36,7 +37,8 @@ func GetProcessIndicator1() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
-                Namespace:    fixtureconsts.Namespace1,
+		Namespace:    fixtureconsts.Namespace1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodId:        fixtureconsts.PodName1,
 		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
@@ -66,7 +68,8 @@ func GetProcessIndicator2() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
-                Namespace:    fixtureconsts.Namespace1,
+		Namespace:    fixtureconsts.Namespace1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodId:        fixtureconsts.PodName1,
 		PodUid:       fixtureconsts.PodUID1,
 		Signal: &storage.ProcessSignal{
@@ -96,7 +99,8 @@ func GetProcessIndicator3() *storage.ProcessIndicator {
 	pi := &storage.ProcessIndicator{
 		Id:           "b3523d84-ac1a-4daa-a908-62d196c5a741",
 		DeploymentId: GetDeployment().GetId(),
-                Namespace:    fixtureconsts.Namespace1,
+		Namespace:    fixtureconsts.Namespace1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodId:        fixtureconsts.PodName2,
 		PodUid:       fixtureconsts.PodUID2,
 		Signal: &storage.ProcessSignal{
