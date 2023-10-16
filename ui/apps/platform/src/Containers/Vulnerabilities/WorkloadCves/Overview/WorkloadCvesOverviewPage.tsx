@@ -58,12 +58,14 @@ function WorkloadCvesOverviewPage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey] = useURLStringUnion('entityTab', entityTabValues);
 
-    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 }, loading } =
-        useQuery(entityTypeCountsQuery, {
+    const { data: countsData = { imageCount: 0, imageCVECount: 0, deploymentCount: 0 } } = useQuery(
+        entityTypeCountsQuery,
+        {
             variables: {
                 query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             },
-        });
+        }
+    );
 
     const pagination = useURLPagination(20);
 
@@ -131,17 +133,14 @@ function WorkloadCvesOverviewPage() {
                 )}
                 <PageSection isCenterAligned>
                     <Card>
-                        <CardBody
-                            role="region"
-                            aria-live="polite"
-                            aria-busy={loading ? 'true' : 'false'}
-                        >
+                        <CardBody>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
                                     defaultFilters={emptyStorage.preferences.defaultFilters}
                                     countsData={countsData}
                                     pagination={pagination}
                                     vulnerabilityState={currentVulnerabilityState}
+                                    isUnifiedDeferralsEnabled={isUnifiedDeferralsEnabled}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (

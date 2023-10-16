@@ -43,3 +43,5 @@ export function isValidEntityTab(value: unknown): value is EntityTab {
 }
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
+
+export type CveExceptionRequestType = 'DEFERRAL' | 'FALSE_POSITIVE';

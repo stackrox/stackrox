@@ -72,7 +72,12 @@ function DeploymentsTableContainer({
                 <TableErrorComponent error={error} message="Adjust your filters and try again" />
             )}
             {!error && tableData && (
-                <div className="workload-cves-table-container">
+                <div
+                    className="workload-cves-table-container"
+                    role="region"
+                    aria-live="polite"
+                    aria-busy={loading ? 'true' : 'false'}
+                >
                     <DeploymentsTable
                         deployments={tableData.deployments}
                         getSortParams={getSortParams}
