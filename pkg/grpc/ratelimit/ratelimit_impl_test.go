@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,28 +60,22 @@ func TestDecreaseLimit(t *testing.T) {
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
 }
 
-func BenchmarkNoLimit(b *testing.B) {
-	l := NewRateLimiter(0)
-	for i := 0; i < b.N; i++ {
-		l.Limit()
-	}
-}
-
-func BenchmarkWithLimitHit(b *testing.B) {
-	limit := b.N / 10
-	if limit < 1 {
-		limit = 1
+func BenchmarkRateLimiter(b *testing.B) {
+	tests := []struct {
+		name      string
+		maxPerSec int
+	}{
+		{"NoLimit", 0},
+		{"WithLimitHit", 1},
+		{"WithLimitNoHit", math.MaxInt - 1},
 	}
 
-	l := NewRateLimiter(limit)
-	for i := 0; i < b.N; i++ {
-		l.Limit()
-	}
-}
-
-func BenchmarkWithLimitNoHit(b *testing.B) {
-	l := NewRateLimiter(b.N + 1000)
-	for i := 0; i < b.N; i++ {
-		l.Limit()
+	for _, tt := range tests {
+		b.Run(tt.name, func(b *testing.B) {
+			l := NewRateLimiter(tt.maxPerSec)
+			for i := 0; i < b.N; i++ {
+				l.Limit()
+			}
+		})
 	}
 }
