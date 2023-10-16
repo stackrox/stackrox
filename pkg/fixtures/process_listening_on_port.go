@@ -16,7 +16,7 @@ func GetOpenPlopObject1() *storage.ProcessListeningOnPortFromSensor {
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
+			ContainerName:       "containername",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
@@ -35,7 +35,7 @@ func GetClosePlopObject1() *storage.ProcessListeningOnPortFromSensor {
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
+			ContainerName:       "containername",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
@@ -54,7 +54,7 @@ func GetOpenPlopObject2() *storage.ProcessListeningOnPortFromSensor {
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
+			ContainerName:       "containername",
 			ProcessName:         "test_process2",
 			ProcessArgs:         "test_arguments2",
 			ProcessExecFilePath: "test_path2",
@@ -73,7 +73,7 @@ func GetOpenPlopObject3() *storage.ProcessListeningOnPortFromSensor {
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
 			PodId:               fixtureconsts.PodName2,
-			ContainerName:       "containerid",
+			ContainerName:       "containername",
 			ProcessName:         "apt-get",
 			ProcessArgs:         "install nmap",
 			ProcessExecFilePath: "bin",

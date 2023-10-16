@@ -146,20 +146,20 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 	s.Len(newPlops, 1)
 
 	s.Equal(*newPlops[0], storage.ProcessListeningOnPort{
-		ContainerName: "test_container1",
 		PodId:         fixtureconsts.PodName2,
 		PodUid:        fixtureconsts.PodUID2,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     fixtureconsts.Namespace1,
+		ContainerName: "containername",
 		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 			Port:     80,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		Signal: &storage.ProcessSignal{
-			Name:         "test_process2",
-			Args:         "test_arguments2",
-			ExecFilePath: "test_path2",
+			Name:         "apt-get",
+			Args:         "install nmap",
+			ExecFilePath: "bin",
 		},
 	})
 
