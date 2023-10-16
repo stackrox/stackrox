@@ -9,8 +9,8 @@ import (
 )
 
 // GetOpenPlopObject1 Return an open plop object
-func GetOpenPlopObject1() storage.ProcessListeningOnPortFromSensor {
-	return storage.ProcessListeningOnPortFromSensor{
+func GetOpenPlopObject1() *storage.ProcessListeningOnPortFromSensor {
+	return &storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -22,13 +22,14 @@ func GetOpenPlopObject1() storage.ProcessListeningOnPortFromSensor {
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodUid:       fixtureconsts.PodUID1,
 	}
 }
 
 // GetClosePlopObject1 Return an open plop object
-func GetClosePlopObject1() storage.ProcessListeningOnPortFromSensor {
-	return storage.ProcessListeningOnPortFromSensor{
+func GetClosePlopObject1() *storage.ProcessListeningOnPortFromSensor {
+	return &storage.ProcessListeningOnPortFromSensor{
 		Port:           1234,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
@@ -40,13 +41,14 @@ func GetClosePlopObject1() storage.ProcessListeningOnPortFromSensor {
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodUid:       fixtureconsts.PodUID1,
 	}
 }
 
 // GetOpenPlopObject2 Return an open plop object
-func GetOpenPlopObject2() storage.ProcessListeningOnPortFromSensor {
-	return storage.ProcessListeningOnPortFromSensor{
+func GetOpenPlopObject2() *storage.ProcessListeningOnPortFromSensor {
+	return &storage.ProcessListeningOnPortFromSensor{
 		Port:           80,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -58,13 +60,14 @@ func GetOpenPlopObject2() storage.ProcessListeningOnPortFromSensor {
 			ProcessExecFilePath: "test_path2",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodUid:       fixtureconsts.PodUID1,
 	}
 }
 
 // GetOpenPlopObject3 Return an open plop object
-func GetOpenPlopObject3() storage.ProcessListeningOnPortFromSensor {
-	return storage.ProcessListeningOnPortFromSensor{
+func GetOpenPlopObject3() *storage.ProcessListeningOnPortFromSensor {
+	return &storage.ProcessListeningOnPortFromSensor{
 		Port:           80,
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
@@ -76,6 +79,7 @@ func GetOpenPlopObject3() storage.ProcessListeningOnPortFromSensor {
 			ProcessExecFilePath: "test_path2",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
 		PodUid:       fixtureconsts.PodUID2,
 	}
 }

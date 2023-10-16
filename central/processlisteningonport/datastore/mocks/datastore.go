@@ -83,7 +83,7 @@ func (m *MockDataStore) RemovePlopsByPod(ctx context.Context, id string) error {
 }
 
 // RemovePlopsByPod indicates an expected call of RemovePlopsByPod.
-func (mr *MockDataStoreMockRecorder) RemovePlopsByPod(ctx, id interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemovePlopsByPod(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePlopsByPod", reflect.TypeOf((*MockDataStore)(nil).RemovePlopsByPod), ctx, id)
 }

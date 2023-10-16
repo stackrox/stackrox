@@ -115,7 +115,7 @@ func (s PodDatastoreSuite) TestRemovePod() {
 	openPlopObject2 := fixtures.GetOpenPlopObject2()
 	openPlopObject3 := fixtures.GetOpenPlopObject3()
 
-	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject1, &openPlopObject2, &openPlopObject3}
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject1, openPlopObject2, openPlopObject3}
 	s.NoError(s.datastore.plops.AddProcessListeningOnPort(
 		s.processIndicatorCtx, plopObjects...))
 
