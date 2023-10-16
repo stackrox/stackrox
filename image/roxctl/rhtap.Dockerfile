@@ -38,21 +38,21 @@ RUN microdnf upgrade -y --nobest && \
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
-    name="rhacs-roxctl-rhel8" \
-    maintainer="Red Hat, Inc." \
-    source-location="https://github.com/stackrox/stackrox" \
-    # These labels are added to override the base image values.
-    description="The CLI for ACS" \
-    io.k8s.description="The CLI for ACS" \
+    com.redhat.license_terms="https://www.redhat.com/agreements" \
+    description="The CLI for RHACS" \
+    io.k8s.description="The CLI for RHACS" \
     io.k8s.display-name="roxctl" \
     io.openshift.tags="rhacs,roxctl,stackrox" \
-    summary="The CLI for ACS" \
-    # If we don't reset the following labels, we inherit values from the base container which will be incorrect.
-    # At the same time, we can't configure correct values yet. E.g. see the following thread about version:
+    maintainer="Red Hat, Inc." \
+    name="rhacs-roxctl-rhel8" \
+    source-location="https://github.com/stackrox/stackrox" \
+    summary="The CLI for RHACS" \
+    url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
+    # We must set version label to prevent inheriting value set in the base stage.
+    # It's not possible to inject dynamic value at the moment, see the following thread
     # https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1697127151309229
-    com.redhat.license_terms="" \
-    url="" \
-    version=""
+    # TODO: configure version when it becomes possible.
+    version="0.0.1-todo"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
