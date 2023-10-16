@@ -85,22 +85,24 @@ class SummaryTest extends BaseSpecification {
                 diff = true
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
-            if (stackroxNode.annotationsMap != orchestratorNode.annotations) {
+            Map<String, String> stackroxAnnotationsMap = new HashMap<>(stackroxNode.getAnnotationsMap());
+            if (stackroxAnnotationsMap != orchestratorNode.annotations) {
                 Map<String, String> orchestratorTruncated = orchestratorNode.annotations.clone()
                 orchestratorTruncated.keySet().each { name ->
                     if (orchestratorTruncated[name].length() > Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH) {
                         // Assert that the stackrox node has an entry for that annotation
-                        assert stackroxNode.annotationsMap[name].length() > 0
+                        assert stackroxAnnotationsMap[name].length() > 0
 
+                        log.info "Removing node label ${name}"
                         // Remove the annotation because the logic for truncation tries to maintain words and
                         // is more complicated than we'd like to test
-                        stackroxNode.annotationsMap.remove(name)
+                        stackroxAnnotationsMap.remove(name)
                         orchestratorTruncated.remove(name)
                     }
                 }
-                if (stackroxNode.annotationsMap != orchestratorTruncated) {
+                if (stackroxAnnotationsMap != orchestratorTruncated) {
                     log.info "There is a node annotation difference - StackRox -v- Orchestrator:"
-                    log.info javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
+                    log.info javers.compare(stackroxAnnotationsMap, orchestratorTruncated).prettyPrint()
                     diff = true
                 }
             }
