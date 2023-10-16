@@ -35,7 +35,6 @@ import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
 
-@Tag("PZDebug")
 @Tag("PZ")
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
