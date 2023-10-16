@@ -771,7 +771,7 @@ func initializeFieldMetadata() FieldMetadata {
 		fieldnames.KubeResourceName,
 		querybuilders.ForFieldLabel(augmentedobjs.KubernetesResourceNameCustomTag), nil,
 		func(*validateConfiguration) *regexp.Regexp {
-			return kubernetesNameRegex
+			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_AUDIT_LOG_EVENT},
 		[]RuntimeFieldType{AuditLogEvent},
