@@ -110,7 +110,6 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 // Add plops, process indicators, pods. Delete one of the pods.
 // Check that the correct pod, process indicators, and plops are deleted.
 func (s PodDatastoreSuite) TestRemovePod() {
-	testNamespace := "test_namespace"
 
 	openPlopObject1 := fixtures.GetOpenPlopObject1()
 	openPlopObject2 := fixtures.GetOpenPlopObject2()
@@ -152,7 +151,7 @@ func (s PodDatastoreSuite) TestRemovePod() {
 		PodUid:        fixtureconsts.PodUID2,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
-		Namespace:     testNamespace,
+		Namespace:     fixtureconsts.Namespace1,
 		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 			Port:     80,
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -168,6 +167,6 @@ func (s PodDatastoreSuite) TestRemovePod() {
 	indicatorsFromDB := s.getProcessIndicatorsFromDB()
 	s.Len(indicatorsFromDB, 1)
 
-	s.Equal(*indicatorsFromDB[0], indicator1)
+	s.Equal(*indicatorsFromDB[0], indicator3)
 
 }
