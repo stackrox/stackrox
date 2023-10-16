@@ -58,14 +58,14 @@ export type ClusterScanStatus = {
 };
 
 export type ScanConfig = {
-    id: string;
+    id?: string;
     scanName: string;
     clusters: string[];
     scanConfig: BaseComplianceScanConfigurationSettings;
-    clusterStatus: ClusterScanStatus[];
-    createdTime: string; // ISO 8601 date string
-    lastUpdatedTime: string; // ISO 8601 date string
-    modifiedBy: SlimUser;
+    clusterStatus?: ClusterScanStatus[];
+    createdTime?: string; // ISO 8601 date string
+    lastUpdatedTime?: string; // ISO 8601 date string
+    modifiedBy?: SlimUser;
 };
 
 interface ComplianceScanStatsShim {
