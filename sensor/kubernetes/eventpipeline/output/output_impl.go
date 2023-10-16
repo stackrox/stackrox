@@ -56,7 +56,6 @@ func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
 // runOutputQueue reads messages from the inner queue, forwards them to the forwardQueue channel
 // and sends the deployments (if needed) to Detector
 func (q *outputQueueImpl) runOutputQueue() {
-	close(q.forwardQueue)
 	for {
 		select {
 		case <-q.stopSig.Done():
