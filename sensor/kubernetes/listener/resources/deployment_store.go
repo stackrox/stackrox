@@ -19,6 +19,14 @@ type DeploymentStore struct {
 	deploymentIDs map[string]map[string]struct{}
 	// Stores deployments by IDs.
 	deployments map[string]*deploymentWrap
+
+	// deploymentSnapshots
+	deploymentSnapshots map[string]snapshotEntry
+}
+
+type snapshotEntry struct {
+	dependenciesHash uint64
+	builtDeployment  *storage.Deployment
 }
 
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
@@ -41,8 +49,9 @@ func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (str
 // newDeploymentStore creates and returns a new deployment store.
 func newDeploymentStore() *DeploymentStore {
 	return &DeploymentStore{
-		deploymentIDs: make(map[string]map[string]struct{}),
-		deployments:   make(map[string]*deploymentWrap),
+		deploymentIDs:       make(map[string]map[string]struct{}),
+		deployments:         make(map[string]*deploymentWrap),
+		deploymentSnapshots: make(map[string]snapshotEntry),
 	}
 }
 
@@ -270,11 +279,23 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 		return nil, errors.Errorf("deployment with ID %s doesn't exist in the internal deployment store", id)
 	}
 
+	snapshot, exists := ds.deploymentSnapshots[wrap.GetId()]
+
+	dependencyHash, err := dependencies.GetHash()
+	if err != nil {
+		return nil, errors.Wrap(err, "hashing deployment dependencies")
+	}
+
+	if wrap.isBuilt {
+		// check if dependencies changed, otherwise return an existing deployment object without needing to clone
+		// or check for hashes.
+		if exists && dependencyHash == snapshot.dependenciesHash {
+			return snapshot.builtDeployment, nil
+		}
+	}
+
 	wrap.updateServiceAccountPermissionLevel(dependencies.PermissionLevel)
 	wrap.updatePortExposureSlice(dependencies.Exposures)
-	if err := wrap.updateHash(); err != nil {
-		return nil, err
-	}
 
 	// These properties are set when initially parsing a deployment/pod event as a deploymentWrap. Since secrets could
 	// influence its values, we need to call this again with the same pods from the wrap. Inside this function we call
@@ -282,7 +303,18 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	// updated, the value from this properties might need to be updated.
 	wrap.populateDataFromPods(wrap.pods...)
 
+	if err := wrap.updateHash(); err != nil {
+		return nil, err
+	}
+
 	wrap.isBuilt = true
+
+	// If it's the first time we are building, or the snapshot is different, then update and clone the deployment
 	ds.addOrUpdateDeploymentNoLock(wrap)
-	return wrap.GetDeployment().Clone(), nil
+	clone := wrap.GetDeployment().Clone()
+	ds.deploymentSnapshots[clone.GetId()] = snapshotEntry{
+		dependenciesHash: dependencyHash,
+		builtDeployment:  clone,
+	}
+	return clone, nil
 }

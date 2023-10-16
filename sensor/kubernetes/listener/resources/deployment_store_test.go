@@ -113,6 +113,106 @@ func (s *deploymentStoreSuite) Test_FindDeploymentIDsWithServiceAccount() {
 	}
 }
 
+func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
+	defaultExposure := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+		{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+				Level:       storage.PortConfig_EXTERNAL,
+				ServiceName: "test.service",
+				ServicePort: 5432,
+			}},
+		},
+		{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+				Level:       storage.PortConfig_HOST,
+				ServiceName: "test2.service",
+				ServicePort: 2345,
+				ExternalIps: []string{"a.com", "b.com"},
+			}},
+		},
+	}
+
+	defaultExposureUnordered := []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+		{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+				Level:       storage.PortConfig_HOST,
+				ServiceName: "test2.service",
+				ServicePort: 2345,
+				ExternalIps: []string{"b.com", "a.com"},
+			}},
+		},
+		{
+			service.PortRefOf(stubService()): []*storage.PortConfig_ExposureInfo{&storage.PortConfig_ExposureInfo{
+				Level:       storage.PortConfig_EXTERNAL,
+				ServiceName: "test.service",
+				ServicePort: 5432,
+			}},
+		},
+	}
+
+	dependenciesX := store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+		Exposures:       defaultExposure,
+	}
+
+	dependenciesXUnordered := store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+		Exposures:       defaultExposureUnordered,
+	}
+
+	dependenciesY := store.Dependencies{
+		PermissionLevel: storage.PermissionLevel_NONE,
+		Exposures:       defaultExposure,
+	}
+
+	testCases := map[string]struct {
+		orderedDependencies        []store.Dependencies
+		orderedExpectedPointerSame []bool
+	}{
+		"No dependencies changed returns cached deployment": {
+			orderedDependencies:        []store.Dependencies{dependenciesX, dependenciesX},
+			orderedExpectedPointerSame: []bool{true},
+		},
+		"Dependency changed returns a new deployment object": {
+			orderedDependencies:        []store.Dependencies{dependenciesX, dependenciesY},
+			orderedExpectedPointerSame: []bool{false},
+		},
+		"Multiple events with only one dependency change doesn't cause multiple clones": {
+			orderedDependencies:        []store.Dependencies{dependenciesX, dependenciesY, dependenciesY, dependenciesY},
+			orderedExpectedPointerSame: []bool{false, true, true}, // should build new object once and then return it for subsequent calls
+		},
+		"Dependencies with mixed ordered in fields should not cause new object to be built": {
+			orderedDependencies:        []store.Dependencies{dependenciesX, dependenciesXUnordered},
+			orderedExpectedPointerSame: []bool{true},
+		},
+	}
+
+	for name, testCase := range testCases {
+		s.Run(name, func() {
+			uid := uuid.NewV4().String()
+			wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))
+			s.deploymentStore.addOrUpdateDeployment(wrap)
+
+			objs := make([]*storage.Deployment, len(testCase.orderedDependencies))
+			var err error
+			for i := 0; i < len(testCase.orderedDependencies); i++ {
+				objs[i], err = s.deploymentStore.BuildDeploymentWithDependencies(uid, testCase.orderedDependencies[i])
+				s.Require().NoError(err)
+			}
+
+			for i, exp := range testCase.orderedExpectedPointerSame {
+				if exp {
+					s.Assert().Samef(objs[i], objs[i+1], "Comparing objects %d and %d failed", i, i+1)
+				} else {
+					s.Assert().NotSamef(objs[i], objs[i+1], "Comparing objects %d and %d failed", i, i+1)
+				}
+			}
+
+			s.deploymentStore.Cleanup()
+		})
+	}
+}
+
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 	uid := uuid.NewV4().String()
 	wrap := s.createDeploymentWrap(makeDeploymentObject("test-deployment", "test-ns", types.UID(uid)))

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/service"
 )
@@ -10,4 +11,12 @@ import (
 type Dependencies struct {
 	PermissionLevel storage.PermissionLevel
 	Exposures       []map[service.PortRef][]*storage.PortConfig_ExposureInfo
+}
+
+func (d *Dependencies) GetHash() (uint64, error) {
+	return hashstructure.Hash(d, hashstructure.FormatV2, &hashstructure.HashOptions{
+		ZeroNil:         true,
+		IgnoreZeroValue: true,
+		SlicesAsSets:    true,
+	})
 }

@@ -473,18 +473,22 @@ func (w *deploymentWrap) updatePortExposure(portExposure map[service.PortRef][]*
 	w.updatePortExposureUncheckedNoLock(portExposure)
 }
 
-func (w *deploymentWrap) updatePortExposureSlice(portExposures []map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+func (w *deploymentWrap) updatePortExposureSlice(portExposures []map[service.PortRef][]*storage.PortConfig_ExposureInfo) bool {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
 	w.resetPortExposureNoLock()
 
+	changed := false
 	for _, exposureInfo := range portExposures {
-		w.updatePortExposureUncheckedNoLock(exposureInfo)
+		if w.updatePortExposureUncheckedNoLock(exposureInfo) {
+			changed = true
+		}
 	}
+	return changed
 }
 
-func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[service.PortRef][]*storage.PortConfig_ExposureInfo) {
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[service.PortRef][]*storage.PortConfig_ExposureInfo) bool {
 	for ref, exposureInfos := range portExposure {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
@@ -517,13 +521,18 @@ func (w *deploymentWrap) updatePortExposureUncheckedNoLock(portExposure map[serv
 	sort.Slice(w.Ports, func(i, j int) bool {
 		return w.Ports[i].ContainerPort < w.Ports[j].ContainerPort
 	})
+	return false
 }
 
-func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel storage.PermissionLevel) {
+func (w *deploymentWrap) updateServiceAccountPermissionLevel(permissionLevel storage.PermissionLevel) bool {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	w.ServiceAccountPermissionLevel = permissionLevel
+	if w.ServiceAccountPermissionLevel != permissionLevel {
+		w.ServiceAccountPermissionLevel = permissionLevel
+		return true
+	}
+	return false
 }
 
 // Clone clones a deploymentWrap. Note: `original` field is not cloned.
