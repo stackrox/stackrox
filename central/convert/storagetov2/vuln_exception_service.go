@@ -46,47 +46,6 @@ func VulnerabilityException(inp *storage.VulnerabilityRequest) *v2.Vulnerability
 	return out
 }
 
-func convertUsers(users []*storage.SlimUser) []*v2.SlimUser {
-	if len(users) == 0 {
-		return nil
-	}
-
-	var ret []*v2.SlimUser
-	for _, user := range users {
-		if user == nil {
-			continue
-		}
-		ret = append(ret, convertUser(user))
-	}
-
-	return ret
-}
-
-func convertUser(user *storage.SlimUser) *v2.SlimUser {
-	if user == nil {
-		return nil
-	}
-
-	return &v2.SlimUser{
-		Id:   user.GetId(),
-		Name: user.GetName(),
-	}
-}
-
-func convertVulnerabilityState(state storage.VulnerabilityState) v2.VulnerabilityState {
-	switch state {
-	case storage.VulnerabilityState_OBSERVED:
-		return v2.VulnerabilityState_OBSERVED
-	case storage.VulnerabilityState_DEFERRED:
-		return v2.VulnerabilityState_DEFERRED
-	case storage.VulnerabilityState_FALSE_POSITIVE:
-		return v2.VulnerabilityState_FALSE_POSITIVE
-	default:
-		utils.Should(errors.Errorf("unhandled vulnerability state encountered %s", state))
-		return v2.VulnerabilityState_OBSERVED
-	}
-}
-
 func convertRequestStatus(status storage.RequestStatus) v2.ExceptionStatus {
 	switch status {
 	case storage.RequestStatus_PENDING:
