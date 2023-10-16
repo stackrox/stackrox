@@ -109,8 +109,7 @@ func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndic
 
 // Add plops, process indicators, pods. Delete one of the pods.
 // Check that the correct pod, process indicators, and plops are deleted.
-func (s PodDatastoreSuite) TestRemovePod() {
-
+func (s *PodDatastoreSuite) TestRemovePod() {
 
 	s.NoError(s.datastore.UpsertPod(s.ctx, fixtures.GetPod1()))
 
@@ -168,6 +167,6 @@ func (s PodDatastoreSuite) TestRemovePod() {
 	indicatorsFromDB := s.getProcessIndicatorsFromDB()
 	s.Len(indicatorsFromDB, 1)
 
-	s.Equal(*indicatorsFromDB[0], indicator3)
+	s.Equal(*indicatorsFromDB[0], *indicator3)
 
 }
