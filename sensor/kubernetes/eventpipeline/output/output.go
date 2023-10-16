@@ -1,8 +1,7 @@
 package output
 
 import (
-	"sync/atomic"
-
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -16,7 +15,7 @@ func New(detector detector.Detector, queueSize int) component.OutputQueue {
 		detector:     detector,
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
-		stopped:      &atomic.Bool{},
+		stopSig:      concurrency.NewSignal(),
 	}
 	return outputQueue
 }
