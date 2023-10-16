@@ -36,13 +36,13 @@ import spock.lang.Unroll
 import spock.lang.IgnoreIf
 
 @Tag("PZDebug")
+@Tag("PZ")
 class ImageScanningTest extends BaseSpecification {
     static final private String TEST_NAMESPACE = "qa-image-scanning-test"
     private final static String CLONED_POLICY_SUFFIX = "(${TEST_NAMESPACE})"
 
     static final private String UBI8_0_IMAGE = "registry.access.redhat.com/ubi8:8.0-208"
-    static final private String RHEL7_IMAGE =
-            "registry.redhat.io/rhel7-minimal@sha256:fb1f7f9f331eb01808224e003552dcfe03102694b4cc08a9f9e821031312f1b4"
+    static final private String RHEL7_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:rhel7-minimal-7.5-422"
     static final private String QUAY_IMAGE_WITH_CLAIR_SCAN_DATA = "quay.io/rhacs-eng/qa:struts-app"
     static final private String GCR_IMAGE   = "us.gcr.io/stackrox-ci/qa-multi-arch/registry-image:0.2"
     static final private String NGINX_IMAGE = "quay.io/rhacs-eng/qa:nginx-1-12-1"
