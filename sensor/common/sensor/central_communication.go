@@ -1,17 +1,17 @@
 package sensor
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"google.golang.org/grpc"
 )
 
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
 type CentralCommunication interface {
-	Start(centralConn grpc.ClientConnInterface, centralReachable *concurrency.Flag, handler config.Handler, detector detector.Detector)
+	Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, handler config.Handler, detector detector.Detector)
 	Stop(error)
 	Stopped() concurrency.ReadOnlyErrorSignal
 }
