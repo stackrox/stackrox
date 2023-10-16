@@ -6,7 +6,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import useSet from 'hooks/useSet';
+import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
@@ -18,6 +18,7 @@ import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalOptions,
+    ExceptionRequestModalProps,
 } from '../components/ExceptionRequestModal/ExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
@@ -58,16 +59,22 @@ function CVEsTableContainer({
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
 
-    const selectedCves = useSet<string>();
+    const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const [exceptionRequestModalOptions, setExceptionRequestModalOptions] =
         useState<ExceptionRequestModalOptions>(null);
 
     function openDeferralModal() {
-        setExceptionRequestModalOptions({ type: 'DEFERRAL', cves: selectedCves.asArray() });
+        setExceptionRequestModalOptions({
+            type: 'DEFERRAL',
+            cves: Array.from(selectedCves.values()),
+        });
     }
 
     function openFalsePositiveModal() {
-        setExceptionRequestModalOptions({ type: 'FALSE_POSITIVE', cves: selectedCves.asArray() });
+        setExceptionRequestModalOptions({
+            type: 'FALSE_POSITIVE',
+            cves: Array.from(selectedCves.values()),
+        });
     }
 
     const tableData = data ?? previousData;
