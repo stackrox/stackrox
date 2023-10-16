@@ -2,6 +2,7 @@ import axios from 'services/instance';
 import qs from 'qs';
 
 import { SearchFilter, ApiSortOption } from 'types/search';
+import { SlimUser } from 'types/user.proto';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { mockComplianceScanResultsOverview } from 'Containers/ComplianceEnhanced/Status/MockData/complianceScanResultsOverview';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
@@ -42,14 +43,29 @@ type BaseSchedule = {
     minute: number;
 };
 
+// API types for Scan Configs:
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/compliance_scan_configuration_service
+export type BaseComplianceScanConfigurationSettings = {
+    oneTimeScan: boolean;
+    profiles: string[];
+    scanSchedule: Schedule | null;
+};
+
+export type ClusterScanStatus = {
+    clusterId: string;
+    errors: string[];
+    clusterName: string;
+};
+
 export type ScanConfig = {
+    id: string;
     scanName: string;
     clusters: string[];
-    scanConfig: {
-        profiles: string[];
-        oneTimeScan: boolean;
-        scanSchedule: Schedule | null;
-    };
+    scanConfig: BaseComplianceScanConfigurationSettings;
+    clusterStatus: ClusterScanStatus[];
+    createdTime: string; // ISO 8601 date string
+    lastUpdatedTime: string; // ISO 8601 date string
+    modifiedBy: SlimUser;
 };
 
 interface ComplianceScanStatsShim {
