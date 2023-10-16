@@ -12,7 +12,6 @@ set -euo pipefail
 
 run_tests_part_2() {
     info "QA Automation Platform Part 2"
-    exit 0
 
     if [[ ! -f "${STATE_DEPLOYED}" ]]; then
         info "Skipping part 2 tests due to earlier failure"
