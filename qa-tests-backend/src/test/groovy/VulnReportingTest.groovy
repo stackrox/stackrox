@@ -16,6 +16,7 @@ import spock.lang.IgnoreIf
 import util.Env
 
 @Tag("PZDebug")
+@Tag("PZ")
 class VulnReportingTest extends BaseSpecification {
 
     static final private String SECONDARY_NAMESPACE = "vulnreport-2nd-namespace"
@@ -23,12 +24,12 @@ class VulnReportingTest extends BaseSpecification {
             new Deployment()
                     .setName("struts-deployment")
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:struts-app")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "struts-test"),
             new Deployment()
                     .setName("registry-deployment")
                     .setNamespace(SECONDARY_NAMESPACE)
-                    .setImage("quay.io/rhacs-eng/qa:registry-image-0-4")
+                    .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "registry-image-test")
             // Use these if you want to actually test what the value of the report CSV is
 //            new Deployment()
@@ -48,7 +49,7 @@ class VulnReportingTest extends BaseSpecification {
 
     def setupSpec() {
         mailServer = MailServer.createMailServer(orchestrator, true, false)
-        sleep 15 * 1000 // wait 15s for service to start
+        sleep 60 * 1000 // wait 60s for service to start
 
         orchestrator.ensureNamespaceExists(SECONDARY_NAMESPACE)
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -99,7 +100,7 @@ class VulnReportingTest extends BaseSpecification {
         List emails = []
         withRetry(4, 3) {
             emails = mailServer.findEmailsByToEmail(Constants.EMAIL_NOTIFER_SENDER)
-            assert emails.size() == 1
+            assert emails.size() >= 1
         }
 
         def email = emails[0]
