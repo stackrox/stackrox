@@ -22,11 +22,12 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/config"
+	config "github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
+	repomappingUpdater "github.com/stackrox/rox/scanner/updater/repomapping"
 	"golang.org/x/sys/unix"
 )
 
@@ -91,6 +92,15 @@ func main() {
 	}
 	grpcSrv.Start()
 	defer grpcSrv.Stop()
+
+	//Start repo mapping data updater
+	u, err := repomappingUpdater.NewRepoMappingUpdater(config.SensorEndpoint)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("failed to initialize repo mapping updater")
+	} else {
+		go u.RunForever()
+		defer u.Stop()
+	}
 
 	// Wait for signals.
 	sigC := make(chan os.Signal, 1)

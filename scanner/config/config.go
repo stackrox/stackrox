@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -39,7 +38,9 @@ var (
 		MTLS: MTLSConfig{
 			CertsDir: "",
 		},
-		LogLevel: LogLevel(zerolog.InfoLevel),
+		LogLevel:        LogLevel(zerolog.InfoLevel),
+		CentralEndpoint: "https://central.stackrox.svc",
+		SensorEndpoint:  "https://sensor.stackrox.svc",
 	}
 )
 
@@ -51,6 +52,11 @@ type Config struct {
 	GRPCListenAddr string        `yaml:"grpc_listen_addr"`
 	MTLS           MTLSConfig    `yaml:"mtls"`
 	LogLevel       LogLevel      `yaml:"log_level"`
+	// CentralEndpoint is the endpoint that central can be reached at. See DefaultConfig for the defaults.
+	CentralEndpoint string `yaml:"centralEndpoint"`
+
+	// SensorEndpoint is the endpoint that Sensor can be reached at. See DefaultConfig for the defaults.
+	SensorEndpoint string `yaml:"sensorEndpoint"`
 }
 
 func (c *Config) validate() error {
