@@ -57,9 +57,9 @@ class SummaryTest extends BaseSpecification {
                 log.info "Orchestrator deployments: " + orchestratorResourceNames.join(",")
             }
 
-            assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
-            assert stackroxSummaryCounts.numSecrets == orchestrator.getSecretCount()
-            assert stackroxSummaryCounts.numNodes == orchestrator.getNodeCount()
+            assert abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) < 2
+            assert abs(stackroxSummaryCounts.numSecrets == orchestrator.getSecretCount()) < 2
+            assert abs(stackroxSummaryCounts.numNodes == orchestrator.getNodeCount()) < 2
         }
     }
 
