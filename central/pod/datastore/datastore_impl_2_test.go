@@ -136,7 +136,7 @@ func (s PodDatastoreSuite) TestRemovePod() {
 
 	s.NoError(s.indicatorDataStore.AddProcessIndicators(s.processIndicatorCtx, indicators...))
 
-	s.NoError(s.datastore.RemovePod(s.processIndicatorCtx, fixtureconsts.PodUID1))
+	s.NoError(s.datastore.RemovePod(s.ctx, fixtureconsts.PodUID1))
 
 	// Fetch inserted PLOP back after deleting pod
 	newPlops, err = s.datastore.plops.GetProcessListeningOnPort(
