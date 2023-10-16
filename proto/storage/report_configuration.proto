@@ -34,7 +34,7 @@ message ReportConfiguration {
     ResourceScope                   resource_scope              = 11;
     repeated NotifierConfiguration  notifiers                   = 12;
     SlimUser                        creator                     = 13 [(gogoproto.moretags) = 'sql:"ignore_labels(User ID)"'];
-    int32                           version                     = 14;
+    int32                           version                     = 14;// added in 4.3 and value of 0 means config is from 4.2
 }
 
 message ReportLastRunStatus {
