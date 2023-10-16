@@ -155,6 +155,7 @@ import (
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
+	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -412,6 +413,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
+		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
+		// This cannot be now because the frontend is not ready with the feature flag checks.
 		vulnRequestService.Singleton(),
 		clusterCVEService.Singleton(),
 		imageCVEService.Singleton(),
@@ -433,6 +436,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.AdministrationEvents.Enabled() {
 		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
+	}
+
+	if features.UnifiedCVEDeferral.Enabled() {
+		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()

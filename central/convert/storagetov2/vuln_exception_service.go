@@ -7,39 +7,51 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// VulnerabilityExceptions converts a slice of *storage.VulnerabilityRequest to a slice of *v2.VulnerabilityException.
+func VulnerabilityExceptions(inp ...*storage.VulnerabilityRequest) []*v2.VulnerabilityException {
+	ret := make([]*v2.VulnerabilityException, 0, len(inp))
+	for _, obj := range inp {
+		if obj == nil {
+			continue
+		}
+		ret = append(ret, VulnerabilityException(obj))
+	}
+	return ret
+}
+
 // VulnerabilityException converts *storage.VulnerabilityRequest to *v2.VulnerabilityException.
-func VulnerabilityException(inp *storage.VulnerabilityRequest) *v2.VulnerabilityException {
-	if inp == nil {
+func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.VulnerabilityException {
+	if vulnRequest == nil {
 		return nil
 	}
 
 	out := &v2.VulnerabilityException{
-		Id:          inp.GetId(),
-		Name:        inp.GetName(),
-		TargetState: convertVulnerabilityState(inp.GetTargetState()),
-		Status:      convertRequestStatus(inp.GetStatus()),
-		Expired:     inp.GetExpired(),
-		Requester:   convertUser(inp.GetRequestor()),
-		Approvers:   convertUsers(inp.GetApprovers()),
-		LastUpdated: inp.GetLastUpdated(),
-		Comments:    convertRequestComments(inp.GetComments()),
-		Scope:       convertScope(inp.GetScope()),
-		Cves:        inp.GetCves().GetCves(),
+		Id:          vulnRequest.GetId(),
+		Name:        vulnRequest.GetName(),
+		TargetState: convertVulnerabilityState(vulnRequest.GetTargetState()),
+		Status:      convertRequestStatus(vulnRequest.GetStatus()),
+		Expired:     vulnRequest.GetExpired(),
+		Requester:   convertUser(vulnRequest.GetRequestor()),
+		Approvers:   convertUsers(vulnRequest.GetApprovers()),
+		LastUpdated: vulnRequest.GetLastUpdated(),
+		Comments:    convertRequestComments(vulnRequest.GetComments()),
+		Scope:       convertScope(vulnRequest.GetScope()),
+		Cves:        vulnRequest.GetCves().GetCves(),
 	}
 
-	if inp.GetDeferralReq() != nil {
+	if vulnRequest.GetDeferralReq() != nil {
 		out.Req = &v2.VulnerabilityException_DeferralReq{
-			DeferralReq: convertDeferralReq(inp.GetDeferralReq()),
+			DeferralReq: convertDeferralReq(vulnRequest.GetDeferralReq()),
 		}
-	} else if inp.GetFpRequest() != nil {
+	} else if vulnRequest.GetFpRequest() != nil {
 		out.Req = &v2.VulnerabilityException_FpRequest{
 			FpRequest: &v2.FalsePositiveRequest{},
 		}
 	}
 
-	if inp.GetUpdatedDeferralReq() != nil {
+	if vulnRequest.GetUpdatedDeferralReq() != nil {
 		out.UpdatedReq = &v2.VulnerabilityException_DeferralReqUpdate{
-			DeferralReqUpdate: convertDeferralReq(inp.GetUpdatedDeferralReq()),
+			DeferralReqUpdate: convertDeferralReq(vulnRequest.GetUpdatedDeferralReq()),
 		}
 	}
 

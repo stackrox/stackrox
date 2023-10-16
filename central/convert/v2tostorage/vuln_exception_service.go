@@ -8,43 +8,43 @@ import (
 )
 
 // VulnerabilityRequest converts *v2.VulnerabilityException to *storage.VulnerabilityRequest.
-func VulnerabilityRequest(inp *v2.VulnerabilityException) *storage.VulnerabilityRequest {
-	if inp == nil {
+func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.VulnerabilityRequest {
+	if vulnException == nil {
 		return nil
 	}
 
 	out := &storage.VulnerabilityRequest{
-		Id:          inp.GetId(),
-		Name:        inp.GetName(),
-		TargetState: convertVulnerabilityState(inp.GetTargetState()),
-		Status:      convertRequestStatus(inp.GetStatus()),
-		Expired:     inp.GetExpired(),
-		Requestor:   convertUser(inp.GetRequester()),
-		Approvers:   convertUsers(inp.GetApprovers()),
-		LastUpdated: inp.GetLastUpdated(),
-		Comments:    convertRequestComments(inp.GetComments()),
-		Scope:       convertScope(inp.GetScope()),
+		Id:          vulnException.GetId(),
+		Name:        vulnException.GetName(),
+		TargetState: convertVulnerabilityState(vulnException.GetTargetState()),
+		Status:      convertRequestStatus(vulnException.GetStatus()),
+		Expired:     vulnException.GetExpired(),
+		Requestor:   convertUser(vulnException.GetRequester()),
+		Approvers:   convertUsers(vulnException.GetApprovers()),
+		LastUpdated: vulnException.GetLastUpdated(),
+		Comments:    convertRequestComments(vulnException.GetComments()),
+		Scope:       convertScope(vulnException.GetScope()),
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
-				Cves: inp.GetCves(),
+				Cves: vulnException.GetCves(),
 			},
 		},
 		UpdatedReq: nil,
 	}
 
-	if inp.GetDeferralReq() != nil {
+	if vulnException.GetDeferralReq() != nil {
 		out.Req = &storage.VulnerabilityRequest_DeferralReq{
-			DeferralReq: convertDeferralReq(inp.GetDeferralReq()),
+			DeferralReq: convertDeferralReq(vulnException.GetDeferralReq()),
 		}
-	} else if inp.GetFpRequest() != nil {
+	} else if vulnException.GetFpRequest() != nil {
 		out.Req = &storage.VulnerabilityRequest_FpRequest{
 			FpRequest: &storage.FalsePositiveRequest{},
 		}
 	}
 
-	if inp.GetDeferralReqUpdate() != nil {
+	if vulnException.GetDeferralReqUpdate() != nil {
 		out.UpdatedReq = &storage.VulnerabilityRequest_UpdatedDeferralReq{
-			UpdatedDeferralReq: convertDeferralReq(inp.GetDeferralReqUpdate()),
+			UpdatedDeferralReq: convertDeferralReq(vulnException.GetDeferralReqUpdate()),
 		}
 	}
 
