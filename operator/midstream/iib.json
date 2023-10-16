@@ -7,7 +7,7 @@
     "4.15": "597340"
   },
   "operator": {
-    "version": "1.0",
+    "version": "1.0.0",
     "channel": "rhacs-1.0"
   }
 }
