@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -21,7 +22,7 @@ func init() {
 		}
 	}
 	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := email.NewEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptoKey)
+		e, err := email.NewEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return e, err
 	})
 }

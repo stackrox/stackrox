@@ -159,8 +159,8 @@ func validate(notifier *storage.Notifier) error {
 }
 
 // NewEmail exported to allow for usage in various components.
-func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter,
-	mitreStore mitreDS.AttackReadOnlyDataStore, cryptoKey string) (*email, error) {
+func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
+	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
 	if err := validate(notifier); err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 		config:      conf,
 		creds:       "",
 		cryptoKey:   cryptoKey,
-		cryptoCodec: cryptocodec.Singleton(),
+		cryptoCodec: cryptoCodec,
 		smtpServer: smtpServer{
 			host: host,
 			port: port,
