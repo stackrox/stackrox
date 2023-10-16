@@ -157,9 +157,20 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		Signal: &storage.ProcessSignal{
+			ContainerId:  "containerid",
 			Name:         "apt-get",
 			Args:         "install nmap",
 			ExecFilePath: "bin",
+			LineageInfo: []*storage.ProcessSignal_LineageInfo{
+				{
+					ParentUid:          22,
+					ParentExecFilePath: "/bin/bash",
+				},
+				{
+					ParentUid:          28,
+					ParentExecFilePath: "/bin/curl",
+				},
+			},
 		},
 	})
 
