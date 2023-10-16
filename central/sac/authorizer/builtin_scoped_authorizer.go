@@ -402,9 +402,7 @@ func fetchClustersFromCache() ([]*storage.Cluster, bool) {
 	}
 
 	result := make([]*storage.Cluster, 0, len(cachedClusters))
-	for _, c := range cachedClusters {
-		result = append(result, c)
-	}
+	result = append(result, cachedClusters...)
 	return result, true
 }
 
@@ -460,9 +458,7 @@ func fetchNamespacesFromCache() ([]*storage.NamespaceMetadata, bool) {
 	}
 
 	result := make([]*storage.NamespaceMetadata, 0, len(cachedNamespaces))
-	for _, ns := range cachedNamespaces {
-		result = append(result, ns)
-	}
+	result = append(result, cachedNamespaces...)
 	return result, true
 }
 
