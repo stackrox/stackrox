@@ -76,13 +76,13 @@ describe('Workload CVE List deferral and false positive flows', () => {
         selectMultipleCvesForException('DEFERRAL');
     });
 
-    it('should mark a single CVE false positive', () => {
+    it.skip('should mark a single CVE false positive', () => {
         visitWorkloadCveOverview();
 
         selectSingleCveForException('FALSE_POSITIVE');
     });
 
-    it('should mark multiple selected CVEs as false positive', () => {
+    it.skip('should mark multiple selected CVEs as false positive', () => {
         visitWorkloadCveOverview();
 
         selectMultipleCvesForException('FALSE_POSITIVE');

@@ -16,8 +16,8 @@ function ExceptionScopeField({ fieldId, label, scopeContext }: ExceptionScopeFie
                 <Radio
                     id="scope-global"
                     name="scope-global"
-                    isChecked={false}
-                    onChange={() => {}}
+                    isDisabled
+                    isChecked
                     label="Selected CVEs across all images and deployments"
                 />
             )}
