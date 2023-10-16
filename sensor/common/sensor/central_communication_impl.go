@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
@@ -33,10 +34,11 @@ import (
 // sensor implements the Sensor interface by sending inputs to central,
 // and providing the output from central asynchronously.
 type centralCommunicationImpl struct {
-	receiver        CentralReceiver
-	sender          CentralSender
-	components      []common.SensorComponent
-	clientReconcile bool
+	receiver            CentralReceiver
+	sender              CentralSender
+	components          []common.SensorComponent
+	clientReconcile     bool
+	initialDeduperState map[deduper.Key]uint64
 
 	stopper concurrency.Stopper
 
@@ -50,8 +52,8 @@ var (
 	errCantReconcile = errors.New("unable to reconcile due to deduper payload too large")
 )
 
-func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
-	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
+	go s.sendEvents(client, centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(_ error) {
@@ -186,7 +188,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.
@@ -282,6 +284,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	}
 
 	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
+	s.initialDeduperState = deduper.ParseDeduperState(msg.GetDeduperState().GetResourceHashes())
 	return nil
 }
 
