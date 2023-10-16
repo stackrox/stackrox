@@ -552,7 +552,7 @@ func (e *email) getPassword() (string, error) {
 
 	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.config.GetPassword())
 	if err != nil {
-		return "", errors.New("Error decrypting secret")
+		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", e.notifier.GetName())
 	}
 	e.creds = decCreds
 	return e.creds, nil
