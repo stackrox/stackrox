@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -483,7 +482,7 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 func newAPIRateLimiter() ratelimit.RateLimiter {
 	apiRequestLimitPerSec := env.CentralAPIRateLimitPerSecond.IntegerSetting()
 	if apiRequestLimitPerSec < 0 {
-		panic(fmt.Sprintf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar()))
+		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
 	}
 
 	return ratelimit.NewRateLimiter(apiRequestLimitPerSec)

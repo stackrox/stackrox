@@ -22,45 +22,41 @@ func (limiter *rateLimiter) Limit() bool {
 	return !limiter.tokenBucketLimiter.Allow()
 }
 
-func (limiter *rateLimiter) IncreaseLimit(limit int) {
-	if limiter.tokenBucketLimiter.Limit() == rate.Inf || limit <= 0 {
+func (limiter *rateLimiter) modifyRateLimit(limitDelta int) {
+	if limiter.tokenBucketLimiter.Limit() == rate.Inf {
 		return
 	}
 
 	limiter.mutex.Lock()
 	defer limiter.mutex.Unlock()
 
-	newBurst := limiter.tokenBucketLimiter.Burst() + limit
+	newBurst := limiter.tokenBucketLimiter.Burst() + limitDelta
 	if 0 < newBurst {
 		limiter.tokenBucketLimiter.SetBurst(newBurst)
-	}
-
-	newLimit := limiter.tokenBucketLimiter.Limit() + rate.Every(time.Second/time.Duration(limit))
-	if 0 < newLimit && newLimit < rate.Inf {
-		limiter.tokenBucketLimiter.SetLimit(newLimit)
+		limiter.tokenBucketLimiter.SetLimit(rate.Every(time.Second / time.Duration(newBurst)))
 	}
 }
 
-func (limiter *rateLimiter) DecreaseLimit(limit int) {
-	if limiter.tokenBucketLimiter.Limit() == rate.Inf || limit <= 0 {
+func (limiter *rateLimiter) IncreaseLimit(limitDelta int) {
+	if limitDelta <= 0 {
 		return
 	}
 
-	limiter.mutex.Lock()
-	defer limiter.mutex.Unlock()
-
-	newBurst := limiter.tokenBucketLimiter.Burst() - limit
-	if 0 < newBurst {
-		limiter.tokenBucketLimiter.SetBurst(newBurst)
-	}
-
-	newLimit := limiter.tokenBucketLimiter.Limit() - rate.Every(time.Second/time.Duration(limit))
-	if 0 < newLimit && newLimit < rate.Inf {
-		limiter.tokenBucketLimiter.SetLimit(newLimit)
-	}
+	limiter.modifyRateLimit(limitDelta)
 }
 
-// NewRateLimiter defines rate limiter any type of events.
+func (limiter *rateLimiter) DecreaseLimit(limitDelta int) {
+	if limitDelta <= 0 {
+		return
+	}
+
+	limiter.modifyRateLimit(-limitDelta)
+}
+
+// NewRateLimiter defines rate limiter any type of events. The rate limit
+// will be considered unlimited when the value of maxPerSec is less than or
+// equal to zero.
+//
 // Note: Please be aware that we're currently employing a basic token bucket
 // rate limiting approach. Once the limit is reached, any additional events
 // will be declined. It's worth noting that a more effective solution would
@@ -96,7 +92,9 @@ func (limiter *rateLimiter) GetHTTPInterceptor() httputil.HTTPInterceptor {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if limiter.Limit() {
-				http.Error(w, fmt.Sprintf("APIRateLimiter call on %q is rejected by rate limiter, please retry later.", r.URL.Path), http.StatusTooManyRequests)
+				msg := fmt.Sprintf("APIRateLimiter call on %q is rejected by rate limiter, please retry later.", r.URL.Path)
+				http.Error(w, msg, http.StatusTooManyRequests)
+
 				return
 			}
 

@@ -13,14 +13,14 @@ type RateLimiter interface {
 	Limit() bool
 
 	// IncreaseLimit increases the allowed rate of events. If rate limiter
-	// is unlimited, no change is made. The argument 'limit' has to be
-	// bigger than 1, otherwise no change is made.
-	IncreaseLimit(limit int)
+	// is unlimited, no change is made. The argument 'limitDelta' has to be
+	// bigger than 0, otherwise no change is made.
+	IncreaseLimit(limitDelta int)
 
 	// DecreaseLimit decreases the allowed rate of events. If rate limiter
-	// is unlimited, no change is made. The argument 'limit' has to be
-	// bigger than 1, otherwise no change is made.
-	DecreaseLimit(limit int)
+	// is unlimited, no change is made. The argument 'limitDelta' has to be
+	// bigger than 0, otherwise no change is made.
+	DecreaseLimit(limitDelta int)
 
 	// GetUnaryServerInterceptor returns a gRPC UnaryServerInterceptor
 	// that can be used to apply rate limiting.
