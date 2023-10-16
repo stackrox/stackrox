@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -27,12 +26,12 @@ type rateLimitManager struct {
 func NewRateLimitManager() *rateLimitManager {
 	maxSensors := env.CentralMaxInitSyncSensors.IntegerSetting()
 	if maxSensors < 0 {
-		panic(fmt.Sprintf("Negative number is not allowed for max init sync sensors. Check env variable: %q", env.CentralMaxInitSyncSensors.EnvVar()))
+		log.Panicf("Negative number is not allowed for max init sync sensors. Check env variable: %q", env.CentralMaxInitSyncSensors.EnvVar())
 	}
 
 	eventRateLimit := env.CentralSensorMaxEventsPerSecond.IntegerSetting()
 	if eventRateLimit < 0 {
-		panic(fmt.Sprintf("Negative number is not allowed for rate limit of sensors events. Check env variable: %q", env.CentralSensorMaxEventsPerSecond.EnvVar()))
+		log.Panicf("Negative number is not allowed for rate limit of sensors events. Check env variable: %q", env.CentralSensorMaxEventsPerSecond.EnvVar())
 	}
 
 	// Use MaxInt for unlimited max init sync sensors.
@@ -47,7 +46,11 @@ func NewRateLimitManager() *rateLimitManager {
 	}
 }
 
-func (m *rateLimitManager) Add(clusterID string) bool {
+func (m *rateLimitManager) AddInitSync(clusterID string) bool {
+	if m == nil {
+		return true
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -55,22 +58,30 @@ func (m *rateLimitManager) Add(clusterID string) bool {
 		return false
 	}
 
-	if m.initSyncSensors.Add(clusterID) {
+	if m.initSyncSensors.Add(clusterID) && m.eventRateLimiter != nil {
 		m.eventRateLimiter.IncreaseLimit(boostInitSyncRateLimit)
 	}
 
 	return true
 }
 
-func (m *rateLimitManager) Remove(clusterID string) {
+func (m *rateLimitManager) RemoveInitSync(clusterID string) {
+	if m == nil {
+		return
+	}
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.initSyncSensors.Remove(clusterID) {
+	if m.initSyncSensors.Remove(clusterID) && m.eventRateLimiter != nil {
 		m.eventRateLimiter.DecreaseLimit(boostInitSyncRateLimit)
 	}
 }
 
 func (m *rateLimitManager) LimitMsg() bool {
+	if m == nil || m.eventRateLimiter == nil {
+		return false
+	}
+
 	return m.eventRateLimiter.Limit()
 }

@@ -234,7 +234,7 @@ func (m *manager) replaceConnection(ctx context.Context, cluster *storage.Cluste
 
 // CloseConnection is only used when deleting a cluster hence the removal of the deduper
 func (m *manager) CloseConnection(clusterID string) {
-	m.rateLimitMgr.Remove(clusterID)
+	m.rateLimitMgr.RemoveInitSync(clusterID)
 
 	if conn := m.GetConnection(clusterID); conn != nil {
 		conn.Terminate(errors.New("cluster was deleted"))
@@ -253,7 +253,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	clusterID := cluster.GetId()
 	clusterName := cluster.GetName()
 
-	if !m.rateLimitMgr.Add(clusterID) {
+	if !m.rateLimitMgr.AddInitSync(clusterID) {
 		return errors.Wrap(errox.ResourceExhausted, "Central has reached the maximum number of allowed Sensors in init sync state")
 	}
 
@@ -279,7 +279,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
 		log.Errorf("Replacing connection: %v", err)
-		m.rateLimitMgr.Remove(clusterID)
+		m.rateLimitMgr.RemoveInitSync(clusterID)
 		return errors.Wrap(err, "replacing old connection")
 	}
 
@@ -293,7 +293,7 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 
 	// Address the scenario in which the sensor loses its connection during
 	// the initial synchronization process.
-	m.rateLimitMgr.Remove(clusterID)
+	m.rateLimitMgr.RemoveInitSync(clusterID)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
 		connAndUpgradeCtrl := m.connectionsByClusterID[clusterID]

@@ -57,6 +57,14 @@ func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipel
 	}
 }
 
+func (s *sensorEventHandler) getRateLimitMgr() *rateLimitManager {
+	if s == nil {
+		return nil
+	}
+
+	return s.rateLimitMgr
+}
+
 func (s *sensorEventHandler) handleMessages(ctx context.Context, msg *central.MsgFromSensor) error {
 	return s.pipeline.Run(ctx, msg, s.injector)
 }
@@ -93,7 +101,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
-		s.rateLimitMgr.Remove(s.cluster.GetId())
+		s.rateLimitMgr.RemoveInitSync(s.cluster.GetId())
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return
