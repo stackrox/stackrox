@@ -10,10 +10,6 @@ setup_gcp() {
     local service_account
     if [[ -n "${GCP_SERVICE_ACCOUNT_STACKROX_CI:-}" ]]; then
         service_account="${GCP_SERVICE_ACCOUNT_STACKROX_CI}"
-    elif [[ -n "${GCLOUD_SERVICE_ACCOUNT_CI_ROX:-}" ]]; then
-        # ROX-19985 stackrox/jenkins-plugin relies on this env name. This can be
-        # removed once that issue is closed.
-        service_account="${GCLOUD_SERVICE_ACCOUNT_CI_ROX}"
     else
         die "Support is missing for this environment"
     fi
