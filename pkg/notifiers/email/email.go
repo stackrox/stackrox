@@ -43,9 +43,11 @@ const (
 
 // email notifier plugin.
 type email struct {
-	config     *storage.Email
-	credential string
-	smtpServer smtpServer
+	config      *storage.Email
+	creds       string
+	cryptoKey   string
+	cryptoCodec cryptocodec.CryptoCodec
+	smtpServer  smtpServer
 
 	metadataGetter notifiers.MetadataGetter
 	mitreStore     mitreDS.AttackReadOnlyDataStore
@@ -177,17 +179,11 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 		host = server[:idx]
 	}
 
-	cred := conf.GetPassword()
-	var err error
-	if env.EncNotifierCreds.BooleanSetting() {
-		cred, err = decryptCredential(cryptoKey, notifier.GetNotifierSecret())
-		if err != nil {
-			return nil, err
-		}
-	}
 	return &email{
-		config:     conf,
-		credential: cred,
+		config:      conf,
+		creds:       "",
+		cryptoKey:   cryptoKey,
+		cryptoCodec: cryptocodec.Singleton(),
 		smtpServer: smtpServer{
 			host: host,
 			port: port,
@@ -196,19 +192,6 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 		metadataGetter: metadataGetter,
 		mitreStore:     mitreStore,
 	}, nil
-}
-
-func decryptCredential(cryptoKey string, secret string) (string, error) {
-	if cryptoKey == "" {
-		return "", errors.New("crypto key must be non-empty")
-	}
-	codec := cryptocodec.Singleton()
-	cred, err := codec.Decrypt(cryptoKey, secret)
-	if err != nil {
-		// Don't send out error from crypto lib
-		return "", errors.New("Error decrypting secret")
-	}
-	return cred, nil
 }
 
 type message struct {
@@ -507,23 +490,35 @@ func (e *email) connection(ctx context.Context) (conn net.Conn, auth smtp.Auth, 
 }
 
 func (e *email) tlsConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
+	password, err := e.getPassword()
+	if err != nil {
+		return nil, nil, err
+	}
 	// With a connection that starts with TLS, we can simply use the standard
 	// library to authenticate.
-	auth = smtp.PlainAuth("", e.config.GetUsername(), e.credential, e.smtpServer.host)
+	auth = smtp.PlainAuth("", e.config.GetUsername(), password, e.smtpServer.host)
 	conn, err = proxy.AwareDialContextTLS(dialCtx, e.smtpServer.endpoint(), e.tlsConfig())
 	return
 }
 
 func (e *email) unencryptedConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
+	password, err := e.getPassword()
+	if err != nil {
+		return nil, nil, err
+	}
 	// With a completely unencrypted connection, we must override the
 	// standard library's SMTP authenticator, since it blocks attempts
 	// to send credentials over any non-TLS connection that isn't localhost.
-	auth = unencryptedPlainAuth("", e.config.GetUsername(), e.credential, e.smtpServer.host)
+	auth = unencryptedPlainAuth("", e.config.GetUsername(), password, e.smtpServer.host)
 	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
 }
 
 func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
+	password, err := e.getPassword()
+	if err != nil {
+		return nil, nil, err
+	}
 	// With STARTTLS, we will first connect unencrypted and later
 	// "upgrade" the connection to use TLS by the time we authenticate.
 	// Hence, we can use the stdlib authenticator, which treats
@@ -531,9 +526,9 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 	// transmit a password.
 	switch e.notifier.GetEmail().GetStartTLSAuthMethod() {
 	case storage.Email_PLAIN:
-		auth = smtp.PlainAuth("", e.config.GetUsername(), e.credential, e.smtpServer.host)
+		auth = smtp.PlainAuth("", e.config.GetUsername(), password, e.smtpServer.host)
 	case storage.Email_LOGIN:
-		auth = loginAuthMethod(e.config.GetUsername(), e.credential)
+		auth = loginAuthMethod(e.config.GetUsername(), password)
 	}
 	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
@@ -543,6 +538,24 @@ func (e *email) tlsConfig() *tls.Config {
 	return &tls.Config{
 		ServerName: e.smtpServer.host,
 	}
+}
+
+func (e *email) getPassword() (string, error) {
+	if e.creds != "" {
+		return e.creds, nil
+	}
+
+	if !env.EncNotifierCreds.BooleanSetting() {
+		e.creds = e.config.GetPassword()
+		return e.creds, nil
+	}
+
+	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.config.GetPassword())
+	if err != nil {
+		return "", errors.New("Error decrypting secret")
+	}
+	e.creds = decCreds
+	return e.creds, nil
 }
 
 func (e *email) ProtoNotifier() *storage.Notifier {

@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"encoding/base64"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -52,8 +51,6 @@ type gcmCryptoCodecImpl struct {
 // bytes as a base64 std encoded string. The encryption key should be a base64 std encoded string.
 func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string) (string, error) {
 	key, err := base64.StdEncoding.DecodeString(keyString)
-	// TODO: Added for debugging, remove before merging
-	log.Infof("crypto key is '%s'", keyString)
 	if err != nil {
 		return "", err
 	}
@@ -84,28 +81,20 @@ func (gcm *gcmCryptoCodecImpl) Encrypt(keyString string, stringToEncrypt string)
 func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string) (string, error) {
 	key, err := base64.StdEncoding.DecodeString(keyString)
 	if err != nil {
-		// TODO: Added for debugging, remove before merging
-		log.Errorf("error decoding key '%s': %s", keyString, err)
 		return "", err
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		// TODO: Added for debugging, remove before merging
-		log.Errorf("error creating cipher block '%s': %s", keyString, err)
 		return "", err
 	}
 	aesgcm, err := cipher.NewGCMWithNonceSize(block, gcmNonceSizeBytes)
 	if err != nil {
-		// TODO: Added for debugging, remove before merging
-		log.Errorf("error creating aesgcm instance: %s", err)
 		return "", err
 	}
 
 	cipherText, err := base64.StdEncoding.DecodeString(stringToDecrypt)
 	if err != nil {
-		// TODO: Added for debugging, remove before merging
-		log.Errorf("error decoding cipher text '%s': %s", stringToDecrypt, err)
 		return "", err
 	}
 	if len(cipherText) < aesgcm.NonceSize() {
@@ -114,8 +103,6 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	nonce := cipherText[:aesgcm.NonceSize()]
 	decrypted, err := aesgcm.Open(nil, nonce, cipherText[aesgcm.NonceSize():], nil)
 	if err != nil {
-		log.Errorf("error decrypting: %s", err)
-		// TODO: Added for debugging, remove before merging
 		return "", err
 	}
 	return string(decrypted), nil

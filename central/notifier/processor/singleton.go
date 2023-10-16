@@ -68,8 +68,6 @@ func initialize() {
 			// Don't send out error from crypto lib
 			utils.CrashOnError(fmt.Errorf("Error securing notifier %s", protoNotifier.GetId()))
 		}
-		// TODO: Added for debugging, remove before merging
-		log.Infof("secret is '%s'", protoNotifier.NotifierSecret)
 		if encCredsModified {
 			_, err = datastore.Singleton().UpsertNotifier(ctx, protoNotifier)
 			if err != nil {
