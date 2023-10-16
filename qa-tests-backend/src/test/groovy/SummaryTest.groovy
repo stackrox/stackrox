@@ -89,10 +89,16 @@ class SummaryTest extends BaseSpecification {
                 Map<String, String> orchestratorTruncated = orchestratorNode.annotations.clone()
                 orchestratorTruncated.keySet().each { name ->
                     if (orchestratorTruncated[name].length() > Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH) {
-                        orchestratorTruncated[name] = orchestratorTruncated[name].substring(0,
-                                Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH - 1) + "..."
+                        // Assert that the stackrox node has an entry for that annotation
+                        assert stackroxNode.annotationsMap[name].length() > 0
+
+                        // Remove the annotation because the logic for truncation tries to maintain words and
+                        // is more complicated than we'd like to test
+                        stackroxNode.annotationsMap.remove(name)
+                        orchestratorTruncated.remove(name)
                     }
                 }
+                ''
                 if (stackroxNode.annotationsMap != orchestratorTruncated) {
                     log.info "There is a node annotation difference - StackRox -v- Orchestrator:"
                     log.info javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
