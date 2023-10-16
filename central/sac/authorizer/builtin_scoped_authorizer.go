@@ -2,6 +2,7 @@ package authorizer
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -23,6 +24,18 @@ var (
 	ErrUnexpectedScopeKey = errors.New("unexpected scope key")
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
+
+	clusterMutex          sync.RWMutex
+	clustersLastRefreshed time.Time
+	cachedClusters        []*storage.Cluster
+
+	namespaceMutex          sync.RWMutex
+	namespacesLastRefreshed time.Time
+	cachedNamespaces        []*storage.NamespaceMetadata
+)
+
+const (
+	cacheRefreshPeriod = 5 * time.Second
 )
 
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
@@ -30,11 +43,11 @@ var (
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
 	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
 
-	clusters, err := clusterStore.Singleton().GetClusters(adminCtx)
+	clusters, err := fetchClusters(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := namespaceStore.Singleton().GetAllNamespaces(adminCtx)
+	namespaces, err := fetchNamespaces(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -360,4 +373,120 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 	namespaceNode, ok := clusterNode.Namespaces[namespaceName]
 
 	return ok && namespaceNode.State == effectiveaccessscope.Included
+}
+
+func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	clusters, valid := fetchClustersFromCache()
+	if valid {
+		return clusters, nil
+	}
+
+	clusters, err := fetchClustersFromDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	populateClusterCache(clusters)
+	return clusters, nil
+}
+
+func fetchClustersFromCache() ([]*storage.Cluster, bool) {
+	now := time.Now()
+
+	clusterMutex.RLock()
+	defer clusterMutex.RUnlock()
+
+	if now.After(clustersLastRefreshed.Add(cacheRefreshPeriod)) {
+		// The data expired, need to re-fetch and re-populate the cache
+		return nil, false
+	}
+
+	result := make([]*storage.Cluster, 0, len(cachedClusters))
+	for _, c := range cachedClusters {
+		result = append(result, c)
+	}
+	return result, true
+}
+
+func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
+	return clusterStore.Singleton().GetClusters(ctx)
+}
+
+func populateClusterCache(clusters []*storage.Cluster) {
+	refreshTime := time.Now()
+
+	clusterMutex.Lock()
+	defer clusterMutex.Unlock()
+	if refreshTime.Before(clustersLastRefreshed.Add(cacheRefreshPeriod)) {
+		return
+	}
+
+	cachedClusters = make([]*storage.Cluster, 0, len(clusters))
+	for _, c := range clusters {
+		stripCluster(c)
+		cachedClusters = append(cachedClusters, c)
+	}
+	clustersLastRefreshed = refreshTime
+}
+
+func stripCluster(_ *storage.Cluster) {
+	// TODO: remove any field that is not used in the SAC scope computation.
+}
+
+func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	namespaces, valid := fetchNamespacesFromCache()
+	if valid {
+		return namespaces, nil
+	}
+
+	namespaces, err := fetchNamespacesFromDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	populateNamespaceCache(namespaces)
+	return namespaces, nil
+}
+
+func fetchNamespacesFromCache() ([]*storage.NamespaceMetadata, bool) {
+	now := time.Now()
+
+	namespaceMutex.RLock()
+	defer namespaceMutex.RUnlock()
+
+	if now.After(namespacesLastRefreshed.Add(cacheRefreshPeriod)) {
+		// The data expired, need to re-fetch and re-populate the cache
+		return nil, false
+	}
+
+	result := make([]*storage.NamespaceMetadata, 0, len(cachedNamespaces))
+	for _, ns := range cachedNamespaces {
+		result = append(result, ns)
+	}
+	return result, true
+}
+
+func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	return namespaceStore.Singleton().GetAllNamespaces(ctx)
+}
+
+func populateNamespaceCache(namespaces []*storage.NamespaceMetadata) {
+	refreshTime := time.Now()
+
+	namespaceMutex.Lock()
+	defer namespaceMutex.Unlock()
+	if refreshTime.Before(namespacesLastRefreshed.Add(cacheRefreshPeriod)) {
+		return
+	}
+
+	cachedNamespaces = make([]*storage.NamespaceMetadata, 0, len(namespaces))
+	for _, ns := range namespaces {
+		stripNamespace(ns)
+		cachedNamespaces = append(cachedNamespaces, ns)
+	}
+	namespacesLastRefreshed = refreshTime
+}
+
+func stripNamespace(_ *storage.NamespaceMetadata) {
+	// TODO: remove any field that is not used in the SAC scope computation.
 }
