@@ -98,7 +98,6 @@ class SummaryTest extends BaseSpecification {
                         orchestratorTruncated.remove(name)
                     }
                 }
-                ''
                 if (stackroxNode.annotationsMap != orchestratorTruncated) {
                     log.info "There is a node annotation difference - StackRox -v- Orchestrator:"
                     log.info javers.compare(stackroxNode.annotationsMap, orchestratorTruncated).prettyPrint()
