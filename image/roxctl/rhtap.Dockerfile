@@ -40,13 +40,19 @@ LABEL \
     com.redhat.component="rhacs-roxctl-container" \
     name="rhacs-roxctl-rhel8" \
     maintainer="Red Hat, Inc." \
-    upstream-repo="github.com/stackrox/stackrox" \
+    source-location="https://github.com/stackrox/stackrox" \
     # These labels are added to override the base image values.
     description="The CLI for ACS" \
     io.k8s.description="The CLI for ACS" \
     io.k8s.display-name="roxctl" \
     io.openshift.tags="rhacs,roxctl,stackrox" \
-    summary="The CLI for ACS"
+    summary="The CLI for ACS" \
+    # If we don't reset the following labels, we inherit values from the base container which will be incorrect.
+    # At the same time, we can't configure correct values yet. E.g. see the following thread about version:
+    # https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1697127151309229
+    com.redhat.license_terms="" \
+    url="" \
+    version=""
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
