@@ -376,113 +376,103 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 }
 
 func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
-	clusters, valid := fetchClustersFromCache()
-	if valid {
-		return clusters, nil
-	}
-
-	clusters, err := fetchClustersFromDB(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	populateClusterCache(clusters)
-	return clusters, nil
-}
-
-func fetchClustersFromCache() ([]*storage.Cluster, bool) {
-	now := time.Now()
-
-	clusterMutex.RLock()
-	defer clusterMutex.RUnlock()
-
-	if now.After(clustersLastRefreshed.Add(cacheRefreshPeriod)) {
-		// The data expired, need to re-fetch and re-populate the cache
-		return nil, false
-	}
-
-	result := make([]*storage.Cluster, 0, len(cachedClusters))
-	result = append(result, cachedClusters...)
-	return result, true
+	return fetchObjects(
+		ctx,
+		&clusterMutex,
+		&clustersLastRefreshed,
+		&cachedClusters,
+		fetchClustersFromDB,
+		effectiveaccessscope.TrimCluster,
+	)
 }
 
 func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
 	return clusterStore.Singleton().GetClusters(ctx)
 }
 
-func populateClusterCache(clusters []*storage.Cluster) {
-	refreshTime := time.Now()
-
-	clusterMutex.Lock()
-	defer clusterMutex.Unlock()
-	if refreshTime.Before(clustersLastRefreshed.Add(cacheRefreshPeriod)) {
-		return
-	}
-
-	cachedClusters = make([]*storage.Cluster, 0, len(clusters))
-	for _, c := range clusters {
-		stripCluster(c)
-		cachedClusters = append(cachedClusters, c)
-	}
-	clustersLastRefreshed = refreshTime
-}
-
-func stripCluster(_ *storage.Cluster) {
-	// TODO: remove any field that is not used in the SAC scope computation.
-}
-
 func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	namespaces, valid := fetchNamespacesFromCache()
-	if valid {
-		return namespaces, nil
-	}
-
-	namespaces, err := fetchNamespacesFromDB(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	populateNamespaceCache(namespaces)
-	return namespaces, nil
-}
-
-func fetchNamespacesFromCache() ([]*storage.NamespaceMetadata, bool) {
-	now := time.Now()
-
-	namespaceMutex.RLock()
-	defer namespaceMutex.RUnlock()
-
-	if now.After(namespacesLastRefreshed.Add(cacheRefreshPeriod)) {
-		// The data expired, need to re-fetch and re-populate the cache
-		return nil, false
-	}
-
-	result := make([]*storage.NamespaceMetadata, 0, len(cachedNamespaces))
-	result = append(result, cachedNamespaces...)
-	return result, true
+	return fetchObjects(
+		ctx,
+		&namespaceMutex,
+		&namespacesLastRefreshed,
+		&cachedNamespaces,
+		fetchNamespacesFromDB,
+		effectiveaccessscope.TrimNamespace,
+	)
 }
 
 func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	return namespaceStore.Singleton().GetAllNamespaces(ctx)
 }
 
-func populateNamespaceCache(namespaces []*storage.NamespaceMetadata) {
+// fetchObjects reads objects from a managed object cache or the database, and
+// performs the object cache lifecycle management.
+//
+// The object cache is actually an array of pointers to trimmed objects
+// associated with a refresh timer. If the cache is considered not fresh
+// enough (refresh timer expired), the objects are fetched from database,
+// pushed to the cache and the cache timer is re-armed.
+func fetchObjects[T any](
+	ctx context.Context,
+	mutex *sync.RWMutex,
+	cacheLastRefreshed *time.Time,
+	cachedObjects *[]*T,
+	fetchFromDB func(context.Context) ([]*T, error),
+	trimFn func(*T),
+) ([]*T, error) {
+	objects, valid := fetchFromCache[T](mutex, cacheLastRefreshed, cachedObjects)
+	if valid {
+		return objects, nil
+	}
+
+	objects, err := fetchFromDB(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	populateCache(mutex, cacheLastRefreshed, objects, cachedObjects, trimFn)
+	return objects, nil
+}
+
+func fetchFromCache[T any](
+	mutex *sync.RWMutex,
+	cacheLastRefresh *time.Time,
+	cachedObjects *[]*T,
+) ([]*T, bool) {
+	now := time.Now()
+
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	if now.After(cacheLastRefresh.Add(cacheRefreshPeriod)) {
+		// The data expired, need to re-fetch data and re-populate the cache
+		return nil, false
+	}
+
+	result := make([]*T, 0, len(*cachedObjects))
+	result = append(result, *cachedObjects...)
+	return result, true
+}
+
+func populateCache[T any](
+	mutex *sync.RWMutex,
+	cacheLastRefreshed *time.Time,
+	objects []*T,
+	objectCache *[]*T,
+	trimFn func(*T),
+) {
 	refreshTime := time.Now()
 
-	namespaceMutex.Lock()
-	defer namespaceMutex.Unlock()
-	if refreshTime.Before(namespacesLastRefreshed.Add(cacheRefreshPeriod)) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if refreshTime.Before(cacheLastRefreshed.Add(cacheRefreshPeriod)) {
 		return
 	}
 
-	cachedNamespaces = make([]*storage.NamespaceMetadata, 0, len(namespaces))
-	for _, ns := range namespaces {
-		stripNamespace(ns)
-		cachedNamespaces = append(cachedNamespaces, ns)
+	*objectCache = make([]*T, 0, len(objects))
+	for _, obj := range objects {
+		trimFn(obj)
+		*objectCache = append(*objectCache, obj)
 	}
-	namespacesLastRefreshed = refreshTime
-}
-
-func stripNamespace(_ *storage.NamespaceMetadata) {
-	// TODO: remove any field that is not used in the SAC scope computation.
+	*cacheLastRefreshed = refreshTime
 }
