@@ -180,7 +180,7 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 	cred := conf.GetPassword()
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
-		cred, err = decryptCredential(notifier.GetNotifierSecret(), cryptoKey)
+		cred, err = decryptCredential(cryptoKey, notifier.GetNotifierSecret())
 		if err != nil {
 			return nil, err
 		}
@@ -198,12 +198,12 @@ func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGette
 	}, nil
 }
 
-func decryptCredential(secret string, cryptoKey string) (string, error) {
+func decryptCredential(cryptoKey string, secret string) (string, error) {
 	if cryptoKey == "" {
 		return "", errors.New("crypto key must be non-empty")
 	}
 	codec := cryptocodec.Singleton()
-	cred, err := codec.Decrypt(secret, cryptoKey)
+	cred, err := codec.Decrypt(cryptoKey, secret)
 	if err != nil {
 		// Don't send out error from crypto lib
 		return "", errors.New("Error decrypting secret")
