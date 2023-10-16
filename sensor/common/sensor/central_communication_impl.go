@@ -51,7 +51,8 @@ type centralCommunicationImpl struct {
 }
 
 var (
-	errCantReconcile                 = errors.New("unable to reconcile due to deduper payload too large")
+	errCantReconcile                 = errors.New("unable to reconcile")
+	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
 )
 
@@ -289,7 +290,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	if err != nil {
 		if e, ok := status.FromError(err); ok {
 			if e.Code() == codes.ResourceExhausted {
-				return errors.Wrap(errCantReconcile, e.String())
+				return errors.Wrap(errLargePayload, e.String())
 			}
 		}
 		return errors.Wrap(err, "receiving initial deduper sync")
