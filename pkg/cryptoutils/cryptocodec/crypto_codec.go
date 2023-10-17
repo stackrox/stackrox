@@ -88,7 +88,7 @@ func (gcm *gcmCryptoCodecImpl) Decrypt(keyString string, stringToDecrypt string)
 	if err != nil {
 		return "", err
 	}
-	aesgcm, err := cipher.NewGCM(block)
+	aesgcm, err := cipher.NewGCMWithNonceSize(block, gcmNonceSizeBytes)
 	if err != nil {
 		return "", err
 	}
