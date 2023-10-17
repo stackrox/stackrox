@@ -104,6 +104,10 @@ class VulnReportingTest extends BaseSpecification {
         def email = emails[0]
         def emailId = (String) email["id"]
 
+        // debug info
+        log.info "emailId        ==== " + emailId
+        log.info "email[subject] ==== " + email["subject"]
+        log.info "email[html]    ==== " + email["html"]
         assert emailId
         assert email["subject"] =~ /(StackRox|RHACS) Image Vulnerability Report for (\d+)-(.*)-(\d+)/
         assert email["html"] =~ /has found vulnerabilities/
