@@ -59,7 +59,7 @@ func Export(ctx context.Context, outputDir string) error {
 	outOfTree := [][]driver.Updater{
 		make([]driver.Updater, 0),
 	}
-	outOfTree = append(outOfTree, updaterSet.Updaters())
+	outOfTree := append(make([][]driver.Updater, 1), updaterSet.Updaters())
 
 	for i, uSet := range [][]string{
 		{"oracle", "aws", "rhcc"},
