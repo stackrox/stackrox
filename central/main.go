@@ -190,6 +190,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
@@ -245,6 +246,14 @@ func runSafeMode() {
 	log.Info("Central terminated")
 }
 
+func applyOverride(pool postgres.DB, override string) {
+	log.Infof("Executing %q", override)
+	if _, err := pool.Exec(context.Background(), override); err != nil {
+		log.Errorf("error executing: %q: %v", override, err)
+	}
+	log.Infof("Successfully executed %q", override)
+}
+
 func main() {
 	premain.StartMain()
 
@@ -283,6 +292,11 @@ func main() {
 		}
 	}
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
+
+	// Apply SQL Overrides. These are SQL queries that run at startup to tune or optimize the database for a specific use case.
+	for _, override := range conf.CentralDB.SQLOverrides {
+		applyOverride(globaldb.GetPostgres(), override)
+	}
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
 	if err := migrations.SafeRemoveDBWithSymbolicLink(filepath.Join(migrations.DBMountPath(), migrations.GetBackupClone())); err != nil {

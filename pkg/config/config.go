@@ -81,6 +81,7 @@ type CentralDB struct {
 	Source       string `yaml:"source"`
 	External     bool   `yaml:"external"`
 	DatabaseName string
+	SQLOverrides []string `yaml:"sql-overrides"`
 }
 
 func (c *CentralDB) applyDefaults() {
