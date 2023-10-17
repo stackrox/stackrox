@@ -212,7 +212,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		opts = append(opts, name.Insecure)
 	}
 	n := fmt.Sprintf("%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
-	ref, err := name.NewDigest(n)
+	ref, err := name.NewDigest(n, opts...)
 	if err != nil {
 		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
 		return nil, fmt.Errorf("creating digest reference: %w", err)
