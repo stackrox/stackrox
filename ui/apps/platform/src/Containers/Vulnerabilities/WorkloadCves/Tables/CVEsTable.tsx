@@ -15,6 +15,7 @@ import { Button, ButtonVariant, Text, pluralize } from '@patternfly/react-core';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
+import useMap from 'hooks/useMap';
 import { VulnerabilitySeverityLabel } from '../types';
 import { getEntityPagePath } from '../searchUtils';
 import TooltipTh from '../components/TooltipTh';
@@ -31,6 +32,8 @@ import {
 } from '../sortUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
 import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal/ExceptionRequestModal';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { CveSelectionsProps } from '../components/ExceptionRequestModal/CveSelections';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
@@ -95,7 +98,7 @@ export type CVEsTableProps = {
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
     showExceptionMenuItems: boolean;
-    selectedCves: ReturnType<typeof useSet<string>>;
+    selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     cveTableActionHandler: (opts: ExceptionRequestModalOptions) => void;
 };
 
@@ -181,6 +184,8 @@ function CVEsTable({
 
                     const prioritizedDistros = sortCveDistroList(distroTuples);
                     const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
+                    const summary =
+                        prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
                     return (
                         <Tbody
@@ -203,7 +208,13 @@ function CVEsTable({
                                         key={cve}
                                         select={{
                                             rowIndex,
-                                            onSelect: () => selectedCves.toggle(cve),
+                                            onSelect: () => {
+                                                if (selectedCves.has(cve)) {
+                                                    selectedCves.remove(cve);
+                                                } else {
+                                                    selectedCves.set(cve, { cve, summary });
+                                                }
+                                            },
                                             isSelected: selectedCves.has(cve),
                                         }}
                                     />
@@ -252,7 +263,7 @@ function CVEsTable({
                                                     onClick: () =>
                                                         cveTableActionHandler({
                                                             type: 'DEFERRAL',
-                                                            cves: [cve],
+                                                            cves: [{ cve, summary }],
                                                         }),
                                                 },
                                                 {
@@ -260,7 +271,7 @@ function CVEsTable({
                                                     onClick: () =>
                                                         cveTableActionHandler({
                                                             type: 'FALSE_POSITIVE',
-                                                            cves: [cve],
+                                                            cves: [{ cve, summary }],
                                                         }),
                                                 },
                                             ]}
@@ -272,9 +283,7 @@ function CVEsTable({
                                 <Td />
                                 <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
-                                        {prioritizedDistros.length > 0 && (
-                                            <Text>{prioritizedDistros[0].summary}</Text>
-                                        )}
+                                        {prioritizedDistros.length > 0 && <Text>{summary}</Text>}
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

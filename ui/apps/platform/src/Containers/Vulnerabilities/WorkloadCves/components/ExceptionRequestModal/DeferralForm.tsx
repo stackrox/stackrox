@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Bullseye,
     Button,
@@ -12,6 +12,7 @@ import {
     Tab,
     TextArea,
     Text,
+    TabContent,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
@@ -28,14 +29,14 @@ import {
     deferralValidationSchema,
     futureDateValidator,
 } from './utils';
-import ExceptionScopeField from './ExceptionScopeField';
-import CveSelections from './CveSelections';
+import ExceptionScopeField, { ALL } from './ExceptionScopeField';
+import CveSelections, { CveSelectionsProps } from './CveSelections';
 
 function getDefaultValues(cves: string[], scopeContext: ScopeContext): DeferralValues {
     const imageScope =
         scopeContext === 'GLOBAL'
-            ? { registry: '.*', remote: '.*', tag: '.*' }
-            : { registry: '.*', remote: scopeContext.image.name, tag: '.*' };
+            ? { registry: ALL, remote: ALL, tag: ALL }
+            : { registry: ALL, remote: scopeContext.image.name, tag: ALL };
 
     return {
         cves,
@@ -56,16 +57,20 @@ function prettifyDate(date = ''): string {
 }
 
 export type DeferralFormProps = {
-    cves: string[];
+    cves: CveSelectionsProps['cves'];
     scopeContext: ScopeContext;
     onCancel: () => void;
 };
 
 function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
+    const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
     const { data: config, loading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
 
     const formik = useFormik({
-        initialValues: getDefaultValues(cves, scopeContext),
+        initialValues: getDefaultValues(
+            cves.map(({ cve }) => cve),
+            scopeContext
+        ),
         onSubmit: () => {},
         validationSchema: deferralValidationSchema,
     });
@@ -95,137 +100,145 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
     }
 
     function setExpiry(expiry: DeferralValues['expiry']) {
-        setValues((prev) => ({ ...prev, expiry })).catch(() => {});
+        return setValues((prev) => ({ ...prev, expiry }));
     }
 
     return (
         <>
-            <Form>
-                <Tabs defaultActiveKey="options">
-                    <Tab eventKey="options" title="Options">
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
-                            <Text>CVEs will be marked as deferred after approval</Text>
-                            {config && (
-                                <FormGroup label="How long should the CVEs be deferred?" isRequired>
-                                    <Flex
-                                        direction={{ default: 'column' }}
-                                        spaceItems={{ default: 'spaceItemsXs' }}
-                                    >
-                                        {config.expiryOptions.fixableCveOptions.anyFixable && (
+            <Form className="pf-u-display-flex pf-u-flex-direction-column" style={{ minHeight: 0 }}>
+                <Tabs
+                    className="pf-u-flex-shrink-0"
+                    activeKey={activeKeyTab}
+                    onSelect={(_, tab) => setActiveKeyTab(tab)}
+                >
+                    <Tab eventKey="options" title="Options" tabContentId="options" />
+                    <Tab eventKey="cves" title="CVE selections" tabContentId="cves" />
+                </Tabs>
+                <TabContent
+                    id="options"
+                    className="pf-u-flex-1"
+                    hidden={activeKeyTab !== 'options'}
+                >
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsLg' }}
+                    >
+                        <Text>CVEs will be marked as deferred after approval</Text>
+                        {config && (
+                            <FormGroup label="How long should the CVEs be deferred?" isRequired>
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsXs' }}
+                                >
+                                    {config.expiryOptions.fixableCveOptions.anyFixable && (
+                                        <Radio
+                                            id="any-cve-fixable"
+                                            name="any-cve-fixable"
+                                            isChecked={values.expiry?.type === 'ANY_CVE_FIXABLE'}
+                                            onChange={() => setExpiry({ type: 'ANY_CVE_FIXABLE' })}
+                                            label="When any CVE is fixable"
+                                        />
+                                    )}
+                                    {config.expiryOptions.fixableCveOptions.allFixable && (
+                                        <Radio
+                                            id="all-cve-fixable"
+                                            name="all-cve-fixable"
+                                            isChecked={values.expiry?.type === 'ALL_CVE_FIXABLE'}
+                                            onChange={() => setExpiry({ type: 'ALL_CVE_FIXABLE' })}
+                                            label="When all CVEs are fixable"
+                                        />
+                                    )}
+                                    {config.expiryOptions.dayOptions
+                                        .filter((option) => option.enabled)
+                                        .map(({ numDays }) => (
                                             <Radio
-                                                id="any-cve-fixable"
-                                                name="any-cve-fixable"
+                                                id={`fixed-duration-${numDays}`}
+                                                name={`fixed-duration-${numDays}`}
+                                                key={`fixed-duration-${numDays}`}
                                                 isChecked={
-                                                    values.expiry?.type === 'ANY_CVE_FIXABLE'
+                                                    values.expiry?.type === 'TIME' &&
+                                                    values.expiry?.days === numDays
                                                 }
-                                                onChange={() => {
-                                                    setExpiry({ type: 'ANY_CVE_FIXABLE' });
-                                                }}
-                                                label="When any CVE is fixable"
-                                            />
-                                        )}
-                                        {config.expiryOptions.fixableCveOptions.allFixable && (
-                                            <Radio
-                                                id="all-cve-fixable"
-                                                name="all-cve-fixable"
-                                                isChecked={
-                                                    values.expiry?.type === 'ALL_CVE_FIXABLE'
+                                                onChange={() =>
+                                                    setExpiry({
+                                                        type: 'TIME',
+                                                        days: numDays,
+                                                    })
                                                 }
-                                                onChange={() => {
-                                                    setExpiry({ type: 'ALL_CVE_FIXABLE' });
-                                                }}
-                                                label="When all CVEs are fixable"
+                                                label={`For ${numDays} days`}
                                             />
-                                        )}
-                                        {config.expiryOptions.dayOptions
-                                            .filter((option) => option.enabled)
-                                            .map(({ numDays }) => (
-                                                <Radio
-                                                    id={`fixed-duration-${numDays}`}
-                                                    name={`fixed-duration-${numDays}`}
-                                                    key={`fixed-duration-${numDays}`}
-                                                    isChecked={
-                                                        values.expiry?.type === 'TIME' &&
-                                                        values.expiry?.days === numDays
-                                                    }
-                                                    onChange={() => {
-                                                        setExpiry({ type: 'TIME', days: numDays });
-                                                    }}
-                                                    label={`For ${numDays} days`}
-                                                />
-                                            ))}
-                                        {/* TODO - Awaiting backend support for indefinite deferrals
+                                        ))}
+                                    {/* TODO - Awaiting backend support for indefinite deferrals
                                          config.expiryOptions.indefinite && (
                                             <Radio
                                                 id="indefinite"
                                                 name="indefinite"
-                                                isChecked={values.expiryType === 'INDEFINITE'}
+                                                isChecked={values.expiry?.type === 'INDEFINITE'}
                                                 onChange={() => {}}
                                                 label="Indefinitely"
                                             />
                                         )
                                         */}
-                                        {config.expiryOptions.customDate && (
-                                            <Radio
-                                                id="custom-date"
-                                                name="custom-date"
-                                                isChecked={values.expiry?.type === 'CUSTOM_DATE'}
-                                                onChange={() =>
-                                                    setExpiry({
-                                                        type: 'CUSTOM_DATE',
-                                                        date: addDays(new Date(), 1).toISOString(),
-                                                    })
-                                                }
-                                                label="Until a specific date"
-                                            />
-                                        )}
+                                    {config.expiryOptions.customDate && (
+                                        <Radio
+                                            id="custom-date"
+                                            name="custom-date"
+                                            isChecked={values.expiry?.type === 'CUSTOM_DATE'}
+                                            onChange={() =>
+                                                setExpiry({
+                                                    type: 'CUSTOM_DATE',
+                                                    date: addDays(new Date(), 1).toISOString(),
+                                                })
+                                            }
+                                            label="Until a specific date"
+                                        />
+                                    )}
 
-                                        {config.expiryOptions.customDate &&
-                                            values.expiry?.type === 'CUSTOM_DATE' && (
-                                                <div>
-                                                    <DatePicker
-                                                        name="custom-date-picker"
-                                                        value={prettifyDate(values.expiry?.date)}
-                                                        onChange={(_, value) => {
-                                                            setExpiry({
-                                                                type: 'CUSTOM_DATE',
-                                                                date: value,
-                                                            });
-                                                        }}
-                                                        validators={[futureDateValidator]}
-                                                    />
-                                                </div>
-                                            )}
-                                    </Flex>
-                                </FormGroup>
-                            )}
-                            <ExceptionScopeField
-                                fieldId="scope"
-                                label="Scope"
-                                formik={formik}
-                                scopeContext={scopeContext}
-                            />
-                            <FormGroup fieldId="comment" label="Deferral rationale" isRequired>
-                                <TextArea
-                                    id="comment"
-                                    name="comment"
-                                    isRequired
-                                    onBlur={handleBlur('comment')}
-                                    onChange={(value) => setFieldValue('comment', value)}
-                                    validated={
-                                        touched.comment && errors.comment ? 'error' : 'default'
-                                    }
-                                />
+                                    {config.expiryOptions.customDate &&
+                                        values.expiry?.type === 'CUSTOM_DATE' && (
+                                            <div>
+                                                <DatePicker
+                                                    name="custom-date-picker"
+                                                    value={prettifyDate(values.expiry.date)}
+                                                    onChange={(_, value) =>
+                                                        setExpiry({
+                                                            type: 'CUSTOM_DATE',
+                                                            date: value,
+                                                        })
+                                                    }
+                                                    validators={[futureDateValidator]}
+                                                />
+                                            </div>
+                                        )}
+                                </Flex>
                             </FormGroup>
-                        </Flex>
-                    </Tab>
-                    <Tab eventKey="cves" title="CVE Selections">
-                        <CveSelections cves={cves} />
-                    </Tab>
-                </Tabs>
+                        )}
+                        <ExceptionScopeField
+                            fieldId="scope"
+                            label="Scope"
+                            formik={formik}
+                            scopeContext={scopeContext}
+                        />
+                        <FormGroup fieldId="comment" label="Deferral rationale" isRequired>
+                            <TextArea
+                                id="comment"
+                                name="comment"
+                                isRequired
+                                onBlur={handleBlur('comment')}
+                                onChange={(value) => setFieldValue('comment', value)}
+                                validated={touched.comment && errors.comment ? 'error' : 'default'}
+                            />
+                        </FormGroup>
+                    </Flex>
+                </TabContent>
+                <TabContent
+                    id="cves"
+                    className="pf-u-flex-1"
+                    hidden={activeKeyTab !== 'cves'}
+                    style={{ overflowY: 'auto' }}
+                >
+                    <CveSelections cves={cves} />
+                </TabContent>
                 <Flex>
                     <Button onClick={() => {}}>Submit request</Button>
                     <Button variant="secondary" onClick={onCancel}>
