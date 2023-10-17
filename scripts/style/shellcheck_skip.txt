@@ -16,6 +16,16 @@ image/templates/sensor/kubernetes/sensor.sh
 image/templates/sensor/openshift/sensor.sh
 licenses/generate-license-wrapper.sh
 operator/hack/common.sh
+performance-scale-tests/utilities/create-infra.sh
+performance-scale-tests/utilities/examples/env_3.73.x-130-g1ead7d6745.sh
+performance-scale-tests/utilities/examples/env_3_73.sh
+performance-scale-tests/utilities/examples/no_plop_patch.sh
+performance-scale-tests/utilities/examples/plop_patch.sh
+performance-scale-tests/utilities/open-close-ports-load/open-close-ports-load.sh
+performance-scale-tests/utilities/performance-test.sh
+performance-scale-tests/utilities/set-docker-credentials-for-cluster.sh
+performance-scale-tests/utilities/start-central-and-scanner.sh
+performance-scale-tests/utilities/start-secured-cluster.sh
 qa-tests-backend/scripts/migrate_protos.sh
 qa-tests-backend/test-images/fail-compliance/ssh/run-ssh.sh
 qa-tests-backend/test-images/trigger-policy-violations/most/run-csh.sh
