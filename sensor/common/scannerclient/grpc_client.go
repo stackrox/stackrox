@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	v4client "github.com/stackrox/rox/scanner/client"
+	scannerclient "github.com/stackrox/rox/scanner/pkg/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -53,7 +53,7 @@ type v2Client struct {
 // known as Scanner V4 Indexer.
 type v4Client struct {
 	// Sensor uses Scanner V4's client.
-	client v4client.ScannerClient
+	client scannerclient.ScannerClient
 }
 
 // GetStatus returns the image analysis status
@@ -144,10 +144,10 @@ func dialV2() (ScannerClient, error) {
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
-	client, err := v4client.NewGRPCScannerClient(ctx,
-		v4client.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
+	client, err := scannerclient.NewGRPCScannerClient(ctx,
+		scannerclient.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
 		// TODO: [ROX-19050] Set the Scanner V4 TLS validation when certificates are ready.
-		v4client.WithoutTLSVerify)
+		scannerclient.WithoutTLSVerify)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func dialV4() (ScannerClient, error) {
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
 func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
-	name := image.GetName().GetFullName()
+	imgName := image.GetName().GetFullName()
 
 	// The WaitForReady option will cause invocations to block (until server ready or
 	// ctx done/expires) This was added so that on fresh installation of sensor when
@@ -172,11 +172,11 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		},
 	}, grpc.WaitForReady(true))
 	if err != nil {
-		log.Debugf("Unable to get image components from local Scanner for image %s: %v", name, err)
+		log.Debugf("Unable to get image components from local Scanner for image %s: %v", imgName, err)
 		return nil, errors.Wrap(err, "getting image components from scanner")
 	}
 
-	log.Debugf("Received image components from local Scanner for image %s", name)
+	log.Debugf("Received image components from local Scanner for image %s", imgName)
 
 	return &ImageAnalysis{
 		ScanStatus:   resp.GetStatus(),
