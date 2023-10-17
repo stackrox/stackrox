@@ -245,11 +245,11 @@ func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime *types.Timestamp) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		timestamp.FromProtobuf(dataStartTime).GoTime())
-	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	allClusters, err := rg.clusterDatastore.GetClustersForSAC(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
-	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	allNamespaces, err := rg.namespaceDatastore.GetNamespacesForSAC(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
 	}

@@ -77,7 +77,7 @@ func DenyAllEffectiveAccessScope() *ScopeTree {
 // ComputeEffectiveAccessScope applies a simple access scope to provided
 // clusters and namespaces and yields ScopeTree. Empty access scope rules
 // mean nothing is included.
-func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
+func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []ClusterForSAC, namespaces []NamespaceForSAC, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
 	root := newEffectiveAccessScopeTree(Excluded)
 
 	// Compile scope into cluster and namespace selectors.
@@ -230,7 +230,7 @@ func (root *ScopeTree) GetClusterByID(clusterID string) *clustersScopeSubTree {
 // populateStateForCluster adds given cluster as Included or Excluded to root.
 // Only the last observed cluster is considered if multiple ones with the same
 // name exist.
-func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (root *ScopeTree) populateStateForCluster(cluster ClusterForSAC, clusterSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := cluster.GetName()
 
 	// There is no need to check if root is Included as we start with Excluded root.
@@ -243,7 +243,7 @@ func (root *ScopeTree) populateStateForCluster(cluster *storage.Cluster, cluster
 	// Match and update the tree.
 	matched := matchLabels(clusterSelectors, clusterLabels)
 	root.Clusters[clusterName] = newClusterScopeSubTree(matched, nodeAttributesForCluster(cluster, detail))
-	root.clusterIDToName[cluster.GetId()] = clusterName
+	root.clusterIDToName[cluster.GetID()] = clusterName
 }
 
 // bubbleUpStatesAndCompactify updates the state of parent nodes based on the
@@ -351,7 +351,7 @@ func (cluster *clustersScopeSubTree) copy() *clustersScopeSubTree {
 // populateStateForNamespace adds given namespace as Included or Excluded to
 // parent cluster. Only the last observed namespace is considered if multiple
 // ones with the same <cluster name, namespace name> exist.
-func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace *storage.NamespaceMetadata, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
+func (cluster *clustersScopeSubTree) populateStateForNamespace(namespace NamespaceForSAC, namespaceSelectors []labels.Selector, detail v1.ComputeEffectiveAccessScopeRequest_Detail) {
 	clusterName := namespace.GetClusterName()
 	namespaceName := namespace.GetName()
 	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)

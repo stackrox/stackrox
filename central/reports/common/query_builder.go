@@ -42,8 +42,8 @@ func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilte
 }
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
-func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata) (*ReportQuery, error) {
+func (q *queryBuilder) BuildQuery(ctx context.Context, clusters []effectiveaccessscope.ClusterForSAC,
+	namespaces []effectiveaccessscope.NamespaceForSAC) (*ReportQuery, error) {
 	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
 	if err != nil {
 		return nil, err
@@ -94,8 +94,8 @@ func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
 	return strings.Join(conjuncts, "+"), nil
 }
 
-func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
+func (q *queryBuilder) buildAccessScopeQuery(clusters []effectiveaccessscope.ClusterForSAC,
+	namespaces []effectiveaccessscope.NamespaceForSAC) (*v1.Query, error) {
 	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
 	if accessScopeRules == nil {
 		// Old(v1) report configurations would have nil access scope rules.

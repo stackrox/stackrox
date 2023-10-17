@@ -31,6 +31,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cache/objectarraycache"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -40,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/simplecache"
@@ -55,6 +57,8 @@ const (
 
 const (
 	defaultAdmissionControllerTimeout = 3
+
+	cacheRefreshPeriod = 5 * time.Second
 )
 
 var (
@@ -87,6 +91,8 @@ type datastoreImpl struct {
 	nameToIDCache simplecache.Cache
 
 	searcher search.Searcher
+
+	objectCacheForSAC *objectarraycache.ObjectArrayCache[effectiveaccessscope.ClusterForSAC]
 
 	lock sync.Mutex
 }
@@ -246,6 +252,62 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 	}
 
 	return ds.searchRawClusters(ctx, pkgSearch.EmptyQuery())
+}
+
+func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.ClusterForSAC, error) {
+	return ds.objectCacheForSAC.GetObjects(ctx)
+}
+
+func (ds *datastoreImpl) getClustersForSAC(ctx context.Context) ([]effectiveaccessscope.ClusterForSAC, error) {
+	_, err := clusterSAC.ReadAllowed(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	clusters := make([]effectiveaccessscope.ClusterForSAC, 0)
+	err = ds.clusterStorage.Walk(ctx, func(obj *storage.Cluster) error {
+		clusters = append(clusters, storageClusterToClusterForSAC(obj))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return clusters, nil
+}
+
+func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
+	return &clusterForSAC{
+		ID:     cluster.GetId(),
+		name:   cluster.GetName(),
+		labels: cluster.GetLabels(),
+	}
+}
+
+type clusterForSAC struct {
+	ID     string
+	name   string
+	labels map[string]string
+}
+
+func (c *clusterForSAC) GetID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ID
+}
+
+func (c *clusterForSAC) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.name
+}
+
+func (c *clusterForSAC) GetLabels() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.labels
 }
 
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {

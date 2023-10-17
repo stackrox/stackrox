@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -13,9 +14,11 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cache/objectarraycache"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -29,6 +32,7 @@ import (
 type DataStore interface {
 	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.NamespaceForSAC, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -43,12 +47,14 @@ type DataStore interface {
 
 // New returns a new DataStore instance using the provided store and indexer
 func New(nsStore store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
-	return &datastoreImpl{
+	ds := &datastoreImpl{
 		store:             nsStore,
 		deployments:       deploymentDataStore,
 		namespaceRanker:   namespaceRanker,
 		formattedSearcher: formatSearcherV2(indexer, namespaceRanker),
 	}
+	ds.objectCacheForSAC = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, ds.getNamespacesForSAC)
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
@@ -72,6 +78,10 @@ var (
 	}
 )
 
+const (
+	cacheRefreshPeriod = 5 * time.Second
+)
+
 type datastoreImpl struct {
 	store             store.Store
 	indexer           index.Indexer
@@ -79,6 +89,8 @@ type datastoreImpl struct {
 	namespaceRanker   *ranking.Ranker
 
 	deployments deploymentDataStore.DataStore
+
+	objectCacheForSAC *objectarraycache.ObjectArrayCache[effectiveaccessscope.NamespaceForSAC]
 }
 
 // GetNamespace returns namespace with given id.
@@ -117,6 +129,23 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 	}
 	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
+}
+
+// GetNamespacesForSAC retrieves the namespaces for SAC check purposes
+func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.NamespaceForSAC, error) {
+	return b.objectCacheForSAC.GetObjects(ctx)
+}
+
+func (b *datastoreImpl) getNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.NamespaceForSAC, error) {
+	namespaces := make([]effectiveaccessscope.NamespaceForSAC, 0)
+	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
+		namespaces = append(namespaces, storageNamespaceToNamespaceForSAC(namespace))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return namespaces, nil
 }
 
 func (b *datastoreImpl) GetManyNamespaces(ctx context.Context, ids []string) ([]*storage.NamespaceMetadata, error) {
@@ -252,4 +281,48 @@ func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker)
 	// This is currently required due to the priority searcher
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+}
+
+func storageNamespaceToNamespaceForSAC(ns *storage.NamespaceMetadata) *namespaceForSAC {
+	return &namespaceForSAC{
+		ID:          ns.GetId(),
+		name:        ns.GetName(),
+		clusterName: ns.GetClusterName(),
+		labels:      ns.GetLabels(),
+	}
+}
+
+type namespaceForSAC struct {
+	ID          string
+	name        string
+	clusterName string
+	labels      map[string]string
+}
+
+func (n *namespaceForSAC) GetID() string {
+	if n == nil {
+		return ""
+	}
+	return n.ID
+}
+
+func (n *namespaceForSAC) GetName() string {
+	if n == nil {
+		return ""
+	}
+	return n.name
+}
+
+func (n *namespaceForSAC) GetClusterName() string {
+	if n == nil {
+		return ""
+	}
+	return n.clusterName
+}
+
+func (n *namespaceForSAC) GetLabels() map[string]string {
+	if n == nil {
+		return nil
+	}
+	return n.labels
 }

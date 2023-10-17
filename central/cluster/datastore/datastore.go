@@ -26,10 +26,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cache/objectarraycache"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/simplecache"
 )
@@ -45,6 +47,7 @@ type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
+	GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.ClusterForSAC, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 
@@ -117,6 +120,8 @@ func New(
 		idToNameCache:             simplecache.New(),
 		nameToIDCache:             simplecache.New(),
 	}
+
+	ds.objectCacheForSAC = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, ds.getClustersForSAC)
 
 	ds.searcher = search.NewV2(clusterStorage, indexer, clusterRanker)
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {

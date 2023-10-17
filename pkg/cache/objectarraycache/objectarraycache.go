@@ -8,7 +8,7 @@ import (
 )
 
 // RefreshFunction is a function that retrieves an array of objects.
-type RefreshFunction[T any] func(ctx context.Context) ([]*T, error)
+type RefreshFunction[T any] func(ctx context.Context) ([]T, error)
 
 // ObjectArrayCache is a cache for an array of objects.
 // The object array in the cache instance are valid for a pre-defined period,
@@ -17,7 +17,7 @@ type ObjectArrayCache[T any] struct {
 	mutex          sync.RWMutex
 	lastRefreshed  time.Time
 	validityPeriod time.Duration
-	objectCache    []*T
+	objectCache    []T
 	refreshFn      RefreshFunction[T]
 }
 
@@ -32,7 +32,7 @@ func NewObjectArrayCache[T any](validityPeriod time.Duration, refreshFn RefreshF
 
 // GetObjects retrieves the array of objects, either from cache (when not
 // expired), or using the refresh function (when the cache is expired).
-func (c *ObjectArrayCache[T]) GetObjects(ctx context.Context) ([]*T, error) {
+func (c *ObjectArrayCache[T]) GetObjects(ctx context.Context) ([]T, error) {
 	objects, valid := c.getObjectsFromCache()
 	if valid {
 		return objects, nil
@@ -47,7 +47,7 @@ func (c *ObjectArrayCache[T]) GetObjects(ctx context.Context) ([]*T, error) {
 	return objects, nil
 }
 
-func (c *ObjectArrayCache[T]) getObjectsFromCache() ([]*T, bool) {
+func (c *ObjectArrayCache[T]) getObjectsFromCache() ([]T, bool) {
 	now := time.Now()
 
 	c.mutex.RLock()
@@ -58,12 +58,12 @@ func (c *ObjectArrayCache[T]) getObjectsFromCache() ([]*T, bool) {
 		return nil, false
 	}
 
-	res := make([]*T, 0, len(c.objectCache))
+	res := make([]T, 0, len(c.objectCache))
 	res = append(res, c.objectCache...)
 	return res, true
 }
 
-func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
+func (c *ObjectArrayCache[T]) refreshCache(objects []T) {
 	refreshTime := time.Now()
 
 	c.mutex.Lock()
@@ -79,7 +79,7 @@ func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
 			c.objectCache[i] = objects[i]
 		}
 	} else {
-		c.objectCache = make([]*T, 0, len(objects))
+		c.objectCache = make([]T, 0, len(objects))
 		c.objectCache = append(c.objectCache, objects...)
 	}
 }

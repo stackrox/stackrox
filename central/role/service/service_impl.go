@@ -325,12 +325,12 @@ func (s *serviceImpl) ComputeEffectiveAccessScope(ctx context.Context, req *v1.C
 	// but while she is creating them she would only see a sliced view.
 	readScopesCtx := ctx
 
-	clusters, err := s.clusterDataStore.GetClusters(readScopesCtx)
+	clusters, err := s.clusterDataStore.GetClustersForSAC(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
 
-	namespaces, err := s.namespaceDataStore.GetAllNamespaces(readScopesCtx)
+	namespaces, err := s.namespaceDataStore.GetNamespacesForSAC(readScopesCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to compute effective access scope: %v", err)
 	}
@@ -378,7 +378,12 @@ func (s *serviceImpl) GetNamespacesForClusterAndPermissions(ctx context.Context,
 
 // effectiveAccessScopeForSimpleAccessScope computes the effective access scope
 // for the given rules and converts it to the desired response.
-func effectiveAccessScopeForSimpleAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []*storage.Cluster, namespaces []*storage.NamespaceMetadata, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*storage.EffectiveAccessScope, error) {
+func effectiveAccessScopeForSimpleAccessScope(
+	scopeRules *storage.SimpleAccessScope_Rules,
+	clusters []effectiveaccessscope.ClusterForSAC,
+	namespaces []effectiveaccessscope.NamespaceForSAC,
+	detail v1.ComputeEffectiveAccessScopeRequest_Detail,
+) (*storage.EffectiveAccessScope, error) {
 	tree, err := effectiveaccessscope.ComputeEffectiveAccessScope(scopeRules, clusters, namespaces, detail)
 	if err != nil {
 		return nil, err
