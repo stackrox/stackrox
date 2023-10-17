@@ -306,13 +306,13 @@ function setup_internal_sso() {
         --secret=declarative-configurations \
         --namespace=stackrox \
         --name="Internal-SSO" \
-     	--ui-endpoint="${LOCAL_API_ENDPOINT}" \
-     	--minimum-access-role=Admin \
-     	--extra-ui-endpoints=localhost:8000 \
-     	--extra-ui-endpoints=localhost:3000 \
-     	--issuer=https://auth.redhat.com/auth/realms/EmployeeIDP \
-     	--mode=post \
-     	--client-id=rhacs-dev-envs \
-     	--client-secret="${LOCAL_CLIENT_SECRET}" \
-     	--disable-offline-access=true
+        --ui-endpoint="${LOCAL_API_ENDPOINT}" \
+        --minimum-access-role=Admin \
+        --extra-ui-endpoints=localhost:8000 \
+        --extra-ui-endpoints=localhost:3000 \
+        --issuer=https://auth.redhat.com/auth/realms/EmployeeIDP \
+        --mode=post \
+        --client-id=rhacs-dev-envs \
+        --client-secret="${LOCAL_CLIENT_SECRET}" \
+        --disable-offline-access=true
 }
