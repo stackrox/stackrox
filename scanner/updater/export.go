@@ -56,9 +56,6 @@ func Export(ctx context.Context, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	outOfTree := [][]driver.Updater{
-		make([]driver.Updater, 0),
-	}
 	outOfTree := append(make([][]driver.Updater, 1), updaterSet.Updaters())
 
 	for i, uSet := range [][]string{
