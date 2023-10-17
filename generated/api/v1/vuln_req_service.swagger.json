@@ -636,14 +636,7 @@
       "properties": {
         "cve": {
           "type": "string",
-          "description": "This field indicates the CVEs requested to be deferred.\nOnly one field, `cve` or `cves`, can be set in the request."
-        },
-        "cves": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "This field is under development. This field indicates the CVEs requested to be deferred.\nOnly one field, `cve` or `cves`, can be set in the request."
+          "description": "This field indicates the CVEs requested to be deferred."
         },
         "comment": {
           "type": "string"
@@ -663,7 +656,7 @@
           "description": "This field is under development.\nThis field can be used only for deferral requests.\nThis field indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request are fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
         }
       },
-      "title": "next available tag: 8"
+      "title": "next available tag: 7"
     },
     "v1DeferVulnRequestExpiryType": {
       "type": "string",
@@ -709,14 +702,7 @@
       "properties": {
         "cve": {
           "type": "string",
-          "description": "This field indicates the CVE requested to be marked as false-positive.\nOnly one field, `cve` or `cves`, can be set in the request."
-        },
-        "cves": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "This field is under development. This field indicates the CVEs requested to be marked as false-positive.\nOnly one field, `cve` or `cves`, can be set in the request."
+          "description": "This field indicates the CVE requested to be marked as false-positive."
         },
         "scope": {
           "$ref": "#/definitions/storageVulnerabilityRequestScope"
