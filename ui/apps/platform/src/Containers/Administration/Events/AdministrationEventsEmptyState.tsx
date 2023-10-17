@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
-import { Bullseye, EmptyState, EmptyStateBody, EmptyStateIcon } from '@patternfly/react-core';
-import { FilterIcon } from '@patternfly/react-icons';
+import {
+    Bullseye,
+    EmptyState,
+    EmptyStateBody,
+    EmptyStateIcon,
+    Flex,
+    Text,
+    Title,
+} from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';
 
 export type AdministrationEventsEmptyStateProps = {
@@ -17,12 +25,25 @@ function AdministrationEventsEmptyState({
             <Tr>
                 <Td colSpan={colSpan}>
                     <Bullseye>
-                        <EmptyState>
-                            {hasFilter && <EmptyStateIcon icon={FilterIcon} />}
-                            <EmptyStateBody>
-                                {hasFilter ? 'No events found' : 'No events'}
-                            </EmptyStateBody>
-                        </EmptyState>
+                        {hasFilter ? (
+                            <EmptyState>
+                                <EmptyStateIcon icon={SearchIcon} />
+                                <EmptyStateBody>
+                                    <Flex direction={{ default: 'column' }}>
+                                        <Title headingLevel="h2">
+                                            No administration events found
+                                        </Title>
+                                        <Text>Modify filters and try again</Text>
+                                    </Flex>
+                                </EmptyStateBody>
+                            </EmptyState>
+                        ) : (
+                            <EmptyState>
+                                <EmptyStateBody>
+                                    <Title headingLevel="h2">No administration events</Title>
+                                </EmptyStateBody>
+                            </EmptyState>
+                        )}
                     </Bullseye>
                 </Td>
             </Tr>

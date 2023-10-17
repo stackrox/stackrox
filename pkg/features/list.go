@@ -46,7 +46,7 @@ var (
 	ComplianceEnhancements = registerUnchangeableFeature("Compliance enhancements", "ROX_COMPLIANCE_ENHANCEMENTS", false)
 
 	// AdministrationEvents enables APIs (including collection) and UI pages for administration events.
-	AdministrationEvents = registerUnchangeableFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
+	AdministrationEvents = registerFeature("Enable administration events", "ROX_ADMINISTRATION_EVENTS", false)
 
 	// PostgresDatastore defines if PostgresSQL should be used
 	PostgresDatastore = registerUnchangeableFeature("Enable Postgres Datastore", "ROX_POSTGRES_DATASTORE", true)

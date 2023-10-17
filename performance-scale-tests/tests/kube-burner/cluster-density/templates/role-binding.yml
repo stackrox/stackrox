@@ -1,0 +1,13 @@
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.resourceName}}-{{.Replica}}
+subjects:
+  - kind: ServiceAccount
+    name: {{.saName}}-{{.Replica}}
+    namespace: "{{.namespace}}-{{.Iteration}}"
+roleRef:
+  kind: Role
+  name: {{.roleName}}-{{.Replica}}
+  apiGroup: ""

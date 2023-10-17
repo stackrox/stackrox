@@ -65,9 +65,7 @@ func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *
 		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), pgutils.NilOrTime(updatedVersion.GetLastPersisted()))
 		return err
 	})
-	if err != nil {
-		utils.Must(errors.Wrapf(err, "failed to write migration version to %s", "name"))
-	}
+	utils.Must(errors.Wrap(err, "failed to write migration version"))
 }
 
 // SetVersionPostgres - sets the version in the named postgres database

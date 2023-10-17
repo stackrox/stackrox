@@ -167,8 +167,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				d.enforcer.ProcessAlertResults(result.action, storage.LifecycleStage_DEPLOY, alertResults)
 				fallthrough
 			case central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
-				var isMostRecentUpdate bool
-				concurrency.WithRLock(&d.deploymentProcessingLock, func() {
+				isMostRecentUpdate := concurrency.WithRLock1(&d.deploymentProcessingLock, func() bool {
 					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
 					if !exists {
 						// CREATE and UPDATE actions write a 0 timestamp into the map to signify that it is being processed
@@ -178,14 +177,13 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 						for _, alert := range alertResults.GetAlerts() {
 							alert.State = storage.ViolationState_RESOLVED
 						}
-						isMostRecentUpdate = true
-					} else {
-						isMostRecentUpdate = result.timestamp >= value
-						if isMostRecentUpdate {
-							d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
-						}
+						return true
 					}
-
+					isMostRecentUpdate := result.timestamp >= value
+					if isMostRecentUpdate {
+						d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
+					}
+					return isMostRecentUpdate
 				})
 				// If the deployment is not being marked as being processed, then it was already removed and don't push to the channel
 				// If the timestamp of the deployment is older than one that has already been processed then also ignore

@@ -53,13 +53,26 @@ export function selectResourceFilterType(entityType) {
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
  * @param {string} value
  */
-export function typeAndEnterResourceFilterValue(entityType, value) {
+export function typeAndSelectResourceFilterValue(entityType, value) {
     cy.get(selectors.resourceValueTypeahead(entityType)).click();
     cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
-    cy.get(selectors.resourceValueMenuItem(entityType, value)).click();
+    cy.get(selectors.resourceValueMenuItem(entityType))
+        .contains(new RegExp(`^${value}$`))
+        .click();
     cy.get(selectors.resourceValueTypeahead(entityType)).click();
 }
 
+/**
+ * Type a value into the resource filter typeahead and select the first matching value.
+ * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace')} entityType
+ * @param {string} value
+ */
+export function typeAndSelectCustomResourceFilterValue(entityType, value) {
+    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+    cy.get(selectors.resourceValueTypeahead(entityType)).type(value);
+    cy.get(selectors.resourceValueMenuItem(entityType)).contains(`Add "${value}"`).click();
+    cy.get(selectors.resourceValueTypeahead(entityType)).click();
+}
 /**
  * View a specific entity tab for a Workload CVE table
  *
@@ -90,6 +103,73 @@ export function extractNonZeroSeverityFromCount(severityCountText) {
         targetSeverity,
         allSeverities.filter((s) => s.toUpperCase() !== targetSeverity.toUpperCase()),
     ];
+}
+
+/**
+ * Selects the first CVE for the table and opens the exception modal
+ * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
+ */
+export function selectSingleCveForException(exceptionType) {
+    const menuOption = exceptionType === 'DEFERRAL' ? 'Defer CVE' : 'Mark as false positive';
+    const modalSelector =
+        exceptionType === 'DEFERRAL'
+            ? selectors.deferCveModal
+            : selectors.markCveFalsePositiveModal;
+
+    return cy.get(selectors.firstTableRow).then(($row) => {
+        const cveName = $row.find('td[data-label="CVE"]').text();
+        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
+        cy.get(selectors.menuOption(menuOption)).click();
+
+        cy.get('button:contains("CVE Selections")').click();
+        // TODO - Update this code when modal form is completed
+        cy.get(`${modalSelector}:contains("${cveName}")`);
+        return Promise.resolve(cveName);
+    });
+}
+
+/**
+ * Selects the first CVE on each of two pages for the table and opens the exception modal
+ * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
+ */
+export function selectMultipleCvesForException(exceptionType) {
+    const menuOption = exceptionType === 'DEFERRAL' ? 'Defer CVEs' : 'Mark as false positives';
+    const modalSelector =
+        exceptionType === 'DEFERRAL'
+            ? selectors.deferCveModal
+            : selectors.markCveFalsePositiveModal;
+
+    const cveNames = [];
+
+    // Select the first CVE on the first page and the first CVE on the second page
+    // to test multi-deferral flows
+    return cy
+        .get(selectors.firstTableRow)
+        .then(($row) => {
+            cveNames.push($row.find('td[data-label="CVE"]').text());
+            cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
+            cy.get(selectors.paginationNext).click();
+            // Wait for the table to finish updating
+            cy.get(selectors.isUpdatingTable).should('not.exist');
+
+            return cy.get(selectors.firstTableRow);
+        })
+        .then(($nextRow) => {
+            cveNames.push($nextRow.find('td[data-label="CVE"]').text());
+            cy.wrap($nextRow).find(selectors.tableRowSelectCheckbox).click();
+
+            cy.get(selectors.bulkActionMenuToggle).click();
+            cy.get(selectors.menuOption(menuOption)).click();
+        })
+        .then(() => {
+            cy.get('button:contains("CVE Selections")').click();
+            // TODO - Update this code when modal form is completed
+            cveNames.forEach((name) => {
+                cy.get(`${modalSelector}:contains("${name}")`);
+            });
+
+            return Promise.resolve(cveNames);
+        });
 }
 
 /**

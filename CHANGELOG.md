@@ -27,6 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
+- The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
 
 ### Technical Changes
 - Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
@@ -34,6 +35,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   have been _always_ lower-cased by the backend. However, this is not the case anymore to support custom categories, which
   are required to be title-cased.
 - ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
+- The experimental API `/v1/product/usage` has been renamed to `/v1/administration/usage`.
+- Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
 
 ## [4.2.0]
 

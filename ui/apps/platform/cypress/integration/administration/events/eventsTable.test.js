@@ -66,7 +66,7 @@ describe('Administration Events table', () => {
         cy.get('th:contains("Domain")');
         cy.get('th:contains("Resource type")');
         cy.get('th:contains("Level")');
-        cy.get('th:contains("Event last occurred at")');
+        cy.get('th:contains("Last occurred")');
         cy.get('th:contains("Count")');
     });
 
@@ -80,8 +80,8 @@ describe('Administration Events table', () => {
         // TODO assert absence of 'Resource ID'
         assertDescriptionListGroup('Event type', 'Log');
         assertDescriptionListGroup('Event ID', event.id);
-        assertDescriptionListGroup('Created at', event.createdAt);
-        assertDescriptionListGroup('Last occurred at', event.lastOccurredAt);
+        assertDescriptionListGroup('Created', event.createdAt);
+        assertDescriptionListGroup('Last occurred', event.lastOccurredAt);
         assertDescriptionListGroup('Count', event.numOccurrences);
     });
 });

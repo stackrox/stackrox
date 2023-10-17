@@ -169,8 +169,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestListComplianceScanConfigurati
 
 	for _, tc := range testCases {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			expectedResp := &apiV2.ListComplianceScanConfigurationResponse{
-				Configuration: []*apiV2.ComplianceScanConfigurationStatus{
+			expectedResp := &apiV2.ListComplianceScanConfigurationsResponse{
+				Configurations: []*apiV2.ComplianceScanConfigurationStatus{
 					getTestAPIStatusRec(createdTime, lastUpdatedTime),
 				},
 			}

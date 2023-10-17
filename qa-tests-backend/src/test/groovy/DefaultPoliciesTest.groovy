@@ -47,6 +47,7 @@ import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
@@ -108,7 +109,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         //     .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(TRIGGER_MOST)
-            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most")
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)

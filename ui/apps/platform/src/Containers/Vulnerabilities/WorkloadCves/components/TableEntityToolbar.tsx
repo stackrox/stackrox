@@ -15,6 +15,7 @@ type TableEntityToolbarProps = {
     pagination: UseURLPaginationResult;
     tableRowCount: number;
     isFiltered: boolean;
+    children?: React.ReactNode;
 };
 
 function TableEntityToolbar({
@@ -24,6 +25,7 @@ function TableEntityToolbar({
     pagination,
     tableRowCount,
     isFiltered,
+    children,
 }: TableEntityToolbarProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
     return (
@@ -49,6 +51,7 @@ function TableEntityToolbar({
                             <DynamicTableLabel />
                         </ToolbarItem>
                     )}
+                    {children}
                     <ToolbarItem alignment={{ default: 'alignRight' }} variant="pagination">
                         <Pagination
                             itemCount={tableRowCount}

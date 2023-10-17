@@ -12,6 +12,7 @@ from ci_tests import SensorIntegrationOCP
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
+os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 
 ClusterTestRunner(
     pre_test=PreSystemTests(run_poll_for_system_test_images=False),

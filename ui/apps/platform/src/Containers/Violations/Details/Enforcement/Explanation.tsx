@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Divider } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { LifecycleStage } from '../../types/violationTypes';
+import { LifecycleStage } from 'types/policy.proto';
 
 function getEnforcementExplanation(lifecycleStage: LifecycleStage, message: string) {
     if (lifecycleStage === LIFECYCLE_STAGES.DEPLOY) {

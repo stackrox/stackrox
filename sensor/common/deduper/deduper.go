@@ -65,10 +65,13 @@ type deduper struct {
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
-func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperState map[Key]uint64) messagestream.SensorMessageStream {
+	if deduperState == nil {
+		deduperState = make(map[Key]uint64)
+	}
 	return &deduper{
 		stream:   stream,
-		lastSent: make(map[Key]uint64),
+		lastSent: deduperState,
 		hasher:   hash.NewHasher(),
 	}
 }
