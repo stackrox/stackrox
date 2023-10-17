@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
@@ -64,8 +63,6 @@ type deploymentWrap struct {
 	original         interface{}
 	portConfigs      map[service.PortRef]*storage.PortConfig
 	pods             []*v1.Pod
-	// registryStore is the image registry store to use when determining if an image is cluster-local.
-	registryStore *registry.Store
 	// TODO(ROX-9984): we could have the networkPoliciesApplied stored here. This would require changes in the ProcessDeployment functions of the detector.
 	// networkPoliciesApplied augmentedobjs.NetworkPoliciesApplied
 
@@ -87,8 +84,8 @@ func doesFieldExist(value reflect.Value) bool {
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType, clusterID string,
 	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string,
-	namespaces *orchestratornamespaces.OrchestratorNamespaces, registryStore *registry.Store) *deploymentWrap {
-	wrap := newWrap(obj, deploymentType, clusterID, registryOverride, registryStore)
+	namespaces *orchestratornamespaces.OrchestratorNamespaces) *deploymentWrap {
+	wrap := newWrap(obj, deploymentType, clusterID, registryOverride)
 	if wrap == nil {
 		return nil
 	}
@@ -102,7 +99,7 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	return wrap
 }
 
-func newWrap(obj interface{}, kind, clusterID, registryOverride string, registryStore *registry.Store) *deploymentWrap {
+func newWrap(obj interface{}, kind, clusterID, registryOverride string) *deploymentWrap {
 	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind, clusterID, registryOverride)
 	if err != nil || deployment == nil {
 		return nil
@@ -110,7 +107,6 @@ func newWrap(obj interface{}, kind, clusterID, registryOverride string, registry
 	return &deploymentWrap{
 		Deployment:       deployment,
 		registryOverride: registryOverride,
-		registryStore:    registryStore,
 		isBuilt:          false,
 	}
 }
@@ -247,7 +243,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
 		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
-			w.populateDataFromPods(pod)
+			w.populateDataFromPods(set.StringSet{}, pod)
 		} else {
 			pods, err := w.getPods(hierarchy, labelSelector, lister)
 			if err != nil {
@@ -256,7 +252,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 			if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
 				resources.NewDeploymentWrap(w.Deployment, w.registryOverride).PopulateDeploymentFromPodSpec(podSpec)
 			}
-			w.populateDataFromPods(pods...)
+			w.populateDataFromPods(set.StringSet{}, pods...)
 		}
 	}
 
@@ -295,17 +291,17 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 	return filterOnOwners(hierarchy, w.Id, pods), nil
 }
 
-func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
+func (w *deploymentWrap) populateDataFromPods(localImages set.StringSet, pods ...*v1.Pod) {
 	w.pods = pods
 	// Sensor must already know about the OpenShift internal registries to determine if an image is cluster-local,
 	// which is ok because Sensor listens for Secrets before it starts listening for Deployment-like resources.
-	w.populateImageMetadata(pods...)
+	w.populateImageMetadata(localImages, pods...)
 }
 
 // populateImageMetadata populates metadata for each image in the deployment.
 // This metadata includes: ImageID, NotPullable, and IsClusterLocal.
 // Note: NotPullable and IsClusterLocal are only determined if the image's ID can be determined.
-func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
+func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods ...*v1.Pod) {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -346,7 +342,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if image.GetId() != "" {
 				// Use the image ID from the pod's ContainerStatus.
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = w.registryStore.IsLocal(image.GetName())
+				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 				continue
 			}
 
@@ -365,7 +361,7 @@ func (w *deploymentWrap) populateImageMetadata(pods ...*v1.Pod) {
 			if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 				image.Id = digest
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
-				image.IsClusterLocal = w.registryStore.IsLocal(image.GetName())
+				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 			}
 		}
 	}

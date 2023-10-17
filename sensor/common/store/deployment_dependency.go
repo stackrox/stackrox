@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/service"
 )
 
@@ -11,6 +12,7 @@ import (
 type Dependencies struct {
 	PermissionLevel storage.PermissionLevel
 	Exposures       []map[service.PortRef][]*storage.PortConfig_ExposureInfo
+	LocalImages     set.StringSet
 }
 
 func (d *Dependencies) GetHash() (uint64, error) {

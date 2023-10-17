@@ -301,7 +301,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 	// influence its values, we need to call this again with the same pods from the wrap. Inside this function we call
 	// the registry store and update `IsClusterLocal` and `NotPullable` based on it. Meaning that if a pull secret was
 	// updated, the value from this properties might need to be updated.
-	wrap.populateDataFromPods(wrap.pods...)
+	wrap.populateDataFromPods(dependencies.LocalImages, wrap.pods...)
 
 	if err := wrap.updateHash(); err != nil {
 		return nil, err

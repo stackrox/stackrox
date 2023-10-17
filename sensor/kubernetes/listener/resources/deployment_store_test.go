@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -48,7 +47,7 @@ func (s *deploymentStoreSuite) SetupTest() {
 func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj interface{}) *deploymentWrap {
 	action := central.ResourceAction_CREATE_RESOURCE
 	wrap := newDeploymentEventFromResource(deploymentObj, &action,
-		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.NewOrchestratorNamespaces(), registry.NewRegistryStore(nil))
+		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.NewOrchestratorNamespaces())
 	return wrap
 }
 
@@ -611,7 +610,6 @@ func TestDeploymentStore_ReconcileDelete(t *testing.T) {
 		original:         nil,
 		portConfigs:      nil,
 		pods:             nil,
-		registryStore:    nil,
 		isBuilt:          false,
 		mutex:            sync.RWMutex{},
 	}
