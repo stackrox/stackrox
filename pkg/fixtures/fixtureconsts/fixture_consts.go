@@ -47,6 +47,6 @@ const (
 	NetworkPolicy3      = "ffaaaaaa-0000-0000-0000-222222222222"
 	NetworkPolicy4      = "ffaaaaaa-0000-0000-0000-333333333333"
 
-	PodName1            = "nginx-7db9fccd9b-92hfs"
-	PodName2            = "visa-processor"
+	PodName1 = "nginx-7db9fccd9b-92hfs"
+	PodName2 = "visa-processor"
 )
