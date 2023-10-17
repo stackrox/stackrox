@@ -9,7 +9,7 @@ spec:
     name: application
   params:
   - name: POLICY_CONFIGURATION
-    value: github.com/stackrox/stackrox?ref=misha/whitelist-golang-builder-rhtap//.tekton/enterprise-contract
+    value: github.com/stackrox/stackrox?ref=misha-whitelist-golang-builder-rhtap//.tekton/enterprise-contract
   resolverRef:
     params:
     - name: url
