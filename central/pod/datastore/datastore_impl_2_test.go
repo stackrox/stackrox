@@ -40,12 +40,24 @@ type PodDatastoreSuite struct {
 	postgres *pgtest.TestPostgres
 	filter   filter.Filter
 
-	hasWriteCtx         context.Context
-	ctx                 context.Context
-	processIndicatorCtx context.Context
+	ctx          context.Context
+	plopAndPiCtx context.Context
 }
 
 func (s *PodDatastoreSuite) SetupSuite() {
+
+	testContexts := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
+		resources.Deployment)
+
+	s.ctx = testContexts[testutils.UnrestrictedReadWriteCtx]
+
+	s.plopAndPiCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+}
+
+func (s *PodDatastoreSuite) SetupTest() {
 	s.postgres = pgtest.ForT(s.T())
 
 	podStorage := podStore.New(s.postgres.DB)
@@ -61,42 +73,20 @@ func (s *PodDatastoreSuite) SetupSuite() {
 	s.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, s.plopStorage, indicatorSearcher, nil)
 
-	//	s.plopDS = nil
 	s.plopDS = plopDataStore.New(s.plopStorage, s.indicatorDataStore)
 
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
 	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
-
-	// s.hasWriteCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-	//       sac.AllowFixedScopes(
-	//               sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-	//	resources.Deployment)
-
-	testContexts := testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(),
-		resources.Deployment)
-
-	s.ctx = testContexts[testutils.UnrestrictedReadWriteCtx]
-
-	s.processIndicatorCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.DeploymentExtension)))
-}
-
-func (s *PodDatastoreSuite) TearDownSuite() {
-}
-
-func (s *PodDatastoreSuite) SetupTest() {
-
 }
 
 func (s *PodDatastoreSuite) TearDownTest() {
+	s.postgres.Teardown(s.T())
 }
 
 func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {
 	indicatorsFromDB := []*storage.ProcessIndicator{}
-	err := s.indicatorDataStore.WalkAll(s.processIndicatorCtx,
+	err := s.indicatorDataStore.WalkAll(s.plopAndPiCtx,
 		func(processIndicator *storage.ProcessIndicator) error {
 			indicatorsFromDB = append(indicatorsFromDB, processIndicator)
 			return nil
@@ -118,7 +108,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 	indicator3 := fixtures.GetProcessIndicator3()
 	indicators := []*storage.ProcessIndicator{indicator1, indicator2, indicator3}
 
-	s.NoError(s.indicatorDataStore.AddProcessIndicators(s.processIndicatorCtx, indicators...))
+	s.NoError(s.indicatorDataStore.AddProcessIndicators(s.plopAndPiCtx, indicators...))
 
 	openPlopObject1 := fixtures.GetOpenPlopObject1()
 	openPlopObject2 := fixtures.GetOpenPlopObject2()
@@ -126,11 +116,11 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{openPlopObject1, openPlopObject2, openPlopObject3}
 	s.NoError(s.datastore.plops.AddProcessListeningOnPort(
-		s.processIndicatorCtx, plopObjects...))
+		s.plopAndPiCtx, plopObjects...))
 
 	// Fetch inserted PLOP
 	newPlops, err := s.datastore.plops.GetProcessListeningOnPort(
-		s.processIndicatorCtx, fixtureconsts.Deployment1)
+		s.plopAndPiCtx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	s.Len(newPlops, 3)
@@ -139,7 +129,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 
 	// Fetch inserted PLOP back after deleting pod
 	newPlops, err = s.datastore.plops.GetProcessListeningOnPort(
-		s.processIndicatorCtx, fixtureconsts.Deployment1)
+		s.plopAndPiCtx, fixtureconsts.Deployment1)
 	s.NoError(err)
 
 	// Verify that the correct listening endpoints have been deleted
@@ -179,5 +169,4 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 	s.Len(indicatorsFromDB, 1)
 
 	s.Equal(*indicatorsFromDB[0], *indicator3)
-
 }
