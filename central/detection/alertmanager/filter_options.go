@@ -63,10 +63,10 @@ func WithClusterID(clusterID string) AlertFilterOption {
 }
 
 // WithNamespace returns an AlertFilterOption that filters for the specified namespace.
-func WithNamespace(namespaceID string) AlertFilterOption {
+func WithNamespace(namespace string) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddExactMatches(search.NamespaceID, namespaceID)
+			qb.AddExactMatches(search.Namespace, namespace)
 		},
 	}
 }
