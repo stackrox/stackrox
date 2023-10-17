@@ -328,4 +328,3 @@ func collectClusterInformation() error {
 
 	return nil
 }
-

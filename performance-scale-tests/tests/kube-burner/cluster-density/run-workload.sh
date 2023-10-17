@@ -105,12 +105,12 @@ function run_workload() {
     local metadata_path="user-metadata-${run_uuid}.yml"
 
     go run ../../metadata-collector/main.go \
-        --namespaces-count ${num_namespaces} \
-        --deployments-per-namespace-count ${num_deployments} \
-        --pods-per-deployment-count ${num_pods} \
-        --configs-per-deployment-count ${num_configs} \
-        --test-workload-type ${template} \
-        --output-file ${metadata_path}
+        --namespaces-count "${num_namespaces}" \
+        --deployments-per-namespace-count "${num_deployments}" \
+        --pods-per-deployment-count "${num_pods}" \
+        --configs-per-deployment-count "${num_configs}" \
+        --test-workload-type "${template}" \
+        --output-file "${metadata_path}"
 
     echo "--- Starting kube-burner"
     "${kube_burner_path}" init \
