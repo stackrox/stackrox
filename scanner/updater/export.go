@@ -48,7 +48,7 @@ func Export(ctx context.Context, outputDir string) error {
 	defer func() {
 		closeErr := zstdWriter.Close()
 		if closeErr != nil {
-			zlog.Error(ctx).Err(closeErr).Msg("Failed to closing zstd Writer")
+			zlog.Error(ctx).Err(closeErr).Msg("Failed to close zstd writer")
 		}
 	}()
 
