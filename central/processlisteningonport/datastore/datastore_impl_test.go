@@ -7,14 +7,17 @@ import (
 	"testing"
 	"time"
 
+	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -31,12 +34,15 @@ type PLOPDataStoreTestSuite struct {
 	datastore          DataStore
 	store              plopStore.Store
 	indicatorDataStore processIndicatorDataStore.DataStore
+	podDataStore       podDataStore.DataStore
 
 	postgres *pgtest.TestPostgres
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
+	allCtx      context.Context
+	filter      filter.Filter
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupSuite() {
@@ -49,6 +55,9 @@ func (suite *PLOPDataStoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
+	suite.allCtx = sac.WithAllAccess(context.Background())
+
+	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 }
 
 func (suite *PLOPDataStoreTestSuite) SetupTest() {
@@ -62,6 +71,8 @@ func (suite *PLOPDataStoreTestSuite) SetupTest() {
 	suite.indicatorDataStore, _ = processIndicatorDataStore.New(
 		indicatorStorage, suite.store, indicatorSearcher, nil)
 	suite.datastore = New(suite.store, suite.indicatorDataStore)
+
+	suite.podDataStore, _ = podDataStore.NewPostgresDB(suite.postgres.DB, suite.indicatorDataStore, suite.filter)
 }
 
 func (suite *PLOPDataStoreTestSuite) TearDownTest() {
@@ -94,6 +105,39 @@ func (suite *PLOPDataStoreTestSuite) getProcessIndicatorsFromDB() []*storage.Pro
 	return indicatorsFromDB
 }
 
+var (
+	podID1 = "nginx"
+	podID2 = "visa-processor"
+
+	openPlopObject = storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: nil,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               podID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+	}
+
+	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
+		Port:           1234,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               podID1,
+			ContainerName:       "test_container1",
+			ProcessName:         "test_process1",
+			ProcessArgs:         "test_arguments1",
+			ProcessExecFilePath: "test_path1",
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+	}
+)
+
 func getIndicators() []*storage.ProcessIndicator {
 	testNamespace := "test_namespace"
 
@@ -101,7 +145,8 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         podID1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -115,7 +160,8 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID2,
 			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
+			PodId:         podID2,
+			PodUid:        fixtureconsts.PodUID2,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container2",
 			Namespace:     testNamespace,
@@ -134,36 +180,6 @@ func getIndicators() []*storage.ProcessIndicator {
 	return indicators
 }
 
-var (
-	openPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: nil,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-	}
-
-	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-	}
-)
-
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
@@ -172,6 +188,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -189,7 +209,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -234,6 +255,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -283,6 +308,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -303,7 +332,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -344,6 +374,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -396,6 +430,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -421,7 +459,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -463,6 +502,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 	plopObjectsActive := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
 	plopObjectsClosed := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -516,6 +559,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject, &closedPlopObject}
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -559,6 +606,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	indicators := getIndicators()
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -618,6 +669,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	indicatorsFromDB := suite.getProcessIndicatorsFromDB()
 	suite.Len(indicatorsFromDB, 0)
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// Add PLOP referencing non existing indicators
 	suite.NoError(suite.datastore.AddProcessListeningOnPort(
 		suite.hasWriteCtx, plopObjects...))
@@ -630,7 +685,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 			Port:     1234,
@@ -668,6 +723,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 // as it is closed it will not be returned by the API.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
 	// Add PLOP referencing non existing indicators
@@ -704,6 +763,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 // TestPLOPAddOpenNoIndicatorThenClose Adds an open PLOP object with no matching
 // indicator. Adds an indicator and then closes the PLOP
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
@@ -755,6 +818,11 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 // database to contain one PLOP and the database to return nothing, because
 // it is closed.
 func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 	closedPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject}
 
@@ -802,7 +870,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         podID1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -816,7 +885,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID2,
 			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
+			PodId:         podID2,
+			PodUid:        fixtureconsts.PodUID2,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -834,6 +904,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	}
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
 		suite.hasWriteCtx, indicators...))
@@ -850,7 +924,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -895,6 +970,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		&closedPlopObject,
 		&openPlopObject,
 	}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -947,6 +1026,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		&openPlopObject,
 		&closedPlopObject,
 	}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1001,7 +1084,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1015,7 +1098,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1029,7 +1112,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1046,6 +1129,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		&closedPlopObject2,
 		&openPlopObject,
 	}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1100,7 +1187,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1114,7 +1201,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1128,7 +1215,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1146,6 +1233,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		&closedPlopObject2,
 		&openPlopObject,
 	}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1195,7 +1286,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         podID1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -1211,6 +1303,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	id.SetIndicatorID(initialIndicators[0])
 
 	openPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
 
 	// Prepare indicators for FK
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1260,7 +1356,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 			DeploymentId: fixtureconsts.Deployment2,
 			// Keeping the same PodId even though a new deployment almost certainly would have a new PodId
 			// The code is robust even for that case
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         podID1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -1281,7 +1378,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               podID1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
@@ -1291,6 +1388,16 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	}
 
 	newOpenPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&newOpenPlopObject}
+
+	pod1 := fixtures.GetPod1()
+	pod2 := fixtures.GetPod2()
+
+	pod1.DeploymentId = fixtureconsts.Deployment2
+	pod2.DeploymentId = fixtureconsts.Deployment2
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, pod1))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, pod2))
 
 	// Add new indicator
 	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
@@ -1309,7 +1416,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment2,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -1365,6 +1473,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 		DeploymentId:       fixtureconsts.Deployment1,
 	}
 
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
 	// It is not possible to add a PLOP from sensor with no process info
 	// so upsert directly to the database. In the tests when a process indicator
 	// is deleted the PLOP is also deleted from the database. This does not seem
@@ -1385,4 +1497,78 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 	suite.Len(newPlopsFromDB, 1)
 
 	suite.Equal(plopStorage, newPlopsFromDB[0])
+}
+
+// TestPLOPAddWithoutPod: Add a listening endpoint without a corresponding pod.
+// Check that the listening endpoint does not appear in the API.
+// Add the pod to the db. Check that the listening endpoint apprears in the API
+func (suite *PLOPDataStoreTestSuite) TestPLOPAddWithoutPod() {
+	testNamespace := "test_namespace"
+
+	indicators := getIndicators()
+
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
+
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, plopObjects...))
+
+	// Fetch inserted listening endpoint back
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	// The listening endpoint should not be reported, because it does not have a matching pod
+	suite.Len(newPlops, 0)
+
+	// Prepare pods
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod1()))
+	suite.NoError(suite.podDataStore.UpsertPod(suite.allCtx, fixtures.GetPod2()))
+
+	// Fetch inserted listening endpoint back
+	newPlops, err = suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+
+	suite.Len(newPlops, 1)
+	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         podID1,
+		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     testNamespace,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+
+	// Verify that newly added PLOP object doesn't have Process field set in
+	// the serialized column (because all the info is stored in the referenced
+	// process indicator record)
+	newPlopsFromDB := suite.getPlopsFromDB()
+	suite.Len(newPlopsFromDB, 1)
+
+	expectedPlopStorage := &storage.ProcessListeningOnPortStorage{
+		Id:                 newPlopsFromDB[0].GetId(),
+		Port:               plopObjects[0].GetPort(),
+		Protocol:           plopObjects[0].GetProtocol(),
+		CloseTimestamp:     plopObjects[0].GetCloseTimestamp(),
+		ProcessIndicatorId: indicators[0].GetId(),
+		Closed:             false,
+		Process:            nil,
+		DeploymentId:       plopObjects[0].GetDeploymentId(),
+	}
+
+	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
 }

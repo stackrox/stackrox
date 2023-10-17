@@ -38,6 +38,8 @@ const getByDeploymentStmt = "SELECT plop.id, plop.serialized, " +
 	"ON plop.processindicatorid = proc.id " +
 	"WHERE plop.deploymentid = $1 AND plop.closed = false"
 
+const getPodsStmt = "SELECT name from pods where deploymentid = $1"
+
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
@@ -60,6 +62,8 @@ func (s *fullStoreImpl) retryableGetPLOP(
 ) ([]*storage.ProcessListeningOnPort, error) {
 	var rows pgx.Rows
 	var err error
+	var podRows pgx.Rows
+	var podErr error
 
 	rows, err = s.db.Query(ctx, getByDeploymentStmt, deploymentID)
 
@@ -73,7 +77,23 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	}
 	defer rows.Close()
 
-	results, err := s.readRows(rows)
+	podRows, podErr = s.db.Query(ctx, getPodsStmt, deploymentID)
+	if podErr != nil {
+		// Do not be alarmed if the error is simply NoRows
+		podErr = pgutils.ErrNilIfNoRows(podErr)
+		if podErr != nil {
+			log.Warnf("%s: %s", getPodsStmt, podErr)
+		}
+		return nil, podErr
+	}
+	defer podRows.Close()
+
+	podMap, podErr := s.readPodRows(podRows)
+	if podErr != nil {
+		return nil, podErr
+	}
+
+	results, err := s.readRows(rows, podMap)
 	if err != nil {
 		return nil, err
 	}
@@ -81,10 +101,25 @@ func (s *fullStoreImpl) retryableGetPLOP(
 	return results, rows.Err()
 }
 
+func (s *fullStoreImpl) readPodRows(rows pgx.Rows) (map[string]bool, error) {
+	podMap := make(map[string]bool)
+	for rows.Next() {
+		var podID string
+		if err := rows.Scan(&podID); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+
+		podMap[podID] = true
+	}
+
+	return podMap, nil
+}
+
 // Manual converting of raw data from SQL query to ProcessListeningOnPort (not
 // ProcessListeningOnPortStorage) object enriched with ProcessIndicator info.
 func (s *fullStoreImpl) readRows(
 	rows pgx.Rows,
+	podMap map[string]bool,
 ) ([]*storage.ProcessListeningOnPort, error) {
 	var plops []*storage.ProcessListeningOnPort
 
@@ -132,6 +167,13 @@ func (s *fullStoreImpl) readRows(
 		// processes listening on ports side, the process indicator has been deleted and the
 		// port has been closed. Central just hasn't gotten the message yet.
 		if podID == "" && containerName == "" && name == "" && args == "" && execFilePath == "" {
+			continue
+		}
+
+		_, podExists := podMap[podID]
+
+		// If the pod of the listening endpoint is not active, don't report the endpoint
+		if !podExists {
 			continue
 		}
 
