@@ -54,7 +54,7 @@ func getEmail(t *testing.T) (*email, *gomock.Controller) {
 		},
 	}
 
-	e, err := NewEmail(notifier, metadataGetter, mitreStore)
+	e, err := NewEmail(notifier, metadataGetter, mitreStore, nil, "")
 	require.NoError(t, err)
 	return e, mockCtrl
 }
@@ -78,7 +78,7 @@ func getUnauthEmail(t *testing.T) (*email, *gomock.Controller) {
 		},
 	}
 
-	e, err := NewEmail(notifier, metadataGetter, mitreStore)
+	e, err := NewEmail(notifier, metadataGetter, mitreStore, nil, "")
 	require.NoError(t, err)
 	return e, mockCtrl
 }
