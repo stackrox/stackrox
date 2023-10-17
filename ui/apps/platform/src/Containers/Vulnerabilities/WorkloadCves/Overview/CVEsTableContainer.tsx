@@ -18,7 +18,7 @@ import { defaultCVESortFields, CVEsDefaultSort } from '../sortUtils';
 import TableEntityToolbar from '../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalOptions,
-} from '../components/ExceptionRequestModal';
+} from '../components/ExceptionRequestModal/ExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
     defaultFilters: DefaultFilters;
@@ -77,6 +77,7 @@ function CVEsTableContainer({
                 <ExceptionRequestModal
                     cves={exceptionRequestModalOptions.cves}
                     type={exceptionRequestModalOptions.type}
+                    scopeContext="GLOBAL"
                     onClose={() => setExceptionRequestModalOptions(null)}
                 />
             )}

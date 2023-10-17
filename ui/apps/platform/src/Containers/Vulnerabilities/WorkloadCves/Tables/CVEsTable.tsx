@@ -30,7 +30,7 @@ import {
     aggregateByImageSha,
 } from '../sortUtils';
 import EmptyTableResults from '../components/EmptyTableResults';
-import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal';
+import { ExceptionRequestModalOptions } from '../components/ExceptionRequestModal/ExceptionRequestModal';
 
 export const cveListQuery = gql`
     query getImageCVEList($query: String, $pagination: Pagination) {
