@@ -78,7 +78,8 @@ function NetworkGraphPage() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForBlocks =
         hasReadAccess('Administration') && hasReadWriteAccess('NetworkGraph');
-    const hasReadAccessForGenerator = hasReadAccess('Integration');
+    const hasReadAccessForGenerator =
+        hasReadAccess('Integration') && hasReadAccess('NetworkPolicy');
 
     const history = useHistory();
     const [edgeState, setEdgeState] = useState<EdgeState>('active');
@@ -299,9 +300,10 @@ function NetworkGraphPage() {
                             <ToolbarGroup
                                 variant="button-group"
                                 alignment={{ default: 'alignRight' }}
+                                spaceItems={{ default: 'spaceItemsMd' }}
                             >
                                 {hasWriteAccessForBlocks && (
-                                    <ToolbarItem spacer={{ default: 'spacerMd' }}>
+                                    <ToolbarItem>
                                         <Button
                                             variant="secondary"
                                             onClick={toggleCIDRBlockForm}
@@ -312,7 +314,7 @@ function NetworkGraphPage() {
                                     </ToolbarItem>
                                 )}
                                 {hasReadAccessForGenerator && (
-                                    <ToolbarItem spacer={{ default: 'spacerNone' }}>
+                                    <ToolbarItem>
                                         <SimulateNetworkPolicyButton
                                             simulation={simulation}
                                             isDisabled={scopeHierarchy.cluster.id === ''}
@@ -389,7 +391,7 @@ function NetworkGraphPage() {
                 variant={hasClusterNamespaceSelected ? 'default' : 'light'}
                 padding={{ default: 'noPadding' }}
             >
-                {!hasClusterNamespaceSelected && (
+                {hasReadAccessForGenerator && !hasClusterNamespaceSelected && (
                     <Drawer isExpanded={simulation.isOn} isInline>
                         <DrawerContent
                             panelContent={
