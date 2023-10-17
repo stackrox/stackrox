@@ -219,7 +219,7 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndNotResourceType() {
 		testutils.PredMatcher("query for violation state, cluster id and resource type", queryHasFields(search.ViolationState, search.ClusterID, search.ResourceType)),
 	).Return(([]*storage.Alert)(nil), nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithClusterID("cid"), WithoutResourceType(storage.ListAlert_DEPLOYMENT))
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithClusterID("cid"), WithResource(storage.ListAlert_DEPLOYMENT))
 	suite.False(modified.Cardinality() > 0)
 	suite.NoError(err, "update should succeed")
 }

@@ -62,11 +62,21 @@ func WithClusterID(clusterID string) AlertFilterOption {
 	}
 }
 
-// WithoutResourceType returns an AlertFilterOption that filters _out_ the specified resource type.
-func WithoutResourceType(resourceType storage.ListAlert_ResourceType) AlertFilterOption {
+// WithNamespace returns an AlertFilterOption that filters for the specified namespace.
+func WithNamespace(namespaceID string) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
-			qb.AddStrings(search.ResourceType, search.NegateQueryString(resourceType.String()))
+			qb.AddExactMatches(search.NamespaceID, namespaceID)
+		},
+	}
+}
+
+// WithResource returns an AlertFilterOption that filters for the specified resource.
+func WithResource(resourceName string, resourceType storage.Alert_Resource_ResourceType) AlertFilterOption {
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddExactMatches(search.ResourceName, resourceName)
+			qb.AddExactMatches(search.ResourceType, resourceType.String())
 		},
 	}
 }
