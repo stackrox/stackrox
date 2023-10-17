@@ -1,4 +1,4 @@
-apiVersion: appstudio.redhat.com/v1alpha1
+apiVersion: appstudio.redhat.com/v1beta1
 kind: IntegrationTestScenario
 metadata:
   name: acs-enterprise-contract-misha-test
