@@ -52,8 +52,6 @@ func Test_SensorHello2(t *testing.T) {
 	})
 	t.Cleanup(c.Stop)
 
-	t.Cleanup(c.Stop)
-
 	require.NoError(t, err)
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
