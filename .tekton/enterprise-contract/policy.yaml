@@ -35,6 +35,8 @@ sources:
   data:
   - oci::quay.io/redhat-appstudio-tekton-catalog/data-acceptable-bundles:latest
   - github.com/release-engineering/rhtap-ec-policy//data
+  # Here's our custom data configuration
+  - github.com/stackrox/stackrox?ref=misha-whitelist-golang-builder-rhtap//.tekton/enterprise-contract
 
 configuration:
   include:

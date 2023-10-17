@@ -1,0 +1,8 @@
+rule_data_custom:
+  allowed_registry_prefixes:
+  - registry.access.redhat.com/
+  - registry.redhat.io/
+  # Allow this for openshift-golang-builder until a better
+  # solution is available. See defaults here:
+  # https://github.com/enterprise-contract/ec-policies/blob/main/data/rule_data.yml#L5-L7
+  - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
