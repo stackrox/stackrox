@@ -85,11 +85,11 @@ class SummaryTest extends BaseSpecification {
                 diff = true
             }
             assert stackroxNode.labelsMap == orchestratorNode.labels
-            Map<String, String> stackroxAnnotationsMap = new HashMap<>(stackroxNode.getAnnotationsMap());
+            Map<String, String> stackroxAnnotationsMap = new HashMap<>(stackroxNode.getAnnotationsMap())
             if (stackroxAnnotationsMap != orchestratorNode.annotations) {
                 Map<String, String> orchestratorTruncated = orchestratorNode.annotations.clone()
                 orchestratorNode.annotations.keySet().each { name ->
-                    if (orchestratorNode.annotations[name].length() > Constants.STACKROX_NODE_ANNOTATION_TRUNCATION_LENGTH) {
+                    if (orchestratorTruncated[name].length() > Constants.STACKROX_ANNOTATION_TRUNCATION_LENGTH) {
                         // Assert that the stackrox node has an entry for that annotation
                         assert stackroxAnnotationsMap[name].length() > 0
 
