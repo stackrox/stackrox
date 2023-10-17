@@ -36,8 +36,10 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			},
 			args: args{
 				image: &storage.Image{
+					Id: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
 					Name: &storage.ImageName{
-						FullName: "foobar@sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
+						Registry: "example.com",
+						Remote:   "foobar",
 					},
 				},
 				cfg: &types.Config{},
@@ -56,8 +58,10 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			},
 			args: args{
 				image: &storage.Image{
+					Id: "sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
 					Name: &storage.ImageName{
-						FullName: "foobar@sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e",
+						Registry: "example.com",
+						Remote:   "foobar",
 					},
 				},
 				cfg: &types.Config{},
