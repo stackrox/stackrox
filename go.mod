@@ -46,7 +46,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/google/certificate-transparency-go v1.1.6
 	github.com/google/gnostic-models v0.6.8
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.5.0
