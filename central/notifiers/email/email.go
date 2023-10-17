@@ -160,8 +160,7 @@ func validate(notifier *storage.Notifier) error {
 	return errorList.ToError()
 }
 
-// NewEmail exported to allow for usage in various components.
-func NewEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
+func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
 	if err := validate(notifier); err != nil {
 		return nil, err
@@ -583,7 +582,7 @@ func init() {
 		}
 	}
 	notifiers.Add(notifiers.EmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		e, err := NewEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
+		e, err := newEmail(notifier, metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return e, err
 	})
 }

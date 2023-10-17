@@ -15,9 +15,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -25,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -46,7 +49,11 @@ var (
 type generic struct {
 	*storage.Notifier
 
-	client                 *http.Client
+	client      *http.Client
+	creds       string
+	cryptoKey   string
+	cryptoCodec cryptocodec.CryptoCodec
+
 	fullyQualifiedEndpoint string
 	extraFieldsJSONPrefix  string
 }
@@ -105,7 +112,7 @@ func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 	return string(data), nil
 }
 
-func newGeneric(notifier *storage.Notifier) (*generic, error) {
+func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*generic, error) {
 	genericConfig, ok := notifier.Config.(*storage.Notifier_Generic)
 
 	if !ok {
@@ -148,6 +155,9 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 				Proxy: proxy.FromConfig(),
 			},
 		},
+		creds:                  "",
+		cryptoKey:              cryptoKey,
+		cryptoCodec:            cryptoCodec,
 		fullyQualifiedEndpoint: fullyQualifiedEndpoint,
 		extraFieldsJSONPrefix:  extraFieldsJSON,
 	}, nil
@@ -184,6 +194,10 @@ func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader
 }
 
 func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey string) error {
+	password, err := g.getPassword()
+	if err != nil {
+		return err
+	}
 	body, err := g.constructJSON(message, msgKey)
 	if err != nil {
 		return err
@@ -199,7 +213,7 @@ func (g *generic) postMessage(ctx context.Context, message proto.Message, msgKey
 	}
 
 	if g.GetGeneric().GetUsername() != "" {
-		req.SetBasicAuth(g.GetGeneric().GetUsername(), g.GetGeneric().GetPassword())
+		req.SetBasicAuth(g.GetGeneric().GetUsername(), password)
 	}
 
 	resp, err := g.client.Do(req)
@@ -235,9 +249,35 @@ func (g *generic) AuditLoggingEnabled() bool {
 	return g.GetGeneric().GetAuditLoggingEnabled()
 }
 
+func (g *generic) getPassword() (string, error) {
+	if g.creds != "" {
+		return g.creds, nil
+	}
+
+	if !env.EncNotifierCreds.BooleanSetting() {
+		g.creds = g.GetGeneric().GetPassword()
+		return g.creds, nil
+	}
+
+	decCreds, err := g.cryptoCodec.Decrypt(g.cryptoKey, g.GetNotifierSecret())
+	if err != nil {
+		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", g.GetName())
+	}
+	g.creds = decCreds
+	return g.creds, nil
+}
+
 func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+	}
 	notifiers.Add(notifiers.GenericType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		g, err := newGeneric(notifier)
+		g, err := newGeneric(notifier, cryptocodec.Singleton(), cryptoKey)
 		return g, err
 	})
 }
