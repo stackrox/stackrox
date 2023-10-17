@@ -1,18 +1,18 @@
 import React from 'react';
-import { Modal, pluralize } from '@patternfly/react-core';
+import { Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
 
 import { CveExceptionRequestType } from '../../types';
-import DeferralForm from './DeferralForm';
+import DeferralForm, { DeferralFormProps } from './DeferralForm';
 import { ScopeContext } from './utils';
 
 export type ExceptionRequestModalOptions = {
     type: CveExceptionRequestType;
-    cves: string[];
+    cves: DeferralFormProps['cves'];
 } | null;
 
 export type ExceptionRequestModalProps = {
     type: CveExceptionRequestType;
-    cves: string[];
+    cves: DeferralFormProps['cves'];
     scopeContext: ScopeContext;
     onClose: () => void;
 };
@@ -25,10 +25,12 @@ function ExceptionRequestModal({ type, cves, scopeContext, onClose }: ExceptionR
             : `Mark ${cveCountText} as false positive`;
 
     return (
-        <Modal onClose={onClose} title={title} isOpen variant="medium">
-            {type === 'DEFERRAL' && (
-                <DeferralForm cves={cves} scopeContext={scopeContext} onCancel={onClose} />
-            )}
+        <Modal hasNoBodyWrapper onClose={onClose} title={title} isOpen variant="medium">
+            <ModalBoxBody className="pf-u-display-flex pf-u-flex-direction-column">
+                {type === 'DEFERRAL' && (
+                    <DeferralForm cves={cves} scopeContext={scopeContext} onCancel={onClose} />
+                )}
+            </ModalBoxBody>
         </Modal>
     );
 }
