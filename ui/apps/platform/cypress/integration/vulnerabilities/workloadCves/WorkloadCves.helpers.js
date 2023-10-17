@@ -121,6 +121,7 @@ export function selectSingleCveForException(exceptionType) {
         cy.wrap($row).find(selectors.tableRowMenuToggle).click();
         cy.get(selectors.menuOption(menuOption)).click();
 
+        cy.get('button:contains("CVE Selections")').click();
         // TODO - Update this code when modal form is completed
         cy.get(`${modalSelector}:contains("${cveName}")`);
         return Promise.resolve(cveName);
@@ -161,6 +162,7 @@ export function selectMultipleCvesForException(exceptionType) {
             cy.get(selectors.menuOption(menuOption)).click();
         })
         .then(() => {
+            cy.get('button:contains("CVE Selections")').click();
             // TODO - Update this code when modal form is completed
             cveNames.forEach((name) => {
                 cy.get(`${modalSelector}:contains("${name}")`);
