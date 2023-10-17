@@ -183,10 +183,12 @@ func genIntegrationName(prefix string, namespace string, registry string) string
 	return fmt.Sprintf("%v%v%v", prefix, namespace, registry)
 }
 
+// AddSecretID appends a kubernetes secret ID into a set to keep track of its existence in the cluster.
 func (rs *Store) AddSecretID(id string) {
 	rs.knownSecretIDs.Add(id)
 }
 
+// RemoveSecretID removes a kubernetes secret ID from tracking set.
 func (rs *Store) RemoveSecretID(id string) bool {
 	return rs.knownSecretIDs.Remove(id)
 }
