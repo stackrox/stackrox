@@ -296,3 +296,23 @@ EOF
 }
 EOF
 }
+
+function setup_internal_sso() {
+    local LOCAL_API_ENDPOINT="$1"
+    local LOCAL_CLIENT_SECRET="$2"
+	echo "Setting up Dev Internal SSO login"
+
+    roxctl declarative-config create auth-provider oidc \
+        --secret=declarative-configurations \
+        --namespace=stackrox \
+        --name="Internal-SSO" \
+     	--ui-endpoint="${LOCAL_API_ENDPOINT}" \
+     	--minimum-access-role=Admin \
+     	--extra-ui-endpoints=localhost:8000 \
+     	--extra-ui-endpoints=localhost:3000 \
+     	--issuer=https://auth.redhat.com/auth/realms/EmployeeIDP \
+     	--mode=post \
+     	--client-id=rhacs-dev-envs \
+     	--client-secret="${LOCAL_CLIENT_SECRET}" \
+     	--disable-offline-access=true
+}
