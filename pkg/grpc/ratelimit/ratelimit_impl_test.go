@@ -3,6 +3,7 @@ package ratelimit
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
@@ -38,7 +39,7 @@ func TestIncreaseLimit(t *testing.T) {
 
 	rl.IncreaseLimit(10)
 	expectedRatePerSec += 10
-	assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
+	assert.Equal(t, rate.Every(time.Second/time.Duration(expectedRatePerSec)), rl.tokenBucketLimiter.Limit())
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
 }
 
@@ -56,7 +57,7 @@ func TestDecreaseLimit(t *testing.T) {
 
 	rl.DecreaseLimit(10)
 	expectedRatePerSec -= 10
-	assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
+	assert.Equal(t, rate.Every(time.Second/time.Duration(expectedRatePerSec)), rl.tokenBucketLimiter.Limit())
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
 }
 
