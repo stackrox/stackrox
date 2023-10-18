@@ -61,6 +61,8 @@ const sortOptions = {
     defaultSortOption: { field: 'Report Completion Time', direction: 'desc' } as const,
 };
 
+const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
+
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -247,12 +249,18 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
                         function onDownload() {
+                            const { completedAt } = reportStatus;
+                            const filename = `${name}-${completedAt}`;
+                            const sanitizedFilename = filename.replaceAll(
+                                filenameSanitizerRegex,
+                                '_'
+                            );
                             return saveFile({
                                 method: 'get',
                                 url: `/api/reports/jobs/download?id=${reportJobId}`,
                                 data: null,
                                 timeout: 300000,
-                                name: `${name}.zip`,
+                                name: `${sanitizedFilename}.zip`,
                             });
                         }
 

@@ -14,8 +14,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/client"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/pkg/client"
 	"golang.org/x/sys/unix"
 )
 
@@ -48,7 +48,7 @@ func main() {
 		var ok bool
 		u, p, ok := strings.Cut(*basicAuth, ":")
 		if !ok {
-			log.Fatalf("Invalid auth: %q", *basicAuth)
+			log.Fatal("Invalid auth format, expecting \"username:password\"")
 		}
 		auth = authn.FromConfig(authn.AuthConfig{
 			Username: u,
@@ -94,7 +94,7 @@ func main() {
 	}()
 
 	// Connect to scanner and scan.
-	c, err := client.NewGRPCScannerClient(ctx)
+	c, err := client.NewGRPCScanner(ctx)
 	if err != nil {
 		log.Fatalf("connecting: %v", err)
 	}

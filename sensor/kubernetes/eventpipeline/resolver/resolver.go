@@ -1,8 +1,7 @@
 package resolver
 
 import (
-	"sync/atomic"
-
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
@@ -13,6 +12,6 @@ func New(outputQueue component.OutputQueue, provider store.Provider, queueSize i
 		outputQueue:   outputQueue,
 		innerQueue:    make(chan *component.ResourceEvent, queueSize),
 		storeProvider: provider,
-		stopped:       &atomic.Bool{},
+		stopSig:       concurrency.NewSignal(),
 	}
 }

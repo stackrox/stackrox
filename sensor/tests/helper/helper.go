@@ -283,7 +283,8 @@ func (c *TestContext) StartFakeGRPC() {
 		message.SensorHello(certID),
 		message.ClusterConfig(),
 		message.PolicySync(c.config.InitialSystemPolicies),
-		message.BaselineSync([]*storage.ProcessBaseline{}))
+		message.BaselineSync([]*storage.ProcessBaseline{}),
+		message.NetworkBaselineSync(nil))
 
 	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 

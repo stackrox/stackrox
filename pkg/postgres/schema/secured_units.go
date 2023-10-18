@@ -29,10 +29,10 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.SecuredUnits)(nil)), "secured_units")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PRODUCT_USAGE, "securedunits", (*storage.SecuredUnits)(nil)))
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_USAGE, "securedunits", (*storage.SecuredUnits)(nil)))
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSecuredUnitsStmt)
-		mapping.RegisterCategoryToTable(v1.SearchCategory_PRODUCT_USAGE, schema)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_USAGE, schema)
 		return schema
 	}()
 )

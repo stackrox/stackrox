@@ -34,6 +34,7 @@ endif
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
 
+
 GO_BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
 GO_BUILD_CMD := $(GO_BUILD_FLAGS) go build \
                  -trimpath \
@@ -85,7 +86,7 @@ build: $(build-t)
 .PHONY: $(build-t)
 $(build-t): deps
 	@echo "+ $@"
-	$(SILENT)$(build-cmd) -o $@ ./cmd/$(@F)
+	$(build-cmd) -o $@ ./cmd/$(@F)
 
 .PHONY: clean-build
 clean-build:
@@ -103,12 +104,12 @@ images: scanner-image db-image
 
 image/scanner/bin/scanner: bin/scanner
 	@echo "+ $@"
-	$(SILENT)cp $< $@
+	cp $< $@
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
 	@echo "+ $@"
-	$(SILENT)$(MAKE) GOOS=${HOST_OS} image/scanner/bin/scanner
+	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} image/scanner/bin/scanner
 
 OSSLS_NOTICE_DEP := ossls-notice
 ifdef CI
@@ -117,14 +118,12 @@ endif
 .PHONY: scanner-image
 scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
 	@echo "+ $@"
-	@echo "Building $(image-prefix):$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
+	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 	@echo "+ $@"
-	@echo "Building $(image-prefix)-db:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
+	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##

@@ -33,7 +33,7 @@ ARG TARGET_ARCH=amd64
 
 LABEL name="main" \
       vendor="StackRox" \
-      maintainer="support@stackrox.com" \
+      maintainer="https://stackrox.io/" \
       summary="The StackRox Kubernetes Security Platform" \
       description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
       version="${LABEL_VERSION}" \

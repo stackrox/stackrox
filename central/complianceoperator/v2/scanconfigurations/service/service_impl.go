@@ -91,7 +91,7 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	return convertStorageScanConfigToV2(ctx, scanConfig, s.complianceScanSettingsDS)
 }
 
-func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationResponse, error) {
+func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationsResponse, error) {
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
@@ -111,8 +111,8 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
 
-	return &v2.ListComplianceScanConfigurationResponse{
-		Configuration: scanStatuses,
+	return &v2.ListComplianceScanConfigurationsResponse{
+		Configurations: scanStatuses,
 	}, nil
 }
 

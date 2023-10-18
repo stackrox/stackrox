@@ -2,15 +2,19 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -31,11 +35,9 @@ type centralCommunicationSuite struct {
 	mockDetector *mocksDetector.MockDetector
 	mockService  *MockSensorServiceClient
 	comm         CentralCommunication
-	responsesC   chan *message.ExpiringMessage
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
-var _ suite.TearDownTestSuite = (*centralCommunicationSuite)(nil)
 
 func (c *centralCommunicationSuite) SetupTest() {
 	mockCtrl := gomock.NewController(c.T())
@@ -57,19 +59,6 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-
-	// Create a fake SensorComponent
-	c.responsesC = make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, NewFakeSensorComponent(c.responsesC))
-
-	c.mockService = &MockSensorServiceClient{
-		connected: concurrency.NewSignal(),
-		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
-	}
-}
-
-func (c *centralCommunicationSuite) TearDownTest() {
-	defer close(c.responsesC)
 }
 
 func Test_CentralCommunicationSuite(t *testing.T) {
@@ -93,9 +82,12 @@ var centralSyncMessages = []*central.MsgToSensor{
 	debuggerMessage.ClusterConfig(),
 	debuggerMessage.PolicySync([]*storage.Policy{}),
 	debuggerMessage.BaselineSync([]*storage.ProcessBaseline{}),
+	debuggerMessage.NetworkBaselineSync([]*storage.NetworkBaseline{}),
 }
 
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
+	responsesC, closeFn := c.createCentralCommunication(false)
+	defer closeFn()
 	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
@@ -106,11 +98,11 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 
 	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Pretend that a component (listener) is sending the sync event
-	c.responsesC <- message.New(syncMessage())
+	responsesC <- message.New(syncMessage())
 	select {
 	case <-ch:
 		break
@@ -120,6 +112,8 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
+	_, closeFn := c.createCentralCommunication(false)
+	defer closeFn()
 	expectSyncMessages(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
@@ -129,7 +123,7 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 
 	reachable := concurrency.Flag{}
 	// Start the go routine with the mocked client
-	go c.comm.(*centralCommunicationImpl).sendEvents(c.mockService, &reachable, c.mockHandler, c.mockDetector, c.comm.(*centralCommunicationImpl).receiver.Stop, c.comm.(*centralCommunicationImpl).sender.Stop)
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 	c.mockService.connected.Wait()
 
 	// Stop CentralCommunication
@@ -140,6 +134,141 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	case <-time.After(5 * time.Second):
 		c.Fail("timeout reached waiting for the communication to stop")
 	}
+}
+
+func (c *centralCommunicationSuite) Test_ClientReconciliation() {
+	dep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central"})
+	dep2 := givenDeployment(fixtureconsts.Deployment2, "dep2", map[string]string{"app": "sensor"})
+	updatedDep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central_updated"})
+
+	hasher := hash.NewHasher()
+	hash1, _ := hasher.HashEvent(dep1.GetEvent())
+	updatedHash1, _ := hasher.HashEvent(updatedDep1.GetEvent())
+	setSensorHash(dep1, hash1)
+	setSensorHash(updatedDep1, updatedHash1)
+
+	testCases := map[string]struct {
+		deduperState      map[string]uint64
+		componentMessages []*central.MsgFromSensor
+		expectedMessages  *messagesMatcher
+	}{
+		"Deduper hash hit": {
+			deduperState: map[string]uint64{
+				deploymentKey(fixtureconsts.Deployment1): hash1,
+			},
+			componentMessages: []*central.MsgFromSensor{dep1},
+			expectedMessages:  newMessagesMatcher("no deployment should be sent"),
+		},
+		"Deduper hash hit in second event": {
+			deduperState:      map[string]uint64{},
+			componentMessages: []*central.MsgFromSensor{dep1, dep1},
+			expectedMessages:  newMessagesMatcher("first deployment should be sent", dep1),
+		},
+		"All deployments sent": {
+			deduperState:      map[string]uint64{},
+			componentMessages: []*central.MsgFromSensor{dep1, dep2},
+			expectedMessages:  newMessagesMatcher("all deployments should be sent", dep1, dep2),
+		},
+		"Updated deployment": {
+			deduperState: map[string]uint64{
+				deploymentKey(fixtureconsts.Deployment1): hash1,
+			},
+			componentMessages: []*central.MsgFromSensor{updatedDep1},
+			expectedMessages:  newMessagesMatcher("updated deployment should be sent", updatedDep1),
+		},
+	}
+
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			responsesC, closeFn := c.createCentralCommunication(true)
+			defer closeFn()
+			syncMessages := append(centralSyncMessages, debuggerMessage.DeduperState(tc.deduperState))
+			expectSyncMessages(syncMessages, c.mockService)
+
+			c.mockService.client.EXPECT().Send(tc.expectedMessages).Times(len(tc.expectedMessages.messagesToMatch))
+			c.mockService.client.EXPECT().CloseSend().AnyTimes()
+
+			reachable := concurrency.Flag{}
+			// Start the go routine with the mocked client
+			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+			c.mockService.connected.Wait()
+
+			for _, msg := range tc.componentMessages {
+				responsesC <- message.New(msg)
+			}
+
+			select {
+			case <-time.After(5 * time.Second):
+				c.Failf("timeout waiting for test state", tc.expectedMessages.error)
+			case <-tc.expectedMessages.matcherIsDone.Done():
+				break
+			}
+		})
+	}
+}
+
+type messagesMatcher struct {
+	messagesToMatch map[string]*central.MsgFromSensor
+	cmpFn           func(x, y *central.MsgFromSensor) bool
+	matcherIsDone   concurrency.Signal
+	error           string
+}
+
+func (m *messagesMatcher) Matches(target interface{}) bool {
+	msg, ok := target.(*central.MsgFromSensor)
+	if !ok {
+		m.error += " received message that isn't a MsgFromSensor"
+		return false
+	}
+	if expectedMsg, found := m.messagesToMatch[msg.GetEvent().GetId()]; found && m.cmpFn(expectedMsg, msg) {
+		delete(m.messagesToMatch, msg.GetEvent().GetId())
+		if len(m.messagesToMatch) == 0 {
+			// We are done processing the expected messages
+			m.matcherIsDone.Signal()
+		}
+		return true
+	}
+	m.error += fmt.Sprintf(" unexpected event: %+v", msg.GetEvent())
+	return false
+}
+
+func (m *messagesMatcher) String() string {
+	return fmt.Sprintf("expected %v: error: %s", m.messagesToMatch, m.error)
+}
+
+func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messagesMatcher {
+	ret := &messagesMatcher{
+		messagesToMatch: make(map[string]*central.MsgFromSensor),
+		matcherIsDone:   concurrency.NewSignal(),
+		error:           errorMsg,
+		cmpFn: func(x, y *central.MsgFromSensor) bool {
+			if x.GetEvent() == nil || y.GetEvent() == nil {
+				return false
+			}
+			return x.GetEvent().GetId() == y.GetEvent().GetId() && cmp.Equal(x.GetEvent().GetDeployment(), y.GetEvent().GetDeployment())
+		},
+	}
+	for _, m := range msgs {
+		ret.messagesToMatch[m.GetEvent().GetId()] = m
+	}
+	if len(msgs) == 0 {
+		// If we are not expecting any messages we can go ahead and trigger the signal.
+		// The test will fail if any messages are sent since the mock expects Send to be called 0 times.
+		ret.matcherIsDone.Signal()
+	}
+	return ret
+}
+
+func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
+	// Create a CentralCommunication with a fake SensorComponent
+	ret := make(chan *message.ExpiringMessage)
+	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
+	// Initialize the gRPC mocked service
+	c.mockService = &MockSensorServiceClient{
+		connected: concurrency.NewSignal(),
+		client:    mocksClient.NewMockServiceCommunicateClient(c.controller),
+	}
+	return ret, func() { close(ret) }
 }
 
 func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
@@ -155,6 +284,44 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	}
 	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
 	gomock.InOrder(orderedCalls...)
+}
+
+func deploymentKey(id string) string {
+	return fmt.Sprintf("Deployment:%s", id)
+}
+
+func givenDeployment(uuid, name string, labels map[string]string) *central.MsgFromSensor {
+	return &central.MsgFromSensor{
+		HashKey:           "",
+		DedupeKey:         "",
+		ProcessingAttempt: 0,
+		Msg: &central.MsgFromSensor_Event{
+			// The hash in the gRPC deduper is constructed by the central.SensorEvent struct
+			// Any changes in this struct will prevent the deduper from filtering the message
+			Event: &central.SensorEvent{
+				Id:     uuid,
+				Action: 0,
+				Timing: nil,
+				// SensorHash stores the SensorEvent hash. It is set later
+				SensorHashOneof: nil,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{
+						Id:     uuid,
+						Name:   name,
+						Labels: labels,
+					},
+				},
+			},
+		},
+	}
+}
+
+func setSensorHash(sensorMsg *central.MsgFromSensor, sensorHash uint64) {
+	if event := sensorMsg.GetEvent(); event != nil {
+		event.SensorHashOneof = &central.SensorEvent_SensorHash{
+			SensorHash: sensorHash,
+		}
+	}
 }
 
 func NewFakeSensorComponent(responsesC chan *message.ExpiringMessage) common.SensorComponent {

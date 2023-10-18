@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "google/protobuf/timestamp.proto";
+
 package central;
 
 // ComplianceOperatorInfo has basic info and status about the compliance operator.
@@ -109,4 +111,42 @@ message ComplianceResponse {
         ApplyComplianceScanConfigResponse   apply_compliance_scan_config_response   = 3;
         DeleteComplianceScanConfigResponse  delete_compliance_scan_config_response  = 4;
     }
+}
+
+message ComplianceOperatorCheckResultV2 {
+    enum CheckStatus {
+        UNSET          = 0;
+        PASS           = 1;
+        FAIL           = 2;
+        ERROR          = 3;
+        INFO           = 4;
+        MANUAL         = 5;
+        NOT_APPLICABLE = 6;
+        INCONSISTENT   = 7;
+    }
+
+    enum RuleSeverity {
+        UNSET_RULE_SEVERITY = 0;
+        UNKNOWN_RULE_SEVERITY = 1;
+        INFO_RULE_SEVERITY = 2;
+        LOW_RULE_SEVERITY = 3;
+        MEDIUM_RULE_SEVERITY = 4;
+        HIGH_RULE_SEVERITY = 5;
+    }
+
+    string                    id           = 1;
+    string                    check_id     = 2;
+    string                    check_name   = 3;
+    string                    cluster_id   = 4;
+    CheckStatus               status       = 5;
+    RuleSeverity              severity     = 6;
+    string                    description  = 7;
+    string                    instructions = 8;
+    map<string, string>       labels       = 9;
+    map<string, string>       annotations  = 10;
+    google.protobuf.Timestamp created_time = 11;
+    string                    standard     = 12;
+    string                    control      = 13;
+    string                    scan_name    = 14;
+    string                    suite_name   = 15;
 }

@@ -22,10 +22,10 @@ sensor_wait() {
       fi
       echo "Sensor replicas: $(jq '.status.replicas' <<<"${sensor_json}")"
       echo "Sensor readyReplicas: $(jq '.status.readyReplicas' <<<"${sensor_json}")"
-      if (( $(date '+%s') - start_time > 600 )); then
+      if (( $(date '+%s') - start_time > 1200 )); then
         kubectl -n stackrox get pod -o wide
         kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 10m"
+        echo >&2 "Timed out after 20m"
         exit 1
       fi
       sleep 10
@@ -41,10 +41,10 @@ sensor_wait() {
     until [ "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $2}')" -eq "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $4}')" ]; do
       echo "Desired collectors: $(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $2}')"
       echo "Ready collectors: $(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $4}')"
-      if (( $(date '+%s') - start_time > 600 )); then
+      if (( $(date '+%s') - start_time > 1200 )); then
         kubectl -n stackrox get pod -o wide
         kubectl -n stackrox get ds -o wide
-        echo >&2 "Timed out after 10m"
+        echo >&2 "Timed out after 20m"
         exit 1
       fi
       sleep 10

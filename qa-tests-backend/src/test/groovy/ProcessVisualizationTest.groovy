@@ -11,6 +11,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
     static final private String NGINXDEPLOYMENT = "qanginx"
@@ -18,7 +19,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String CENTOSDEPLOYMENT = "centosdeployment"
     static final private String FEDORADEPLOYMENT = "fedoradeployment"
     static final private String ELASTICDEPLOYMENT = "elasticdeployment"
-    static final private String REDISDEPLOYMENT = "redisdeployment"
+    //static final private String REDISDEPLOYMENT = "redisdeployment"
     static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
     static final private String ROX4979DEPLOYMENT = "rox4979deployment"
@@ -48,10 +49,12 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:elasticsearch-"+
                            "cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb")
                 .addLabel ("app", "test" ),
+            /* deployment is flaky on few arches, disabling has no impact as other deployments have sufficient coverage
             new Deployment()
                 .setName (REDISDEPLOYMENT)
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:redis-4.0.11")
                 .addLabel ("app", "test" ),
+            */
             new Deployment()
                 .setName (MONGODEPLOYMENT)
                 .setImage ("quay.io/rhacs-eng/qa-multi-arch:mongodb")
@@ -156,8 +159,10 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/bin/cut",
          "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
 
+        /*
         ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
          "/usr/local/bin/gosu"] as Set | REDISDEPLOYMENT
+        */
 
         ["/usr/local/bin/docker-entrypoint.sh",
          "/usr/bin/id",

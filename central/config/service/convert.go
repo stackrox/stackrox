@@ -5,9 +5,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// VulnerabilityDeferralConfigV1ToStorage returns a new instance of *storage.VulnerabilityDeferralConfig
-// based on input *v1.VulnerabilityDeferralConfig.
-func VulnerabilityDeferralConfigV1ToStorage(config *v1.VulnerabilityDeferralConfig) *storage.VulnerabilityDeferralConfig {
+// VulnerabilityExceptionConfigV1ToStorage returns a new instance of *storage.VulnerabilityExceptionConfig
+// based on input *v1.VulnerabilityExceptionConfig.
+func VulnerabilityExceptionConfigV1ToStorage(config *v1.VulnerabilityExceptionConfig) *storage.VulnerabilityExceptionConfig {
 	if config == nil {
 		return nil
 	}
@@ -15,8 +15,8 @@ func VulnerabilityDeferralConfigV1ToStorage(config *v1.VulnerabilityDeferralConf
 	if expiryOptions == nil {
 		return nil
 	}
-	return &storage.VulnerabilityDeferralConfig{
-		ExpiryOptions: &storage.VulnerabilityDeferralConfig_ExpiryOptions{
+	return &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
 			DayOptions: func() []*storage.DayOption {
 				dayOptions := make([]*storage.DayOption, 0, len(expiryOptions.GetDayOptions()))
 				for _, op := range expiryOptions.GetDayOptions() {
@@ -27,7 +27,7 @@ func VulnerabilityDeferralConfigV1ToStorage(config *v1.VulnerabilityDeferralConf
 				}
 				return dayOptions
 			}(),
-			FixableCveOptions: &storage.VulnerabilityDeferralConfig_FixableCVEOptions{
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: expiryOptions.GetFixableCveOptions().GetAllFixable(),
 				AnyFixable: expiryOptions.GetFixableCveOptions().GetAnyFixable(),
 			},
@@ -36,9 +36,9 @@ func VulnerabilityDeferralConfigV1ToStorage(config *v1.VulnerabilityDeferralConf
 	}
 }
 
-// VulnerabilityDeferralConfigStorageToV1 returns a new instance of *v1.VulnerabilityDeferralConfig
-// based on input *storage.VulnerabilityDeferralConfig.
-func VulnerabilityDeferralConfigStorageToV1(config *storage.VulnerabilityDeferralConfig) *v1.VulnerabilityDeferralConfig {
+// VulnerabilityExceptionConfigStorageToV1 returns a new instance of *v1.VulnerabilityExceptionConfig
+// based on input *storage.VulnerabilityExceptionConfig.
+func VulnerabilityExceptionConfigStorageToV1(config *storage.VulnerabilityExceptionConfig) *v1.VulnerabilityExceptionConfig {
 	if config == nil {
 		return nil
 	}
@@ -46,8 +46,8 @@ func VulnerabilityDeferralConfigStorageToV1(config *storage.VulnerabilityDeferra
 	if expiryOptions == nil {
 		return nil
 	}
-	return &v1.VulnerabilityDeferralConfig{
-		ExpiryOptions: &v1.VulnerabilityDeferralConfig_ExpiryOptions{
+	return &v1.VulnerabilityExceptionConfig{
+		ExpiryOptions: &v1.VulnerabilityExceptionConfig_ExpiryOptions{
 			DayOptions: func() []*v1.DayOption {
 				dayOptions := make([]*v1.DayOption, 0, len(expiryOptions.GetDayOptions()))
 				for _, op := range expiryOptions.GetDayOptions() {
@@ -58,7 +58,7 @@ func VulnerabilityDeferralConfigStorageToV1(config *storage.VulnerabilityDeferra
 				}
 				return dayOptions
 			}(),
-			FixableCveOptions: &v1.VulnerabilityDeferralConfig_FixableCVEOptions{
+			FixableCveOptions: &v1.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: expiryOptions.GetFixableCveOptions().GetAllFixable(),
 				AnyFixable: expiryOptions.GetFixableCveOptions().GetAnyFixable(),
 			},

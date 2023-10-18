@@ -8,6 +8,8 @@ func init() {
 	// general
 	prometheus.MustRegister(
 		panicCounter,
+		detectorDedupeCacheHits,
+		detectorDeploymentProcessed,
 		processDedupeCacheHits,
 		processDedupeCacheMisses,
 		processEnrichmentHits,

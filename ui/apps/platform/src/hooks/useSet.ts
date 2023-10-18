@@ -42,5 +42,9 @@ export default function useSet<T>(initialSet: Set<T> = new Set()) {
         setItemSet(new Set());
     }
 
-    return { has, toggle, clear };
+    function asArray() {
+        return Array.from(itemSet);
+    }
+
+    return { has, toggle, clear, size: itemSet.size, asArray };
 }

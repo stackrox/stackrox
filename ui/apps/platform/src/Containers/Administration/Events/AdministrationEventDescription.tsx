@@ -59,11 +59,11 @@ function AdministrationEventDescription({
                     <DescriptionListDescription>{id}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Created at</DescriptionListTerm>
+                    <DescriptionListTerm>Created</DescriptionListTerm>
                     <DescriptionListDescription>{createdAt}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>Last occurred at</DescriptionListTerm>
+                    <DescriptionListTerm>Last occurred</DescriptionListTerm>
                     <DescriptionListDescription>{lastOccurredAt}</DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>

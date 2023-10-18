@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/reflectutils"
@@ -67,6 +68,8 @@ type sensorConnection struct {
 
 	sensorHello  *central.SensorHello
 	capabilities set.Set[centralsensor.SensorCapability]
+
+	hashDeduper hashManager.Deduper
 }
 
 func newConnection(ctx context.Context,
@@ -111,6 +114,7 @@ func newConnection(ctx context.Context,
 	deduper := hashMgr.GetDeduper(ctx, cluster.GetId())
 	deduper.StartSync()
 
+	conn.hashDeduper = deduper
 	conn.sensorEventHandler = newSensorEventHandler(cluster, sensorHello.GetSensorVersion(), eventPipeline, conn, &conn.stopSig, deduper, initSyncMgr)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
@@ -594,9 +598,34 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		}
 	}
 
+	if features.SensorReconciliationOnReconnect.Enabled() && connectionCapabilities.Contains(centralsensor.SensorReconciliationOnReconnect) {
+		// Sensor is capable of doing the reconciliation by itself if receives the hashes from central.
+		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
+
+		// Send hashes to sensor
+		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+		deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
+			DeduperState: &central.DeduperState{
+				ResourceHashes: successfulHashes,
+			},
+		}}
+
+		log.Infof("Sending %d hashes (Size=%d)", len(successfulHashes), deduperMessage.Size())
+
+		err := server.Send(deduperMessage)
+		if err != nil {
+			log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
+			return errors.Wrap(err, "unable to sync deduper state")
+		}
+		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
+		c.sensorEventHandler.disableReconciliation()
+	} else {
+		log.Infof("Sensor (%s) cannot do client reconciliation: central will reconcile on SYNC events", c.clusterID)
+	}
+
 	go c.runSend(server)
 
-	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the the feature is enabled.
+	// Trigger initial network graph external sources sync. Network graph external sources capability is added to sensor only if the feature is enabled.
 	if connectionCapabilities.Contains(centralsensor.NetworkGraphExternalSrcsCap) {
 		if err := c.NetworkEntities().SyncNow(ctx); err != nil {
 			log.Errorf("Unable to sync initial external network entities to cluster %q: %v", c.clusterID, err)

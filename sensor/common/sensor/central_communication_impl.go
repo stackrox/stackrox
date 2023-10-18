@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
@@ -33,9 +34,11 @@ import (
 // sensor implements the Sensor interface by sending inputs to central,
 // and providing the output from central asynchronously.
 type centralCommunicationImpl struct {
-	receiver   CentralReceiver
-	sender     CentralSender
-	components []common.SensorComponent
+	receiver            CentralReceiver
+	sender              CentralSender
+	components          []common.SensorComponent
+	clientReconcile     bool
+	initialDeduperState map[deduper.Key]uint64
 
 	stopper concurrency.Stopper
 
@@ -45,8 +48,12 @@ type centralCommunicationImpl struct {
 	isReconnect bool
 }
 
-func (s *centralCommunicationImpl) Start(conn grpc.ClientConnInterface, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
-	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
+var (
+	errCantReconcile = errors.New("unable to reconcile due to deduper payload too large")
+)
+
+func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
+	go s.sendEvents(client, centralReachable, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(_ error) {
@@ -129,6 +136,12 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	for _, component := range s.components {
 		capsSet.AddAll(component.Capabilities()...)
 	}
+	if s.clientReconcile {
+		log.Info("Sensor is capable of doing client reconciliation")
+		capsSet.Add(centralsensor.SensorReconciliationOnReconnect)
+	} else {
+		log.Info("Sensor has client reconciliation disabled")
+	}
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
@@ -175,7 +188,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
 	s.receiver.Start(stream, s.Stop, s.sender.Stop)
-	s.sender.Start(stream, s.Stop, s.receiver.Stop)
+	s.sender.Start(stream, s.initialDeduperState, s.Stop, s.receiver.Stop)
 	log.Info("Communication with central started.")
 
 	// Wait for stop.
@@ -242,7 +255,37 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialPolicySync(stream, detector)
+	if err := s.initialPolicySync(stream, detector); err != nil {
+		return err
+	}
+
+	return s.initialDeduperSync(stream)
+}
+
+func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {
+	// If client reconciliation is disabled or cental does not support it, don't expect a deduper sync message to arrive
+	if !s.clientReconcile || !centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) {
+		log.Info("Skipping client reconciliation. Sensor will not wait for deduper state")
+		return nil
+	}
+	log.Info("Waiting for deduper state from Central")
+
+	msg, err := stream.Recv()
+	if err != nil {
+		if e, ok := status.FromError(err); ok {
+			if e.Code() == codes.ResourceExhausted {
+				return errors.Wrap(errCantReconcile, e.String())
+			}
+		}
+		return errors.Wrap(err, "receiving initial deduper sync")
+	}
+	if msg.GetDeduperState() == nil {
+		return errors.Wrapf(errCantReconcile, "central sent incorrect order of events: expected DeduperState but received %t instead", msg.GetMsg())
+	}
+
+	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
+	s.initialDeduperState = deduper.ParseDeduperState(msg.GetDeduperState().GetResourceHashes())
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
@@ -280,6 +323,18 @@ func (s *centralCommunicationImpl) initialPolicySync(stream central.SensorServic
 	}
 	if err := detector.ProcessMessage(msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
+	}
+
+	// Network Baseline sync
+	msg, err = stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving network baseline sync")
+	}
+	if msg.GetNetworkBaselineSync() == nil {
+		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
+	}
+	if err := detector.ProcessMessage(msg); err != nil {
+		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil
 }

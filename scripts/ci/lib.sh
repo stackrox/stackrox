@@ -40,9 +40,10 @@ ci_exit_trap() {
 
     finalize_job_record "${exit_code}" "false"
 
-    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
-
+    # `post_process_test_results` will generate the Slack attachment first, then
+    # `send_slack_notice_for_failures_on_merge` will check that attachment and send it
     post_process_test_results
+    (send_slack_notice_for_failures_on_merge "${exit_code}") || { echo "ERROR: Could not slack a test failure message"; }
 
     while [[ -e /tmp/hold ]]; do
         info "Holding this job for debug"
@@ -1073,6 +1074,10 @@ store_qa_test_results() {
     done
 }
 
+stored_test_results() {
+    echo "${ARTIFACT_DIR}/junit-$1"
+}
+
 store_test_results() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: store_test_results <from> <to>"
@@ -1087,7 +1092,8 @@ store_test_results() {
 
     info "Copying test results from $from to $to"
 
-    local dest="${ARTIFACT_DIR}/junit-$to"
+    local dest
+    dest="$(stored_test_results "$to")"
 
     cp -a "$from" "$dest" || true # (best effort)
 }
@@ -1116,7 +1122,7 @@ post_process_test_results() {
 
         csv_output="$(mktemp --suffix=.csv)"
 
-        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.11/junit2jira -o junit2jira && \
+        curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.14/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
@@ -1129,6 +1135,7 @@ post_process_test_results() {
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
             -threshold 5 \
             -html-output "$ARTIFACT_DIR/junit2jira-summary.html" \
+            -slack-output "$ARTIFACT_DIR/junit2jira-slack-attachments.json" \
             "${extra_args[@]}"
 
         info "Creating Big Query test records from ${csv_output}"
@@ -1250,18 +1257,11 @@ __EOM__
   }
 ]
 '
-    if [[ -n "${ARTIFACT_DIR}" ]]; then
-        if ! command -v junit-parse >/dev/null 2>&1; then
-            get_junit_parse_cli || true
-        fi
-        if command -v junit-parse >/dev/null 2>&1; then
-            local junit_file_names=()
-            while IFS='' read -r line; do junit_file_names+=("$line"); done < <(find "${ARTIFACT_DIR}" -type f -name '*.xml' || true)
-            local check_slack_attachments
-            check_slack_attachments=$(junit-parse "${junit_file_names[@]}") || exitstatus="$?"
-            if [[ "$exitstatus" == "0" ]]; then
-                slack_attachments="$check_slack_attachments"
-            fi
+    if [[ -f "$ARTIFACT_DIR/junit2jira-slack-attachments.json" ]]; then
+        local check_slack_attachments
+        check_slack_attachments=$(cat "$ARTIFACT_DIR/junit2jira-slack-attachments.json") || exitstatus="$?"
+        if [[ "$exitstatus" == "0" ]]; then
+            slack_attachments="$check_slack_attachments"
         fi
     fi
 
@@ -1313,7 +1313,7 @@ __EOM__
       "$body")"
     echo -e "About to post:\n$payload"
 
-    echo "$payload" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url" || {
+    echo "$payload" | curl --location --silent --show-error --fail --data @- --header 'Content-Type: application/json' "$webhook_url" || {
         slack_error "Error posting to Slack"
         return 1
     }
@@ -1352,6 +1352,22 @@ junit_wrap() {
     fi
 }
 
+junit_contains_failure() {
+    local dir="$1"
+    if [[ ! -d $dir ]]; then
+        return 1
+    fi
+    # There should be few files in such dir, and they should have well-behaved names,
+    # and "return" does not mix with piping to "while read", so we use a "for" over find.
+    # shellcheck disable=SC2044
+    for f in $(find "$dir" -type f -iname '*.xml'); do
+        if grep -q '<failure ' "$f"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 get_junit_misc_dir() {
     echo "${ARTIFACT_DIR}/junit-misc"
 }
@@ -1380,6 +1396,14 @@ save_junit_failure() {
     fi
 
     save_junit_record "$@"
+}
+
+remove_junit_record() {
+    local class="$1"
+    local junit_dir
+    junit_dir="$(get_junit_misc_dir)"
+    local junit_file="${junit_dir}/junit-${class}.xml"
+    rm -f "${junit_file}"
 }
 
 save_junit_record() {
@@ -1483,10 +1507,6 @@ To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
 EOT
 
     hub-comment -type build -template-file "$tmpfile"
-}
-
-get_junit_parse_cli() {
-    go install github.com/stackrox/junit-parse@latest
 }
 
 is_system_test_without_images() {

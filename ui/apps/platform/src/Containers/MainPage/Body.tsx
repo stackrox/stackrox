@@ -47,7 +47,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
-import InviteUsersModal from './InviteUsersModal';
+import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -106,7 +106,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     'compliance-enhanced': {
         component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Status/ComplianceStatusPage')
+            () => import('Containers/ComplianceEnhanced/ComplianceEnhancedPage')
         ),
         path: complianceEnhancedBasePath,
     },

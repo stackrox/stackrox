@@ -187,14 +187,13 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
 	}
 
-	var retC chan *central.TelemetryResponsePayload
-	var found bool
-	concurrency.WithLock(&c.returnChansMutex, func() {
-		retC, found = c.returnChans[requestID]
+	retC, found := concurrency.WithLock2(&c.returnChansMutex, func() (chan *central.TelemetryResponsePayload, bool) {
+		retC, found := c.returnChans[requestID]
 		if !found {
 			// Add the channel to the map to make sure log messages get throttled.
 			c.returnChans[requestID] = nil
 		}
+		return retC, found
 	})
 	if retC == nil {
 		if found {

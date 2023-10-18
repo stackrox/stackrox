@@ -1,0 +1,64 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: endpoint-load-{{.Replica}}
+spec:
+  replicas: {{.podReplicas}}
+  selector:
+    matchLabels:
+      app: endpoint-load-{{.Replica}}
+  template:
+    metadata:
+      labels:
+        app: endpoint-load-{{.Replica}}
+    spec:
+      imagePullSecrets:
+      - name: {{.JobName}}-{{.Replica}}
+      containers:
+      - image: quay.io/rhacs-eng/qa:berserker-1.0-40-ge3bd96aa5a
+        resources:
+          requests:
+            memory: "150Mi"
+            cpu: "250m"
+          limits:
+            memory: "150Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker"
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        name: cluster-density
+        env:
+        - name: ENVVAR1
+          value: "250"
+        - name: ENVVAR2
+          value: "250"
+        - name: ENVVAR3
+          value: "250"
+        - name: ENVVAR4
+          value: "250"
+      volumes:
+      - name: config
+        configMap:
+          name: {{.JobName}}-berserker-config
+          items:
+          - key: workload.toml
+            path: workload.toml
+      # Add not-ready/unreachable tolerations for 15 minutes so that node
+      # failure doesn't trigger pod deletion.
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
