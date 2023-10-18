@@ -43,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	"github.com/stackrox/rox/pkg/postgres/stats"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/observe"
@@ -72,6 +73,8 @@ const (
 	telemetryCentralAndSensors
 
 	centralClusterPrefix = "_central-cluster"
+
+	pgStatStatementsMax = 1000
 
 	layout    = "2006-01-02T15:04:05.000Z"
 	logWindow = 20 * time.Minute
@@ -286,6 +289,14 @@ func addJSONToZip(zipWriter *zip.Writer, fileName string, jsonObj interface{}) e
 	return jsonEnc.Encode(jsonObj)
 }
 
+func zipPGStatStatements(zipWriter *zip.Writer, name string) error {
+	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
+	if err != nil {
+		return err
+	}
+
+	return prometheusutil.ExportText(metricsWriter)
+}
 func zipPrometheusMetrics(zipWriter *zip.Writer, name string) error {
 	metricsWriter, err := zipWriterWithCurrentTimestamp(zipWriter, name)
 	if err != nil {
@@ -403,9 +414,16 @@ func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
 		return err
 	}
 
-	dbDiagnosticData := buildDBDiagnosticData(ctx, dbConfig, globaldb.GetPostgres())
-
-	return addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData)
+	db := globaldb.GetPostgres()
+	dbDiagnosticData := buildDBDiagnosticData(ctx, dbConfig, db)
+	if err := addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData); err != nil {
+		return err
+	}
+	statements, err := stats.GetPGStatStatements(ctx, db, pgStatStatementsMax)
+	if err != nil {
+		return errors.Wrap(err, "collecting pg_stat_statements")
+	}
+	return addJSONToZip(zipWriter, "central-db-pg-stats.json", statements)
 }
 
 func (s *serviceImpl) getLogImbue(ctx context.Context, zipWriter *zip.Writer) error {
