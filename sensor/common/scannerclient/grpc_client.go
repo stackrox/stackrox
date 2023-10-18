@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	scannerclient "github.com/stackrox/rox/scanner/pkg/client"
+	"github.com/stackrox/rox/scanner/pkg/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -53,7 +53,7 @@ type v2Client struct {
 // known as Scanner V4 Indexer.
 type v4Client struct {
 	// Sensor uses Scanner V4's client.
-	client scannerclient.ScannerClient
+	client client.Scanner
 }
 
 // GetStatus returns the image analysis status
@@ -144,14 +144,14 @@ func dialV2() (ScannerClient, error) {
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
-	client, err := scannerclient.NewGRPCScannerClient(ctx,
-		scannerclient.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
+	c, err := client.NewGRPCScanner(ctx,
+		client.WithAddress(env.ScannerV4GRPCEndpoint.Setting()),
 		// TODO: [ROX-19050] Set the Scanner V4 TLS validation when certificates are ready.
-		scannerclient.WithoutTLSVerify)
+		client.WithoutTLSVerify)
 	if err != nil {
 		return nil, err
 	}
-	return &v4Client{client: client}, nil
+	return &v4Client{client: c}, nil
 }
 
 // GetImageAnalysis retrieves the image analysis results for the given image.
