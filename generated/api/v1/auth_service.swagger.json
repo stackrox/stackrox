@@ -63,37 +63,6 @@
         "tags": [
           "AuthService"
         ]
-      },
-      "put": {
-        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.",
-        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigRequest"
-            }
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
       }
     },
     "/v1/auth/m2m/exchange": {
@@ -187,6 +156,43 @@
         "tags": [
           "AuthService"
         ]
+      },
+      "put": {
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.",
+        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
       }
     },
     "/v1/auth/status": {
@@ -221,7 +227,7 @@
           "type": "string"
         }
       },
-      "description": "The issuer configuration for a generic OIDC issuer of the identity token.\nFor the GitHub Action type, no additional configuration is required."
+      "description": "The issuer configuration for a generic OIDC issuer of the identity token.\nFor the GitHub Action type, no configuration is required and the generic issuer will be ignored."
     },
     "AuthMachineToMachineConfigMapping": {
       "type": "object",
@@ -515,14 +521,14 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "UUID of the config."
+          "description": "UUID of the config.\nNote that when adding a machine to machine config, this field must not be set."
         },
         "type": {
           "$ref": "#/definitions/v1AuthMachineToMachineConfigType"
         },
         "tokenExpirationDuration": {
           "type": "string",
-          "description": "The expiration of the token annotated as a duration.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m."
+          "description": "The expiration of the token annotated as a duration.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
         },
         "mappings": {
           "type": "array",
@@ -530,7 +536,7 @@
             "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
           }
         },
-        "generic": {
+        "genericIssuerConfig": {
           "$ref": "#/definitions/AuthMachineToMachineConfigGenericIssuer"
         }
       },
@@ -539,10 +545,10 @@
     "v1AuthMachineToMachineConfigType": {
       "type": "string",
       "enum": [
-        "GITHUB_ACTIONS",
-        "GENERIC"
+        "GENERIC",
+        "GITHUB_ACTIONS"
       ],
-      "default": "GITHUB_ACTIONS",
+      "default": "GENERIC",
       "description": "The type of the auth machine to machine config.\nCurrently supports GitHub actions or any other generic OIDC provider to use for verifying and\nexchanging the token."
     },
     "v1AuthStatus": {
@@ -612,14 +618,6 @@
           "items": {
             "$ref": "#/definitions/v1AuthMachineToMachineConfig"
           }
-        }
-      }
-    },
-    "v1UpdateAuthMachineToMachineConfigRequest": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
         }
       }
     },

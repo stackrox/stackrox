@@ -1,0 +1,47 @@
+package v1tostorage
+
+import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+)
+
+// AuthM2MConfig converts the given v1.AuthMachineToMachineConfig to storage.AuthMachineToMachineConfig.
+func AuthM2MConfig(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineToMachineConfig {
+	storageConfig := &storage.AuthMachineToMachineConfig{
+		Id:                      config.GetId(),
+		Type:                    convertTypeEnum(config.GetType()),
+		TokenExpirationDuration: config.GetTokenExpirationDuration(),
+		Mappings:                convertMappings(config.GetMappings()),
+	}
+
+	if config.GetIssuerConfig() != nil {
+		storageConfig.IssuerConfig = convertIssuerConfig(config.GetGenericIssuerConfig())
+	}
+
+	return storageConfig
+}
+
+func convertIssuerConfig(config *v1.AuthMachineToMachineConfig_GenericIssuer) *storage.AuthMachineToMachineConfig_GenericIssuerConfig {
+	return &storage.AuthMachineToMachineConfig_GenericIssuerConfig{GenericIssuerConfig: &storage.AuthMachineToMachineConfig_GenericIssuer{
+		Issuer: config.GetIssuer(),
+	}}
+}
+
+func convertMappings(mappings []*v1.AuthMachineToMachineConfig_Mapping) []*storage.AuthMachineToMachineConfig_Mapping {
+	if len(mappings) == 0 {
+		return nil
+	}
+	storageMappings := make([]*storage.AuthMachineToMachineConfig_Mapping, 0, len(mappings))
+	for _, mapping := range mappings {
+		storageMappings = append(storageMappings, &storage.AuthMachineToMachineConfig_Mapping{
+			Key:   mapping.GetKey(),
+			Value: mapping.GetValue(),
+			Role:  mapping.GetRole(),
+		})
+	}
+	return storageMappings
+}
+
+func convertTypeEnum(val v1.AuthMachineToMachineConfig_Type) storage.AuthMachineToMachineConfig_Type {
+	return storage.AuthMachineToMachineConfig_Type(storage.AuthMachineToMachineConfig_Type_value[val.String()])
+}

@@ -4,28 +4,34 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 import "gogoproto/gogo.proto";
 
+package storage;
+
 // AuthMachineToMachineConfig is the storage representation of auth machine to machine configs in Central.
 //
 // Refer to v1.AuthMachineToMachineConfig for a more detailed doc.
 // Next tag: 6.
 message AuthMachineToMachineConfig {
     string id                        = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+
     enum Type {
-        GITHUB_ACTIONS               = 0;
-        GENERIC                      = 1;
+        GENERIC                      = 0;
+        GITHUB_ACTIONS               = 1;
     }
     Type type                        = 2;
+
     string token_expiration_duration = 3;
+
     message Mapping {
         string key                   = 1;
         string value                 = 2;
-        string role                  = 3;
+        string role                  = 3 [(gogoproto.moretags) = 'sql:"fk(Role:name),restrict-delete"'];
     }
     repeated Mapping mappings        = 4;
+
     message GenericIssuer {
-        string issuer                = 1;
+        string issuer                       = 1;
     }
     oneof IssuerConfig {
-        GenericIssuer generic        = 5;
+        GenericIssuer generic_issuer_config = 5;
     }
 }

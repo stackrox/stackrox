@@ -36,14 +36,15 @@ message AuthStatus {
 // for the config.
 message AuthMachineToMachineConfig {
     // UUID of the config.
+    // Note that when adding a machine to machine config, this field must not be set.
     string id = 1;
 
     // The type of the auth machine to machine config.
     // Currently supports GitHub actions or any other generic OIDC provider to use for verifying and
     // exchanging the token.
     enum Type {
-        GITHUB_ACTIONS = 0;
-        GENERIC        = 1;
+        GENERIC        = 0;
+        GITHUB_ACTIONS = 1;
     }
     Type type          = 2;
 
@@ -51,6 +52,8 @@ message AuthMachineToMachineConfig {
     // Possible valid time units are: s, m, h.
     // The maximum allowed expiration duration is 24h.
     // As an example: 2h45m.
+    // For additional information on the validation of the duration, see:
+    // https://pkg.go.dev/time#ParseDuration.
     string token_expiration_duration = 3;
 
    // Mappings map an identity token's claim values to a specific role within Central.
@@ -67,12 +70,12 @@ message AuthMachineToMachineConfig {
     repeated Mapping mappings = 4;
 
     // The issuer configuration for a generic OIDC issuer of the identity token.
-    // For the GitHub Action type, no additional configuration is required.
+    // For the GitHub Action type, no configuration is required and the generic issuer will be ignored.
     message GenericIssuer {
-        string issuer         = 1;
+        string issuer                       = 1;
     }
     oneof IssuerConfig {
-        GenericIssuer generic = 5;
+        GenericIssuer generic_issuer_config = 5;
     }
 }
 
@@ -143,7 +146,7 @@ service AuthService {
     // UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
     rpc UpdateAuthMachineToMachineConfig(UpdateAuthMachineToMachineConfigRequest) returns (UpdateAuthMachineToMachineConfigResponse) {
         option (google.api.http) = {
-            put: "/v1/auth/m2m"
+            put: "/v1/auth/m2m/{config.id}"
             body: "*"
         };
     }

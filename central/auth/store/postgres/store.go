@@ -102,6 +102,31 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, obj *storage.AuthMa
 	finalStr := "INSERT INTO auth_machine_to_machine_configs (Id, serialized) VALUES($1, $2) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
+	var query string
+
+	for childIndex, child := range obj.GetMappings() {
+		if err := insertIntoAuthMachineToMachineConfigsMappings(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
+		}
+	}
+
+	query = "delete from auth_machine_to_machine_configs_mappings where auth_machine_to_machine_configs_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetMappings()))
+	return nil
+}
+
+func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storage.AuthMachineToMachineConfig_Mapping, authMachineToMachineConfigID string, idx int) error {
+
+	values := []interface{}{
+		// parent primary keys start
+		pgutils.NilOrUUID(authMachineToMachineConfigID),
+		idx,
+		obj.GetRole(),
+	}
+
+	finalStr := "INSERT INTO auth_machine_to_machine_configs_mappings (auth_machine_to_machine_configs_Id, idx, Role) VALUES($1, $2, $3) ON CONFLICT(auth_machine_to_machine_configs_Id, idx) DO UPDATE SET auth_machine_to_machine_configs_Id = EXCLUDED.auth_machine_to_machine_configs_Id, idx = EXCLUDED.idx, Role = EXCLUDED.Role"
+	batch.Queue(finalStr, values...)
+
 	return nil
 }
 
@@ -155,6 +180,51 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 		}
 	}
 
+	for idx, obj := range objs {
+		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
+
+		if err := copyFromAuthMachineToMachineConfigsMappings(ctx, s, tx, obj.GetId(), obj.GetMappings()...); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, authMachineToMachineConfigID string, objs ...*storage.AuthMachineToMachineConfig_Mapping) error {
+	inputRows := make([][]interface{}, 0, batchSize)
+
+	copyCols := []string{
+		"auth_machine_to_machine_configs_id",
+		"idx",
+		"role",
+	}
+
+	for idx, obj := range objs {
+		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
+		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
+			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
+			"to simply use the object.  %s", obj)
+
+		inputRows = append(inputRows, []interface{}{
+			pgutils.NilOrUUID(authMachineToMachineConfigID),
+			idx,
+			obj.GetRole(),
+		})
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
+			// delete for the top level parent
+
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"auth_machine_to_machine_configs_mappings"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
+				return err
+			}
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
 	return nil
 }
 
@@ -175,6 +245,12 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableAuthMachineToMachineConfigs(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_machine_to_machine_configs CASCADE")
+	dropTableAuthMachineToMachineConfigsMappings(ctx, db)
+
+}
+
+func dropTableAuthMachineToMachineConfigsMappings(ctx context.Context, db postgres.DB) {
+	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS auth_machine_to_machine_configs_mappings CASCADE")
 
 }
 
