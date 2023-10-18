@@ -87,6 +87,16 @@ func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, er
 			},
 		}
 		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeNetworkPolicy.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_NetworkPolicy{
+					NetworkPolicy: &storage.NetworkPolicy{Id: resID}},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
 	case deduper.TypeNode.String():
 		msg := central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
