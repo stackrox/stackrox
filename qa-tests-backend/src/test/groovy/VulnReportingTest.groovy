@@ -8,6 +8,7 @@ import objects.EmailNotifier
 import services.CollectionsService
 import services.VulnReportService
 import util.MailServer
+import util.Env
 
 import org.junit.Assume
 import spock.lang.Shared
@@ -77,21 +78,46 @@ class VulnReportingTest extends BaseSpecification {
                 true, true, NotifierOuterClass.Email.AuthMethod.DISABLED)
         notifier.createNotifier()
         assert notifier.id
+        // debug info
+        log.info "notifier.id    ==== " + notifier.id
+        log.info "notifier       ==== " + notifier
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
 
         and:
         "a collection is created"
         def collection = CollectionsService.createCollection(["struts-deployment"],
                 [Constants.ORCHESTRATOR_NAMESPACE])
         assert collection.id
+        // debug info
+        log.info "collection.id  ==== " + collection.id
+        log.info "collection     ==== " + collection
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
 
         and:
         "a report is configured"
         def report = VulnReportService.createVulnReportConfig(collection.id, notifier.id)
         assert report.id
+        // debug info
+        log.info "report.id      ==== " + report.id
+        log.info "report         ==== " + report
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
 
         when:
         "a report is generated"
         assert VulnReportService.runReport(report.id)
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
+        }
 
         then:
         "the email server should've gotten an email with the report"
@@ -99,6 +125,10 @@ class VulnReportingTest extends BaseSpecification {
         withRetry(4, 3) {
             emails = mailServer.findEmailsByToEmail(Constants.EMAIL_NOTIFER_SENDER)
             assert emails.size() >= 1
+        }
+        // some breather needed on few arches
+        if (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x") {
+            sleep(5000)
         }
 
         def email = emails[0]
