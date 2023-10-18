@@ -390,7 +390,6 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 		}
 		alertGroups[key] = append(alertGroups[key], alert)
 	}
-	log.Infof("Number of groups: %d", len(alertGroups))
 	for key, alerts := range alertGroups {
 		opts := []alertmanager.AlertFilterOption{
 			alertmanager.WithLifecycleStage(stage),

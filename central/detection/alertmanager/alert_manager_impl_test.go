@@ -214,12 +214,12 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	suite.NoError(err, "update should succeed")
 }
 
-func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndNotResourceType() {
+func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndResource() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
 		testutils.PredMatcher("query for violation state, cluster id and resource type", queryHasFields(search.ViolationState, search.ClusterID, search.ResourceType)),
 	).Return(([]*storage.Alert)(nil), nil)
 
-	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithClusterID("cid"), WithResource(storage.ListAlert_DEPLOYMENT))
+	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithLifecycleStage(storage.LifecycleStage_RUNTIME), WithClusterID("cid"), WithNamespace("nn"), WithResource("rn", storage.Alert_Resource_SECRETS))
 	suite.False(modified.Cardinality() > 0)
 	suite.NoError(err, "update should succeed")
 }
