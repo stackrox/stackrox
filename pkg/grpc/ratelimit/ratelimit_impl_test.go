@@ -10,32 +10,38 @@ import (
 )
 
 func TestNewRateLimiterUnlimited(t *testing.T) {
-	rl := NewRateLimiter(-1)
+	rl := newRateLimiter(-1)
 	assert.Equal(t, rate.Inf, rl.tokenBucketLimiter.Limit())
 
-	rl = NewRateLimiter(0)
+	rl = newRateLimiter(0)
 	assert.Equal(t, rate.Inf, rl.tokenBucketLimiter.Limit())
 }
 
 func TestNewRateLimiterLimitedValue(t *testing.T) {
 	expectedRatePerSec := 100
-	rl := NewRateLimiter(expectedRatePerSec)
+	rl := newRateLimiter(expectedRatePerSec)
 
 	assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
 }
 
 func TestIncreaseLimit(t *testing.T) {
-	noLimitRL := NewRateLimiter(0)
+	noLimitRL := newRateLimiter(0)
 	assert.Equal(t, rate.Inf, noLimitRL.tokenBucketLimiter.Limit())
 
 	noLimitRL.IncreaseLimit(1)
 	assert.Equal(t, rate.Inf, noLimitRL.tokenBucketLimiter.Limit())
 
 	expectedRatePerSec := 100
-	rl := NewRateLimiter(expectedRatePerSec)
+	rl := newRateLimiter(expectedRatePerSec)
 	assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
+
+	for _, limitDelta := range []int{-10, 0, math.MaxInt} {
+		rl.IncreaseLimit(limitDelta)
+		assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
+		assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
+	}
 
 	rl.IncreaseLimit(10)
 	expectedRatePerSec += 10
@@ -44,16 +50,22 @@ func TestIncreaseLimit(t *testing.T) {
 }
 
 func TestDecreaseLimit(t *testing.T) {
-	noLimitRL := NewRateLimiter(0)
+	noLimitRL := newRateLimiter(0)
 	assert.Equal(t, rate.Inf, noLimitRL.tokenBucketLimiter.Limit())
 
 	noLimitRL.DecreaseLimit(1)
 	assert.Equal(t, rate.Inf, noLimitRL.tokenBucketLimiter.Limit())
 
 	expectedRatePerSec := 100
-	rl := NewRateLimiter(expectedRatePerSec)
+	rl := newRateLimiter(expectedRatePerSec)
 	assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
 	assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
+
+	for _, limitDelta := range []int{-10, 0, math.MaxInt, expectedRatePerSec} {
+		rl.DecreaseLimit(limitDelta)
+		assert.Equal(t, rate.Limit(expectedRatePerSec), rl.tokenBucketLimiter.Limit())
+		assert.Equal(t, expectedRatePerSec, rl.tokenBucketLimiter.Burst())
+	}
 
 	rl.DecreaseLimit(10)
 	expectedRatePerSec -= 10

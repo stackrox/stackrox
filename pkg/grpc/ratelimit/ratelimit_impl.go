@@ -17,6 +17,20 @@ type rateLimiter struct {
 	tokenBucketLimiter *rate.Limiter
 }
 
+func newRateLimiter(maxPerSec int) *rateLimiter {
+	limit := rate.Inf
+	if maxPerSec > 0 {
+		limit = rate.Every(time.Second / time.Duration(maxPerSec))
+	}
+
+	// When no limit is set, we use "rate.Inf," and burst is disregarded.
+	limiter := &rateLimiter{
+		tokenBucketLimiter: rate.NewLimiter(limit, maxPerSec),
+	}
+
+	return limiter
+}
+
 // Limit implements "ratelimit.Limiter" interface.
 func (limiter *rateLimiter) Limit() bool {
 	return !limiter.tokenBucketLimiter.Allow()
@@ -53,30 +67,6 @@ func (limiter *rateLimiter) DecreaseLimit(limitDelta int) {
 	limiter.modifyRateLimit(-limitDelta)
 }
 
-// NewRateLimiter defines rate limiter any type of events. The rate limit
-// will be considered unlimited when the value of maxPerSec is less than or
-// equal to zero.
-//
-// Note: Please be aware that we're currently employing a basic token bucket
-// rate limiting approach. Once the limit is reached, any additional events
-// will be declined. It's worth noting that a more effective solution would
-// involve implementing event throttling before reaching the hard limit.
-// However, this alternative would introduce a 1ms delay for each event
-// and necessitate the creation of timers for every throttled event.
-func NewRateLimiter(maxPerSec int) *rateLimiter {
-	limit := rate.Inf
-	if maxPerSec > 0 {
-		limit = rate.Every(time.Second / time.Duration(maxPerSec))
-	}
-
-	// When no limit is set, we use "rate.Inf," and burst is disregarded.
-	limiter := &rateLimiter{
-		tokenBucketLimiter: rate.NewLimiter(limit, maxPerSec),
-	}
-
-	return limiter
-}
-
 // GetUnaryServerInterceptor returns a gRPC UnaryServerInterceptor.
 func (limiter *rateLimiter) GetUnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return ratelimit.UnaryServerInterceptor(limiter)
@@ -101,4 +91,18 @@ func (limiter *rateLimiter) GetHTTPInterceptor() httputil.HTTPInterceptor {
 			handler.ServeHTTP(w, r)
 		})
 	}
+}
+
+// NewRateLimiter defines rate limiter any type of events. The rate limit
+// will be considered unlimited when the value of maxPerSec is less than or
+// equal to zero.
+//
+// Note: Please be aware that we're currently employing a basic token bucket
+// rate limiting approach. Once the limit is reached, any additional events
+// will be declined. It's worth noting that a more effective solution would
+// involve implementing event throttling before reaching the hard limit.
+// However, this alternative would introduce a 1ms delay for each event
+// and necessitate the creation of timers for every throttled event.
+func NewRateLimiter(maxPerSec int) RateLimiter {
+	return newRateLimiter(maxPerSec)
 }
