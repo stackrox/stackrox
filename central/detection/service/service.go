@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -26,8 +27,18 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, imageDatastore imageDatastore.DataStore, riskManager manager.Manager,
-	deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, notifications notifier.Processor, detector deploytime.Detector, policySet detection.PolicySet) Service {
+func New(
+	clusters clusterDatastore.DataStore,
+	imageEnricher enricher.ImageEnricher,
+	imageDatastore imageDatastore.DataStore,
+	riskManager manager.Manager,
+	deploymentEnricher enrichment.Enricher,
+	buildTimeDetector buildTimeDetection.Detector,
+	notifications notifier.Processor,
+	detector deploytime.Detector,
+	policySet detection.PolicySet,
+	clusterSACHelper sachelper.ClusterSacHelper,
+) Service {
 	return &serviceImpl{
 		clusters:           clusters,
 		imageEnricher:      imageEnricher,
@@ -38,5 +49,6 @@ func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnrich
 		detector:           detector,
 		policySet:          policySet,
 		notifications:      notifications,
+		clusterSACHelper:   clusterSACHelper,
 	}
 }

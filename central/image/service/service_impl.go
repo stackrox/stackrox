@@ -8,10 +8,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -84,6 +84,8 @@ var (
 	})
 
 	reprocessInterval = env.ReprocessInterval.DurationSetting()
+
+	delegateScanPermissions = []string{"Image"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -105,7 +107,7 @@ type serviceImpl struct {
 
 	scanWaiterManager waiter.Manager[*storage.Image]
 
-	clusterDataStore cluster.DataStore
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -311,7 +313,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	if request.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterDataStore, request.GetCluster())
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, request.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}

@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
-	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	sacHelperMocks "github.com/stackrox/rox/central/role/sachelper/mocks"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
@@ -240,7 +241,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 
 func TestDelegateEnrichImage(t *testing.T) {
 	var deleClusterDS *deleDSMocks.MockDataStore
-	var namespaceDS *namespaceDSMocks.MockDataStore
+	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
 	var connMgr *connMocks.MockManager
 	var waiterMgr *waiterMocks.MockManager[*storage.Image]
 	var waiter *waiterMocks.MockWaiter[*storage.Image]
@@ -253,11 +254,11 @@ func TestDelegateEnrichImage(t *testing.T) {
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		waiter = waiterMocks.NewMockWaiter[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-		namespaceDS = namespaceDSMocks.NewMockDataStore(ctrl)
+		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		namespaceDS.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-		d = New(deleClusterDS, connMgr, waiterMgr, namespaceDS)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		d = New(deleClusterDS, connMgr, waiterMgr, namespaceSACHelper)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {
@@ -319,20 +320,20 @@ func TestDelegateEnrichImage(t *testing.T) {
 }
 
 func TestInferNamespace(t *testing.T) {
-	var namespaceDS *namespaceDSMocks.MockDataStore
+	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
 
 	var d *delegatorImpl
 
 	setup := func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		namespaceDS = namespaceDSMocks.NewMockDataStore(ctrl)
+		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
-		d = New(nil, nil, nil, namespaceDS)
+		d = New(nil, nil, nil, namespaceSACHelper)
 	}
 
 	t.Run("no namespace on error", func(t *testing.T) {
 		setup(t)
-		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(nil, errBroken)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(nil, errBroken)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Zero(t, result)
@@ -340,17 +341,7 @@ func TestInferNamespace(t *testing.T) {
 
 	t.Run("no namespace on empty search result", func(t *testing.T) {
 		setup(t)
-		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(nil, nil)
-
-		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
-		assert.Zero(t, result)
-	})
-
-	// This scenario shouldn't be possible due to using an exact matcher, but test for it just in case.
-	t.Run("no namespace when multiple found", func(t *testing.T) {
-		setup(t)
-		namespaces := []*storage.NamespaceMetadata{{Name: "repo"}, {Name: "ns2"}}
-		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(namespaces, nil)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(nil, nil)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Zero(t, result)
@@ -358,8 +349,8 @@ func TestInferNamespace(t *testing.T) {
 
 	t.Run("namespace found", func(t *testing.T) {
 		setup(t)
-		namespaces := []*storage.NamespaceMetadata{{Name: "repo"}}
-		namespaceDS.EXPECT().SearchNamespaces(ctxBG, gomock.Any()).Return(namespaces, nil)
+		namespaces := []*v1.ScopeObject{{Name: "repo"}}
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(namespaces, nil)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Equal(t, "repo", result)
