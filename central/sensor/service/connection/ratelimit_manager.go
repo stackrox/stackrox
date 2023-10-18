@@ -21,9 +21,9 @@ type rateLimitManager struct {
 	eventRateLimiter ratelimit.RateLimiter
 }
 
-// NewRateLimitManager creates an rateLimitManager with max sensors
+// newRateLimitManager creates an rateLimitManager with max sensors
 // retrieved from env variable, ensuring it is non-negative.
-func NewRateLimitManager() *rateLimitManager {
+func newRateLimitManager() *rateLimitManager {
 	maxSensors := env.CentralMaxInitSyncSensors.IntegerSetting()
 	if maxSensors < 0 {
 		log.Panicf("Negative number is not allowed for max init sync sensors. Check env variable: %q", env.CentralMaxInitSyncSensors.EnvVar())
