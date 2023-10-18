@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
@@ -54,7 +55,7 @@ func getEmail(t *testing.T) (*email, *gomock.Controller) {
 		},
 	}
 
-	e, err := NewEmail(notifier, metadataGetter, mitreStore, nil, "")
+	e, err := newEmail(notifier, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return e, mockCtrl
 }
@@ -78,7 +79,7 @@ func getUnauthEmail(t *testing.T) (*email, *gomock.Controller) {
 		},
 	}
 
-	e, err := NewEmail(notifier, metadataGetter, mitreStore, nil, "")
+	e, err := newEmail(notifier, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return e, mockCtrl
 }
