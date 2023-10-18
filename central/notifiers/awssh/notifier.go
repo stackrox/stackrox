@@ -107,13 +107,7 @@ func init() {
 	})
 }
 
-func validateNotifierConfiguration(notifier *storage.Notifier) (*storage.AWSSecurityHub, error) {
-	if env.EncNotifierCreds.BooleanSetting() {
-		if notifier.GetNotifierSecret() == "" {
-			return nil, errors.New("Notifier secret must be non-empty")
-		}
-	}
-	awssh := notifier.GetAwsSecurityHub()
+func validateNotifierConfiguration(awssh *storage.AWSSecurityHub) (*storage.AWSSecurityHub, error) {
 	if awssh == nil {
 		return nil, errors.New("AWSSecurityHub configuration is required")
 	}
@@ -169,7 +163,7 @@ type notifier struct {
 }
 
 func newNotifier(configuration configuration) (*notifier, error) {
-	awssh, err := validateNotifierConfiguration(configuration.descriptor)
+	awssh, err := validateNotifierConfiguration(configuration.descriptor.GetAwsSecurityHub())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to validate config for AWS SecurityHub")
 	}
@@ -211,6 +205,10 @@ func newNotifier(configuration configuration) (*notifier, error) {
 func getCredentials(config configuration) (*storage.AWSSecurityHub_Credentials, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return config.descriptor.GetAwsSecurityHub().GetCredentials(), nil
+	}
+	
+	if config.descriptor.GetNotifierSecret() == "" {
+		return nil, errors.New("Notifier secret must be non-empty")
 	}
 	if config.cryptoCodec == nil {
 		return nil, errors.New("crypto codec is required")
