@@ -8,6 +8,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -52,7 +53,7 @@ func TestWithFakeCSCC(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
 	clusterStore.EXPECT().GetCluster(gomock.Any(), "test_id").Return(cluster, true, nil)
-	scc, _ := newCSCC(s)
+	scc, _ := newCSCC(s, cryptocodec.Singleton(), "stackrox")
 
 	alertID := "myAlertID"
 	severity := findings.High

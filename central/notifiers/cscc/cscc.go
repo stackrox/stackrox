@@ -2,22 +2,26 @@ package cscc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/notifiers/cscc/client"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -31,8 +35,17 @@ var (
 )
 
 func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+	}
+
 	notifiers.Add(notifiers.CSCCType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newCSCC(notifier)
+		j, err := newCSCC(notifier, cryptocodec.Singleton(), cryptoKey)
 		return j, err
 	})
 }
@@ -243,24 +256,33 @@ func (c *cscc) initFinding(_ context.Context, alert *storage.Alert, clusterDatas
 
 }
 
-func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
+func newCSCC(protoNotifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
 		return nil, errors.New("Cloud SCC config is required")
 	}
 	conf := csccConfig.Cscc
 
+	decCreds := conf.ServiceAccount
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		if protoNotifier.GetNotifierSecret() == "" {
+			return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", protoNotifier.GetName())
+		}
+		decCreds, err = cryptoCodec.Decrypt(cryptoKey, protoNotifier.GetNotifierSecret())
+		if err != nil {
+			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", protoNotifier.GetName())
+		}
+	}
+
 	cfg := &config{
-		ServiceAccount: conf.ServiceAccount,
+		ServiceAccount: decCreds,
 		SourceID:       conf.SourceId,
 	}
+
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	return newWithConfig(protoNotifier, cfg), nil
-}
-
-func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 	return &cscc{
 		Notifier: protoNotifier,
 		client: client.Config{
@@ -269,7 +291,7 @@ func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 			Logger:         log,
 		},
 		config: cfg,
-	}
+	}, nil
 }
 
 func (c *cscc) ProtoNotifier() *storage.Notifier {
