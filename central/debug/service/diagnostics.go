@@ -127,7 +127,7 @@ func pullCentralClusterDiagnostics(ctx context.Context, filesC chan<- k8sintrosp
 
 	restCfg, err := k8sutil.GetK8sInClusterConfig()
 	if err == nil {
-		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC), since)
+		err = k8sintrospect.Collect(ctx, mainClusterConfig, restCfg, k8sintrospect.SendToChan(filesC), since, false)
 	}
 	if err != nil {
 		errFile := k8sintrospect.File{

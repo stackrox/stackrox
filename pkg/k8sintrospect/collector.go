@@ -49,12 +49,12 @@ type collector struct {
 	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
 
-	since  time.Time
-	errors []error
+	since       time.Time
+	errors      []error
+	shouldStuck bool
 }
 
-func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback,
-	since time.Time) (*collector, error) {
+func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, cb FileCallback, since time.Time, shouldStuck bool) (*collector, error) {
 	restConfigShallowCopy := *k8sRESTConfig
 	oldWrapTransport := restConfigShallowCopy.WrapTransport
 	restConfigShallowCopy.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -80,6 +80,7 @@ func newCollector(ctx context.Context, k8sRESTConfig *rest.Config, cfg Config, c
 		client:        k8sClient,
 		dynamicClient: dynamicClient,
 		since:         since,
+		shouldStuck:   shouldStuck,
 	}, nil
 }
 
@@ -403,6 +404,9 @@ func (c *collector) Run() error {
 			objClient := clientMap[objCfg.GVK]
 			if objClient == nil {
 				continue
+			}
+			if c.shouldStuck {
+				time.Sleep(2 * time.Minute)
 			}
 			if err := c.collectObjectsData(ns, objCfg, objClient); err != nil {
 				return err

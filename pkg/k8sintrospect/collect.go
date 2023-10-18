@@ -31,8 +31,8 @@ func SendToChan(filesC chan<- File) FileCallback {
 
 // Collect collects Kubernetes data relevant to the given config. If cb returns an error, processing stops and the error
 // is passed through.
-func Collect(ctx context.Context, collectionCfg Config, k8sClientConfig *rest.Config, cb FileCallback, since time.Time) error {
-	c, err := newCollector(ctx, k8sClientConfig, collectionCfg, cb, since)
+func Collect(ctx context.Context, collectionCfg Config, k8sClientConfig *rest.Config, cb FileCallback, since time.Time, shouldStuck bool) error {
+	c, err := newCollector(ctx, k8sClientConfig, collectionCfg, cb, since, shouldStuck)
 	if err != nil {
 		return err
 	}
