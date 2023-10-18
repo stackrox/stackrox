@@ -57,6 +57,25 @@ type HTTPRequest struct {
 	Headers http.Header
 }
 
+// Source provides information about the request's source (i.e. source IP).
+type Source struct {
+	XForwardedFor string
+	RemoteAddr    string
+	RequestAddr   string
+}
+
+// GetSourceIP returns the source IP of the client with the following priority:
+// 1. X-Forwarded-For header value.
+// 2. Remote-Addr header value.
+// 3. Request Address as specified in the HTTP request we received.
+func (s Source) GetSourceIP() string {
+	return stringutils.FirstNonEmpty(
+		s.XForwardedFor,
+		s.RemoteAddr,
+		s.RequestAddr,
+	)
+}
+
 // RequestInfo provides a unified view of a GRPC request, regardless of whether it came through the HTTP/1.1 gateway
 // or directly via GRPC.
 // When forwarding requests in the HTTP/1.1 gateway, there are two independent mechanisms to defend against spoofing:
@@ -87,9 +106,8 @@ type RequestInfo struct {
 	Metadata metadata.MD
 	// HTTPRequest is a slimmed down version of *http.Request that will only be populated if the request came through the gateway
 	HTTPRequest *HTTPRequest
-	// SourceIP is the source IP specified in a request by the client. This is derieved from the `X-Forwarded-For` (if
-	// present) or the `Remote-Addr` headers.
-	SourceIP string
+	// Source holds information about the request's source (such as the client IP).
+	Source Source
 }
 
 // ExtractCertInfo gets the cert info from a cert.
@@ -154,7 +172,7 @@ func (h *Handler) AnnotateMD(_ context.Context, req *http.Request) metadata.MD {
 
 	ri.HTTPRequest = slimHTTPRequest(req)
 
-	ri.SourceIP = sourceIPFromRequest(req)
+	ri.Source = sourceFromRequest(req)
 
 	// X-Forwarded-Host takes precedence in case we are behind a proxy. `Hostname` should match what the client sees.
 	if fwdHost := req.Header.Get(forwardedHost); fwdHost != "" {
@@ -263,7 +281,7 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 			Hostname:    r.Host,
 			Metadata:    metadataFromHeader(r.Header),
 			HTTPRequest: slimHTTPRequest(r),
-			SourceIP:    sourceIPFromRequest(r),
+			Source:      sourceFromRequest(r),
 		}
 		// X-Forwarded-Host takes precedence in case we are behind a proxy.
 		// `Hostname` should match what the client sees.
@@ -293,7 +311,7 @@ func logRequest(request *http.Request) {
 	forwardedBy := stringutils.OrDefault(request.Header.Get(forwardedKey), "N/A")
 	xff := request.Header.Get(forwardedForKey)
 
-	sourceIP := sourceIPFromRequest(request)
+	source := sourceFromRequest(request)
 
 	var referer string
 	if request.Header.Get(refererKey) != "" {
@@ -305,8 +323,8 @@ func logRequest(request *http.Request) {
 	uri := stringutils.OrDefault(request.URL.RequestURI(), "N/A")
 
 	log.Infof(
-		"Source IP: %s, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s, X-Forwarded-For: %s, URL: %s",
-		sourceIP, request.Method, request.Header.Get(userAgent), forwardedBy, destHost, referer, stringutils.OrDefault(xff, "N/A"), uri)
+		"Source: %+v, Method: %s, User Agent: %s, Forwarded: %s, Destination Host: %s, Referer: %s, X-Forwarded-For: %s, URL: %s",
+		source, request.Method, request.Header.Get(userAgent), forwardedBy, destHost, referer, stringutils.OrDefault(xff, "N/A"), uri)
 }
 
 func sourceAddr(ctx context.Context) net.Addr {
@@ -325,13 +343,8 @@ func metadataFromHeader(header http.Header) metadata.MD {
 	return md
 }
 
-// sourceIPFromRequest retrieve the source IP from the HTTP request with the following order:
-//   - The `X-Forwarded-For` header.
-//   - The remote address on the request object.
-//   - The `Remote-Addr` header.
-//
-// In case the source IP cannot be determined, `N/A` will be returned.
-func sourceIPFromRequest(request *http.Request) string {
+// sourceFromRequest retrieves the source from the HTTP request.
+func sourceFromRequest(request *http.Request) Source {
 	// If using the XFF header, the real client IP is the first value in the list of CSV values.
 	var xffSourceIP string
 	xff := request.Header.Get(forwardedForKey)
@@ -340,10 +353,9 @@ func sourceIPFromRequest(request *http.Request) string {
 		xffSourceIP = strings.TrimSpace(ips[0])
 	}
 
-	return stringutils.FirstNonEmpty(
-		xffSourceIP,
-		request.RemoteAddr,
-		request.Header.Get(remoteAddr),
-		"N/A",
-	)
+	return Source{
+		XForwardedFor: xffSourceIP,
+		RemoteAddr:    request.Header.Get(remoteAddr),
+		RequestAddr:   request.RemoteAddr,
+	}
 }
