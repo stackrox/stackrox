@@ -12,7 +12,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 # shellcheck disable=2034
-CLUSTER_NAME=$1
+CLUSTER_NAME=${1//./-}
 ARTIFACTS_DIR="$(mktemp -d)/artifacts"
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
