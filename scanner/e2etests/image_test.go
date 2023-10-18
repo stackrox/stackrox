@@ -96,7 +96,7 @@ func TestImage(t *testing.T) {
 				}
 			}()
 			assert.Equal(t, expected, converted,
-				"The vulnerability report converted did not contain the expected values.")
+				"The converted vulnerability report did not contain the expected values.")
 		})
 	}
 }
