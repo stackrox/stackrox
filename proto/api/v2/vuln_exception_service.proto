@@ -95,9 +95,23 @@ message VulnerabilityException {
     repeated string                  cves               = 14;
 
     oneof updated_req {
-        // If set, indicates the update to be applied to the original exception. The update must be approved to be enforced on the system.
-        DeferralRequest              deferral_req_update = 15;
+        // If set, indicates the update to be applied to the original deferral exception.
+        DeferralUpdate              deferral_update       = 15;
+        // If set, indicates the update to be applied to the original false-positive exception.
+        FalsePositiveUpdate         false_positive_update = 16;
     }
+}
+
+message DeferralUpdate {
+    // Use this field to update the CVEs of a deferral exception.
+    repeated string cves = 1;
+    // Use this field to update the exception expiry.
+    ExceptionExpiry expiry  = 2;
+}
+
+message FalsePositiveUpdate {
+    // Use this field to update the CVEs of a false-positive exception.
+    repeated string CVEs = 1;
 }
 
 message GetVulnerabilityExceptionResponse {
@@ -164,8 +178,13 @@ message UpdateVulnerabilityExceptionRequest {
     string          id      = 1;
     // REQUIRED. The rationale for updating the exception.
     string          comment = 2;
-    ExceptionExpiry expiry  = 3;
-    repeated string cves    = 4;
+
+    oneof update {
+        // Use this field to update a deferral exception.
+        DeferralUpdate      deferral_update       = 3;
+        // Use this field to update a false-positive exception.
+        FalsePositiveUpdate false_positive_update = 4;
+    }
 }
 
 message UpdateVulnerabilityExceptionResponse {
@@ -197,7 +216,9 @@ service VulnerabilityExceptionService {
     }
 
     // CreateDeferVulnerabilityException creates an exception request to defer specified vulnerabilities.
-    // Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
+    // Once an exception is created, it remains in the PENDING state until the approval. The exception is enforced
+    // only after it is approved. Once the exception expires, it is garbage collected as per the retention configuration
+    // `.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)
     rpc CreateDeferVulnerabilityException (CreateDeferVulnerabilityExceptionRequest) returns (CreateDeferVulnerabilityExceptionResponse) {
         option (google.api.http) = {
             post: "/v2/vulnerability-exceptions/deferral"
@@ -206,7 +227,7 @@ service VulnerabilityExceptionService {
     }
 
     // CreateFalsePositiveVulnerabilityException creates an exception request to mark specified vulnerabilities as false positive.
-    // Once an exception is created, it moves to the PENDING state. The exception is enforced only after it is approved.
+    // Once an exception is created, it remains in the PENDING state until the approval. The exception is enforced only after it is approved.
     rpc CreateFalsePositiveVulnerabilityException (CreateFalsePositiveVulnerabilityExceptionRequest) returns (CreateFalsePositiveVulnerabilityExceptionResponse) {
         option (google.api.http) = {
             post: "/v2/vulnerability-exceptions/false-positive"
@@ -224,7 +245,8 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // DenyVulnerabilityException denies a vulnerability exception.
+    // DenyVulnerabilityException denies a vulnerability exception. Denied exceptions are inactive and are garbage
+    // collected as per the retention configuration `.expiredVulnReqRetentionDurationDays` (GET`/v1/config/`)
     rpc DenyVulnerabilityException (DenyVulnerabilityExceptionRequest) returns (DenyVulnerabilityExceptionResponse) {
         option (google.api.http) = {
             post: "/v2/vulnerability-exceptions/{id}/deny"
@@ -232,7 +254,8 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // UpdateVulnerabilityException updates an existing vulnerability exception. Currently only the following can be updated:
+    // UpdateVulnerabilityException updates an existing vulnerability exception. The update is enforced only once it is approved.
+    // Currently only the following can be updated:
     // - CVEs and expiry of the deferral exceptions
     // - CVEs of the false positive exception
     rpc UpdateVulnerabilityException (UpdateVulnerabilityExceptionRequest) returns (UpdateVulnerabilityExceptionResponse) {
@@ -242,8 +265,9 @@ service VulnerabilityExceptionService {
         };
     }
 
-    // CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, the exception is no longer
-    // enforced if it was in APPROVED state.
+    // CancelVulnerabilityException cancels a vulnerability exception. Once cancelled, an approved exception is no longer
+    // enforced. Cancelled exceptions are garbage collected as per the retention configuration
+    // `.expiredVulnReqRetentionDurationDays` (GET `/v1/config/`).
     rpc CancelVulnerabilityException (ResourceByID) returns (CancelVulnerabilityExceptionResponse) {
         option (google.api.http) = {
             post: "/v2/vulnerability-exceptions/{id}/cancel"
