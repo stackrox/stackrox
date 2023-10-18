@@ -550,6 +550,12 @@ func (e *email) getPassword() (string, error) {
 		e.creds = e.config.GetPassword()
 		return e.creds, nil
 	}
+	if e.cryptoCodec == nil {
+		return "", errors.New("crypto codec is required")
+	}
+	if e.cryptoKey == "" {
+		return "", errors.New("non-empty crypto key is required")
+	}
 
 	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.notifier.GetNotifierSecret())
 	if err != nil {
