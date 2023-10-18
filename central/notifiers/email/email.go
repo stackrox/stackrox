@@ -546,7 +546,7 @@ func (e *email) getPassword() (string, error) {
 	}
 
 	if e.notifier.GetNotifierSecret() == "" {
-		return "", errors.New("Notifier secret must be non-empty")
+		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
 	}
 	if e.cryptoCodec == nil {
 		return "", errors.New("crypto codec is required")
