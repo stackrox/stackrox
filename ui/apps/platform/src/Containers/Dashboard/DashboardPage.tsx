@@ -28,17 +28,31 @@ function DashboardPage() {
     const hasReadAccessForNode = hasReadAccess('Node');
     const hasReadAccessForSecret = hasReadAccess('Secret');
 
+    const hasReadAccessForSummaryCounts =
+        hasReadAccessForAlert ||
+        hasReadAccessForCluster ||
+        hasReadAccessForDeployment ||
+        hasReadAccessForImage ||
+        hasReadAccessForNode ||
+        hasReadAccessForSecret;
+
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                {hasReadAccessForAlert &&
-                    hasReadAccessForCluster &&
-                    hasReadAccessForDeployment &&
-                    hasReadAccessForImage &&
-                    hasReadAccessForNode &&
-                    hasReadAccessForSecret && <SummaryCounts />}
-            </PageSection>
-            <Divider component="div" />
+            {hasReadAccessForSummaryCounts && (
+                <>
+                    <PageSection variant="light" padding={{ default: 'noPadding' }}>
+                        <SummaryCounts
+                            Cluster={hasReadAccessForCluster}
+                            Node={hasReadAccessForNode}
+                            Violation={hasReadAccessForAlert}
+                            Deployment={hasReadAccessForDeployment}
+                            Image={hasReadAccessForImage}
+                            Secret={hasReadAccessForSecret}
+                        />
+                    </PageSection>
+                    <Divider component="div" />
+                </>
+            )}
             <PageSection variant="light">
                 <Flex
                     direction={{ default: 'column', lg: 'row' }}
