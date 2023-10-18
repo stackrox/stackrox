@@ -89,8 +89,8 @@ func GetTestVulnRequestNoComments(t *testing.T) *storage.VulnerabilityRequest {
 // GetTestVulnRequestWithUpdate returns a mock *storage.VulnerabilityRequest with non-nil `.updateReq` field.
 func GetTestVulnRequestWithUpdate(t *testing.T) *storage.VulnerabilityRequest {
 	ret := GetTestVulnDeferralRequestFull(t)
-	ret.UpdatedReq = &storage.VulnerabilityRequest_UpdatedDeferralReq{
-		UpdatedDeferralReq: &storage.DeferralRequest{
+	ret.UpdatedReq = &storage.VulnerabilityRequest_DeferralUpdate{
+		DeferralUpdate: &storage.DeferralUpdate{
 			Expiry: &storage.RequestExpiry{
 				ExpiryType: storage.RequestExpiry_TIME,
 				Expiry: &storage.RequestExpiry_ExpiresOn{

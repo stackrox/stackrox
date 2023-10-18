@@ -86,8 +86,8 @@ func GetTestVulnExceptionNoComments(t *testing.T) *v2.VulnerabilityException {
 // GetTestVulnExceptionWithUpdate returns a mock *v2.VulnerabilityException with non-nil `.updateReq` field.
 func GetTestVulnExceptionWithUpdate(t *testing.T) *v2.VulnerabilityException {
 	ret := GetTestVulnDeferralExceptionFull(t)
-	ret.UpdatedReq = &v2.VulnerabilityException_DeferralReqUpdate{
-		DeferralReqUpdate: &v2.DeferralRequest{
+	ret.UpdatedReq = &v2.VulnerabilityException_DeferralUpdate{
+		DeferralUpdate: &v2.DeferralUpdate{
 			Expiry: &v2.ExceptionExpiry{
 				ExpiryType: v2.ExceptionExpiry_TIME,
 				ExpiresOn:  ts1,

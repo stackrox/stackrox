@@ -53,7 +53,7 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 		out.UpdatedReq = &v2.VulnerabilityException_DeferralUpdate{
 			DeferralUpdate: deferralUpdate(vulnRequest.GetDeferralUpdate()),
 		}
-	} else if vulnRequest.GetFpRequest() != nil {
+	} else if vulnRequest.GetFpUpdate() != nil {
 		out.UpdatedReq = &v2.VulnerabilityException_FalsePositiveUpdate{
 			FalsePositiveUpdate: falsePositiveUpdate(vulnRequest.GetFpUpdate()),
 		}
