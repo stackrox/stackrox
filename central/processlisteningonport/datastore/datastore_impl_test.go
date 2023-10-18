@@ -101,7 +101,8 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         fixtureconsts.PodName1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -115,7 +116,8 @@ func getIndicators() []*storage.ProcessIndicator {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID2,
 			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
+			PodId:         fixtureconsts.PodName2,
+			PodUid:        fixtureconsts.PodUID2,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container2",
 			Namespace:     testNamespace,
@@ -140,13 +142,14 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
@@ -154,13 +157,14 @@ var (
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 )
 
@@ -189,7 +193,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -219,6 +224,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAdd() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       plopObjects[0].GetDeploymentId(),
+		PodUid:             plopObjects[0].GetPodUid(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -268,6 +274,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             plopObjectsClosed[0].GetPodUid(),
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -303,7 +310,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -333,6 +341,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -379,6 +388,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -421,7 +431,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -449,6 +460,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -501,6 +513,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -545,6 +558,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -592,6 +606,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -630,7 +645,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
 			Port:     1234,
@@ -658,6 +674,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 		Closed:             false,
 		Process:            plopObjects[0].GetProcess(),
 		DeploymentId:       plopObjects[0].GetDeploymentId(),
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -696,6 +713,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 		Closed:             true,
 		Process:            plopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -745,6 +763,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 		Closed:             true,
 		Process:            closedPlopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -788,6 +807,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 		Closed:             true,
 		Process:            closedPlopObjects[0].GetProcess(),
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -802,7 +822,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         fixtureconsts.PodName1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -816,7 +837,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID2,
 			DeploymentId:  fixtureconsts.Deployment2,
-			PodId:         fixtureconsts.PodUID2,
+			PodId:         fixtureconsts.PodName2,
+			PodUid:        fixtureconsts.PodUID2,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -850,7 +872,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment1,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -878,6 +901,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -930,6 +954,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -981,6 +1006,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1001,13 +1027,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	closedPlopObject2 := storage.ProcessListeningOnPortFromSensor{
@@ -1015,13 +1042,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	closedPlopObject3 := storage.ProcessListeningOnPortFromSensor{
@@ -1029,13 +1057,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject1}
@@ -1080,6 +1109,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1100,13 +1130,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time1),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	closedPlopObject2 := storage.ProcessListeningOnPortFromSensor{
@@ -1114,13 +1145,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time2),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	closedPlopObject3 := storage.ProcessListeningOnPortFromSensor{
@@ -1128,13 +1160,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time3),
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment1,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&closedPlopObject1}
@@ -1180,6 +1213,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1195,7 +1229,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		{
 			Id:            fixtureconsts.ProcessIndicatorID1,
 			DeploymentId:  fixtureconsts.Deployment1,
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         fixtureconsts.PodName1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -1241,6 +1276,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Closed:             true,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage1, plopsFromDB1[0])
@@ -1260,7 +1296,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 			DeploymentId: fixtureconsts.Deployment2,
 			// Keeping the same PodId even though a new deployment almost certainly would have a new PodId
 			// The code is robust even for that case
-			PodId:         fixtureconsts.PodUID1,
+			PodId:         fixtureconsts.PodName1,
+			PodUid:        fixtureconsts.PodUID1,
 			ClusterId:     fixtureconsts.Cluster1,
 			ContainerName: "test_container1",
 			Namespace:     testNamespace,
@@ -1281,13 +1318,14 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
 		CloseTimestamp: nil,
 		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodUID1,
+			PodId:               fixtureconsts.PodName1,
 			ContainerName:       "test_container1",
 			ProcessName:         "test_process1",
 			ProcessArgs:         "test_arguments1",
 			ProcessExecFilePath: "test_path1",
 		},
 		DeploymentId: fixtureconsts.Deployment2,
+		PodUid:       fixtureconsts.PodUID1,
 	}
 
 	newOpenPlopObjects := []*storage.ProcessListeningOnPortFromSensor{&newOpenPlopObject}
@@ -1309,7 +1347,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	suite.Len(newPlops, 1)
 	suite.Equal(*newPlops[0], storage.ProcessListeningOnPort{
 		ContainerName: "test_container1",
-		PodId:         fixtureconsts.PodUID1,
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
 		DeploymentId:  fixtureconsts.Deployment2,
 		ClusterId:     fixtureconsts.Cluster1,
 		Namespace:     testNamespace,
@@ -1345,6 +1384,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment2,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	suite.Equal(expectedPlopStorage, newPlopsFromDB[0])
@@ -1363,6 +1403,7 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 		Closed:             false,
 		Process:            nil,
 		DeploymentId:       fixtureconsts.Deployment1,
+		PodUid:             fixtureconsts.PodUID1,
 	}
 
 	// It is not possible to add a PLOP from sensor with no process info
