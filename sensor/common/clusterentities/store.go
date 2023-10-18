@@ -55,15 +55,6 @@ type Store struct {
 	mutex sync.RWMutex
 }
 
-// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
-// shall be deleted from Central.
-func (e *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
-	_, _, _ = resType, resID, resHash
-	// TODO(ROX-20075): Implement me
-	return "", errors.New("Not implemented")
-}
-
 // NewStore creates and returns a new store instance.
 // Note: Generally, you probably do not want to call this function, but use the singleton instance returned by
 // `StoreInstance()`.
