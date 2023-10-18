@@ -42,12 +42,14 @@ function DashboardPage() {
                 <>
                     <PageSection variant="light" padding={{ default: 'noPadding' }}>
                         <SummaryCounts
-                            Cluster={hasReadAccessForCluster}
-                            Node={hasReadAccessForNode}
-                            Violation={hasReadAccessForAlert}
-                            Deployment={hasReadAccessForDeployment}
-                            Image={hasReadAccessForImage}
-                            Secret={hasReadAccessForSecret}
+                            hasReadAccessForResource={{
+                                Alert: hasReadAccessForAlert,
+                                Cluster: hasReadAccessForCluster,
+                                Deployment: hasReadAccessForDeployment,
+                                Image: hasReadAccessForImage,
+                                Node: hasReadAccessForNode,
+                                Secret: hasReadAccessForSecret,
+                            }}
                         />
                     </PageSection>
                     <Divider component="div" />

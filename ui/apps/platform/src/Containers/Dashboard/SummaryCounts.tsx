@@ -23,39 +23,51 @@ export type SummaryCountsResponse = {
     secretCount: number;
 };
 
-const tileEntityTypes = ['Cluster', 'Node', 'Violation', 'Deployment', 'Image', 'Secret'] as const;
-type TileEntity = (typeof tileEntityTypes)[number];
+const tileResources = ['Cluster', 'Node', 'Alert', 'Deployment', 'Image', 'Secret'] as const;
+type TileResource = (typeof tileResources)[number];
 
-const dataKey: Record<TileEntity, string> = {
+const dataKey: Record<TileResource, string> = {
     Cluster: 'clusterCount',
     Node: 'nodeCount',
-    Violation: 'violationCount',
+    Alert: 'violationCount',
     Deployment: 'deploymentCount',
     Image: 'imageCount',
     Secret: 'secretCount',
 };
 
-const tileLinks: Record<TileEntity, string> = {
+// According to current minimalist philosophy, ignore that routes might have additional resource requirements.
+const tileLinks: Record<TileResource, string> = {
     Cluster: clustersBasePath,
     Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-    Violation: violationsBasePath,
+    Alert: violationsBasePath,
     Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
     Image: vulnManagementImagesPath,
     Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
+};
+
+const tileNouns: Record<TileResource, string> = {
+    Cluster: 'Cluster',
+    Node: 'Node',
+    Alert: 'Violation',
+    Deployment: 'Deployment',
+    Image: 'Image',
+    Secret: 'Secret',
 };
 
 const locale = window.navigator.language ?? 'en-US';
 const dateFormatter = new Intl.DateTimeFormat(locale);
 const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
 
-export type SummaryCountsProps = Record<TileEntity, boolean>;
+export type SummaryCountsProps = {
+    hasReadAccessForResource: Record<TileResource, boolean>;
+};
 
-function SummaryCounts(hasReadAccessForTileEntity: SummaryCountsProps): ReactElement {
+function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
     const query = gql`
         query summary_counts {
-            ${tileEntityTypes
-                .filter((tileEntity) => hasReadAccessForTileEntity[tileEntity])
-                .map((tileEntity) => dataKey[tileEntity])
+            ${tileResources
+                .filter((tileResource) => hasReadAccessForResource[tileResource])
+                .map((tileResource) => dataKey[tileResource])
                 .join('\n')}
         }
     `;
@@ -91,14 +103,14 @@ function SummaryCounts(hasReadAccessForTileEntity: SummaryCountsProps): ReactEle
         <Split className="pf-u-align-items-center">
             <SplitItem isFilled>
                 <Split className="pf-u-flex-wrap">
-                    {tileEntityTypes
-                        .filter((tileEntity) => typeof data[dataKey[tileEntity]] === 'number')
-                        .map((tileEntity) => (
+                    {tileResources
+                        .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
+                        .map((tileResource) => (
                             <SummaryCount
-                                key={tileEntity}
-                                count={data[dataKey[tileEntity]]}
-                                href={tileLinks[tileEntity]}
-                                noun={tileEntity}
+                                key={tileResource}
+                                count={data[dataKey[tileResource]]}
+                                href={tileLinks[tileResource]}
+                                noun={tileNouns[tileResource]}
                             />
                         ))}
                 </Split>
