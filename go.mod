@@ -91,7 +91,7 @@ require (
 	github.com/prometheus/common v0.44.0
 	github.com/quay/claircore v1.5.19
 	github.com/quay/zlog v1.1.5
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
