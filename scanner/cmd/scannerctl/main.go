@@ -14,8 +14,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/client"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/pkg/client"
 	"golang.org/x/sys/unix"
 )
 
