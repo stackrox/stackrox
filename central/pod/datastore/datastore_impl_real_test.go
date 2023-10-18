@@ -35,7 +35,6 @@ type PodDatastoreSuite struct {
 	datastore          *datastoreImpl
 	indicatorDataStore processIndicatorDataStore.DataStore
 	plopDS             plopDataStore.DataStore
-	plopStorage        plopStore.Store
 
 	postgres *pgtest.TestPostgres
 	filter   filter.Filter
@@ -64,16 +63,16 @@ func (s *PodDatastoreSuite) SetupTest() {
 	podIndexer := processIndicatorStorage.NewIndexer(s.postgres.DB)
 	podSearcher := podSearch.New(podStorage, podIndexer)
 
-	s.plopStorage = plopPostgresStore.NewFullStore(s.postgres.DB)
+	var plopStorage plopStore.Store = plopPostgresStore.NewFullStore(s.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(s.postgres.DB)
 	indicatorIndexer := processIndicatorStorage.NewIndexer(s.postgres.DB)
 	indicatorSearcher := processIndicatorSearch.New(indicatorStorage, indicatorIndexer)
 
 	s.indicatorDataStore, _ = processIndicatorDataStore.New(
-		indicatorStorage, s.plopStorage, indicatorSearcher, nil)
+		indicatorStorage, plopStorage, indicatorSearcher, nil)
 
-	s.plopDS = plopDataStore.New(s.plopStorage, s.indicatorDataStore)
+	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore)
 
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
