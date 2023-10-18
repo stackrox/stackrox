@@ -310,6 +310,7 @@ function setup_internal_sso() {
         --minimum-access-role=Admin \
         --extra-ui-endpoints=localhost:8000 \
         --extra-ui-endpoints=localhost:3000 \
+        --extra-ui-endpoints=localhost:8443 \
         --issuer=https://auth.redhat.com/auth/realms/EmployeeIDP \
         --mode=post \
         --client-id=rhacs-dev-envs \
