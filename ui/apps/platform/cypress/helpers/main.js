@@ -1,7 +1,7 @@
 import navSelectors from '../selectors/navigation';
 
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
-import { visit } from './visit';
+import { visit, visitWithStaticResponseForPermissions } from './visit';
 
 /*
  * Import relevant alias constants in test files that call visitMainDashboard function
@@ -78,6 +78,32 @@ export function visitMainDashboard(staticResponseMap) {
     visit(basePath, routeMatcherMap, staticResponseMap);
 
     cy.get(`.pf-c-nav__link.pf-m-current:contains("${title}")`);
+    cy.get(`h1:contains("${title}")`);
+}
+
+/**
+ * Visit main dashboard to test conditional rendering for user role permissions specified as response or fixture.
+ * Conditional rendering for permissions might make a subset of requests.
+ *
+ * { body: { resourceToAccess: { … } } }
+ * { fixture: 'fixtures/wherever/whatever.json' }
+ *
+ * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
+ * @param {Record<string, { method: string, url: string }>} [routeMatcherMapForSubsetOfRequests]
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMapForSubsetOfRequests]
+ */
+export function visitMainDashboardWithStaticResponseForPermissions(
+    staticResponseForPermissions,
+    routeMatcherMapForSubsetOfRequests,
+    staticResponseMapForSubsetOfRequests
+) {
+    visitWithStaticResponseForPermissions(
+        basePath,
+        staticResponseForPermissions,
+        routeMatcherMapForSubsetOfRequests,
+        staticResponseMapForSubsetOfRequests
+    );
+
     cy.get(`h1:contains("${title}")`);
 }
 
