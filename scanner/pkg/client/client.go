@@ -35,7 +35,6 @@ type Scanner interface {
 	Close() error
 }
 
-
 // gRPCScanner A scanner client implementation based on gRPC endpoints.
 type gRPCScanner struct {
 	indexer        v4.IndexerClient
