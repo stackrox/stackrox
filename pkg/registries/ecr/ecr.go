@@ -20,10 +20,13 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	refreshAttemptInterval = 30 * time.Second
 )
 
 var _ types.Registry = (*ecr)(nil)
@@ -34,10 +37,12 @@ type ecr struct {
 	config      *storage.ECRConfig
 	integration *storage.ImageIntegration
 
-	endpoint        string
-	service         *awsECR.ECR
-	expiryTime      time.Time
-	disableRepoList bool
+	lock               sync.Mutex
+	endpoint           string
+	service            *awsECR.ECR
+	expiryTime         time.Time
+	disableRepoList    bool
+	lastRefreshAttempt time.Time
 }
 
 // sanitizeConfiguration validates and cleans-up the integration configuration.
@@ -84,8 +89,17 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 	return errorList.ToError()
 }
 
+func (e *ecr) setLastRefreshAttempt() {
+	e.lastRefreshAttempt = time.Now()
+}
+
 func (e *ecr) refreshDockerClient() error {
-	if e.expiryTime.After(time.Now()) {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+
+	defer e.setLastRefreshAttempt()
+
+	if e.expiryTime.After(time.Now()) && time.Since(e.lastRefreshAttempt) > refreshAttemptInterval {
 		return nil
 	}
 	if e.integration.GetEcr().GetAuthorizationData() != nil {
