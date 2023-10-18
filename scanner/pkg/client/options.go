@@ -41,13 +41,13 @@ func WithServerName(serverName string) Option {
 	}
 }
 
-// WithoutTLSVerify disables TLS verification, and don't read or use client
-// certificates (mTLS).
+// WithoutTLSVerify disables TLS verification, preventing the reading and usage
+// of client certificates (mTLS).
 func WithoutTLSVerify(o *options) {
 	o.withTLSVerify = false
 }
 
-// WithAddress specifies the GRPC address to connect.
+// WithAddress specifies the gRPC address to connect.
 func WithAddress(address string) Option {
 	return func(o *options) {
 		o.address = address
