@@ -1110,6 +1110,8 @@ post_process_test_results() {
 
     local csv_output
     local extra_args=()
+    local base_link
+    local calculated_base_link
 
     set +u
     {
@@ -1121,11 +1123,15 @@ post_process_test_results() {
         fi
 
         csv_output="$(mktemp --suffix=.csv)"
-
+        # We need a link to repository. In case it's not part of job spec (e.g., periodic`s)
+        # we will fallback to short commit
+        # TODO: Extract a function to obtain repo and org and use it here.
+        base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
+        calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
         curl --retry 5 -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.14/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
-            -base-link "$(echo "$JOB_SPEC" | jq ".refs.base_link" -r)" \
+            -base-link "${base_link:-$calculated_base_link}" \
             -build-id "${BUILD_ID}" \
             -build-link "https://prow.ci.openshift.org/view/gs/origin-ci-test/logs/$JOB_NAME/$BUILD_ID" \
             -build-tag "${STACKROX_BUILD_TAG}" \
