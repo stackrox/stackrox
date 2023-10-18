@@ -88,14 +88,14 @@ func TestImage(t *testing.T) {
 			vr, err := c.IndexAndScanImage(ctx, d, auth)
 			require.NoError(t, err)
 
-			expected := &tc.TestWant
+			expected := tc.TestWant
 			converted := tc.convertReport(vr)
 			defer func() {
 				if t.Failed() && vr != nil {
 					tc.logReport(t, vr)
 				}
 			}()
-			assert.Equal(t, expected, converted,
+			assert.Equal(t, &expected, converted,
 				"The converted vulnerability report did not contain the expected values.")
 		})
 	}
@@ -146,8 +146,8 @@ func (tc *TestCase) convertFeatures(vr *v4.VulnerabilityReport) []Feature {
 	}
 	// Populate map with all features in the test case.
 	feats := make(map[string]*Feature, len(tc.Features))
-	for _, f := range tc.Features {
-		feats[nv(f.Name, f.Version)] = &f
+	for idx, f := range tc.Features {
+		feats[nv(f.Name, f.Version)] = &tc.Features[idx]
 	}
 	// Convert every expected package in the report.
 	ret := make([]Feature, 0, len(tc.Features))
@@ -175,8 +175,8 @@ func (tc *TestCase) convertFeatures(vr *v4.VulnerabilityReport) []Feature {
 func (tc *TestCase) convertVulns(vr *v4.VulnerabilityReport, pkg *v4.Package, feat *Feature) []Vulnerability {
 	// Populate map with all vulnerabilities in the test case feature.
 	featVulns := make(map[string]*Vulnerability)
-	for _, featVuln := range feat.Vulnerabilities {
-		featVulns[featVuln.Name] = &featVuln
+	for idx, featVuln := range feat.Vulnerabilities {
+		featVulns[featVuln.Name] = &feat.Vulnerabilities[idx]
 	}
 	// Convert all package vulnerabilities.
 	var vulns []Vulnerability
