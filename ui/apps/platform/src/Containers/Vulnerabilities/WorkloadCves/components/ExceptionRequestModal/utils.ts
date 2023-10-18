@@ -6,12 +6,12 @@ import { ensureExhaustive } from 'utils/type.utils';
 
 export type ScopeContext = 'GLOBAL' | { image: { name: string; tag: string } };
 
-export const deferralValidationSchema = yup.object({
+export const exceptionValidationSchema = yup.object({
     cves: yup.array().of(yup.string()).min(1, 'At least one CVE must be selected'),
     comment: yup.string().required('A rationale is required'),
 });
 
-export type DeferralValues = {
+export type ExceptionValues = {
     cves: string[];
     comment: string;
     scope: {
@@ -21,6 +21,11 @@ export type DeferralValues = {
             tag: string;
         };
     };
+};
+
+export type FalsePositiveValues = ExceptionValues;
+
+export type DeferralValues = ExceptionValues & {
     expiry?:
         | { type: 'TIME'; days: number }
         | { type: 'ALL_CVE_FIXABLE' | 'ANY_CVE_FIXABLE' | 'INDEFINITE' }
