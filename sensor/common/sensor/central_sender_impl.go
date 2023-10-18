@@ -13,12 +13,14 @@ import (
 )
 
 type centralSenderImpl struct {
-	senders  []common.SensorComponent
-	stopper  concurrency.Stopper
-	finished *sync.WaitGroup
+	senders             []common.SensorComponent
+	stopper             concurrency.Stopper
+	finished            *sync.WaitGroup
+	initialDeduperState map[deduper.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
+	s.initialDeduperState = initialDeduperState
 	go s.send(stream, onStops...)
 }
 
@@ -57,7 +59,7 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
-	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "total")
 

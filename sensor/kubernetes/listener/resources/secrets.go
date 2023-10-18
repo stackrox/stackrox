@@ -397,6 +397,16 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 		oldSecret = nil
 	}
 
+	parsedID := string(secret.GetUID())
+	switch action {
+	case central.ResourceAction_SYNC_RESOURCE, central.ResourceAction_CREATE_RESOURCE:
+		s.regStore.AddSecretID(parsedID)
+	case central.ResourceAction_REMOVE_RESOURCE:
+		if !s.regStore.RemoveSecretID(parsedID) {
+			log.Warnf("Should have secret (%s:%s) in registryStore known IDs but ID wasn't found", secret.GetName(), parsedID)
+		}
+	}
+
 	switch secret.Type {
 	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg:
 		return s.processDockerConfigEvent(secret, oldSecret, action)

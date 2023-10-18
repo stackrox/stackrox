@@ -25,3 +25,48 @@ func WithRLock(locker RLocker, do func()) {
 
 	do()
 }
+
+// WithRLock1 locks the RLocker of the given lockable, executes `do`, returns T, and releases the lock.
+// This function is panic-safe, i.e., even if `do()` panics, the lock will be released.
+func WithRLock1[T any](locker RLocker, do func() T) T {
+	locker.RLock()
+	defer locker.RUnlock()
+
+	return do()
+}
+
+// WithRLock2 locks the RLocker of the given lockable, executes `do`, returns T and E, and releases the lock.
+// This function is panic-safe, i.e., even if `do()` panics, the lock will be released.
+func WithRLock2[T any, E any](locker RLocker, do func() (T, E)) (T, E) {
+	locker.RLock()
+	defer locker.RUnlock()
+
+	return do()
+}
+
+// WithLock1 locks the given locker, executes `do`, returns T, and releases the lock.
+// This function is panic-safe, i.e., even if `do()` panics, the lock will be released.
+func WithLock1[T any](locker sync.Locker, do func() T) T {
+	locker.Lock()
+	defer locker.Unlock()
+
+	return do()
+}
+
+// WithLock2 locks the given locker, executes `do`, returns T and E, and releases the lock.
+// This function is panic-safe, i.e., even if `do()` panics, the lock will be released.
+func WithLock2[T any, E any](locker sync.Locker, do func() (T, E)) (T, E) {
+	locker.Lock()
+	defer locker.Unlock()
+
+	return do()
+}
+
+// WithLock3 locks the given locker, executes `do`, returns T, S , E, and releases the lock.
+// This function is panic-safe, i.e., even if `do()` panics, the lock will be released.
+func WithLock3[T any, E any, S any](locker sync.Locker, do func() (T, E, S)) (T, E, S) {
+	locker.Lock()
+	defer locker.Unlock()
+
+	return do()
+}

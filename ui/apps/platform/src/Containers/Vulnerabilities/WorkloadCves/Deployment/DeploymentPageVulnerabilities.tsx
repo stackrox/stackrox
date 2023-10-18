@@ -38,7 +38,7 @@ import {
     parseQuerySearchFilter,
     getHiddenSeverities,
     getHiddenStatuses,
-    getCveStatusScopedQueryString,
+    getVulnStateScopedQueryString,
 } from '../searchUtils';
 import { imageMetadataContextFragment } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
@@ -96,7 +96,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getCveStatusScopedQueryString(querySearchFilter);
+    const query = getVulnStateScopedQueryString(querySearchFilter);
 
     const summaryRequest = useQuery<
         {

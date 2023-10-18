@@ -17,10 +17,10 @@ import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent'
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
+import { Alert } from 'types/alert.proto';
 
 import DeploymentDetails from './Deployment/DeploymentDetails';
 import EnforcementDetails from './EnforcementDetails';
-import { Alert } from '../types/violationTypes';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
 import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
@@ -32,7 +32,7 @@ function ViolationDetailsPage(): ReactElement {
     const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
     const [activeTabKey, setActiveTabKey] = useState(0);
-    const [alert, setAlert] = useState<Alert>();
+    const [alert, setAlert] = useState<Alert | null>(null);
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
     const { alertId } = useParams();
@@ -50,7 +50,7 @@ function ViolationDetailsPage(): ReactElement {
                 setIsFetchingSelectedAlert(false);
             },
             () => {
-                setAlert(undefined);
+                setAlert(null);
                 setIsFetchingSelectedAlert(false);
             }
         );
@@ -67,10 +67,17 @@ function ViolationDetailsPage(): ReactElement {
         return <ViolationNotFoundPage />;
     }
 
-    const { policy, deployment, resource, commonEntityInfo, enforcement } = alert;
+    const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    const entityName = resource?.clusterName || deployment?.name || '';
-    const resourceType = resource?.resourceType || commonEntityInfo?.resourceType || 'deployment';
+    /* eslint-disable no-nested-ternary */
+    const entityName =
+        'resource' in alert
+            ? alert.resource.clusterName
+            : 'deployment' in alert
+            ? alert.deployment.name
+            : '';
+    /* eslint-enable no-nested-ternary */
+    const resourceType = 'resource' in alert ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());
 
@@ -104,10 +111,10 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
-                    {hasReadAccessForDeployment && deployment && (
+                    {hasReadAccessForDeployment && 'deployment' in alert && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
                             <PageSection variant="default">
-                                <DeploymentDetails alertDeployment={deployment} />
+                                <DeploymentDetails alertDeployment={alert.deployment} />
                             </PageSection>
                         </Tab>
                     )}

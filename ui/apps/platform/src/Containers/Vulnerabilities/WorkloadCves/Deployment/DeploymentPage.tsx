@@ -29,7 +29,7 @@ import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 
 const workloadCveOverviewDeploymentsPath = getOverviewCvesPath({
-    cveStatusTab: 'Observed',
+    vulnerabilityState: 'OBSERVED',
     entityTab: 'Deployment',
 });
 

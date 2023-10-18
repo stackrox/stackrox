@@ -36,6 +36,10 @@ type Store struct {
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
+	// knownSecretIDs keeps track of all secret IDs in the cluster. This is used to reconcile with
+	// central in case secrets were deleted while the connection was broken.
+	knownSecretIDs set.StringSet
+
 	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
 	// to this cluster (ie: the OCP internal registry).
 	clusterLocalRegistryHosts      set.StringSet
@@ -68,12 +72,13 @@ type Store struct {
 }
 
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
-// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
-	_, _, _ = resType, resID, resHash
-	// TODO(ROX-20074): Implement me
-	return "", errors.New("Not implemented")
+func (rs *Store) ReconcileDelete(_, resID string, _ uint64) (string, error) {
+	if !rs.knownSecretIDs.Contains(resID) {
+		return resID, nil
+	}
+	return "", nil
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -96,6 +101,7 @@ func NewRegistryStore(checkTLS CheckTLS) *Store {
 		centralRegistryIntegrations: registries.NewSet(regFactory),
 		clusterLocalRegistryHosts:   set.NewStringSet(),
 		tlsCheckResults:             expiringcache.NewExpiringCache(tlsCheckTTL),
+		knownSecretIDs:              set.NewStringSet(),
 	}
 
 	if checkTLS != nil {
@@ -188,6 +194,16 @@ func genIntegrationName(prefix string, namespace string, registry string) string
 	}
 
 	return fmt.Sprintf("%v%v%v", prefix, namespace, registry)
+}
+
+// AddSecretID appends a kubernetes secret ID into a set to keep track of its existence in the cluster.
+func (rs *Store) AddSecretID(id string) {
+	rs.knownSecretIDs.Add(id)
+}
+
+// RemoveSecretID removes a kubernetes secret ID from tracking set.
+func (rs *Store) RemoveSecretID(id string) bool {
+	return rs.knownSecretIDs.Remove(id)
 }
 
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.

@@ -349,9 +349,8 @@ func (m *manager) checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx context.Cont
 		return nil, err
 	}
 
-	var upgradeCtrl upgradecontroller.UpgradeController
-	concurrency.WithRLock(&m.connectionsByClusterIDMutex, func() {
-		upgradeCtrl = m.connectionsByClusterID[clusterID].upgradeCtrl
+	upgradeCtrl := concurrency.WithRLock1(&m.connectionsByClusterIDMutex, func() upgradecontroller.UpgradeController {
+		return m.connectionsByClusterID[clusterID].upgradeCtrl
 	})
 	if upgradeCtrl == nil {
 		return nil, errors.Errorf("no upgrade controller found for cluster ID %s; either the sensor has not checked in or the clusterID is invalid. Cannot trigger upgrade", clusterID)

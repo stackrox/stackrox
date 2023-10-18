@@ -13,5 +13,6 @@ os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
 
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
+os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 
 make_qa_e2e_test_runner(cluster=GKECluster("qa-e2e-test")).run()

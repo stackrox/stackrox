@@ -37,6 +37,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
 - The experimental API `/v1/product/usage` has been renamed to `/v1/administration/usage`.
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
+- Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
 
 ## [4.2.0]
 

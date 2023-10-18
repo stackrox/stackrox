@@ -4,7 +4,7 @@ import "time"
 
 var (
 	// RiskReprocessInterval will set the duration for which to debounce risk reprocessing
-	RiskReprocessInterval = registerDurationSetting("ROX_RISK_REPROCESSING_INTERVAL", 15*time.Second)
+	RiskReprocessInterval = registerDurationSetting("ROX_RISK_REPROCESSING_INTERVAL", 10*time.Minute)
 	// ReprocessInterval will set the duration for which to reprocess all deployments and get new scans
 	ReprocessInterval = registerDurationSetting("ROX_REPROCESSING_INTERVAL", 4*time.Hour)
 	// ActiveVulnRefreshInterval will set the duration for which to refresh active components and vulnerabilities.

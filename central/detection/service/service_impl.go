@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -65,6 +66,8 @@ var (
 	workloadScheme = k8sRuntime.NewScheme()
 
 	workloadDeserializer = k8sSerializer.NewCodecFactory(workloadScheme).UniversalDeserializer()
+
+	delegateScanPermissions = []string{"Image"}
 )
 
 func init() {
@@ -88,6 +91,8 @@ type serviceImpl struct {
 	notifications notifier.Processor
 
 	detector deploytime.Detector
+
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -144,7 +149,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	if req.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +328,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	if req.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusters, req.GetCluster())
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, req.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}

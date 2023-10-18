@@ -4,7 +4,7 @@ import { Flex, FlexItem, Divider, Card } from '@patternfly/react-core';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { Alert } from '../types/violationTypes';
+import { Alert } from 'types/alert.proto';
 import Header from './Enforcement/Header';
 import Explanation from './Enforcement/Explanation';
 

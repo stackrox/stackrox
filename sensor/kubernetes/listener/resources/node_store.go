@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/store"
 	v1 "k8s.io/api/core/v1"
 )
@@ -54,10 +55,17 @@ type nodeStoreImpl struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
-	_, _, _ = resType, resID, resHash
-	// TODO(ROX-20072): Implement me
-	return "", errors.New("Not implemented")
+func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+	if resType != deduper.TypeNode.String() {
+		return "", errors.Errorf("Invalid resource type: %v", resType)
+	}
+	for _, n := range s.getNodes() {
+		if string(n.UID) == resID {
+			return "", nil
+		}
+	}
+	// Resource on Central but not on Sensor, send for deletion
+	return resID, nil
 }
 
 func newNodeStore() *nodeStoreImpl {
@@ -76,10 +84,10 @@ func (s *nodeStoreImpl) Cleanup() {
 // addOrUpdateNode upserts node into store.
 // It returns true if the IP addresses of the node changed as a result.
 func (s *nodeStoreImpl) addOrUpdateNode(node *nodeWrap) bool {
-	var oldNode *nodeWrap
-	concurrency.WithLock(&s.mutex, func() {
-		oldNode = s.nodes[node.Name]
+	oldNode := concurrency.WithLock1(&s.mutex, func() *nodeWrap {
+		oldNode := s.nodes[node.Name]
 		s.nodes[node.Name] = node
+		return oldNode
 	})
 
 	if oldNode == nil || len(oldNode.addresses) != len(node.addresses) {

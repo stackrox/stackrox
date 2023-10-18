@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stretchr/testify/suite"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestHashReconciliation(t *testing.T) {
@@ -36,6 +40,26 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 		"Deployment": {
 			resType:       deduper.TypeDeployment.String(),
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Deployment{Deployment: &storage.Deployment{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"Node": {
+			resType:       deduper.TypeNode.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Node{Node: &storage.Node{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"ServiceAccount": {
+			resType:       deduper.TypeServiceAccount.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ServiceAccount{ServiceAccount: &storage.ServiceAccount{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"Secret": {
+			resType:       deduper.TypeSecret.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Secret{Secret: &storage.Secret{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"NetworkPolicy": {
+			resType:       deduper.TypeNetworkPolicy.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_NetworkPolicy{NetworkPolicy: &storage.NetworkPolicy{Id: testResID}}}},
 			expectedError: nil,
 		},
 		"Unknown should throw error": {
@@ -68,6 +92,22 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetPod().GetId()
 		}, nil
+	case deduper.TypeServiceAccount.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetServiceAccount().GetId()
+		}, nil
+	case deduper.TypeSecret.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetSecret().GetId()
+		}, nil
+	case deduper.TypeNode.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetNode().GetId()
+		}, nil
+	case deduper.TypeNetworkPolicy.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetNetworkPolicy().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -80,7 +120,36 @@ func initStore() *InMemoryStoreProvider {
 	s.deploymentStore.addOrUpdateDeployment(createWrapWithID("2"))
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "3"})
 	s.podStore.addOrUpdatePod(&storage.Pod{Id: "4"})
+	s.nodeStore.addOrUpdateNode(makeNode("42"))
+	s.nodeStore.addOrUpdateNode(makeNode("43"))
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "1"})
+	s.networkPolicyStore.Upsert(&storage.NetworkPolicy{Id: "2"})
+	s.serviceAccountStore.Add(&storage.ServiceAccount{
+		Id:               "5",
+		Name:             "Acc1",
+		Namespace:        "Test",
+		ImagePullSecrets: []string{},
+	})
+	s.serviceAccountStore.Add(&storage.ServiceAccount{
+		Id:               "6",
+		Name:             "Acc2",
+		Namespace:        "Test",
+		ImagePullSecrets: []string{},
+	})
+	s.registryStore.AddSecretID("5000")
+	s.registryStore.AddSecretID("5001")
 	return s
+}
+
+func makeNode(id types.UID) *nodeWrap {
+	return &nodeWrap{
+		Node: &v1.Node{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: fmt.Sprintf("Node-%s", id),
+				UID:  id,
+			},
+		},
+	}
 }
 
 func makeKey(id string, t reflect.Type) deduper.Key {
@@ -137,6 +206,98 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("3", deduper.TypePod):   76543,
 			},
 			deletedIDs: []string{"99", "100", "101"},
+		},
+		"No ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("5", deduper.TypeServiceAccount): 76543,
+				makeKey("6", deduper.TypeServiceAccount): 65432,
+			},
+			deletedIDs: []string{},
+		},
+		"Single ServiceAccount": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):  76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple ServiceAccounts": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeServiceAccount):  87654,
+				makeKey("100", deduper.TypeServiceAccount): 87654,
+				makeKey("101", deduper.TypeServiceAccount): 87654,
+				makeKey("5", deduper.TypeServiceAccount):   76543,
+			},
+			deletedIDs: []string{"99", "100", "101"},
+		},
+		"No Secret": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("5000", deduper.TypeSecret): 76543,
+				makeKey("5001", deduper.TypeSecret): 65432,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Secret": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeSecret):   87654,
+				makeKey("5000", deduper.TypeSecret): 76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Secrets": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeSecret):   87654,
+				makeKey("100", deduper.TypeSecret):  87654,
+				makeKey("101", deduper.TypeSecret):  87654,
+				makeKey("5000", deduper.TypeSecret): 76543,
+			},
+			deletedIDs: []string{"99", "100", "101"},
+		},
+		"No Node": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("42", deduper.TypeNode): 87654,
+				makeKey("43", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Node": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNode): 87654,
+				makeKey("42", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Nodes": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNode): 87654,
+				makeKey("98", deduper.TypeNode): 33333,
+				makeKey("97", deduper.TypeNode): 76654,
+				makeKey("42", deduper.TypeNode): 76543,
+			},
+			deletedIDs: []string{"99", "98", "97"},
+		},
+		"No Network Policy": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeNetworkPolicy): 12345,
+				makeKey("2", deduper.TypeNetworkPolicy): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Network Policy": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNetworkPolicy): 34567,
+				makeKey("1", deduper.TypeNetworkPolicy):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Network Policies": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNetworkPolicy): 34567,
+				makeKey("98", deduper.TypeNetworkPolicy): 34567,
+				makeKey("97", deduper.TypeNetworkPolicy): 34567,
+				makeKey("1", deduper.TypeNetworkPolicy):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
 		},
 	}
 

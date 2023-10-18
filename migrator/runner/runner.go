@@ -20,7 +20,6 @@ import (
 
 var (
 	skipMigrationMap = set.NewIntSet()
-	ctx              = sac.WithAllAccess(context.Background())
 )
 
 func init() {
@@ -70,6 +69,7 @@ func Run(databases *types.Databases) error {
 	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
 	// there are no migrations executed.
 	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
+	ctx := sac.WithAllAccess(context.Background())
 	err = updateVersion(ctx, databases, currentVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.SeqNum)
@@ -81,7 +81,7 @@ func Run(databases *types.Databases) error {
 func runMigrations(databases *types.Databases, startingSeqNum int) error {
 	for seqNum := startingSeqNum; seqNum < pkgMigrations.CurrentDBVersionSeqNum(); seqNum++ {
 		// Add an outer transaction so migrations can be wrapped in a transaction.
-		ctx = sac.WithAllAccess(context.Background())
+		ctx := sac.WithAllAccess(context.Background())
 
 		tx, err := databases.PostgresDB.Begin(ctx)
 		if err != nil {
