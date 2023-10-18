@@ -40,6 +40,6 @@ Changing from the NVD JSON feed to the NVD CVE API also give us the conveniences
 
 Following this modification, Central will no longer have a dependency on Claircore. The Claircore enricher will be used in Scanner V4, which adopts Claircore as its primary scanning engine by design.
 
-Per the NVD's documentation (https://nvd.nist.gov/General/News/change-timeline), the NVD CVE API omits CVSS v3 vector strings with a 'NONE' severity. This ensures we only obtain data bearing valid CVSS V3 metrics.
+Per the NVD's documentation (https://nvd.nist.gov/developers/vulnerabilities), the NVD CVE API omits CVSS v3 vector strings with a 'NONE' severity. This ensures we only obtain data bearing valid CVSS V3 metrics.
 
-If there are discrepancies in the CVSS data during fetching or downloading, the index report will show an incomplete CVSS score, and certain CVEs might be without their respective scores. Because UpdateEnrichments in Claircore initiates a new UpdateOperation, adds the provided EnrichmentRecord(s), and ensures that enrichments from past updates are not accessible to clients.
+When some parts of the CVSS data cannot be accessed or downloaded during the process of fetching or downloading, the vulnerability report may show missing CVSS scores for some vulns that had them before. This happens because the `UpdateEnrichments` feature in ClairCore adds the EnrichmentRecord(s) provided, but it ensures that the enrichments from previous updates cannot be accessed by clients, effectively removing them from vulnerability reports.
