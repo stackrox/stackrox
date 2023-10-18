@@ -283,6 +283,9 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	decCreds := notifier.GetJira().GetPassword()
 	var err error
 	if env.EncNotifierCreds.BooleanSetting() {
+		if notifier.GetNotifierSecret() == "" {
+			return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", notifier.GetName())
+		}
 		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
 		if err != nil {
 			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", notifier.GetName())
