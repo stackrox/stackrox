@@ -17,7 +17,7 @@ export const agingImagesQueryOpname = 'agingImagesQuery';
 export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
 export const getAggregatedResultsOpname = 'getAggregatedResults';
 
-const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
+export const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
 const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
     getAllNamespacesByClusterOpname,
 ]);

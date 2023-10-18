@@ -2,26 +2,29 @@ import { resourceToAccess as resourceToAccessForAnalyst } from '../../fixtures/a
 import { resourceToAccess as resourceToAccessForNoAccess } from '../../fixtures/auth/mypermissionsNoAccess.json';
 
 import withAuth from '../../helpers/basicAuth';
-import { visitMainDashboardWithStaticResponseForPermissions } from '../../helpers/main';
+import {
+    routeMatcherMapForSummaryCounts,
+    visitMainDashboardWithStaticResponseForPermissions,
+} from '../../helpers/main';
 
-function getDataForAnalystWithoutResources(resources) {
+function getStaticResponseForAnalystWithoutResources(resources) {
     const resourceToAccess = { ...resourceToAccessForAnalyst };
 
     resources.forEach((resource) => {
         resourceToAccess[resource] = 'NO_ACCESS';
     });
 
-    return { resourceToAccess };
+    return { body: { resourceToAccess } };
 }
 
-function getDataForNoAccessExceptResources(resources) {
+function getStaticResponseForNoAccessExceptResources(resources) {
     const resourceToAccess = { ...resourceToAccessForNoAccess };
 
     resources.forEach((resource) => {
         resourceToAccess[resource] = 'READ_ACCESS';
     });
 
-    return { resourceToAccess };
+    return { body: { resourceToAccess } };
 }
 
 function getSummaryCountSelector(noun) {
@@ -34,9 +37,10 @@ describe('Dashboard SummaryCounts', () => {
     withAuth();
 
     it('should display 6 counts for Analyst role', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources([]),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources([]),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
@@ -48,9 +52,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 0 counts with no resources', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources([]),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources([])
+            // no request
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -62,9 +67,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Cluster resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Cluster']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Cluster']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node'));
@@ -76,9 +82,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Cluster resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Cluster']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Cluster']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -90,9 +97,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Node resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Node']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Node']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -104,9 +112,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Node resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Node']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Node']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node'));
@@ -118,9 +127,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Alert resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Alert']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Alert']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
@@ -132,9 +142,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Alert resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Alert']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Alert']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -146,9 +157,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Deployment resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Deployment']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Deployment']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
@@ -160,9 +172,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Deployment resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Deployment']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Deployment']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -174,9 +187,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Image resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Image']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Image']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
@@ -188,9 +202,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Image resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Image']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Image']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
@@ -202,9 +217,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 5 counts without Secret resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForAnalystWithoutResources(['Secret']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForAnalystWithoutResources(['Secret']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster'));
         cy.get(getSummaryCountSelector('Node'));
@@ -216,9 +232,10 @@ describe('Dashboard SummaryCounts', () => {
     });
 
     it('should display 1 count with only Secret resource', () => {
-        visitMainDashboardWithStaticResponseForPermissions({
-            body: getDataForNoAccessExceptResources(['Secret']),
-        });
+        visitMainDashboardWithStaticResponseForPermissions(
+            getStaticResponseForNoAccessExceptResources(['Secret']),
+            routeMatcherMapForSummaryCounts
+        );
 
         cy.get(getSummaryCountSelector('Cluster')).should('not.exist');
         cy.get(getSummaryCountSelector('Node')).should('not.exist');
