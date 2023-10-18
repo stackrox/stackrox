@@ -13,6 +13,7 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +62,6 @@ func (j *fakeJira) handlePriority(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (j *fakeJira) handleCreateMeta(w http.ResponseWriter, req *http.Request) {
-
 	pathSuffix, found := strings.CutPrefix(req.URL.Path, "/rest/api/2/issue/createmeta/")
 
 	if !found {
@@ -186,17 +186,17 @@ func TestWithFakeJira(t *testing.T) {
 	defer mockCtrl.Finish()
 
 	// Test with invalid password
-	_, err := NewJira(fakeJiraConfig, metadataGetter, mitreStore)
+	_, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	assert.Contains(t, err.Error(), "could not get the priority list")
 
 	// Test with valid username/password combo
 	fakeJiraStorageConfig.Password = password
-	_, err = NewJira(fakeJiraConfig, metadataGetter, mitreStore)
+	_, err = newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
 	// Test with valid bearer token
 	fakeJiraStorageConfig.Password = token
-	j, err := NewJira(fakeJiraConfig, metadataGetter, mitreStore)
+	j, err := newJira(fakeJiraConfig, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 
 	assert.NoError(t, j.Test(context.Background()))

@@ -16,8 +16,11 @@ import (
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -52,9 +55,11 @@ var (
 
 // jira notifier plugin.
 type jira struct {
-	client *jiraLib.Client
-
-	conf *storage.Jira
+	client      *jiraLib.Client
+	conf        *storage.Jira
+	creds       string
+	cryptoKey   string
+	cryptoCodec cryptocodec.CryptoCodec
 
 	notifier *storage.Notifier
 
@@ -265,8 +270,8 @@ func validate(jira *storage.Jira) error {
 	return errorList.ToError()
 }
 
-// NewJira exported to allow for usage in various components
-func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore) (*jira, error) {
+func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDataStore.AttackReadOnlyDataStore,
+	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*jira, error) {
 	conf := notifier.GetJira()
 	if conf == nil {
 		return nil, errors.New("Jira configuration required")
@@ -275,13 +280,25 @@ func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 		return nil, err
 	}
 
+	decCreds := notifier.GetJira().GetPassword()
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		if notifier.GetNotifierSecret() == "" {
+			return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", notifier.GetName())
+		}
+		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
+		if err != nil {
+			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", notifier.GetName())
+		}
+	}
+
 	url := urlfmt.FormatURL(conf.GetUrl(), urlfmt.HTTPS, urlfmt.TrailingSlash)
 
 	httpClient := &http.Client{
 		Timeout: timeout,
 		Transport: &jiraLib.BasicAuthTransport{
 			Username:  conf.GetUsername(),
-			Password:  conf.GetPassword(),
+			Password:  decCreds,
 			Transport: proxy.RoundTripper(),
 		},
 	}
@@ -297,7 +314,7 @@ func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 			httpClient := &http.Client{
 				Timeout: timeout,
 				Transport: &jiraLib.BearerAuthTransport{
-					Token:     conf.GetPassword(),
+					Token:     decCreds,
 					Transport: proxy.RoundTripper(),
 				},
 			}
@@ -345,6 +362,9 @@ func NewJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	return &jira{
 		client:             client,
 		conf:               notifier.GetJira(),
+		creds:              "",
+		cryptoKey:          cryptoKey,
+		cryptoCodec:        cryptoCodec,
 		notifier:           notifier,
 		metadataGetter:     metadataGetter,
 		mitreStore:         mitreStore,
@@ -459,8 +479,16 @@ func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[stor
 }
 
 func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+	}
 	notifiers.Add(notifiers.JiraType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := NewJira(notifier, metadatagetter.Singleton(), mitreDataStore.Singleton())
+		j, err := newJira(notifier, metadatagetter.Singleton(), mitreDataStore.Singleton(), cryptocodec.Singleton(), cryptoKey)
 		return j, err
 	})
 }

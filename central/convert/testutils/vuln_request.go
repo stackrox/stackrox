@@ -11,7 +11,7 @@ func GetTestVulnDeferralRequestFull(_ *testing.T) *storage.VulnerabilityRequest 
 	return &storage.VulnerabilityRequest{
 		Id:          "id",
 		Name:        "name",
-		TargetState: storage.VulnerabilityState_OBSERVED,
+		TargetState: storage.VulnerabilityState_DEFERRED,
 		Status:      storage.RequestStatus_PENDING,
 		Expired:     false,
 		Requestor: &storage.SlimUser{
@@ -64,6 +64,7 @@ func GetTestVulnDeferralRequestFull(_ *testing.T) *storage.VulnerabilityRequest 
 // GetTestVulnFPRequestFull returns a mock *storage.VulnerabilityRequest of false-positive kind.
 func GetTestVulnFPRequestFull(t *testing.T) *storage.VulnerabilityRequest {
 	ret := GetTestVulnDeferralRequestFull(t)
+	ret.TargetState = storage.VulnerabilityState_FALSE_POSITIVE
 	ret.Req = &storage.VulnerabilityRequest_FpRequest{
 		FpRequest: &storage.FalsePositiveRequest{},
 	}

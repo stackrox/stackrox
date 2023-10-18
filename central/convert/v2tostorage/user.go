@@ -1,4 +1,4 @@
-package storagetov2
+package v2tostorage
 
 import (
 	v2 "github.com/stackrox/rox/generated/api/v2"

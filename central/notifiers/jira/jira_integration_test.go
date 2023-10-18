@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/pkg/notifiers/mocks"
@@ -52,7 +53,7 @@ func getJira(t *testing.T) (*jira, *gomock.Controller) {
 		LabelDefault: "AJIT",
 	}
 
-	j, err := NewJira(notifier, metadataGetter, mitreStore)
+	j, err := newJira(notifier, metadataGetter, mitreStore, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return j, mockCtrl
 }
