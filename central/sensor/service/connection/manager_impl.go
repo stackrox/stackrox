@@ -75,7 +75,7 @@ func NewManager(mgr hashManager.Manager) Manager {
 	return &manager{
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
-		rateLimitMgr:           NewRateLimitManager(),
+		rateLimitMgr:           newRateLimitManager(),
 	}
 }
 
