@@ -13,7 +13,6 @@ import util.Env
 import spock.lang.Tag
 import spock.lang.Unroll
 
-@Tag("PZDebug")
 @Tag("PZ")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
