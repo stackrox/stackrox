@@ -3,6 +3,7 @@ package sensor
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/config"
@@ -28,5 +29,6 @@ func NewCentralCommunication(reconnect bool, clientReconcile bool, components ..
 		stopper:         concurrency.NewStopper(),
 		isReconnect:     reconnect,
 		clientReconcile: clientReconcile,
+		syncTimeout:     env.DeduperStateSyncTimeout.DurationSetting(),
 	}
 }
