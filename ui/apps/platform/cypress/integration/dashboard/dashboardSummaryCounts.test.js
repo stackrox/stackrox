@@ -159,7 +159,7 @@ describe('Dashboard SummaryCounts', () => {
         cy.get(lastUpdatedSelector);
     });
 
-    it.only('should display 1 count with only Deployment resource', () => {
+    it('should display 1 count with only Deployment resource', () => {
         visitMainDashboardWithStaticResponseForPermissions({
             body: getDataForNoAccessExceptResources(['Deployment']),
         });
