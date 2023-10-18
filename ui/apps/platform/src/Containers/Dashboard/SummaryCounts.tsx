@@ -50,11 +50,11 @@ const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute:
 
 export type SummaryCountsProps = Record<TileEntity, boolean>;
 
-function SummaryCounts(props: SummaryCountsProps): ReactElement {
+function SummaryCounts(hasReadAccessForTileEntity: SummaryCountsProps): ReactElement {
     const query = gql`
         query summary_counts {
             ${tileEntityTypes
-                .filter((tileEntity) => props[tileEntity])
+                .filter((tileEntity) => hasReadAccessForTileEntity[tileEntity])
                 .map((tileEntity) => dataKey[tileEntity])
                 .join('\n')}
         }
