@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/policycleaner"
+	"github.com/stackrox/rox/central/notifiers/splunk"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/notifiers/splunk"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
@@ -139,7 +139,7 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	}
 	upgradeNotifierConfig(request.GetNotifier())
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")
@@ -165,7 +165,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 		return nil, errors.Wrap(errox.InvalidArgs, "id field should be empty when posting a new notifier")
 	}
 	upgradeNotifierConfig(request)
-	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
+	_, err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
 		// Don't send out error from crypto lib
 		return nil, errors.New("Error securing notifier")
@@ -201,7 +201,7 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 		return nil, err
 	}
 	if request.GetUpdatePassword() {
-		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
+		_, err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
 			// Don't send out error from crypto lib
 			return nil, errors.New("Error securing notifier")

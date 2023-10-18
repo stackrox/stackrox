@@ -3,6 +3,7 @@ package resources
 import (
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
@@ -50,6 +51,15 @@ type nodeStoreImpl struct {
 	nodes map[string]*nodeWrap
 }
 
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO(ROX-20072): Implement me
+	return "", errors.New("Not implemented")
+}
+
 func newNodeStore() *nodeStoreImpl {
 	return &nodeStoreImpl{
 		nodes: make(map[string]*nodeWrap),
@@ -66,10 +76,10 @@ func (s *nodeStoreImpl) Cleanup() {
 // addOrUpdateNode upserts node into store.
 // It returns true if the IP addresses of the node changed as a result.
 func (s *nodeStoreImpl) addOrUpdateNode(node *nodeWrap) bool {
-	var oldNode *nodeWrap
-	concurrency.WithLock(&s.mutex, func() {
-		oldNode = s.nodes[node.Name]
+	oldNode := concurrency.WithLock1(&s.mutex, func() *nodeWrap {
+		oldNode := s.nodes[node.Name]
 		s.nodes[node.Name] = node
+		return oldNode
 	})
 
 	if oldNode == nil || len(oldNode.addresses) != len(node.addresses) {

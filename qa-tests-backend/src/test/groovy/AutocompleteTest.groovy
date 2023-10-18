@@ -7,6 +7,7 @@ import services.SearchService
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class AutocompleteTest extends BaseSpecification {
     private static final SearchCategory VULNERABILITY_SEARCH_CATEGORY =
         isPostgresRun() ?

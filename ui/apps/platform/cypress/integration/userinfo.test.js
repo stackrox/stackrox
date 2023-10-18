@@ -3,6 +3,7 @@ import { selectors as topNavSelectors } from '../constants/TopNavigation';
 import withAuth from '../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../helpers/title';
 import { checkInviteUsersModal } from '../helpers/inviteUsers';
+import { closeModalByButton } from '../helpers/modal';
 import {
     visitUserProfile,
     visitUserProfileFromTopNav,
@@ -88,6 +89,9 @@ describe('User Profile', () => {
             cy.get('.pf-c-dropdown__menu-item:contains("Invite users")').click();
 
             checkInviteUsersModal();
+
+            // test closing the modal
+            closeModalByButton();
         });
 
         it('should navigate to the user page', () => {

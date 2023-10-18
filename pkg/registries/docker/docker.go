@@ -174,9 +174,8 @@ func (r *Registry) Match(image *storage.ImageName) bool {
 		return match
 	}
 
-	var list set.StringSet
-	concurrency.WithRLock(&r.repositoryListLock, func() {
-		list = r.repositoryList
+	list := concurrency.WithRLock1(&r.repositoryListLock, func() set.StringSet {
+		return r.repositoryList
 	})
 	if list == nil {
 		return match

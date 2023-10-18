@@ -57,7 +57,8 @@ func SetupTest(suite Suite) {
 		message.SensorHello("00000000-0000-4000-A000-000000000000"),
 		message.ClusterConfig(),
 		message.PolicySync(policies),
-		message.BaselineSync([]*storage.ProcessBaseline{})),
+		message.BaselineSync([]*storage.ProcessBaseline{}),
+		message.NetworkBaselineSync([]*storage.NetworkBaseline{})),
 	)
 }
 

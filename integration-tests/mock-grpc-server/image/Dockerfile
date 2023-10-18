@@ -1,5 +1,6 @@
 FROM scratch
-MAINTAINER StackRox <support@stackrox.com>
+LABEL name="mock-grpc-server" \
+      maintainer="https://stackrox.io/"
 ARG TARGETARCH
 ARG TARGETOS
 

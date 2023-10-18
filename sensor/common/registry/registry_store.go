@@ -57,6 +57,15 @@ type Store struct {
 	centralRegistryIntegrations registries.Set
 }
 
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (rs *Store) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
+	_, _, _ = resType, resID, resHash
+	// TODO(ROX-20074): Implement me
+	return "", errors.New("Not implemented")
+}
+
 // CheckTLS defines a function which checks if the given address is using TLS.
 // An example implementation of this is tlscheck.CheckTLS.
 type CheckTLS func(ctx context.Context, origAddr string) (bool, error)

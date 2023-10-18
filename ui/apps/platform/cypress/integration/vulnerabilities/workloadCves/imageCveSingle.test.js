@@ -3,7 +3,8 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     applyLocalSeverityFilters,
     selectResourceFilterType,
-    typeAndEnterResourceFilterValue,
+    typeAndSelectResourceFilterValue,
+    typeAndSelectCustomResourceFilterValue as typeAndCreateResourceFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
@@ -93,7 +94,7 @@ describe('Workload CVE Image CVE Single page', () => {
             const namespace = $namespace.innerText;
 
             selectResourceFilterType('Namespace');
-            typeAndEnterResourceFilterValue('Namespace', `bogus-${namespace}`);
+            typeAndCreateResourceFilterValue('Namespace', `bogus-${namespace}`);
 
             cy.get(`table tbody tr td[data-label="Namespace"]:contains("${namespace}")`).should(
                 'not.exist'
@@ -101,7 +102,7 @@ describe('Workload CVE Image CVE Single page', () => {
 
             cy.get(selectors.clearFiltersButton).click();
 
-            typeAndEnterResourceFilterValue('Namespace', namespace);
+            typeAndSelectResourceFilterValue('Namespace', namespace);
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`

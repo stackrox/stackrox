@@ -156,25 +156,25 @@ func (m *DayOption) Clone() *DayOption {
 	return cloned
 }
 
-type VulnerabilityDeferralConfig struct {
-	ExpiryOptions        *VulnerabilityDeferralConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                                   `json:"-"`
-	XXX_unrecognized     []byte                                     `json:"-"`
-	XXX_sizecache        int32                                      `json:"-"`
+type VulnerabilityExceptionConfig struct {
+	ExpiryOptions        *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                    `json:"-"`
+	XXX_unrecognized     []byte                                      `json:"-"`
+	XXX_sizecache        int32                                       `json:"-"`
 }
 
-func (m *VulnerabilityDeferralConfig) Reset()         { *m = VulnerabilityDeferralConfig{} }
-func (m *VulnerabilityDeferralConfig) String() string { return proto.CompactTextString(m) }
-func (*VulnerabilityDeferralConfig) ProtoMessage()    {}
-func (*VulnerabilityDeferralConfig) Descriptor() ([]byte, []int) {
+func (m *VulnerabilityExceptionConfig) Reset()         { *m = VulnerabilityExceptionConfig{} }
+func (m *VulnerabilityExceptionConfig) String() string { return proto.CompactTextString(m) }
+func (*VulnerabilityExceptionConfig) ProtoMessage()    {}
+func (*VulnerabilityExceptionConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_266c60d3cc05a407, []int{2}
 }
-func (m *VulnerabilityDeferralConfig) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityExceptionConfig) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityDeferralConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_VulnerabilityDeferralConfig.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityExceptionConfig.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -184,40 +184,40 @@ func (m *VulnerabilityDeferralConfig) XXX_Marshal(b []byte, deterministic bool) 
 		return b[:n], nil
 	}
 }
-func (m *VulnerabilityDeferralConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VulnerabilityDeferralConfig.Merge(m, src)
+func (m *VulnerabilityExceptionConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityExceptionConfig.Merge(m, src)
 }
-func (m *VulnerabilityDeferralConfig) XXX_Size() int {
+func (m *VulnerabilityExceptionConfig) XXX_Size() int {
 	return m.Size()
 }
-func (m *VulnerabilityDeferralConfig) XXX_DiscardUnknown() {
-	xxx_messageInfo_VulnerabilityDeferralConfig.DiscardUnknown(m)
+func (m *VulnerabilityExceptionConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityExceptionConfig.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VulnerabilityDeferralConfig proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityExceptionConfig proto.InternalMessageInfo
 
-func (m *VulnerabilityDeferralConfig) GetExpiryOptions() *VulnerabilityDeferralConfig_ExpiryOptions {
+func (m *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptionConfig_ExpiryOptions {
 	if m != nil {
 		return m.ExpiryOptions
 	}
 	return nil
 }
 
-func (m *VulnerabilityDeferralConfig) MessageClone() proto.Message {
+func (m *VulnerabilityExceptionConfig) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *VulnerabilityDeferralConfig) Clone() *VulnerabilityDeferralConfig {
+func (m *VulnerabilityExceptionConfig) Clone() *VulnerabilityExceptionConfig {
 	if m == nil {
 		return nil
 	}
-	cloned := new(VulnerabilityDeferralConfig)
+	cloned := new(VulnerabilityExceptionConfig)
 	*cloned = *m
 
 	cloned.ExpiryOptions = m.ExpiryOptions.Clone()
 	return cloned
 }
 
-type VulnerabilityDeferralConfig_FixableCVEOptions struct {
+type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 	// This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
 	// in the requests become fixable.
 	AllFixable bool `protobuf:"varint,1,opt,name=all_fixable,json=allFixable,proto3" json:"all_fixable,omitempty"`
@@ -229,22 +229,22 @@ type VulnerabilityDeferralConfig_FixableCVEOptions struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Reset() {
-	*m = VulnerabilityDeferralConfig_FixableCVEOptions{}
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Reset() {
+	*m = VulnerabilityExceptionConfig_FixableCVEOptions{}
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) String() string {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) String() string {
 	return proto.CompactTextString(m)
 }
-func (*VulnerabilityDeferralConfig_FixableCVEOptions) ProtoMessage() {}
-func (*VulnerabilityDeferralConfig_FixableCVEOptions) Descriptor() ([]byte, []int) {
+func (*VulnerabilityExceptionConfig_FixableCVEOptions) ProtoMessage() {}
+func (*VulnerabilityExceptionConfig_FixableCVEOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_266c60d3cc05a407, []int{2, 0}
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -254,50 +254,50 @@ func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Marshal(b []byte, de
 		return b[:n], nil
 	}
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.Merge(m, src)
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions.Merge(m, src)
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_Size() int {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_Size() int {
 	return m.Size()
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) XXX_DiscardUnknown() {
-	xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions.DiscardUnknown(m)
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VulnerabilityDeferralConfig_FixableCVEOptions proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityExceptionConfig_FixableCVEOptions proto.InternalMessageInfo
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) GetAllFixable() bool {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) GetAllFixable() bool {
 	if m != nil {
 		return m.AllFixable
 	}
 	return false
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) GetAnyFixable() bool {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) GetAnyFixable() bool {
 	if m != nil {
 		return m.AnyFixable
 	}
 	return false
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MessageClone() proto.Message {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Clone() *VulnerabilityDeferralConfig_FixableCVEOptions {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Clone() *VulnerabilityExceptionConfig_FixableCVEOptions {
 	if m == nil {
 		return nil
 	}
-	cloned := new(VulnerabilityDeferralConfig_FixableCVEOptions)
+	cloned := new(VulnerabilityExceptionConfig_FixableCVEOptions)
 	*cloned = *m
 
 	return cloned
 }
 
-type VulnerabilityDeferralConfig_ExpiryOptions struct {
+type VulnerabilityExceptionConfig_ExpiryOptions struct {
 	// This allows users to set expiry interval based on number of days.
 	DayOptions []*DayOption `protobuf:"bytes,1,rep,name=day_options,json=dayOptions,proto3" json:"day_options,omitempty"`
 	// This allows users to set vulnerability request expiry based on the CVEs.
-	FixableCveOptions *VulnerabilityDeferralConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions,proto3" json:"fixable_cve_options,omitempty"`
+	FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions,proto3" json:"fixable_cve_options,omitempty"`
 	// This option, if true, allows UI to show a custom date picker for setting expiry date.
 	CustomDate           bool     `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -305,22 +305,22 @@ type VulnerabilityDeferralConfig_ExpiryOptions struct {
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) Reset() {
-	*m = VulnerabilityDeferralConfig_ExpiryOptions{}
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {
+	*m = VulnerabilityExceptionConfig_ExpiryOptions{}
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) String() string {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) String() string {
 	return proto.CompactTextString(m)
 }
-func (*VulnerabilityDeferralConfig_ExpiryOptions) ProtoMessage() {}
-func (*VulnerabilityDeferralConfig_ExpiryOptions) Descriptor() ([]byte, []int) {
+func (*VulnerabilityExceptionConfig_ExpiryOptions) ProtoMessage() {}
+func (*VulnerabilityExceptionConfig_ExpiryOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_266c60d3cc05a407, []int{2, 1}
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.Marshal(b, m, deterministic)
+		return xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -330,47 +330,47 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Marshal(b []byte, determ
 		return b[:n], nil
 	}
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.Merge(m, src)
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions.Merge(m, src)
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_Size() int {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_Size() int {
 	return m.Size()
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) XXX_DiscardUnknown() {
-	xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions.DiscardUnknown(m)
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_VulnerabilityDeferralConfig_ExpiryOptions proto.InternalMessageInfo
+var xxx_messageInfo_VulnerabilityExceptionConfig_ExpiryOptions proto.InternalMessageInfo
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetDayOptions() []*DayOption {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) GetDayOptions() []*DayOption {
 	if m != nil {
 		return m.DayOptions
 	}
 	return nil
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetFixableCveOptions() *VulnerabilityDeferralConfig_FixableCVEOptions {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) GetFixableCveOptions() *VulnerabilityExceptionConfig_FixableCVEOptions {
 	if m != nil {
 		return m.FixableCveOptions
 	}
 	return nil
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) GetCustomDate() bool {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) GetCustomDate() bool {
 	if m != nil {
 		return m.CustomDate
 	}
 	return false
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) MessageClone() proto.Message {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) Clone() *VulnerabilityDeferralConfig_ExpiryOptions {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Clone() *VulnerabilityExceptionConfig_ExpiryOptions {
 	if m == nil {
 		return nil
 	}
-	cloned := new(VulnerabilityDeferralConfig_ExpiryOptions)
+	cloned := new(VulnerabilityExceptionConfig_ExpiryOptions)
 	*cloned = *m
 
 	if m.DayOptions != nil {
@@ -383,27 +383,27 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) Clone() *VulnerabilityDeferr
 	return cloned
 }
 
-type GetVulnerabilityDeferralConfigResponse struct {
-	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
+type GetVulnerabilityExceptionConfigResponse struct {
+	Config               *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) Reset() {
-	*m = GetVulnerabilityDeferralConfigResponse{}
+func (m *GetVulnerabilityExceptionConfigResponse) Reset() {
+	*m = GetVulnerabilityExceptionConfigResponse{}
 }
-func (m *GetVulnerabilityDeferralConfigResponse) String() string { return proto.CompactTextString(m) }
-func (*GetVulnerabilityDeferralConfigResponse) ProtoMessage()    {}
-func (*GetVulnerabilityDeferralConfigResponse) Descriptor() ([]byte, []int) {
+func (m *GetVulnerabilityExceptionConfigResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVulnerabilityExceptionConfigResponse) ProtoMessage()    {}
+func (*GetVulnerabilityExceptionConfigResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_266c60d3cc05a407, []int{3}
 }
-func (m *GetVulnerabilityDeferralConfigResponse) XXX_Unmarshal(b []byte) error {
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *GetVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_GetVulnerabilityExceptionConfigResponse.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -413,125 +413,62 @@ func (m *GetVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, determini
 		return b[:n], nil
 	}
 }
-func (m *GetVulnerabilityDeferralConfigResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.Merge(m, src)
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVulnerabilityExceptionConfigResponse.Merge(m, src)
 }
-func (m *GetVulnerabilityDeferralConfigResponse) XXX_Size() int {
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_Size() int {
 	return m.Size()
 }
-func (m *GetVulnerabilityDeferralConfigResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetVulnerabilityDeferralConfigResponse.DiscardUnknown(m)
+func (m *GetVulnerabilityExceptionConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVulnerabilityExceptionConfigResponse.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_GetVulnerabilityDeferralConfigResponse proto.InternalMessageInfo
+var xxx_messageInfo_GetVulnerabilityExceptionConfigResponse proto.InternalMessageInfo
 
-func (m *GetVulnerabilityDeferralConfigResponse) GetConfig() *VulnerabilityDeferralConfig {
+func (m *GetVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityExceptionConfig {
 	if m != nil {
 		return m.Config
 	}
 	return nil
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) MessageClone() proto.Message {
+func (m *GetVulnerabilityExceptionConfigResponse) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *GetVulnerabilityDeferralConfigResponse) Clone() *GetVulnerabilityDeferralConfigResponse {
+func (m *GetVulnerabilityExceptionConfigResponse) Clone() *GetVulnerabilityExceptionConfigResponse {
 	if m == nil {
 		return nil
 	}
-	cloned := new(GetVulnerabilityDeferralConfigResponse)
+	cloned := new(GetVulnerabilityExceptionConfigResponse)
 	*cloned = *m
 
 	cloned.Config = m.Config.Clone()
 	return cloned
 }
 
-type UpdateVulnerabilityDeferralConfigRequest struct {
-	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
+type UpdateVulnerabilityExceptionConfigRequest struct {
+	Config               *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *UpdateVulnerabilityDeferralConfigRequest) Reset() {
-	*m = UpdateVulnerabilityDeferralConfigRequest{}
+func (m *UpdateVulnerabilityExceptionConfigRequest) Reset() {
+	*m = UpdateVulnerabilityExceptionConfigRequest{}
 }
-func (m *UpdateVulnerabilityDeferralConfigRequest) String() string { return proto.CompactTextString(m) }
-func (*UpdateVulnerabilityDeferralConfigRequest) ProtoMessage()    {}
-func (*UpdateVulnerabilityDeferralConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_266c60d3cc05a407, []int{4}
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.Merge(m, src)
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_Size() int {
-	return m.Size()
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateVulnerabilityDeferralConfigRequest proto.InternalMessageInfo
-
-func (m *UpdateVulnerabilityDeferralConfigRequest) GetConfig() *VulnerabilityDeferralConfig {
-	if m != nil {
-		return m.Config
-	}
-	return nil
-}
-
-func (m *UpdateVulnerabilityDeferralConfigRequest) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *UpdateVulnerabilityDeferralConfigRequest) Clone() *UpdateVulnerabilityDeferralConfigRequest {
-	if m == nil {
-		return nil
-	}
-	cloned := new(UpdateVulnerabilityDeferralConfigRequest)
-	*cloned = *m
-
-	cloned.Config = m.Config.Clone()
-	return cloned
-}
-
-type UpdateVulnerabilityDeferralConfigResponse struct {
-	Config               *VulnerabilityDeferralConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
-	XXX_unrecognized     []byte                       `json:"-"`
-	XXX_sizecache        int32                        `json:"-"`
-}
-
-func (m *UpdateVulnerabilityDeferralConfigResponse) Reset() {
-	*m = UpdateVulnerabilityDeferralConfigResponse{}
-}
-func (m *UpdateVulnerabilityDeferralConfigResponse) String() string {
+func (m *UpdateVulnerabilityExceptionConfigRequest) String() string {
 	return proto.CompactTextString(m)
 }
-func (*UpdateVulnerabilityDeferralConfigResponse) ProtoMessage() {}
-func (*UpdateVulnerabilityDeferralConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_266c60d3cc05a407, []int{5}
+func (*UpdateVulnerabilityExceptionConfigRequest) ProtoMessage() {}
+func (*UpdateVulnerabilityExceptionConfigRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{4}
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Unmarshal(b []byte) error {
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.Marshal(b, m, deterministic)
+		return xxx_messageInfo_UpdateVulnerabilityExceptionConfigRequest.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -541,33 +478,98 @@ func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Marshal(b []byte, determ
 		return b[:n], nil
 	}
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.Merge(m, src)
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVulnerabilityExceptionConfigRequest.Merge(m, src)
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_Size() int {
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_Size() int {
 	return m.Size()
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse.DiscardUnknown(m)
+func (m *UpdateVulnerabilityExceptionConfigRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateVulnerabilityExceptionConfigRequest.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_UpdateVulnerabilityDeferralConfigResponse proto.InternalMessageInfo
+var xxx_messageInfo_UpdateVulnerabilityExceptionConfigRequest proto.InternalMessageInfo
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) GetConfig() *VulnerabilityDeferralConfig {
+func (m *UpdateVulnerabilityExceptionConfigRequest) GetConfig() *VulnerabilityExceptionConfig {
 	if m != nil {
 		return m.Config
 	}
 	return nil
 }
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) MessageClone() proto.Message {
+func (m *UpdateVulnerabilityExceptionConfigRequest) MessageClone() proto.Message {
 	return m.Clone()
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) Clone() *UpdateVulnerabilityDeferralConfigResponse {
+func (m *UpdateVulnerabilityExceptionConfigRequest) Clone() *UpdateVulnerabilityExceptionConfigRequest {
 	if m == nil {
 		return nil
 	}
-	cloned := new(UpdateVulnerabilityDeferralConfigResponse)
+	cloned := new(UpdateVulnerabilityExceptionConfigRequest)
+	*cloned = *m
+
+	cloned.Config = m.Config.Clone()
+	return cloned
+}
+
+type UpdateVulnerabilityExceptionConfigResponse struct {
+	Config               *VulnerabilityExceptionConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
+}
+
+func (m *UpdateVulnerabilityExceptionConfigResponse) Reset() {
+	*m = UpdateVulnerabilityExceptionConfigResponse{}
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) String() string {
+	return proto.CompactTextString(m)
+}
+func (*UpdateVulnerabilityExceptionConfigResponse) ProtoMessage() {}
+func (*UpdateVulnerabilityExceptionConfigResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_266c60d3cc05a407, []int{5}
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpdateVulnerabilityExceptionConfigResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVulnerabilityExceptionConfigResponse.Merge(m, src)
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateVulnerabilityExceptionConfigResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateVulnerabilityExceptionConfigResponse proto.InternalMessageInfo
+
+func (m *UpdateVulnerabilityExceptionConfigResponse) GetConfig() *VulnerabilityExceptionConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *UpdateVulnerabilityExceptionConfigResponse) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *UpdateVulnerabilityExceptionConfigResponse) Clone() *UpdateVulnerabilityExceptionConfigResponse {
+	if m == nil {
+		return nil
+	}
+	cloned := new(UpdateVulnerabilityExceptionConfigResponse)
 	*cloned = *m
 
 	cloned.Config = m.Config.Clone()
@@ -577,59 +579,59 @@ func (m *UpdateVulnerabilityDeferralConfigResponse) Clone() *UpdateVulnerability
 func init() {
 	proto.RegisterType((*PutConfigRequest)(nil), "v1.PutConfigRequest")
 	proto.RegisterType((*DayOption)(nil), "v1.DayOption")
-	proto.RegisterType((*VulnerabilityDeferralConfig)(nil), "v1.VulnerabilityDeferralConfig")
-	proto.RegisterType((*VulnerabilityDeferralConfig_FixableCVEOptions)(nil), "v1.VulnerabilityDeferralConfig.FixableCVEOptions")
-	proto.RegisterType((*VulnerabilityDeferralConfig_ExpiryOptions)(nil), "v1.VulnerabilityDeferralConfig.ExpiryOptions")
-	proto.RegisterType((*GetVulnerabilityDeferralConfigResponse)(nil), "v1.GetVulnerabilityDeferralConfigResponse")
-	proto.RegisterType((*UpdateVulnerabilityDeferralConfigRequest)(nil), "v1.UpdateVulnerabilityDeferralConfigRequest")
-	proto.RegisterType((*UpdateVulnerabilityDeferralConfigResponse)(nil), "v1.UpdateVulnerabilityDeferralConfigResponse")
+	proto.RegisterType((*VulnerabilityExceptionConfig)(nil), "v1.VulnerabilityExceptionConfig")
+	proto.RegisterType((*VulnerabilityExceptionConfig_FixableCVEOptions)(nil), "v1.VulnerabilityExceptionConfig.FixableCVEOptions")
+	proto.RegisterType((*VulnerabilityExceptionConfig_ExpiryOptions)(nil), "v1.VulnerabilityExceptionConfig.ExpiryOptions")
+	proto.RegisterType((*GetVulnerabilityExceptionConfigResponse)(nil), "v1.GetVulnerabilityExceptionConfigResponse")
+	proto.RegisterType((*UpdateVulnerabilityExceptionConfigRequest)(nil), "v1.UpdateVulnerabilityExceptionConfigRequest")
+	proto.RegisterType((*UpdateVulnerabilityExceptionConfigResponse)(nil), "v1.UpdateVulnerabilityExceptionConfigResponse")
 }
 
 func init() { proto.RegisterFile("api/v1/config_service.proto", fileDescriptor_266c60d3cc05a407) }
 
 var fileDescriptor_266c60d3cc05a407 = []byte{
-	// 653 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xcf, 0x4f, 0xd4, 0x4e,
-	0x14, 0xa7, 0x4b, 0xbe, 0xc0, 0xbe, 0xfd, 0xae, 0xc0, 0x00, 0x66, 0x29, 0x66, 0xc1, 0x1e, 0x74,
-	0x45, 0xe9, 0xba, 0x90, 0x68, 0x02, 0x17, 0x23, 0x8b, 0xc4, 0x8b, 0x62, 0x15, 0x62, 0xbc, 0x6c,
-	0x66, 0xbb, 0x8f, 0x4d, 0x63, 0xe9, 0xd4, 0xce, 0xb4, 0xa1, 0x57, 0xe3, 0xd1, 0x83, 0x89, 0x17,
-	0xff, 0x14, 0xef, 0x5e, 0x3c, 0x9a, 0xf8, 0x0f, 0x18, 0xf4, 0x0f, 0x31, 0x9d, 0x19, 0x4b, 0x65,
-	0x93, 0xdd, 0x55, 0x6f, 0xed, 0xeb, 0xe7, 0xd7, 0xeb, 0xbc, 0x79, 0xb0, 0x42, 0x43, 0xaf, 0x99,
-	0xb4, 0x9a, 0x2e, 0x0b, 0x8e, 0xbd, 0x7e, 0x87, 0x63, 0x94, 0x78, 0x2e, 0xda, 0x61, 0xc4, 0x04,
-	0x23, 0xa5, 0xa4, 0x65, 0x5e, 0xe9, 0x33, 0xd6, 0xf7, 0xb1, 0x99, 0xe1, 0x68, 0x10, 0x30, 0x41,
-	0x85, 0xc7, 0x02, 0xae, 0x10, 0x26, 0xd1, 0x74, 0x3c, 0x09, 0x45, 0xaa, 0x6b, 0x8b, 0x5c, 0xb0,
-	0x88, 0xf6, 0x51, 0x6b, 0xaa, 0xaa, 0xb5, 0x03, 0x73, 0x07, 0xb1, 0xd8, 0x95, 0x25, 0x07, 0x5f,
-	0xc5, 0xc8, 0x05, 0xb9, 0x0e, 0x53, 0x0a, 0x53, 0x33, 0xd6, 0x8c, 0x46, 0x65, 0x73, 0xd6, 0xd6,
-	0x54, 0x5b, 0xe3, 0xf4, 0x67, 0xeb, 0x1e, 0x94, 0xdb, 0x34, 0x7d, 0x1c, 0x66, 0xd6, 0x64, 0x19,
-	0x66, 0x82, 0xf8, 0xa4, 0xd3, 0xa3, 0x29, 0x97, 0xbc, 0xaa, 0x33, 0x1d, 0xc4, 0x27, 0x6d, 0x9a,
-	0x72, 0x52, 0x83, 0x69, 0x0c, 0x68, 0xd7, 0xc7, 0x5e, 0xad, 0xb4, 0x66, 0x34, 0x66, 0x9c, 0x5f,
-	0xaf, 0xd6, 0xbb, 0x49, 0x58, 0x39, 0x8a, 0xfd, 0x00, 0x23, 0xda, 0xf5, 0x7c, 0x4f, 0xa4, 0x6d,
-	0x3c, 0xc6, 0x28, 0xa2, 0xbe, 0x72, 0x22, 0xcf, 0xe0, 0x12, 0x9e, 0x86, 0x5e, 0x94, 0x76, 0x98,
-	0x74, 0xe1, 0x3a, 0xd2, 0x86, 0x9d, 0xb4, 0xec, 0x21, 0x44, 0x7b, 0x4f, 0xb2, 0x54, 0x34, 0xee,
-	0x54, 0xb1, 0xf8, 0x6a, 0x1e, 0xc2, 0xfc, 0x03, 0xef, 0x34, 0x4b, 0xb0, 0x7b, 0xb4, 0xa7, 0x8b,
-	0x64, 0x15, 0x2a, 0xd4, 0xf7, 0x3b, 0xc7, 0xea, 0x83, 0xf4, 0x99, 0x71, 0x80, 0xfa, 0xbe, 0x86,
-	0x4a, 0x40, 0x90, 0xe6, 0x80, 0x92, 0x06, 0x04, 0xa9, 0x06, 0x98, 0x9f, 0x0c, 0xa8, 0xfe, 0xe6,
-	0x4b, 0x6c, 0xa8, 0xf4, 0x68, 0x31, 0xfb, 0x64, 0xa3, 0xb2, 0x59, 0xcd, 0xb2, 0xe7, 0xff, 0xcd,
-	0x81, 0x1e, 0xcd, 0xf1, 0x14, 0x16, 0xb4, 0x7c, 0xc7, 0x4d, 0x30, 0xe7, 0x95, 0x64, 0xcf, 0xad,
-	0x51, 0x3d, 0x0f, 0xf4, 0xe4, 0xcc, 0x6b, 0xb5, 0xdd, 0x04, 0x0b, 0x6d, 0xba, 0x31, 0x17, 0x2c,
-	0x3b, 0x29, 0x81, 0xb5, 0x49, 0xd5, 0x85, 0x2a, 0xb5, 0xa9, 0x40, 0x8b, 0xc2, 0xb5, 0x7d, 0x14,
-	0x43, 0x7c, 0x1c, 0xe4, 0x21, 0x0b, 0x38, 0x92, 0xbb, 0x17, 0xe6, 0x64, 0x75, 0x44, 0xc0, 0x7c,
-	0x6e, 0x5c, 0x68, 0x1c, 0x86, 0x99, 0xfd, 0x50, 0x17, 0x35, 0x8c, 0x7f, 0x6d, 0xd2, 0x83, 0x1b,
-	0x63, 0x98, 0xfc, 0x63, 0x2b, 0x9b, 0x6f, 0xfe, 0x83, 0xaa, 0x2a, 0x3d, 0x55, 0x77, 0x94, 0x3c,
-	0x82, 0xd9, 0x7d, 0x14, 0x07, 0x71, 0xd7, 0xf7, 0x5c, 0x3d, 0xc5, 0xe5, 0x4c, 0x6d, 0x2f, 0xbb,
-	0x8b, 0xe6, 0x52, 0x7e, 0x97, 0x8a, 0x08, 0x6b, 0xf9, 0xf5, 0xd7, 0x1f, 0xef, 0x4b, 0x0b, 0x64,
-	0xfe, 0xfc, 0xd2, 0x37, 0x43, 0x09, 0x20, 0x4f, 0x60, 0x2e, 0xd3, 0x8b, 0xbc, 0x84, 0x0a, 0x1c,
-	0x14, 0xbc, 0x7c, 0x2e, 0x58, 0x84, 0x58, 0xa6, 0x54, 0x5c, 0x24, 0xa4, 0xa8, 0xa8, 0x10, 0xe4,
-	0xad, 0x01, 0xf5, 0xe1, 0x67, 0x5c, 0x74, 0x58, 0xcf, 0x1e, 0xc7, 0x1b, 0x09, 0x6b, 0x4b, 0xba,
-	0x6e, 0x90, 0x9b, 0x83, 0xae, 0xcd, 0x9e, 0xa6, 0x34, 0x93, 0x82, 0x90, 0x87, 0x9c, 0x7c, 0x34,
-	0xe0, 0xea, 0xc8, 0xa3, 0x22, 0xb7, 0xb2, 0x18, 0xe3, 0x8e, 0x8d, 0xb9, 0x31, 0x26, 0x5a, 0xe7,
-	0xbe, 0x23, 0x73, 0xdf, 0x36, 0xff, 0x24, 0xf7, 0xb6, 0xb1, 0x4e, 0x76, 0xa0, 0xbc, 0x8f, 0x62,
-	0xf0, 0x9f, 0x5d, 0x5c, 0x99, 0x16, 0x91, 0x06, 0xff, 0x13, 0x38, 0x37, 0x20, 0x0f, 0xa1, 0x9c,
-	0xef, 0x5e, 0xb2, 0x98, 0x91, 0x2f, 0xae, 0xe2, 0x41, 0x9d, 0x25, 0xa9, 0x33, 0x6b, 0x16, 0x74,
-	0xb6, 0x8d, 0xf5, 0xfb, 0xf6, 0xe7, 0xb3, 0xba, 0xf1, 0xe5, 0xac, 0x6e, 0x7c, 0x3b, 0xab, 0x1b,
-	0x1f, 0xbe, 0xd7, 0x27, 0xa0, 0xe6, 0x31, 0x9b, 0x0b, 0xea, 0xbe, 0x8c, 0xd8, 0xa9, 0xda, 0xf5,
-	0x36, 0x0d, 0x3d, 0x3b, 0x69, 0xbd, 0x28, 0x25, 0xad, 0xe7, 0x13, 0xdd, 0x29, 0x59, 0xdb, 0xfa,
-	0x19, 0x00, 0x00, 0xff, 0xff, 0x82, 0xd8, 0xf6, 0x70, 0x6a, 0x06, 0x00, 0x00,
+	// 648 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x4f, 0x4f, 0xd4, 0x40,
+	0x14, 0xa7, 0x4b, 0x04, 0xf6, 0xad, 0x2b, 0x30, 0x80, 0x59, 0x2a, 0x59, 0x48, 0x2f, 0x20, 0xea,
+	0x6c, 0x76, 0x35, 0xd1, 0xc0, 0xc5, 0x08, 0x2b, 0xf1, 0xa2, 0x58, 0x03, 0x31, 0x5e, 0x36, 0xb3,
+	0xdd, 0xc7, 0xa6, 0xb1, 0xb4, 0xb5, 0x33, 0x6d, 0xb6, 0x57, 0xaf, 0x1e, 0x3c, 0x70, 0xf1, 0xc3,
+	0x78, 0xf4, 0xe0, 0xd1, 0xc4, 0x2f, 0x60, 0xd0, 0x0f, 0x62, 0x3a, 0x33, 0x94, 0xca, 0x26, 0xbb,
+	0xab, 0xde, 0xda, 0xd7, 0xdf, 0xbf, 0xd7, 0x79, 0xf3, 0xe0, 0x16, 0x0b, 0xdd, 0x46, 0xd2, 0x6c,
+	0x38, 0x81, 0x7f, 0xe2, 0xf6, 0x3b, 0x1c, 0xa3, 0xc4, 0x75, 0x90, 0x86, 0x51, 0x20, 0x02, 0x52,
+	0x4a, 0x9a, 0xe6, 0x5a, 0x3f, 0x08, 0xfa, 0x1e, 0x36, 0x32, 0x1c, 0xf3, 0xfd, 0x40, 0x30, 0xe1,
+	0x06, 0x3e, 0x57, 0x08, 0x93, 0x68, 0x3a, 0x9e, 0x86, 0x22, 0xd5, 0xb5, 0x65, 0x2e, 0x82, 0x88,
+	0xf5, 0x51, 0x6b, 0xaa, 0xaa, 0xb5, 0x0b, 0x0b, 0x87, 0xb1, 0xd8, 0x93, 0x25, 0x1b, 0xdf, 0xc5,
+	0xc8, 0x05, 0xd9, 0x84, 0x19, 0x85, 0xa9, 0x19, 0x1b, 0xc6, 0x56, 0xa5, 0x35, 0x4f, 0x35, 0x95,
+	0x6a, 0x9c, 0xfe, 0x6c, 0x3d, 0x86, 0xf2, 0x3e, 0x4b, 0x5f, 0x84, 0x99, 0x35, 0x59, 0x85, 0x39,
+	0x3f, 0x3e, 0xed, 0xf4, 0x58, 0xca, 0x25, 0xaf, 0x6a, 0xcf, 0xfa, 0xf1, 0xe9, 0x3e, 0x4b, 0x39,
+	0xa9, 0xc1, 0x2c, 0xfa, 0xac, 0xeb, 0x61, 0xaf, 0x56, 0xda, 0x30, 0xb6, 0xe6, 0xec, 0x8b, 0x57,
+	0xeb, 0x6c, 0x1a, 0xd6, 0x8e, 0x63, 0xcf, 0xc7, 0x88, 0x75, 0x5d, 0xcf, 0x15, 0x69, 0x7b, 0xe0,
+	0xa0, 0xd4, 0x53, 0x56, 0xe4, 0x08, 0x6e, 0xe0, 0x20, 0x74, 0xa3, 0xb4, 0x13, 0xc8, 0x32, 0xd7,
+	0x99, 0x28, 0x4d, 0x9a, 0x74, 0x14, 0x93, 0xb6, 0x25, 0x4d, 0x85, 0xe3, 0x76, 0x15, 0x8b, 0xaf,
+	0xe6, 0x11, 0x2c, 0x3e, 0x75, 0x07, 0x59, 0x86, 0xbd, 0xe3, 0xb6, 0x2e, 0x92, 0x75, 0xa8, 0x30,
+	0xcf, 0xeb, 0x9c, 0xa8, 0x0f, 0xd2, 0x68, 0xce, 0x06, 0xe6, 0x79, 0x1a, 0x2a, 0x01, 0x7e, 0x9a,
+	0x03, 0x4a, 0x1a, 0xe0, 0xa7, 0x1a, 0x60, 0x7e, 0x31, 0xa0, 0xfa, 0x87, 0x2f, 0xa1, 0x50, 0xe9,
+	0xb1, 0x62, 0xf8, 0xe9, 0xad, 0x4a, 0xab, 0x9a, 0x85, 0xcf, 0xff, 0x9c, 0x0d, 0x3d, 0x96, 0xe3,
+	0xbb, 0xb0, 0xa4, 0xe5, 0x3b, 0x4e, 0x82, 0x39, 0xaf, 0x24, 0x9b, 0x6e, 0x8d, 0x6d, 0x7a, 0xa8,
+	0x29, 0x7b, 0x51, 0xcb, 0xed, 0x25, 0x58, 0xe8, 0xd3, 0x89, 0xb9, 0x08, 0xb2, 0xc3, 0x12, 0x58,
+	0x9b, 0x56, 0x6d, 0xa8, 0xd2, 0x3e, 0x13, 0x68, 0x39, 0xb0, 0x79, 0x80, 0x62, 0x94, 0x91, 0x8d,
+	0x3c, 0x0c, 0x7c, 0x8e, 0xe4, 0xd1, 0x95, 0x59, 0xd9, 0x18, 0x17, 0x31, 0x1f, 0x1e, 0x84, 0xdb,
+	0x47, 0x61, 0x16, 0x60, 0xb4, 0x8f, 0x1a, 0xc9, 0x7f, 0xb7, 0x39, 0x81, 0xed, 0x49, 0x6c, 0xfe,
+	0xb7, 0x9d, 0xd6, 0x87, 0x6b, 0x50, 0x55, 0xa5, 0x57, 0xea, 0xb2, 0x92, 0xe7, 0x30, 0x7f, 0x80,
+	0xe2, 0x30, 0xee, 0x7a, 0xae, 0xa3, 0xa7, 0xb9, 0x9c, 0xc9, 0xb5, 0xb3, 0x4b, 0x69, 0xae, 0xe4,
+	0x97, 0xaa, 0x88, 0xb0, 0x56, 0xdf, 0x7f, 0xff, 0x75, 0x56, 0x5a, 0x22, 0x8b, 0x97, 0xb7, 0xbf,
+	0x11, 0x4a, 0x00, 0x79, 0x09, 0x0b, 0x99, 0x5e, 0xe4, 0x26, 0x4c, 0xe0, 0xb0, 0xe0, 0xcd, 0x4b,
+	0xc1, 0x22, 0xc4, 0x32, 0xa5, 0xe2, 0x32, 0x21, 0x45, 0x45, 0x85, 0x20, 0x1f, 0x0d, 0x58, 0x1f,
+	0x73, 0xd2, 0x45, 0x8b, 0x3b, 0xd9, 0xe3, 0x84, 0x93, 0x61, 0x3d, 0x90, 0xbe, 0x94, 0xdc, 0x1d,
+	0xf6, 0x6d, 0xe0, 0x05, 0xa7, 0x91, 0x14, 0xa4, 0x5c, 0xe4, 0xe4, 0xb3, 0x01, 0xd6, 0xf8, 0xf3,
+	0x22, 0xf7, 0xb2, 0x24, 0x13, 0x8f, 0x8f, 0x49, 0x27, 0x85, 0xeb, 0xec, 0x0f, 0x65, 0xf6, 0xa6,
+	0xf9, 0x57, 0xd9, 0x77, 0x8c, 0x6d, 0xb2, 0x0b, 0xe5, 0x03, 0x14, 0xc3, 0x7f, 0xee, 0xea, 0x0a,
+	0xb5, 0x88, 0x74, 0xb8, 0x4e, 0xe0, 0xd2, 0x81, 0x3c, 0x83, 0x72, 0xbe, 0x8b, 0xc9, 0x72, 0x46,
+	0xbe, 0xba, 0x9a, 0x87, 0x75, 0x56, 0xa4, 0xce, 0xbc, 0x59, 0xd0, 0xd9, 0x31, 0xb6, 0x9f, 0xd0,
+	0xaf, 0xe7, 0x75, 0xe3, 0xdb, 0x79, 0xdd, 0xf8, 0x71, 0x5e, 0x37, 0x3e, 0xfd, 0xac, 0x4f, 0x41,
+	0xcd, 0x0d, 0x28, 0x17, 0xcc, 0x79, 0x1b, 0x05, 0x03, 0xb5, 0xfb, 0x29, 0x0b, 0x5d, 0x9a, 0x34,
+	0xdf, 0x94, 0x92, 0xe6, 0xeb, 0xa9, 0xee, 0x8c, 0xac, 0xdd, 0xff, 0x1d, 0x00, 0x00, 0xff, 0xff,
+	0xc0, 0x3b, 0x26, 0x2a, 0x7a, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -646,8 +648,8 @@ const _ = grpc.SupportPackageIsVersion6
 type ConfigServiceClient interface {
 	GetPublicConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PublicConfig, error)
 	GetPrivateConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.PrivateConfig, error)
-	GetVulnerabilityDeferralConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityDeferralConfigResponse, error)
-	UpdateVulnerabilityDeferralConfig(ctx context.Context, in *UpdateVulnerabilityDeferralConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityDeferralConfigResponse, error)
+	GetVulnerabilityExceptionConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityExceptionConfigResponse, error)
+	UpdateVulnerabilityExceptionConfig(ctx context.Context, in *UpdateVulnerabilityExceptionConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityExceptionConfigResponse, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*storage.Config, error)
 	PutConfig(ctx context.Context, in *PutConfigRequest, opts ...grpc.CallOption) (*storage.Config, error)
 }
@@ -678,18 +680,18 @@ func (c *configServiceClient) GetPrivateConfig(ctx context.Context, in *Empty, o
 	return out, nil
 }
 
-func (c *configServiceClient) GetVulnerabilityDeferralConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityDeferralConfigResponse, error) {
-	out := new(GetVulnerabilityDeferralConfigResponse)
-	err := c.cc.Invoke(ctx, "/v1.ConfigService/GetVulnerabilityDeferralConfig", in, out, opts...)
+func (c *configServiceClient) GetVulnerabilityExceptionConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVulnerabilityExceptionConfigResponse, error) {
+	out := new(GetVulnerabilityExceptionConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.ConfigService/GetVulnerabilityExceptionConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *configServiceClient) UpdateVulnerabilityDeferralConfig(ctx context.Context, in *UpdateVulnerabilityDeferralConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityDeferralConfigResponse, error) {
-	out := new(UpdateVulnerabilityDeferralConfigResponse)
-	err := c.cc.Invoke(ctx, "/v1.ConfigService/UpdateVulnerabilityDeferralConfig", in, out, opts...)
+func (c *configServiceClient) UpdateVulnerabilityExceptionConfig(ctx context.Context, in *UpdateVulnerabilityExceptionConfigRequest, opts ...grpc.CallOption) (*UpdateVulnerabilityExceptionConfigResponse, error) {
+	out := new(UpdateVulnerabilityExceptionConfigResponse)
+	err := c.cc.Invoke(ctx, "/v1.ConfigService/UpdateVulnerabilityExceptionConfig", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -718,8 +720,8 @@ func (c *configServiceClient) PutConfig(ctx context.Context, in *PutConfigReques
 type ConfigServiceServer interface {
 	GetPublicConfig(context.Context, *Empty) (*storage.PublicConfig, error)
 	GetPrivateConfig(context.Context, *Empty) (*storage.PrivateConfig, error)
-	GetVulnerabilityDeferralConfig(context.Context, *Empty) (*GetVulnerabilityDeferralConfigResponse, error)
-	UpdateVulnerabilityDeferralConfig(context.Context, *UpdateVulnerabilityDeferralConfigRequest) (*UpdateVulnerabilityDeferralConfigResponse, error)
+	GetVulnerabilityExceptionConfig(context.Context, *Empty) (*GetVulnerabilityExceptionConfigResponse, error)
+	UpdateVulnerabilityExceptionConfig(context.Context, *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error)
 	GetConfig(context.Context, *Empty) (*storage.Config, error)
 	PutConfig(context.Context, *PutConfigRequest) (*storage.Config, error)
 }
@@ -734,11 +736,11 @@ func (*UnimplementedConfigServiceServer) GetPublicConfig(ctx context.Context, re
 func (*UnimplementedConfigServiceServer) GetPrivateConfig(ctx context.Context, req *Empty) (*storage.PrivateConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPrivateConfig not implemented")
 }
-func (*UnimplementedConfigServiceServer) GetVulnerabilityDeferralConfig(ctx context.Context, req *Empty) (*GetVulnerabilityDeferralConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilityDeferralConfig not implemented")
+func (*UnimplementedConfigServiceServer) GetVulnerabilityExceptionConfig(ctx context.Context, req *Empty) (*GetVulnerabilityExceptionConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVulnerabilityExceptionConfig not implemented")
 }
-func (*UnimplementedConfigServiceServer) UpdateVulnerabilityDeferralConfig(ctx context.Context, req *UpdateVulnerabilityDeferralConfigRequest) (*UpdateVulnerabilityDeferralConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateVulnerabilityDeferralConfig not implemented")
+func (*UnimplementedConfigServiceServer) UpdateVulnerabilityExceptionConfig(ctx context.Context, req *UpdateVulnerabilityExceptionConfigRequest) (*UpdateVulnerabilityExceptionConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateVulnerabilityExceptionConfig not implemented")
 }
 func (*UnimplementedConfigServiceServer) GetConfig(ctx context.Context, req *Empty) (*storage.Config, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
@@ -787,38 +789,38 @@ func _ConfigService_GetPrivateConfig_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetVulnerabilityDeferralConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetVulnerabilityExceptionConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfigServiceServer).GetVulnerabilityDeferralConfig(ctx, in)
+		return srv.(ConfigServiceServer).GetVulnerabilityExceptionConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.ConfigService/GetVulnerabilityDeferralConfig",
+		FullMethod: "/v1.ConfigService/GetVulnerabilityExceptionConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfigServiceServer).GetVulnerabilityDeferralConfig(ctx, req.(*Empty))
+		return srv.(ConfigServiceServer).GetVulnerabilityExceptionConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_UpdateVulnerabilityDeferralConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateVulnerabilityDeferralConfigRequest)
+func _ConfigService_UpdateVulnerabilityExceptionConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateVulnerabilityExceptionConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConfigServiceServer).UpdateVulnerabilityDeferralConfig(ctx, in)
+		return srv.(ConfigServiceServer).UpdateVulnerabilityExceptionConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/v1.ConfigService/UpdateVulnerabilityDeferralConfig",
+		FullMethod: "/v1.ConfigService/UpdateVulnerabilityExceptionConfig",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConfigServiceServer).UpdateVulnerabilityDeferralConfig(ctx, req.(*UpdateVulnerabilityDeferralConfigRequest))
+		return srv.(ConfigServiceServer).UpdateVulnerabilityExceptionConfig(ctx, req.(*UpdateVulnerabilityExceptionConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -872,12 +874,12 @@ var _ConfigService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _ConfigService_GetPrivateConfig_Handler,
 		},
 		{
-			MethodName: "GetVulnerabilityDeferralConfig",
-			Handler:    _ConfigService_GetVulnerabilityDeferralConfig_Handler,
+			MethodName: "GetVulnerabilityExceptionConfig",
+			Handler:    _ConfigService_GetVulnerabilityExceptionConfig_Handler,
 		},
 		{
-			MethodName: "UpdateVulnerabilityDeferralConfig",
-			Handler:    _ConfigService_UpdateVulnerabilityDeferralConfig_Handler,
+			MethodName: "UpdateVulnerabilityExceptionConfig",
+			Handler:    _ConfigService_UpdateVulnerabilityExceptionConfig_Handler,
 		},
 		{
 			MethodName: "GetConfig",
@@ -973,7 +975,7 @@ func (m *DayOption) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityDeferralConfig) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -983,12 +985,12 @@ func (m *VulnerabilityDeferralConfig) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityDeferralConfig) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *VulnerabilityDeferralConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1012,7 +1014,7 @@ func (m *VulnerabilityDeferralConfig) MarshalToSizedBuffer(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1022,12 +1024,12 @@ func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Marshal() (dAtA []byte, 
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1059,7 +1061,7 @@ func (m *VulnerabilityDeferralConfig_FixableCVEOptions) MarshalToSizedBuffer(dAt
 	return len(dAtA) - i, nil
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) Marshal() (dAtA []byte, err error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1069,12 +1071,12 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) Marshal() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) MarshalTo(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1122,7 +1124,7 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) MarshalToSizedBuffer(dAtA []
 	return len(dAtA) - i, nil
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err error) {
+func (m *GetVulnerabilityExceptionConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1132,12 +1134,12 @@ func (m *GetVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *GetVulnerabilityExceptionConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *GetVulnerabilityExceptionConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1161,7 +1163,7 @@ func (m *GetVulnerabilityDeferralConfigResponse) MarshalToSizedBuffer(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityDeferralConfigRequest) Marshal() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1171,12 +1173,12 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) Marshal() (dAtA []byte, err e
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityDeferralConfigRequest) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdateVulnerabilityDeferralConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1200,7 +1202,7 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) MarshalToSizedBuffer(dAtA []b
 	return len(dAtA) - i, nil
 }
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -1210,12 +1212,12 @@ func (m *UpdateVulnerabilityDeferralConfigResponse) Marshal() (dAtA []byte, err 
 	return dAtA[:n], nil
 }
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) MarshalTo(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -1284,7 +1286,7 @@ func (m *DayOption) Size() (n int) {
 	return n
 }
 
-func (m *VulnerabilityDeferralConfig) Size() (n int) {
+func (m *VulnerabilityExceptionConfig) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1300,7 +1302,7 @@ func (m *VulnerabilityDeferralConfig) Size() (n int) {
 	return n
 }
 
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Size() (n int) {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1318,7 +1320,7 @@ func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Size() (n int) {
 	return n
 }
 
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) Size() (n int) {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1343,7 +1345,7 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) Size() (n int) {
 	return n
 }
 
-func (m *GetVulnerabilityDeferralConfigResponse) Size() (n int) {
+func (m *GetVulnerabilityExceptionConfigResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1359,7 +1361,7 @@ func (m *GetVulnerabilityDeferralConfigResponse) Size() (n int) {
 	return n
 }
 
-func (m *UpdateVulnerabilityDeferralConfigRequest) Size() (n int) {
+func (m *UpdateVulnerabilityExceptionConfigRequest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1375,7 +1377,7 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) Size() (n int) {
 	return n
 }
 
-func (m *UpdateVulnerabilityDeferralConfigResponse) Size() (n int) {
+func (m *UpdateVulnerabilityExceptionConfigResponse) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1574,7 +1576,7 @@ func (m *DayOption) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityDeferralConfig) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1597,10 +1599,10 @@ func (m *VulnerabilityDeferralConfig) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: VulnerabilityDeferralConfig: wiretype end group for non-group")
+			return fmt.Errorf("proto: VulnerabilityExceptionConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: VulnerabilityDeferralConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: VulnerabilityExceptionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1633,7 +1635,7 @@ func (m *VulnerabilityDeferralConfig) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ExpiryOptions == nil {
-				m.ExpiryOptions = &VulnerabilityDeferralConfig_ExpiryOptions{}
+				m.ExpiryOptions = &VulnerabilityExceptionConfig_ExpiryOptions{}
 			}
 			if err := m.ExpiryOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1661,7 +1663,7 @@ func (m *VulnerabilityDeferralConfig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig_FixableCVEOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1752,7 +1754,7 @@ func (m *VulnerabilityDeferralConfig_FixableCVEOptions) Unmarshal(dAtA []byte) e
 	}
 	return nil
 }
-func (m *VulnerabilityDeferralConfig_ExpiryOptions) Unmarshal(dAtA []byte) error {
+func (m *VulnerabilityExceptionConfig_ExpiryOptions) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1845,7 +1847,7 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			if m.FixableCveOptions == nil {
-				m.FixableCveOptions = &VulnerabilityDeferralConfig_FixableCVEOptions{}
+				m.FixableCveOptions = &VulnerabilityExceptionConfig_FixableCVEOptions{}
 			}
 			if err := m.FixableCveOptions.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1893,7 +1895,7 @@ func (m *VulnerabilityDeferralConfig_ExpiryOptions) Unmarshal(dAtA []byte) error
 	}
 	return nil
 }
-func (m *GetVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
+func (m *GetVulnerabilityExceptionConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1916,10 +1918,10 @@ func (m *GetVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetVulnerabilityDeferralConfigResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetVulnerabilityExceptionConfigResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetVulnerabilityDeferralConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetVulnerabilityExceptionConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1952,7 +1954,7 @@ func (m *GetVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Config == nil {
-				m.Config = &VulnerabilityDeferralConfig{}
+				m.Config = &VulnerabilityExceptionConfig{}
 			}
 			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1980,7 +1982,7 @@ func (m *GetVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UpdateVulnerabilityDeferralConfigRequest) Unmarshal(dAtA []byte) error {
+func (m *UpdateVulnerabilityExceptionConfigRequest) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2003,10 +2005,10 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) Unmarshal(dAtA []byte) error 
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpdateVulnerabilityExceptionConfigRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpdateVulnerabilityExceptionConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2039,7 +2041,7 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) Unmarshal(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if m.Config == nil {
-				m.Config = &VulnerabilityDeferralConfig{}
+				m.Config = &VulnerabilityExceptionConfig{}
 			}
 			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2067,7 +2069,7 @@ func (m *UpdateVulnerabilityDeferralConfigRequest) Unmarshal(dAtA []byte) error 
 	}
 	return nil
 }
-func (m *UpdateVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error {
+func (m *UpdateVulnerabilityExceptionConfigResponse) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2090,10 +2092,10 @@ func (m *UpdateVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: UpdateVulnerabilityExceptionConfigResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: UpdateVulnerabilityDeferralConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: UpdateVulnerabilityExceptionConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -2126,7 +2128,7 @@ func (m *UpdateVulnerabilityDeferralConfigResponse) Unmarshal(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			if m.Config == nil {
-				m.Config = &VulnerabilityDeferralConfig{}
+				m.Config = &VulnerabilityExceptionConfig{}
 			}
 			if err := m.Config.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

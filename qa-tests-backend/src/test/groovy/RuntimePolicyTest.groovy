@@ -12,6 +12,7 @@ import services.PolicyService
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class RuntimePolicyTest extends BaseSpecification  {
     static final private String DEPLOYMENTAPTGET = "runtimenginx"
     static final private String DEPLOYMENTAPT = "runtimeredis"

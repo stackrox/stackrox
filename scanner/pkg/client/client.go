@@ -17,12 +17,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ScannerClient is the interface that contains the StackRox Scanner
+// Scanner is the interface that contains the StackRox Scanner
 // application-oriented methods. It's offered to simplify application code to
 // call StackRox Scanner.
-//
-//go:generate mockgen-wrapper
-type ScannerClient interface {
+type Scanner interface {
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
@@ -37,15 +35,16 @@ type ScannerClient interface {
 	Close() error
 }
 
-// grpcClient A scanner client implementation based on gRPC endpoints.
-type grpcClient struct {
+
+// gRPCScanner A scanner client implementation based on gRPC endpoints.
+type gRPCScanner struct {
 	indexer        v4.IndexerClient
 	matcher        v4.MatcherClient
-	grpcConnection *grpc.ClientConn
+	gRPCConnection *grpc.ClientConn
 }
 
-// NewGRPCScannerClient creates a new gRPC scanner client.
-func NewGRPCScannerClient(ctx context.Context, opts ...Option) (ScannerClient, error) {
+// NewGRPCScanner creates a new gRPC scanner client.
+func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 	o := makeOptions(opts...)
 	connOpt := clientconn.Options{
 		TLS: clientconn.TLSConfigOptions{
@@ -69,27 +68,27 @@ func NewGRPCScannerClient(ctx context.Context, opts ...Option) (ScannerClient, e
 	}
 	indexerClient := v4.NewIndexerClient(conn)
 	matcherClient := v4.NewMatcherClient(conn)
-	return &grpcClient{
-		grpcConnection: conn,
+	return &gRPCScanner{
+		gRPCConnection: conn,
 		indexer:        indexerClient,
 		matcher:        matcherClient,
 	}, nil
 }
 
 // Close closes the gRPC connection.
-func (c *grpcClient) Close() error {
-	return c.grpcConnection.Close()
+func (c *gRPCScanner) Close() error {
+	return c.gRPCConnection.Close()
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint to first
 // GetIndexReport, then if not found or if the report is not successful, then
 // call CreateIndexReport.
-func (c *grpcClient) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
+func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetOrCreateImageIndex")
 	id := getImageManifestID(ref)
 	var ir *v4.IndexReport
 	// Get the IndexReport if it exists.
-	err := retryWithBackoff(ctx, defaultBackoff(), func() (err error) {
+	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
 		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: id})
 		if e, ok := status.FromError(err); ok {
 			if e.Code() == codes.NotFound {
@@ -125,7 +124,7 @@ func (c *grpcClient) GetOrCreateImageIndex(ctx context.Context, ref name.Digest,
 			},
 		},
 	}
-	err = retryWithBackoff(ctx, defaultBackoff(), func() (err error) {
+	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.CreateIndexReport", func() (err error) {
 		ir, err = c.indexer.CreateIndexReport(ctx, &req)
 		return err
 	})
@@ -137,7 +136,7 @@ func (c *grpcClient) GetOrCreateImageIndex(ctx context.Context, ref name.Digest,
 
 // IndexAndScanImage get or create an index report for the image, then call the
 // matcher to return a vulnerability report.
-func (c *grpcClient) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator) (*v4.VulnerabilityReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "IndexAndScanImage")
 	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth)
 	if err != nil {
@@ -145,7 +144,7 @@ func (c *grpcClient) IndexAndScanImage(ctx context.Context, ref name.Digest, aut
 	}
 	req := &v4.GetVulnerabilitiesRequest{HashId: ir.GetHashId()}
 	var vr *v4.VulnerabilityReport
-	err = retryWithBackoff(ctx, defaultBackoff(), func() (err error) {
+	err = retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
 		vr, err = c.matcher.GetVulnerabilities(ctx, req)
 		return err
 	})
@@ -161,7 +160,8 @@ func getImageManifestID(ref name.Digest) string {
 
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
 // retryable gRPC codes.
-func retryWithBackoff(ctx context.Context, b backoff.BackOff, op backoff.Operation) error {
+func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
+	zlog.ContextWithValues(ctx, "rpc", rpc)
 	f := func() error {
 		err := op()
 		if e, ok := status.FromError(err); ok {
@@ -176,7 +176,7 @@ func retryWithBackoff(ctx context.Context, b backoff.BackOff, op backoff.Operati
 		return err
 	}
 	return backoff.RetryNotify(f, backoff.WithContext(b, ctx), func(err error, duration time.Duration) {
-		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying grpc call")
+		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
 	})
 }
 

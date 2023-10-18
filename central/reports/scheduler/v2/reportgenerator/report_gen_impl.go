@@ -124,7 +124,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 		}
 
 	case storage.ReportStatus_EMAIL:
-		emailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
+		defaultEmailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
 		if err != nil {
 			return errors.Wrap(err, "Error generating email subject")
 		}
@@ -160,6 +160,11 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 			emailBody := defaultEmailBody
 			if customBody != "" {
 				emailBody = customBody
+			}
+			customSubject := notifierSnap.GetEmailConfig().GetCustomSubject()
+			emailSubject := defaultEmailSubject
+			if customSubject != "" {
+				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),

@@ -26,6 +26,8 @@ func Test_SensorHello(t *testing.T) {
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})
 
+	t.Cleanup(c.Stop)
+
 	require.NoError(t, err)
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
@@ -37,7 +39,6 @@ func Test_SensorHello(t *testing.T) {
 		require.NotNil(t, hello2)
 		assert.Equal(t, central.SensorHello_RECONNECT, hello2.GetSensorState())
 	}))
-
 }
 
 func Test_SensorReconnects(t *testing.T) {

@@ -6,19 +6,17 @@ import { resourceTypes } from 'services/AdministrationEventsService';
 const optionAll = 'All';
 
 type SearchFilterResourceTypeProps = {
+    isDisabled: boolean;
     resourceType: string | undefined;
     setResourceType: (resourceType: string | undefined) => void;
 };
 
 function SearchFilterResourceType({
+    isDisabled,
     resourceType,
     setResourceType,
 }: SearchFilterResourceTypeProps) {
     const [isOpen, setIsOpen] = useState(false);
-
-    function onToggle(isOpenArg: boolean) {
-        setIsOpen(isOpenArg);
-    }
 
     function onSelect(_event, selection) {
         setResourceType(selection === optionAll ? undefined : selection);
@@ -42,9 +40,10 @@ function SearchFilterResourceType({
             variant="single"
             aria-label="Resource type filter menu items"
             toggleAriaLabel="Resource type filter menu toggle"
-            onToggle={onToggle}
+            onToggle={setIsOpen}
             onSelect={onSelect}
             selections={resourceType ?? optionAll}
+            isDisabled={isDisabled}
             isOpen={isOpen}
         >
             {options}

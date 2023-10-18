@@ -14,7 +14,7 @@ import {
 } from 'constants/enforcementActions';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { violationsBasePath } from 'routePaths';
-import { ListAlert } from './types/violationTypes';
+import { ListAlert } from 'types/alert.proto';
 
 type EntityTableCellProps = {
     // original: ListAlert;

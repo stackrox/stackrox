@@ -34,6 +34,10 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 			log.Error("image to component edge does not match image")
 			continue
 		}
+		if cp.Component == nil || cp.Edge == nil {
+			log.Errorf("UNEXPECTED: nil component or edge when retrieving components for image %q", image.GetId())
+			continue
+		}
 		// Generate an embedded component for the edge and non-embedded version.
 		image.Scan.Components = append(image.Scan.Components, generateEmbeddedComponent(image.GetScan().GetOperatingSystem(), cp, parts.ImageCVEEdges))
 	}
@@ -53,9 +57,6 @@ func mergeComponents(parts ImageParts, image *storage.Image) {
 }
 
 func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[string]*storage.ImageCVEEdge) *storage.EmbeddedImageScanComponent {
-	if cp.Component == nil || cp.Edge == nil {
-		return nil
-	}
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.Component.GetName(),
 		Version:   cp.Component.GetVersion(),
@@ -87,16 +88,16 @@ func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[st
 		if cveEdge == nil {
 			continue
 		}
+		if cve.CVE == nil || cve.Edge == nil {
+			log.Errorf("UNEXPECTED: nil cve or edge when retrieving cves for component %q", cp.Component.GetId())
+			continue
+		}
 		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(cve, imageCVEEdges[cve.CVE.GetId()]))
 	}
 	return ret
 }
 
 func generateEmbeddedCVE(cp CVEParts, imageCVEEdge *storage.ImageCVEEdge) *storage.EmbeddedVulnerability {
-	if cp.CVE == nil || cp.Edge == nil {
-		return nil
-	}
-
 	ret := utils.ImageCVEToEmbeddedVulnerability(cp.CVE)
 	if cp.Edge.IsFixable {
 		ret.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{

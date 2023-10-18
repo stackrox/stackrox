@@ -47,16 +47,25 @@ import spock.lang.Stepwise
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 // TODO(ROX-13738): Re-enable these tests in compatibility-test step
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
     // Deployment names
     static final private String NGINX_LATEST = "qadefpolnginxlatest"
     static final private String STRUTS = "qadefpolstruts"
-    static final private String SSL_TERMINATOR = "qadefpolsslterm"
-    static final private String NGINX_1_10 = "qadefpolnginx110"
+    //static final private String SSL_TERMINATOR = "qadefpolsslterm"
+    static final private String TRIGGER_MOST = "qadefpoltriggermost"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
+    static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
+    static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
+    static final private String COMPONENTS = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
+        " apt, bash, curl, wget":" apt, bash, curl")
+
+    @Shared
+    private String componentCount = ""
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
@@ -80,30 +89,31 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("quay.io/rhacs-eng/qa:struts-app")
+            .setImage(STRUTS_IMAGE)
             .addLabel("app", "test")
             .addPort(80)
 
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
-            .setImage ("quay.io/rhacs-eng/qa:latest") // this is docker.io/nginx:1.22-alpine but tagged as latest
+            // this is docker.io/nginx:1.23.3 but tagged as latest
+            .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
         STRUTS_DEPLOYMENT,
+        // new Deployment()
+        //     .setName(SSL_TERMINATOR)
+        //     .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
+        //     .addLabel("app", "test")
+        //     .setCommand(["sleep", "600"]),
         new Deployment()
-            .setName(SSL_TERMINATOR)
-            .setImage("quay.io/rhacs-eng/qa:ssl-terminator")
-            .addLabel("app", "test")
-            .setCommand(["sleep", "600"]),
-        new Deployment()
-            .setName(NGINX_1_10)
-            .setImage("quay.io/rhacs-eng/qa:docker-io-nginx-1-10")
+            .setName(TRIGGER_MOST)
+            .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.11.1")
+            .setImage("us.gcr.io/stackrox-ci/qa-multi-arch:nginx-1.12")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
@@ -163,6 +173,18 @@ class DefaultPoliciesTest extends BaseSpecification {
         Helpers.collectImageScanForDebug(
                 STRUTS_DEPLOYMENT.getImage(), 'default-policies-test-struts-app.json'
         )
+
+        switch (Env.REMOTE_CLUSTER_ARCH) {
+            case "s390x":
+                componentCount=92
+                break
+            case "ppc64le":
+                componentCount=91
+                break
+            default:
+                componentCount=169
+                break
+        }
     }
 
     def cleanupSpec() {
@@ -236,7 +258,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
 
-        "Wget in Image"                                 | STRUTS         | "C939"
+        "Wget in Image"                                 | WGET_CURL      | "C939"
 
         "90-Day Image Age"                              | STRUTS         | "C810"
 
@@ -246,7 +268,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
-        "Curl in Image"                                 | STRUTS         | "C948"
+        "Curl in Image"                                 | WGET_CURL      | "C948"
     }
 
     def hasApacheStrutsVuln(image) {
@@ -432,21 +454,21 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least 100 CVEs.
-                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                     " contains \\d{2,3}\\d+ CVEs with severities ranging between " +
+                "Image \"" + STRUTS_IMAGE + "\\\"" +
+                     " contains \\d{3,} CVEs with severities ranging between " +
                      "Low and Critical" | []
 
         "Service Configuration"           | 2.0f     |
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image \"quay.io/rhacs-eng/qa:struts-app\" " +
-                "contains components useful for attackers:" +
-                    " apt, bash, curl, wget" | null | []
+                "Image \"" + STRUTS_IMAGE + "\"" +
+                " contains components useful for attackers:" +
+                    COMPONENTS | null | []
 
         "Number of Components in Image"   | 1.5f     | null |
-                "Image \"quay.io/rhacs-eng/qa:struts-app\"" +
-                " contains 169 components" | []
+                "Image \"" + STRUTS_IMAGE + "\\\"" +
+                " contains " + componentCount + " components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
         // TODO(ROX-9637)

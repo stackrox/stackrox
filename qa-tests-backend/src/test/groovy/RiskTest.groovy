@@ -18,6 +18,7 @@ import util.Timer
 import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Stepwise
+import spock.lang.Tag
 
 // RiskTest - Test coverage for functionality used on the Risk page and not covered elsewhere.
 // i.e.
@@ -25,6 +26,7 @@ import spock.lang.Stepwise
 // - CountDeployments
 // - GetGroupedProcessByDeploymentAndContainer
 
+@Tag("PZ")
 @Stepwise // tests are ordered and dependent
 class RiskTest extends BaseSpecification {
     @Shared

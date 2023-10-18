@@ -1,10 +1,9 @@
 package resolver
 
 import (
-	"sync/atomic"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -20,7 +19,7 @@ type resolverImpl struct {
 	innerQueue  chan *component.ResourceEvent
 
 	storeProvider store.Provider
-	stopped       *atomic.Bool
+	stopSig       concurrency.Signal
 }
 
 // Start the resolverImpl component
@@ -31,27 +30,28 @@ func (r *resolverImpl) Start() error {
 
 // Stop the resolverImpl component
 func (r *resolverImpl) Stop(_ error) {
-	defer close(r.innerQueue)
-	r.stopped.Store(true)
+	r.stopSig.Signal()
 }
 
 // Send a ResourceEvent message to the inner queue
 func (r *resolverImpl) Send(event *component.ResourceEvent) {
-	if !r.stopped.Load() {
-		r.innerQueue <- event
-		metrics.IncResolverChannelSize()
-	}
+	r.innerQueue <- event
+	metrics.IncResolverChannelSize()
 }
 
 // runResolver reads messages from the inner queue and process the message
 func (r *resolverImpl) runResolver() {
 	for {
-		msg, more := <-r.innerQueue
-		if !more {
+		select {
+		case msg, more := <-r.innerQueue:
+			if !more {
+				return
+			}
+			r.processMessage(msg)
+			metrics.DecResolverChannelSize()
+		case <-r.stopSig.Done():
 			return
 		}
-		r.processMessage(msg)
-		metrics.DecResolverChannelSize()
 	}
 }
 

@@ -19,25 +19,34 @@ import { SearchFilter } from 'types/search';
 import SearchFilterDomain from './SearchFilterDomain';
 import SearchFilterLevel from './SearchFilterLevel';
 import SearchFilterResourceType from './SearchFilterResourceType';
+import UpdatedTimeOrUpdateButton from './UpdatedTimeOrUpdateButton';
 
 export type AdministrationEventsToolbarProps = {
     count: number;
+    countAvailable: number;
+    isDisabled: boolean;
+    lastUpdatedTime: string;
     page: number;
     perPage: number;
     setPage: (newPage: number) => void;
     setPerPage: (newPerPage: number) => void;
     searchFilter: SearchFilter;
     setSearchFilter: (newFilter: SearchFilter) => void;
+    updateEvents: () => void;
 };
 
 function AdministrationEventsToolbar({
     count,
+    countAvailable,
+    isDisabled,
+    lastUpdatedTime,
     page,
     perPage,
     setPage,
     setPerPage,
     searchFilter,
     setSearchFilter,
+    updateEvents,
 }: AdministrationEventsToolbarProps): ReactElement {
     function setDomain(domain: string | undefined) {
         setSearchFilter(replaceSearchFilterDomain(searchFilter, domain));
@@ -58,21 +67,43 @@ function AdministrationEventsToolbar({
             <ToolbarContent>
                 <ToolbarGroup variant="filter-group">
                     <ToolbarItem>
-                        <SearchFilterDomain domain={domain && domain[0]} setDomain={setDomain} />
+                        <SearchFilterDomain
+                            domain={domain && domain[0]}
+                            isDisabled={isDisabled}
+                            setDomain={setDomain}
+                        />
                     </ToolbarItem>
                     <ToolbarItem>
                         <SearchFilterResourceType
+                            isDisabled={isDisabled}
                             resourceType={resourceType && resourceType[0]}
                             setResourceType={setResourceType}
                         />
                     </ToolbarItem>
                     <ToolbarItem>
-                        <SearchFilterLevel level={level && level[0]} setLevel={setLevel} />
+                        <SearchFilterLevel
+                            isDisabled={isDisabled}
+                            level={level && level[0]}
+                            setLevel={setLevel}
+                        />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup alignment={{ default: 'alignRight' }}>
+                <ToolbarGroup variant="button-group" alignment={{ default: 'alignRight' }}>
+                    {lastUpdatedTime && (
+                        <ToolbarItem>
+                            <UpdatedTimeOrUpdateButton
+                                countAvailable={countAvailable}
+                                isAvailableEqualToPerPage={countAvailable === perPage}
+                                isDisabled={isDisabled}
+                                lastUpdatedTime={lastUpdatedTime}
+                                updateEvents={updateEvents}
+                            />
+                        </ToolbarItem>
+                    )}
                     <ToolbarItem variant="pagination">
                         <Pagination
+                            isCompact
+                            isDisabled={isDisabled}
                             itemCount={count}
                             page={page}
                             perPage={perPage}

@@ -7,6 +7,7 @@ import spock.lang.Stepwise
 import spock.lang.Tag
 
 @Tag("BAT")
+@Tag("PZ")
 @Stepwise
 class ClustersTest extends BaseSpecification {
 

@@ -23,6 +23,7 @@ import spock.lang.Stepwise
 import spock.lang.Tag
 
 @Stepwise
+@Tag("PZ")
 class K8sRbacTest extends BaseSpecification {
     private static final String SERVICE_ACCOUNT_NAME = "test-service-account"
     private static final String ROLE_NAME = "test-role"

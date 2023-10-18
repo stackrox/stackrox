@@ -5,10 +5,14 @@ option java_package = "io.stackrox.proto.api.v2";
 
 import "google/protobuf/timestamp.proto";
 import weak "google/api/annotations.proto";
-import "api/v2/common.proto";
 import "api/v2/search_query.proto";
 
 package v2;
+
+message ComplianceScanCluster {
+    string cluster_id   = 1;
+    string cluster_name = 2;
+}
 
 // ComplianceCheckResult provides the results of a compliance check against a rule
 message ComplianceCheckResult {
@@ -27,7 +31,7 @@ message ComplianceCheckResult {
 
     // ClusterCheckStatus groups the result of the check by cluster
     message ClusterCheckStatus {
-        string                     cluster_id   = 1;
+        ComplianceScanCluster      cluster      = 1;
         CheckStatus                status       = 2;
         google.protobuf.Timestamp  created_time = 3;
     }
@@ -56,9 +60,9 @@ message ComplianceScanStatsShim {
 
 // ComplianceScanResultsOverview provides an overview and stats of the results of a scan configuration
 message ComplianceScanResultsOverview {
-    ComplianceScanStatsShim       scan_stats            = 1;
-    repeated string               profile_name          = 2;
-    repeated string               cluster_id            = 3;
+    ComplianceScanStatsShim        scan_stats   = 1;
+    repeated string                profile_name = 2;
+    repeated ComplianceScanCluster cluster      = 3;
 }
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
@@ -69,8 +73,8 @@ message ComplianceProfileScanStats {
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 message ComplianceClusterScanStats {
-    ComplianceScanStatsShim       scan_stats            = 1;
-    string                        cluster_id            = 2;
+    ComplianceScanStatsShim  scan_stats = 1;
+    ComplianceScanCluster    cluster    = 2;
 }
 
 // ListComplianceScanResultsOverviewResponse provides overviews for scans
@@ -95,6 +99,11 @@ message ListComplianceScanResultsResponse {
 
 service ComplianceResultsService {
     // GetComplianceScanResultsOverview lists current scan configurations with most recent results overview that match the query
+    // Optional RawQuery query fields can be combined.
+    // Commonly used ones include but are not limited to
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceScanResultsOverview (RawQuery) returns (ListComplianceScanResultsOverviewResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/overview"
@@ -102,20 +111,35 @@ service ComplianceResultsService {
     }
 
     // GetComplianceScanResults retrieves the most recent compliance operator scan results for the specified query
+    // Optional RawQuery query fields can be combined.
+    // Commonly used ones include but are not limited to
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceScanResults (RawQuery) returns (ListComplianceScanResultsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/results"
         };
     }
 
-    // GetComplianceProfileScanStats lists current scan stats by profile
+    // GetComplianceProfileScanStats lists current scan stats grouped by profile
+    // Optional RawQuery query fields can be combined.
+    // Commonly used ones include but are not limited to
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceProfileScanStats (RawQuery) returns (ListComplianceProfileScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/profile"
         };
     }
 
-    // GetComplianceClusterScanStats lists current scan stats by cluster
+    // GetComplianceClusterScanStats lists current scan stats grouped by cluster
+    // Optional RawQuery query fields can be combined.
+    // Commonly used ones include but are not limited to
+    // - scan: id(s) of the compliance scan
+    // - cluster: id(s) of the cluster
+    // - profile: id(s) of the profile
     rpc GetComplianceClusterScanStats (RawQuery) returns (ListComplianceClusterScanStatsResponse) {
         option (google.api.http) = {
             get: "/v2/compliance/scan/stats/cluster"

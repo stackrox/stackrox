@@ -1,8 +1,0 @@
-/*
- * With sort button, count column head needs more than pf-u-text-align-right utility class
- * to align at right for numeric data.
- */
-#AdministrationEventsTable th:last-child button.pf-c-table__button {
-    margin-left: auto;
-    padding-right: 0;
-}

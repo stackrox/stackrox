@@ -15,6 +15,7 @@ import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class NetworkSimulator extends BaseSpecification {
 
     // Deployment names
@@ -665,8 +666,6 @@ class NetworkSimulator extends BaseSpecification {
     }
 
     @Tag("NetworkPolicySimulation")
-    // skipping tests using SLACK_MAIN_WEBHOOK on P/Z
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"

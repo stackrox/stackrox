@@ -122,7 +122,7 @@ type BaseViolation = {
     time: string | null; // ISO 8601 date string
 };
 
-export type ViolationType = 'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW';
+export type ViolationType = 'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW' | 'NETWORK_POLICY';
 
 export type ProcessViolation = {
     message: string;
@@ -201,7 +201,6 @@ export type BaseListAlert = {
     policy: ListAlertPolicy;
     state: ViolationState;
     enforcementCount: number;
-    tags: string[];
     enforcementAction: EnforcementAction;
     commonEntityInfo: CommonEntityInfo;
 };

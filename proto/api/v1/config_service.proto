@@ -19,7 +19,7 @@ message DayOption {
     bool   enabled  = 2;
 }
 
-message VulnerabilityDeferralConfig {
+message VulnerabilityExceptionConfig {
     message FixableCVEOptions {
         // This options allows users to expire the vulnerability deferral request if and only if **all** vulnerabilities
         // in the requests become fixable.
@@ -41,17 +41,17 @@ message VulnerabilityDeferralConfig {
     ExpiryOptions expiry_options = 1;
 }
 
-message GetVulnerabilityDeferralConfigResponse {
-    VulnerabilityDeferralConfig config = 1;
+message GetVulnerabilityExceptionConfigResponse {
+    VulnerabilityExceptionConfig config = 1;
 }
 
 
-message UpdateVulnerabilityDeferralConfigRequest {
-    VulnerabilityDeferralConfig config = 1;
+message UpdateVulnerabilityExceptionConfigRequest {
+    VulnerabilityExceptionConfig config = 1;
 }
 
-message UpdateVulnerabilityDeferralConfigResponse {
-    VulnerabilityDeferralConfig config = 1;
+message UpdateVulnerabilityExceptionConfigResponse {
+    VulnerabilityExceptionConfig config = 1;
 }
 
 // ConfigService APIs can be used to manage Central config.
@@ -69,15 +69,15 @@ service ConfigService {
         };
     }
 
-    rpc GetVulnerabilityDeferralConfig(Empty) returns (GetVulnerabilityDeferralConfigResponse) {
+    rpc GetVulnerabilityExceptionConfig(Empty) returns (GetVulnerabilityExceptionConfigResponse) {
         option (google.api.http) = {
-            get: "/v1/config/private/deferral/vulnerabilities"
+            get: "/v1/config/private/exception/vulnerabilities"
         };
     }
 
-    rpc UpdateVulnerabilityDeferralConfig(UpdateVulnerabilityDeferralConfigRequest) returns (UpdateVulnerabilityDeferralConfigResponse) {
+    rpc UpdateVulnerabilityExceptionConfig(UpdateVulnerabilityExceptionConfigRequest) returns (UpdateVulnerabilityExceptionConfigResponse) {
         option (google.api.http) = {
-            put: "/v1/config/private/deferral/vulnerabilities"
+            put: "/v1/config/private/exception/vulnerabilities"
             body: "*"
         };
     }

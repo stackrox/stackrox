@@ -16,6 +16,7 @@ import org.junit.Rule
 import spock.lang.Tag
 import spock.lang.Timeout
 
+@Tag("PZ")
 class NetworkBaselineTest extends BaseSpecification {
     private static final String SERVER_DEP_NAME = "net-bl-server"
     private static final String BASELINED_CLIENT_DEP_NAME = "net-bl-client-baselined"
