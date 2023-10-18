@@ -16,6 +16,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
+	effectiveaccessscope "github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -148,6 +149,21 @@ func (m *MockDataStore) GetClusters(ctx context.Context) ([]*storage.Cluster, er
 func (mr *MockDataStoreMockRecorder) GetClusters(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockDataStore)(nil).GetClusters), ctx)
+}
+
+// GetClustersForSAC mocks base method.
+func (m *MockDataStore) GetClustersForSAC(ctx context.Context) ([]effectiveaccessscope.ClusterForSAC, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClustersForSAC", ctx)
+	ret0, _ := ret[0].([]effectiveaccessscope.ClusterForSAC)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClustersForSAC indicates an expected call of GetClustersForSAC.
+func (mr *MockDataStoreMockRecorder) GetClustersForSAC(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClustersForSAC", reflect.TypeOf((*MockDataStore)(nil).GetClustersForSAC), ctx)
 }
 
 // LookupOrCreateClusterFromConfig mocks base method.
