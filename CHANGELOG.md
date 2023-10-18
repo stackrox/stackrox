@@ -39,6 +39,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 - Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
 - ROX-20303: Fixed a bug that may have incorrectly matched an image to an image integration during scanning.
+- ROX:20288: A new environment variable `ROX_AUDIT_LOG_WITHOUT_PERMISSIONS` has been added to Central (defaults to `false`).
+  When set to `true`, audit log messages will not contain the detailed permissions of the user associated with the request.
+  Instead, only the associated role names will be there. Enabling this will lower the verbosity of the audit log messages,
+  but investigating associated permissions for a requester might be harder (i.e. the associated role would have be known at the time of the request).
+  Thus, it is generally not recommended to set this to `true`.
 
 ## [4.2.0]
 
