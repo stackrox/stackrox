@@ -17,7 +17,9 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -42,12 +44,12 @@ func TestPruning(t *testing.T) {
 	suite.Run(t, new(PostgresPruningSuite))
 }
 
-func (s *PostgresPruningSuite) SetupSuite() {
+func (s *PostgresPruningSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *PostgresPruningSuite) TearDownSuite() {
+func (s *PostgresPruningSuite) TearDownTest() {
 	s.testDB.Teardown(s.T())
 }
 
@@ -286,11 +288,13 @@ func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
 
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
-		name              string
-		initialProcesses  []*storage.ProcessIndicator
-		deployments       set.FrozenStringSet
-		pods              set.FrozenStringSet
-		expectedDeletions []string
+		name                  string
+		initialProcesses      []*storage.ProcessIndicator
+		initialPlops          []*storage.ProcessListeningOnPortFromSensor
+		deployments           set.FrozenStringSet
+		pods                  set.FrozenStringSet
+		expectedDeletions     []string
+		expectedPlopDeletions []string
 	}{
 		{
 			name: "no deployments nor pods - remove all old indicators",
@@ -299,9 +303,14 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(),
-			pods:              set.NewFrozenStringSet(),
-			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
+			initialPlops: []*storage.ProcessListeningOnPortFromSensor{
+				fixtures.GetOpenPlopObject1(),
+				fixtures.GetOpenPlopObject4(),
+			},
+			deployments:            set.NewFrozenStringSet(),
+			pods:                   set.NewFrozenStringSet(),
+			expectedDeletions:      []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "no deployments nor pods - remove no new orphaned indicators",
@@ -310,9 +319,14 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
+			initialPlops: []*storage.ProcessListeningOnPortFromSensor{
+				fixtures.GetOpenPlopObject2(),
+				fixtures.GetOpenPlopObject3(),
+			},
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
 			expectedDeletions: nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "all pods separate deployments - remove no indicators",
@@ -324,6 +338,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
 			expectedDeletions: nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "all pods same deployment - remove no indicators",
@@ -335,6 +350,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
 			expectedDeletions: nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "some pods separate deployments - remove some indicators",
@@ -346,6 +362,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "some pods same deployment - remove some indicators",
@@ -357,10 +374,13 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			expectedPlopDeletions: nil,
 		},
 	}
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
+			s.testDB.Teardown(s.T())
+			s.testDB = pgtest.ForT(s.T())
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Nil(err)
@@ -382,6 +402,13 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses), countFromDB)
 
+			plopDS := plopDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			s.NoError(plopDS.AddProcessListeningOnPort(s.ctx, c.initialPlops...))
+			actualPlops, err := plopDS.GetProcessListeningOnPort(s.ctx, fixtureconsts.Deployment1)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops), len(actualPlops))
+
 			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
 			countFromDB, err = processDatastore.Count(s.ctx, nil)
 			s.NoError(err)
@@ -401,6 +428,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			for _, podID := range c.pods.AsSlice() {
 				s.NoError(podDS.RemovePod(s.ctx, podID))
 			}
+
 		})
 	}
 }

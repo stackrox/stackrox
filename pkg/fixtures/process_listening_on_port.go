@@ -83,3 +83,22 @@ func GetOpenPlopObject3() *storage.ProcessListeningOnPortFromSensor {
 		PodUid:       fixtureconsts.PodUID2,
 	}
 }
+
+// GetOpenPlopObject4 Return an open plop object
+func GetOpenPlopObject4() *storage.ProcessListeningOnPortFromSensor {
+	return &storage.ProcessListeningOnPortFromSensor{
+		Port:           80,
+		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
+		CloseTimestamp: nil,
+		Process: &storage.ProcessIndicatorUniqueKey{
+			PodId:               fixtureconsts.PodName2,
+			ContainerName:       "containername",
+			ProcessName:         "apt-get",
+			ProcessArgs:         "install nmap",
+			ProcessExecFilePath: "bin",
+		},
+		DeploymentId: fixtureconsts.Deployment1,
+		ClusterId:    fixtureconsts.Cluster1,
+		PodUid:       fixtureconsts.PodUID3,
+	}
+}
