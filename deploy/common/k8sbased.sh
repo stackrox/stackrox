@@ -421,7 +421,7 @@ function launch_central {
       fi
     fi
 
-    if [[ "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" != "" ]]; then
+    if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
         ${KUBE_COMMAND:-kubectl} create secret generic declarative-configurations -n "${STACKROX_NAMESPACE}" &>/dev/null
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
