@@ -333,7 +333,7 @@ func TestInferNamespace(t *testing.T) {
 
 	t.Run("no namespace on error", func(t *testing.T) {
 		setup(t)
-		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, nil).Return(nil, errBroken)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(nil, errBroken)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Zero(t, result)
@@ -341,7 +341,7 @@ func TestInferNamespace(t *testing.T) {
 
 	t.Run("no namespace on empty search result", func(t *testing.T) {
 		setup(t)
-		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, nil).Return(nil, nil)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(nil, nil)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Zero(t, result)
@@ -350,7 +350,7 @@ func TestInferNamespace(t *testing.T) {
 	t.Run("namespace found", func(t *testing.T) {
 		setup(t)
 		namespaces := []*v1.ScopeObject{{Name: "repo"}}
-		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, nil).Return(namespaces, nil)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID, inferNamespacePermissions).Return(namespaces, nil)
 
 		result := d.inferNamespace(ctxBG, fakeImgName, fakeClusterID)
 		assert.Equal(t, "repo", result)
