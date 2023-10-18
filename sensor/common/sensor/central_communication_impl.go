@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -39,6 +40,7 @@ type centralCommunicationImpl struct {
 	components          []common.SensorComponent
 	clientReconcile     bool
 	initialDeduperState map[deduper.Key]uint64
+	syncTimeout         time.Duration
 
 	stopper concurrency.Stopper
 
@@ -49,7 +51,9 @@ type centralCommunicationImpl struct {
 }
 
 var (
-	errCantReconcile = errors.New("unable to reconcile due to deduper payload too large")
+	errCantReconcile                 = errors.New("unable to reconcile")
+	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
+	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
 )
 
 func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -270,11 +274,23 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	}
 	log.Info("Waiting for deduper state from Central")
 
-	msg, err := stream.Recv()
+	done := make(chan struct{})
+	var err error
+	var msg *central.MsgToSensor
+	go func() {
+		msg, err = stream.Recv()
+		close(done)
+	}()
+	select {
+	case <-time.After(s.syncTimeout):
+		return errTimeoutWaitingForDeduperState
+	case <-done:
+		break
+	}
 	if err != nil {
 		if e, ok := status.FromError(err); ok {
 			if e.Code() == codes.ResourceExhausted {
-				return errors.Wrap(errCantReconcile, e.String())
+				return errors.Wrap(errLargePayload, e.String())
 			}
 		}
 		return errors.Wrap(err, "receiving initial deduper sync")

@@ -389,8 +389,12 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
 				if errors.Is(err, errCantReconcile) {
-					log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
-						"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+					if errors.Is(err, errLargePayload) {
+						log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+							"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+					} else {
+						log.Warnf("Sensor cannot reconcile due to: %v", err)
+					}
 					s.reconcile.Store(false)
 				}
 				log.Infof("Communication with Central stopped with error: %s. Retrying.", err)

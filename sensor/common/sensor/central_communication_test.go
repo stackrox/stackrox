@@ -88,7 +88,7 @@ var centralSyncMessages = []*central.MsgToSensor{
 func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	responsesC, closeFn := c.createCentralCommunication(false)
 	defer closeFn()
-	expectSyncMessages(centralSyncMessages, c.mockService)
+	expectSyncMessagesNoBlockRecv(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().Send(gomock.Any()).Times(1).DoAndReturn(func(msg *central.MsgFromSensor) error {
 		defer close(ch)
@@ -114,7 +114,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	_, closeFn := c.createCentralCommunication(false)
 	defer closeFn()
-	expectSyncMessages(centralSyncMessages, c.mockService)
+	expectSyncMessagesNoBlockRecv(centralSyncMessages, c.mockService)
 	ch := make(chan struct{})
 	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
 		defer close(ch)
@@ -183,7 +183,7 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 			responsesC, closeFn := c.createCentralCommunication(true)
 			defer closeFn()
 			syncMessages := append(centralSyncMessages, debuggerMessage.DeduperState(tc.deduperState))
-			expectSyncMessages(syncMessages, c.mockService)
+			expectSyncMessagesNoBlockRecv(syncMessages, c.mockService)
 
 			c.mockService.client.EXPECT().Send(tc.expectedMessages).Times(len(tc.expectedMessages.messagesToMatch))
 			c.mockService.client.EXPECT().CloseSend().AnyTimes()
@@ -205,6 +205,32 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 			}
 		})
 	}
+}
+
+func (c *centralCommunicationSuite) Test_TimeoutWaitingForDeduperState() {
+	_, closeFn := c.createCentralCommunication(true)
+	defer closeFn()
+	recvSignal := expectSyncMessages(centralSyncMessages, true, c.mockService)
+	ch := make(chan struct{})
+	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
+		defer close(ch)
+		return nil
+	})
+
+	reachable := concurrency.Flag{}
+	c.comm.(*centralCommunicationImpl).syncTimeout = 10 * time.Millisecond
+	// Start the go routine with the mocked client
+	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+	c.mockService.connected.Wait()
+
+	select {
+	case <-ch:
+		c.Assert().ErrorIs(c.comm.Stopped().Err(), errTimeoutWaitingForDeduperState)
+		break
+	case <-time.After(5 * time.Second):
+		c.Fail("timeout reached waiting for the connection to timeout if the deduper state is not received")
+	}
+	recvSignal.Signal()
 }
 
 type messagesMatcher struct {
@@ -271,7 +297,12 @@ func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile b
 	return ret, func() { close(ret) }
 }
 
-func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
+func expectSyncMessagesNoBlockRecv(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
+	_ = expectSyncMessages(messages, false, service)
+}
+
+func expectSyncMessages(messages []*central.MsgToSensor, blockRecv bool, service *MockSensorServiceClient) concurrency.Signal {
+	signal := concurrency.NewSignal()
 	md := metadata.MD{
 		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
 	}
@@ -282,8 +313,17 @@ func expectSyncMessages(messages []*central.MsgToSensor, service *MockSensorServ
 	for _, m := range messages {
 		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
 	}
-	orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
+	if !blockRecv {
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())
+	} else {
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes().DoAndReturn(func() (*central.MsgToSensor, error) {
+			// This will block the Recv() calls until the signal is triggered. Otherwise, we process constantly Recv()
+			signal.Wait()
+			return nil, nil
+		}))
+	}
 	gomock.InOrder(orderedCalls...)
+	return signal
 }
 
 func deploymentKey(id string) string {
