@@ -25,6 +25,7 @@ type DataStore interface {
 	) ([]*storage.ProcessListeningOnPort, error)
 	WalkAll(ctx context.Context, fn WalkFn) error
 	RemoveProcessListeningOnPort(ctx context.Context, ids []string) error
+	RemovePlopsByPod(ctx context.Context, id string) error
 }
 
 // New creates a data store object to access the database. Since some
