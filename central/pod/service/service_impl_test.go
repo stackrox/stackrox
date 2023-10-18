@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	plopMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
@@ -70,6 +71,7 @@ func TestGetPods(t *testing.T) {
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
 	mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
+	mockPlops := plopMocks.NewMockDataStore(mockCtrl)
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -78,7 +80,7 @@ func TestGetPods(t *testing.T) {
 			pool := pgtestbase.DB
 			defer pgtestbase.Teardown(t)
 
-			podsDS, err := datastore.NewPostgresDB(pool, mockIndicators, mockFilter)
+			podsDS, err := datastore.NewPostgresDB(pool, mockIndicators, mockPlops, mockFilter)
 			require.NoError(t, err)
 
 			for _, pod := range c.pods {
