@@ -14,7 +14,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: roxctl
     pipelines.appstudio.openshift.io/type: build
-  name: roxctl-on-pull-request
+  name: roxctl-on-pull-request-6
   namespace: rh-acs-tenant
 spec:
   params:
