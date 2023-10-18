@@ -85,7 +85,7 @@ func DeferVulnerabilityRequest(ctx context.Context, req *v2.CreateDeferVulnerabi
 		ret.Comments = []*storage.RequestComment{
 			{
 				Id:        uuid.NewV4().String(),
-				CreatedAt: types.TimestampNow(),
+				CreatedAt: now,
 				Message:   comment,
 				User:      authn.UserFromContext(ctx),
 			},
@@ -119,7 +119,7 @@ func FalsePositiveVulnerabilityRequest(ctx context.Context, req *v2.CreateFalseP
 		ret.Comments = []*storage.RequestComment{
 			{
 				Id:        uuid.NewV4().String(),
-				CreatedAt: types.TimestampNow(),
+				CreatedAt: now,
 				Message:   comment,
 				User:      authn.UserFromContext(ctx),
 			},
