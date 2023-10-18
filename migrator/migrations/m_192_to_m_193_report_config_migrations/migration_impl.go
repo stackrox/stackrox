@@ -22,7 +22,7 @@ func createV2reportConfig(reportConfigProto *storage.ReportConfiguration) *stora
 	// clone v1 report config
 	newConfig := reportConfigProto.Clone()
 	// populate id
-	newConfig.Id = uuid.NewV4().String()
+	newConfig.Id = uuid.NewV5(uuid.FromStringOrPanic(reportConfigProto.GetId()), "report config").String()
 	// assign collection id in resource scope
 	newConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: reportConfigProto.GetScopeId()},
@@ -114,11 +114,11 @@ func migrate(database *types.Databases) error {
 	var reportNotifiers []*updatedSchema.ReportConfigurationsNotifiers
 	var errList errorhelpers.ErrorList
 	for rows.Next() {
+		// convert to report config proto
 		var reportConfig *updatedSchema.ReportConfigurations
 		if err = db.ScanRows(rows, &reportConfig); err != nil {
 			return errors.Wrapf(err, "failed to scan rows")
 		}
-		// convert to report config proto
 		reportConfigProto, err := updatedSchema.ConvertReportConfigurationToProto(reportConfig)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert %+v to proto", reportConfigProto)
@@ -128,6 +128,7 @@ func migrate(database *types.Databases) error {
 		if reportConfigProto.Version != 0 {
 			continue
 		}
+
 		if reportConfigProto.Version == 0 && reportConfigProto.GetResourceScope() != nil {
 			reportConfigProto.Version = 2
 			// convert report config proto back to gorm model
@@ -139,6 +140,7 @@ func migrate(database *types.Databases) error {
 
 			continue
 		}
+
 		// create v2 report config from v1
 		newConfig := createV2reportConfig(reportConfigProto)
 
@@ -205,20 +207,20 @@ func migrate(database *types.Databases) error {
 	return nil
 }
 
-func updateTablestransaction(db *gorm.DB, dbNotifier *gorm.DB, dbSnapshot *gorm.DB, reportConfigs []*updatedSchema.ReportConfigurations, snapshots []*updatedSchema.ReportSnapshots, notifiers []*updatedSchema.ReportConfigurationsNotifiers) error {
-	tx := db.Session(&gorm.Session{SkipDefaultTransaction: true})
-
-	return db.Transaction(func(tx *gorm.DB) error {
-		if len(reportConfigs) > 0 {
-			if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
-				return errors.Wrap(err, "failed to upsert converted report configs")
-			}
-		}
-
-		// return nil will commit the whole transaction
-		return nil
-	})
-}
+//func updateTablestransaction(db *gorm.DB, dbNotifier *gorm.DB, dbSnapshot *gorm.DB, reportConfigs []*updatedSchema.ReportConfigurations, snapshots []*updatedSchema.ReportSnapshots, notifiers []*updatedSchema.ReportConfigurationsNotifiers) error {
+//	tx := db.Session(&gorm.Session{SkipDefaultTransaction: true})
+//
+//	return db.Transaction(func(tx *gorm.DB) error {
+//		if len(reportConfigs) > 0 {
+//			if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
+//				return errors.Wrap(err, "failed to upsert converted report configs")
+//			}
+//		}
+//
+//		// return nil will commit the whole transaction
+//		return nil
+//	})
+//}
 
 func updateTables(db *gorm.DB, dbNotifier *gorm.DB, dbSnapshot *gorm.DB, reportConfigs []*updatedSchema.ReportConfigurations, snapshots []*updatedSchema.ReportSnapshots, notifiers []*updatedSchema.ReportConfigurationsNotifiers) error {
 
