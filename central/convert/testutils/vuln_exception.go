@@ -16,7 +16,7 @@ func GetTestVulnDeferralExceptionFull(_ *testing.T) *v2.VulnerabilityException {
 	return &v2.VulnerabilityException{
 		Id:          "id",
 		Name:        "name",
-		TargetState: v2.VulnerabilityState_OBSERVED,
+		TargetState: v2.VulnerabilityState_DEFERRED,
 		Status:      v2.ExceptionStatus_PENDING,
 		Expired:     false,
 		Requester: &v2.SlimUser{
@@ -61,6 +61,7 @@ func GetTestVulnDeferralExceptionFull(_ *testing.T) *v2.VulnerabilityException {
 // GetTestVulnFPExceptionFull returns a mock *v2.VulnerabilityException of false-positive kind.
 func GetTestVulnFPExceptionFull(t *testing.T) *v2.VulnerabilityException {
 	ret := GetTestVulnDeferralExceptionFull(t)
+	ret.TargetState = v2.VulnerabilityState_FALSE_POSITIVE
 	ret.Req = &v2.VulnerabilityException_FpRequest{
 		FpRequest: &v2.FalsePositiveRequest{},
 	}
@@ -94,4 +95,24 @@ func GetTestVulnExceptionWithUpdate(t *testing.T) *v2.VulnerabilityException {
 		},
 	}
 	return ret
+}
+
+// GetTestCreateDeferVulnExceptionRequest returns a mock *v2.CreateDeferVulnerabilityExceptionRequest.
+func GetTestCreateDeferVulnExceptionRequest(t *testing.T) *v2.CreateDeferVulnerabilityExceptionRequest {
+	req := GetTestVulnDeferralExceptionFull(t)
+	return &v2.CreateDeferVulnerabilityExceptionRequest{
+		Cves:            []string{"cve1"},
+		Comment:         "message",
+		Scope:           req.GetScope(),
+		ExceptionExpiry: req.GetDeferralReq().GetExpiry(),
+	}
+}
+
+// GetTestCreateFPVulnExceptionRequest returns a mock *v2.CreateFalsePositiveVulnerabilityExceptionRequest.
+func GetTestCreateFPVulnExceptionRequest(t *testing.T) *v2.CreateFalsePositiveVulnerabilityExceptionRequest {
+	return &v2.CreateFalsePositiveVulnerabilityExceptionRequest{
+		Cves:    []string{"cve1"},
+		Comment: "message",
+		Scope:   GetTestVulnDeferralExceptionFull(t).GetScope(),
+	}
 }
