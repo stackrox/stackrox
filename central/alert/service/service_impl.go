@@ -601,6 +601,7 @@ func getMapOfAlertCounts(alerts []search.Result, groupByFunc func(alert search.R
 				groups[g] = make(map[storage.Severity]int)
 			}
 			if len(a.Matches[field.GetFieldPath()]) == 0 {
+				log.Infof("Skipping field path for %v", a.ID)
 				continue
 			}
 			// There is a difference in how enum matches are stored in postgres vs rockdb. In postgres they are
