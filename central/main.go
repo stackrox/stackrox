@@ -400,9 +400,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processBaselineService.Singleton(),
 		administrationUsageService.Singleton(),
 		rbacService.Singleton(),
-		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
-		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
@@ -426,8 +424,9 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
-		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
