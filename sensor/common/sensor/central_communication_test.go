@@ -24,7 +24,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 type centralCommunicationSuite struct {
@@ -139,39 +141,87 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	dep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central"})
 	dep2 := givenDeployment(fixtureconsts.Deployment2, "dep2", map[string]string{"app": "sensor"})
+	dep3 := givenDeployment(fixtureconsts.Deployment3, "dep3", map[string]string{"app": "scanner"})
 	updatedDep1 := givenDeployment(fixtureconsts.Deployment1, "dep1", map[string]string{"app": "central_updated"})
 
 	hasher := hash.NewHasher()
 	hash1, _ := hasher.HashEvent(dep1.GetEvent())
+	hash2, _ := hasher.HashEvent(dep2.GetEvent())
+	hash3, _ := hasher.HashEvent(dep3.GetEvent())
 	updatedHash1, _ := hasher.HashEvent(updatedDep1.GetEvent())
 	setSensorHash(dep1, hash1)
 	setSensorHash(updatedDep1, updatedHash1)
 
 	testCases := map[string]struct {
-		deduperState      map[string]uint64
+		deduperStates     []*central.DeduperState
 		componentMessages []*central.MsgFromSensor
 		expectedMessages  *messagesMatcher
 	}{
 		"Deduper hash hit": {
-			deduperState: map[string]uint64{
-				deploymentKey(fixtureconsts.Deployment1): hash1,
+			deduperStates: []*central.DeduperState{
+				{
+					ResourceHashes: map[string]uint64{
+						deploymentKey(fixtureconsts.Deployment1): hash1,
+					},
+					Total:   1,
+					Current: 1,
+				},
 			},
 			componentMessages: []*central.MsgFromSensor{dep1},
 			expectedMessages:  newMessagesMatcher("no deployment should be sent"),
 		},
+		"Deduper hash hit with multiple deduper states": {
+			deduperStates: []*central.DeduperState{
+				{
+					ResourceHashes: map[string]uint64{
+						deploymentKey(fixtureconsts.Deployment1): hash1,
+						deploymentKey(fixtureconsts.Deployment2): hash2,
+					},
+					Total:   2,
+					Current: 1,
+				},
+				{
+					ResourceHashes: map[string]uint64{
+						deploymentKey(fixtureconsts.Deployment3): hash3,
+					},
+					Total:   2,
+					Current: 2,
+				},
+			},
+			componentMessages: []*central.MsgFromSensor{dep1, dep2, dep3},
+			expectedMessages:  newMessagesMatcher("no deployment should be sent"),
+		},
 		"Deduper hash hit in second event": {
-			deduperState:      map[string]uint64{},
+			deduperStates: []*central.DeduperState{
+				{
+					ResourceHashes: map[string]uint64{},
+					Total:          1,
+					Current:        1,
+				},
+			},
 			componentMessages: []*central.MsgFromSensor{dep1, dep1},
 			expectedMessages:  newMessagesMatcher("first deployment should be sent", dep1),
 		},
 		"All deployments sent": {
-			deduperState:      map[string]uint64{},
+			deduperStates: []*central.DeduperState{
+				{
+					ResourceHashes: map[string]uint64{},
+					Total:          1,
+					Current:        1,
+				},
+			},
 			componentMessages: []*central.MsgFromSensor{dep1, dep2},
 			expectedMessages:  newMessagesMatcher("all deployments should be sent", dep1, dep2),
 		},
 		"Updated deployment": {
-			deduperState: map[string]uint64{
-				deploymentKey(fixtureconsts.Deployment1): hash1,
+			deduperStates: []*central.DeduperState{
+				{
+					ResourceHashes: map[string]uint64{
+						deploymentKey(fixtureconsts.Deployment1): hash1,
+					},
+					Total:   1,
+					Current: 1,
+				},
 			},
 			componentMessages: []*central.MsgFromSensor{updatedDep1},
 			expectedMessages:  newMessagesMatcher("updated deployment should be sent", updatedDep1),
@@ -182,7 +232,10 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 		c.Run(name, func() {
 			responsesC, closeFn := c.createCentralCommunication(true)
 			defer closeFn()
-			syncMessages := append(centralSyncMessages, debuggerMessage.DeduperState(tc.deduperState))
+			syncMessages := centralSyncMessages
+			for _, state := range tc.deduperStates {
+				syncMessages = append(syncMessages, debuggerMessage.DeduperState(state.GetResourceHashes(), state.GetCurrent(), state.GetTotal()))
+			}
 			expectSyncMessagesNoBlockRecv(syncMessages, c.mockService)
 
 			c.mockService.client.EXPECT().Send(tc.expectedMessages).Times(len(tc.expectedMessages.messagesToMatch))
@@ -207,30 +260,61 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 	}
 }
 
-func (c *centralCommunicationSuite) Test_TimeoutWaitingForDeduperState() {
-	_, closeFn := c.createCentralCommunication(true)
-	defer closeFn()
-	recvSignal := expectSyncMessages(centralSyncMessages, true, c.mockService)
-	ch := make(chan struct{})
-	c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
-		defer close(ch)
-		return nil
-	})
-
-	reachable := concurrency.Flag{}
-	c.comm.(*centralCommunicationImpl).syncTimeout = 10 * time.Millisecond
-	// Start the go routine with the mocked client
-	c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
-	c.mockService.connected.Wait()
-
-	select {
-	case <-ch:
-		c.Assert().ErrorIs(c.comm.Stopped().Err(), errTimeoutWaitingForDeduperState)
-		break
-	case <-time.After(5 * time.Second):
-		c.Fail("timeout reached waiting for the connection to timeout if the deduper state is not received")
+func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
+	testCases := map[string]struct {
+		givenSyncMessages []*central.MsgToSensor
+		givenSyncErrors   []error
+		expectError       error
+	}{
+		"timeout waiting for first deduper state": {
+			givenSyncMessages: centralSyncMessages,
+			expectError:       errTimeoutWaitingForDeduperState,
+		},
+		"timeout waiting for second deduper state": {
+			givenSyncMessages: append(centralSyncMessages, debuggerMessage.DeduperState(map[string]uint64{}, 1, 2)),
+			expectError:       errTimeoutWaitingForDeduperState,
+		},
+		"incorrect deduper state order": {
+			givenSyncMessages: append(centralSyncMessages, debuggerMessage.DeduperState(map[string]uint64{}, 2, 2)),
+			expectError:       errIncorrectDeduperStateOrder,
+		},
+		"incorrect event order": {
+			givenSyncMessages: append(centralSyncMessages, debuggerMessage.PolicySync([]*storage.Policy{})),
+			expectError:       errIncorrectEventOrder,
+		},
+		"payload is too big": {
+			givenSyncMessages: append(centralSyncMessages, nil),
+			givenSyncErrors:   []error{nil, nil, nil, nil, nil, status.New(codes.ResourceExhausted, "Limit exceeded").Err()},
+			expectError:       errLargePayload,
+		},
 	}
-	recvSignal.Signal()
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			_, closeFn := c.createCentralCommunication(true)
+			defer closeFn()
+			recvSignal := expectSyncMessages(createSyncMessageErrorPairs(tc.givenSyncMessages, tc.givenSyncErrors), true, c.mockService)
+			ch := make(chan struct{})
+			c.mockService.client.EXPECT().CloseSend().Times(1).DoAndReturn(func() error {
+				defer close(ch)
+				return nil
+			})
+
+			reachable := concurrency.Flag{}
+			c.comm.(*centralCommunicationImpl).syncTimeout = 100 * time.Millisecond
+			// Start the go routine with the mocked client
+			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
+			c.mockService.connected.Wait()
+
+			select {
+			case <-ch:
+				c.Assert().ErrorIs(c.comm.Stopped().Err(), tc.expectError)
+				break
+			case <-time.After(5 * time.Second):
+				c.Fail("timeout reached waiting for the connection to timeout if the deduper state is not received")
+			}
+			recvSignal.Signal()
+		})
+	}
 }
 
 type messagesMatcher struct {
@@ -297,11 +381,30 @@ func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile b
 	return ret, func() { close(ret) }
 }
 
-func expectSyncMessagesNoBlockRecv(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
-	_ = expectSyncMessages(messages, false, service)
+type syncMessageErrorPair struct {
+	message *central.MsgToSensor
+	err     error
 }
 
-func expectSyncMessages(messages []*central.MsgToSensor, blockRecv bool, service *MockSensorServiceClient) concurrency.Signal {
+func createSyncMessageErrorPairs(messages []*central.MsgToSensor, errs []error) []*syncMessageErrorPair {
+	ret := make([]*syncMessageErrorPair, len(messages))
+	for i, m := range messages {
+		ret[i] = &syncMessageErrorPair{
+			message: m,
+			err:     nil,
+		}
+	}
+	for i, err := range errs {
+		ret[i].err = err
+	}
+	return ret
+}
+
+func expectSyncMessagesNoBlockRecv(messages []*central.MsgToSensor, service *MockSensorServiceClient) {
+	_ = expectSyncMessages(createSyncMessageErrorPairs(messages, nil), false, service)
+}
+
+func expectSyncMessages(messages []*syncMessageErrorPair, blockRecv bool, service *MockSensorServiceClient) concurrency.Signal {
 	signal := concurrency.NewSignal()
 	md := metadata.MD{
 		strings.ToLower(centralsensor.SensorHelloMetadataKey): []string{"true"},
@@ -311,7 +414,7 @@ func expectSyncMessages(messages []*central.MsgToSensor, blockRecv bool, service
 	service.client.EXPECT().Context().AnyTimes().Return(context.Background())
 	var orderedCalls []any
 	for _, m := range messages {
-		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m, nil))
+		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().Times(1).Return(m.message, m.err))
 	}
 	if !blockRecv {
 		orderedCalls = append(orderedCalls, service.client.EXPECT().Recv().AnyTimes())

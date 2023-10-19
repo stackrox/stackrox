@@ -20,11 +20,13 @@ func SensorHello(clusterID string) *central.MsgToSensor {
 }
 
 // DeduperState returns as fake DeduperState message
-func DeduperState(state map[string]uint64) *central.MsgToSensor {
+func DeduperState(state map[string]uint64, current, total int32) *central.MsgToSensor {
 	return &central.MsgToSensor{
 		Msg: &central.MsgToSensor_DeduperState{
 			DeduperState: &central.DeduperState{
 				ResourceHashes: state,
+				Current:        current,
+				Total:          total,
 			},
 		},
 	}

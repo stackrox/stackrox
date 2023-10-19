@@ -54,6 +54,8 @@ var (
 	errCantReconcile                 = errors.New("unable to reconcile")
 	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
+	errIncorrectDeduperStateOrder    = errors.Wrap(errCantReconcile, "central sent incorrect order of chunks of the deduper state")
+	errIncorrectEventOrder           = errors.Wrap(errCantReconcile, "central sent incorrect order of events")
 )
 
 func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -273,34 +275,48 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		return nil
 	}
 	log.Info("Waiting for deduper state from Central")
-
-	done := make(chan struct{})
-	var err error
-	var msg *central.MsgToSensor
-	go func() {
-		msg, err = stream.Recv()
-		close(done)
-	}()
-	select {
-	case <-time.After(s.syncTimeout):
-		return errTimeoutWaitingForDeduperState
-	case <-done:
-		break
-	}
-	if err != nil {
-		if e, ok := status.FromError(err); ok {
-			if e.Code() == codes.ResourceExhausted {
-				return errors.Wrap(errLargePayload, e.String())
-			}
+	var current int32 = 1
+	deduperState := make(map[string]uint64)
+	for {
+		done := make(chan struct{})
+		var err error
+		var msg *central.MsgToSensor
+		go func() {
+			msg, err = stream.Recv()
+			close(done)
+		}()
+		select {
+		case <-time.After(s.syncTimeout):
+			return errTimeoutWaitingForDeduperState
+		case <-done:
 		}
-		return errors.Wrap(err, "receiving initial deduper sync")
-	}
-	if msg.GetDeduperState() == nil {
-		return errors.Wrapf(errCantReconcile, "central sent incorrect order of events: expected DeduperState but received %t instead", msg.GetMsg())
-	}
+		if err != nil {
+			if e, ok := status.FromError(err); ok {
+				if e.Code() == codes.ResourceExhausted {
+					return errors.Wrap(errLargePayload, e.String())
+				}
+			}
+			return errors.Wrap(err, "receiving initial deduper sync")
+		}
+		if msg.GetDeduperState() == nil {
+			return errors.Wrapf(errIncorrectEventOrder, "expected DeduperState but received %t instead", msg.GetMsg())
+		}
 
-	log.Infof("Received %d messages (size=%d)", len(msg.GetDeduperState().GetResourceHashes()), msg.Size())
-	s.initialDeduperState = deduper.ParseDeduperState(msg.GetDeduperState().GetResourceHashes())
+		if current != msg.GetDeduperState().GetCurrent() {
+			return errors.Wrapf(errIncorrectDeduperStateOrder, "expected message number %d but received %d", current, msg.GetDeduperState().GetCurrent())
+		}
+
+		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.Size(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
+		for k, v := range msg.GetDeduperState().GetResourceHashes() {
+			deduperState[k] = v
+		}
+
+		if msg.GetDeduperState().GetCurrent() == msg.GetDeduperState().GetTotal() {
+			break
+		}
+		current++
+	}
+	s.initialDeduperState = deduper.ParseDeduperState(deduperState)
 	return nil
 }
 
