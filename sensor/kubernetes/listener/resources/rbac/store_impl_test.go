@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stretchr/testify/assert"
@@ -679,6 +680,83 @@ func BenchmarkRBACUpsertExistingBinding(b *testing.B) {
 	b.StartTimer()
 	for n := 0; n < b.N; n++ {
 		store.UpsertBinding(binding)
+	}
+}
+
+func TestReconcileDelete(t *testing.T) {
+	roles := []*v1.Role{{
+		ObjectMeta: meta("role-admin"),
+	}}
+	bindings := []*v1.RoleBinding{{
+		ObjectMeta: meta("b1"),
+		RoleRef:    role("role-admin"),
+	}}
+	clusterRoles := []*v1.ClusterRole{{
+		ObjectMeta: meta("cluster-role"),
+	}}
+	clusterBindings := []*v1.ClusterRoleBinding{{
+		ObjectMeta: meta("cb1"),
+		RoleRef:    clusterRole("cluster-role"),
+	}}
+	s := setupStore(roles, clusterRoles, bindings, clusterBindings)
+
+	cases := map[string]struct {
+		resType    string
+		id         string
+		hasError   bool
+		reconciled bool
+	}{
+		"Role still exists": {
+			resType:    deduper.TypeRole.String(),
+			id:         "role-admin-id",
+			reconciled: false,
+		},
+		"Role was deleted": {
+			resType:    deduper.TypeRole.String(),
+			id:         "some-id",
+			reconciled: true,
+		},
+		"Binding exists": {
+			resType:    deduper.TypeBinding.String(),
+			id:         "b1-id",
+			reconciled: false,
+		},
+		"Binding was deleted": {
+			resType:    deduper.TypeBinding.String(),
+			id:         "some-id",
+			reconciled: true,
+		},
+		"Cluster Role still exists": {
+			resType:    deduper.TypeRole.String(),
+			id:         "cluster-role-id",
+			reconciled: false,
+		},
+		"Cluster Binding exists": {
+			resType:    deduper.TypeBinding.String(),
+			id:         "cb1-id",
+			reconciled: false,
+		},
+		"Wrong resource type": {
+			resType:  deduper.TypeDeployment.String(),
+			hasError: true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			v, err := s.ReconcileDelete(c.resType, c.id, 0)
+			if c.hasError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			if c.reconciled {
+				assert.Equal(t, c.id, v)
+			} else {
+				assert.Empty(t, v)
+			}
+		})
 	}
 }
 

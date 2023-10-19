@@ -108,6 +108,28 @@ func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, er
 			},
 		}
 		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeRole.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Role{
+					Role: &storage.K8SRole{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeBinding.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Binding{
+					Binding: &storage.K8SRoleBinding{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
 	default:
 		return nil, errors.Errorf("Not implemented for resource type %v", resType)
 	}
