@@ -13,5 +13,6 @@ os.environ["SENSOR_HELM_DEPLOY"] = "true"
 
 os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
+os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()

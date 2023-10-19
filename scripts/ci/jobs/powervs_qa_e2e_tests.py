@@ -15,6 +15,7 @@ os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "ppc64le"
 os.environ["COLLECTION_METHOD"] = "ebpf"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
+os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
 # Trigger tests
 make_qa_e2e_test_runner_custom(cluster=AutomationFlavorsCluster()).run()
