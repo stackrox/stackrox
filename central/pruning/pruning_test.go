@@ -36,6 +36,7 @@ import (
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	plopDatastoreMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -222,6 +223,9 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
+	mockPlopDataStore := plopDatastoreMocks.NewMockDataStore(ctrl)
+	mockPlopDataStore.EXPECT().RemovePlopsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
 	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(ctrl)
@@ -244,7 +248,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 		ranking.NewRanker(),
 	)
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockFilter)
+	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 	require.NoError(s.T(), err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods
@@ -256,11 +260,14 @@ func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 
+	mockPlopDataStore := plopDatastoreMocks.NewMockDataStore(ctrl)
+	mockPlopDataStore.EXPECT().RemovePlopsByPod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockFilter)
+	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 	require.NoError(s.T(), err)
 
 	return pods

@@ -310,7 +310,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 
 	err := s.backend.ValidateClientCertificate(ctx, certs)
 	s.Require().Error(err)
-	s.Equal("failed checking init bundle status: retrieving init bundle: init bundle not found", err.Error())
+	s.Equal(fmt.Sprintf("failed checking init bundle status %[1]q: retrieving init bundle %[1]q: init bundle not found", id), err.Error())
 }
 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {
