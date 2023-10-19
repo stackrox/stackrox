@@ -172,6 +172,8 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 		})
 	}()
 
+	time.Sleep(30 * time.Second)
+
 	var err error
 	switch req.GetDataType() {
 	case central.PullTelemetryDataRequest_KUBERNETES_INFO:

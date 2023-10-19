@@ -77,7 +77,7 @@ const (
 	logWindow = 20 * time.Minute
 	// This timeout is safety net to prevent request from running forever.
 	// We don't expect it to ever actually be reached. Actual timeout should be set on the client side.
-	debugDumpHardTimeout = 1 * time.Hour
+	debugDumpHardTimeout = 1 * time.Minute
 )
 
 var (
