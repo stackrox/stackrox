@@ -21,7 +21,7 @@
         "comment": "sensor is up before central in scale-tests",
         "job": "scale-tests",
         "logfile": "sensor-previous",
-        "logline": "checking central status failed after 15 retries"
+        "logline": "checking central status failed after"
     },
     {
         "comment": "collector initialization restart with download failure due to bouncing in upgrade test",
@@ -40,5 +40,11 @@
         "job": "upgrade",
         "logfile": "collector-previous",
         "logline": "Failed to initialize collector kernel components"
+    },
+    {
+        "comment": "Central images may be slow to pull",
+        "job": "upgrade",
+        "logfile": "sensor-previous",
+        "logline": "checking central status failed after"
     }
 ]
