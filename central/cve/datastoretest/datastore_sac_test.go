@@ -45,7 +45,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
 	s.imageCVEStore = imageCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
 	s.nodeCVEStore, err = nodeCVEDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.Require().NoError(err)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)

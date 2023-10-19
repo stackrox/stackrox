@@ -68,7 +68,6 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)
 	s.Require().NoError(err)
 	s.imageStore = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
 	s.optionsMap = schema.DeploymentsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
