@@ -40,23 +40,23 @@ const SystemHealthDashboardPage = () => {
 
     return (
         <>
-            <PageSection variant="light">
+            <PageSection variant="light" component="div">
                 <Flex>
                     <FlexItem>
                         <Title headingLevel="h1">System Health</Title>
                     </FlexItem>
-                    <FlexItem align={{ default: 'alignRight' }}>
-                        <Flex>
-                            <FlexItem>
-                                <ShowAdministrationUsage />
-                            </FlexItem>
-                            {hasReadAccessForAdministration && (
+                    {hasReadAccessForAdministration && (
+                        <FlexItem align={{ default: 'alignRight' }}>
+                            <Flex>
+                                <FlexItem>
+                                    <ShowAdministrationUsage />
+                                </FlexItem>
                                 <FlexItem>
                                     <GenerateDiagnosticBundle />
                                 </FlexItem>
-                            )}
-                        </Flex>
-                    </FlexItem>
+                            </Flex>
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
             <PageSection>
