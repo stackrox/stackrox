@@ -12,6 +12,7 @@ import util.Timer
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZDebug")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
     // The image name in quay.io includes the SHA from the original image
