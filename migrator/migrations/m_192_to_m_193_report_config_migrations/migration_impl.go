@@ -1,6 +1,9 @@
 package m192tom193
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	updatedSchema "github.com/stackrox/rox/migrator/migrations/m_192_to_m_193_report_config_migrations/schema"
@@ -22,7 +25,8 @@ func createV2reportConfig(reportConfigProto *storage.ReportConfiguration) *stora
 	// clone v1 report config
 	newConfig := reportConfigProto.Clone()
 	// populate id
-	newConfig.Id = uuid.NewV4().String()
+	id := getDeterministicID(reportConfigProto.GetId())
+	newConfig.Id = id
 	// assign collection id in resource scope
 	newConfig.ResourceScope = &storage.ResourceScope{
 		ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: reportConfigProto.GetScopeId()},
@@ -89,20 +93,50 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 	return nil
 }
 
+func checkifNotifierExsists(notifiertID string, database *types.Databases) (bool, error) {
+	sql := fmt.Sprintf(
+		"SELECT serialized FROM %s WHERE id = $1",
+		updatedSchema.NotifiersTableName)
+	row, err := database.PostgresDB.Query(database.DBCtx, sql, notifiertID)
+	if err != nil {
+		return false, err
+	}
+	if row.Next() {
+		return true, nil
+	}
+	return false, nil
+}
+
+func getMigratedReportConfigIfExsists(reportID string, database *types.Databases) (bool, *storage.ReportConfiguration, error) {
+	sql := fmt.Sprintf(
+		"SELECT serialized FROM %s WHERE id = $1",
+		updatedSchema.ReportConfigurationsTableName)
+	row, err := database.PostgresDB.Query(database.DBCtx, sql, getDeterministicID(reportID))
+	if err != nil {
+		return false, nil, err
+	}
+	if row.Next() {
+		var data []byte
+		if err := row.Scan(&data); err != nil {
+			return false, nil, err
+		}
+		var config storage.ReportConfiguration
+		if err := config.Unmarshal(data); err != nil {
+			return false, nil, err
+		}
+		return true, &config, nil
+	}
+	return false, nil, nil
+}
+
 func migrate(database *types.Databases) error {
 
 	db := database.GormDB
 	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableReportConfigurationsStmt)
-	db = db.WithContext(database.DBCtx).Table("report_configurations")
-
-	dbSnapshot := database.GormDB
-	pgutils.CreateTableFromModel(database.DBCtx, dbSnapshot, updatedSchema.CreateTableReportSnapshotsStmt)
-	dbSnapshot = dbSnapshot.WithContext(database.DBCtx).Table("report_snapshots")
-
-	dbNotifier := database.GormDB
-	pgutils.CreateTableFromModel(database.DBCtx, dbNotifier, updatedSchema.CreateTableReportConfigurationsStmt.Children[0])
-	dbNotifier = dbNotifier.WithContext(database.DBCtx).Table("report_configurations_notifiers")
-
+	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableReportSnapshotsStmt)
+	pgutils.CreateTableFromModel(database.DBCtx, db, updatedSchema.CreateTableReportConfigurationsStmt.Children[0])
+	db = db.WithContext(database.DBCtx)
+	tx := db.Begin()
 	query := db.WithContext(database.DBCtx).Table(updatedSchema.ReportConfigurationsTableName).Select("serialized")
 	rows, err := query.Rows()
 	if err != nil {
@@ -116,19 +150,14 @@ func migrate(database *types.Databases) error {
 	for rows.Next() {
 		// convert to report config proto
 		var reportConfig *updatedSchema.ReportConfigurations
-		if err = db.ScanRows(rows, &reportConfig); err != nil {
+		if err = query.ScanRows(rows, &reportConfig); err != nil {
 			return errors.Wrapf(err, "failed to scan rows")
 		}
 		reportConfigProto, err := updatedSchema.ConvertReportConfigurationToProto(reportConfig)
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert report config  %+v to proto", reportConfigProto)
 		}
-		// skip if version=1 since config is migrated
-		// skip if version=2
-		if reportConfigProto.Version != 0 {
-			continue
-		}
-
+		// skip if version=0 and scope id is not nil since it is v2 config created in tech preview
 		if reportConfigProto.Version == 0 && reportConfigProto.GetResourceScope() != nil {
 			reportConfigProto.Version = 2
 			// convert report config proto back to gorm model
@@ -138,6 +167,29 @@ func migrate(database *types.Databases) error {
 			}
 			convertedReportConfigs = append(convertedReportConfigs, convertedGormConfig)
 
+			continue
+		}
+
+		//if deterministic id exists no need to copy the config
+		migrated, data, err := getMigratedReportConfigIfExsists(reportConfigProto.GetId(), database)
+		if err != nil {
+			return errors.Wrapf(err, "failed to query report config with id %s", reportConfigProto.GetId())
+		}
+		if migrated {
+			if reflect.DeepEqual(reportConfig, data) {
+				log.Infof("Old v1 report config proto %+v is different from v2 copy", data)
+			}
+			continue
+		}
+
+		notifierFound, err := checkifNotifierExsists(reportConfigProto.GetEmailConfig().GetNotifierId(), database)
+		if err != nil {
+			return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
+		}
+
+		if !notifierFound {
+			log.Infof("Did not find notifier with id %s attached to report config %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
+				reportConfigProto)
 			continue
 		}
 
@@ -182,13 +234,16 @@ func migrate(database *types.Databases) error {
 			reportSnapshots = append(reportSnapshots, reportSnapshotGORM)
 		}
 		if len(convertedReportConfigs) == batchSize {
-			err = updateTables(db, dbNotifier, dbSnapshot, convertedReportConfigs, reportSnapshots, reportNotifiers)
+			if err = updateTables(tx, convertedReportConfigs, reportSnapshots, reportNotifiers); err != nil {
+				result := tx.Rollback()
+				if result.Error != nil {
+					return errors.Wrapf(result.Error, "failed to rollback with error")
+				}
+
+			}
 			convertedReportConfigs = convertedReportConfigs[:0]
 			reportSnapshots = reportSnapshots[:0]
 			reportNotifiers = reportNotifiers[:0]
-			if err != nil {
-				return err
-			}
 		}
 	}
 
@@ -196,34 +251,45 @@ func migrate(database *types.Databases) error {
 		return errors.Wrap(rows.Err(), "failed to get rows for report_configurations")
 	}
 
-	err = updateTables(db, dbNotifier, dbSnapshot, convertedReportConfigs, reportSnapshots, reportNotifiers)
-	if err != nil {
-		return err
+	if err = updateTables(tx, convertedReportConfigs, reportSnapshots, reportNotifiers); err != nil {
+		result := tx.Rollback()
+		if result.Error != nil {
+			return errors.Wrapf(result.Error, "failed to rollback with error")
+		}
+
 	}
+
 	if !errList.Empty() {
-		return errList.ToError()
+		log.Error(errList)
 	}
-	return nil
+	return tx.Commit().Error
+
 }
 
-func updateTables(db *gorm.DB, dbNotifier *gorm.DB, dbSnapshot *gorm.DB, reportConfigs []*updatedSchema.ReportConfigurations, snapshots []*updatedSchema.ReportSnapshots, notifiers []*updatedSchema.ReportConfigurationsNotifiers) error {
+func updateTables(tx *gorm.DB, reportConfigs []*updatedSchema.ReportConfigurations, snapshots []*updatedSchema.ReportSnapshots, notifiers []*updatedSchema.ReportConfigurationsNotifiers) error {
 
 	if len(reportConfigs) > 0 {
-		if err := db.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
+
+		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&reportConfigs).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert converted report configs")
 		}
 	}
 	if len(snapshots) > 0 {
-		if err := dbSnapshot.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportSnapshotsStmt.GormModel).Create(&snapshots).Error; err != nil {
+		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportSnapshotsStmt.GormModel).Create(&snapshots).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert converted report snapshots")
 		}
 	}
 
 	if len(notifiers) > 0 {
-
-		if err := dbNotifier.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.Children[0].GormModel).Create(&notifiers).Error; err != nil {
+		if err := tx.Clauses(clause.OnConflict{UpdateAll: true}).Model(updatedSchema.CreateTableReportConfigurationsStmt.Children[0].GormModel).Create(&notifiers).Error; err != nil {
 			return errors.Wrap(err, "failed to upsert converted report notifier configurations")
 		}
 	}
+
 	return nil
+
+}
+
+func getDeterministicID(configID string) string {
+	return uuid.NewV5(uuid.FromStringOrPanic(configID), "report config").String()
 }
