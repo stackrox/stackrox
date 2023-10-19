@@ -1,7 +1,8 @@
 name: Update Vulnerabilities
 on:
-  schedule:
-    - cron: "0 */3 * * *"
+  push:
+    branches:
+      - yli3/* #for testing purpose of scanner team
 
 jobs:
   read-versions:
