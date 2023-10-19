@@ -419,9 +419,9 @@ func getCentralDBData(ctx context.Context, zipWriter *zip.Writer) error {
 	if err := addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData); err != nil {
 		return err
 	}
-	statements, err := stats.GetPGStatStatements(ctx, db, pgStatStatementsMax)
-	if err != nil {
-		return errors.Wrap(err, "collecting pg_stat_statements")
+	statements := stats.GetPGStatStatements(ctx, db, pgStatStatementsMax)
+	if statements.Error != "" {
+		log.Errorf("error retrieving pg_stat_statements: %s", statements.Error)
 	}
 	return addJSONToZip(zipWriter, "central-db-pg-stats.json", statements)
 }

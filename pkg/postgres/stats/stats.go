@@ -20,21 +20,24 @@ type PGStatStatement struct {
 // PGStatStatements is a wrapper around PGStatStatement
 type PGStatStatements struct {
 	Statements []*PGStatStatement
+	Error      string
 }
 
 // GetPGStatStatements returns a statements struct that wraps the results from the query to pg_stat_statements
-func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) (*PGStatStatements, error) {
+func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStatStatements {
+	var statements PGStatStatements
 	rows, err := db.Query(ctx, "select total_exec_time, max_exec_time, stddev_exec_time, calls, rows, substr(query, 1, 1000) from pg_stat_statements order by total_exec_time limit $1", limit)
 	if err != nil {
-		return nil, err
+		statements.Error = err.Error()
+		return &statements
 	}
-	var statements PGStatStatements
 	for rows.Next() {
 		var statement PGStatStatement
 		if err := rows.Scan(&statement.TotalExecTimeMS, &statement.MaxExecTimeMS, &statement.StddevExecTimeMS, &statement.Calls, &statement.Rows, &statement.Query); err != nil {
-			return nil, errors.Wrap(err, "error scanning rows from pg_stat_statements")
+			statements.Error = errors.Wrap(err, "error scanning rows from pg_stat_statements").Error()
+			return &statements
 		}
 		statements.Statements = append(statements.Statements, &statement)
 	}
-	return &statements, nil
+	return &statements
 }
