@@ -26,7 +26,7 @@ type PGStatStatements struct {
 // GetPGStatStatements returns a statements struct that wraps the results from the query to pg_stat_statements
 func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStatStatements {
 	var statements PGStatStatements
-	rows, err := db.Query(ctx, "select total_exec_time, max_exec_time, stddev_exec_time, calls, rows, substr(query, 1, 1000) from pg_stat_statements order by total_exec_time limit $1", limit)
+	rows, err := db.Query(ctx, "select total_exec_time, max_exec_time, stddev_exec_time, calls, rows, substr(query, 1, 1000) from pg_stat_statements order by total_exec_time desc limit $1", limit)
 	if err != nil {
 		statements.Error = err.Error()
 		return &statements
