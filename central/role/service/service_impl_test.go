@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -70,10 +71,17 @@ var (
 		},
 	}
 )
+
 var clusters = []*storage.Cluster{
 	clusterQueen,
 	clusterPinkFloyd,
 	clusterDeepPurple,
+}
+
+var clustersForSAC = []effectiveaccessscope.ClusterForSAC{
+	storageClusterToClusterForSAC(clusterQueen),
+	storageClusterToClusterForSAC(clusterPinkFloyd),
+	storageClusterToClusterForSAC(clusterDeepPurple),
 }
 
 var (
@@ -137,6 +145,17 @@ var namespaces = []*storage.NamespaceMetadata{
 	namespaceTheWallInClusterPinkFloyd,
 	// Deep Purple
 	namespaceMachineHeadInClusterDeepPurple,
+}
+
+var namespacesForSAC = []effectiveaccessscope.NamespaceForSAC{
+	// Queen
+	storageNamespaceToNamespaceForSAC(namespaceQueenInClusterQueen),
+	storageNamespaceToNamespaceForSAC(namespaceJazzInClusterQueen),
+	storageNamespaceToNamespaceForSAC(namespaceInnuendoInClusterQueen),
+	// Pink Floyd
+	storageNamespaceToNamespaceForSAC(namespaceTheWallInClusterPinkFloyd),
+	// Deep Purple
+	storageNamespaceToNamespaceForSAC(namespaceMachineHeadInClusterDeepPurple),
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -473,22 +492,22 @@ func TestEffectiveAccessScopeForSimpleAccessScope(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc+"detail: HIGH", func(t *testing.T) {
-			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_HIGH)
+			resHigh, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clustersForSAC, namespacesForSAC, v1.ComputeEffectiveAccessScopeRequest_HIGH)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedHigh, resHigh)
 		})
 		t.Run(tc.desc+"detail: STANDARD", func(t *testing.T) {
-			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
+			resStandard, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clustersForSAC, namespacesForSAC, v1.ComputeEffectiveAccessScopeRequest_STANDARD)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedStandard, resStandard)
 		})
 		t.Run(tc.desc+"detail: MINIMAL", func(t *testing.T) {
-			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
+			resMinimal, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clustersForSAC, namespacesForSAC, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedMinimal, resMinimal)
 		})
 		t.Run(tc.desc+"unknown detail maps to STANDARD", func(t *testing.T) {
-			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clusters, namespaces, 42)
+			resUnknown, err := effectiveAccessScopeForSimpleAccessScope(tc.rules, clustersForSAC, namespacesForSAC, 42)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedStandard, resUnknown)
 		})
@@ -1334,3 +1353,88 @@ func (s *roleServiceGetMyPermissionsTestSuite) TestGetMyPermissions() {
 		})
 	}
 }
+
+// region Scoped Access Control helpers
+
+type clusterForSAC struct {
+	ID     string
+	Name   string
+	Labels map[string]string
+}
+
+func (c *clusterForSAC) GetID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ID
+}
+
+func (c *clusterForSAC) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *clusterForSAC) GetLabels() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Labels
+}
+
+func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
+	return &clusterForSAC{
+		ID:     cluster.GetId(),
+		Name:   cluster.GetName(),
+		Labels: cluster.GetLabels(),
+	}
+}
+
+type namespaceForSAC struct {
+	ID          string
+	Name        string
+	ClusterID   string
+	ClusterName string
+	Labels      map[string]string
+}
+
+func (n *namespaceForSAC) GetID() string {
+	if n == nil {
+		return ""
+	}
+	return n.ID
+}
+
+func (n *namespaceForSAC) GetName() string {
+	if n == nil {
+		return ""
+	}
+	return n.Name
+}
+
+func (n *namespaceForSAC) GetClusterName() string {
+	if n == nil {
+		return ""
+	}
+	return n.ClusterName
+}
+
+func (n *namespaceForSAC) GetLabels() map[string]string {
+	if n == nil {
+		return nil
+	}
+	return n.Labels
+}
+
+func storageNamespaceToNamespaceForSAC(ns *storage.NamespaceMetadata) *namespaceForSAC {
+	return &namespaceForSAC{
+		ID:          ns.GetId(),
+		Name:        ns.GetName(),
+		ClusterID:   ns.GetClusterId(),
+		ClusterName: ns.GetClusterName(),
+		Labels:      ns.GetLabels(),
+	}
+}
+
+// endregion Scoped Access Control helpers

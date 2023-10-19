@@ -275,41 +275,6 @@ func (ds *datastoreImpl) getClustersForSAC(ctx context.Context) ([]effectiveacce
 	return clusters, nil
 }
 
-func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
-	return &clusterForSAC{
-		ID:     cluster.GetId(),
-		name:   cluster.GetName(),
-		labels: cluster.GetLabels(),
-	}
-}
-
-type clusterForSAC struct {
-	ID     string
-	name   string
-	labels map[string]string
-}
-
-func (c *clusterForSAC) GetID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ID
-}
-
-func (c *clusterForSAC) GetName() string {
-	if c == nil {
-		return ""
-	}
-	return c.name
-}
-
-func (c *clusterForSAC) GetLabels() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.labels
-}
-
 func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string, bool, error) {
 	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
 		return "", false, err
@@ -1084,3 +1049,42 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	}
 	return clusters, nil
 }
+
+// region Scoped Access Control helpers
+
+func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
+	return &clusterForSAC{
+		ID:     cluster.GetId(),
+		name:   cluster.GetName(),
+		labels: cluster.GetLabels(),
+	}
+}
+
+type clusterForSAC struct {
+	ID     string
+	name   string
+	labels map[string]string
+}
+
+func (c *clusterForSAC) GetID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ID
+}
+
+func (c *clusterForSAC) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.name
+}
+
+func (c *clusterForSAC) GetLabels() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.labels
+}
+
+// endregion Scoped Access Control helpers

@@ -30,12 +30,12 @@ import (
 //   Fremen        { }                                                        //
 //                                                                            //
 
-var clusters = []*storage.Cluster{
+var clusters = []ClusterForSAC{
 	clusterEarth,
 	clusterArrakis,
 }
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []NamespaceForSAC{
 	nsErrored,
 	// Earth
 	nsSkunkWorks,
@@ -764,14 +764,14 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			var clonedClusters []*storage.Cluster
+			var clonedClusters []ClusterForSAC
 			for _, c := range clusters {
-				clonedClusters = append(clonedClusters, c.Clone())
+				clonedClusters = append(clonedClusters, cloneCluster(c))
 			}
 
-			var clonedNamespaces []*storage.NamespaceMetadata
+			var clonedNamespaces []NamespaceForSAC
 			for _, ns := range namespaces {
-				clonedNamespaces = append(clonedNamespaces, ns.Clone())
+				clonedNamespaces = append(clonedNamespaces, cloneNamespace(ns))
 			}
 
 			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces, tc.detail)
@@ -788,7 +788,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 
 				assert.Nil(t, result.GetClusterByID("unknown cluster id"))
 				for _, c := range clonedClusters {
-					assert.Equal(t, result.GetClusterByID(c.GetId()), tc.expected.Clusters[c.GetName()])
+					assert.Equal(t, result.GetClusterByID(c.GetID()), tc.expected.Clusters[c.GetName()])
 				}
 			}
 		})

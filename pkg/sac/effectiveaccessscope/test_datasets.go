@@ -2,8 +2,6 @@ package effectiveaccessscope
 
 import (
 	"testing"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,13 +23,13 @@ import (
 
 // storage.Cluster objects
 var (
-	clusterEarth = &storage.Cluster{
-		Id:   "planet.earth",
+	clusterEarth = &clusterForSAC{
+		ID:   "planet.earth",
 		Name: "Earth",
 	}
 
-	clusterArrakis = &storage.Cluster{
-		Id:   "planet.arrakis",
+	clusterArrakis = &clusterForSAC{
+		ID:   "planet.arrakis",
 		Name: "Arrakis",
 		Labels: map[string]string{
 			"focus": "melange",
@@ -42,8 +40,8 @@ var (
 // Cluster helpers
 var (
 	clusterIDs = map[string]string{
-		clusterEarth.GetId():   clusterEarth.GetName(),
-		clusterArrakis.GetId(): clusterArrakis.GetName(),
+		clusterEarth.GetID():   clusterEarth.GetName(),
+		clusterArrakis.GetID(): clusterArrakis.GetName(),
 	}
 
 	arrakisAttributes = treeNodeAttributes{
@@ -68,10 +66,10 @@ var (
 
 // storage.NamespaceMetadata objects
 var (
-	nsSkunkWorks = &storage.NamespaceMetadata{
-		Id:          "lab.skunkworks",
+	nsSkunkWorks = &namespaceForSAC{
+		ID:          "lab.skunkworks",
 		Name:        "Skunk Works",
-		ClusterId:   "planet.earth",
+		ClusterID:   "planet.earth",
 		ClusterName: "Earth",
 		Labels: map[string]string{
 			"focus":     "transportation",
@@ -80,10 +78,10 @@ var (
 		},
 	}
 
-	nsFraunhofer = &storage.NamespaceMetadata{
-		Id:          "lab.fraunhofer",
+	nsFraunhofer = &namespaceForSAC{
+		ID:          "lab.fraunhofer",
 		Name:        "Fraunhofer",
-		ClusterId:   "planet.earth",
+		ClusterID:   "planet.earth",
 		ClusterName: "Earth",
 		Labels: map[string]string{
 			"focus":     "applied_research",
@@ -93,10 +91,10 @@ var (
 		},
 	}
 
-	nsCERN = &storage.NamespaceMetadata{
-		Id:          "lab.cern",
+	nsCERN = &namespaceForSAC{
+		ID:          "lab.cern",
 		Name:        "CERN",
-		ClusterId:   "planet.earth",
+		ClusterID:   "planet.earth",
 		ClusterName: "Earth",
 		Labels: map[string]string{
 			"focus":  "physics",
@@ -104,10 +102,10 @@ var (
 		},
 	}
 
-	nsJPL = &storage.NamespaceMetadata{
-		Id:          "lab.jpl",
+	nsJPL = &namespaceForSAC{
+		ID:          "lab.jpl",
 		Name:        "JPL",
-		ClusterId:   "planet.earth",
+		ClusterID:   "planet.earth",
 		ClusterName: "Earth",
 		Labels: map[string]string{
 			"focus":  "applied_research",
@@ -115,10 +113,10 @@ var (
 		},
 	}
 
-	nsAtreides = &storage.NamespaceMetadata{
-		Id:          "house.atreides",
+	nsAtreides = &namespaceForSAC{
+		ID:          "house.atreides",
 		Name:        "Atreides",
-		ClusterId:   "planet.arrakis",
+		ClusterID:   "planet.arrakis",
 		ClusterName: "Arrakis",
 		Labels: map[string]string{
 			"focus":     "melange",
@@ -126,20 +124,20 @@ var (
 		},
 	}
 
-	nsHarkonnen = &storage.NamespaceMetadata{
-		Id:          "house.harkonnen",
+	nsHarkonnen = &namespaceForSAC{
+		ID:          "house.harkonnen",
 		Name:        "Harkonnen",
-		ClusterId:   "planet.arrakis",
+		ClusterID:   "planet.arrakis",
 		ClusterName: "Arrakis",
 		Labels: map[string]string{
 			"focus": "melange",
 		},
 	}
 
-	nsSpacingGuild = &storage.NamespaceMetadata{
-		Id:          "org.spacingguild",
+	nsSpacingGuild = &namespaceForSAC{
+		ID:          "org.spacingguild",
 		Name:        "Spacing Guild",
-		ClusterId:   "planet.arrakis",
+		ClusterID:   "planet.arrakis",
 		ClusterName: "Arrakis",
 		Labels: map[string]string{
 			"focus":     "transportation",
@@ -148,10 +146,10 @@ var (
 		},
 	}
 
-	nsBeneGesserit = &storage.NamespaceMetadata{
-		Id:          "org.benegesserit",
+	nsBeneGesserit = &namespaceForSAC{
+		ID:          "org.benegesserit",
 		Name:        "Bene Gesserit",
-		ClusterId:   "planet.arrakis",
+		ClusterID:   "planet.arrakis",
 		ClusterName: "Arrakis",
 		Labels: map[string]string{
 			"region": "dune_universe",
@@ -159,17 +157,17 @@ var (
 		},
 	}
 
-	nsFremen = &storage.NamespaceMetadata{
-		Id:          "tribe.fremen",
+	nsFremen = &namespaceForSAC{
+		ID:          "tribe.fremen",
 		Name:        "Fremen",
-		ClusterId:   "planet.arrakis",
+		ClusterID:   "planet.arrakis",
 		ClusterName: "Arrakis",
 	}
 
-	nsErrored = &storage.NamespaceMetadata{
-		Id:          "not.found",
+	nsErrored = &namespaceForSAC{
+		ID:          "not.found",
 		Name:        "Not Found",
-		ClusterId:   "not.found",
+		ClusterID:   "not.found",
 		ClusterName: "Not Found",
 		Labels: map[string]string{
 			"code": "404",
@@ -567,33 +565,121 @@ func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespace
 	return m
 }
 
-func included(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func included(n *namespaceForSAC) *namespacesScopeSubTree {
 	return namespace(Included, n)
 }
 
-func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func includedStandard(n *namespaceForSAC) *namespacesScopeSubTree {
 	return namespaceStandard(Included, n)
 }
 
-func excluded(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func excluded(n *namespaceForSAC) *namespacesScopeSubTree {
 	return namespace(Excluded, n)
 }
 
-func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func excludedStandard(n *namespaceForSAC) *namespacesScopeSubTree {
 	return namespaceStandard(Excluded, n)
 }
 
-func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespace(scope scopeState, n *namespaceForSAC) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
-		ID:     n.Id,
+		ID:     n.ID,
 		Name:   n.Name,
 		Labels: n.Labels,
 	}}
 }
 
-func namespaceStandard(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespaceStandard(scope scopeState, n *namespaceForSAC) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
-		ID:   n.Id,
+		ID:   n.ID,
 		Name: n.Name,
 	}}
+}
+
+type clusterForSAC struct {
+	ID     string
+	Name   string
+	Labels map[string]string
+}
+
+func (c *clusterForSAC) GetID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ID
+}
+
+func (c *clusterForSAC) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *clusterForSAC) GetLabels() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Labels
+}
+
+func cloneCluster(c ClusterForSAC) ClusterForSAC {
+	clonedLabels := make(map[string]string, len(c.GetLabels()))
+	for k, v := range c.GetLabels() {
+		clonedLabels[k] = v
+	}
+	return &clusterForSAC{
+		ID:     c.GetID(),
+		Name:   c.GetName(),
+		Labels: clonedLabels,
+	}
+}
+
+type namespaceForSAC struct {
+	ID          string
+	Name        string
+	ClusterID   string
+	ClusterName string
+	Labels      map[string]string
+}
+
+func (n *namespaceForSAC) GetID() string {
+	if n == nil {
+		return ""
+	}
+	return n.ID
+}
+
+func (n *namespaceForSAC) GetName() string {
+	if n == nil {
+		return ""
+	}
+	return n.Name
+}
+
+func (n *namespaceForSAC) GetClusterName() string {
+	if n == nil {
+		return ""
+	}
+	return n.ClusterName
+}
+
+func (n *namespaceForSAC) GetLabels() map[string]string {
+	if n == nil {
+		return nil
+	}
+	return n.Labels
+}
+
+func cloneNamespace(ns NamespaceForSAC) NamespaceForSAC {
+	clonedLabels := make(map[string]string, len(ns.GetLabels()))
+	for k, v := range ns.GetLabels() {
+		clonedLabels[k] = v
+	}
+	return &namespaceForSAC{
+		ID:          ns.GetID(),
+		Name:        ns.GetName(),
+		ClusterName: ns.GetClusterName(),
+		Labels:      clonedLabels,
+	}
 }

@@ -10,39 +10,40 @@ import (
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-var clusters = []*storage.Cluster{
-	{
-		Id:   uuid.NewV4().String(),
+var clusters = []effectiveaccessscope.ClusterForSAC{
+	&clusterForSAC{
+		ID:   uuid.NewV4().String(),
 		Name: "remote",
 	},
-	{
-		Id:   uuid.NewV4().String(),
+	&clusterForSAC{
+		ID:   uuid.NewV4().String(),
 		Name: "secured",
 	},
 }
 
-var namespaces = []*storage.NamespaceMetadata{
+var namespaces = []effectiveaccessscope.NamespaceForSAC{
 	remoteNS,
 	securedNS,
 }
 
-var remoteNS = &storage.NamespaceMetadata{
-	Id:          "namespace1",
+var remoteNS = &namespaceForSAC{
+	ID:          "namespace1",
 	Name:        "ns1",
-	ClusterId:   clusters[0].Id,
+	ClusterID:   clusters[0].GetID(),
 	ClusterName: "remote",
 }
 
-var securedNS = &storage.NamespaceMetadata{
-	Id:          "namespace2",
+var securedNS = &namespaceForSAC{
+	ID:          "namespace2",
 	Name:        "ns2",
-	ClusterId:   clusters[1].Id,
+	ClusterID:   clusters[1].GetID(),
 	ClusterName: "secured",
 }
 
@@ -114,7 +115,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			identityGen: func() authn.Identity {
 				accessScope := &storage.SimpleAccessScope{
 					Rules: &storage.SimpleAccessScope_Rules{
-						IncludedClusters: []string{clusters[0].Name},
+						IncludedClusters: []string{clusters[0].GetName()},
 					},
 				}
 				mockRole1 := permissionsMocks.NewMockResolvedRole(mockCtrl)
@@ -144,9 +145,9 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 			identityGen: func() authn.Identity {
 				accessScope := &storage.SimpleAccessScope{
 					Rules: &storage.SimpleAccessScope_Rules{
-						IncludedClusters: []string{clusters[0].Name},
+						IncludedClusters: []string{clusters[0].GetName()},
 						IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-							{ClusterName: clusters[1].Name, NamespaceName: securedNS.Name},
+							{ClusterName: clusters[1].GetName(), NamespaceName: securedNS.Name},
 						},
 					},
 				}
@@ -156,9 +157,9 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				return mockID
 			},
 			expectedQ: search.DisjunctionQuery(
-				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].Id).ProtoQuery(),
+				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].GetID()).ProtoQuery(),
 				search.ConjunctionQuery(
-					search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].Id).ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].GetID()).ProtoQuery(),
 					search.NewQueryBuilder().AddExactMatches(search.Namespace, securedNS.Name).ProtoQuery(),
 				),
 			),
@@ -193,3 +194,70 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 func assertByDirectComparison(t testing.TB, expected *v1.Query, actual *v1.Query) {
 	assert.Equal(t, expected, actual)
 }
+
+// region SAC helpers
+
+type clusterForSAC struct {
+	ID     string
+	Name   string
+	Labels map[string]string
+}
+
+func (c *clusterForSAC) GetID() string {
+	if c == nil {
+		return ""
+	}
+	return c.ID
+}
+
+func (c *clusterForSAC) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *clusterForSAC) GetLabels() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Labels
+}
+
+type namespaceForSAC struct {
+	ID          string
+	Name        string
+	ClusterID   string
+	ClusterName string
+	Labels      map[string]string
+}
+
+func (n *namespaceForSAC) GetID() string {
+	if n == nil {
+		return ""
+	}
+	return n.ID
+}
+
+func (n *namespaceForSAC) GetName() string {
+	if n == nil {
+		return ""
+	}
+	return n.Name
+}
+
+func (n *namespaceForSAC) GetClusterName() string {
+	if n == nil {
+		return ""
+	}
+	return n.ClusterName
+}
+
+func (n *namespaceForSAC) GetLabels() map[string]string {
+	if n == nil {
+		return nil
+	}
+	return n.Labels
+}
+
+// endregion SAC helpers
