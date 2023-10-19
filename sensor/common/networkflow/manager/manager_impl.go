@@ -417,7 +417,10 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
+	log.Debugf("Enriching connection: %+v", conn)
+
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
+	log.Debugf("Found container for connection? %t", ok)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -428,6 +431,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 		return
 	}
+	log.Debugf("Container for connection: %s, %s", container.ContainerName, container.ContainerID)
 
 	var lookupResults []clusterentities.LookupResult
 
@@ -438,6 +442,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
+	log.Debugf("Connection is fresh: %t", isFresh)
+	log.Debugf("Connection lookupResults: %+v", lookupResults)
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
