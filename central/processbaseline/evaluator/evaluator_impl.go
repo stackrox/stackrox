@@ -55,7 +55,7 @@ func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Depl
 }
 
 func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error) {
-	containerNameToBaselineedProcesses := make(map[string]*set.StringSet)
+	containerNameToBaselinedProcesses := make(map[string]*set.StringSet)
 	containerNameToBaselineResults := make(map[string]*storage.ContainerNameAndBaselineStatus)
 
 	var hasAtLeastOneLockedBaseline bool
@@ -82,7 +82,7 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 		processSet := processbaseline.Processes(baseline, processbaseline.RoxOrUserLocked)
 		if processSet != nil {
-			containerNameToBaselineedProcesses[container.GetName()] = processSet
+			containerNameToBaselinedProcesses[container.GetName()] = processSet
 		}
 	}
 
@@ -94,7 +94,7 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 	}
 	for _, process := range processes {
-		processSet, exists := containerNameToBaselineedProcesses[process.GetContainerName()]
+		processSet, exists := containerNameToBaselinedProcesses[process.GetContainerName()]
 		// If no explicit baseline, then all processes are valid.
 		if !exists {
 			continue
