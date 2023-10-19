@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.6.0
-	cloud.google.com/go/storage v1.29.0
+	cloud.google.com/go/containeranalysis v0.10.1
+	cloud.google.com/go/storage v1.30.1
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
@@ -38,7 +38,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-jwt/jwt/v4 v4.4.3
 	github.com/golang/mock v1.7.0-rc.1
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.3
 	github.com/google/certificate-transparency-go v1.1.4
 	github.com/google/gnostic v0.6.9
 	github.com/google/go-cmp v0.5.9
@@ -100,15 +100,15 @@ require (
 	golang.org/x/crypto v0.14.0
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
 	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.4.0
-	golang.org/x/sync v0.1.0
+	golang.org/x/oauth2 v0.10.0
+	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.13.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.6.0
 	golang.stackrox.io/grpc-http1 v0.2.6
-	google.golang.org/api v0.107.0
-	google.golang.org/genproto v0.0.0-20230131230820-1c016267d619
-	google.golang.org/grpc v1.52.3
+	google.golang.org/api v0.126.0
+	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98
+	google.golang.org/grpc v1.58.3
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
@@ -134,15 +134,18 @@ require github.com/hashicorp/golang-lru v0.5.4
 require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
+	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/jackc/pgx/v5 v5.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
 	github.com/skeema/knownhosts v1.1.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
 )
 
 require (
-	cloud.google.com/go v0.107.0 // indirect
-	cloud.google.com/go/compute v1.14.0 // indirect
-	cloud.google.com/go/iam v0.8.0 // indirect
+	cloud.google.com/go v0.110.4 // indirect
+	cloud.google.com/go/compute v1.21.0 // indirect
+	cloud.google.com/go/iam v1.1.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
@@ -219,17 +222,16 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/gobuffalo/flect v0.2.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/golang/glog v1.0.0 // indirect
+	github.com/golang/glog v1.1.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/martian/v3 v3.3.2 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.1 // indirect
-	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
+	github.com/googleapis/gax-go/v2 v2.11.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
@@ -352,7 +354,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -422,7 +424,7 @@ replace (
 	//       there is a mix of header auth and body auth in existence, which
 	//       the library solves with autosensing + caching, and what we don't
 	//       want to reimplement in our code.
-	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20220531064142-8b312376cb4c
+	golang.org/x/oauth2 => github.com/stackrox/oauth2 v0.0.0-20230323154701-8854a69ca091
 
 	gopkg.in/yaml.v2 => github.com/stackrox/yaml/v2 v2.4.1
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
