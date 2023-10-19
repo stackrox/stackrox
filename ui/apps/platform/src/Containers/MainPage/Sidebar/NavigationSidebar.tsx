@@ -32,6 +32,7 @@ import {
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    exceptionManagementPath,
 } from 'routePaths';
 
 import NavigationContent from './NavigationContent';
@@ -160,6 +161,12 @@ const navDescriptions: NavDescription[] = [
                 content: <NavigationContent variant="TechPreview">Workload CVEs</NavigationContent>,
                 path: vulnerabilitiesWorkloadCvesPath,
                 routeKey: 'workload-cves',
+            },
+            {
+                type: 'child',
+                content: 'Exception Management',
+                path: exceptionManagementPath,
+                routeKey: 'exception-management',
             },
             {
                 type: 'child',

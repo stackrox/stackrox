@@ -13,6 +13,7 @@ export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 export const authorizeRoxctlPath = '/authorize-roxctl';
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 
 // Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 export const accessControlBasePath = `${mainPath}/access-control`;
@@ -41,6 +42,7 @@ export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
 export const exceptionConfigurationPath = `${mainPath}/exception-configuration`;
+export const exceptionManagementPath = `${vulnerabilitiesBasePath}/exception-management`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
@@ -68,7 +70,6 @@ export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
-export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
@@ -154,6 +155,7 @@ export type RouteKey =
     | 'configmanagement'
     | 'dashboard'
     | 'exception-configuration'
+    | 'exception-management'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -246,6 +248,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'exception-configuration': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource(['Administration']),
+    },
+    'exception-management': {
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
+        resourceAccessRequirements: everyResource(['VulnerabilityManagementRequests']),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
@@ -408,6 +414,7 @@ const vulnerabilitiesPathToLabelMap = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
+    [exceptionManagementPath]: 'Exception Management',
 };
 
 export const basePathToLabelMap = {
