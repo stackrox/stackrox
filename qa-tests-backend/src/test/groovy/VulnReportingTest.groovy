@@ -65,6 +65,7 @@ class VulnReportingTest extends BaseSpecification {
         orchestrator.deleteNamespace(SECONDARY_NAMESPACE)
     }
 
+    @IgnoreIf({ Env.ROX_VULN_MGMT_REPORTING_ENHANCEMENTS=="true" })
     @Tag("BAT")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
