@@ -348,17 +348,6 @@
         }
       }
     },
-    "storageClairConfig": {
-      "type": "object",
-      "properties": {
-        "endpoint": {
-          "type": "string"
-        },
-        "insecure": {
-          "type": "boolean"
-        }
-      }
-    },
     "storageClairV4Config": {
       "type": "object",
       "properties": {
@@ -499,9 +488,6 @@
         },
         "google": {
           "$ref": "#/definitions/storageGoogleConfig"
-        },
-        "clair": {
-          "$ref": "#/definitions/storageClairConfig"
         },
         "clairV4": {
           "$ref": "#/definitions/storageClairV4Config"
