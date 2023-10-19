@@ -49,9 +49,13 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 		}
 	}
 
-	if vulnRequest.GetUpdatedDeferralReq() != nil {
-		out.UpdatedReq = &v2.VulnerabilityException_DeferralReqUpdate{
-			DeferralReqUpdate: deferralRequest(vulnRequest.GetUpdatedDeferralReq()),
+	if vulnRequest.GetDeferralUpdate() != nil {
+		out.UpdatedReq = &v2.VulnerabilityException_DeferralUpdate{
+			DeferralUpdate: deferralUpdate(vulnRequest.GetDeferralUpdate()),
+		}
+	} else if vulnRequest.GetFalsePositiveUpdate() != nil {
+		out.UpdatedReq = &v2.VulnerabilityException_FalsePositiveUpdate{
+			FalsePositiveUpdate: falsePositiveUpdate(vulnRequest.GetFalsePositiveUpdate()),
 		}
 	}
 
@@ -135,5 +139,18 @@ func exceptionExpiryType(t storage.RequestExpiry_ExpiryType) v2.ExceptionExpiry_
 	default:
 		utils.Should(errors.Errorf("unhandled expiry type encountered %s", t))
 		return v2.ExceptionExpiry_TIME
+	}
+}
+
+func deferralUpdate(update *storage.DeferralUpdate) *v2.DeferralUpdate {
+	return &v2.DeferralUpdate{
+		Cves:   update.GetCVEs(),
+		Expiry: exceptionExpiry(update.GetExpiry()),
+	}
+}
+
+func falsePositiveUpdate(update *storage.FalsePositiveUpdate) *v2.FalsePositiveUpdate {
+	return &v2.FalsePositiveUpdate{
+		CVEs: update.GetCVEs(),
 	}
 }
