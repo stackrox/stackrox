@@ -26,11 +26,6 @@ function create_pull_secret() {
   log "Creating image pull secret..."
   "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
     | kubectl -n "${operator_ns}" apply -f -
-
-  log "Adding pull secret to service account..."
-  # This can be removed once we no longer need to support OpenShift 4.6.
-  # OLM in OpenShift 4.7 properly propagates the image pull secret from `CatalogSource` to the index pod.
-  kubectl -n "${operator_ns}" patch serviceaccount default -p '{"imagePullSecrets": [{"name": "'${pull_secret}'"}]}'
 }
 
 function apply_operator_manifests() {
