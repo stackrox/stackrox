@@ -121,9 +121,9 @@ message VulnerabilityRequest {
 
     // 21 to 25 reserved for the updated request type oneof.
     oneof updated_req {
-        DeferralRequest              updated_deferral_req = 21 [deprecated = true, (gogoproto.moretags) = 'search:"-"'];
-        DeferralUpdate               deferral_update      = 22 [(gogoproto.moretags) = 'search:"-"'];
-        FalsePositiveUpdate          fp_update            = 23;
+        DeferralRequest              updated_deferral_req  = 21 [deprecated = true, (gogoproto.moretags) = 'search:"-"'];
+        DeferralUpdate               deferral_update       = 22 [(gogoproto.moretags) = 'search:"-"'];
+        FalsePositiveUpdate          false_positive_update = 23;
     }
 
 }

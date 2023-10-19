@@ -593,7 +593,7 @@
         "deferralUpdate": {
           "$ref": "#/definitions/storageDeferralUpdate"
         },
-        "fpUpdate": {
+        "falsePositiveUpdate": {
           "$ref": "#/definitions/storageFalsePositiveUpdate"
         }
       },

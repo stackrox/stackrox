@@ -52,8 +52,8 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 			DeferralUpdate: DeferralUpdate(vulnException.GetDeferralUpdate()),
 		}
 	} else if vulnException.GetFalsePositiveUpdate() != nil {
-		out.UpdatedReq = &storage.VulnerabilityRequest_FpUpdate{
-			FpUpdate: FalsePositiveUpdate(vulnException.GetFalsePositiveUpdate()),
+		out.UpdatedReq = &storage.VulnerabilityRequest_FalsePositiveUpdate{
+			FalsePositiveUpdate: FalsePositiveUpdate(vulnException.GetFalsePositiveUpdate()),
 		}
 	}
 	return out
