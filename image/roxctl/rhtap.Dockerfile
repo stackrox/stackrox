@@ -19,6 +19,7 @@ RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app
     git fetch --tags --force && \
     mkdir -p image/bin
 
+# TODO(ROX-20240): enable non-release development builds.
 ENV CI=1 GOFLAGS="" GOTAGS="release"
 
 RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) BUILD_TAG=$(make tag) scripts/go-build.sh ./roxctl && \
