@@ -18,10 +18,11 @@ download_cluster_artifacts() {
 }
 
 fetch_cluster_credentials() {
-    DATA=()
-    while IFS=' ' read -ra item; do
-        DATA+=("${item[@]}")
-    done < <(kubectl get secret/access-rhacs -n stackrox -o jsonpath='{.data}' 2>/dev/null | jq -r '(.central_url|@base64d) +" "+ (.username|@base64d) +" "+(.password|@base64d)')
+    if ! command -v readarray > /dev/null 2>&1; then
+        echo "ERROR: readarray is a requirement for this script. Ensure that your default bash is at least v4."
+        exit 1
+    fi
+    readarray -d ' ' -t DATA < <(kubectl get secret/access-rhacs -n stackrox -o jsonpath='{.data}' | jq -r '(.central_url|@base64d) +" "+ (.username|@base64d) +" "+(.password|@base64d)' | tr -d "\n")
 }
 
 print_cluster_credentials() {
