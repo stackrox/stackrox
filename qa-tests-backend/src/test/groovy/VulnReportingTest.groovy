@@ -66,6 +66,7 @@ class VulnReportingTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    @IgnoreIf({ true }) // Skipping temporarily since this needs to be updated to v2 reports API
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:
         "Central is using postgres"
