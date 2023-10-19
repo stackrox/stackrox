@@ -13,7 +13,7 @@ fi
 
 # Ensure that the cluster name is correct even if the user specified the version tag instead of the dashed name.
 # shellcheck disable=2034
-CLUSTER_NAME=${1//./-}
+CLUSTER_NAME="${1//./-}"
 ARTIFACTS_DIR="$(mktemp -d)/artifacts"
 export KUBECONFIG="${ARTIFACTS_DIR}/kubeconfig"
 
