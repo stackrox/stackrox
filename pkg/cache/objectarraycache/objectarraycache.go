@@ -30,6 +30,8 @@ func NewObjectArrayCache[T any](validityPeriod time.Duration, refreshFn RefreshF
 	}
 }
 
+// GetObjects retrieves the array of objects, either from cache (when not
+// expired), or using the refresh function (when the cache is expired).
 func (c *ObjectArrayCache[T]) GetObjects(ctx context.Context) ([]*T, error) {
 	objects, valid := c.getObjectsFromCache()
 	if valid {
@@ -82,6 +84,7 @@ func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
 	}
 }
 
+// Refresh triggers a manual refresh of the cache.
 func (c *ObjectArrayCache[T]) Refresh(ctx context.Context) error {
 	objects, err := c.refreshFn(ctx)
 	if err != nil {
