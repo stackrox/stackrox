@@ -129,12 +129,6 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Scanner',
         image: clair,
-        label: '[DEPRECATED] CoreOS Clair',
-        type: 'clair',
-    },
-    {
-        categories: 'Scanner',
-        image: clair,
         label: 'Clair v4',
         type: 'clairV4',
     },

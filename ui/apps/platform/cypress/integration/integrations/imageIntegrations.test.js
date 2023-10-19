@@ -342,9 +342,9 @@ describe('Image Integrations', () => {
         // Test does not delete, because it did not create.
     });
 
-    it('should create a new Clair integration', () => {
-        const integrationName = generateNameWithDate('Clair Test');
-        const integrationType = 'clair';
+    it('should create a new Clair v4 integration', () => {
+        const integrationName = generateNameWithDate('Clair v4 Test');
+        const integrationType = 'clairV4';
 
         visitIntegrationsTable(integrationSource, integrationType);
         clickCreateNewIntegrationInTable(integrationSource, integrationType);

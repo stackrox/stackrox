@@ -25,7 +25,8 @@ message ImageIntegration {
         QuayConfig        quay      = 10;
         ECRConfig         ecr       = 11;
         GoogleConfig      google    = 13;
-        ClairConfig       clair     = 14;
+        // Previously: ClairConfig clair (Clair v2).
+        reserved 14;
         ClairV4Config     clair_v4  = 22;
         IBMRegistryConfig ibm       = 20;
     }
@@ -66,11 +67,6 @@ message QuayConfig {
         // The server will mask the value of this password in responses and logs.
         string password  = 2 [(gogoproto.moretags) = 'scrub:"always"'];
     }
-}
-
-message ClairConfig {
-    string endpoint = 1 [(gogoproto.moretags) = 'validate:"nolocalendpoint"'];
-    bool   insecure = 2;
 }
 
 message ClairV4Config {

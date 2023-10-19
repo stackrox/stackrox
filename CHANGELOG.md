@@ -25,6 +25,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-9510: As announced in release 69.0, empty value for `role.access_scope_id` is not supported anymore for `CreateRole` and `UpdateRole` in `/v1/roles/`. Role creation and update now require passing an identifier referencing a valid access scope in `role.access_scope_id`.
 - The UI menu option `Vulnerability Reporting` under `Vulnerability Management (1.0)` has been removed. The new and improved v2 version is available under `Vulnerability Management (2.0)`. 
 - The `/v1/report` APIs have been removed. Please use `/v2/reports/` APIs.
+- ROX-20320: CoreOS Clair (Clair v2) is no longer a supported image integration.
 
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.

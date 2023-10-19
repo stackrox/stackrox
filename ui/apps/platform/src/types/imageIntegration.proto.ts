@@ -20,7 +20,6 @@ export type ImageIntegration =
     | ArtifactoryImageIntegration
     | ArtifactRegistryImageIntegration
     | AzureImageIntegration
-    | ClairImageIntegration
     | ClairV4ImageIntegration
     | ClairifyImageIntegration
     | DockerImageIntegration
@@ -42,16 +41,6 @@ export type ArtifactRegistryImageIntegration = {
 export type AzureImageIntegration = {
     type: 'azure';
 } & BaseImageIntegration;
-
-export type ClairImageIntegration = {
-    type: 'clair';
-    clair: ClairConfig;
-} & BaseImageIntegration;
-
-export type ClairConfig = {
-    endpoint: string;
-    insecure: boolean;
-};
 
 export type ClairV4ImageIntegration = {
     type: 'clairV4';
