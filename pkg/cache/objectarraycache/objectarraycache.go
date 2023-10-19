@@ -78,9 +78,7 @@ func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
 		}
 	} else {
 		c.objectCache = make([]*T, 0, len(objects))
-		for _, obj := range objects {
-			c.objectCache = append(c.objectCache, obj)
-		}
+		c.objectCache = append(c.objectCache, objects...)
 	}
 }
 
