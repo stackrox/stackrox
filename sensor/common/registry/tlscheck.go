@@ -59,11 +59,12 @@ func (rs *Store) doAndCacheTLSCheck(ctx context.Context, registry string) (bool,
 		return false, errors.Wrapf(err, "unable to check TLS for registry %q", registry)
 	}
 
+	res := tlsCheckResultInsecure
 	if secure {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultSecure)
-	} else {
-		rs.tlsCheckResults.Add(registry, tlsCheckResultInsecure)
+		res = tlsCheckResultSecure
 	}
+
+	rs.tlsCheckResults.Add(registry, res)
 
 	return secure, nil
 }
