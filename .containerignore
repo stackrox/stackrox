@@ -1,7 +1,7 @@
 # This file is derived of the .dockerignore
 # It is required to pass `.git` to the builder containers on RHTAP so we can bake build information into the binary.
 # It is required to pass the `.gitignore` files in `image/bin/` and `image/rhel/bin` and the tests in `qa-tests-backend` to avoid a dirty version.
-# RHTAP uses Buildah which first looks up for `.containerignore`, then, if absent, - `.dockerignore`.
+# RHTAP uses Buildah which first looks up for `.containerignore`, then, if absent, `.dockerignore`.
 # Having this file enables us to have different exclusion list for RHTAP builds than in GHA.
 # To regenerate, replace the below contents with the output of the following command (please keep these comments).
 #  grep -vF -e '/.git/' -e '/image/' -e '/qa-tests-backend/' .dockerignore

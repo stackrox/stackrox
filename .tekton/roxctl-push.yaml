@@ -7,6 +7,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-event: '[push]'
+    # TODO: set to appropriate target branches
     pipelinesascode.tekton.dev/on-target-branch: '[rhtap-roxctl-onboarding]'
   creationTimestamp: null
   labels:
@@ -27,6 +28,7 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  # TODO(ROX-20233, ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
   # - name: prefetch-input
