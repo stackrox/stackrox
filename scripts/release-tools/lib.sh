@@ -5,6 +5,14 @@ export C_PURPLE='\033[0;35m'
 export C_OFF='\033[0m'
 
 download_cluster_artifacts() {
+    if [ "$(infractl whoami)" = "Anonymous" ]; then
+        echo "ERROR: Ensure that your infractl is authenticated."
+        exit 1
+    fi
+    if ! infractl list --all | grep -F "${CLUSTER_NAME}" > /dev/null; then
+        echo "ERROR: Requested cluster does not exist."
+        exit 1
+    fi
     mkdir -p "${ARTIFACTS_DIR}"
     infractl artifacts "${CLUSTER_NAME}" -d "${ARTIFACTS_DIR}" > /dev/null 2>&1
 }
