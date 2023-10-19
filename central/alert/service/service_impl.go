@@ -252,6 +252,8 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		return nil, err
 	}
 
+	log.Infof("Total count: %v - Count data: %+v", len(alerts), alerts)
+
 	if response, ok := alertsCountsResponseFrom(alerts, request.GetGroupBy()); ok {
 		return response, nil
 	}
