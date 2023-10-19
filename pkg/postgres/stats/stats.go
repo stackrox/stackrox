@@ -11,6 +11,7 @@ import (
 type PGStatStatement struct {
 	TotalExecTimeMS  float64
 	MaxExecTimeMS    float64
+	MeanExecTimeMS   float64
 	StddevExecTimeMS float64
 	Calls            int64
 	Rows             int64
@@ -26,14 +27,14 @@ type PGStatStatements struct {
 // GetPGStatStatements returns a statements struct that wraps the results from the query to pg_stat_statements
 func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStatStatements {
 	var statements PGStatStatements
-	rows, err := db.Query(ctx, "select total_exec_time, max_exec_time, stddev_exec_time, calls, rows, substr(query, 1, 1000) from pg_stat_statements order by total_exec_time desc limit $1", limit)
+	rows, err := db.Query(ctx, "select total_exec_time, max_exec_time, mean_exec_time, stddev_exec_time, calls, rows, substr(query, 1, 1000) from pg_stat_statements order by total_exec_time desc limit $1", limit)
 	if err != nil {
 		statements.Error = err.Error()
 		return &statements
 	}
 	for rows.Next() {
 		var statement PGStatStatement
-		if err := rows.Scan(&statement.TotalExecTimeMS, &statement.MaxExecTimeMS, &statement.StddevExecTimeMS, &statement.Calls, &statement.Rows, &statement.Query); err != nil {
+		if err := rows.Scan(&statement.TotalExecTimeMS, &statement.MaxExecTimeMS, &statement.MeanExecTimeMS, &statement.StddevExecTimeMS, &statement.Calls, &statement.Rows, &statement.Query); err != nil {
 			statements.Error = errors.Wrap(err, "error scanning rows from pg_stat_statements").Error()
 			return &statements
 		}
