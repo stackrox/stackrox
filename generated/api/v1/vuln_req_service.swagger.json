@@ -436,8 +436,33 @@
         }
       }
     },
+    "storageDeferralUpdate": {
+      "type": "object",
+      "properties": {
+        "CVEs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expiry": {
+          "$ref": "#/definitions/storageRequestExpiry"
+        }
+      }
+    },
     "storageFalsePositiveRequest": {
       "type": "object"
+    },
+    "storageFalsePositiveUpdate": {
+      "type": "object",
+      "properties": {
+        "CVEs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "storageRequestComment": {
       "type": "object",
@@ -564,9 +589,15 @@
         },
         "updatedDeferralReq": {
           "$ref": "#/definitions/storageDeferralRequest"
+        },
+        "deferralUpdate": {
+          "$ref": "#/definitions/storageDeferralUpdate"
+        },
+        "falsePositiveUpdate": {
+          "$ref": "#/definitions/storageFalsePositiveUpdate"
         }
       },
-      "description": "Next available tag: 23\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
+      "description": "Next available tag: 27\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
     },
     "storageVulnerabilityRequestScope": {
       "type": "object",

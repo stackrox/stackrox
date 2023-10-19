@@ -47,12 +47,15 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		}
 	}
 
-	if vulnException.GetDeferralReqUpdate() != nil {
-		out.UpdatedReq = &storage.VulnerabilityRequest_UpdatedDeferralReq{
-			UpdatedDeferralReq: deferralRequest(vulnException.GetDeferralReqUpdate()),
+	if vulnException.GetDeferralUpdate() != nil {
+		out.UpdatedReq = &storage.VulnerabilityRequest_DeferralUpdate{
+			DeferralUpdate: DeferralUpdate(vulnException.GetDeferralUpdate()),
+		}
+	} else if vulnException.GetFalsePositiveUpdate() != nil {
+		out.UpdatedReq = &storage.VulnerabilityRequest_FalsePositiveUpdate{
+			FalsePositiveUpdate: FalsePositiveUpdate(vulnException.GetFalsePositiveUpdate()),
 		}
 	}
-
 	return out
 }
 
@@ -126,6 +129,21 @@ func FalsePositiveVulnerabilityRequest(ctx context.Context, req *v2.CreateFalseP
 		}
 	}
 	return ret
+}
+
+// DeferralUpdate converts *v2.DeferralUpdate object to *storage.DeferralUpdate object.
+func DeferralUpdate(update *v2.DeferralUpdate) *storage.DeferralUpdate {
+	return &storage.DeferralUpdate{
+		CVEs:   update.GetCves(),
+		Expiry: requestExpiry(update.GetExpiry()),
+	}
+}
+
+// FalsePositiveUpdate converts *v2.FalsePositiveUpdate object to  *storage.FalsePositiveUpdate.
+func FalsePositiveUpdate(update *v2.FalsePositiveUpdate) *storage.FalsePositiveUpdate {
+	return &storage.FalsePositiveUpdate{
+		CVEs: update.GetCVEs(),
+	}
 }
 
 func requestStatus(status v2.ExceptionStatus) storage.RequestStatus {
