@@ -12,7 +12,6 @@ import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import io.stackrox.proto.storage.Vulnerability
 
 import objects.AzureRegistryIntegration
-import objects.ClairScannerIntegration
 import objects.ClairV4ScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
@@ -451,8 +450,6 @@ class ImageScanningTest extends BaseSpecification {
         new StackroxScannerIntegration() | "openssl-libs"        | "1:1.0.2k-12.el7"  | 0   | "CVE-2018-0735"  | RHEL7_IMAGE  | ""
         new StackroxScannerIntegration() | "systemd"             | "229-4ubuntu21.29" | 0   | "CVE-2021-33910" | OCI_IMAGE    | ""
         new StackroxScannerIntegration() | "glibc"               | "2.35-0ubuntu3.1"  | 4   | "CVE-2016-20013" | LIST_IMAGE_OCI_MANIFEST | ""
-        new ClairScannerIntegration()    | "apt"                 | "1.4.8"            | 0   | "CVE-2011-3374"  | NGINX_IMAGE  | ""
-        new ClairScannerIntegration()    | "bash"                | "4.4-5"            | 0   | "CVE-2019-18276" | NGINX_IMAGE  | ""
         new ClairV4ScannerIntegration()  | "openssl-libs"        | "1:1.1.1-8.el8"    | 0   | "RHSA-2021:1024" | UBI8_0_IMAGE | ""
         new ClairV4ScannerIntegration()  | "platform-python-pip" | "9.0.3-13.el8"     | 0   | "RHSA-2020:4432" | UBI8_0_IMAGE | ""
     }
@@ -538,9 +535,9 @@ class ImageScanningTest extends BaseSpecification {
         "tests are:"
 
         scanner                          | expectedMessage                      | testAspect
-        new ClairScannerIntegration()    | /failed to get the manifest digest/  | "image does not exist"
+        new ClairV4ScannerIntegration()  | /failed to get the manifest digest/  | "image does not exist"
         new StackroxScannerIntegration() | /failed to get the manifest digest/  | "image does not exist"
-        new ClairScannerIntegration()    | /no matching image registries found/ | "missing required registry"
+        new ClairV4ScannerIntegration()  | /no matching image registries found/ | "missing required registry"
         new StackroxScannerIntegration() | /no matching image registries found/ | "missing required registry"
 // This is not supported. Scanners get access to previous creds and can pull the images that way.
 // https://stack-rox.atlassian.net/browse/ROX-5376

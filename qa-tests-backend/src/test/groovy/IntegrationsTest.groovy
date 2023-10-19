@@ -11,7 +11,7 @@ import io.stackrox.proto.storage.ScopeOuterClass
 
 import common.Constants
 import objects.AzureRegistryIntegration
-import objects.ClairScannerIntegration
+import objects.ClairV4ScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
@@ -666,7 +666,7 @@ class IntegrationsTest extends BaseSpecification {
 
         imageIntegration                 | customArgs      | testAspect
         new StackroxScannerIntegration() | [:]             | "default config"
-        new ClairScannerIntegration()    | [:]             | "default config"
+        new ClairV4ScannerIntegration()  | [:]             | "default config"
         new QuayImageIntegration()       | [:]             | "default config"
         new GCRImageIntegration()        | [:]             | "default config"
         new AzureRegistryIntegration()   | [:]             | "default config"
@@ -702,7 +702,7 @@ class IntegrationsTest extends BaseSpecification {
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
 
-        new ClairScannerIntegration()   | { [endpoint: "http://127.0.0.1/nowhere",]
+        new ClairV4ScannerIntegration()  | { [endpoint: "http://127.0.0.1/nowhere",]
         }       | StatusRuntimeException |
         /invalid endpoint: endpoint cannot reference localhost/ |
         "invalid endpoint"
