@@ -43,7 +43,7 @@ func (s *nodeDatastoreSACSuite) SetupSuite() {
 	var err error
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.Require().NoError(err)
 	s.optionsMap = schema.NodesSchema.OptionsMap
 

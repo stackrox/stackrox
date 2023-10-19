@@ -67,7 +67,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)
 	s.Require().NoError(err)
-	s.imageStore, err = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.imageStore = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
 	s.Require().NoError(err)
 	s.optionsMap = schema.DeploymentsSchema.OptionsMap
 

@@ -42,12 +42,10 @@ type RiskDataStoreTestSuite struct {
 }
 
 func (suite *RiskDataStoreTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
-	suite.datastore, err = GetTestPostgresDataStore(suite.T(), suite.pool)
-	suite.Require().NoError(err)
+	suite.datastore = GetTestPostgresDataStore(suite.T(), suite.pool)
 
 	suite.optionsMap = schema.RisksSchema.OptionsMap
 
