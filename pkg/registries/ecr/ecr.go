@@ -97,11 +97,11 @@ func (e *ecr) refreshDockerClient() error {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	defer e.setLastRefreshAttempt()
-
-	if e.expiryTime.After(time.Now()) && time.Since(e.lastRefreshAttempt) > refreshAttemptInterval {
+	if e.expiryTime.After(time.Now()) || time.Since(e.lastRefreshAttempt) < refreshAttemptInterval {
 		return nil
 	}
+	defer e.setLastRefreshAttempt()
+
 	if e.integration.GetEcr().GetAuthorizationData() != nil {
 		// This integration has static authorization data, and we never refresh the
 		// tokens in central, rather we wait for sensor to update them.
