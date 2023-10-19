@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
+	rbacV1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -62,6 +63,16 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_NetworkPolicy{NetworkPolicy: &storage.NetworkPolicy{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"Role": {
+			resType:       deduper.TypeRole.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Role{Role: &storage.K8SRole{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"Binding": {
+			resType:       deduper.TypeBinding.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Binding{Binding: &storage.K8SRoleBinding{Id: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
@@ -108,6 +119,14 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetNetworkPolicy().GetId()
 		}, nil
+	case deduper.TypeRole.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetRole().GetId()
+		}, nil
+	case deduper.TypeBinding.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetBinding().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -138,6 +157,13 @@ func initStore() *InMemoryStoreProvider {
 	})
 	s.registryStore.AddSecretID("5000")
 	s.registryStore.AddSecretID("5001")
+
+	s.rbacStore.UpsertRole(&rbacV1.Role{
+		ObjectMeta: metav1.ObjectMeta{UID: "6001", Namespace: "a", Name: "6001"},
+	})
+	s.rbacStore.UpsertClusterRole(&rbacV1.ClusterRole{ObjectMeta: metav1.ObjectMeta{UID: "6002", Name: "6002"}})
+	s.rbacStore.UpsertBinding(&rbacV1.RoleBinding{ObjectMeta: metav1.ObjectMeta{UID: "6003"}})
+	s.rbacStore.UpsertClusterBinding(&rbacV1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{UID: "6004"}})
 	return s
 }
 
@@ -299,6 +325,22 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			},
 			deletedIDs: []string{"97", "98", "99"},
 		},
+		"No RBACs": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("6001", deduper.TypeRole):    76543,
+				makeKey("6003", deduper.TypeBinding): 87654,
+			},
+			deletedIDs: []string{},
+		},
+		"One role, one binding": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("6002", deduper.TypeRole):    76543,
+				makeKey("6004", deduper.TypeBinding): 87654,
+				makeKey("99", deduper.TypeRole):      76543,
+				makeKey("98", deduper.TypeBinding):   87654,
+			},
+			deletedIDs: []string{"99", "98"},
+		},
 	}
 
 	for n, c := range cases {
@@ -318,7 +360,6 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 			s.ElementsMatch(c.deletedIDs, ids)
 		})
 	}
-
 }
 
 func createWrapWithID(id string) *deploymentWrap {

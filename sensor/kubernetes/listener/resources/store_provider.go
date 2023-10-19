@@ -84,6 +84,8 @@ func InitializeStore() *InMemoryStoreProvider {
 		deduper.TypeSecret.String():         p.registryStore,
 		deduper.TypeNode.String():           p.nodeStore,
 		deduper.TypeNetworkPolicy.String():  p.networkPolicyStore,
+		deduper.TypeRole.String():           p.rbacStore,
+		deduper.TypeBinding.String():        p.rbacStore,
 	}
 
 	return p
