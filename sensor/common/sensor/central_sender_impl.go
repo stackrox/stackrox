@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 type centralSenderImpl struct {
@@ -17,10 +18,13 @@ type centralSenderImpl struct {
 	stopper             concurrency.Stopper
 	finished            *sync.WaitGroup
 	initialDeduperState map[deduper.Key]uint64
+	shouldReconcile     bool
+	hashReconciler      store.HashReconciler
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, shouldReconcile bool, initialDeduperState map[deduper.Key]uint64, onStops ...func(error)) {
 	s.initialDeduperState = initialDeduperState
+	s.shouldReconcile = shouldReconcile
 	go s.send(stream, onStops...)
 }
 
@@ -47,6 +51,12 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 		case <-s.stopper.Flow().StopRequested():
 			return
 		}
+	}
+}
+
+func (s *centralSenderImpl) triggerReconcileDelete() {
+	if s.shouldReconcile {
+		s.hashReconciler.ProcessHashes(s.initialDeduperState)
 	}
 }
 
@@ -108,6 +118,8 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 
 			if msg.GetEvent().GetSynced() != nil {
 				log.Info("Sending synced signal to Central")
+				// Deduper hashes should only be processed once sensor listeners have fully synced.
+				s.triggerReconcileDelete()
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {

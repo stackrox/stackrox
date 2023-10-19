@@ -11,8 +11,10 @@ package mocks
 import (
 	reflect "reflect"
 
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	clusterentities "github.com/stackrox/rox/sensor/common/clusterentities"
+	deduper "github.com/stackrox/rox/sensor/common/deduper"
 	rbac "github.com/stackrox/rox/sensor/common/rbac"
 	registry "github.com/stackrox/rox/sensor/common/registry"
 	selector "github.com/stackrox/rox/sensor/common/selector"
@@ -666,4 +668,41 @@ func (m *MockNodeStore) GetNode(nodeName string) *storage.Node {
 func (mr *MockNodeStoreMockRecorder) GetNode(nodeName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockNodeStore)(nil).GetNode), nodeName)
+}
+
+// MockHashReconciler is a mock of HashReconciler interface.
+type MockHashReconciler struct {
+	ctrl     *gomock.Controller
+	recorder *MockHashReconcilerMockRecorder
+}
+
+// MockHashReconcilerMockRecorder is the mock recorder for MockHashReconciler.
+type MockHashReconcilerMockRecorder struct {
+	mock *MockHashReconciler
+}
+
+// NewMockHashReconciler creates a new mock instance.
+func NewMockHashReconciler(ctrl *gomock.Controller) *MockHashReconciler {
+	mock := &MockHashReconciler{ctrl: ctrl}
+	mock.recorder = &MockHashReconcilerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockHashReconciler) EXPECT() *MockHashReconcilerMockRecorder {
+	return m.recorder
+}
+
+// ProcessHashes mocks base method.
+func (m *MockHashReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessHashes", h)
+	ret0, _ := ret[0].([]central.MsgFromSensor)
+	return ret0
+}
+
+// ProcessHashes indicates an expected call of ProcessHashes.
+func (mr *MockHashReconcilerMockRecorder) ProcessHashes(h any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessHashes", reflect.TypeOf((*MockHashReconciler)(nil).ProcessHashes), h)
 }

@@ -201,6 +201,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
+		resources.NewResourceStoreReconciler(storeProvider),
 		components...,
 	)
 

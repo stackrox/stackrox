@@ -1,8 +1,10 @@
 package store
 
 import (
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/rbac"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
@@ -88,4 +90,8 @@ type EndpointManager interface {
 // NodeStore represents a collection of Nodes
 type NodeStore interface {
 	GetNode(nodeName string) *storage.Node
+}
+
+type HashReconciler interface {
+	ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor
 }

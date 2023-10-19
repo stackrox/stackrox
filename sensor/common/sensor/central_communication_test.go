@@ -20,6 +20,7 @@ import (
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
+	storeMock "github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -30,11 +31,12 @@ import (
 type centralCommunicationSuite struct {
 	suite.Suite
 
-	controller   *gomock.Controller
-	mockHandler  *configMocks.MockHandler
-	mockDetector *mocksDetector.MockDetector
-	mockService  *MockSensorServiceClient
-	comm         CentralCommunication
+	controller     *gomock.Controller
+	mockHandler    *configMocks.MockHandler
+	mockDetector   *mocksDetector.MockDetector
+	mockService    *MockSensorServiceClient
+	mockReconciler *storeMock.MockHashReconciler
+	comm           CentralCommunication
 }
 
 var _ suite.SetupTestSuite = (*centralCommunicationSuite)(nil)
@@ -45,6 +47,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.controller = mockCtrl
 	c.mockHandler = configMocks.NewMockHandler(mockCtrl)
 	c.mockDetector = mocksDetector.NewMockDetector(mockCtrl)
+	c.mockReconciler = storeMock.NewMockHashReconciler(mockCtrl)
 
 	certPath := "../../../tools/local-sensor/certs/"
 
@@ -59,6 +62,7 @@ func (c *centralCommunicationSuite) SetupTest() {
 	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	c.mockReconciler.EXPECT().ProcessHashes(gomock.Any()).AnyTimes().Return(nil)
 }
 
 func Test_CentralCommunicationSuite(t *testing.T) {
@@ -288,7 +292,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(nil, false, clientReconcile, NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
