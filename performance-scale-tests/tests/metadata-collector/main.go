@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"unicode"
 
@@ -34,6 +35,8 @@ type MetadataField struct {
 }
 
 var (
+	metadataFields []MetadataField
+
 	// Please keep in alphabetic order of the name field.
 	acsEnabledFeatures           = newMetadataStringField("acsEnabledFeatures", false, "comma-separated list of the ACS features enabled on the test cluster")
 	acsVersion                   = newMetadataStringField("acsVersion", false, "ACS version used on the test cluster")
@@ -62,39 +65,7 @@ var (
 	workerNodesKernelVersion     = newMetadataStringField("workerNodesKernelVersion", false, "kernel version used on the worker nodes on the test cluster")
 	workerNodesType              = newMetadataStringField("workerNodesType", true, "type of the worker nodes used on the test cluster")
 
-	metadataFields = []MetadataField{
-		// Please keep in alphabetic order of the name field.
-		acsEnabledFeatures,
-		acsVersion,
-		clusterType,
-		configsPerDeploymentCount,
-		cpuArchitecture,
-		deploymentsPerNamespaceCount,
-		infraNodesCount,
-		infraNodesKernelVersion,
-		infraNodesType,
-		k8sVersion,
-		masterNodesCount,
-		masterNodesKernelVersion,
-		masterNodesType,
-		namespacesCount,
-		ocpMajorVersion,
-		ocpVersion,
-		otherNodesCount,
-		platform,
-		podsPerDeploymentCount,
-		sdnType,
-		testWorkloadType,
-		testWorkloadVersion,
-		totalNodes,
-		workerNodesCount,
-		workerNodesKernelVersion,
-		workerNodesType,
-	}
-
-	AllMetadata = make(map[string]interface{}, len(metadataFields))
-
-	kubeconfigpath = os.Getenv("KUBECONFIG")
+	allMetadata = make(map[string]interface{}, len(metadataFields))
 )
 
 func newMetadataField(
@@ -103,12 +74,14 @@ func newMetadataField(
 	fieldType fieldType,
 	description string,
 ) MetadataField {
-	return MetadataField{
+	field := MetadataField{
 		Name:                  name,
 		Description:           description,
 		FieldType:             fieldType,
 		AutomaticallyGathered: automaticallyCollected,
 	}
+	metadataFields = append(metadataFields, field)
+	return field
 }
 
 func newMetadataIntField(
@@ -149,19 +122,19 @@ func (f *MetadataField) getFlagName() string {
 }
 
 func (f *MetadataField) getDescription() string {
-	var b strings.Builder
-	b.WriteString(f.Description)
-	if f.AutomaticallyGathered {
-		b.WriteString(" - This field is automatically collected by default")
+	if !f.AutomaticallyGathered {
+		return f.Description
 	}
-	return b.String()
+	return f.Description + " - This field is automatically collected by default"
 }
 
 func main() {
 	outputPath := "run_metadata.yaml"
+	var kubeConfigPath string
 
-	if len(kubeconfigpath) == 0 {
-		kubeconfigpath = strings.Join([]string{os.Getenv("HOME"), ".kube", "config"}, "/")
+	kubeConfigPathDefault := os.Getenv("KUBECONFIG")
+	if len(kubeConfigPathDefault) == 0 {
+		kubeConfigPathDefault = filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	}
 
 	cmd := &cobra.Command{
@@ -173,7 +146,7 @@ func main() {
 				return errors.New("expected no arguments; please check usage")
 			}
 
-			collectDataErr := collectAutomaticData(c)
+			collectDataErr := collectAutomaticData(kubeConfigPath)
 			if collectDataErr != nil {
 				fmt.Fprintf(os.Stderr, "error during the automated data collection: %v\n", collectDataErr)
 			}
@@ -185,14 +158,14 @@ func main() {
 				switch field.FieldType {
 				case integerFieldType:
 					val, _ := c.Flags().GetInt(field.getFlagName())
-					AllMetadata[field.Name] = val
+					allMetadata[field.Name] = val
 				case stringFieldType:
 					val, _ := c.Flags().GetString(field.getFlagName())
-					AllMetadata[field.Name] = val
+					allMetadata[field.Name] = val
 				}
 			}
 
-			writeErr := WriteMetadata(outputPath, AllMetadata)
+			writeErr := WriteMetadata(outputPath, allMetadata)
 			if writeErr != nil {
 				return writeErr
 			}
@@ -201,7 +174,7 @@ func main() {
 	}
 
 	cmd.Flags().StringVar(&outputPath, "output-file", "run_metadata.yaml", "location where the consolidated metadata should be written to")
-	cmd.Flags().StringVar(&kubeconfigpath, "kubeconf-path", kubeconfigpath, "location of the kubernetes config file used for cluster infromation retrieval")
+	cmd.Flags().StringVar(&kubeConfigPath, "kubeconf-path", kubeConfigPathDefault, "location of the kubernetes config file used for cluster infromation retrieval")
 
 	for _, field := range metadataFields {
 		switch field.FieldType {
@@ -222,31 +195,23 @@ func WriteMetadata(outputPath string, values map[string]any) error {
 	if encodeErr != nil {
 		return encodeErr
 	}
-	outputFile, openErr := os.OpenFile(outputPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-	if openErr != nil {
-		return openErr
-	}
-	defer outputFile.Close()
-	writtenBytes, writeErr := outputFile.Write(bytes)
+	writeErr := os.WriteFile(outputPath, bytes, 0600)
 	if writeErr != nil {
 		return writeErr
-	}
-	if writtenBytes < len(bytes) {
-		return fmt.Errorf("wrote %d bytes out of %d", writtenBytes, len(bytes))
 	}
 	return nil
 }
 
-func collectAutomaticData(cmd *cobra.Command) error {
+func collectAutomaticData(kubeConfigPath string) error {
 	var err *multierror.Error
 	gitRevision, gitLookupErr := getGitRevision()
 	if gitLookupErr != nil {
 		err = multierror.Append(err, gitLookupErr)
 	} else {
-		AllMetadata[testWorkloadVersion.Name] = gitRevision
+		allMetadata[testWorkloadVersion.Name] = gitRevision
 	}
 
-	clusterInfoErr := collectClusterInformation()
+	clusterInfoErr := collectClusterInformation(kubeConfigPath)
 	if clusterInfoErr != nil {
 		err = multierror.Append(err, clusterInfoErr)
 	}
@@ -297,8 +262,8 @@ func getGitRevision() (string, error) {
 	return hashString, nil
 }
 
-func collectClusterInformation() error {
-	config, configErr := clientcmd.BuildConfigFromFlags("", kubeconfigpath)
+func collectClusterInformation(kubeConfigurationPath string) error {
+	config, configErr := clientcmd.BuildConfigFromFlags("", kubeConfigurationPath)
 	if configErr != nil {
 		return configErr
 	}
@@ -311,20 +276,20 @@ func collectClusterInformation() error {
 		return infoFetchErr
 	}
 
-	AllMetadata[clusterType.Name] = clusterMetadata.ClusterType
-	AllMetadata[infraNodesCount.Name] = clusterMetadata.InfraNodesCount
-	AllMetadata[infraNodesType.Name] = clusterMetadata.InfraNodesType
-	AllMetadata[k8sVersion.Name] = clusterMetadata.K8SVersion
-	AllMetadata[masterNodesCount.Name] = clusterMetadata.MasterNodesCount
-	AllMetadata[masterNodesType.Name] = clusterMetadata.MasterNodesType
-	AllMetadata[ocpMajorVersion.Name] = clusterMetadata.OCPMajorVersion
-	AllMetadata[ocpVersion.Name] = clusterMetadata.OCPVersion
-	AllMetadata[otherNodesCount.Name] = clusterMetadata.OtherNodesCount
-	AllMetadata[platform.Name] = clusterMetadata.Platform
-	AllMetadata[sdnType.Name] = clusterMetadata.SDNType
-	AllMetadata[totalNodes.Name] = clusterMetadata.TotalNodes
-	AllMetadata[workerNodesCount.Name] = clusterMetadata.WorkerNodesCount
-	AllMetadata[workerNodesType.Name] = clusterMetadata.WorkerNodesType
+	allMetadata[clusterType.Name] = clusterMetadata.ClusterType
+	allMetadata[infraNodesCount.Name] = clusterMetadata.InfraNodesCount
+	allMetadata[infraNodesType.Name] = clusterMetadata.InfraNodesType
+	allMetadata[k8sVersion.Name] = clusterMetadata.K8SVersion
+	allMetadata[masterNodesCount.Name] = clusterMetadata.MasterNodesCount
+	allMetadata[masterNodesType.Name] = clusterMetadata.MasterNodesType
+	allMetadata[ocpMajorVersion.Name] = clusterMetadata.OCPMajorVersion
+	allMetadata[ocpVersion.Name] = clusterMetadata.OCPVersion
+	allMetadata[otherNodesCount.Name] = clusterMetadata.OtherNodesCount
+	allMetadata[platform.Name] = clusterMetadata.Platform
+	allMetadata[sdnType.Name] = clusterMetadata.SDNType
+	allMetadata[totalNodes.Name] = clusterMetadata.TotalNodes
+	allMetadata[workerNodesCount.Name] = clusterMetadata.WorkerNodesCount
+	allMetadata[workerNodesType.Name] = clusterMetadata.WorkerNodesType
 
 	return nil
 }
