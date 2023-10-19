@@ -12,14 +12,15 @@ import util.Timer
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZDebug")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
     // The image name in quay.io includes the SHA from the original image
     // imported from docker.io which is somewhat confusingly different.
     private static final String DEPLOYMENT_IMAGE_NAME =
-        "quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
+        "quay.io/rhacs-eng/qa-multi-arch:nginx"
     private static final String DEPLOYMENT_IMAGE_SHA =
-        "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
+        "a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
     private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
     private static final String STACKROX_DEPLOYMENT_NAME = "sensor"
@@ -85,8 +86,8 @@ class DeploymentTest extends BaseSpecification {
         query                                                            | _
         "Image:"+DEPLOYMENT_IMAGE_NAME                                   | _
         "Image Sha:sha256:"+DEPLOYMENT_IMAGE_SHA                         | _
-        "CVE:CVE-2018-18314"                                             | _
-        "CVE:CVE-2018-18314+Fixable:true"                                | _
+        "CVE:CVE-2018-25032"                                             | _
+        "CVE:CVE-2018-25032+Fixable:true"                                | _
         "Deployment:${DEPLOYMENT_NAME}+Image:r/quay.io.*"                | _
         "Image:r/quay.io.*"                                              | _
         "Image:!stackrox.io"                                             | _
