@@ -27,3 +27,6 @@ apps\.openshift\.io\/v1 DeploymentConfig is deprecated in v4\.14\+, unavailable 
 # Image enrichment errors are expected in some test (i.e. testing for non-existing images).
 # Skip those specifically.
 Error: error enriching image
+# Network flakiness can lead to this error occurring in Sensor k8s libraries. All tests pass and it is not
+# an indication of a Sensor issue
+request.go:1116] Unexpected error when reading response body: context deadline exceeded
