@@ -3,6 +3,7 @@ package connection
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/pkg/errors"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -603,19 +605,34 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 
 		// Send hashes to sensor
+		maxEntries := env.MaxDeduperEntriesPerMessage.IntegerSetting()
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
-		deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
-			DeduperState: &central.DeduperState{
-				ResourceHashes: successfulHashes,
-			},
-		}}
-
-		log.Infof("Sending %d hashes (Size=%d)", len(successfulHashes), deduperMessage.Size())
-
-		err := server.Send(deduperMessage)
-		if err != nil {
-			log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
-			return errors.Wrap(err, "unable to sync deduper state")
+		if len(successfulHashes) == 0 {
+			if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
+				return err
+			}
+		}
+		// Make sure maxEntries is a valid number to not panic
+		if maxEntries < 1 {
+			maxEntries = 100
+		}
+		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
+		var current int32 = 1
+		payload := make(map[string]uint64)
+		for k, v := range successfulHashes {
+			payload[k] = v
+			if len(payload) == maxEntries {
+				if err := c.sendDeduperState(server, payload, current, total); err != nil {
+					return err
+				}
+				payload = make(map[string]uint64)
+				current++
+			}
+		}
+		if len(payload) > 0 {
+			if err := c.sendDeduperState(server, payload, current, total); err != nil {
+				return err
+			}
 		}
 		log.Infof("Successfully sent deduper state to sensor (%s)", c.clusterID)
 		c.sensorEventHandler.disableReconciliation()
@@ -671,4 +688,23 @@ func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 
 func (c *sensorConnection) SensorVersion() string {
 	return c.sensorHello.GetSensorVersion()
+}
+
+func (c *sensorConnection) sendDeduperState(server central.SensorService_CommunicateServer, payload map[string]uint64, current, total int32) error {
+	deduperMessage := &central.MsgToSensor{Msg: &central.MsgToSensor_DeduperState{
+		DeduperState: &central.DeduperState{
+			ResourceHashes: payload,
+			Current:        current,
+			Total:          total,
+		},
+	}}
+
+	log.Infof("Sending %d hashes (Size=%d), current chunk: %d, total: %d", len(payload), deduperMessage.Size(), current, total)
+
+	err := server.Send(deduperMessage)
+	if err != nil {
+		log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
+		return errors.Wrap(err, "unable to sync deduper state")
+	}
+	return nil
 }
