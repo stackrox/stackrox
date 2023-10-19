@@ -7,8 +7,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-event: '[push]'
-    # TODO: set to appropriate target branches
-    pipelinesascode.tekton.dev/on-target-branch: '[rhtap-roxctl-onboarding]'
+    pipelinesascode.tekton.dev/on-target-branch: '[master]'
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs

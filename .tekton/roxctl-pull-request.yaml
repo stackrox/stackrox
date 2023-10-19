@@ -8,7 +8,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-event: '[pull_request]'
-    pipelinesascode.tekton.dev/on-target-branch: '[*]'
+    pipelinesascode.tekton.dev/on-target-branch: '[master]'
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: acs
