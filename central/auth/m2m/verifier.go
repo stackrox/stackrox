@@ -17,12 +17,13 @@ type tokenVerifier interface {
 }
 
 func tokenVerifierFromConfig(config *storage.AuthMachineToMachineConfig) tokenVerifier {
-	// By default, we assume GitHub actions are used.
-	// Ref: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token.
-	issuer := "https://token.actions.githubusercontent.com"
-
-	if config.GetType() == storage.AuthMachineToMachineConfig_GENERIC {
-		issuer = config.GetGeneric().GetIssuer()
+	var issuer string
+	switch config.GetType() {
+	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
+		// Ref: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token.
+		issuer = "https://token.actions.githubusercontent.com"
+	default:
+		issuer = config.GetGenericIssuerConfig().GetIssuer()
 	}
 
 	return &genericTokenVerifier{issuer: issuer}

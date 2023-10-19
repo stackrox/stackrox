@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/datastore"
+	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	permissionSetPostgresStore "github.com/stackrox/rox/central/role/store/permissionset/postgres"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -24,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 const (
@@ -62,6 +65,8 @@ type authServiceAccessControlTestSuite struct {
 }
 
 func (s *authServiceAccessControlTestSuite) SetupSuite() {
+	s.T().Setenv(env.AuthMachineToMachine.EnvVar(), "true")
+
 	authProvider, err := authproviders.NewProvider(
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
@@ -87,9 +92,6 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.pool = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pool)
 
-	store := pgStore.New(s.pool.DB)
-	authDataStore := datastore.New(store)
-
 	permSetStore := permissionSetPostgresStore.New(s.pool.DB)
 	accessScopeStore := accessScopePostgresStore.New(s.pool.DB)
 	roleStore := rolePostgresStore.New(s.pool.DB)
@@ -99,6 +101,11 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.addRoles()
 
+	store := pgStore.New(s.pool.DB)
+	mockSet := mocks.NewMockTokenExchangerSet(gomock.NewController(s.T()))
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	authDataStore := datastore.New(store, mockSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
