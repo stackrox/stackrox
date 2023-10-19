@@ -57,6 +57,8 @@ func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Depl
 func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*storage.ProcessIndicator, err error) {
 	containerNameToBaselineedProcesses := make(map[string]*set.StringSet)
 	containerNameToBaselineResults := make(map[string]*storage.ContainerNameAndBaselineStatus)
+
+	var hasAtLeastOneLockedBaseline bool
 	for _, container := range deployment.GetContainers() {
 		baseline, exists, err := e.baselines.GetProcessBaseline(evaluatorCtx, &storage.ProcessBaselineKey{
 			DeploymentId:  deployment.GetId(),
@@ -66,6 +68,10 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching process baseline for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
+		}
+		baselineStatus := getBaselineStatus(baseline)
+		if baselineStatus == storage.ContainerNameAndBaselineStatus_LOCKED {
+			hasAtLeastOneLockedBaseline = true
 		}
 		containerNameToBaselineResults[container.GetName()] = &storage.ContainerNameAndBaselineStatus{
 			ContainerName:  container.GetName(),
@@ -78,14 +84,15 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		if processSet != nil {
 			containerNameToBaselineedProcesses[container.GetName()] = processSet
 		}
-
 	}
 
-	processes, err := e.indicators.SearchRawProcessIndicators(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
-	if err != nil {
-		return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
+	var processes []*storage.ProcessIndicator
+	if hasAtLeastOneLockedBaseline {
+		processes, err = e.indicators.SearchRawProcessIndicators(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
+		if err != nil {
+			return nil, errors.Wrapf(err, "searching process indicators for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
+		}
 	}
-
 	for _, process := range processes {
 		processSet, exists := containerNameToBaselineedProcesses[process.GetContainerName()]
 		// If no explicit baseline, then all processes are valid.
