@@ -12,6 +12,7 @@ import (
 	rolePostgresStore "github.com/stackrox/rox/central/role/store/role/postgres"
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -86,7 +87,7 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 	})
 	s.Require().NoError(err)
 
-	s.Error(s.roleDataStore.RemoveRole(s.ctx, testRole1))
+	s.ErrorIs(s.roleDataStore.RemoveRole(s.ctx, testRole1), errox.ReferencedByAnotherObject)
 
 	s.NoError(s.authDataStore.RemoveAuthM2MConfig(s.ctx, config.GetId()))
 
