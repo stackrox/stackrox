@@ -30,22 +30,22 @@ var (
 	allResourcesEdit = mapResourcesToAccess(resources.AllResourcesModifyPermissions())
 
 	clusters = []effectiveaccessscope.ClusterForSAC{
-		&clusterForSAC{ID: firstClusterID, Name: firstClusterName},
-		&clusterForSAC{ID: secondClusterID, Name: secondClusterName},
+		effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{Id: firstClusterID, Name: firstClusterName}),
+		effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{Id: secondClusterID, Name: secondClusterName}),
 	}
 	namespaces = []effectiveaccessscope.NamespaceForSAC{
-		&namespaceForSAC{
-			ID:          "namespace-1",
+		effectiveaccessscope.StorageNamespaceToNamespaceForSAC(&storage.NamespaceMetadata{
+			Id:          "namespace-1",
 			Name:        firstNamespaceName,
-			ClusterID:   firstClusterID,
+			ClusterId:   firstClusterID,
 			ClusterName: firstClusterName,
-		},
-		&namespaceForSAC{
-			ID:          "namespace-2",
+		}),
+		effectiveaccessscope.StorageNamespaceToNamespaceForSAC(&storage.NamespaceMetadata{
+			Id:          "namespace-2",
 			Name:        secondNamespaceName,
-			ClusterID:   firstClusterID,
+			ClusterId:   firstClusterID,
 			ClusterName: firstClusterName,
-		},
+		}),
 	}
 )
 
@@ -846,70 +846,3 @@ func countAllowedResults(xs []bool) int {
 	}
 	return result
 }
-
-// region SAC helpers
-
-type clusterForSAC struct {
-	ID     string
-	Name   string
-	Labels map[string]string
-}
-
-func (c *clusterForSAC) GetID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ID
-}
-
-func (c *clusterForSAC) GetName() string {
-	if c == nil {
-		return ""
-	}
-	return c.Name
-}
-
-func (c *clusterForSAC) GetLabels() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.Labels
-}
-
-type namespaceForSAC struct {
-	ID          string
-	Name        string
-	ClusterID   string
-	ClusterName string
-	Labels      map[string]string
-}
-
-func (n *namespaceForSAC) GetID() string {
-	if n == nil {
-		return ""
-	}
-	return n.ID
-}
-
-func (n *namespaceForSAC) GetName() string {
-	if n == nil {
-		return ""
-	}
-	return n.Name
-}
-
-func (n *namespaceForSAC) GetClusterName() string {
-	if n == nil {
-		return ""
-	}
-	return n.ClusterName
-}
-
-func (n *namespaceForSAC) GetLabels() map[string]string {
-	if n == nil {
-		return nil
-	}
-	return n.Labels
-}
-
-// endregion SAC helpers

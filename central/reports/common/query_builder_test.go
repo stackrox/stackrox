@@ -18,14 +18,14 @@ import (
 )
 
 var clusters = []effectiveaccessscope.ClusterForSAC{
-	&clusterForSAC{
-		ID:   uuid.NewV4().String(),
+	effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{
+		Id:   uuid.NewV4().String(),
 		Name: "remote",
-	},
-	&clusterForSAC{
-		ID:   uuid.NewV4().String(),
+	}),
+	effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{
+		Id:   uuid.NewV4().String(),
 		Name: "secured",
-	},
+	}),
 }
 
 var namespaces = []effectiveaccessscope.NamespaceForSAC{
@@ -33,19 +33,19 @@ var namespaces = []effectiveaccessscope.NamespaceForSAC{
 	securedNS,
 }
 
-var remoteNS = &namespaceForSAC{
-	ID:          "namespace1",
+var remoteNS = effectiveaccessscope.StorageNamespaceToNamespaceForSAC(&storage.NamespaceMetadata{
+	Id:          "namespace1",
 	Name:        "ns1",
-	ClusterID:   clusters[0].GetID(),
+	ClusterId:   clusters[0].GetID(),
 	ClusterName: "remote",
-}
+})
 
-var securedNS = &namespaceForSAC{
-	ID:          "namespace2",
+var securedNS = effectiveaccessscope.StorageNamespaceToNamespaceForSAC(&storage.NamespaceMetadata{
+	Id:          "namespace2",
 	Name:        "ns2",
-	ClusterID:   clusters[1].GetID(),
+	ClusterId:   clusters[1].GetID(),
 	ClusterName: "secured",
-}
+})
 
 func getMatchNoneQuery() *v1.Query {
 	return &v1.Query{
@@ -147,7 +147,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 					Rules: &storage.SimpleAccessScope_Rules{
 						IncludedClusters: []string{clusters[0].GetName()},
 						IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-							{ClusterName: clusters[1].GetName(), NamespaceName: securedNS.Name},
+							{ClusterName: clusters[1].GetName(), NamespaceName: securedNS.GetName()},
 						},
 					},
 				}
@@ -160,7 +160,7 @@ func TestBuildAccessScopeQuery(t *testing.T) {
 				search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[0].GetID()).ProtoQuery(),
 				search.ConjunctionQuery(
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusters[1].GetID()).ProtoQuery(),
-					search.NewQueryBuilder().AddExactMatches(search.Namespace, securedNS.Name).ProtoQuery(),
+					search.NewQueryBuilder().AddExactMatches(search.Namespace, securedNS.GetName()).ProtoQuery(),
 				),
 			),
 			assertQueries: func(t testing.TB, expected *v1.Query, actual *v1.Query) {

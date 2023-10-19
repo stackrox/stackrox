@@ -266,7 +266,7 @@ func (ds *datastoreImpl) getClustersForSAC(ctx context.Context) ([]effectiveacce
 
 	clusters := make([]effectiveaccessscope.ClusterForSAC, 0)
 	err = ds.clusterStorage.Walk(ctx, func(obj *storage.Cluster) error {
-		clusters = append(clusters, storageClusterToClusterForSAC(obj))
+		clusters = append(clusters, effectiveaccessscope.StorageClusterToClusterForSAC(obj))
 		return nil
 	})
 	if err != nil {
@@ -1049,42 +1049,3 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	}
 	return clusters, nil
 }
-
-// region Scoped Access Control helpers
-
-func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
-	return &clusterForSAC{
-		ID:     cluster.GetId(),
-		name:   cluster.GetName(),
-		labels: cluster.GetLabels(),
-	}
-}
-
-type clusterForSAC struct {
-	ID     string
-	name   string
-	labels map[string]string
-}
-
-func (c *clusterForSAC) GetID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ID
-}
-
-func (c *clusterForSAC) GetName() string {
-	if c == nil {
-		return ""
-	}
-	return c.name
-}
-
-func (c *clusterForSAC) GetLabels() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.labels
-}
-
-// endregion Scoped Access Control helpers

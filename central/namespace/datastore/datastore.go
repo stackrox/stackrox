@@ -139,7 +139,7 @@ func (b *datastoreImpl) GetNamespacesForSAC(ctx context.Context) ([]effectiveacc
 func (b *datastoreImpl) getNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.NamespaceForSAC, error) {
 	namespaces := make([]effectiveaccessscope.NamespaceForSAC, 0)
 	err := b.store.Walk(ctx, func(namespace *storage.NamespaceMetadata) error {
-		namespaces = append(namespaces, storageNamespaceToNamespaceForSAC(namespace))
+		namespaces = append(namespaces, effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespace))
 		return nil
 	})
 	if err != nil {
@@ -281,48 +281,4 @@ func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker)
 	// This is currently required due to the priority searcher
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
-}
-
-func storageNamespaceToNamespaceForSAC(ns *storage.NamespaceMetadata) *namespaceForSAC {
-	return &namespaceForSAC{
-		ID:          ns.GetId(),
-		name:        ns.GetName(),
-		clusterName: ns.GetClusterName(),
-		labels:      ns.GetLabels(),
-	}
-}
-
-type namespaceForSAC struct {
-	ID          string
-	name        string
-	clusterName string
-	labels      map[string]string
-}
-
-func (n *namespaceForSAC) GetID() string {
-	if n == nil {
-		return ""
-	}
-	return n.ID
-}
-
-func (n *namespaceForSAC) GetName() string {
-	if n == nil {
-		return ""
-	}
-	return n.name
-}
-
-func (n *namespaceForSAC) GetClusterName() string {
-	if n == nil {
-		return ""
-	}
-	return n.clusterName
-}
-
-func (n *namespaceForSAC) GetLabels() map[string]string {
-	if n == nil {
-		return nil
-	}
-	return n.labels
 }

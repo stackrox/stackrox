@@ -79,9 +79,9 @@ var clusters = []*storage.Cluster{
 }
 
 var clustersForSAC = []effectiveaccessscope.ClusterForSAC{
-	storageClusterToClusterForSAC(clusterQueen),
-	storageClusterToClusterForSAC(clusterPinkFloyd),
-	storageClusterToClusterForSAC(clusterDeepPurple),
+	effectiveaccessscope.StorageClusterToClusterForSAC(clusterQueen),
+	effectiveaccessscope.StorageClusterToClusterForSAC(clusterPinkFloyd),
+	effectiveaccessscope.StorageClusterToClusterForSAC(clusterDeepPurple),
 }
 
 var (
@@ -149,13 +149,13 @@ var namespaces = []*storage.NamespaceMetadata{
 
 var namespacesForSAC = []effectiveaccessscope.NamespaceForSAC{
 	// Queen
-	storageNamespaceToNamespaceForSAC(namespaceQueenInClusterQueen),
-	storageNamespaceToNamespaceForSAC(namespaceJazzInClusterQueen),
-	storageNamespaceToNamespaceForSAC(namespaceInnuendoInClusterQueen),
+	effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespaceQueenInClusterQueen),
+	effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespaceJazzInClusterQueen),
+	effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespaceInnuendoInClusterQueen),
 	// Pink Floyd
-	storageNamespaceToNamespaceForSAC(namespaceTheWallInClusterPinkFloyd),
+	effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespaceTheWallInClusterPinkFloyd),
 	// Deep Purple
-	storageNamespaceToNamespaceForSAC(namespaceMachineHeadInClusterDeepPurple),
+	effectiveaccessscope.StorageNamespaceToNamespaceForSAC(namespaceMachineHeadInClusterDeepPurple),
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1353,88 +1353,3 @@ func (s *roleServiceGetMyPermissionsTestSuite) TestGetMyPermissions() {
 		})
 	}
 }
-
-// region Scoped Access Control helpers
-
-type clusterForSAC struct {
-	ID     string
-	Name   string
-	Labels map[string]string
-}
-
-func (c *clusterForSAC) GetID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ID
-}
-
-func (c *clusterForSAC) GetName() string {
-	if c == nil {
-		return ""
-	}
-	return c.Name
-}
-
-func (c *clusterForSAC) GetLabels() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.Labels
-}
-
-func storageClusterToClusterForSAC(cluster *storage.Cluster) *clusterForSAC {
-	return &clusterForSAC{
-		ID:     cluster.GetId(),
-		Name:   cluster.GetName(),
-		Labels: cluster.GetLabels(),
-	}
-}
-
-type namespaceForSAC struct {
-	ID          string
-	Name        string
-	ClusterID   string
-	ClusterName string
-	Labels      map[string]string
-}
-
-func (n *namespaceForSAC) GetID() string {
-	if n == nil {
-		return ""
-	}
-	return n.ID
-}
-
-func (n *namespaceForSAC) GetName() string {
-	if n == nil {
-		return ""
-	}
-	return n.Name
-}
-
-func (n *namespaceForSAC) GetClusterName() string {
-	if n == nil {
-		return ""
-	}
-	return n.ClusterName
-}
-
-func (n *namespaceForSAC) GetLabels() map[string]string {
-	if n == nil {
-		return nil
-	}
-	return n.Labels
-}
-
-func storageNamespaceToNamespaceForSAC(ns *storage.NamespaceMetadata) *namespaceForSAC {
-	return &namespaceForSAC{
-		ID:          ns.GetId(),
-		Name:        ns.GetName(),
-		ClusterID:   ns.GetClusterId(),
-		ClusterName: ns.GetClusterName(),
-		Labels:      ns.GetLabels(),
-	}
-}
-
-// endregion Scoped Access Control helpers

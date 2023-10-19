@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -132,9 +133,9 @@ func (s *EnhancedReportingTestSuite) TestSaveReportData() {
 }
 
 func (s *EnhancedReportingTestSuite) TestGetReportData() {
-	clusters := []*storage.Cluster{
-		{Id: uuid.NewV4().String(), Name: "c1"},
-		{Id: uuid.NewV4().String(), Name: "c2"},
+	clusters := []effectiveaccessscope.ClusterForSAC{
+		effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{Id: uuid.NewV4().String(), Name: "c1"}),
+		effectiveaccessscope.StorageClusterToClusterForSAC(&storage.Cluster{Id: uuid.NewV4().String(), Name: "c2"}),
 	}
 
 	namespaces := testNamespaces(clusters, 2)
@@ -147,10 +148,10 @@ func (s *EnhancedReportingTestSuite) TestGetReportData() {
 	s.upsertManyImages(watchedImages)
 	s.upsertManyWatchedImages(watchedImages)
 
-	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
+	s.clusterDatastore.EXPECT().GetClustersForSAC(gomock.Any()).
 		Return(clusters, nil).AnyTimes()
 
-	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
+	s.namespaceDatastore.EXPECT().GetNamespacesForSAC(gomock.Any()).
 		Return(namespaces, nil).AnyTimes()
 
 	testCases := []struct {
@@ -397,17 +398,22 @@ func (s *EnhancedReportingTestSuite) upsertManyDeployments(deployments []*storag
 	}
 }
 
-func testNamespaces(clusters []*storage.Cluster, namespacesPerCluster int) []*storage.NamespaceMetadata {
-	namespaces := make([]*storage.NamespaceMetadata, 0)
+func testNamespaces(
+	clusters []effectiveaccessscope.ClusterForSAC,
+	namespacesPerCluster int,
+) []effectiveaccessscope.NamespaceForSAC {
+	namespaces := make([]effectiveaccessscope.NamespaceForSAC, 0)
 	for _, cluster := range clusters {
 		for i := 0; i < namespacesPerCluster; i++ {
 			namespaceName := fmt.Sprintf("ns%d", i+1)
-			namespaces = append(namespaces, &storage.NamespaceMetadata{
-				Id:          uuid.NewV4().String(),
-				Name:        namespaceName,
-				ClusterId:   cluster.Id,
-				ClusterName: cluster.Name,
-			})
+			newNS := effectiveaccessscope.StorageNamespaceToNamespaceForSAC(
+				&storage.NamespaceMetadata{
+					Id:          uuid.NewV4().String(),
+					Name:        namespaceName,
+					ClusterId:   cluster.GetID(),
+					ClusterName: cluster.GetName(),
+				})
+			namespaces = append(namespaces, newNS)
 		}
 	}
 	return namespaces
@@ -422,14 +428,17 @@ func allSeverities() []storage.VulnerabilitySeverity {
 	}
 }
 
-func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeploymentsPerNamespace int) ([]*storage.Deployment, []*storage.Image) {
+func testDeploymentsWithImages(
+	namespaces []effectiveaccessscope.NamespaceForSAC,
+	numDeploymentsPerNamespace int,
+) ([]*storage.Deployment, []*storage.Image) {
 	capacity := len(namespaces) * numDeploymentsPerNamespace
 	deployments := make([]*storage.Deployment, 0, capacity)
 	images := make([]*storage.Image, 0, capacity)
 
 	for _, namespace := range namespaces {
 		for i := 0; i < numDeploymentsPerNamespace; i++ {
-			depName := fmt.Sprintf("%s_%s_dep%d", namespace.ClusterName, namespace.Name, i)
+			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
 			image := testImage(depName)
 			deployment := testDeployment(depName, namespace, image)
 			deployments = append(deployments, deployment)
@@ -439,14 +448,18 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 	return deployments, images
 }
 
-func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata, image *storage.Image) *storage.Deployment {
+func testDeployment(
+	deploymentName string,
+	namespace effectiveaccessscope.NamespaceForSAC,
+	image *storage.Image,
+) *storage.Deployment {
 	return &storage.Deployment{
 		Name:        deploymentName,
 		Id:          uuid.NewV4().String(),
-		ClusterName: namespace.ClusterName,
-		ClusterId:   namespace.ClusterId,
-		Namespace:   namespace.Name,
-		NamespaceId: namespace.Id,
+		ClusterName: namespace.GetClusterName(),
+		ClusterId:   namespace.GetClusterID(),
+		Namespace:   namespace.GetName(),
+		NamespaceId: namespace.GetID(),
 		Containers: []*storage.Container{
 			{
 				Name:  fmt.Sprintf("%s_container", deploymentName),

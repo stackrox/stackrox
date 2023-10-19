@@ -596,37 +596,13 @@ func namespaceStandard(scope scopeState, n *namespaceForSAC) *namespacesScopeSub
 	}}
 }
 
-type clusterForSAC struct {
-	ID     string
-	Name   string
-	Labels map[string]string
-}
-
-func (c *clusterForSAC) GetID() string {
-	if c == nil {
-		return ""
-	}
-	return c.ID
-}
-
-func (c *clusterForSAC) GetName() string {
-	if c == nil {
-		return ""
-	}
-	return c.Name
-}
-
-func (c *clusterForSAC) GetLabels() map[string]string {
-	if c == nil {
-		return nil
-	}
-	return c.Labels
-}
-
 func cloneCluster(c ClusterForSAC) ClusterForSAC {
 	clonedLabels := make(map[string]string, len(c.GetLabels()))
 	for k, v := range c.GetLabels() {
 		clonedLabels[k] = v
+	}
+	if c.GetLabels() == nil {
+		clonedLabels = nil
 	}
 	return &clusterForSAC{
 		ID:     c.GetID(),
@@ -635,50 +611,18 @@ func cloneCluster(c ClusterForSAC) ClusterForSAC {
 	}
 }
 
-type namespaceForSAC struct {
-	ID          string
-	Name        string
-	ClusterID   string
-	ClusterName string
-	Labels      map[string]string
-}
-
-func (n *namespaceForSAC) GetID() string {
-	if n == nil {
-		return ""
-	}
-	return n.ID
-}
-
-func (n *namespaceForSAC) GetName() string {
-	if n == nil {
-		return ""
-	}
-	return n.Name
-}
-
-func (n *namespaceForSAC) GetClusterName() string {
-	if n == nil {
-		return ""
-	}
-	return n.ClusterName
-}
-
-func (n *namespaceForSAC) GetLabels() map[string]string {
-	if n == nil {
-		return nil
-	}
-	return n.Labels
-}
-
 func cloneNamespace(ns NamespaceForSAC) NamespaceForSAC {
 	clonedLabels := make(map[string]string, len(ns.GetLabels()))
 	for k, v := range ns.GetLabels() {
 		clonedLabels[k] = v
 	}
+	if ns.GetLabels() == nil {
+		clonedLabels = nil
+	}
 	return &namespaceForSAC{
 		ID:          ns.GetID(),
 		Name:        ns.GetName(),
+		ClusterID:   ns.GetClusterID(),
 		ClusterName: ns.GetClusterName(),
 		Labels:      clonedLabels,
 	}
