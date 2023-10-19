@@ -165,7 +165,7 @@ func request_AuthService_UpdateAuthMachineToMachineConfig_0(ctx context.Context,
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Config); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -176,15 +176,15 @@ func request_AuthService_UpdateAuthMachineToMachineConfig_0(ctx context.Context,
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["config.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "config.id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "config.id", val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "config.id", err)
 	}
 
 	msg, err := client.UpdateAuthMachineToMachineConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -200,7 +200,7 @@ func local_request_AuthService_UpdateAuthMachineToMachineConfig_0(ctx context.Co
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Config); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -211,15 +211,15 @@ func local_request_AuthService_UpdateAuthMachineToMachineConfig_0(ctx context.Co
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["config.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "config.id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "config.id", val)
 
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "config.id", err)
 	}
 
 	msg, err := server.UpdateAuthMachineToMachineConfig(ctx, &protoReq)
@@ -675,7 +675,7 @@ var (
 
 	pattern_AuthService_AddAuthMachineToMachineConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "auth", "m2m"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_AuthService_UpdateAuthMachineToMachineConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "auth", "m2m", "id"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_AuthService_UpdateAuthMachineToMachineConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "auth", "m2m", "config.id"}, "", runtime.AssumeColonVerbOpt(false)))
 
 	pattern_AuthService_DeleteAuthMachineToMachineConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "auth", "m2m", "id"}, "", runtime.AssumeColonVerbOpt(false)))
 

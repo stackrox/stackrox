@@ -98,6 +98,46 @@
         ]
       }
     },
+    "/v1/auth/m2m/{config.id}": {
+      "put": {
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.",
+        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "config.id",
+            "description": "UUID of the config.\nNote that when adding a machine to machine config, this field must not be set.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/v1/auth/m2m/{id}": {
       "get": {
         "summary": "GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.",
@@ -151,43 +191,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          }
-        ],
-        "tags": [
-          "AuthService"
-        ]
-      },
-      "put": {
-        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.",
-        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1AuthMachineToMachineConfig"
-            }
           }
         ],
         "tags": [
@@ -618,6 +621,14 @@
           "items": {
             "$ref": "#/definitions/v1AuthMachineToMachineConfig"
           }
+        }
+      }
+    },
+    "v1UpdateAuthMachineToMachineConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
         }
       }
     },
