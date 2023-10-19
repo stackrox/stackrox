@@ -161,18 +161,8 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		//   the upsert later on).
 		// * No existing PLOP object, create a new one with whatever close
 		//   timestamp we have received and fetched indicator ID.
-		log.Infof("prevExists= %+v", prevExists)
-		log.Infof("existingPLOP= %+v", existingPLOP)
-		log.Infof("val.PodUid= %+v", val.PodUid)
-		log.Infof("val.PodUid != '' = %+v", val.PodUid != "")
-		if prevExists {
-			log.Infof("existingPLOP.PodUid= %+v", existingPLOP.PodUid)
-			log.Infof("existingPLOP.PodUid == '' = %+v", existingPLOP.PodUid == "")
-			log.Infof("existingPLOP.PodUid == '' && val.PodUid != '' = %+v", existingPLOP.PodUid == "" && val.PodUid != "")
-		}
 		if prevExists && (existingPLOP.CloseTimestamp != val.CloseTimestamp || (existingPLOP.PodUid == "" && val.PodUid != "")) {
 			log.Debugf("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
-			log.Infof("Got existing PLOP: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			existingPLOP.CloseTimestamp = val.CloseTimestamp
 			existingPLOP.Closed = existingPLOP.CloseTimestamp != nil
@@ -215,11 +205,9 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 
 		if prevExists {
 			log.Debugf("Got existing PLOP to update timestamp: %s", plopStorageToNoSecretsString(existingPLOP))
-			log.Infof("Got existing PLOP to update timestamp: %s", plopStorageToNoSecretsString(existingPLOP))
 
 			if existingPLOP.CloseTimestamp != nil &&
 				(existingPLOP.CloseTimestamp != val.CloseTimestamp || (existingPLOP.PodUid == "" && existingPLOP.PodUid != val.PodUid)) {
-					log.Infof("Updating")
 
 				// Update the timestamp and PodUid
 				existingPLOP.CloseTimestamp = val.CloseTimestamp
