@@ -55,12 +55,8 @@ var (
 
 // jira notifier plugin.
 type jira struct {
-	client      *jiraLib.Client
-	conf        *storage.Jira
-	creds       string
-	cryptoKey   string
-	cryptoCodec cryptocodec.CryptoCodec
-
+	client   *jiraLib.Client
+	conf     *storage.Jira
 	notifier *storage.Notifier
 
 	metadataGetter notifiers.MetadataGetter
@@ -362,9 +358,6 @@ func newJira(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter
 	return &jira{
 		client:             client,
 		conf:               notifier.GetJira(),
-		creds:              "",
-		cryptoKey:          cryptoKey,
-		cryptoCodec:        cryptoCodec,
 		notifier:           notifier,
 		metadataGetter:     metadataGetter,
 		mitreStore:         mitreStore,
