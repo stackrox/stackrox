@@ -616,8 +616,9 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		// Since the environment variable can be set to zero or some negative number.
 		// Make sure maxEntries is a valid number to not panic
 		if maxEntries < 1 {
-			maxEntries = 100
+			maxEntries = 200000
 		}
+		log.Debugf("DeduperState chunk size %d", maxEntries)
 		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
 		var current int32 = 1
 		payload := make(map[string]uint64)
