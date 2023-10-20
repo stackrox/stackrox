@@ -28,7 +28,7 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 	// create output json file
-	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.ztd"))
+	outputFile, err := os.Create(filepath.Join(outputDir, "output.json.zst"))
 	if err != nil {
 		return err
 	}
