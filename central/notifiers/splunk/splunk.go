@@ -13,10 +13,13 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -54,6 +57,9 @@ type splunk struct {
 	eventEndpoint  string
 	healthEndpoint string
 	conf           *storage.Splunk
+	creds          string
+	cryptoKey      string
+	cryptoCodec    cryptocodec.CryptoCodec
 
 	*storage.Notifier
 }
@@ -172,7 +178,11 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.conf.HttpToken))
+	token, err := s.getHttpToken()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", token))
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -183,14 +193,43 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 	return notifiers.CreateError(s.GetName(), resp, codes.SplunkGeneric)
 }
 
+func (s *splunk) getHttpToken() (string, error) {
+	if s.creds != "" {
+		return s.creds, nil
+	}
+
+	if !env.EncNotifierCreds.BooleanSetting() {
+		s.creds = s.conf.HttpToken
+		return s.creds, nil
+	}
+
+	if s.GetNotifierSecret() == "" {
+		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
+	}
+	decCreds, err := s.cryptoCodec.Decrypt(s.cryptoKey, s.GetNotifierSecret())
+	if err != nil {
+		return "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", s.GetName())
+	}
+	s.creds = decCreds
+	return s.creds, nil
+}
+
 func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+	}
 	notifiers.Add(notifiers.SplunkType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newSplunk(notifier)
+		s, err := newSplunk(notifier, cryptocodec.Singleton(), cryptoKey)
 		return s, err
 	})
 }
 
-func newSplunk(notifier *storage.Notifier) (*splunk, error) {
+func newSplunk(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*splunk, error) {
 	conf := notifier.GetSplunk()
 	if conf == nil {
 		return nil, errors.New("Splunk configuration required")
@@ -213,6 +252,9 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 	return &splunk{
 		client:         client,
 		conf:           conf,
+		creds:          "",
+		cryptoKey:      cryptoKey,
+		cryptoCodec:    cryptoCodec,
 		eventEndpoint:  eventEndpoint,
 		healthEndpoint: healthEndpoint,
 		Notifier:       notifier,

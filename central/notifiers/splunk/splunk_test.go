@@ -46,7 +46,7 @@ func getSplunk(t *testing.T) *splunk {
 		},
 	}
 
-	s, err := newSplunk(notifier)
+	s, err := newSplunk(notifier, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return s
 }
