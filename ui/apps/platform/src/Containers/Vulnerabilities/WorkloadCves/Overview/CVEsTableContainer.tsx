@@ -9,7 +9,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import { BaseVulnerabilityException } from 'services/VulnerabilityExceptionService';
 import CVEsTable, { cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import TableErrorComponent from '../components/TableErrorComponent';
 import { EntityCounts } from '../components/EntityTypeToggleGroup';
@@ -65,7 +65,7 @@ function CVEsTableContainer({
     const [exceptionRequestModalOptions, setExceptionRequestModalOptions] =
         useState<ExceptionRequestModalOptions>(null);
 
-    const [completedException, setCompletedException] = useState<VulnerabilityException | null>(
+    const [completedException, setCompletedException] = useState<BaseVulnerabilityException | null>(
         null
     );
 

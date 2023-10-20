@@ -3,7 +3,7 @@ import { Alert, Modal, ModalBoxBody, pluralize } from '@patternfly/react-core';
 import { FormikHelpers } from 'formik';
 
 import {
-    VulnerabilityException,
+    BaseVulnerabilityException,
     createDeferralVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
@@ -21,7 +21,7 @@ export type ExceptionRequestModalProps = {
     type: CveExceptionRequestType;
     cves: DeferralFormProps['cves'];
     scopeContext: ScopeContext;
-    onExceptionRequestSuccess: (vulnerabilityException: VulnerabilityException) => void;
+    onExceptionRequestSuccess: (vulnerabilityException: BaseVulnerabilityException) => void;
     onClose: () => void;
 };
 

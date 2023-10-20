@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button, Modal } from '@patternfly/react-core';
-import { VulnerabilityException } from 'services/VulnerabilityExceptionService';
+import { BaseVulnerabilityException } from 'services/VulnerabilityExceptionService';
 
 export type CompletedExceptionRequestModalProps = {
-    exceptionRequest: VulnerabilityException;
+    exceptionRequest: BaseVulnerabilityException;
     onClose: () => void;
 };
 
@@ -21,7 +21,7 @@ function CompletedExceptionRequestModal({
             variant="medium"
             actions={[
                 <Button key="confirm" variant="primary" onClick={onClose}>
-                    Done
+                    Close
                 </Button>,
             ]}
         >
