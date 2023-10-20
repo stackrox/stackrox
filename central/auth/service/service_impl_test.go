@@ -208,7 +208,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Id:                      "some-id",
 				TokenExpirationDuration: "1",
 			},
-			err: errox.InvalidArgs,
+			err: errInvalidToken,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
@@ -382,6 +382,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			err := s.svc.validateAuthMachineToMachineConfig(sac.WithAllAccess(context.Background()),
 				testCase.config, testCase.skipIDCheck)
 			s.ErrorIs(err, testCase.err)
+			fmt.Print(err)
 		})
 	}
 }
@@ -446,6 +447,36 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfig() {
 	})
 	s.NoError(err)
 	s.NotEmpty(resp.GetConfig().GetId())
+}
+
+func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfigWithID() {
+	config := &v1.AuthMachineToMachineConfig{
+		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
+		TokenExpirationDuration: "1h",
+		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+	}
+
+	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
+		Config: config,
+	})
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(resp)
+}
+
+func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
+	config := &v1.AuthMachineToMachineConfig{
+		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
+		TokenExpirationDuration: "1h",
+		Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+		IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
+			GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{Issuer: "something"}},
+	}
+
+	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
+		Config: config,
+	})
+	s.ErrorIs(err, errox.InvalidArgs)
+	s.Nil(resp)
 }
 
 func (s *authServiceAccessControlTestSuite) TestListConfigs() {

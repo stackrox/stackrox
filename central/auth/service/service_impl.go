@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -41,7 +42,7 @@ var (
 			// ExchangeAuthM2MToken exchanges an identity token of a third-party
 			// OIDC provider with a Central access token, and hence needs to allow
 			// calls by anonymous users. In case no config for exchanging the token
-			// is present, it will return HTTP 401.
+			// is present, it will return HTTP 4xx status code.
 			"/v1.AuthService/ExchangeAuthMachineToMachineToken",
 		},
 		user.With(permissions.View(resources.Access)): {
@@ -54,6 +55,8 @@ var (
 			"/v1.AuthService/UpdateAuthMachineToMachineConfig",
 		},
 	})
+
+	errInvalidToken = errors.New("invalid token expiration duration given")
 )
 
 type serviceImpl struct {
@@ -191,7 +194,7 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(ctx context.Context, co
 
 	duration, err := time.ParseDuration(config.GetTokenExpirationDuration())
 	if err != nil {
-		return errox.InvalidArgs.New("invalid token expiration duration given").CausedBy(err)
+		return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidToken, err)
 	}
 
 	if duration < time.Minute || duration > 24*time.Hour {

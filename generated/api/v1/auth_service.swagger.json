@@ -169,7 +169,7 @@
         ]
       },
       "delete": {
-        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a config that does not exist is deleted, no error will be returned.",
+        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a specified auth machine to machine config does not exist is deleted, no error will be returned.",
         "operationId": "AuthService_DeleteAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -531,7 +531,7 @@
         },
         "tokenExpirationDuration": {
           "type": "string",
-          "description": "The expiration of the token annotated as a duration.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
+          "description": "Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
         },
         "mappings": {
           "type": "array",

@@ -74,6 +74,23 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 	s.pool.Close()
 }
 
+func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
+	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
+		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
+		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+		TokenExpirationDuration: "5m",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:   "sub",
+				Value: "some-value",
+				Role:  "non-existing-role",
+			},
+		},
+	})
+	s.ErrorIs(err, errox.NotFound)
+	s.Nil(config)
+}
+
 func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",

@@ -48,7 +48,7 @@ message AuthMachineToMachineConfig {
     }
     Type type          = 2;
 
-    // The expiration of the token annotated as a duration.
+    // Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.
     // Possible valid time units are: s, m, h.
     // The maximum allowed expiration duration is 24h.
     // As an example: 2h45m.
@@ -149,7 +149,7 @@ service AuthService {
     }
 
     // DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
-    // In case a config that does not exist is deleted, no error will be returned.
+    // In case a specified auth machine to machine config does not exist is deleted, no error will be returned.
     rpc DeleteAuthMachineToMachineConfig(ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/auth/m2m/{id}"
