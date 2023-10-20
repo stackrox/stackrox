@@ -43,7 +43,7 @@ func BenchmarkBuildDeployments_NoChange(b *testing.B) {
 		exposureInfo := generateExposureInfos(5, 5)
 		b.StartTimer()
 		for i := 0; i < 100; i++ {
-			d, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
+			d, _, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
 				PermissionLevel: storage.PermissionLevel_NONE,
 				Exposures:       exposureInfo,
 			})
@@ -69,7 +69,7 @@ func BenchmarkBuildDeployments_Change(b *testing.B) {
 		b.StartTimer()
 		for i := 0; i < 100; i++ {
 
-			d, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
+			d, _, err := benchStore.BuildDeploymentWithDependencies(deployment1.GetId(), store.Dependencies{
 				PermissionLevel: permLevles[i%2],
 				Exposures:       exposureInfo,
 			})

@@ -195,7 +195,7 @@ func (s *deploymentStoreSuite) Test_BuildDeployments_CachedDependencies() {
 			objs := make([]*storage.Deployment, len(testCase.orderedDependencies))
 			var err error
 			for i := 0; i < len(testCase.orderedDependencies); i++ {
-				objs[i], err = s.deploymentStore.BuildDeploymentWithDependencies(uid, testCase.orderedDependencies[i])
+				objs[i], _, err = s.deploymentStore.BuildDeploymentWithDependencies(uid, testCase.orderedDependencies[i])
 				s.Require().NoError(err)
 			}
 
@@ -226,7 +226,7 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 	_, isBuilt := s.deploymentStore.GetBuiltDeployment(uid)
 	s.Assert().False(isBuilt, "deployment should not be fully built yet")
 
-	deployment, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
+	deployment, _, err := s.deploymentStore.BuildDeploymentWithDependencies(uid, store.Dependencies{
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures: []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
 			{
@@ -248,7 +248,7 @@ func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies() {
 }
 
 func (s *deploymentStoreSuite) Test_BuildDeploymentWithDependencies_NoDeployment() {
-	_, err := s.deploymentStore.BuildDeploymentWithDependencies("some-uuid", store.Dependencies{
+	_, _, err := s.deploymentStore.BuildDeploymentWithDependencies("some-uuid", store.Dependencies{
 		PermissionLevel: storage.PermissionLevel_CLUSTER_ADMIN,
 		Exposures:       []map[service.PortRef][]*storage.PortConfig_ExposureInfo{},
 	})

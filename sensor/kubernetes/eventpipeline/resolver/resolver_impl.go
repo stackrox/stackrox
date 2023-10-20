@@ -110,7 +110,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 				exposureInfo := r.storeProvider.Services().
 					GetExposureInfos(preBuiltDeployment.GetNamespace(), preBuiltDeployment.GetPodLabels())
 
-				d, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
+				d, newObject, err := r.storeProvider.Deployments().BuildDeploymentWithDependencies(id, store.Dependencies{
 					PermissionLevel: permissionLevel,
 					Exposures:       exposureInfo,
 					LocalImages:     localImages,
@@ -121,8 +121,12 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					continue
 				}
 
-				msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
-					AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				// Skip generating an event and sending the deployment to the detector if the object is not
+				// new and detection isn't forced.
+				if !deploymentReference.ForceDetection && newObject {
+					msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
+						AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
+				}
 			}
 		}
 
