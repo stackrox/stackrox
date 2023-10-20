@@ -47,8 +47,7 @@ func (s *SearchComparisonTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	s.deploymentDatastore = deploymentDS
 
-	imageDS, err := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Require().NoError(err)
+	imageDS := imageDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.imageDatastore = imageDS
 	s.optionsMap = pkgSchema.ImagesSchema.OptionsMap
 }

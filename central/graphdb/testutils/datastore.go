@@ -311,14 +311,8 @@ func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 	s := &testGraphDataStoreImpl{}
 
 	s.pgtestbase = pgtest.ForT(t)
-	s.nodeStore, err = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-	if err != nil {
-		return nil, err
-	}
-	s.imageStore, err = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-	if err != nil {
-		return nil, err
-	}
+	s.nodeStore = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	s.imageStore = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	if err != nil {
 		return nil, err

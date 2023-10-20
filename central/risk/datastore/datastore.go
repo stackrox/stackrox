@@ -29,7 +29,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(riskStore store.Store, searcher search.Searcher) (DataStore, error) {
+func New(riskStore store.Store, searcher search.Searcher) DataStore {
 	d := &datastoreImpl{
 		storage:  riskStore,
 		searcher: searcher,
@@ -43,11 +43,11 @@ func New(riskStore store.Store, searcher search.Searcher) (DataStore, error) {
 			storage.RiskSubjectType_IMAGE_COMPONENT.String(): ranking.ComponentRanker(),
 		},
 	}
-	return d, nil
+	return d
 }
 
 // GetTestPostgresDataStore provides a datastore connected to pgStore for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)
