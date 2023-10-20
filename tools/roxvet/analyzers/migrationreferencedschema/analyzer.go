@@ -33,11 +33,10 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	// If we are not the migrator, simply move along
 	if !strings.HasPrefix(root, "migrator") {
 		return nil, nil
-	} else {
-		// This is allowed in frozen schema or the initial frozen schema as that code is isolaged
-		if strings.Contains(root, "postgreshelper") || strings.Contains(root, "frozenschema") {
-			return nil, nil
-		}
+	}
+	// This is allowed in frozen schema or the initial frozen schema as that code is isolated
+	if strings.Contains(root, "postgreshelper") || strings.Contains(root, "frozenschema") {
+		return nil, nil
 	}
 
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
