@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/filepathwalk"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/godoccapitalizationmismatch"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/importpackagenames"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/migrationreferencedschema"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/needlessformat"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoclone"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/protoptrs"
@@ -34,5 +35,6 @@ func main() {
 		validateimports.Analyzer,
 		importpackagenames.Analyzer,
 		structuredlogs.Analyzer,
+		migrationreferencedschema.Analyzer,
 	)
 }
