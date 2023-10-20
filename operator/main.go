@@ -217,6 +217,10 @@ func getWebhookOptions(enableHTTP2 bool) webhook.Options {
 	// to force usage of the legacy location, which is provided both by old and new OLM, but not
 	// by the "make deploy" scaffolding.
 
+	opts := webhook.Options{
+		Port: 9443,
+	}
+
 	// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
 	// the Go standard library and golang.org/x/net are fully fixed.
 	// Right now, it is possible for authenticated and unauthenticated users to
@@ -225,18 +229,14 @@ func getWebhookOptions(enableHTTP2 bool) webhook.Options {
 	// * https://github.com/kubernetes/kubernetes/pull/121120
 	// * https://github.com/kubernetes/kubernetes/issues/121197
 	// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
-	disableHTTP2 := func(c *tls.Config) {
-		if enableHTTP2 {
-			return
-		}
+	forceHTTP1 := func(c *tls.Config) {
 		c.NextProtos = []string{"http/1.1"}
 	}
 
-	opts := webhook.Options{
-		Port: 9443,
-		TLSOpts: []func(*tls.Config){
-			disableHTTP2,
-		},
+	if !enableHTTP2 {
+		opts.TLSOpts = []func(*tls.Config){
+			forceHTTP1,
+		}
 	}
 
 	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
