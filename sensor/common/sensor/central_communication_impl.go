@@ -302,6 +302,8 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 			return errors.Wrapf(errIncorrectEventOrder, "expected DeduperState but received %t instead", msg.GetMsg())
 		}
 
+		// If the expected current is different from the one received is better to stop the connection and reconnect with
+		// sensor's reconciliation disabled.
 		if current != msg.GetDeduperState().GetCurrent() {
 			return errors.Wrapf(errIncorrectDeduperStateOrder, "expected message number %d but received %d", current, msg.GetDeduperState().GetCurrent())
 		}

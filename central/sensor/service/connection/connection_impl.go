@@ -607,11 +607,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		// Send hashes to sensor
 		maxEntries := env.MaxDeduperEntriesPerMessage.IntegerSetting()
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
+		// If there are no hashes we send the empty map
 		if len(successfulHashes) == 0 {
 			if err := c.sendDeduperState(server, successfulHashes, 1, 1); err != nil {
 				return err
 			}
 		}
+		// Since the environment variable can be set to zero or some negative number.
 		// Make sure maxEntries is a valid number to not panic
 		if maxEntries < 1 {
 			maxEntries = 100
