@@ -35,6 +35,10 @@ Release = namedtuple("Release", ["major", "minor"])
 # period.
 num_releases_default = 3
 
+# For support exceptions we may need to get the latest patch for a specific release that is not within the
+# last N versions. In that case get_latest_helm_chart_version_for_specific_release will provide the latest
+# patch of the input release.
+sample_support_exception Release(major=3, minor=74)
 
 def main(argv):
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -42,9 +46,8 @@ def main(argv):
     helm_versions = get_latest_helm_chart_versions("stackrox-secured-cluster-services", n)
     logging.info(f"Helm chart versions for the latest {n} releases:")
     print("\n".join(helm_versions))
-    specific_release=Release(major=3, minor=74)
-    helm_version_specific = get_latest_helm_chart_version_for_specific_release("stackrox-secured-cluster-services", specific_release)
-    logging.info(f"Latest chart version for the {specific_release} releases is {helm_version_specific}")
+    helm_version_specific = get_latest_helm_chart_version_for_specific_release("stackrox-secured-cluster-services", sample_support_exception)
+    logging.info(f"Latest chart version for the {sample_support_exception} releases is {helm_version_specific}")
 
 
 def get_latest_helm_chart_versions(chart_name, num_releases=num_releases_default):

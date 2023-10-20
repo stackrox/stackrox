@@ -11,8 +11,7 @@ import sys
 from clusters import GKECluster
 from collections import namedtuple
 from compatibility_test import make_compatibility_test_runner
-from get_latest_helm_chart_versions import get_latest_helm_chart_versions
-from get_latest_helm_chart_versions import get_latest_helm_chart_version_for_specific_release
+from get_latest_helm_chart_versions import get_latest_helm_chart_versions, get_latest_helm_chart_version_for_specific_release
 from pathlib import Path
 
 Release = namedtuple("Release", ["major", "minor"])
