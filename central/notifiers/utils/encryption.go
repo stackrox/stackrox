@@ -101,6 +101,5 @@ func SecureNotifier(notifier *storage.Notifier, key string) (bool, error) {
 		notifier.NotifierSecret, err = cryptoCodec.Encrypt(key, string(marshalled))
 		return notifier.NotifierSecret != encCreds, err
 	}
-	// TODO (ROX-19879): Cleanup creds if ROX_CLEANUP_NOTIFIER_CREDS is enabled
 	return false, nil
 }
