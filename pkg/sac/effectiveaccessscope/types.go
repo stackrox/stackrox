@@ -102,7 +102,7 @@ func (n *namespaceForSAC) GetClusterID() string {
 	if n == nil {
 		return ""
 	}
-	return n.ClusterName
+	return n.ClusterID
 }
 
 func (n *namespaceForSAC) GetClusterName() string {
