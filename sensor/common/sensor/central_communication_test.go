@@ -265,14 +265,18 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 		givenSyncMessages []*central.MsgToSensor
 		givenSyncErrors   []error
 		expectError       error
+		reducedTimeout    bool
+		shouldReconcile   bool
 	}{
 		"timeout waiting for first deduper state": {
 			givenSyncMessages: centralSyncMessages,
 			expectError:       errTimeoutWaitingForDeduperState,
+			reducedTimeout:    true,
 		},
 		"timeout waiting for second deduper state": {
 			givenSyncMessages: append(centralSyncMessages, debuggerMessage.DeduperState(map[string]uint64{}, 1, 2)),
 			expectError:       errTimeoutWaitingForDeduperState,
+			reducedTimeout:    true,
 		},
 		"incorrect deduper state order": {
 			givenSyncMessages: append(centralSyncMessages, debuggerMessage.DeduperState(map[string]uint64{}, 2, 2)),
@@ -300,7 +304,9 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 			})
 
 			reachable := concurrency.Flag{}
-			c.comm.(*centralCommunicationImpl).syncTimeout = 100 * time.Millisecond
+			if tc.reducedTimeout {
+				c.comm.(*centralCommunicationImpl).syncTimeout = 10 * time.Millisecond
+			}
 			// Start the go routine with the mocked client
 			c.comm.Start(c.mockService, &reachable, c.mockHandler, c.mockDetector)
 			c.mockService.connected.Wait()
@@ -308,6 +314,11 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 			select {
 			case <-ch:
 				c.Assert().ErrorIs(c.comm.Stopped().Err(), tc.expectError)
+				if !tc.shouldReconcile {
+					c.Assert().ErrorIs(c.comm.Stopped().Err(), errCantReconcile)
+				} else {
+					c.Assert().NotErrorIs(c.comm.Stopped().Err(), errCantReconcile)
+				}
 				break
 			case <-time.After(5 * time.Second):
 				c.Fail("timeout reached waiting for the connection to timeout if the deduper state is not received")
