@@ -315,16 +315,12 @@ func (s *Sensor) Stop() {
 		}
 	}
 
-	if s.server != nil {
-		if !s.server.Stop() {
-			log.Warnf("Sensor gRPC server stop was called more than once")
-		}
+	if s.server != nil && !s.server.Stop() {
+		log.Warnf("Sensor gRPC server stop was called more than once")
 	}
 
-	if s.webhookServer != nil {
-		if !s.webhookServer.Stop() {
-			log.Warnf("Sensor webhook server stop was called more than once")
-		}
+	if s.webhookServer != nil && !s.webhookServer.Stop() {
+		log.Warnf("Sensor webhook server stop was called more than once")
 	}
 
 	log.Info("Sensor shutdown complete")
