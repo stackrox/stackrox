@@ -127,10 +127,6 @@ spec:
         secret:
           defaultMode: 420
           optional: true
-          {{- /* If installing scanner slim assume install is occuring in a 
-                 standalone secured cluster (no central), as a result read the
-                 additional CAs from the same secret the other secured cluster 
-                 components use. */ -}}
           {{- if eq ._rox.scanner.mode "slim" }}
           secretName: additional-ca-sensor
           {{- else }}
