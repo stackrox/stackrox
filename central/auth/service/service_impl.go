@@ -155,18 +155,17 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 	return &v1.AddAuthMachineToMachineConfigResponse{Config: storagetov1.AuthM2MConfig(storageConfig)}, nil
 }
 
-func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.UpdateAuthMachineToMachineConfigResponse, error) {
+func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
 	config := request.GetConfig()
 	if err := s.validateAuthMachineToMachineConfig(ctx, config, false); err != nil {
 		return nil, err
 	}
 
-	storageConfig, err := s.authDataStore.UpdateAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config))
-	if err != nil {
+	if err := s.authDataStore.UpdateAuthM2MConfig(ctx, v1tostorage.AuthM2MConfig(config)); err != nil {
 		return nil, err
 	}
 
-	return &v1.UpdateAuthMachineToMachineConfigResponse{Config: storagetov1.AuthM2MConfig(storageConfig)}, nil
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {

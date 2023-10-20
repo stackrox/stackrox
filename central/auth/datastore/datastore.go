@@ -12,7 +12,7 @@ type DataStore interface {
 	GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
 	ListAuthM2MConfigs(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error)
 	AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error)
-	UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error)
+	UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error
 	RemoveAuthM2MConfig(ctx context.Context, id string) error
 }
 

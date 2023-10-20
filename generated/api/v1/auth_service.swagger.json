@@ -100,13 +100,13 @@
     },
     "/v1/auth/m2m/{config.id}": {
       "put": {
-        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.",
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.\nIn case the auth machine to machine config does not exist, a new one will be created.",
         "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigResponse"
+              "$ref": "#/definitions/v1Empty"
             }
           },
           "default": {
@@ -119,7 +119,7 @@
         "parameters": [
           {
             "name": "config.id",
-            "description": "UUID of the config.\nNote that when adding a machine to machine config, this field must not be set.",
+            "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -169,7 +169,7 @@
         ]
       },
       "delete": {
-        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.",
+        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a config that does not exist is deleted, no error will be returned.",
         "operationId": "AuthService_DeleteAuthMachineToMachineConfig",
         "responses": {
           "200": {
@@ -524,7 +524,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "UUID of the config.\nNote that when adding a machine to machine config, this field must not be set."
+          "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set."
         },
         "type": {
           "$ref": "#/definitions/v1AuthMachineToMachineConfigType"
@@ -625,14 +625,6 @@
       }
     },
     "v1UpdateAuthMachineToMachineConfigRequest": {
-      "type": "object",
-      "properties": {
-        "config": {
-          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
-        }
-      }
-    },
-    "v1UpdateAuthMachineToMachineConfigResponse": {
       "type": "object",
       "properties": {
         "config": {

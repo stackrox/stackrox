@@ -30,12 +30,11 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 	return config, nil
 }
 
-func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	if err := d.store.Upsert(ctx, config); err != nil {
-		return nil, err
+		return err
 	}
-
-	return config, nil
+	return nil
 }
 
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {

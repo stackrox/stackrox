@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	existingRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3)
+	testRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3)
 )
 
 func TestAuthServiceAccessControl(t *testing.T) {
@@ -97,6 +97,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.roleDS = roleDataStore.New(roleStore, permSetStore, accessScopeStore, func(_ context.Context, _ func(*storage.Group) bool) ([]*storage.Group, error) {
 		return nil, nil
 	})
+
 	s.addRoles()
 
 	s.svc = &serviceImpl{authDataStore: authDataStore, roleDataStore: s.roleDS}
@@ -406,49 +407,45 @@ func (s *authServiceAccessControlTestSuite) TestGetConfig() {
 	})
 	s.Require().NoError(err)
 
-	id := uuid.NewV4().String()
-	fmt.Print(id)
-
 	getConfigResp, err := s.svc.GetAuthMachineToMachineConfig(s.accessCtx,
 		&v1.ResourceByID{Id: addConfigResp.GetConfig().GetId()})
 	s.NoError(err)
 	s.Equal(addConfigResp.GetConfig(), getConfigResp.GetConfig())
+}
 
-	getConfigResp, err = s.svc.GetAuthMachineToMachineConfig(s.accessCtx,
+func (s *authServiceAccessControlTestSuite) TestGetConfigNonExisting() {
+	getConfigResp, err := s.svc.GetAuthMachineToMachineConfig(s.accessCtx,
 		&v1.ResourceByID{Id: "80c053c2-24a7-4b97-bd69-85b3a511241e"})
 	s.ErrorIs(err, errox.NotFound)
 	s.Nil(getConfigResp)
 }
 
-func (s *authServiceAccessControlTestSuite) TestAddConfig() {
-	testCases := []struct {
-		config *v1.AuthMachineToMachineConfig
-	}{
-		{
-			config: &v1.AuthMachineToMachineConfig{
-				TokenExpirationDuration: "1h",
-				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-				IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-					GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{Issuer: "something"}},
-			},
-		},
-		{
-			config: &v1.AuthMachineToMachineConfig{
-				TokenExpirationDuration: "1h",
-				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-			},
-		},
+func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfig() {
+	config := &v1.AuthMachineToMachineConfig{
+		TokenExpirationDuration: "1h",
+		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
 
-	for i, tc := range testCases {
-		s.Run(fmt.Sprintf("test case %d", i), func() {
-			resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
-				Config: tc.config,
-			})
-			s.NoError(err)
-			s.NotEmpty(resp.GetConfig().GetId())
-		})
+	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
+		Config: config,
+	})
+	s.NoError(err)
+	s.NotEmpty(resp.GetConfig().GetId())
+}
+
+func (s *authServiceAccessControlTestSuite) TestAddGenericConfig() {
+	config := &v1.AuthMachineToMachineConfig{
+		TokenExpirationDuration: "1h",
+		Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+		IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
+			GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{Issuer: "something"}},
 	}
+
+	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
+		Config: config,
+	})
+	s.NoError(err)
+	s.NotEmpty(resp.GetConfig().GetId())
 }
 
 func (s *authServiceAccessControlTestSuite) TestListConfigs() {
@@ -498,7 +495,7 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 	s.ElementsMatch(configs.GetConfigs(), []*v1.AuthMachineToMachineConfig{config1.GetConfig(), config2.GetConfig()})
 }
 
-func (s *authServiceAccessControlTestSuite) TestUpdateConfig() {
+func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 	config, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
@@ -527,21 +524,21 @@ func (s *authServiceAccessControlTestSuite) TestUpdateConfig() {
 		},
 	}
 
-	updatedConfig, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx,
+	_, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx,
 		&v1.UpdateAuthMachineToMachineConfigRequest{Config: config.GetConfig()})
 	s.NoError(err)
-	s.Equal(config.GetConfig(), updatedConfig.GetConfig())
+}
 
+func (s *authServiceAccessControlTestSuite) TestUpdateAddConfig() {
 	newConfig := &v1.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		TokenExpirationDuration: "1m",
 		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 	}
-	updatedConfig, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
+	_, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
 		Config: newConfig,
 	})
 	s.NoError(err)
-	s.Equal(updatedConfig.GetConfig(), newConfig)
 }
 
 func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
@@ -565,9 +562,6 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 	})
 	s.Require().NoError(err)
 
-	_, err = s.svc.DeleteAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: "80c053c2-24a7-4b97-bd69-85b3a511241e"})
-	s.NoError(err)
-
 	_, err = s.svc.DeleteAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: config.GetConfig().GetId()})
 	s.NoError(err)
 
@@ -575,6 +569,11 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 		&v1.ResourceByID{Id: config.GetConfig().GetId()})
 	s.ErrorIs(err, errox.NotFound)
 	s.Nil(configResponse)
+}
+
+func (s *authServiceAccessControlTestSuite) TestRemoveNonExistingConfig() {
+	_, err := s.svc.DeleteAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: "80c053c2-24a7-4b97-bd69-85b3a511241e"})
+	s.NoError(err)
 }
 
 func (s *authServiceAccessControlTestSuite) addRoles() {
@@ -597,7 +596,7 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 		},
 	}))
 
-	for _, role := range existingRoles.AsSlice() {
+	for _, role := range testRoles.AsSlice() {
 		s.Require().NoError(s.roleDS.AddRole(s.accessCtx, &storage.Role{
 			Name:            role,
 			Description:     "test role",

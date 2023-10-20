@@ -8,6 +8,7 @@ import (
 
 func toErrox(err error) error {
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {
+		// Ref: https://www.postgresql.org/docs/current/errcodes-appendix.html.
 		switch pgErr.Code {
 		case "23505":
 			return errors.Wrap(errox.AlreadyExists, err.Error())

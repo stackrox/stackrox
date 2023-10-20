@@ -36,7 +36,7 @@ message AuthStatus {
 // for the config.
 message AuthMachineToMachineConfig {
     // UUID of the config.
-    // Note that when adding a machine to machine config, this field must not be set.
+    // Note that when adding a machine to machine config, this field should not be set.
     string id = 1;
 
     // The type of the auth machine to machine config.
@@ -99,10 +99,6 @@ message UpdateAuthMachineToMachineConfigRequest {
     AuthMachineToMachineConfig config = 1;
 }
 
-message UpdateAuthMachineToMachineConfigResponse {
-    AuthMachineToMachineConfig config = 1;
-}
-
 message ExchangeAuthMachineToMachineTokenRequest {
     // Identity token that is supposed to be exchanged.
     string id_token = 1;
@@ -144,7 +140,8 @@ service AuthService {
     }
 
     // UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.
-    rpc UpdateAuthMachineToMachineConfig(UpdateAuthMachineToMachineConfigRequest) returns (UpdateAuthMachineToMachineConfigResponse) {
+    // In case the auth machine to machine config does not exist, a new one will be created.
+    rpc UpdateAuthMachineToMachineConfig(UpdateAuthMachineToMachineConfigRequest) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/auth/m2m/{config.id}"
             body: "*"
@@ -152,6 +149,7 @@ service AuthService {
     }
 
     // DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.
+    // In case a config that does not exist is deleted, no error will be returned.
     rpc DeleteAuthMachineToMachineConfig(ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/auth/m2m/{id}"

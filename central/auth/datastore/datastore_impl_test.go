@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	existingRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3)
+	testRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3)
 )
 
 func TestAuthDatastorePostgres(t *testing.T) {
@@ -64,7 +64,9 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.roleDataStore = roleDataStore.New(roleStore, permSetStore, accessScopeStore, func(_ context.Context, _ func(*storage.Group) bool) ([]*storage.Group, error) {
 		return nil, nil
 	})
+
 	s.addRoles()
+
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {
@@ -114,7 +116,7 @@ func (s *datastorePostgresTestSuite) addRoles() {
 		},
 	}))
 
-	for _, role := range existingRoles.AsSlice() {
+	for _, role := range testRoles.AsSlice() {
 		s.Require().NoError(s.roleDataStore.AddRole(s.ctx, &storage.Role{
 			Name:            role,
 			Description:     "test role",
