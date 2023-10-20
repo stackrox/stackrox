@@ -5,7 +5,10 @@ import {
     DatePicker,
     Flex,
     FormGroup,
+    FormHelperText,
     Form,
+    HelperText,
+    HelperTextItem,
     Radio,
     Spinner,
     Tabs,
@@ -15,7 +18,7 @@ import {
     TabContent,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useFormik } from 'formik';
+import { FormikHelpers, useFormik } from 'formik';
 import { addDays } from 'date-fns';
 
 import EmptyStateTemplate from 'Components/PatternFly/EmptyStateTemplate';
@@ -38,13 +41,7 @@ function getDefaultValues(cves: string[], scopeContext: ScopeContext): DeferralV
             ? { registry: ALL, remote: ALL, tag: ALL }
             : { registry: ALL, remote: scopeContext.image.name, tag: ALL };
 
-    return {
-        cves,
-        comment: '',
-        scope: {
-            imageScope,
-        },
-    };
+    return { cves, comment: '', scope: { imageScope } };
 }
 
 /**
@@ -59,10 +56,11 @@ function prettifyDate(date = ''): string {
 export type DeferralFormProps = {
     cves: CveSelectionsProps['cves'];
     scopeContext: ScopeContext;
+    onSubmit: (formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) => void;
     onCancel: () => void;
 };
 
-function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
+function DeferralForm({ cves, scopeContext, onSubmit, onCancel }: DeferralFormProps) {
     const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
     const { data: config, loading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
 
@@ -71,10 +69,20 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
             cves.map(({ cve }) => cve),
             scopeContext
         ),
-        onSubmit: () => {},
+        onSubmit,
         validationSchema: deferralValidationSchema,
     });
-    const { values, setValues, setFieldValue, handleBlur, touched, errors } = formik;
+    const {
+        values,
+        setValues,
+        handleBlur,
+        setFieldValue,
+        touched,
+        handleSubmit,
+        submitForm,
+        isSubmitting,
+        errors,
+    } = formik;
 
     if (loading) {
         return (
@@ -105,7 +113,11 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
 
     return (
         <>
-            <Form className="pf-u-display-flex pf-u-flex-direction-column" style={{ minHeight: 0 }}>
+            <Form
+                onSubmit={handleSubmit}
+                className="pf-u-display-flex pf-u-flex-direction-column"
+                style={{ minHeight: 0 }}
+            >
                 <Tabs
                     className="pf-u-flex-shrink-0"
                     activeKey={activeKeyTab}
@@ -210,6 +222,19 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                                                 />
                                             </div>
                                         )}
+                                    {errors.expiry && (
+                                        <FormHelperText isError isHidden={false}>
+                                            <HelperText>
+                                                <HelperTextItem
+                                                    variant="error"
+                                                    icon={<ExclamationCircleIcon />}
+                                                    className="pf-u-display-flex pf-u-align-items-center"
+                                                >
+                                                    {errors.expiry}
+                                                </HelperTextItem>
+                                            </HelperText>
+                                        </FormHelperText>
+                                    )}
                                 </Flex>
                             </FormGroup>
                         )}
@@ -240,8 +265,10 @@ function DeferralForm({ cves, scopeContext, onCancel }: DeferralFormProps) {
                     <CveSelections cves={cves} />
                 </TabContent>
                 <Flex>
-                    <Button onClick={() => {}}>Submit request</Button>
-                    <Button variant="secondary" onClick={onCancel}>
+                    <Button isLoading={isSubmitting} isDisabled={isSubmitting} onClick={submitForm}>
+                        Submit request
+                    </Button>
+                    <Button isDisabled={isSubmitting} variant="secondary" onClick={onCancel}>
                         Cancel
                     </Button>
                 </Flex>
