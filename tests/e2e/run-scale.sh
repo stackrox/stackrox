@@ -123,7 +123,7 @@ store_metrics() {
     unzip -d "${debug_dump_dir}"/stackrox_debug "${this_run_metrics}"
     prometheus-metric-parser single --file="${debug_dump_dir}"/stackrox_debug/metrics-2 \
         --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
-        --project-id=stackrox-ci --timestamp="$(date -u +"%s")"
+        --project-id=acs-san-stackroxci --timestamp="$(date -u +"%s")"
 }
 
 store_as_spyglass_artifact() {
