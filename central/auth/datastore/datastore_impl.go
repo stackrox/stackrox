@@ -6,51 +6,97 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	_ DataStore = (*datastoreImpl)(nil)
+
+	accessSAC = sac.ForResource(resources.Access)
 )
 
 type datastoreImpl struct {
 	store store.Store
 	set   m2m.TokenExchangerSet
+
+	mutex sync.RWMutex
 }
 
 func (d *datastoreImpl) GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	return d.getAuthM2MConfigNoLock(ctx, id)
+}
+
+func (d *datastoreImpl) getAuthM2MConfigNoLock(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error) {
 	return d.store.Get(ctx, id)
 }
 
 func (d *datastoreImpl) ListAuthM2MConfigs(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error) {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 	return d.store.GetAll(ctx)
 }
 
 func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := d.store.Upsert(ctx, config); err != nil {
 		return nil, err
 	}
 
-	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
+	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
 		return nil, err
 	}
 	return config, nil
 }
 
 func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+	if err != nil {
+		return err
+	}
+
 	if err := d.store.Upsert(ctx, config); err != nil {
 		return err
 	}
 
-	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
+	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
 		return err
 	}
 	return nil
 }
 
+func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m2m.TokenExchanger, bool) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return nil, false
+	}
+	return d.set.GetTokenExchanger(issuer)
+}
+
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {
-	if err := d.store.Delete(ctx, id); err != nil {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	config, exists, err := d.getAuthM2MConfigNoLock(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	if err := d.set.RemoveTokenExchanger(config.GetIssuer()); err != nil {
 		return err
 	}
 
-	return d.set.RemoveTokenExchanger(id)
+	return d.store.Delete(ctx, id)
 }

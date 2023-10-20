@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -21,9 +20,12 @@ var (
 )
 
 // TokenExchanger will exchange a raw ID token to a Rox token (i.e. a Central access token).
-// This will be done based on a auth machine to machine config.
+// This will be done based on an auth machine to machine config.
+//
+//go:generate mockgen-wrapper
 type TokenExchanger interface {
 	ExchangeToken(ctx context.Context, rawIDToken string) (string, error)
+	Provider() authproviders.Provider
 }
 
 type machineToMachineTokenExchanger struct {
@@ -37,7 +39,8 @@ type machineToMachineTokenExchanger struct {
 }
 
 // newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
-func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore) (*machineToMachineTokenExchanger, error) {
+func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig,
+	roleDS roleDataStore.DataStore, issuerFactory tokens.IssuerFactory) (TokenExchanger, error) {
 	tokenTTL, err := time.ParseDuration(config.GetTokenExpirationDuration())
 	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
 	// data store).
@@ -53,7 +56,7 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 	}
 	provider := newProviderFromConfig(config, newRoleMapper(config, roleDS, configRegExps))
 	roxClaimExtractor := newClaimExtractorFromConfig(config)
-	issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(provider, tokens.WithTTL(tokenTTL))
+	issuer, err := issuerFactory.CreateIssuer(provider, tokens.WithTTL(tokenTTL))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating token issuer")
 	}
@@ -67,6 +70,10 @@ func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachine
 		roxClaimExtractor: roxClaimExtractor,
 		roleDS:            roleDS,
 	}, nil
+}
+
+func (m *machineToMachineTokenExchanger) Provider() authproviders.Provider {
+	return m.provider
 }
 
 func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawIDToken string) (string, error) {

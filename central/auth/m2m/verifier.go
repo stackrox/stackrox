@@ -17,25 +17,15 @@ type tokenVerifier interface {
 }
 
 func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
-	var issuer string
-	switch config.GetType() {
-	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
-		// Ref: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token.
-		issuer = "https://token.actions.githubusercontent.com"
-	default:
-		issuer = config.GetGenericIssuerConfig().GetIssuer()
-	}
-
-	provider, err := oidc.NewProvider(ctx, issuer)
+	provider, err := oidc.NewProvider(ctx, config.GetIssuer())
 	if err != nil {
-		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", issuer)
+		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", config.GetIssuer())
 	}
 
-	return &genericTokenVerifier{issuer: issuer, provider: provider}, nil
+	return &genericTokenVerifier{provider: provider}, nil
 }
 
 type genericTokenVerifier struct {
-	issuer   string
 	provider *oidc.Provider
 }
 

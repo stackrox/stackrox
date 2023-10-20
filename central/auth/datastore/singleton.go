@@ -31,9 +31,11 @@ func Singleton() DataStore {
 		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 		configs, err := ds.ListAuthM2MConfigs(ctx)
-		utils.Must(err)
+		utils.Should(err)
 		for _, config := range configs {
-			utils.Must(set.UpsertTokenExchanger(ctx, config))
+			exchanger, err := set.NewTokenExchangerFromConfig(ctx, config)
+			utils.Should(err)
+			utils.Should(set.UpsertTokenExchanger(exchanger, config.GetId()))
 		}
 	})
 	return ds

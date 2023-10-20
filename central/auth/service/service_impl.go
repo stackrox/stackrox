@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
@@ -70,8 +72,7 @@ var (
 )
 
 type serviceImpl struct {
-	authDataStore  datastore.DataStore
-	tokenExchanger m2m.TokenExchanger
+	authDataStore datastore.DataStore
 
 	v1.UnimplementedAuthServiceServer
 }
@@ -211,7 +212,23 @@ func (s *serviceImpl) ExchangeAuthMachineToMachineToken(ctx context.Context,
 	if !features.AuthMachineToMachine.Enabled() {
 		return nil, m2mFeatureDisabledError()
 	}
-	accessToken, err := s.tokenExchanger.ExchangeToken(ctx, req.GetIdToken())
+
+	rawIDToken := req.GetIdToken()
+
+	issuer, err := m2m.IssuerFromRawIDToken(rawIDToken)
+	if err != nil {
+		return nil, err
+	}
+	// Since this is called anonymously, we have to elevate the context to be able to retrieve the token exchanger.
+	// This will not be shared with the client context.
+	accessCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
+		sac.ResourceScopeKeys(resources.Access), sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
+	exchanger, exists := s.authDataStore.GetTokenExchanger(accessCtx, issuer)
+	if !exists {
+		return nil, errox.NoCredentials.Newf("issuer %q is not configured", issuer)
+	}
+
+	accessToken, err := exchanger.ExchangeToken(ctx, req.GetIdToken())
 	if err != nil {
 		return nil, err
 	}
