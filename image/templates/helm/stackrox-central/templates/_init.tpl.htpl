@@ -34,16 +34,17 @@
 {{ $_ = set $._rox "_state" $state }}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
-{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml}}
+{{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
 
+[<- if .FeatureFlags.ROX_SCANNER_V4 >]
+{{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
+{{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner $configShapeScannerV4 (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
+[<- else >]
 {{ $_ = include "srox.mergeInto" (list $rox $configShape $configShapeScanner (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
-{{ $_ = set $._rox "_configShape" $configShape }}
+[<- end >]
 
-[< if .FeatureFlags.ROX_SCANNER_V4 ->]
-  {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml}}
-  {{ $_ = include "srox.mergeInto" (list $rox $configShapeScannerV4) }}
-  {{ $_ = set $._rox "_configShapeScannerV4" $configShapeScannerV4 }}
-[< end >]
+{{ $_ = set $._rox "_configShape" $configShape }}
+{{ $_ = set $._rox "_configShapeScannerV4" $configShapeScannerV4 }}
 
 {{/*
     General validation.
@@ -285,12 +286,13 @@
    ScannerV4 setup.
   */}}
 
-{{ if not ._rox.scannerV4.disable }}
+{{ $scannerV4Cfg := $._rox.scannerV4 }}
+{{ if not $scannerV4Cfg.disable }}
   {{/* TODO: should also check if indexer and matcher are disabled? */}}
   {{/* if and (not ._rox.scannerV4.indexer.disable) (not ._rox.scannerV4.matcher.disable) }}
   {{ end */}}
   {{ include "srox.scannerV4Volume" $ }}
-  {{ include "srox.scannerV4Init" (list $ $._rox.scannerV4) }}
+  {{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
 {{ end }}
 
 [<- end >]

@@ -37,7 +37,7 @@
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner v4 Matcher" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $scannerCertSpec) }}
 
-    {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }}
+    {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }} // TODO: Shouldn't this be SCANNER_V4_DB_SERVICE? -mc
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
 {{ end }}
 
