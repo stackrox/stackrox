@@ -4,6 +4,8 @@ package datastore
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -1540,3 +1542,91 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	suite.Equal(expectedPlopStorage1, newPlopsFromDB2[0])
 
 }
+
+func makeRandomString(length int) string {
+        var charset = []byte("asdfqwert")
+        randomString := make([]byte, length)
+        for i := range randomString {
+                randomString[i] = charset[rand.Intn(len(charset))]
+        }
+        return string(randomString)
+}
+
+func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, npod int, deployment string) {
+        count := 0
+
+	batchSize := 100
+
+	nplops := 2*nprocess*npod*nport
+
+	if batchSize > nplops {
+		batchSize = nplops
+	}
+
+        plops := make([]*storage.ProcessListeningOnPortFromSensor, batchSize)
+        for podIdx := 0; podIdx < npod; podIdx++ {
+                podID := makeRandomString(10)
+                podUID := makeRandomString(10)
+                for processIdx := 0; processIdx < nprocess; processIdx++ {
+                        execFilePath := makeRandomString(10)
+                        for port := 0; port < nport; port++ {
+
+                                plopTCP := &storage.ProcessListeningOnPortFromSensor{
+                                        Port:     uint32(port),
+                                        Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp: nil,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               podID,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: execFilePath,
+					},
+					DeploymentId: deployment,
+					PodUid:       podUID,
+                                }
+                                plopUDP := &storage.ProcessListeningOnPortFromSensor{
+                                        Port:     uint32(port),
+                                        Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
+					CloseTimestamp: nil,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               podID,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: execFilePath,
+					},
+					DeploymentId: deployment,
+					PodUid:       podUID,
+                                }
+                                plops[count] = plopTCP
+                                count++
+                                plops[count] = plopUDP
+                                count++
+				if count == batchSize {
+					suite.NoError(suite.datastore.AddProcessListeningOnPort(
+						suite.hasWriteCtx, plops...))
+					count = 0
+				}
+                        }
+                }
+        }
+}
+
+func (suite *PLOPDataStoreTestSuite) TestSort1000000() {
+        nport := 100
+        nprocess := 100
+        npod := 100
+
+        suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
+
+        startTime := time.Now()
+	newPlops, err := suite.datastore.GetProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Deployment1)
+	suite.NoError(err)
+        duration := time.Since(startTime)
+
+	fmt.Printf("Fetching %d plops %s took\n", len(newPlops), duration)
+
+}
+
