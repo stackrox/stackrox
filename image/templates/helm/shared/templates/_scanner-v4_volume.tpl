@@ -6,8 +6,8 @@
 {{ define "srox.scannerV4Volume" }}
 {{ $ := . }}
 {{ $_ := set $ "_rox" $._rox }}
-{{ $scannerV4DBCfg := $._rox.scannerV4.db }}
 
+{{ $scannerV4DBCfg := $._rox.scannerV4.db }}
 {{/*
     Scanner v4 DB Volume config setup.
   */}}

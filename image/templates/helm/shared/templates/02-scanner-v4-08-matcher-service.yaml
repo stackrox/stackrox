@@ -23,7 +23,7 @@ spec:
     targetPort: 9090
   {{- end }}
 
-{{- if ._rox.env.istio -}}
+{{- if ._rox.env.istio }}
 ---
 
 apiVersion: networking.istio.io/v1alpha3
@@ -44,5 +44,5 @@ spec:
         number: 8443
       tls:
         mode: DISABLE
-{{- end -}}
-{{ end -}}
+{{- end }}
+{{- end }}

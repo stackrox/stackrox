@@ -76,5 +76,3 @@ scannerV4:
       none: null # bool
     extraMounts: null # [dict]
   exposeMonitoring: null # bool
-system:
-  enablePodSecurityPolicies: null # bool
