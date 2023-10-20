@@ -69,7 +69,7 @@ run_scale_test() {
 
     compare_with_stored_metrics "${debug_dump_dir}"
 
-    if is_nightly_run && [[ -n "${STORE_METRICS:-}" ]]; then
+    if [[ -n "${STORE_METRICS:-}" ]]; then
         store_metrics "${debug_dump_dir}"
     fi
 }
