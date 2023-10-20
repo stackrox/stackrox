@@ -30,7 +30,7 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 		return nil, err
 	}
 
-	if err := d.set.UpsertTokenExchanger(config); err != nil {
+	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -41,7 +41,7 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 		return err
 	}
 
-	if err := d.set.UpsertTokenExchanger(config); err != nil {
+	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
 		return err
 	}
 	return nil

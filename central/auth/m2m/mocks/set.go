@@ -69,15 +69,15 @@ func (mr *MockTokenExchangerSetMockRecorder) RemoveTokenExchanger(id any) *gomoc
 }
 
 // UpsertTokenExchanger mocks base method.
-func (m *MockTokenExchangerSet) UpsertTokenExchanger(config *storage.AuthMachineToMachineConfig) error {
+func (m *MockTokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertTokenExchanger", config)
+	ret := m.ctrl.Call(m, "UpsertTokenExchanger", ctx, config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpsertTokenExchanger indicates an expected call of UpsertTokenExchanger.
-func (mr *MockTokenExchangerSetMockRecorder) UpsertTokenExchanger(config any) *gomock.Call {
+func (mr *MockTokenExchangerSetMockRecorder) UpsertTokenExchanger(ctx, config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).UpsertTokenExchanger), config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).UpsertTokenExchanger), ctx, config)
 }

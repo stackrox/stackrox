@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -22,27 +23,32 @@ var (
 //go:generate mockgen-wrapper
 type TokenExchangerSet interface {
 	TokenExchanger
-	UpsertTokenExchanger(config *storage.AuthMachineToMachineConfig) error
+	UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error
 	RemoveTokenExchanger(id string) error
 }
 
 type tokenExchangerSet struct {
 	mutex           sync.RWMutex
-	tokenExchangers map[string]TokenExchanger
+	tokenExchangers map[string]*machineToMachineTokenExchanger
 	roleDS          roleDataStore.DataStore
+	issuerFactory   tokens.IssuerFactory
 }
 
 // TokenExchangerSetSingleton creates a singleton holding all token exchangers for auth machine to machine configs.
-func TokenExchangerSetSingleton(roleDS roleDataStore.DataStore) TokenExchangerSet {
+func TokenExchangerSetSingleton(roleDS roleDataStore.DataStore, issuerFactory tokens.IssuerFactory) TokenExchangerSet {
 	once.Do(func() {
-		t = &tokenExchangerSet{tokenExchangers: map[string]TokenExchanger{}, roleDS: roleDS}
+		t = &tokenExchangerSet{
+			tokenExchangers: map[string]*machineToMachineTokenExchanger{},
+			roleDS:          roleDS,
+			issuerFactory:   issuerFactory,
+		}
 	})
 	return t
 }
 
 // UpsertTokenExchanger upserts a token exchanger based off the given config.
 // In case a token exchanger already exists for the given config, it will be replaced.
-func (t *tokenExchangerSet) UpsertTokenExchanger(config *storage.AuthMachineToMachineConfig) error {
+func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
@@ -50,13 +56,12 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(config *storage.AuthMachineToMa
 	if exists {
 		// Need to unregister the source temporarily, otherwise we receive an error on creation that the
 		// source is already registered.
-		m2mTokenExchanger := exchanger.(*machineToMachineTokenExchanger)
-		if err := jwt.IssuerFactorySingleton().UnregisterSource(m2mTokenExchanger.provider); err != nil {
+		if err := jwt.IssuerFactorySingleton().UnregisterSource(exchanger.provider); err != nil {
 			return pkgErrors.Wrapf(err, "unregistering source for config %s", config.GetId())
 		}
 	}
 
-	tokenExchanger, err := newTokenExchanger(config, t.roleDS)
+	tokenExchanger, err := newTokenExchanger(ctx, config, t.roleDS)
 	if err != nil {
 		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
 	}
@@ -78,8 +83,7 @@ func (t *tokenExchangerSet) RemoveTokenExchanger(id string) error {
 
 	// We need to unregister the source with the issuer factory.
 	// This will lead to all tokens issued by the previous token exchanger to be rejected by Central.
-	m2mTokenExchanger := exchanger.(*machineToMachineTokenExchanger)
-	if err := jwt.IssuerFactorySingleton().UnregisterSource(m2mTokenExchanger.provider); err != nil {
+	if err := t.issuerFactory.UnregisterSource(exchanger.provider); err != nil {
 		return pkgErrors.Wrapf(err, "unregistering source for config %s", id)
 	}
 

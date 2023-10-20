@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,34 +21,37 @@ var (
 )
 
 type roleMapper struct {
-	config *storage.AuthMachineToMachineConfig
-	roleDS roleDataStore.DataStore
+	config        *storage.AuthMachineToMachineConfig
+	configRegexps []*regexp.Regexp
+	roleDS        roleDataStore.DataStore
 }
 
-func newRoleMapper(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore) permissions.RoleMapper {
+func newRoleMapper(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore,
+	configRegExps []*regexp.Regexp) *roleMapper {
 	return &roleMapper{
-		config: config,
-		roleDS: roleDS,
+		config:        config,
+		configRegexps: configRegExps,
+		roleDS:        roleDS,
 	}
 }
 
 func (r *roleMapper) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]permissions.ResolvedRole, error) {
-	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.config.GetMappings())
+	return resolveRolesForClaims(ctx, user.Attributes, r.roleDS, r.config.GetMappings(), r.configRegexps)
 }
 
 func resolveRolesForClaims(ctx context.Context, claims map[string][]string, roleDS roleDataStore.DataStore,
-	mappings []*storage.AuthMachineToMachineConfig_Mapping) ([]permissions.ResolvedRole, error) {
+	mappings []*storage.AuthMachineToMachineConfig_Mapping, expressions []*regexp.Regexp) ([]permissions.ResolvedRole, error) {
 	rolesForUser := set.NewStringSet()
 
-	for _, mapping := range mappings {
-		if valuesMatch(mapping.GetValue(), claims[mapping.GetKey()]) {
+	for i, mapping := range mappings {
+		if valuesMatch(expressions[i], claims[mapping.GetKey()]) {
 			rolesForUser.Add(mapping.GetRole())
 		}
 	}
 
 	// If no roles are assigned to the user, we will return an error and short-circuit.
 	if rolesForUser.Cardinality() == 0 {
-		return nil, errors.New("no roles assigned")
+		return nil, auth.ErrNoValidRole
 	}
 
 	resolvedRoles := make([]permissions.ResolvedRole, 0, rolesForUser.Cardinality())
@@ -68,37 +72,11 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 	return resolvedRoles, nil
 }
 
-func valuesMatch(expr string, claimValues []string) bool {
+func valuesMatch(expr *regexp.Regexp, claimValues []string) bool {
 	for _, claimValue := range claimValues {
-		if valueMatches(expr, claimValue) {
+		if expr.MatchString(claimValue) {
 			return true
 		}
 	}
 	return false
-}
-
-func valueMatches(expr string, claimValue string) bool {
-	// We allow either a simple string as the expression, or regular expressions.
-	if regExp := convertToRegexp(expr); regExp != nil {
-		return regExp.MatchString(claimValue)
-	}
-	// If it's not a regular expression, we do simple string comparison.
-	return claimValue == expr
-}
-
-func convertToRegexp(expr string) *regexp.Regexp {
-	// If expression is the default value (i.e. empty string), the compiled regular expression will match
-	// everything.
-	if expr == "" {
-		return nil
-	}
-
-	parsedExpr, err := regexp.Compile(expr)
-	// Since we allow the user to either specify a regular expression or not, this could fail in the case
-	// the value is a non-regexp. Hence, we do not return an error but instead log a debug message.
-	if err != nil {
-		log.Debugf("Failed to compile regular expression %q: %v", expr, err)
-		return nil
-	}
-	return parsedExpr
 }

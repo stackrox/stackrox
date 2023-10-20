@@ -16,7 +16,7 @@ type tokenVerifier interface {
 	VerifyIDToken(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
 }
 
-func tokenVerifierFromConfig(config *storage.AuthMachineToMachineConfig) tokenVerifier {
+func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
 	var issuer string
 	switch config.GetType() {
 	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
@@ -26,20 +26,21 @@ func tokenVerifierFromConfig(config *storage.AuthMachineToMachineConfig) tokenVe
 		issuer = config.GetGenericIssuerConfig().GetIssuer()
 	}
 
-	return &genericTokenVerifier{issuer: issuer}
+	provider, err := oidc.NewProvider(ctx, issuer)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", issuer)
+	}
+
+	return &genericTokenVerifier{issuer: issuer, provider: provider}, nil
 }
 
 type genericTokenVerifier struct {
-	issuer string
+	issuer   string
+	provider *oidc.Provider
 }
 
 func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*oidc.IDToken, error) {
-	provider, err := oidc.NewProvider(ctx, g.issuer)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", g.issuer)
-	}
-
-	verifier := provider.Verifier(&oidc.Config{
+	verifier := g.provider.Verifier(&oidc.Config{
 		// We currently provide no config to expose the client ID that's associated with the ID token.
 		// The reason for this is the following:
 		// - A magnitude of client IDs would have to be configured (i.e. in the case of GitHub actions, this would be

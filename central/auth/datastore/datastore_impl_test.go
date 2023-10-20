@@ -70,7 +70,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.addRoles()
 
 	s.mockSet = mocks.NewMockTokenExchangerSet(gomock.NewController(s.T()))
-	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
 	s.authDataStore = New(store, s.mockSet)
 }

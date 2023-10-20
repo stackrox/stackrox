@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -65,7 +65,7 @@ type authServiceAccessControlTestSuite struct {
 }
 
 func (s *authServiceAccessControlTestSuite) SetupSuite() {
-	s.T().Setenv(env.AuthMachineToMachine.EnvVar(), "true")
+	s.T().Setenv(features.AuthMachineToMachine.EnvVar(), "true")
 
 	authProvider, err := authproviders.NewProvider(
 		authproviders.WithEnabled(true),
@@ -103,7 +103,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	store := pgStore.New(s.pool.DB)
 	mockSet := mocks.NewMockTokenExchangerSet(gomock.NewController(s.T()))
-	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
 	authDataStore := datastore.New(store, mockSet)
 	s.svc = &serviceImpl{authDataStore: authDataStore}

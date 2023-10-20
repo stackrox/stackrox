@@ -2,6 +2,7 @@ package m2m
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,6 +28,7 @@ type TokenExchanger interface {
 
 type machineToMachineTokenExchanger struct {
 	config            *storage.AuthMachineToMachineConfig
+	configRegExps     []*regexp.Regexp
 	verifier          tokenVerifier
 	provider          authproviders.Provider
 	issuer            tokens.Issuer
@@ -35,7 +37,7 @@ type machineToMachineTokenExchanger struct {
 }
 
 // newTokenExchanger creates a new token exchanger based on an auth machine to machine config.
-func newTokenExchanger(config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore) (TokenExchanger, error) {
+func newTokenExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig, roleDS roleDataStore.DataStore) (*machineToMachineTokenExchanger, error) {
 	tokenTTL, err := time.ParseDuration(config.GetTokenExpirationDuration())
 	// Technically, this shouldn't happen, as the config is expected to be validated beforehand (i.e. when added to the
 	// data store).
@@ -43,8 +45,13 @@ func newTokenExchanger(config *storage.AuthMachineToMachineConfig, roleDS roleDa
 		return nil, errors.Wrap(err, "parsing token expiration duration")
 	}
 
-	verifier := tokenVerifierFromConfig(config)
-	provider := newProviderFromConfig(config, newRoleMapper(config, roleDS))
+	configRegExps := createRegexp(config)
+
+	verifier, err := tokenVerifierFromConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	provider := newProviderFromConfig(config, newRoleMapper(config, roleDS, configRegExps))
 	roxClaimExtractor := newClaimExtractorFromConfig(config)
 	issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(provider, tokens.WithTTL(tokenTTL))
 	if err != nil {
@@ -53,6 +60,7 @@ func newTokenExchanger(config *storage.AuthMachineToMachineConfig, roleDS roleDa
 
 	return &machineToMachineTokenExchanger{
 		config:            config,
+		configRegExps:     configRegExps,
 		issuer:            issuer,
 		verifier:          verifier,
 		provider:          provider,
@@ -64,7 +72,7 @@ func newTokenExchanger(config *storage.AuthMachineToMachineConfig, roleDS roleDa
 func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawIDToken string) (string, error) {
 	idToken, err := m.verifier.VerifyIDToken(ctx, rawIDToken)
 	if err != nil {
-		return "", errox.NoCredentials.New("no valid ID token").CausedBy(err)
+		return "", errox.NoCredentials.New("ID token is invalid").CausedBy(err)
 	}
 
 	log.Debugf("Successfully validated ID token (sub=%q) for config %q", idToken.Subject, m.config.GetId())
@@ -85,7 +93,7 @@ func (m *machineToMachineTokenExchanger) ExchangeToken(ctx context.Context, rawI
 	// Additionally, since the context will have no access, elevate it locally to fetch roles.
 	resolveRolesCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
-	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings())
+	_, err = resolveRolesForClaims(resolveRolesCtx, claims, m.roleDS, m.config.GetMappings(), m.configRegExps)
 	if err != nil {
 		return "", errox.NoCredentials.New("resolving roles for id token").CausedBy(err)
 	}
@@ -119,4 +127,15 @@ func mapToStringClaims(claims map[string]interface{}) map[string][]string {
 	}
 
 	return stringClaims
+}
+
+func createRegexp(config *storage.AuthMachineToMachineConfig) []*regexp.Regexp {
+	regExps := make([]*regexp.Regexp, 0, len(config.GetMappings()))
+
+	for _, mapping := range config.GetMappings() {
+		// The mapping value is validated on insert / update to contain a valid regexp, thus we can use MustCompile here.
+		regExps = append(regExps, regexp.MustCompile(mapping.GetValue()))
+	}
+
+	return regExps
 }

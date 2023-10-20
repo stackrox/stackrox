@@ -2,7 +2,6 @@ package m2m
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/role/datastore/mocks"
@@ -29,36 +28,38 @@ func TestResolveRolesForClaims(t *testing.T) {
 		"repository": {"github.com/sample-org/sample-repo:main:062348SHA"},
 		"iss":        {"https://stackrox.io"},
 	}
-	mappings := []*storage.AuthMachineToMachineConfig_Mapping{
-		{
-			Key:   "sub",
-			Value: "something",
-			Role:  "Admin",
-		},
-		{
-			Key:   "aud",
-			Value: "somewhere",
-			Role:  "Analyst",
-		},
-		{
-			Key:   "aud",
-			Value: "something",
-			Role:  "Analyst",
-		},
-		{
-			Key:   "aud",
-			Value: "elsewhere",
-			Role:  "Continuous Integration",
-		},
-		{
-			Key:   "repository",
-			Value: "github.com/sample-org/sample-repo.*",
-			Role:  "roxctl",
-		},
-		{
-			Key:   "iss",
-			Value: ".*",
-			Role:  authn.NoneRole,
+	config := &storage.AuthMachineToMachineConfig{
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:   "sub",
+				Value: "something",
+				Role:  "Admin",
+			},
+			{
+				Key:   "aud",
+				Value: "somewhere",
+				Role:  "Analyst",
+			},
+			{
+				Key:   "aud",
+				Value: "something",
+				Role:  "Analyst",
+			},
+			{
+				Key:   "aud",
+				Value: "elsewhere",
+				Role:  "Continuous Integration",
+			},
+			{
+				Key:   "repository",
+				Value: "github.com/sample-org/sample-repo.*",
+				Role:  "roxctl",
+			},
+			{
+				Key:   "iss",
+				Value: ".*",
+				Role:  authn.NoneRole,
+			},
 		},
 	}
 	roles := map[string]permissions.ResolvedRole{
@@ -74,36 +75,7 @@ func TestResolveRolesForClaims(t *testing.T) {
 		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
 	}
 
-	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, mappings)
+	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, config.GetMappings(), createRegexp(config))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Admin"], roles["Analyst"], roles["roxctl"]})
-}
-
-func TestValuesMatch(t *testing.T) {
-	testCases := []struct {
-		expr        string
-		claimValues []string
-		match       bool
-	}{
-		{
-			expr:        "",
-			claimValues: []string{"a", "b", "c"},
-		},
-		{
-			expr:        ".*",
-			claimValues: []string{"a", "b", "c"},
-			match:       true,
-		},
-		{
-			expr:        "c",
-			claimValues: []string{"a", "b", "c"},
-			match:       true,
-		},
-	}
-
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("tc %d", i), func(t *testing.T) {
-			assert.Equal(t, tc.match, valuesMatch(tc.expr, tc.claimValues))
-		})
-	}
 }

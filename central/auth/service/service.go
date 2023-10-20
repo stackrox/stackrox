@@ -5,9 +5,10 @@ import (
 
 	"github.com/stackrox/rox/central/auth/datastore"
 	"github.com/stackrox/rox/central/auth/m2m"
+	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -30,9 +31,9 @@ type Service interface {
 func Singleton() Service {
 	once.Do(func() {
 		svc := &serviceImpl{authDataStore: datastore.Singleton()}
-		if env.AuthMachineToMachine.BooleanSetting() {
+		if features.AuthMachineToMachine.Enabled() {
 			svc.authDataStore = datastore.Singleton()
-			svc.tokenExchanger = m2m.TokenExchangerSetSingleton(roleDataStore.Singleton())
+			svc.tokenExchanger = m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), jwt.IssuerFactorySingleton())
 		}
 		s = svc
 	})

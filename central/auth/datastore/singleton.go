@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -23,7 +24,7 @@ var (
 // Singleton provides a singleton auth machine to machine DataStore.
 func Singleton() DataStore {
 	once.Do(func() {
-		set := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton())
+		set := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), jwt.IssuerFactorySingleton())
 		ds = New(pgStore.New(globaldb.GetPostgres()), set)
 
 		// On initialization of the store, list all existing configs and fill the set.
@@ -32,7 +33,7 @@ func Singleton() DataStore {
 		configs, err := ds.ListAuthM2MConfigs(ctx)
 		utils.Must(err)
 		for _, config := range configs {
-			utils.Must(set.UpsertTokenExchanger(config))
+			utils.Must(set.UpsertTokenExchanger(ctx, config))
 		}
 	})
 	return ds
