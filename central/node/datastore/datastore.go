@@ -46,17 +46,14 @@ func NewWithPostgres(storage store.Store, searcher search.Searcher, risks riskDS
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool, false, concurrency.NewKeyFence())
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
-	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
-	return NewWithPostgres(dbstore, searcher, riskStore, nodeRanker, nodeComponentRanker), nil
+	return NewWithPostgres(dbstore, searcher, riskStore, nodeRanker, nodeComponentRanker)
 }
 
 // NodeString returns a human-readable string representation of a node.
