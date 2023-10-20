@@ -34,7 +34,7 @@ const basePath = '/main/administration-events';
 export function visitAdministrationEvents(staticResponseMap) {
     visit(basePath, routeMatcherMapForAdministationEvents, staticResponseMap);
 
-    cy.get(`h1:contains("Administration Events")`);
+    cy.get('h1:contains("Administration Events")');
 }
 
 /**
@@ -59,7 +59,7 @@ export function interactAndWaitForAdministrationEvents(interactionCallback, stat
         staticResponseMap
     );
 
-    cy.get(`h1:contains("Administration Events")`);
+    cy.get('h1:contains("Administration Events")');
 }
 
 // query
