@@ -50,8 +50,42 @@ export function visitAdministrationEventFromTableRow(index0, staticResponseMap) 
     );
 }
 
-// assert
+// interact
 
-export function assertDescriptionListGroup(term, description) {
-    cy.get(`dl:has('dt:contains("${term}")') dd:contains("${description}")`);
+export function interactAndWaitForAdministrationEvents(interactionCallback, staticResponseMap) {
+    interactAndWaitForResponses(
+        interactionCallback,
+        routeMatcherMapForAdministationEvents,
+        staticResponseMap
+    );
+
+    cy.get(`h1:contains("Administration Events")`);
+}
+
+// query
+
+export function getFilterQueryForPage(key, value) {
+    return `s[${encodeURI(key)}]=${encodeURI(value)}`;
+}
+
+// selector
+
+export function getDescriptionListGroupSelector(term, description) {
+    return `dl:has('dt:contains("${term}")') dd:contains("${description}")`;
+}
+
+export function getDescriptionListTermSelector(term) {
+    return `dl:has('dt:contains("${term}")')`;
+}
+
+function getToggleSelector(label) {
+    return `button.pf-c-select__toggle[aria-label="${label}"]`;
+}
+
+export function selectFilter(label, item) {
+    const toggleSelector = getToggleSelector(label);
+    cy.get(toggleSelector).click();
+    cy.get(
+        `${toggleSelector} + ul.pf-c-select__menu button.pf-c-select__menu-item:contains("${item}")`
+    ).click();
 }
