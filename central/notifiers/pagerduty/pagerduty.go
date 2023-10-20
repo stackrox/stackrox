@@ -13,13 +13,17 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imagesTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -50,7 +54,7 @@ type pagerDuty struct {
 	routingKey string
 }
 
-func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
+func newPagerDuty(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*pagerDuty, error) {
 	pagerDutyConfig, ok := notifier.GetConfig().(*storage.Notifier_Pagerduty)
 	if !ok {
 		return nil, errors.New("PagerDuty configuration required")
@@ -59,6 +63,19 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	if err := validate(conf); err != nil {
 		return nil, err
 	}
+
+	decCreds := conf.GetApiKey()
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		if notifier.GetNotifierSecret() == "" {
+			return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", notifier.GetName())
+		}
+		decCreds, err = cryptoCodec.Decrypt(cryptoKey, notifier.GetNotifierSecret())
+		if err != nil {
+			return nil, errors.Errorf("Error decrypting notifier secret for notifier '%s'", notifier.GetName())
+		}
+	}
+
 	pdClient := pd.NewClient("")
 	pdClient.HTTPClient = &http.Client{
 		Transport: proxy.RoundTripper(),
@@ -66,7 +83,7 @@ func newPagerDuty(notifier *storage.Notifier) (*pagerDuty, error) {
 	return &pagerDuty{
 		Notifier:   notifier,
 		pdClient:   pdClient,
-		routingKey: conf.GetApiKey(),
+		routingKey: decCreds,
 	}, nil
 }
 
@@ -202,8 +219,17 @@ func (a *marshalableAlert) UnmarshalJSON(data []byte) error {
 }
 
 func init() {
+	cryptoKey := ""
+	var err error
+	if env.EncNotifierCreds.BooleanSetting() {
+		cryptoKey, err = notifierUtils.GetNotifierSecretEncryptionKey()
+		if err != nil {
+			utils.CrashOnError(err)
+		}
+	}
+
 	notifiers.Add(notifiers.PagerDutyType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		s, err := newPagerDuty(notifier)
+		s, err := newPagerDuty(notifier, cryptocodec.Singleton(), cryptoKey)
 		return s, err
 	})
 }
