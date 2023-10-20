@@ -45,15 +45,15 @@ func main() {
 		*basicAuth = os.Getenv(authEnvName)
 	}
 	if *basicAuth != "" {
-		var ok bool
 		u, p, ok := strings.Cut(*basicAuth, ":")
 		if !ok {
-			log.Fatal("Invalid auth format, expecting \"username:password\"")
+			log.Fatal("Invalid basic auth: expecting the username and the " +
+				"password with a colon (aladdin:opensesame)")
 		}
-		auth = authn.FromConfig(authn.AuthConfig{
+		auth = &authn.Basic{
 			Username: u,
 			Password: p,
-		})
+		}
 	}
 
 	if len(flag.Args()) < 1 {
@@ -104,7 +104,7 @@ func main() {
 	}
 	vrJSON, err := json.MarshalIndent(vr, "", "  ")
 	if err != nil {
-		log.Fatalf("decoding report: %s", err)
+		log.Fatalf("decoding report: %v", err)
 	}
 
 	fmt.Println(string(vrJSON))
