@@ -32,6 +32,8 @@ func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStat
 		statements.Error = err.Error()
 		return &statements
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var statement PGStatStatement
 		if err := rows.Scan(&statement.TotalExecTimeMS, &statement.MaxExecTimeMS, &statement.MeanExecTimeMS, &statement.StddevExecTimeMS, &statement.Calls, &statement.Rows, &statement.Query); err != nil {
@@ -39,6 +41,9 @@ func GetPGStatStatements(ctx context.Context, db postgres.DB, limit int) *PGStat
 			return &statements
 		}
 		statements.Statements = append(statements.Statements, &statement)
+	}
+	if err := rows.Err(); err != nil {
+		statements.Error = err.Error()
 	}
 	return &statements
 }
