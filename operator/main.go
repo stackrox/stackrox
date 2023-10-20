@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"os"
 	"path/filepath"
@@ -104,11 +105,15 @@ func run() error {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var enableHTTP2 bool
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableHTTP2, "enable-http2", enableHTTP2, "If HTTP/2 should be enabled for the metrics and webhook servers.")
+
 	opts := zap.Options{
 		Development: !buildinfo.ReleaseBuild,
 	}
@@ -125,7 +130,7 @@ func run() error {
 
 	var webhookServer webhook.Server
 	if enableWebhooks.BooleanSetting() {
-		webhookServer = webhook.NewServer(getWebhookOptions())
+		webhookServer = webhook.NewServer(getWebhookOptions(enableHTTP2))
 	}
 
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
@@ -203,7 +208,7 @@ func run() error {
 	return nil
 }
 
-func getWebhookOptions() webhook.Options {
+func getWebhookOptions(enableHTTP2 bool) webhook.Options {
 	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
 	// provide the TLS certificate/key in the location referenced by default by the controller runtime
 	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
@@ -211,9 +216,29 @@ func getWebhookOptions() webhook.Options {
 	// If the files are missing at the default location, then we explicitly set the settings as follows
 	// to force usage of the legacy location, which is provided both by old and new OLM, but not
 	// by the "make deploy" scaffolding.
+
+	// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
+	// the Go standard library and golang.org/x/net are fully fixed.
+	// Right now, it is possible for authenticated and unauthenticated users to
+	// hold open HTTP2 connections and consume huge amounts of memory.
+	// See:
+	// * https://github.com/kubernetes/kubernetes/pull/121120
+	// * https://github.com/kubernetes/kubernetes/issues/121197
+	// * https://github.com/golang/go/issues/63417#issuecomment-1758858612
+	disableHTTP2 := func(c *tls.Config) {
+		if enableHTTP2 {
+			return
+		}
+		c.NextProtos = []string{"http/1.1"}
+	}
+
 	opts := webhook.Options{
 		Port: 9443,
+		TLSOpts: []func(*tls.Config){
+			disableHTTP2,
+		},
 	}
+
 	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
 		return opts
 	}
