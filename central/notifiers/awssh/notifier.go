@@ -210,9 +210,6 @@ func getCredentials(config configuration) (*storage.AWSSecurityHub_Credentials, 
 	if config.descriptor.GetNotifierSecret() == "" {
 		return nil, errors.Errorf("encrypted notifier credentials for notifier '%s' empty", config.descriptor.GetName())
 	}
-	if config.cryptoCodec == nil {
-		return nil, errors.New("crypto codec is required")
-	}
 
 	decCredsStr, err := config.cryptoCodec.Decrypt(config.cryptoKey, config.descriptor.GetNotifierSecret())
 	if err != nil {
