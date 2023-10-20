@@ -382,7 +382,6 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			err := s.svc.validateAuthMachineToMachineConfig(sac.WithAllAccess(context.Background()),
 				testCase.config, testCase.skipIDCheck)
 			s.ErrorIs(err, testCase.err)
-			fmt.Print(err)
 		})
 	}
 }
@@ -459,8 +458,8 @@ func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfigWithID() {
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
+	s.NoError(err)
+	s.NotEmpty(resp.GetConfig().GetId())
 }
 
 func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
@@ -475,8 +474,8 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: config,
 	})
-	s.ErrorIs(err, errox.InvalidArgs)
-	s.Nil(resp)
+	s.NoError(err)
+	s.NotEmpty(resp.GetConfig().GetId())
 }
 
 func (s *authServiceAccessControlTestSuite) TestListConfigs() {
