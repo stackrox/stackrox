@@ -217,10 +217,10 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		// TODO: ROX-19576: Is the assumption that images always have SHA correct?
 		return nil, fmt.Errorf("creating digest reference: %w", err)
 	}
-	auth := authn.FromConfig(authn.AuthConfig{
+	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,
-	})
+	}
 	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, auth)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
