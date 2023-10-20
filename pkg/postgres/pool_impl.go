@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgconn"
@@ -9,6 +11,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/stackrox/rox/pkg/contextutil"
 )
+
+var query = "select distinct(policy_categories.Id), policy_categories.Name as policy_category from policy_categories inner join policy_category_edges on policy_categories.Id = policy_category_edges.CategoryId where policy_category_edges.PolicyId"
 
 // New creates a new DB wrapper
 func New(ctx context.Context, config *Config) (*db, error) {
@@ -98,6 +102,9 @@ func (d *db) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.
 
 // Query wraps pgxpool.Pool Query
 func (d *db) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+	if strings.Contains(sql, query) {
+		debug.PrintStack()
+	}
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 	rows := &Rows{
 		query:      sql,
@@ -120,6 +127,10 @@ func (d *db) Query(ctx context.Context, sql string, args ...interface{}) (*Rows,
 // QueryRow wraps pgxpool.Pool QueryRow
 func (d *db) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
+
+	if strings.Contains(sql, query) {
+		debug.PrintStack()
+	}
 
 	row := &Row{
 		query:      sql,

@@ -65,6 +65,10 @@ func (c *Conn) Exec(ctx context.Context, sql string, args ...interface{}) (ct pg
 func (c *Conn) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, defaultTimeout)
 
+	if strings.Contains(sql, query) {
+		debug.PrintStack()
+	}
+
 	if tx, ok := TxFromContext(ctx); ok {
 		rows, err := tx.Query(ctx, sql, args...)
 		incQueryErrors(sql, err)

@@ -41,6 +41,9 @@ func (t *Tx) Exec(ctx context.Context, sql string, args ...interface{}) (command
 
 // Query wraps pgx.Tx Query
 func (t *Tx) Query(ctx context.Context, sql string, args ...interface{}) (*Rows, error) {
+	if strings.Contains(sql, query) {
+		debug.PrintStack()
+	}
 	rows, err := t.Tx.Query(ctx, sql, args...)
 	if err != nil {
 		incQueryErrors(sql, err)
