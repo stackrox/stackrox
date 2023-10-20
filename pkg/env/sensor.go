@@ -49,6 +49,9 @@ var (
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
 
+	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
+	RegistryTLSCheckTTL = registerDurationSetting("ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
+
 	// DeduperStateSyncTimeout defines the maximum time Sensor will wait for the expected deduper state coming from Central
 	DeduperStateSyncTimeout = registerDurationSetting("ROX_DEDUPER_STATE_TIMEOUT", 30*time.Second)
 )
