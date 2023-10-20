@@ -39,6 +39,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 - Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
 - ROX-20303: Fixed a bug that may have incorrectly matched an image to an image integration during scanning.
+- ROX-20105: Scanner slim will now read additional CAs from the `additional-ca-sensor` secret.
 
 ## [4.2.0]
 
