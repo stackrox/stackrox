@@ -236,14 +236,16 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 
 		conn := makeNetworkConnection(src, dst, containerID, closeTS)
 
-		originator := getRandomOriginator(containerID)
+		for i := 0; i < 10000; i++ {
+			originator := getRandomOriginator(containerID)
 
-		networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
+			networkEndpoint := getNetworkEndpointFromConnectionAndOriginator(conn, originator)
 
-		conns = append(conns, conn)
-		if endpointPool.Size < endpointPool.Capacity {
-			endpointPool.add(networkEndpoint)
-			networkEndpoints = append(networkEndpoints, networkEndpoint)
+			conns = append(conns, conn)
+			if endpointPool.Size < endpointPool.Capacity {
+				endpointPool.add(networkEndpoint)
+				networkEndpoints = append(networkEndpoints, networkEndpoint)
+			}
 		}
 	}
 
