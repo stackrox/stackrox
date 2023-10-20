@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
+	"strings"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
