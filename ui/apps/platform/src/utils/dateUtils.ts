@@ -99,10 +99,15 @@ export const getDistanceStrict: typeof distanceInWordsStrict = (
  * Also the order of the arguments is reversed in date-fns@2
  * formatDistanceStrict(parseISO(dataDatetime), currentDatetime, { roundingMethod: 'floor', addSuffix: true });
  */
-export const getDistanceStrictAsPhrase = (dataDatetime: DateLike, currentDatetime: DateLike) =>
+export const getDistanceStrictAsPhrase = (
+    dataDatetime: DateLike,
+    currentDatetime: DateLike,
+    unit?: 's' | 'm' | 'h' | 'd' | 'M' | 'Y'
+) =>
     distanceInWordsStrict(currentDatetime, dataDatetime, {
         addSuffix: true,
         partialMethod: 'floor',
+        unit,
     });
 
 export const addDaysToDate = (date: DateLike, amount: number) => {
