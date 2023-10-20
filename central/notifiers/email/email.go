@@ -128,13 +128,7 @@ func (s *smtpServer) endpoint() string {
 	return fmt.Sprintf("%v:%v", s.host, s.port)
 }
 
-func validate(notifier *storage.Notifier) error {
-	if env.EncNotifierCreds.BooleanSetting() {
-		if notifier.GetNotifierSecret() == "" {
-			return errors.New("Notifier secret must be non-empty")
-		}
-	}
-	emailConf := notifier.GetEmail()
+func validate(emailConf *storage.Email) error {
 	if emailConf == nil {
 		return errors.New("Email configuration is required")
 	}
@@ -162,11 +156,11 @@ func validate(notifier *storage.Notifier) error {
 
 func newEmail(notifier *storage.Notifier, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
 	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*email, error) {
-	if err := validate(notifier); err != nil {
+	conf := notifier.GetEmail()
+	if err := validate(conf); err != nil {
 		return nil, err
 	}
 
-	conf := notifier.GetEmail()
 	port := 465 // default TLS SMTP Port
 	server := conf.GetServer()
 	host := conf.GetServer()
@@ -549,6 +543,10 @@ func (e *email) getPassword() (string, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		e.creds = e.config.GetPassword()
 		return e.creds, nil
+	}
+
+	if e.notifier.GetNotifierSecret() == "" {
+		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
 	}
 
 	decCreds, err := e.cryptoCodec.Decrypt(e.cryptoKey, e.notifier.GetNotifierSecret())
