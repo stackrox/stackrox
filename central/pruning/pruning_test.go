@@ -1392,7 +1392,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			s.Require().NoError(err)
 			s.Require().Contains(plopIDs, c.initialPlops[0].GetId())
 
-			gci.removeOrphanedPLOP()
+			gci.removeOrphanedPLOPs()
 
 			// Fetch the IDs again after the prune
 			plopIDs, err = plopDBstore.GetIDs(pruningCtx)

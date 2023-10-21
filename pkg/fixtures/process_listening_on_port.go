@@ -111,7 +111,7 @@ func GetPlopStorage1() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
 	}
@@ -124,9 +124,9 @@ func GetPlopStorage2() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
-		DeploymentId:       fixtureconsts.Deployment6,
+		DeploymentId:       fixtureconsts.Deployment5,
 	}
 }
 
@@ -137,7 +137,7 @@ func GetPlopStorage3() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment3,
 	}
@@ -151,7 +151,7 @@ func GetPlopStorage4() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
 		DeploymentId:       fixtureconsts.Deployment6,
 		PodUid:             fixtureconsts.PodUID1,
@@ -166,9 +166,9 @@ func GetPlopStorage5() *storage.ProcessListeningOnPortStorage {
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
 		Closed:             true,
-		DeploymentId:       fixtureconsts.Deployment6,
+		DeploymentId:       fixtureconsts.Deployment5,
 		PodUid:             fixtureconsts.PodUID2,
 	}
 }
@@ -178,6 +178,48 @@ func GetPlopStorage5() *storage.ProcessListeningOnPortStorage {
 func GetPlopStorage6() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
 		Id:                 fixtureconsts.PlopUID6,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
+		CloseTimestamp:     timestamp.NowMinus(20 * time.Minute),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment3,
+		PodUid:             fixtureconsts.PodUID3,
+	}
+}
+
+// GetPlopStorageExpired1 Return an expired plop for the database
+func GetPlopStorageExpired1() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID7,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment6,
+		PodUid:             fixtureconsts.PodUID1,
+	}
+}
+
+// GetPlopStorageExpired2 Return an expired plop for the database
+func GetPlopStorageExpired2() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID8,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment5,
+		PodUid:             fixtureconsts.PodUID2,
+	}
+}
+
+// GetPlopStorageExpired3 Return an expired plop for the database
+func GetPlopStorageExpired3() *storage.ProcessListeningOnPortStorage {
+	return &storage.ProcessListeningOnPortStorage{
+		Id:                 fixtureconsts.PlopUID9,
 		Port:               1234,
 		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
 		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,

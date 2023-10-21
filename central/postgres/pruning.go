@@ -223,8 +223,8 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 	}
 }
 
-// PruneOrphanedPLOP prunes old PLOPs
-func PruneOrphanedPLOP(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
+// PruneOrphanedPLOPs prunes old PLOPs
+func PruneOrphanedPLOPs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
 	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
 	commandTag, err := pool.Exec(ctx, query)
 	if err != nil {
