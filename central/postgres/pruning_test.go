@@ -311,9 +311,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage5(),
 				fixtures.GetPlopStorage6(),
 			},
-			deployments:            set.NewFrozenStringSet(),
-			pods:                   set.NewFrozenStringSet(),
-			expectedDeletions:      []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
 			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3},
 		},
 		{
@@ -328,9 +328,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:       set.NewFrozenStringSet(),
-			pods:              set.NewFrozenStringSet(),
-			expectedDeletions: nil,
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedDeletions:     nil,
 			expectedPlopDeletions: nil,
 		},
 		{
@@ -345,9 +345,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions: nil,
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions:     nil,
 			expectedPlopDeletions: nil,
 		},
 		{
@@ -357,9 +357,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions: nil,
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions:     nil,
 			expectedPlopDeletions: nil,
 		},
 		{
@@ -374,9 +374,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
 			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 		{
@@ -391,9 +391,9 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				fixtures.GetPlopStorage2(),
 				fixtures.GetPlopStorage3(),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
 			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 	}
@@ -423,7 +423,8 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.Equal(len(c.initialProcesses), countFromDB)
 
 			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
-			plopStore.UpsertMany(s.ctx, c.initialPlops)
+			err = plopStore.UpsertMany(s.ctx, c.initialPlops)
+			s.NoError(err)
 			plopCount, err := plopStore.Count(s.ctx)
 			s.NoError(err)
 			s.Equal(len(c.initialPlops), plopCount)
@@ -527,7 +528,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestamp.TimestampNowMinus(age),
+			Time: timestamp.NowMinus(age),
 		},
 	}
 }

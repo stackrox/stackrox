@@ -311,7 +311,7 @@ func newReportSnapshot(
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 runState,
 			ReportRequestType:        runMethod,
-			CompletedAt:              timestamp.TimestampNowMinus(age),
+			CompletedAt:              timestamp.NowMinus(age),
 			ReportNotificationMethod: notificationMethod,
 		},
 	}

@@ -104,77 +104,86 @@ func GetOpenPlopObject4() *storage.ProcessListeningOnPortFromSensor {
 	}
 }
 
+// GetPlopStorage1 Return a plop for the database
 func GetPlopStorage1() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID1,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment6,
-        }
+		Id:                 fixtureconsts.PlopUID1,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment6,
+	}
 }
 
+// GetPlopStorage2 Return a plop for the database
 func GetPlopStorage2() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID2,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment6,
-        }
+		Id:                 fixtureconsts.PlopUID2,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment6,
+	}
 }
 
+// GetPlopStorage3 Return a plop for the database
 func GetPlopStorage3() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID3,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment3,
-        }
+		Id:                 fixtureconsts.PlopUID3,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment3,
+	}
 }
 
+// GetPlopStorage4 Return a plop for the database
+// It is the same as GetPlopStorage1 except it has a PodUid
 func GetPlopStorage4() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID4,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID1,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment6,
-		PodUid:			fixtureconsts.PodUID1,
-        }
+		Id:                 fixtureconsts.PlopUID4,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment6,
+		PodUid:             fixtureconsts.PodUID1,
+	}
 }
 
+// GetPlopStorage5 Return a plop for the database
+// It is the same as GetPlopStorage2 except it has a PodUid
 func GetPlopStorage5() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID5,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID2,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment6,
-		PodUid:			fixtureconsts.PodUID2,
-        }
+		Id:                 fixtureconsts.PlopUID5,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID2,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment6,
+		PodUid:             fixtureconsts.PodUID2,
+	}
 }
 
+// GetPlopStorage6 Return a plop for the database
+// It is the same as GetPlopStorage3 except it has a PodUid
 func GetPlopStorage6() *storage.ProcessListeningOnPortStorage {
 	return &storage.ProcessListeningOnPortStorage{
-                Id:                     fixtureconsts.PlopUID6,
-                Port:                   1234,
-                Protocol:               storage.L4Protocol_L4_PROTOCOL_TCP,
-                ProcessIndicatorId:     fixtureconsts.ProcessIndicatorID3,
-		CloseTimestamp:		timestamp.TimestampNowMinus(1*time.Hour),
-                Closed:                 true,
-                DeploymentId:           fixtureconsts.Deployment3,
-		PodUid:			fixtureconsts.PodUID3,
-        }
+		Id:                 fixtureconsts.PlopUID6,
+		Port:               1234,
+		Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+		ProcessIndicatorId: fixtureconsts.ProcessIndicatorID3,
+		CloseTimestamp:     timestamp.NowMinus(1 * time.Hour),
+		Closed:             true,
+		DeploymentId:       fixtureconsts.Deployment3,
+		PodUid:             fixtureconsts.PodUID3,
+	}
 }
