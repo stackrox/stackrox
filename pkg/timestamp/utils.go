@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/pkg/protoconv"
+	protoTypes "github.com/gogo/protobuf/types"
 )
 
 // RoundTimestamp rounds up ts to the nearest multiple of d. In case of error, the function returns without rounding up.
@@ -14,4 +15,14 @@ func RoundTimestamp(ts *types.Timestamp, d time.Duration) {
 		return
 	}
 	*ts = *protoconv.ConvertTimeToTimestamp(t.Round(d))
+}
+
+// TimestampNowMinus substracts a specified amount of time from the current timestamp
+func TimestampNowMinus(t time.Duration) *types.Timestamp {
+        return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
+}
+
+// TimeBeforeDays subtracts a specified number of days from the current timestamp
+func TimeBeforeDays(days int) *protoTypes.Timestamp {
+        return TimestampNowMinus(24 * time.Duration(days) * time.Hour)
 }

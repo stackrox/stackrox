@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	protoTypes "github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
@@ -17,7 +16,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	plopDatastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -26,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -290,7 +290,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
 		name                  string
 		initialProcesses      []*storage.ProcessIndicator
-		initialPlops          []*storage.ProcessListeningOnPortFromSensor
+		initialPlops          []*storage.ProcessListeningOnPortStorage
 		deployments           set.FrozenStringSet
 		pods                  set.FrozenStringSet
 		expectedDeletions     []string
@@ -303,14 +303,18 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			initialPlops: []*storage.ProcessListeningOnPortFromSensor{
-				fixtures.GetOpenPlopObject1(),
-				fixtures.GetOpenPlopObject4(),
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
 			},
 			deployments:            set.NewFrozenStringSet(),
 			pods:                   set.NewFrozenStringSet(),
 			expectedDeletions:      []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
-			expectedPlopDeletions: nil,
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1, fixtureconsts.PlopUID2, fixtureconsts.PlopUID3},
 		},
 		{
 			name: "no deployments nor pods - remove no new orphaned indicators",
@@ -319,9 +323,10 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			initialPlops: []*storage.ProcessListeningOnPortFromSensor{
-				fixtures.GetOpenPlopObject2(),
-				fixtures.GetOpenPlopObject3(),
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
 			},
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
@@ -334,6 +339,11 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID1, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID1),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
+			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
@@ -359,10 +369,15 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
-			expectedPlopDeletions: nil,
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 		{
 			name: "some pods same deployment - remove some indicators",
@@ -371,10 +386,15 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
 			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
-			expectedPlopDeletions: nil,
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 	}
 	for _, c := range cases {
@@ -402,17 +422,21 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses), countFromDB)
 
-			plopDS := plopDatastore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			s.Nil(err)
-			s.NoError(plopDS.AddProcessListeningOnPort(s.ctx, c.initialPlops...))
-			actualPlops, err := plopDS.GetProcessListeningOnPort(s.ctx, fixtureconsts.Deployment1)
+			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
+			plopStore.UpsertMany(s.ctx, c.initialPlops)
+			plopCount, err := plopStore.Count(s.ctx)
 			s.NoError(err)
-			s.Equal(len(c.initialPlops), len(actualPlops))
+			s.Equal(len(c.initialPlops), plopCount)
 
 			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
+
 			countFromDB, err = processDatastore.Count(s.ctx, nil)
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+
+			plopCount, err = plopStore.Count(s.ctx)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
 			// Cleanup
 			var cleanupIDs []string
@@ -440,7 +464,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastOccurredAt: timeBeforeDays(2),
+			LastOccurredAt: timestamp.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -455,7 +479,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastOccurredAt: timeBeforeDays(3),
+			LastOccurredAt: timestamp.TimeBeforeDays(3),
 		},
 		// Should not be subject to pruning.
 		{
@@ -465,12 +489,12 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should be subject to pruning.
 		{
 			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastOccurredAt: timeBeforeDays(12),
+			LastOccurredAt: timestamp.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastOccurredAt: timeBeforeDays(365),
+			LastOccurredAt: timestamp.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(administrationEventDS.UpsertTestEvents(s.ctx, s.T(),
@@ -503,7 +527,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestampNowMinus(age),
+			Time: timestamp.TimestampNowMinus(age),
 		},
 	}
 }
@@ -512,12 +536,4 @@ func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID
 	indicator := newIndicatorWithDeployment(id, age, deploymentID)
 	indicator.PodUid = podUID
 	return indicator
-}
-
-func timestampNowMinus(t time.Duration) *types.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
-
-func timeBeforeDays(days int) *protoTypes.Timestamp {
-	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
 }
