@@ -255,3 +255,36 @@ func parseContainerImageURL(imageURL string) (name.Reference, error) {
 	}
 	return ref, nil
 }
+
+// GetDigestFromURL returns an image digest from the given image URL.
+func GetDigestFromURL(imgURL string, auth authn.Authenticator) (name.Digest, error) {
+	ref, err := parseContainerImageURL(imgURL)
+	if err != nil {
+		return name.Digest{}, err
+	}
+	return GetDigestFromReference(ref, auth)
+}
+
+// GetDigestFromReference returns an image digest from a reference, it either
+// returns the digest specified in the image reference or reads from the
+// registry's image manifest.
+func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.Digest, error) {
+	if d, ok := ref.(name.Digest); ok {
+		return d, nil
+	}
+	// If not, convert to a digest reference by retrieving the digest.
+	img, err := remote.Image(ref, remote.WithAuth(auth))
+	if err != nil {
+		return name.Digest{}, err
+	}
+	hash, err := img.Digest()
+	if err != nil {
+		return name.Digest{}, err
+	}
+	s := fmt.Sprintf("%s@%s", ref.Context().String(), hash.String())
+	dRef, err := name.NewDigest(s)
+	if err != nil {
+		return name.Digest{}, fmt.Errorf("internal error: %w", err)
+	}
+	return dRef, nil
+}
