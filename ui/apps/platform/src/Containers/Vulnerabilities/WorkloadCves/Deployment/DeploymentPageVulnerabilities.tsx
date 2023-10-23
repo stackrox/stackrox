@@ -46,6 +46,8 @@ import DeploymentVulnerabilitiesTable, {
     DeploymentWithVulnerabilities,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import { Resource } from '../components/FilterResourceDropdown';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -79,6 +81,8 @@ export type DeploymentPageVulnerabilitiesProps = {
 };
 
 function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabilitiesProps) {
+    const currentVulnerabilityState = useVulnerabilityState();
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
@@ -96,7 +100,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getVulnStateScopedQueryString(querySearchFilter);
+    const query = getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState);
 
     const summaryRequest = useQuery<
         {
@@ -163,6 +167,7 @@ function DeploymentPageVulnerabilities({ deploymentId }: DeploymentPageVulnerabi
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
+                <VulnerabilityStateTabs isBox />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         autocompleteSearchContext={{

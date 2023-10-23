@@ -8,9 +8,6 @@ import {
     Card,
     CardBody,
     Button,
-    Tab,
-    TabTitleText,
-    Tabs,
 } from '@patternfly/react-core';
 import { useApolloClient, useQuery } from '@apollo/client';
 
@@ -22,7 +19,6 @@ import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, { WATCH_IMAGE_MODAL_OPENED } from 'hooks/useAnalytics';
-import { vulnerabilityStates } from 'types/cve.proto';
 import { VulnMgmtLocalStorage, entityTabValues } from '../types';
 import { parseQuerySearchFilter, getVulnStateScopedQueryString } from '../searchUtils';
 import { entityTypeCountsQuery } from '../components/EntityTypeToggleGroup';
@@ -31,6 +27,8 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const emptyStorage: VulnMgmtLocalStorage = {
     preferences: {
@@ -51,11 +49,7 @@ function WorkloadCvesOverviewPage() {
 
     const { analyticsTrack } = useAnalytics();
 
-    const [vulnerabilityStateKey, setVulnerabilityStateKey] = useURLStringUnion(
-        'vulnerabilityState',
-        vulnerabilityStates
-    );
-    const currentVulnerabilityState = isUnifiedDeferralsEnabled ? vulnerabilityStateKey : undefined;
+    const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -80,10 +74,6 @@ function WorkloadCvesOverviewPage() {
 
     function onWatchedImagesChange() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
-    }
-
-    function handleTabClick(e, tab) {
-        setVulnerabilityStateKey(tab);
     }
 
     return (
@@ -117,24 +107,13 @@ function WorkloadCvesOverviewPage() {
                 )}
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
-                {isUnifiedDeferralsEnabled && (
-                    <Tabs
-                        activeKey={vulnerabilityStateKey}
-                        onSelect={handleTabClick}
-                        component="nav"
-                        className="pf-u-pl-lg pf-u-background-color-100"
-                    >
-                        <Tab
-                            eventKey="OBSERVED"
-                            title={<TabTitleText>Observed CVEs</TabTitleText>}
-                        />
-                        <Tab eventKey="DEFERRED" title={<TabTitleText>Deferrals</TabTitleText>} />
-                        <Tab
-                            eventKey="FALSE_POSITIVE"
-                            title={<TabTitleText>False positives</TabTitleText>}
-                        />
-                    </Tabs>
-                )}
+                <PageSection
+                    padding={{ default: 'noPadding' }}
+                    component="div"
+                    className="pf-u-pl-lg pf-u-background-color-100"
+                >
+                    <VulnerabilityStateTabs />
+                </PageSection>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>

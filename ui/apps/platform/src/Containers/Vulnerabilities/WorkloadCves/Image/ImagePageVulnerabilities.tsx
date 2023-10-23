@@ -43,6 +43,8 @@ import {
 import BySeveritySummaryCard from '../SummaryCards/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
 import { Resource } from '../components/FilterResourceDropdown';
+import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -70,6 +72,8 @@ export type ImagePageVulnerabilitiesProps = {
 };
 
 function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
+    const currentVulnerabilityState = useVulnerabilityState();
+
     const { searchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(20);
@@ -103,7 +107,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
     >(imageVulnerabilitiesQuery, {
         variables: {
             id: imageId,
-            query: getVulnStateScopedQueryString(querySearchFilter),
+            query: getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState),
             pagination,
         },
     });
@@ -208,6 +212,7 @@ function ImagePageVulnerabilities({ imageId }: ImagePageVulnerabilitiesProps) {
                 className="pf-u-display-flex pf-u-flex-direction-column pf-u-flex-grow-1"
                 component="div"
             >
+                <VulnerabilityStateTabs isBox />
                 <div className="pf-u-px-sm pf-u-background-color-100">
                     <WorkloadTableToolbar
                         supportedResourceFilters={imageResourceFilters}
