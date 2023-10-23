@@ -110,7 +110,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.3"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.4"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.
