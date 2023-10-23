@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/sensor/common/deduper"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,11 +24,14 @@ var (
 
 // ResultDispatcher handles compliance check result objects
 type ResultDispatcher struct {
+	reconciliationStore reconciliation.Store
 }
 
 // NewResultDispatcher creates and returns a new compliance check result dispatcher.
-func NewResultDispatcher() *ResultDispatcher {
-	return &ResultDispatcher{}
+func NewResultDispatcher(store reconciliation.Store) *ResultDispatcher {
+	return &ResultDispatcher{
+		reconciliationStore: store,
+	}
 }
 
 func statusToProtoStatus(status v1alpha1.ComplianceCheckStatus) storage.ComplianceOperatorCheckResult_CheckStatus {
@@ -143,6 +148,11 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 				},
 			},
 		}
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			c.reconciliationStore.Remove(deduper.TypeComplianceOperatorResult.String(), id)
+		} else {
+			c.reconciliationStore.Add(deduper.TypeComplianceOperatorResult.String(), id)
+		}
 		return component.NewEvent(events...)
 	}
 
@@ -163,6 +173,11 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 				},
 			},
 		},
+	}
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorResult.String(), id)
+	} else {
+		c.reconciliationStore.Add(deduper.TypeComplianceOperatorResult.String(), id)
 	}
 	return component.NewEvent(events...)
 }
