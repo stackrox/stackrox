@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/rbac"
@@ -13,6 +14,15 @@ import (
 var (
 	log = logging.LoggerForModule()
 )
+
+type reconcilePair struct {
+	resID   string
+	resType string
+}
+
+func (r reconcilePair) GetPair() (string, string) {
+	return r.resID, r.resType
+}
 
 type storeImpl struct {
 	lock sync.RWMutex
@@ -38,23 +48,33 @@ func (rs *storeImpl) Cleanup() {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (rs *storeImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+func (rs *storeImpl) ReconcileDelete(resType, resID string, _ uint64) ([]reconcile.Resource, error) {
 	if resType == deduper.TypeRole.String() {
 		for _, role := range rs.roles {
 			if role.latestUID == resID {
-				return "", nil
+				return nil, nil
 			}
 		}
-		return resID, nil
+		return []reconcile.Resource{
+			&reconcilePair{
+				resID:   resID,
+				resType: resType,
+			},
+		}, nil
 	} else if resType == deduper.TypeBinding.String() {
 		for _, binding := range rs.bindings {
 			if binding.bindingID == resID {
-				return "", nil
+				return nil, nil
 			}
 		}
-		return resID, nil
+		return []reconcile.Resource{
+			&reconcilePair{
+				resID:   resID,
+				resType: resType,
+			},
+		}, nil
 	}
-	return "", errors.Errorf("resource type %s not supported", resType)
+	return nil, errors.Errorf("resource type %s not supported", resType)
 }
 
 func (rs *storeImpl) GetPermissionLevelForDeployment(d rbac.NamespacedServiceAccount) storage.PermissionLevel {

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/reconciliation"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
@@ -19,7 +20,7 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(deduperStateProcessor *reconciliation.DeduperStateProcessor, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(storeProvider store.Provider, deduperStateProcessor *reconciliation.DeduperStateProcessor, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
 		allFinished:           &finished,
@@ -27,6 +28,7 @@ func NewCentralCommunication(deduperStateProcessor *reconciliation.DeduperStateP
 		sender:                NewCentralSender(&finished, components...),
 		components:            components,
 		deduperStateProcessor: deduperStateProcessor,
+		storeProvider:         storeProvider,
 
 		stopper:         concurrency.NewStopper(),
 		isReconnect:     reconnect,

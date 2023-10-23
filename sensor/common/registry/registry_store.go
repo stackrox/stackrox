@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/registries"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -61,14 +62,28 @@ type Store struct {
 	centralRegistryIntegrations registries.Set
 }
 
+type reconcilePair struct {
+	resID   string
+	resType string
+}
+
+func (r reconcilePair) GetPair() (string, string) {
+	return r.resID, r.resType
+}
+
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliation ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (rs *Store) ReconcileDelete(_, resID string, _ uint64) (string, error) {
+func (rs *Store) ReconcileDelete(resType, resID string, _ uint64) ([]reconcile.Resource, error) {
 	if !rs.knownSecretIDs.Contains(resID) {
-		return resID, nil
+		return []reconcile.Resource{
+			&reconcilePair{
+				resID:   resID,
+				resType: resType,
+			},
+		}, nil
 	}
-	return "", nil
+	return nil, nil
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.

@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
@@ -87,17 +88,22 @@ type networkPolicyStoreImpl struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, _ uint64) ([]reconcile.Resource, error) {
 	if resType != deduper.TypeNetworkPolicy.String() {
-		return "", errors.Errorf("invalid resource type %v", resType)
+		return nil, errors.Errorf("invalid resource type %v", resType)
 	}
 
 	p := n.Get(resID)
 	if p != nil {
-		return "", nil
+		return nil, nil
 	}
 	// Resource on Central but not on Sensor, send for deletion
-	return resID, nil
+	return []reconcile.Resource{
+		&reconcilePair{
+			resID:   resID,
+			resType: resType,
+		},
+	}, nil
 }
 
 func newNetworkPoliciesStore() *networkPolicyStoreImpl {

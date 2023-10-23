@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -55,17 +56,22 @@ type nodeStoreImpl struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+func (s *nodeStoreImpl) ReconcileDelete(resType, resID string, _ uint64) ([]reconcile.Resource, error) {
 	if resType != deduper.TypeNode.String() {
-		return "", errors.Errorf("Invalid resource type: %v", resType)
+		return nil, errors.Errorf("Invalid resource type: %v", resType)
 	}
 	for _, n := range s.getNodes() {
 		if string(n.UID) == resID {
-			return "", nil
+			return nil, nil
 		}
 	}
 	// Resource on Central but not on Sensor, send for deletion
-	return resID, nil
+	return []reconcile.Resource{
+		&reconcilePair{
+			resID:   resID,
+			resType: resType,
+		},
+	}, nil
 }
 
 func newNodeStore() *nodeStoreImpl {

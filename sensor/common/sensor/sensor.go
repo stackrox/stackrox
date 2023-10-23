@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/common/store"
 )
 
 const (
@@ -79,6 +80,7 @@ type Sensor struct {
 	reconnect             atomic.Bool
 	reconcile             atomic.Bool
 	deduperStateProcessor *reconciliation.DeduperStateProcessor
+	storeProvider         store.Provider
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -88,6 +90,7 @@ func NewSensor(
 	imageService image.Service,
 	centralConnectionFactory centralclient.CentralConnectionFactory,
 	deduperStateProcessor *reconciliation.DeduperStateProcessor,
+	storeProvider store.Provider,
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
@@ -98,6 +101,7 @@ func NewSensor(
 		detector:              detector,
 		imageService:          imageService,
 		deduperStateProcessor: deduperStateProcessor,
+		storeProvider:         storeProvider,
 		components:            append(components, detector, configHandler, deduperStateProcessor), // Explicitly add the config handler
 
 		centralConnectionFactory: centralConnectionFactory,
@@ -326,7 +330,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, false, false, s.components...)
+	s.centralCommunication = NewCentralCommunication(s.storeProvider, s.deduperStateProcessor, false, false, s.components...)
 
 	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
 
@@ -391,7 +395,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		s.centralCommunication = NewCentralCommunication(s.deduperStateProcessor, s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		s.centralCommunication = NewCentralCommunication(s.storeProvider, s.deduperStateProcessor, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, s.configHandler, s.detector)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()

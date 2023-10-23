@@ -19,7 +19,13 @@ import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/local_scanner.proto";
 import "internalapi/central/process_listening_on_ports_update.proto";
 import "storage/cluster.proto";
+import "storage/deployment.proto";
 import "storage/image.proto";
+import "storage/network_policy.proto";
+import "storage/node.proto";
+import "storage/secret.proto";
+import "storage/service_account.proto";
+import "storage/rbac.proto";
 
 package central;
 
@@ -79,11 +85,40 @@ message MsgToSensor {
         ComplianceRequest              compliance_request                 = 24;
         ClusterHealthResponse          cluster_health_response            = 25;
         DeduperState                   deduper_state                      = 26;
+        ResourceEvent event = 27;
     }
 }
 
 message DeduperState {
     map<string,uint64> resource_hashes = 1;
+}
+
+message Pod {
+    string namespace = 1;
+    string uuid = 2;
+    string deployment_id = 3;
+}
+
+message Resource {
+    oneof resource {
+        Pod pod = 1;
+    }
+}
+
+message ResourceEvent {
+    int32 current = 9;
+    int32 total = 10;
+    repeated Resource resource_list = 11;
+    oneof resource {
+        storage.NetworkPolicy          network_policy     = 1;
+        storage.Deployment             deployment         = 2;
+        storage.Pod                    pod                = 3;
+        storage.Secret                 secret             = 4;
+        storage.Node                   node               = 5;
+        storage.ServiceAccount         service_account    = 6;
+        storage.K8sRole                role               = 7;
+        storage.K8sRoleBinding         binding            = 8;
+    }
 }
 
 message NodeInventoryACK {

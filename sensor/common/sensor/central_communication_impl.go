@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
+	"github.com/stackrox/rox/sensor/common/store"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
@@ -50,6 +51,7 @@ type centralCommunicationImpl struct {
 
 	isReconnect           bool
 	deduperStateProcessor *reconciliation.DeduperStateProcessor
+	storeProvider         store.Provider
 }
 
 var (
@@ -272,7 +274,58 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		return err
 	}
 
-	return s.initialDeduperSync(stream)
+	if err := s.initialDeduperSync(stream); err != nil {
+		return err
+	}
+
+	return s.initialResourceSync(stream)
+}
+
+func (s *centralCommunicationImpl) initialResourceSync(stream central.SensorService_CommunicateClient) error {
+	// If client reconciliation is disabled or cental does not support it, don't expect a deduper sync message to arrive
+	if !s.clientReconcile || !centralcaps.Has(centralsensor.SensorReconciliationOnReconnect) {
+		log.Info("Skipping client reconciliation. Sensor will not wait for resources sync")
+		return nil
+	}
+	log.Info("Waiting for resources from Central")
+	var current int32 = 1
+	for {
+		done := make(chan struct{})
+		var err error
+		var msg *central.MsgToSensor
+		go func() {
+			msg, err = stream.Recv()
+			close(done)
+		}()
+		select {
+		case <-time.After(s.syncTimeout):
+			return errTimeoutWaitingForDeduperState
+		case <-done:
+		}
+		if err != nil {
+			return err
+		}
+		if msg.GetEvent() == nil {
+			return errors.New("should be resource event")
+		}
+		if current != msg.GetEvent().GetCurrent() {
+			return errors.New("incorrect order")
+		}
+		if len(msg.GetEvent().GetResourceList()) == 0 && msg.GetEvent().GetTotal() > 0 {
+			return errors.New("should have resources")
+		}
+		for _, r := range msg.GetEvent().GetResourceList() {
+			if r.GetPod() != nil {
+				// populate pods
+				s.storeProvider.ReconciliationPodStore().Add(r.GetPod().GetNamespace(), r.GetPod().GetUuid(), r.GetPod().GetDeploymentId())
+			}
+		}
+		if current == msg.GetEvent().GetTotal() {
+			break
+		}
+		current++
+	}
+	return nil
 }
 
 func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorService_CommunicateClient) error {

@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -24,18 +25,23 @@ type DeploymentStore struct {
 // ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
 // Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
 // shall be deleted from Central.
-func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
-	if resType != deduper.TypeDeployment.String() {
-		return "", nil
+func (ds *DeploymentStore) ReconcileDelete(resType, resID string, _ uint64) ([]reconcile.Resource, error) {
+	if resType != deduper.TypeDeployment.String() && resType != deduper.TypePod.String() {
+		return nil, nil
 	}
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 	_, exists := ds.deployments[resID]
 	if !exists {
 		// found on Central, not found on Sensor - need to send a Delete message
-		return resID, nil
+		return []reconcile.Resource{
+			&reconcilePair{
+				resID:   resID,
+				resType: resType,
+			},
+		}, nil
 	}
-	return "", nil
+	return nil, nil
 }
 
 // newDeploymentStore creates and returns a new deployment store.

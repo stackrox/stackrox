@@ -206,6 +206,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		cfg.centralConnFactory,
 		deduperStateProcessor,
+		storeProvider,
 		components...,
 	)
 

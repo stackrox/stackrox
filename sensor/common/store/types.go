@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/rbac"
+	"github.com/stackrox/rox/sensor/common/reconciliation/types"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/service"
@@ -80,6 +81,7 @@ type Provider interface {
 	EndpointManager() EndpointManager
 	Registries() *registry.Store
 	Entities() *clusterentities.Store
+	ReconciliationPodStore() types.PodStore
 }
 
 // EndpointManager provides functionality to map and store endpoints information

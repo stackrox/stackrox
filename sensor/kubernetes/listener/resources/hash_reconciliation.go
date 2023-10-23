@@ -22,21 +22,24 @@ func NewResourceStoreReconciler(storeProvider *InMemoryStoreProvider) *ResourceS
 func (hr *ResourceStoreReconciler) ProcessHashes(h map[deduper.Key]uint64) []central.MsgFromSensor {
 	events := make([]central.MsgFromSensor, 0)
 	for hash, hashValue := range h {
-		toDeleteID, err := hr.storeProvider.ReconcileDelete(hash.ResourceType.String(), hash.ID, hashValue)
+		toDeleteResources, err := hr.storeProvider.ReconcileDelete(hash.ResourceType.String(), hash.ID, hashValue)
 		if err != nil {
 			log.Errorf("reconciliation error: %s", err)
 			continue
 		}
-		if toDeleteID == "" {
+		if len(toDeleteResources) == 0 {
 			log.Debug("empty reconciliation result - not found on Sensor")
 			continue
 		}
-		delMsg, err := resourceToMessage(hash.ResourceType.String(), toDeleteID)
-		if err != nil {
-			log.Errorf("converting resource to MsgFromSensor: %s", err)
-			continue
+		for _, res := range toDeleteResources {
+			id, resType := res.GetPair()
+			delMsg, err := resourceToMessage(resType, id)
+			if err != nil {
+				log.Errorf("converting resource to MsgFromSensor: %s", err)
+				continue
+			}
+			events = append(events, *delMsg)
 		}
-		events = append(events, *delMsg)
 	}
 	return events
 }

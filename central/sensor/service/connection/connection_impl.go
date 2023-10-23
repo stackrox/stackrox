@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -29,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -609,10 +611,43 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				ResourceHashes: successfulHashes,
 			},
 		}}
+		query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.ClusterID()).ProtoQuery()
+		results, err := podDatastore.Singleton().Search(ctx, query)
+		for i, res := range results {
+			pod, found, _ := podDatastore.Singleton().GetPod(ctx, res.ID)
+			if found {
+				podMsg := &central.MsgToSensor{
+					Msg: &central.MsgToSensor_Event{
+						Event: &central.ResourceEvent{
+							Total:   int32(len(results)),
+							Current: int32(i) + 1,
+							ResourceList: []*central.Resource{
+								{
+									Resource: &central.Resource_Pod{
+										Pod: &central.Pod{
+											Namespace:    pod.GetNamespace(),
+											Uuid:         pod.GetId(),
+											DeploymentId: pod.GetDeploymentId(),
+										},
+									},
+								},
+							},
+							Resource: &central.ResourceEvent_Pod{
+								Pod: pod,
+							},
+						},
+					},
+				}
+				err = server.Send(podMsg)
+				if err != nil {
+					return err
+				}
+			}
+		}
 
 		log.Infof("Sending %d hashes (Size=%d)", len(successfulHashes), deduperMessage.Size())
 
-		err := server.Send(deduperMessage)
+		err = server.Send(deduperMessage)
 		if err != nil {
 			log.Errorf("Central wasn't able to send deduper state to sensor (%s): %s", c.clusterID, err)
 			return errors.Wrap(err, "unable to sync deduper state")
