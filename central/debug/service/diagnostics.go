@@ -204,15 +204,6 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 		go pullMetricsFromSensor(ctx, clusterName, sensorConn, filesC, &wg)
 	}
 
-	go func() {
-		select {
-		case <-wg.Done():
-			// All invoked goroutines are done.  Close the channel so the handling loop knows it can terminate
-			close(filesC)
-		case <-ctx.Done():
-		}
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
