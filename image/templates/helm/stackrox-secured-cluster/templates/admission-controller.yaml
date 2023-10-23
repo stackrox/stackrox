@@ -210,6 +210,13 @@ webhooks:
           - kube-system
           - kube-public
           - istio-system
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - stackrox
+          - kube-system
+          - kube-public
+          - istio-system
     failurePolicy: Ignore
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
