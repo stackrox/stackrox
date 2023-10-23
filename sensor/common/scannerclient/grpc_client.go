@@ -221,7 +221,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
-	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, auth)
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
