@@ -61,6 +61,7 @@ func (c *DeduperStateProcessor) Notify(e common.SensorComponentEvent) {
 		messages := c.reconciler.ProcessHashes(c.deduperState)
 		log.Infof("Hashes reconciled: %d messages generated", len(messages))
 		for _, msg := range messages {
+			msg := msg
 			c.responseC <- c.generateMessageWithCurrentContext(&msg)
 		}
 		log.Infof("Client reconciliation done")
