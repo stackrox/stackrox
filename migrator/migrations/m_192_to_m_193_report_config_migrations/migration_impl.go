@@ -1,7 +1,7 @@
 package m192tom193
 
 import (
-	"fmt"
+	"context"
 	"reflect"
 
 	"github.com/pkg/errors"
@@ -93,38 +93,39 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 	return nil
 }
 
-//func checkifNotifierExsists(notifiertID string, database *types.Databases) (bool, error) {
-//	sql := fmt.Sprintf(
-//		"SELECT serialized FROM %s WHERE id = $1",
-//		updatedSchema.NotifiersTableName)
-//	row, err := database.PostgresDB.Query(database.DBCtx, sql, notifiertID)
-//	if err != nil {
-//		return false, err
-//	}
-//	if row.Next() {
-//		return true, nil
-//	}
-//	return false, nil
-//}
+func checkifNotifierExsists(notifiertID string, tx *gorm.DB, dbctx context.Context) (bool, error) {
 
-func getMigratedReportConfigIfExsists(reportID string, database *types.Databases) (bool, *storage.ReportConfiguration, error) {
-	sql := fmt.Sprintf(
-		"SELECT serialized FROM %s WHERE id = $1",
-		updatedSchema.ReportConfigurationsTableName)
-	row, err := database.PostgresDB.Query(database.DBCtx, sql, getDeterministicID(reportID))
+	queryv1 := tx.WithContext(dbctx).Table(updatedSchema.NotifiersTableName).Select("serialized").Where(&updatedSchema.Notifiers{ID: notifiertID})
+	rowsNotifier, err := queryv1.Rows()
 	if err != nil {
-		return false, nil, err
+		return false, errors.Wrapf(err, "failed to iterate table notifiers")
 	}
-	if row.Next() {
-		var data []byte
-		if err := row.Scan(&data); err != nil {
-			return false, nil, err
+	defer func() { _ = rowsNotifier.Close() }()
+	if rowsNotifier.Next() {
+		return true, nil
+
+	}
+	return false, nil
+}
+
+func getMigratedReportConfigIfExsists(reportID string, tx *gorm.DB, dbctx context.Context) (bool, *storage.ReportConfiguration, error) {
+	queryv1 := tx.WithContext(dbctx).Table(updatedSchema.ReportConfigurationsTableName).Select("serialized").Where(&updatedSchema.ReportConfigurations{ID: getDeterministicID(reportID)})
+	rowsV1config, err := queryv1.Rows()
+	if err != nil {
+		return false, nil, errors.Wrapf(err, "failed to iterate table %s", "report_configurations")
+	}
+	defer func() { _ = rowsV1config.Close() }()
+	for rowsV1config.Next() {
+		var reportConfigv2 *updatedSchema.ReportConfigurations
+		if err = tx.ScanRows(rowsV1config, &reportConfigv2); err != nil {
+			return false, nil, errors.Wrapf(err, "failed to scan rows")
 		}
-		var config storage.ReportConfiguration
-		if err := config.Unmarshal(data); err != nil {
-			return false, nil, err
+		reportv2ConfigProto, err := updatedSchema.ConvertReportConfigurationToProto(reportConfigv2)
+		if err != nil {
+			return false, nil, errors.Wrapf(err, "failed to convert %+v to proto", reportv2ConfigProto)
 		}
-		return true, &config, nil
+		return true, reportv2ConfigProto, nil
+
 	}
 	return false, nil, nil
 }
@@ -171,7 +172,7 @@ func migrate(database *types.Databases) error {
 		}
 
 		//if deterministic id exists no need to copy the config
-		migrated, data, err := getMigratedReportConfigIfExsists(reportConfigProto.GetId(), database)
+		migrated, data, err := getMigratedReportConfigIfExsists(reportConfigProto.GetId(), tx, database.DBCtx)
 		if err != nil {
 			return errors.Wrapf(err, "failed to query report config with id %s", reportConfigProto.GetId())
 		}
@@ -182,16 +183,18 @@ func migrate(database *types.Databases) error {
 			continue
 		}
 
-		//notifierFound, err := checkifNotifierExsists(reportConfigProto.GetEmailConfig().GetNotifierId(), database)
-		//if err != nil {
-		//	return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
-		//}
-		//
-		//if !notifierFound {
-		//	log.Infof("Did not find notifier with id %s attached to report config %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
-		//		reportConfigProto)
-		//	continue
-		//}
+		notifierFound, err := checkifNotifierExsists(reportConfigProto.GetEmailConfig().GetNotifierId(), tx, database.DBCtx)
+		if err != nil {
+			return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
+		}
+
+		if !notifierFound {
+			log.Infof("Did not find notifier with id %s attached to report config %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
+				reportConfigProto)
+			log.Infof("Did not find notifier with id %s.converted configs %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
+				convertedReportConfigs)
+			continue
+		}
 
 		// create v2 report config from v1
 		newConfig := createV2reportConfig(reportConfigProto)
