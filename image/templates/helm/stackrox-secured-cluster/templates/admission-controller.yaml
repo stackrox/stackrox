@@ -200,6 +200,7 @@ webhooks:
           {{- if ._rox.env.openshift }}
           - deploymentconfigs
           {{- end }}
+        scope: "Namespaced"
     namespaceSelector:
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
