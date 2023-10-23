@@ -152,6 +152,11 @@ require (
 )
 
 require (
+	github.com/fatih/camelcase v1.0.0
+	github.com/jhump/protoreflect v1.12.0
+)
+
+require (
 	cloud.google.com/go v0.110.6 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
