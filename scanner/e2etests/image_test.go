@@ -12,8 +12,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/scanner/client"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/pkg/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,7 +68,7 @@ type TestCase struct {
 // TestImage is the E2E test for container image scans.
 func TestImage(t *testing.T) {
 	ctx := context.Background()
-	c, err := client.NewGRPCScannerClient(ctx,
+	c, err := client.NewGRPCScanner(ctx,
 		client.WithAddress(":8443"),
 		client.WithoutTLSVerify)
 	require.NoError(t, err)
