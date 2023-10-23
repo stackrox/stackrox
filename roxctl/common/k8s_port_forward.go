@@ -107,9 +107,7 @@ func runPortForward() (uint16, error) {
 
 	go func() {
 		<-signals
-		if stopChannel != nil {
-			close(stopChannel)
-		}
+		close(stopChannel)
 	}()
 
 	req := client.Post().
@@ -133,6 +131,7 @@ func runPortForward() (uint16, error) {
 	errChan := make(chan error)
 	go func() {
 		errChan <- forwarder.ForwardPorts()
+		close(errChan)
 	}()
 	select {
 	case <-readyChannel:
