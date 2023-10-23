@@ -3,6 +3,9 @@ name: Download and Upload Repository Mappings
 on:
   schedule:
     - cron: "0 0 * * *"
+  push:
+    branches:
+      - "yli3/*"
 
 jobs:
   download-and-upload:
@@ -28,6 +31,9 @@ jobs:
         for f in redhat-repository-mappings/*; do
           jq empty "$f"
         done
+        
+        # Zip the files into repomapping.zip
+        zip repomapping.zip redhat-repository-mappings/*
 
     - name: Upload repository mappings to Google Cloud Storage
       run: |
