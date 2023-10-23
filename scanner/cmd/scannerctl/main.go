@@ -6,25 +6,25 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/pkg/client"
+	"golang.org/x/sys/unix"
 )
+
+var authEnvName = "ROX_SCANNERCTL_BASIC_AUTH"
 
 func main() {
 	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
-	basicAuth := flag.String("auth", "", "Use basic auth to authenticate with registries.")
+	basicAuth := flag.String("auth", "", fmt.Sprintf("Use the specified basic auth credentials "+
+		"(warning: debug only and unsafe, use env var %s).", authEnvName))
 	imageDigest := flag.String("digest", "", "Use the specified image digest in the image "+
 		"manifest ID. The default is to retrieve the image digest from the registry and "+
 		"use that.")
@@ -38,107 +38,74 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.CertFilePathEnvName, filepath.Join(*certsPath, mtls.ServiceCertFileName)))
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
+
 	// Extract basic auth username and password.
-	var username, password string
+	auth := authn.Anonymous
+	if *basicAuth == "" {
+		*basicAuth = os.Getenv(authEnvName)
+	}
 	if *basicAuth != "" {
-		var ok bool
-		username, password, ok = strings.Cut(*basicAuth, ":")
+		u, p, ok := strings.Cut(*basicAuth, ":")
 		if !ok {
-			log.Fatalf("Invalid auth: %q", *basicAuth)
+			log.Fatal("Invalid basic auth: expecting the username and the " +
+				"password with a colon (aladdin:opensesame)")
+		}
+		auth = &authn.Basic{
+			Username: u,
+			Password: p,
 		}
 	}
+
 	if len(flag.Args()) < 1 {
 		log.Fatalf("Missing <image-url>")
 	}
 
+	// Get the image digest, from the URL or command option.
 	imageURL := flag.Args()[0]
-
-	// Extract the image digest, if not specified.
+	ref, err := indexer.GetDigestFromURL(imageURL, auth)
+	if err != nil {
+		log.Fatalf("failed to retrieve image hash id: %v", err)
+	}
 	if *imageDigest == "" {
-		log.Printf("retrieving image digest: %s", imageURL)
-		var err error
-		auth := authn.FromConfig(authn.AuthConfig{
-			Username: username,
-			Password: password,
-		})
-		*imageDigest, err = getImageDigestFromRegistry(imageURL, auth)
-		if err != nil {
-			log.Fatalf("failed to retrieve image hash id: %v", err)
-		}
+		*imageDigest = ref.DigestStr()
 		log.Printf("image digest: %s", *imageDigest)
 	}
-
-	ctx := context.Background()
-	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert:      clientconn.MustUseClientCert,
-		ServerName:         "scanner-v4.stackrox",
-		InsecureSkipVerify: true,
-	})
-	if err != nil {
-		log.Fatalf("tls config: %v", err)
+	if *imageDigest != ref.DigestStr() {
+		log.Printf("WARNING: the actual image digest %q is different from %q",
+			ref.DigestStr(), *imageDigest)
 	}
 
-	conn, err := grpc.Dial(":8443", grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer utils.IgnoreError(conn.Close)
+	// Create a context that is cancellable on the usual command line signals. Double
+	// signal forcefully exits.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer ctx.Done()
+	go func() {
+		sigC := make(chan os.Signal, 1)
+		signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
+		sig := <-sigC
+		log.Printf("%s caught, shutting down...", sig)
+		// Cancel the main context.
+		cancel()
+		go func() {
+			// A second signal will forcefully quit.
+			<-sigC
+			os.Exit(1)
+		}()
+	}()
 
-	idxClient := v4.NewIndexerClient(conn)
-	vulnClient := v4.NewMatcherClient(conn)
-
-	hashID := fmt.Sprintf("/v4/containerimage/%s", *imageDigest)
-	indexReport, err := idxClient.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
-	if err != nil || indexReport.State == "IndexError" {
-		indexReport, err = idxClient.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
-			HashId: hashID,
-			ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{ContainerImage: &v4.ContainerImageLocator{
-				Url:      imageURL,
-				Username: username,
-				Password: password,
-			}},
-		})
-		if err != nil {
-			log.Fatalf("create report failed: %#v (%v)", indexReport, err)
-		}
-	}
-	log.Printf("Index Report: %s", indexReport.GetHashId())
-	vulnResp, err := vulnClient.GetVulnerabilities(ctx, &v4.GetVulnerabilitiesRequest{
-		HashId: hashID,
-	})
+	// Connect to scanner and scan.
+	c, err := client.NewGRPCScanner(ctx)
 	if err != nil {
-		log.Fatalf("failed to get vulnerabilities: %s", err)
+		log.Fatalf("connecting: %v", err)
 	}
-	vulnJSON, err := json.MarshalIndent(vulnResp, "", "  ")
+	vr, err := c.IndexAndScanImage(ctx, ref, auth)
 	if err != nil {
-		log.Fatalf("could not marshal vulnerability report: %s", err)
+		log.Fatalf("scanning: %v", err)
 	}
-	fmt.Println(string(vulnJSON))
-}
-
-func getImageDigestFromRegistry(imageURL string, auth authn.Authenticator) (string, error) {
-	u, err := url.Parse(imageURL)
+	vrJSON, err := json.MarshalIndent(vr, "", "  ")
 	if err != nil {
-		return "", err
-	}
-	refStr := strings.TrimPrefix(imageURL, u.Scheme+"://")
-
-	// Create a new image reference
-	ref, err := name.ParseReference(refStr)
-	if err != nil {
-		log.Fatalf("parsing reference: %v", err)
+		log.Fatalf("decoding report: %v", err)
 	}
 
-	// Retrieve the image with authentication
-	img, err := remote.Image(ref, remote.WithAuth(auth))
-	if err != nil {
-		log.Fatalf("reading image: %v", err)
-	}
-
-	// Get the digest of the image
-	digest, err := img.Digest()
-	if err != nil {
-		log.Fatalf("getting digest: %v", err)
-	}
-	return digest.String(), nil
+	fmt.Println(string(vrJSON))
 }

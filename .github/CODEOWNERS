@@ -30,7 +30,8 @@ tests/performance @stackrox/merlin
 
 /ui/**/* @stackrox/ui
 
-pkg/images/defaults/**/* @stackrox/maple
+pkg/images/defaults/**/*    @stackrox/maple
+sensor/**/*                 @stackrox/maple
 
 operator/**/* @stackrox/draco
 
