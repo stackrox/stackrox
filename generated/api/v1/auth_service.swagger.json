@@ -223,15 +223,6 @@
     }
   },
   "definitions": {
-    "AuthMachineToMachineConfigGenericIssuer": {
-      "type": "object",
-      "properties": {
-        "issuer": {
-          "type": "string"
-        }
-      },
-      "description": "The issuer configuration for a generic OIDC issuer of the identity token.\nFor the GitHub Action type, no configuration is required and the generic issuer will be ignored."
-    },
     "AuthMachineToMachineConfigMapping": {
       "type": "object",
       "properties": {
@@ -539,8 +530,9 @@
             "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
           }
         },
-        "genericIssuerConfig": {
-          "$ref": "#/definitions/AuthMachineToMachineConfigGenericIssuer"
+        "issuer": {
+          "type": "string",
+          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\nIn case of GitHub actions, this will be https://token.actions.githubusercontent.com by default if left empty."
         }
       },
       "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."

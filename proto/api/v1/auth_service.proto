@@ -69,14 +69,9 @@ message AuthMachineToMachineConfig {
     }
     repeated Mapping mappings = 4;
 
-    // The issuer configuration for a generic OIDC issuer of the identity token.
-    // For the GitHub Action type, no configuration is required and the generic issuer will be ignored.
-    message GenericIssuer {
-        string issuer                       = 1;
-    }
-    oneof IssuerConfig {
-        GenericIssuer generic_issuer_config = 5;
-    }
+    // The issuer of the related OIDC provider issuing the ID tokens to exchange.
+    // In case of GitHub actions, this will be https://token.actions.githubusercontent.com by default if left empty.
+    string issuer = 5;
 }
 
 message ListAuthMachineToMachineConfigResponse {

@@ -24,6 +24,7 @@ func (d *datastoreImpl) ListAuthM2MConfigs(ctx context.Context) ([]*storage.Auth
 }
 
 func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	setIssuer(config)
 	if err := d.store.Upsert(ctx, config); err != nil {
 		return nil, err
 	}
@@ -31,6 +32,7 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 }
 
 func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	setIssuer(config)
 	if err := d.store.Upsert(ctx, config); err != nil {
 		return err
 	}
@@ -39,4 +41,15 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 
 func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) error {
 	return d.store.Delete(ctx, id)
+}
+
+func setIssuer(config *storage.AuthMachineToMachineConfig) {
+	switch config.GetType() {
+	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
+		// This allows to set a custom issuer in case e.g. GitHub cloud or enterprise are used.
+		// Ref: https://docs.github.com/en/enterprise-cloud@latest/rest/actions/oidc?apiVersion=2022-11-28
+		if config.GetIssuer() == "" {
+			config.Issuer = "https://token.actions.githubusercontent.com"
+		}
+	}
 }

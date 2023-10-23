@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -12,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/auth/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
@@ -56,12 +58,13 @@ var (
 		},
 	})
 
-	errInvalidToken = errors.New("invalid token expiration duration given")
+	errInvalidToken             = errors.New("invalid token expiration duration given")
+	errInvalidIssuer            = errors.New("invalid token issuer given")
+	errInvalidRegularExpression = errors.New("invalid regular expression given")
 )
 
 type serviceImpl struct {
 	authDataStore datastore.DataStore
-	roleDataStore roleDataStore.DataStore
 
 	v1.UnimplementedAuthServiceServer
 }
@@ -146,7 +149,7 @@ func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.
 
 func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
 	config := request.GetConfig()
-	if err := s.validateAuthMachineToMachineConfig(ctx, config, true); err != nil {
+	if err := s.validateAuthMachineToMachineConfig(config, true); err != nil {
 		return nil, err
 	}
 	config.Id = uuid.NewV4().String()
@@ -160,7 +163,7 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 
 func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
 	config := request.GetConfig()
-	if err := s.validateAuthMachineToMachineConfig(ctx, config, false); err != nil {
+	if err := s.validateAuthMachineToMachineConfig(config, false); err != nil {
 		return nil, err
 	}
 
@@ -183,8 +186,7 @@ func (s *serviceImpl) ExchangeAuthMachineToMachineToken(_ context.Context, _ *v1
 	return nil, errox.InvariantViolation.New("not yet implemented")
 }
 
-func (s *serviceImpl) validateAuthMachineToMachineConfig(ctx context.Context, config *v1.AuthMachineToMachineConfig,
-	skipIDCheck bool) error {
+func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineToMachineConfig, skipIDCheck bool) error {
 	if config == nil {
 		return errox.InvalidArgs.New("empty config given")
 	}
@@ -202,26 +204,29 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(ctx context.Context, co
 			duration.String())
 	}
 
-	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetGenericIssuerConfig().GetIssuer() == "" {
+	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetIssuer() == "" {
 		return errox.InvalidArgs.Newf("type %s was used, but no configuration for the issuer was given",
 			storage.AuthMachineToMachineConfig_GENERIC)
 	}
 
-	var roleValidationErrs error
-	for _, mapping := range config.GetMappings() {
-		// The user's context requires permissions to Access, which the role datastore requires as well. Hence,
-		// no need to elevate the context here.
-		_, exists, err := s.roleDataStore.GetRole(ctx, mapping.GetRole())
+	if config.GetIssuer() != "" {
+		_, err := url.Parse(config.GetIssuer())
 		if err != nil {
-			roleValidationErrs = errors.Join(roleValidationErrs, err)
+			return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidIssuer, err)
 		}
-		if !exists {
-			roleValidationErrs = errors.Join(roleValidationErrs,
-				errox.InvalidArgs.Newf("referenced role %q does not exist", mapping.GetRole()))
+		config.Issuer = urlfmt.FormatURL(config.GetIssuer(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	}
+
+	var regexValidationErrs error
+	for _, mapping := range config.GetMappings() {
+		if _, err := regexp.Compile(mapping.GetValue()); err != nil {
+			regexValidationErrs = errors.Join(regexValidationErrs,
+				fmt.Errorf("%w: %w", errInvalidRegularExpression, err))
 		}
 	}
-	if roleValidationErrs != nil {
-		return roleValidationErrs
+
+	if regexValidationErrs != nil {
+		return fmt.Errorf("%w: %w", errox.InvalidArgs, regexValidationErrs)
 	}
 
 	return nil

@@ -13,12 +13,6 @@ func TestAuthM2MConfig(t *testing.T) {
 	config := &v1.AuthMachineToMachineConfig{}
 	require.NoError(t, testutils.FullInit(config, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
-	// Currently required as issuer won't be filled by FullInit.
-	config.IssuerConfig = &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-		GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{
-			Issuer: "https://stackrox.io",
-		},
-	}
 	storageConfig := AuthM2MConfig(config)
 
 	convertTestUtils.AssertProtoMessageEqual(t, config, storageConfig)

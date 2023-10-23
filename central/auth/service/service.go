@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/auth/datastore"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,7 +26,7 @@ type Service interface {
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
-		s = &serviceImpl{authDataStore: datastore.Singleton(), roleDataStore: roleDataStore.Singleton()}
+		s = &serviceImpl{authDataStore: datastore.Singleton()}
 	})
 	return s
 }

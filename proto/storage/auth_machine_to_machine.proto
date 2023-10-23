@@ -28,10 +28,5 @@ message AuthMachineToMachineConfig {
     }
     repeated Mapping mappings        = 4;
 
-    message GenericIssuer {
-        string issuer                       = 1;
-    }
-    oneof IssuerConfig {
-        GenericIssuer generic_issuer_config = 5;
-    }
+    string issuer                    = 5 [(gogoproto.moretags) = 'sql:"unique"'];
 }

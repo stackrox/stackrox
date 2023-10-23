@@ -12,19 +12,10 @@ func AuthM2MConfig(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineTo
 		Type:                    convertTypeEnum(config.GetType()),
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                convertMappings(config.GetMappings()),
-	}
-
-	if config.GetIssuerConfig() != nil {
-		storageConfig.IssuerConfig = convertIssuerConfig(config.GetGenericIssuerConfig())
+		Issuer:                  config.GetIssuer(),
 	}
 
 	return storageConfig
-}
-
-func convertIssuerConfig(config *v1.AuthMachineToMachineConfig_GenericIssuer) *storage.AuthMachineToMachineConfig_GenericIssuerConfig {
-	return &storage.AuthMachineToMachineConfig_GenericIssuerConfig{GenericIssuerConfig: &storage.AuthMachineToMachineConfig_GenericIssuer{
-		Issuer: config.GetIssuer(),
-	}}
 }
 
 func convertMappings(mappings []*v1.AuthMachineToMachineConfig_Mapping) []*storage.AuthMachineToMachineConfig_Mapping {

@@ -100,7 +100,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 
 	s.addRoles()
 
-	s.svc = &serviceImpl{authDataStore: authDataStore, roleDataStore: s.roleDS}
+	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
 func (s *authServiceAccessControlTestSuite) TearDownTest() {
@@ -268,6 +268,29 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
+				Issuer:                  "something-invalid/%+o",
+			},
+			err: errInvalidIssuer,
+		},
+		{
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
+				Issuer:                  "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:   "some-key",
+						Value: "a(b",
+						Role:  testRole1,
+					},
+				},
+			},
+			err: errInvalidRegularExpression,
+		},
+		{
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
@@ -293,11 +316,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-				IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-					GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{
-						Issuer: "https://stackrox.io",
-					},
-				},
+				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:   "some-key",
@@ -322,11 +341,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-				IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-					GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{
-						Issuer: "https://stackrox.io",
-					},
-				},
+				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:   "some-key",
@@ -351,11 +366,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			config: &v1.AuthMachineToMachineConfig{
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-				IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-					GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{
-						Issuer: "https://stackrox.io",
-					},
-				},
+				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:   "some-key",
@@ -379,8 +390,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 
 	for i, testCase := range testCases {
 		s.Run(fmt.Sprintf("test case %d", i), func() {
-			err := s.svc.validateAuthMachineToMachineConfig(sac.WithAllAccess(context.Background()),
-				testCase.config, testCase.skipIDCheck)
+			err := s.svc.validateAuthMachineToMachineConfig(testCase.config, testCase.skipIDCheck)
 			s.ErrorIs(err, testCase.err)
 		})
 	}
@@ -437,8 +447,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfig() {
 	config := &v1.AuthMachineToMachineConfig{
 		TokenExpirationDuration: "1h",
 		Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-		IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-			GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{Issuer: "something"}},
+		Issuer:                  "https://stackrox.io",
 	}
 
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
@@ -467,8 +476,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		TokenExpirationDuration: "1h",
 		Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-		IssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuerConfig{
-			GenericIssuerConfig: &v1.AuthMachineToMachineConfig_GenericIssuer{Issuer: "something"}},
+		Issuer:                  "https://stackrox.io",
 	}
 
 	resp, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{

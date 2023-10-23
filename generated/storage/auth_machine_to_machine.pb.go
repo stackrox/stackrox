@@ -57,12 +57,10 @@ type AuthMachineToMachineConfig struct {
 	Type                    AuthMachineToMachineConfig_Type       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
 	TokenExpirationDuration string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration,proto3" json:"token_expiration_duration,omitempty"`
 	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
-	// Types that are valid to be assigned to IssuerConfig:
-	//	*AuthMachineToMachineConfig_GenericIssuerConfig
-	IssuerConfig         isAuthMachineToMachineConfig_IssuerConfig `protobuf_oneof:"IssuerConfig"`
-	XXX_NoUnkeyedLiteral struct{}                                  `json:"-"`
-	XXX_unrecognized     []byte                                    `json:"-"`
-	XXX_sizecache        int32                                     `json:"-"`
+	Issuer                  string                                `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"`
+	XXX_NoUnkeyedLiteral    struct{}                              `json:"-"`
+	XXX_unrecognized        []byte                                `json:"-"`
+	XXX_sizecache           int32                                 `json:"-"`
 }
 
 func (m *AuthMachineToMachineConfig) Reset()         { *m = AuthMachineToMachineConfig{} }
@@ -98,36 +96,6 @@ func (m *AuthMachineToMachineConfig) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AuthMachineToMachineConfig proto.InternalMessageInfo
 
-type isAuthMachineToMachineConfig_IssuerConfig interface {
-	isAuthMachineToMachineConfig_IssuerConfig()
-	MarshalTo([]byte) (int, error)
-	Size() int
-	Clone() isAuthMachineToMachineConfig_IssuerConfig
-}
-
-type AuthMachineToMachineConfig_GenericIssuerConfig struct {
-	GenericIssuerConfig *AuthMachineToMachineConfig_GenericIssuer `protobuf:"bytes,5,opt,name=generic_issuer_config,json=genericIssuerConfig,proto3,oneof" json:"generic_issuer_config,omitempty"`
-}
-
-func (*AuthMachineToMachineConfig_GenericIssuerConfig) isAuthMachineToMachineConfig_IssuerConfig() {}
-func (m *AuthMachineToMachineConfig_GenericIssuerConfig) Clone() isAuthMachineToMachineConfig_IssuerConfig {
-	if m == nil {
-		return nil
-	}
-	cloned := new(AuthMachineToMachineConfig_GenericIssuerConfig)
-	*cloned = *m
-
-	cloned.GenericIssuerConfig = m.GenericIssuerConfig.Clone()
-	return cloned
-}
-
-func (m *AuthMachineToMachineConfig) GetIssuerConfig() isAuthMachineToMachineConfig_IssuerConfig {
-	if m != nil {
-		return m.IssuerConfig
-	}
-	return nil
-}
-
 func (m *AuthMachineToMachineConfig) GetId() string {
 	if m != nil {
 		return m.Id
@@ -156,18 +124,11 @@ func (m *AuthMachineToMachineConfig) GetMappings() []*AuthMachineToMachineConfig
 	return nil
 }
 
-func (m *AuthMachineToMachineConfig) GetGenericIssuerConfig() *AuthMachineToMachineConfig_GenericIssuer {
-	if x, ok := m.GetIssuerConfig().(*AuthMachineToMachineConfig_GenericIssuerConfig); ok {
-		return x.GenericIssuerConfig
+func (m *AuthMachineToMachineConfig) GetIssuer() string {
+	if m != nil {
+		return m.Issuer
 	}
-	return nil
-}
-
-// XXX_OneofWrappers is for the internal use of the proto package.
-func (*AuthMachineToMachineConfig) XXX_OneofWrappers() []interface{} {
-	return []interface{}{
-		(*AuthMachineToMachineConfig_GenericIssuerConfig)(nil),
-	}
+	return ""
 }
 
 func (m *AuthMachineToMachineConfig) MessageClone() proto.Message {
@@ -185,9 +146,6 @@ func (m *AuthMachineToMachineConfig) Clone() *AuthMachineToMachineConfig {
 		for idx, v := range m.Mappings {
 			cloned.Mappings[idx] = v.Clone()
 		}
-	}
-	if m.IssuerConfig != nil {
-		cloned.IssuerConfig = m.IssuerConfig.Clone()
 	}
 	return cloned
 }
@@ -268,73 +226,10 @@ func (m *AuthMachineToMachineConfig_Mapping) Clone() *AuthMachineToMachineConfig
 	return cloned
 }
 
-type AuthMachineToMachineConfig_GenericIssuer struct {
-	Issuer               string   `protobuf:"bytes,1,opt,name=issuer,proto3" json:"issuer,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) Reset() {
-	*m = AuthMachineToMachineConfig_GenericIssuer{}
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) String() string { return proto.CompactTextString(m) }
-func (*AuthMachineToMachineConfig_GenericIssuer) ProtoMessage()    {}
-func (*AuthMachineToMachineConfig_GenericIssuer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ce5f143e8b019d79, []int{0, 1}
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AuthMachineToMachineConfig_GenericIssuer.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AuthMachineToMachineConfig_GenericIssuer.Merge(m, src)
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) XXX_Size() int {
-	return m.Size()
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) XXX_DiscardUnknown() {
-	xxx_messageInfo_AuthMachineToMachineConfig_GenericIssuer.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AuthMachineToMachineConfig_GenericIssuer proto.InternalMessageInfo
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) GetIssuer() string {
-	if m != nil {
-		return m.Issuer
-	}
-	return ""
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) MessageClone() proto.Message {
-	return m.Clone()
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) Clone() *AuthMachineToMachineConfig_GenericIssuer {
-	if m == nil {
-		return nil
-	}
-	cloned := new(AuthMachineToMachineConfig_GenericIssuer)
-	*cloned = *m
-
-	return cloned
-}
-
 func init() {
 	proto.RegisterEnum("storage.AuthMachineToMachineConfig_Type", AuthMachineToMachineConfig_Type_name, AuthMachineToMachineConfig_Type_value)
 	proto.RegisterType((*AuthMachineToMachineConfig)(nil), "storage.AuthMachineToMachineConfig")
 	proto.RegisterType((*AuthMachineToMachineConfig_Mapping)(nil), "storage.AuthMachineToMachineConfig.Mapping")
-	proto.RegisterType((*AuthMachineToMachineConfig_GenericIssuer)(nil), "storage.AuthMachineToMachineConfig.GenericIssuer")
 }
 
 func init() {
@@ -342,36 +237,34 @@ func init() {
 }
 
 var fileDescriptor_ce5f143e8b019d79 = []byte{
-	// 455 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0x8d, 0x13, 0xb7, 0xa1, 0x13, 0x88, 0xa2, 0x6d, 0xa1, 0x6e, 0x0e, 0x69, 0x64, 0x84, 0xe2,
-	0x8a, 0xe2, 0x8a, 0xc0, 0x29, 0x70, 0xa9, 0x43, 0x94, 0xe6, 0xd0, 0x22, 0x2d, 0xe1, 0xc2, 0xc5,
-	0x32, 0xf6, 0xd4, 0x59, 0xd9, 0xf1, 0x9a, 0xf5, 0x1a, 0x35, 0x7f, 0xc2, 0xff, 0x70, 0xe1, 0xc8,
-	0x17, 0x54, 0x28, 0xfc, 0x41, 0xbf, 0x00, 0xd9, 0xeb, 0x54, 0xe5, 0x50, 0xa9, 0xb7, 0xb7, 0x33,
-	0xef, 0xcd, 0xdb, 0x7d, 0x3b, 0xf0, 0x22, 0x93, 0x5c, 0x78, 0x21, 0x9e, 0x78, 0xb9, 0x5c, 0xb8,
-	0x4b, 0xcf, 0x5f, 0xb0, 0x04, 0x5d, 0xc9, 0x37, 0xd0, 0x4e, 0x05, 0x97, 0x9c, 0x34, 0x2b, 0x5a,
-	0x77, 0x2f, 0xe4, 0x21, 0x2f, 0x6b, 0x27, 0x05, 0x52, 0x6d, 0xf3, 0xa7, 0x0e, 0xdd, 0xd3, 0x5c,
-	0x2e, 0xce, 0x95, 0x68, 0xce, 0x2b, 0x30, 0xe6, 0xc9, 0x25, 0x0b, 0xc9, 0x00, 0xea, 0x2c, 0x30,
-	0xb4, 0xbe, 0x66, 0xed, 0x38, 0xfb, 0x37, 0xd7, 0x87, 0xbb, 0xd9, 0xb7, 0x78, 0x64, 0xa6, 0xd1,
-	0xb1, 0x5c, 0xa5, 0x68, 0xe5, 0x39, 0x0b, 0x8e, 0x4c, 0x5a, 0x67, 0x01, 0x79, 0x0f, 0x7a, 0x51,
-	0x32, 0xea, 0x7d, 0xcd, 0x6a, 0x0f, 0x2d, 0xbb, 0x72, 0xb5, 0xef, 0x9f, 0x6d, 0xcf, 0x57, 0x29,
-	0xd2, 0x52, 0x45, 0x46, 0x70, 0x20, 0x79, 0x84, 0x89, 0x8b, 0x57, 0x29, 0x13, 0x9e, 0x64, 0x3c,
-	0x71, 0x83, 0x5c, 0x01, 0xa3, 0x51, 0xb8, 0xd3, 0xfd, 0x92, 0x30, 0xb9, 0xed, 0x7f, 0xa8, 0xda,
-	0x64, 0x0a, 0x8f, 0x96, 0x5e, 0x9a, 0xb2, 0x24, 0xcc, 0x0c, 0xbd, 0xdf, 0xb0, 0x5a, 0xc3, 0x97,
-	0x0f, 0x71, 0x3f, 0x57, 0x1a, 0x7a, 0x2b, 0x26, 0x21, 0x3c, 0x0d, 0x31, 0x41, 0xc1, 0x7c, 0x97,
-	0x65, 0x59, 0x8e, 0xc2, 0xf5, 0x4b, 0xaa, 0xb1, 0xd5, 0xd7, 0xac, 0xd6, 0xf0, 0xf5, 0x43, 0xa6,
-	0x4e, 0xd5, 0x80, 0x59, 0xa9, 0x3f, 0xab, 0xd1, 0xdd, 0xf0, 0x6e, 0x41, 0x91, 0xba, 0x09, 0x34,
-	0x2b, 0x77, 0xd2, 0x81, 0x46, 0x84, 0x2b, 0x15, 0x30, 0x2d, 0x20, 0xd9, 0x83, 0xad, 0xef, 0x5e,
-	0x9c, 0xab, 0x24, 0x77, 0xa8, 0x3a, 0x90, 0x77, 0xa0, 0x0b, 0x1e, 0xa3, 0xca, 0xc2, 0x19, 0xdc,
-	0x5c, 0x1f, 0x3e, 0x2f, 0x7f, 0xe2, 0x32, 0xb2, 0x28, 0x8f, 0x71, 0x94, 0x78, 0x4b, 0x3c, 0x3a,
-	0x16, 0x98, 0x49, 0xc1, 0x7c, 0xf9, 0x2a, 0xc0, 0x18, 0x25, 0x9a, 0xb4, 0x14, 0x75, 0x07, 0xf0,
-	0xe4, 0xbf, 0x7b, 0x91, 0x67, 0xb0, 0xad, 0x5e, 0x58, 0x19, 0x57, 0x27, 0x73, 0x00, 0x7a, 0xf1,
-	0x29, 0xa4, 0x05, 0xcd, 0xe9, 0xe4, 0x62, 0x42, 0x67, 0xe3, 0x4e, 0x8d, 0x10, 0x68, 0x4f, 0x67,
-	0xf3, 0xb3, 0xcf, 0x8e, 0x7b, 0x3a, 0x9e, 0xcf, 0x3e, 0x5e, 0x7c, 0xea, 0x68, 0x4e, 0x1b, 0x1e,
-	0xdf, 0x7d, 0x91, 0xf3, 0xf6, 0xd7, 0xba, 0xa7, 0xfd, 0x5e, 0xf7, 0xb4, 0x3f, 0xeb, 0x9e, 0xf6,
-	0xe3, 0x6f, 0xaf, 0x06, 0x07, 0x8c, 0xdb, 0x99, 0xf4, 0xfc, 0x48, 0xf0, 0x2b, 0xb5, 0x6a, 0x9b,
-	0xf8, 0xbe, 0x6c, 0x36, 0xf2, 0xeb, 0x76, 0x59, 0x7f, 0xf3, 0x2f, 0x00, 0x00, 0xff, 0xff, 0x7e,
-	0xa8, 0x94, 0x29, 0xca, 0x02, 0x00, 0x00,
+	// 420 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xc1, 0x6e, 0xd3, 0x40,
+	0x10, 0x86, 0xeb, 0x24, 0x6d, 0xe8, 0x16, 0x55, 0xd1, 0x52, 0xa9, 0x6e, 0x0e, 0x49, 0x64, 0x84,
+	0xe2, 0x8a, 0xe2, 0x4a, 0x85, 0x53, 0xe0, 0x52, 0x87, 0x28, 0xe4, 0xd0, 0x22, 0x2d, 0xe6, 0xc2,
+	0xc5, 0x5a, 0xe2, 0xa9, 0xb3, 0xb2, 0xb3, 0xeb, 0xae, 0x77, 0x51, 0xf3, 0x26, 0x3c, 0x12, 0x12,
+	0x17, 0x9e, 0x20, 0x42, 0xe1, 0x0d, 0xf2, 0x04, 0xc8, 0xbb, 0x4e, 0x6f, 0x48, 0xdc, 0x7e, 0xcf,
+	0x3f, 0xdf, 0x8c, 0xe6, 0xf7, 0xa2, 0x17, 0xa5, 0x12, 0x92, 0xa6, 0x70, 0x49, 0xb5, 0x5a, 0xc4,
+	0x4b, 0x3a, 0x5f, 0x30, 0x0e, 0xb1, 0x12, 0x3b, 0x19, 0x14, 0x52, 0x28, 0x81, 0xdb, 0x75, 0x5b,
+	0xf7, 0x24, 0x15, 0xa9, 0x30, 0xb5, 0xcb, 0x4a, 0x59, 0xdb, 0xfb, 0xd9, 0x44, 0xdd, 0x6b, 0xad,
+	0x16, 0x37, 0x16, 0x8a, 0x44, 0x2d, 0xc6, 0x82, 0xdf, 0xb1, 0x14, 0x0f, 0x51, 0x83, 0x25, 0xae,
+	0x33, 0x70, 0xfc, 0xc3, 0xf0, 0x74, 0xbb, 0xee, 0x3f, 0x2b, 0xef, 0xf3, 0x91, 0x57, 0x64, 0x17,
+	0x6a, 0x55, 0x80, 0xaf, 0x35, 0x4b, 0xce, 0x3d, 0xd2, 0x60, 0x09, 0x7e, 0x87, 0x5a, 0x55, 0xc9,
+	0x6d, 0x0c, 0x1c, 0xff, 0xf8, 0xca, 0x0f, 0xea, 0xad, 0xc1, 0xbf, 0x67, 0x07, 0xd1, 0xaa, 0x00,
+	0x62, 0x28, 0x3c, 0x42, 0x67, 0x4a, 0x64, 0xc0, 0x63, 0x78, 0x28, 0x98, 0xa4, 0x8a, 0x09, 0x1e,
+	0x27, 0xda, 0x0a, 0xb7, 0x59, 0x6d, 0x27, 0xa7, 0xa6, 0x61, 0xf2, 0xe8, 0xbf, 0xaf, 0x6d, 0x3c,
+	0x45, 0x4f, 0x96, 0xb4, 0x28, 0x18, 0x4f, 0x4b, 0xb7, 0x35, 0x68, 0xfa, 0x47, 0x57, 0x2f, 0xff,
+	0x67, 0xfb, 0x8d, 0x65, 0xc8, 0x23, 0x8c, 0x7d, 0x74, 0xc0, 0xca, 0x52, 0x83, 0x74, 0xf7, 0xcd,
+	0xbd, 0x9d, 0xed, 0xba, 0xff, 0xd4, 0xdc, 0xab, 0x39, 0xbb, 0xd7, 0xe0, 0x91, 0xda, 0xef, 0x72,
+	0xd4, 0xae, 0x71, 0xdc, 0x41, 0xcd, 0x0c, 0x56, 0x36, 0x21, 0x52, 0x49, 0x7c, 0x82, 0xf6, 0xbf,
+	0xd1, 0x5c, 0xdb, 0x28, 0x0e, 0x89, 0xfd, 0xc0, 0x6f, 0x51, 0x4b, 0x8a, 0x1c, 0xec, 0x31, 0xe1,
+	0x70, 0xbb, 0xee, 0x3f, 0x37, 0xa3, 0xef, 0x32, 0x9f, 0x88, 0x1c, 0x46, 0x9c, 0x2e, 0xe1, 0xfc,
+	0x42, 0x42, 0xa9, 0x24, 0x9b, 0xab, 0x57, 0x09, 0xe4, 0xa0, 0xc0, 0x23, 0x06, 0xf2, 0x86, 0xa8,
+	0x55, 0x85, 0x85, 0x8f, 0x50, 0x7b, 0x3a, 0xb9, 0x9d, 0x90, 0xd9, 0xb8, 0xb3, 0x87, 0x31, 0x3a,
+	0x9e, 0xce, 0xa2, 0x0f, 0x9f, 0xc3, 0xf8, 0x7a, 0x1c, 0xcd, 0x3e, 0xde, 0x7e, 0xea, 0x38, 0xe1,
+	0x9b, 0x1f, 0x9b, 0x9e, 0xf3, 0x6b, 0xd3, 0x73, 0x7e, 0x6f, 0x7a, 0xce, 0xf7, 0x3f, 0xbd, 0x3d,
+	0x74, 0xc6, 0x44, 0x50, 0x2a, 0x3a, 0xcf, 0xa4, 0x78, 0xb0, 0xbf, 0x7c, 0x17, 0xce, 0x97, 0xdd,
+	0xcb, 0xf8, 0x7a, 0x60, 0xea, 0xaf, 0xff, 0x06, 0x00, 0x00, 0xff, 0xff, 0xd1, 0x1e, 0xd3, 0x25,
+	0x52, 0x02, 0x00, 0x00,
 }
 
 func (m *AuthMachineToMachineConfig) Marshal() (dAtA []byte, err error) {
@@ -398,14 +291,12 @@ func (m *AuthMachineToMachineConfig) MarshalToSizedBuffer(dAtA []byte) (int, err
 		i -= len(m.XXX_unrecognized)
 		copy(dAtA[i:], m.XXX_unrecognized)
 	}
-	if m.IssuerConfig != nil {
-		{
-			size := m.IssuerConfig.Size()
-			i -= size
-			if _, err := m.IssuerConfig.MarshalTo(dAtA[i:]); err != nil {
-				return 0, err
-			}
-		}
+	if len(m.Issuer) > 0 {
+		i -= len(m.Issuer)
+		copy(dAtA[i:], m.Issuer)
+		i = encodeVarintAuthMachineToMachine(dAtA, i, uint64(len(m.Issuer)))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if len(m.Mappings) > 0 {
 		for iNdEx := len(m.Mappings) - 1; iNdEx >= 0; iNdEx-- {
@@ -443,27 +334,6 @@ func (m *AuthMachineToMachineConfig) MarshalToSizedBuffer(dAtA []byte) (int, err
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthMachineToMachineConfig_GenericIssuerConfig) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuerConfig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.GenericIssuerConfig != nil {
-		{
-			size, err := m.GenericIssuerConfig.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintAuthMachineToMachine(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x2a
-	}
-	return len(dAtA) - i, nil
-}
 func (m *AuthMachineToMachineConfig_Mapping) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -512,40 +382,6 @@ func (m *AuthMachineToMachineConfig_Mapping) MarshalToSizedBuffer(dAtA []byte) (
 	return len(dAtA) - i, nil
 }
 
-func (m *AuthMachineToMachineConfig_GenericIssuer) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
-	if len(m.Issuer) > 0 {
-		i -= len(m.Issuer)
-		copy(dAtA[i:], m.Issuer)
-		i = encodeVarintAuthMachineToMachine(dAtA, i, uint64(len(m.Issuer)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
 func encodeVarintAuthMachineToMachine(dAtA []byte, offset int, v uint64) int {
 	offset -= sovAuthMachineToMachine(v)
 	base := offset
@@ -580,8 +416,9 @@ func (m *AuthMachineToMachineConfig) Size() (n int) {
 			n += 1 + l + sovAuthMachineToMachine(uint64(l))
 		}
 	}
-	if m.IssuerConfig != nil {
-		n += m.IssuerConfig.Size()
+	l = len(m.Issuer)
+	if l > 0 {
+		n += 1 + l + sovAuthMachineToMachine(uint64(l))
 	}
 	if m.XXX_unrecognized != nil {
 		n += len(m.XXX_unrecognized)
@@ -589,18 +426,6 @@ func (m *AuthMachineToMachineConfig) Size() (n int) {
 	return n
 }
 
-func (m *AuthMachineToMachineConfig_GenericIssuerConfig) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.GenericIssuerConfig != nil {
-		l = m.GenericIssuerConfig.Size()
-		n += 1 + l + sovAuthMachineToMachine(uint64(l))
-	}
-	return n
-}
 func (m *AuthMachineToMachineConfig_Mapping) Size() (n int) {
 	if m == nil {
 		return 0
@@ -616,22 +441,6 @@ func (m *AuthMachineToMachineConfig_Mapping) Size() (n int) {
 		n += 1 + l + sovAuthMachineToMachine(uint64(l))
 	}
 	l = len(m.Role)
-	if l > 0 {
-		n += 1 + l + sovAuthMachineToMachine(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
-	return n
-}
-
-func (m *AuthMachineToMachineConfig_GenericIssuer) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Issuer)
 	if l > 0 {
 		n += 1 + l + sovAuthMachineToMachine(uint64(l))
 	}
@@ -795,9 +604,9 @@ func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GenericIssuerConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Issuer", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowAuthMachineToMachine
@@ -807,26 +616,23 @@ func (m *AuthMachineToMachineConfig) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthAuthMachineToMachine
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthAuthMachineToMachine
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			v := &AuthMachineToMachineConfig_GenericIssuer{}
-			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			m.IssuerConfig = &AuthMachineToMachineConfig_GenericIssuerConfig{v}
+			m.Issuer = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -974,89 +780,6 @@ func (m *AuthMachineToMachineConfig_Mapping) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Role = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAuthMachineToMachine(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAuthMachineToMachine
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *AuthMachineToMachineConfig_GenericIssuer) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAuthMachineToMachine
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GenericIssuer: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GenericIssuer: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Issuer", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAuthMachineToMachine
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthAuthMachineToMachine
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthAuthMachineToMachine
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Issuer = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
