@@ -10,12 +10,12 @@ const compareNetworkPolicies = (a: NetworkPolicy, b: NetworkPolicy): number => {
     return a.name.localeCompare(b.name);
 };
 
-export type NetworkPoliciesCardProps = {
+export type NetworkPoliciesTabProps = {
     clusterId: string;
     namespaceName: string;
 };
 
-function NetworkPoliciesCard({ clusterId, namespaceName }: NetworkPoliciesCardProps): ReactElement {
+function NetworkPoliciesTab({ clusterId, namespaceName }: NetworkPoliciesTabProps): ReactElement {
     const [selectedNetworkPolicy, setSelectedNetworkPolicy] = useState<NetworkPolicy | null>(null);
     const [namespacePolicies, setNamespacePolicies] = useState<NetworkPolicy[]>([]);
 
@@ -65,4 +65,4 @@ function NetworkPoliciesCard({ clusterId, namespaceName }: NetworkPoliciesCardPr
     );
 }
 
-export default NetworkPoliciesCard;
+export default NetworkPoliciesTab;

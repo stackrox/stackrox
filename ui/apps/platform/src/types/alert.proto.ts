@@ -9,38 +9,42 @@ import { ProcessIndicator } from './processIndicator.proto';
 export type Alert = DeploymentAlert | ImageAlert | ResourceAlert;
 
 export type DeploymentAlert = {
-    deployment: {
-        id: string;
-        name: string;
-        type: string;
-        namespace: string;
-        namespaceId: string;
-        labels: Record<string, string>;
-        clusterId: string;
-        clusterName: string;
-        containers: {
-            image: ContainerImage;
-            name: string;
-        }[];
-        annotations: Record<string, string>;
-        inactive: boolean;
-    };
+    deployment: AlertDeployment;
 } & BaseAlert;
+
+export type AlertDeployment = {
+    id: string;
+    name: string;
+    type: string;
+    namespace: string;
+    namespaceId: string;
+    labels: Record<string, string>;
+    clusterId: string;
+    clusterName: string;
+    containers: {
+        image: ContainerImage;
+        name: string;
+    }[];
+    annotations: Record<string, string>;
+    inactive: boolean;
+};
 
 export type ImageAlert = {
     image: ContainerImage;
 } & BaseAlert;
 
 export type ResourceAlert = {
-    resource: {
-        resourceType: AlertResourceType;
-        name: string;
-        clusterId: string;
-        clusterName: string;
-        namespace: string;
-        namespaceId: string;
-    };
+    resource: AlertResource;
 } & BaseAlert;
+
+export type AlertResource = {
+    resourceType: AlertResourceType;
+    name: string;
+    clusterId: string;
+    clusterName: string;
+    namespace: string;
+    namespaceId: string;
+};
 
 export type AlertResourceType =
     | 'UNKNOWN'
