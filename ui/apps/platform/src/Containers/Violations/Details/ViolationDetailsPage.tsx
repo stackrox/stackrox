@@ -2,24 +2,26 @@ import React, { ReactElement, useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 import {
-    TabTitleText,
-    Tabs,
-    Tab,
-    Title,
+    Bullseye,
     Divider,
     PageSection,
     Spinner,
-    Bullseye,
+    Tab,
+    TabTitleText,
+    Tabs,
+    Title,
 } from '@patternfly/react-core';
 
-import { fetchAlert } from 'services/AlertsService';
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
-import { Alert } from 'types/alert.proto';
+import { fetchAlert } from 'services/AlertsService';
+import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
 
-import DeploymentDetails from './Deployment/DeploymentDetails';
+import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
+import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
+import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
 import EnforcementDetails from './EnforcementDetails';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
 import ViolationDetails from './ViolationDetails';
@@ -29,6 +31,7 @@ function ViolationDetailsPage(): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForDeployment = hasReadAccess('Deployment');
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
     const isRouteEnabledForPolicy = isRouteEnabled('policy-management');
 
     const [activeTabKey, setActiveTabKey] = useState(0);
@@ -70,14 +73,13 @@ function ViolationDetailsPage(): ReactElement {
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
     /* eslint-disable no-nested-ternary */
-    const entityName =
-        'resource' in alert
-            ? alert.resource.clusterName
-            : 'deployment' in alert
-            ? alert.deployment.name
-            : '';
+    const entityName = isResourceAlert(alert)
+        ? alert.resource.clusterName
+        : isDeploymentAlert(alert)
+        ? alert.deployment.name
+        : '';
     /* eslint-enable no-nested-ternary */
-    const resourceType = 'resource' in alert ? alert.resource.resourceType : 'deployment';
+    const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());
 
@@ -111,23 +113,39 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
-                    {hasReadAccessForDeployment && 'deployment' in alert && (
+                    {isDeploymentAlert(alert) && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
                             <PageSection variant="default">
-                                <DeploymentDetails alertDeployment={alert.deployment} />
+                                {hasReadAccessForDeployment ? (
+                                    <DeploymentTabWithReadAccessForDeployment
+                                        alertDeployment={alert.deployment}
+                                    />
+                                ) : (
+                                    <DeploymentTabWithoutReadAccessForDeployment
+                                        alertDeployment={alert.deployment}
+                                    />
+                                )}
                             </PageSection>
                         </Tab>
                     )}
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
-                                <>
-                                    <Title headingLevel="h3" className="pf-u-mb-md">
-                                        Policy overview
-                                    </Title>
-                                    <Divider component="div" className="pf-u-pb-md" />
-                                    <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
-                                </>
+                                <Title headingLevel="h3" className="pf-u-mb-md">
+                                    Policy overview
+                                </Title>
+                                <Divider component="div" className="pf-u-pb-md" />
+                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
+                            </PageSection>
+                        </Tab>
+                    )}
+                    {isDeploymentAlert(alert) && hasReadAccessForNetworkPolicy && (
+                        <Tab eventKey={4} title={<TabTitleText>Network policies</TabTitleText>}>
+                            <PageSection variant="default">
+                                <NetworkPolicies
+                                    clusterId={alert.deployment.clusterId}
+                                    namespaceName={alert.deployment.namespace}
+                                />
                             </PageSection>
                         </Tab>
                     )}
