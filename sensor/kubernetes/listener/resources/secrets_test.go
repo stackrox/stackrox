@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/sensor/common/registry"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -75,7 +76,8 @@ func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	reconcileStore := reconciliation.NewStore()
+	d := newSecretDispatcher(regStore, reconcileStore)
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -116,7 +118,8 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 
 func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	reconcileStore := reconciliation.NewStore()
+	d := newSecretDispatcher(regStore, reconcileStore)
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -185,7 +188,8 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with feature disabled, registry secret should NOT be stored
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	reconcileStore := reconciliation.NewStore()
+	d := newSecretDispatcher(regStore, reconcileStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
@@ -197,7 +201,8 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with delegated scanning disabled, registry secret should NOT be stored
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	reconcileStore = reconciliation.NewStore()
+	d = newSecretDispatcher(regStore, reconcileStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
@@ -215,7 +220,8 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Equal(t, reg.Config().Username, "hello")
 
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	reconcileStore = reconciliation.NewStore()
+	d = newSecretDispatcher(regStore, reconcileStore)
 
 	// secrets with an service-account.name other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotation: "something"}
@@ -238,7 +244,8 @@ func TestForceLocalScanning(t *testing.T) {
 // are not generated for secrets that contain a service account annotation
 func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	reconcileStore := reconciliation.NewStore()
+	d := newSecretDispatcher(regStore, reconcileStore)
 
 	// a secret w/ the `default` sa annotation should trigger no imageintegration events
 	secret := openshift4xDockerConfigSecret.DeepCopy()

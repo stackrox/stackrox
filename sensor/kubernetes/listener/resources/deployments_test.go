@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/awscredentials/mocks"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -62,7 +63,8 @@ func Test_deploymentHandler_getImageIntegrationEvent(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := mocks.NewMockRegistryCredentialsManager(ctrl)
 			d := &deploymentHandler{
-				credentialsManager: m,
+				credentialsManager:  m,
+				reconciliationStore: reconciliation.NewStore(),
 			}
 			m.EXPECT().GetRegistryCredentials(gomock.Eq(registry)).Return(tt.credentials).Times(1)
 			ret := d.getImageIntegrationEvent(registry)

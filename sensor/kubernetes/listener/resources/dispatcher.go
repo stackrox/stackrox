@@ -80,13 +80,13 @@ func NewDispatcherRegistry(
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
-			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
+			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, storeProvider.reconciliationStore, credentialsManager),
 
 		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:           newSecretDispatcher(registryStore),
+		secretDispatcher:           newSecretDispatcher(registryStore, storeProvider.reconciliationStore),
 		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
 		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),

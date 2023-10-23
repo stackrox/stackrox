@@ -105,6 +105,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"ImageIntegration": {
+			resType:       deduper.TypeImageIntegration.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ImageIntegration{ImageIntegration: &storage.ImageIntegration{Id: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
@@ -209,6 +214,10 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetComplianceOperatorScanSettingBinding().GetId()
 		}, nil
+	case deduper.TypeImageIntegration.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetImageIntegration().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -260,6 +269,8 @@ func initStore() *InMemoryStoreProvider {
 	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScan.String(), "2")
 	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), "1")
 	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), "2")
+	s.reconciliationStore.Upsert(deduper.TypeImageIntegration.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeImageIntegration.String(), "2")
 	return s
 }
 
@@ -572,6 +583,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("98", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 				makeKey("97", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
 				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Image Integration": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeImageIntegration): 12345,
+				makeKey("2", deduper.TypeImageIntegration): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Image Integration": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeImageIntegration): 34567,
+				makeKey("1", deduper.TypeImageIntegration):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Image Integrations": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeImageIntegration): 34567,
+				makeKey("98", deduper.TypeImageIntegration): 34567,
+				makeKey("97", deduper.TypeImageIntegration): 34567,
+				makeKey("1", deduper.TypeImageIntegration):  12345,
 			},
 			deletedIDs: []string{"97", "98", "99"},
 		},

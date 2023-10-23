@@ -14,8 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -81,6 +83,7 @@ type deploymentHandler struct {
 	rbac                   rbac.Store
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
+	reconciliationStore    reconciliation.Store
 
 	clusterID string
 }
@@ -99,6 +102,7 @@ func newDeploymentHandler(
 	config config.Handler,
 	namespaces *orchestratornamespaces.OrchestratorNamespaces,
 	registryStore *registry.Store,
+	reconciliationStore reconciliation.Store,
 	credentialsManager awscredentials.RegistryCredentialsManager,
 ) *deploymentHandler {
 	return &deploymentHandler{
@@ -114,6 +118,7 @@ func newDeploymentHandler(
 		rbac:                   rbac,
 		orchestratorNamespaces: namespaces,
 		registryStore:          registryStore,
+		reconciliationStore:    reconciliationStore,
 		clusterID:              clusterID,
 		credentialsManager:     credentialsManager,
 	}
@@ -273,11 +278,13 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	}
 	// Currently, all AWS registry credentials are handled as ECR image integrations, hence
 	// type = "ecr".
+	id := uuid.NewV4().String()
+	d.reconciliationStore.Upsert(deduper.TypeImageIntegration.String(), id)
 	return &central.SensorEvent{
 		Action: central.ResourceAction_UPDATE_RESOURCE,
 		Resource: &central.SensorEvent_ImageIntegration{
 			ImageIntegration: &storage.ImageIntegration{
-				Id:         uuid.NewV4().String(),
+				Id:         id,
 				Type:       "ecr",
 				Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 				IntegrationConfig: &storage.ImageIntegration_Ecr{

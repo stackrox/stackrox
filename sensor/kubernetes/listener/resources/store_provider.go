@@ -104,6 +104,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		deduper.TypeComplianceOperatorRule.String():               p.reconciliationStore,
 		deduper.TypeComplianceOperatorScan.String():               p.reconciliationStore,
 		deduper.TypeComplianceOperatorScanSettingBinding.String(): p.reconciliationStore,
+		deduper.TypeImageIntegration.String():                     p.reconciliationStore,
 	}
 
 	return p
