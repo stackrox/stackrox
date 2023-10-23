@@ -20,6 +20,8 @@ var (
 
 var _ common.SensorComponent = (*DeduperStateProcessor)(nil)
 
+// DeduperStateProcessor is the component that processes deduper state and generates delete messages for removed
+// resources.
 type DeduperStateProcessor struct {
 	responseC      chan *message.ExpiringMessage
 	deduperState   map[deduper.Key]uint64
@@ -31,6 +33,7 @@ type DeduperStateProcessor struct {
 	cancelContext  func()
 }
 
+// NewDeduperStateProcessor returns a new DeduperStateProcessor using store.HashReconciler dependency.
 func NewDeduperStateProcessor(reconciler store.HashReconciler) *DeduperStateProcessor {
 	return &DeduperStateProcessor{
 		responseC:    make(chan *message.ExpiringMessage),
@@ -40,6 +43,8 @@ func NewDeduperStateProcessor(reconciler store.HashReconciler) *DeduperStateProc
 	}
 }
 
+// SetDeduperState should be used when the Deduper State message is received from central, and it should be called
+// only once per active connection. Any new state received will overwrite the existing state in this component.
 func (c *DeduperStateProcessor) SetDeduperState(state map[deduper.Key]uint64) {
 	if len(c.deduperState) != 0 {
 		log.Warnf("SetDeduperState called but current deduperState is not empty (%d entries being overwritten)", len(state))
@@ -50,6 +55,7 @@ func (c *DeduperStateProcessor) SetDeduperState(state map[deduper.Key]uint64) {
 	c.stateReceived.Store(true)
 }
 
+// Notify processes sensor component event messages.
 func (c *DeduperStateProcessor) Notify(e common.SensorComponentEvent) {
 	if e == common.SensorComponentEventSyncFinished {
 		if !c.stateReceived.Load() {
@@ -94,21 +100,26 @@ func (c *DeduperStateProcessor) generateMessageWithCurrentContext(msg *central.M
 	return message.NewExpiring(c.currentContext, msg)
 }
 
+// Start sensor component.
 func (c *DeduperStateProcessor) Start() error {
 	c.currentContext, c.cancelContext = context.WithCancel(context.Background())
 	return nil
 }
 
+// Stop sensor component.
 func (c *DeduperStateProcessor) Stop(_ error) {}
 
+// Capabilities returns the set of features supported by this sensor.
 func (c *DeduperStateProcessor) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+// ProcessMessage processes messages coming from central.
 func (c *DeduperStateProcessor) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
+// ResponsesC returns the channel where Sensor messages are written to.
 func (c *DeduperStateProcessor) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.responseC
 }
