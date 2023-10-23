@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
+	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -47,7 +48,8 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect bool
+	isReconnect           bool
+	deduperStateProcessor *reconciliation.DeduperStateProcessor
 }
 
 var (
@@ -187,6 +189,13 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
+
+	if s.clientReconcile {
+		s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
+		s.sender.OnSync(func() {
+			s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
+		})
+	}
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
