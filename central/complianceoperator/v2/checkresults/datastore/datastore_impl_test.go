@@ -70,9 +70,9 @@ func (s *complianceCheckResultDataStoreTestSuite) TearDownTest() {
 
 func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	// make sure we have nothing
-	checkResults, err := s.storage.GetAll(s.hasReadCtx)
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)
-	s.Require().Empty(checkResults)
+	s.Require().Empty(checkResultIDs)
 
 	rec1 := getTestRec(fixtureconsts.Cluster1)
 	rec2 := getTestRec(fixtureconsts.Cluster2)
@@ -96,9 +96,9 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 
 func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 	// make sure we have nothing
-	checkResults, err := s.storage.GetAll(s.hasReadCtx)
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)
-	s.Require().Empty(checkResults)
+	s.Require().Empty(checkResultIDs)
 
 	rec1 := getTestRec(fixtureconsts.Cluster1)
 	rec2 := getTestRec(fixtureconsts.Cluster2)
@@ -124,9 +124,9 @@ func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
 
 func (s *complianceCheckResultDataStoreTestSuite) TestSearchCheckResults() {
 	// make sure we have nothing
-	checkResults, err := s.storage.GetAll(s.hasReadCtx)
+	checkResultIDs, err := s.storage.GetIDs(s.hasReadCtx)
 	s.Require().NoError(err)
-	s.Require().Empty(checkResults)
+	s.Require().Empty(checkResultIDs)
 
 	rec1 := getTestRec(fixtureconsts.Cluster1)
 	rec2 := getTestRec(fixtureconsts.Cluster2)

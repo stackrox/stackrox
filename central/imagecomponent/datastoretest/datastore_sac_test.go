@@ -44,10 +44,8 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
-	s.imageComponentStore, err = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
-	s.nodeComponentStore, err = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
+	s.imageComponentStore = imageComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
+	s.nodeComponentStore = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 }

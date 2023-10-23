@@ -170,7 +170,7 @@ func retrieveRepositoryList(client *registry.Registry) (set.StringSet, error) {
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.ImageName) bool {
 	match := urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
-	if r.cfg.DisableRepoList {
+	if !match || r.cfg.DisableRepoList {
 		return match
 	}
 

@@ -115,7 +115,7 @@ compare_with_stored_metrics() {
 store_metrics() {
     local debug_dump_dir="$1"
     local this_run_metrics
-    local gs_path="gs://stackrox-ci-metrics/${STORE_METRICS}"
+    local gs_path="gs://stackrox-ci-scale-test-results/${STORE_METRICS}"
 
     this_run_metrics=$(echo "${debug_dump_dir}"/stackrox_debug*.zip)
     gsutil cp "${this_run_metrics}" "${gs_path}"

@@ -10,6 +10,7 @@ import {
 import {
     clickDeploymentTabWithFixture,
     exportAndWaitForNetworkPolicyYaml,
+    interactAndWaitForNetworkPoliciesResponse,
     interactAndWaitForSortedViolationsResponses,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -73,14 +74,15 @@ describe('Violations', () => {
         cy.get(selectors.details.subtitle).should('have.text', 'in "ip-masq-agent" Deployment');
     });
 
-    it('should have 4 tabs in the sidepanel', () => {
+    it('should have 5 tabs in the sidepanel', () => {
         visitViolationWithFixture('alerts/alertFirstInAlerts.json');
 
-        cy.get(selectors.details.tabs).should('have.length', 4);
+        cy.get(selectors.details.tabs).should('have.length', 5);
         cy.get(selectors.details.violationTab);
         cy.get(selectors.details.enforcementTab);
         cy.get(selectors.details.deploymentTab);
         cy.get(selectors.details.policyTab);
+        cy.get(selectors.details.networkPoliciesTab);
     });
 
     it('should have runtime violation information in the Violations tab', () => {
@@ -162,14 +164,17 @@ describe('Violations', () => {
         cy.on('uncaught:exception', () => false);
 
         visitViolationWithFixture('alerts/alertWithEmptyContainerConfig.json');
-        clickDeploymentTabWithFixture('alerts/deploymentWithEmptyContainerConfig.json');
+        interactAndWaitForNetworkPoliciesResponse(() => {
+            cy.get(selectors.details.networkPoliciesTab).click();
+        });
 
-        cy.get(selectors.deployment.networkPolicy).scrollIntoView();
+        const networkPoliciesSelector = `article:has('h3:contains("Network policies")')`;
+        const networkPolicyModalSelector = '[role="dialog"]:contains("Network policy details")';
 
         // Check for substrings in the YAML code editor
-        cy.get(`${selectors.deployment.networkPolicy} button:contains("central-db")`).click();
-        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: central-db")`);
-        cy.get(`${selectors.deployment.networkPolicyModal}`)
+        cy.get(`${networkPoliciesSelector} button:contains("central-db")`).click();
+        cy.get(`${networkPolicyModalSelector} *:contains("Policy name: central-db")`);
+        cy.get(`${networkPolicyModalSelector}`)
             .invoke('text')
             .should('to.match', /name:\s*central-db/)
             .should('to.match', /namespace:\s*stackrox/);
@@ -181,11 +186,11 @@ describe('Violations', () => {
         });
 
         // Close the modal and try another network policy
-        cy.get(`${selectors.deployment.networkPolicyModal} button[aria-label="Close"]`).click();
+        cy.get(`${networkPolicyModalSelector} button[aria-label="Close"]`).click();
 
-        cy.get(`${selectors.deployment.networkPolicy} button:contains("sensor")`).click();
-        cy.get(`${selectors.deployment.networkPolicyModal} *:contains("Policy name: sensor")`);
-        cy.get(`${selectors.deployment.networkPolicyModal}`)
+        cy.get(`${networkPoliciesSelector} button:contains("sensor")`).click();
+        cy.get(`${networkPolicyModalSelector} *:contains("Policy name: sensor")`);
+        cy.get(`${networkPolicyModalSelector}`)
             .invoke('text')
             .should('to.match', /name:\s*sensor/)
             .should('to.match', /namespace:\s*stackrox/);

@@ -10,6 +10,7 @@ import (
 	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	podStore "github.com/stackrox/rox/central/pod/store"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
+	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -35,16 +36,18 @@ type datastoreImpl struct {
 	podSearcher podSearch.Searcher
 
 	indicators    piDS.DataStore
+	plops         plopDS.DataStore
 	processFilter filter.Filter
 
 	keyedMutex *concurrency.KeyedMutex
 }
 
-func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indicators piDS.DataStore, processFilter filter.Filter) *datastoreImpl {
+func newDatastoreImpl(storage podStore.Store, searcher podSearch.Searcher, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) *datastoreImpl {
 	return &datastoreImpl{
 		podStore:      storage,
 		podSearcher:   searcher,
 		indicators:    indicators,
+		plops:         plops,
 		processFilter: processFilter,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
@@ -172,7 +175,16 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
-	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
+
+	errIndicators := ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
+
+	errPlop := ds.plops.RemovePlopsByPod(deleteIndicatorsCtx, id)
+
+	if errIndicators != nil {
+		return errIndicators
+	}
+
+	return errPlop
 }
 
 func (ds *datastoreImpl) GetPodIDs(ctx context.Context) ([]string, error) {

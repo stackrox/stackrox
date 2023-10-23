@@ -60,7 +60,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.26.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.27.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -87,7 +87,7 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:18.0.1'
+    implementation 'io.kubernetes:client-java:19.0.0'
 
     implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.3'
 
@@ -110,7 +110,7 @@ dependencies {
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
-    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.3"
+    implementation "org.glassfish.jaxb:jaxb-runtime:4.0.4"
 
     // Required to make codenarc work with JDK 14.
     // See https://github.com/gradle/gradle/issues/12646.

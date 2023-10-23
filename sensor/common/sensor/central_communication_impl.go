@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
+	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -39,17 +41,21 @@ type centralCommunicationImpl struct {
 	components          []common.SensorComponent
 	clientReconcile     bool
 	initialDeduperState map[deduper.Key]uint64
+	syncTimeout         time.Duration
 
 	stopper concurrency.Stopper
 
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect bool
+	isReconnect           bool
+	deduperStateProcessor *reconciliation.DeduperStateProcessor
 }
 
 var (
-	errCantReconcile = errors.New("unable to reconcile due to deduper payload too large")
+	errCantReconcile                 = errors.New("unable to reconcile")
+	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
+	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
 )
 
 func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector) {
@@ -184,6 +190,13 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	centralReachable.Set(true)
 	defer centralReachable.Set(false)
 
+	if s.clientReconcile {
+		s.deduperStateProcessor.SetDeduperState(s.initialDeduperState)
+		s.sender.OnSync(func() {
+			s.deduperStateProcessor.Notify(common.SensorComponentEventSyncFinished)
+		})
+	}
+
 	// Start receiving and sending with central.
 	////////////////////////////////////////////
 	s.allFinished.Add(2)
@@ -270,11 +283,23 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	}
 	log.Info("Waiting for deduper state from Central")
 
-	msg, err := stream.Recv()
+	done := make(chan struct{})
+	var err error
+	var msg *central.MsgToSensor
+	go func() {
+		msg, err = stream.Recv()
+		close(done)
+	}()
+	select {
+	case <-time.After(s.syncTimeout):
+		return errTimeoutWaitingForDeduperState
+	case <-done:
+		break
+	}
 	if err != nil {
 		if e, ok := status.FromError(err); ok {
 			if e.Code() == codes.ResourceExhausted {
-				return errors.Wrap(errCantReconcile, e.String())
+				return errors.Wrap(errLargePayload, e.String())
 			}
 		}
 		return errors.Wrap(err, "receiving initial deduper sync")

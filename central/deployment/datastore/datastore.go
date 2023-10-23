@@ -88,10 +88,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	dbstore := pgStore.FullStoreWrap(pgStore.New(pool))
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.NewV2(dbstore, indexer)
-	imageStore, err := imageDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
 	processBaselineStore, err := pbDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -100,10 +97,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	riskStore, err := riskDS.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
 	processFilter := processIndicatorFilter.Singleton()
 	clusterRanker := ranking.ClusterRanker()
 	namespaceRanker := ranking.NamespaceRanker()

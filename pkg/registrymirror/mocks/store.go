@@ -109,21 +109,6 @@ func (mr *MockStoreMockRecorder) PullSources(srcImage any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullSources", reflect.TypeOf((*MockStore)(nil).PullSources), srcImage)
 }
 
-// ReconcileDelete mocks base method.
-func (m *MockStore) ReconcileDelete(resType, resID string, resHash uint64) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReconcileDelete", resType, resID, resHash)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ReconcileDelete indicates an expected call of ReconcileDelete.
-func (mr *MockStoreMockRecorder) ReconcileDelete(resType, resID, resHash any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReconcileDelete", reflect.TypeOf((*MockStore)(nil).ReconcileDelete), resType, resID, resHash)
-}
-
 // UpsertImageContentSourcePolicy mocks base method.
 func (m *MockStore) UpsertImageContentSourcePolicy(icsp *v1alpha1.ImageContentSourcePolicy) error {
 	m.ctrl.T.Helper()

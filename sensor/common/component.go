@@ -20,6 +20,9 @@ const (
 
 	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
 	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
+
+	// SensorComponentEventSyncFinished denotes that Sensor finished initial sync.
+	SensorComponentEventSyncFinished SensorComponentEvent = "sync-finished"
 )
 
 // LogSensorComponentEvent returns a unified string for logging the transition between component states/

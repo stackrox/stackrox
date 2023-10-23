@@ -23,8 +23,7 @@ func BenchmarkNodes(b *testing.B) {
 		))
 
 	testDB := pgtest.ForT(b)
-	nodeDS, err := GetTestPostgresDataStore(b, testDB.DB)
-	require.NoError(b, err)
+	nodeDS := GetTestPostgresDataStore(b, testDB.DB)
 	defer testDB.Teardown(b)
 
 	fakeNode := fixtures.GetNodeWithUniqueComponents(100, 100)
@@ -42,17 +41,15 @@ func BenchmarkNodes(b *testing.B) {
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds - 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, fakeNode)
+			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
-		require.NoError(b, err)
 	})
 
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.Scan.ScanTime.Seconds + 500
 		for i := 0; i < b.N; i++ {
-			err = nodeDS.UpsertNode(ctx, fakeNode)
+			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
-		require.NoError(b, err)
 	})
 
 	b.Run("searchAll", func(b *testing.B) {
