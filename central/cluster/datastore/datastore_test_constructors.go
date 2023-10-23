@@ -43,10 +43,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (DataStore, error)
 	if err != nil {
 		return nil, err
 	}
-	nodeStore, err := nodeDataStore.GetTestPostgresDataStore(t, pool)
-	if err != nil {
-		return nil, err
-	}
+	nodeStore := nodeDataStore.GetTestPostgresDataStore(t, pool)
 	podStore, err := podDataStore.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err

@@ -156,7 +156,7 @@ func (suite *ManagerTestSuite) TestHandleResourceAlerts() {
 
 	// unfortunately because the filters are in a different package and have unexported functions it cannot be tested here. Alert Manager tests should cover it
 	suite.alertManager.EXPECT().
-		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any(), gomock.Any()).
+		AlertAndNotify(gomock.Any(), alerts, gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(set.NewStringSet(), nil)
 
 	// reprocessor.ReprocessRiskForDeployments should _not_ be called for resource alerts

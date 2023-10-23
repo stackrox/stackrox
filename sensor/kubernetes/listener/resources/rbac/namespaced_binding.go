@@ -13,8 +13,9 @@ type namespacedBindingID struct {
 }
 
 type namespacedBinding struct {
-	roleRef  namespacedRoleRef   // The role that the subjects are bound to.
-	subjects []namespacedSubject // The subjects that are bound to the referenced role.
+	bindingID string
+	roleRef   namespacedRoleRef   // The role that the subjects are bound to.
+	subjects  []namespacedSubject // The subjects that are bound to the referenced role.
 }
 
 func (b *namespacedBindingID) IsClusterBinding() bool {
@@ -65,8 +66,9 @@ func roleBindingToNamespacedBinding(roleBinding *v1.RoleBinding) (*namespacedBin
 	ref, isClusterRole := roleBindingToNamespacedRoleRef(roleBinding)
 
 	return &namespacedBinding{
-		subjects: subjects,
-		roleRef:  ref,
+		bindingID: string(roleBinding.GetUID()),
+		subjects:  subjects,
+		roleRef:   ref,
 	}, isClusterRole
 }
 
@@ -80,7 +82,8 @@ func clusterRoleBindingToNamespacedBinding(clusterRoleBinding *v1.ClusterRoleBin
 		}
 	}
 	return &namespacedBinding{
-		subjects: subjects,
-		roleRef:  clusterRoleBindingToNamespacedRoleRef(clusterRoleBinding),
+		bindingID: string(clusterRoleBinding.GetUID()),
+		subjects:  subjects,
+		roleRef:   clusterRoleBindingToNamespacedRoleRef(clusterRoleBinding),
 	}
 }

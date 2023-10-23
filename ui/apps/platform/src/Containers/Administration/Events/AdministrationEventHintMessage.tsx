@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { CodeBlock, Flex } from '@patternfly/react-core';
+import { CodeBlock, CodeBlockCode, Flex } from '@patternfly/react-core';
 
 import { AdministrationEvent } from 'services/AdministrationEventsService';
 
@@ -17,7 +17,9 @@ function AdministrationEventHintMessage({
     return (
         <Flex direction={{ default: 'column' }}>
             {hint && <AdministrationEventHint hint={hint} />}
-            <CodeBlock>{message}</CodeBlock>
+            <CodeBlock>
+                <CodeBlockCode>{message}</CodeBlockCode>
+            </CodeBlock>
         </Flex>
     );
 }

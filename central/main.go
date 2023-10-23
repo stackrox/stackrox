@@ -184,6 +184,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -399,9 +400,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processBaselineService.Singleton(),
 		administrationUsageService.Singleton(),
 		rbacService.Singleton(),
-		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
-		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
@@ -425,8 +424,9 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
-		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
@@ -475,6 +475,16 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 			panic(err)
 		}
 	}
+}
+
+// Returns API rate limiter for gRPC/HTTP/Stream requests made to central.
+func newAPIRateLimiter() ratelimit.RateLimiter {
+	apiRequestLimitPerSec := env.CentralAPIRateLimitPerSecond.IntegerSetting()
+	if apiRequestLimitPerSec < 0 {
+		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
+	}
+
+	return ratelimit.NewRateLimiter(apiRequestLimitPerSec)
 }
 
 func startGRPCServer() {
@@ -543,6 +553,7 @@ func startGRPCServer() {
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
+		RateLimiter:        newAPIRateLimiter(),
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
@@ -775,7 +786,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/api/product/usage/secured-units/csv",
+			Route:         "/api/administration/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
 			Compression:   true,

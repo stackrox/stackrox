@@ -16,6 +16,7 @@ import {
 
 import { networkBasePath } from 'routePaths';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
+import usePermissions from 'hooks/usePermissions';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import CidrBlockSideBar from './cidr/CidrBlockSideBar';
@@ -73,6 +74,9 @@ const TopologyComponent = ({
     edgeState,
     scopeHierarchy,
 }: TopologyComponentProps) => {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
+
     const firstRenderRef = useRef(true);
     const history = useHistory();
     const controller = useVisualizationController();
@@ -173,14 +177,16 @@ const TopologyComponent = ({
         <TopologyView
             sideBar={
                 <TopologySideBar resizable onClose={closeSidebar}>
-                    {simulation.isOn && simulation.type === 'networkPolicy' && (
-                        <NetworkPolicySimulatorSidePanel
-                            simulator={simulator}
-                            setNetworkPolicyModification={setNetworkPolicyModification}
-                            scopeHierarchy={scopeHierarchy}
-                            scopeDeploymentCount={deploymentCount ?? 0}
-                        />
-                    )}
+                    {hasReadAccessForNetworkPolicy &&
+                        simulation.isOn &&
+                        simulation.type === 'networkPolicy' && (
+                            <NetworkPolicySimulatorSidePanel
+                                simulator={simulator}
+                                setNetworkPolicyModification={setNetworkPolicyModification}
+                                scopeHierarchy={scopeHierarchy}
+                                scopeDeploymentCount={deploymentCount ?? 0}
+                            />
+                        )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (
                         <NamespaceSideBar
                             namespaceId={selectedNode.id}

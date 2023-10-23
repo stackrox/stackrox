@@ -140,7 +140,7 @@ func (b *backendImpl) Revoke(ctx context.Context, id string) error {
 	}
 
 	if err := b.store.Revoke(ctx, id); err != nil {
-		return errors.Wrap(err, "revoking init bundle")
+		return errors.Wrapf(err, "revoking init bundle %q", id)
 	}
 
 	return nil
@@ -153,7 +153,7 @@ func (b *backendImpl) CheckRevoked(ctx context.Context, id string) error {
 
 	bundleMeta, err := b.store.Get(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "retrieving init bundle")
+		return errors.Wrapf(err, "retrieving init bundle %q", id)
 	}
 
 	if bundleMeta.GetIsRevoked() {
@@ -187,7 +187,7 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 			log.Errorf("init bundle cert is revoked: %q", bundleID)
 			return errors.Wrapf(err, "init bundle verification failed %q", bundleID[0])
 		}
-		return errors.Wrap(err, "failed checking init bundle status")
+		return errors.Wrapf(err, "failed checking init bundle status %q", bundleID[0])
 	}
 
 	return nil

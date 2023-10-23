@@ -8,10 +8,13 @@ import services.ClusterService
 import services.DeploymentService
 import services.ImageService
 import util.Timer
+import util.Env
 
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
+@Tag("PZ")
 class DeploymentTest extends BaseSpecification {
     private static final String DEPLOYMENT_NAME = "image-join"
     // The image name in quay.io includes the SHA from the original image
@@ -20,6 +23,7 @@ class DeploymentTest extends BaseSpecification {
         "quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
     private static final String DEPLOYMENT_IMAGE_SHA =
         "b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e"
+    private static final String CVE_NO = "CVE-2018-18314"
     private static final String GKE_ORCHESTRATOR_DEPLOYMENT_NAME = "kube-dns"
     private static final String OPENSHIFT_ORCHESTRATOR_DEPLOYMENT_NAME = "apiserver"
     private static final String STACKROX_DEPLOYMENT_NAME = "sensor"
@@ -66,6 +70,8 @@ class DeploymentTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
+    // ROX-16332: scannings issues with MA images
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify deployment -> image links #query"() {
         when:
         Timer t = new Timer(3, 10)
@@ -85,17 +91,19 @@ class DeploymentTest extends BaseSpecification {
         query                                                            | _
         "Image:"+DEPLOYMENT_IMAGE_NAME                                   | _
         "Image Sha:sha256:"+DEPLOYMENT_IMAGE_SHA                         | _
-        "CVE:CVE-2018-18314"                                             | _
-        "CVE:CVE-2018-18314+Fixable:true"                                | _
+        "CVE:"+CVE_NO                                                    | _
+        "CVE:"+CVE_NO+"+Fixable:true"                                    | _
         "Deployment:${DEPLOYMENT_NAME}+Image:r/quay.io.*"                | _
         "Image:r/quay.io.*"                                              | _
         "Image:!stackrox.io"                                             | _
         "Deployment:${DEPLOYMENT_NAME}+Image:!stackrox.io"               | _
-        "Image Remote:rhacs-eng/qa-multi-arch+Image Registry:quay.io"               | _
+        "Image Remote:rhacs-eng/qa-multi-arch+Image Registry:quay.io"    | _
     }
 
     @Unroll
     @Tag("BAT")
+    // ROX-16332: scanning issues with MA images
+    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify image -> deployment links #query"() {
         when:
         Timer t = new Timer(3, 10)

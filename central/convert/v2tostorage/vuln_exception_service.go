@@ -1,10 +1,15 @@
-package storagetov2
+package v2tostorage
 
 import (
+	"context"
+
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // VulnerabilityRequest converts *v2.VulnerabilityException to *storage.VulnerabilityRequest.
@@ -17,13 +22,13 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		Id:          vulnException.GetId(),
 		Name:        vulnException.GetName(),
 		TargetState: convertVulnerabilityState(vulnException.GetTargetState()),
-		Status:      convertRequestStatus(vulnException.GetStatus()),
+		Status:      requestStatus(vulnException.GetStatus()),
 		Expired:     vulnException.GetExpired(),
 		Requestor:   convertUser(vulnException.GetRequester()),
 		Approvers:   convertUsers(vulnException.GetApprovers()),
 		LastUpdated: vulnException.GetLastUpdated(),
-		Comments:    convertRequestComments(vulnException.GetComments()),
-		Scope:       convertScope(vulnException.GetScope()),
+		Comments:    requestComments(vulnException.GetComments()),
+		Scope:       requestScope(vulnException.GetScope()),
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
 				Cves: vulnException.GetCves(),
@@ -34,7 +39,7 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 
 	if vulnException.GetDeferralReq() != nil {
 		out.Req = &storage.VulnerabilityRequest_DeferralReq{
-			DeferralReq: convertDeferralReq(vulnException.GetDeferralReq()),
+			DeferralReq: deferralRequest(vulnException.GetDeferralReq()),
 		}
 	} else if vulnException.GetFpRequest() != nil {
 		out.Req = &storage.VulnerabilityRequest_FpRequest{
@@ -42,16 +47,106 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		}
 	}
 
-	if vulnException.GetDeferralReqUpdate() != nil {
-		out.UpdatedReq = &storage.VulnerabilityRequest_UpdatedDeferralReq{
-			UpdatedDeferralReq: convertDeferralReq(vulnException.GetDeferralReqUpdate()),
+	if vulnException.GetDeferralUpdate() != nil {
+		out.UpdatedReq = &storage.VulnerabilityRequest_DeferralUpdate{
+			DeferralUpdate: DeferralUpdate(vulnException.GetDeferralUpdate()),
+		}
+	} else if vulnException.GetFalsePositiveUpdate() != nil {
+		out.UpdatedReq = &storage.VulnerabilityRequest_FalsePositiveUpdate{
+			FalsePositiveUpdate: FalsePositiveUpdate(vulnException.GetFalsePositiveUpdate()),
 		}
 	}
-
 	return out
 }
 
-func convertRequestStatus(status v2.ExceptionStatus) storage.RequestStatus {
+// DeferVulnerabilityRequest converts a *v2.CreateDeferVulnerabilityExceptionRequest to a *storage.VulnerabilityRequest.
+func DeferVulnerabilityRequest(ctx context.Context, req *v2.CreateDeferVulnerabilityExceptionRequest) *storage.VulnerabilityRequest {
+	now := types.TimestampNow()
+	ret := &storage.VulnerabilityRequest{
+		CreatedAt:   now,
+		LastUpdated: now,
+		TargetState: storage.VulnerabilityState_DEFERRED,
+		Status:      storage.RequestStatus_PENDING,
+		Requestor:   authn.UserFromContext(ctx),
+		Scope:       requestScope(req.GetScope()),
+	}
+	if req.GetExceptionExpiry() != nil {
+		ret.Req = &storage.VulnerabilityRequest_DeferralReq{
+			DeferralReq: &storage.DeferralRequest{
+				Expiry: requestExpiry(req.GetExceptionExpiry()),
+			},
+		}
+	}
+	if len(req.GetCves()) > 0 {
+		ret.Entities = &storage.VulnerabilityRequest_Cves{
+			Cves: &storage.VulnerabilityRequest_CVEs{
+				Cves: req.GetCves(),
+			},
+		}
+	}
+	if comment := req.GetComment(); comment != "" {
+		ret.Comments = []*storage.RequestComment{
+			{
+				Id:        uuid.NewV4().String(),
+				CreatedAt: now,
+				Message:   comment,
+				User:      authn.UserFromContext(ctx),
+			},
+		}
+	}
+	return ret
+}
+
+// FalsePositiveVulnerabilityRequest converts a *v2.CreateFalsePositiveVulnerabilityExceptionRequest to a *storage.VulnerabilityRequest.
+func FalsePositiveVulnerabilityRequest(ctx context.Context, req *v2.CreateFalsePositiveVulnerabilityExceptionRequest) *storage.VulnerabilityRequest {
+	now := types.TimestampNow()
+	ret := &storage.VulnerabilityRequest{
+		CreatedAt:   now,
+		LastUpdated: now,
+		TargetState: storage.VulnerabilityState_FALSE_POSITIVE,
+		Status:      storage.RequestStatus_PENDING,
+		Requestor:   authn.UserFromContext(ctx),
+		Req: &storage.VulnerabilityRequest_FpRequest{
+			FpRequest: &storage.FalsePositiveRequest{},
+		},
+		Scope: requestScope(req.GetScope()),
+	}
+	if len(req.GetCves()) > 0 {
+		ret.Entities = &storage.VulnerabilityRequest_Cves{
+			Cves: &storage.VulnerabilityRequest_CVEs{
+				Cves: req.GetCves(),
+			},
+		}
+	}
+	if comment := req.GetComment(); comment != "" {
+		ret.Comments = []*storage.RequestComment{
+			{
+				Id:        uuid.NewV4().String(),
+				CreatedAt: now,
+				Message:   comment,
+				User:      authn.UserFromContext(ctx),
+			},
+		}
+	}
+	return ret
+}
+
+// DeferralUpdate converts *v2.DeferralUpdate object to *storage.DeferralUpdate object.
+func DeferralUpdate(update *v2.DeferralUpdate) *storage.DeferralUpdate {
+	return &storage.DeferralUpdate{
+		CVEs:   update.GetCves(),
+		Expiry: requestExpiry(update.GetExpiry()),
+	}
+}
+
+// FalsePositiveUpdate converts *v2.FalsePositiveUpdate object to  *storage.FalsePositiveUpdate.
+func FalsePositiveUpdate(update *v2.FalsePositiveUpdate) *storage.FalsePositiveUpdate {
+	return &storage.FalsePositiveUpdate{
+		CVEs: update.GetCVEs(),
+	}
+}
+
+func requestStatus(status v2.ExceptionStatus) storage.RequestStatus {
 	switch status {
 	case v2.ExceptionStatus_PENDING:
 		return storage.RequestStatus_PENDING
@@ -67,7 +162,7 @@ func convertRequestStatus(status v2.ExceptionStatus) storage.RequestStatus {
 	}
 }
 
-func convertRequestComments(comments []*v2.Comment) []*storage.RequestComment {
+func requestComments(comments []*v2.Comment) []*storage.RequestComment {
 	if len(comments) == 0 {
 		return nil
 	}
@@ -87,7 +182,7 @@ func convertRequestComments(comments []*v2.Comment) []*storage.RequestComment {
 	return ret
 }
 
-func convertScope(scope *v2.VulnerabilityException_Scope) *storage.VulnerabilityRequest_Scope {
+func requestScope(scope *v2.VulnerabilityException_Scope) *storage.VulnerabilityRequest_Scope {
 	if scope == nil || scope.GetImageScope() == nil {
 		return nil
 	}
@@ -103,18 +198,18 @@ func convertScope(scope *v2.VulnerabilityException_Scope) *storage.Vulnerability
 	}
 }
 
-func convertDeferralReq(r *v2.DeferralRequest) *storage.DeferralRequest {
+func deferralRequest(r *v2.DeferralRequest) *storage.DeferralRequest {
 	if r == nil {
 		return nil
 	}
 	return &storage.DeferralRequest{
-		Expiry: convertRequestExpiry(r.GetExpiry()),
+		Expiry: requestExpiry(r.GetExpiry()),
 	}
 }
 
-func convertRequestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
+func requestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
 	ret := &storage.RequestExpiry{
-		ExpiryType: convertExpiryType(expiry.GetExpiryType()),
+		ExpiryType: requestExpiryType(expiry.GetExpiryType()),
 	}
 	if expiry.GetExpiryType() == v2.ExceptionExpiry_TIME {
 		ret.Expiry = &storage.RequestExpiry_ExpiresOn{
@@ -128,7 +223,7 @@ func convertRequestExpiry(expiry *v2.ExceptionExpiry) *storage.RequestExpiry {
 	return ret
 }
 
-func convertExpiryType(t v2.ExceptionExpiry_ExpiryType) storage.RequestExpiry_ExpiryType {
+func requestExpiryType(t v2.ExceptionExpiry_ExpiryType) storage.RequestExpiry_ExpiryType {
 	switch t {
 	case v2.ExceptionExpiry_TIME:
 		return storage.RequestExpiry_TIME
@@ -137,7 +232,7 @@ func convertExpiryType(t v2.ExceptionExpiry_ExpiryType) storage.RequestExpiry_Ex
 	case v2.ExceptionExpiry_ANY_CVE_FIXABLE:
 		return storage.RequestExpiry_ANY_CVE_FIXABLE
 	default:
-		utils.Should(errors.Errorf("unhandled expiry type encountered %s", t))
+		utils.Should(errors.Errorf("unhandled requestExpiry type encountered %s", t))
 		return storage.RequestExpiry_TIME
 	}
 }

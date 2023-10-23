@@ -158,8 +158,7 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 	storage := imageCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
 	indexer := imageCVEPostgres.NewIndexer(testDB.DB)
 	searcher := imageCVESearch.New(storage, indexer)
-	datastore, err := imageCVEDS.New(storage, searcher, nil)
-	assert.NoError(t, err)
+	datastore := imageCVEDS.New(storage, searcher, nil)
 
 	return datastore
 }

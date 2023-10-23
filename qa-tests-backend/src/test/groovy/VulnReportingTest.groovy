@@ -65,6 +65,7 @@ class VulnReportingTest extends BaseSpecification {
         orchestrator.deleteNamespace(SECONDARY_NAMESPACE)
     }
 
+    @IgnoreIf({ true }) // temporarily skipped until this is migrated to use V2 API
     @Tag("BAT")
     def "Verify vulnerability generated using a collection sends an email with a valid report attachment"() {
         given:

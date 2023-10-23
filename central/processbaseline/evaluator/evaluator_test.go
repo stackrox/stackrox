@@ -51,17 +51,8 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			shouldBePersisted:          true,
 		},
 		{
-			name:     "Process Baseline exists, but not locked",
-			baseline: &storage.ProcessBaseline{},
-			indicators: []*storage.ProcessIndicator{
-				{
-					Signal: &storage.ProcessSignal{
-						Name: "apt-get",
-						Args: "install nmap",
-					},
-					ContainerName: deployment.GetContainers()[0].GetName(),
-				},
-			},
+			name:                       "Process Baseline exists, but not locked",
+			baseline:                   &storage.ProcessBaseline{},
 			baselineStatuses:           makeBaselineStatuses(t, "UNLOCKED", "UNLOCKED"),
 			anomalousProcessesExecuted: []bool{false, false},
 			currentBaselineResults:     nil,
@@ -277,7 +268,9 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			mockResults := processBaselineResultMocks.NewMockDataStore(mockCtrl)
 
 			mockBaselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.baseline, c.baseline != nil, c.baselineErr)
-			mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
+			if c.indicators != nil {
+				mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
+			}
 
 			expectedBaselineResult := &storage.ProcessBaselineResults{
 				DeploymentId: deployment.GetId(),

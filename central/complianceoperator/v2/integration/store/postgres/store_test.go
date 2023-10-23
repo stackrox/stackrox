@@ -98,9 +98,6 @@ func (s *ComplianceIntegrationsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceIntegrations))
-	allComplianceIntegration, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.ElementsMatch(complianceIntegrations, allComplianceIntegration)
 
 	complianceIntegrationCount, err = store.Count(ctx)
 	s.NoError(err)

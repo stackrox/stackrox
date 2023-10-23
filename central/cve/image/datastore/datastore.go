@@ -35,7 +35,7 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
+func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) DataStore {
 	ds := &datastoreImpl{
 		storage:  storage,
 		searcher: searcher,
@@ -43,14 +43,12 @@ func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence)
 		cveSuppressionCache: make(common.CVESuppressionCache),
 		keyFence:            kf,
 	}
-	if err := ds.buildSuppressedCache(); err != nil {
-		return nil, err
-	}
-	return ds, nil
+	ds.buildSuppressedCache()
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	indexer := pgStore.NewIndexer(pool)
 	searcher := search.New(dbstore, indexer)

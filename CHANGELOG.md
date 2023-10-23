@@ -13,11 +13,11 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-18525, ROX-19158: A new `cluster` flag has been added to the `roxctl` commands and APIs that perform image scans, this enables delegating scans to specific secured clusters on demand.
 - ROX-19156: Ad-hoc image scanning is now enabled for images in the OCP integrated registry.
   - RHACS attempts to infer the OCP project name from the image path and utilize the project secrets for registry authentication.
-
-- ROX-19561: A new environment variable, `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS`, has been introduced in Central, with a default value of `0` (unlimited).
-  When a value greater than `0` is assigned to it, it serves as a limit on the number of sensors performing initial synchronization.
-  This synchronization occurs once sensors establish a connection with Central. It is recommended to set this limit when a significant
-  number of secured clusters are connected to a single Central instance.
+- ROX-19561: Few new environment variables have been introduced in Central. They can be used to rate limit API requests and Sensor communications.
+  - `ROX_CENTRAL_MAX_INIT_SYNC_SENSORS` functions as a restriction on the quantity of Sensors engaged in their initial synchronization process. It is set to a default value `0` (unlimited).
+    This synchronization occurs once Sensor establishes a connection with Central. It is recommended to set this limit when a significant number of secured clusters are connected to a single Central instance to avoid resource exhaustion.
+  - `ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND` setting functions as a global rate limiter for all API requests directed to Central. It is set to a default value `0` (unlimited).
+    The primary objective of this configuration is to serve as a protective measure against Distributed Denial of Service (DDoS) attacks on Central.
 
 ### Removed Features
 
@@ -36,7 +36,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   are required to be title-cased.
 - ROX-14701: Starting from 4.3.0 release, `roxctl` binaries for `ppc64le` and `s390x` architectures are available for download from `https://mirror.openshift.com/pub/rhacs/assets/<version>/Linux/roxctl-<ppc64le|s390x>` (e.g. <https://mirror.openshift.com/pub/rhacs/assets/4.3.0/Linux/roxctl-s390x>).
 - The experimental API `/v1/product/usage` has been renamed to `/v1/administration/usage`.
+- ROX-19566: The results of registry TLS checks made by Sensor are now cached (for 15 minutes by default, which can be changed by setting the `ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL` environment variable). This will result in faster Sensor startup times in clusters with a large number of pull secrets.
 - Risk reprocessing has been shifted from being potentially computed every 15 seconds to 10 minutes. This will improve system performance by debouncing expensive risk calculations.
+- ROX-20303: Fixed a bug that may have incorrectly matched an image to an image integration during scanning.
 
 ## [4.2.0]
 
