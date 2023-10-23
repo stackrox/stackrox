@@ -254,13 +254,13 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
-    		-I$(GOGO_DIR) \
-    		-I$(PROTOC_INCLUDES) \
-    		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
-    		-I$(SCANNER_PROTO_BASE_PATH) \
-    		--proto_path=$(PROTO_BASE_PATH) \
-    		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
-    		$<
+		-I$(GOGO_DIR) \
+		-I$(PROTOC_INCLUDES) \
+		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+		-I$(SCANNER_PROTO_BASE_PATH) \
+		--proto_path=$(PROTO_BASE_PATH) \
+		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+		$<
 
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2)
