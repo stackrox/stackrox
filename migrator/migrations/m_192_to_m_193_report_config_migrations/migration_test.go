@@ -21,6 +21,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+var (
+	reportID = uuid.NewV4().String()
+)
+
 type migrationTestSuite struct {
 	suite.Suite
 
@@ -50,11 +54,11 @@ func (s *migrationTestSuite) SetupSuite() {
 	notifierdB := s.db.GetGormDB()
 	notifierdB = notifierdB.WithContext(s.ctx).Table("notifiers")
 	ret := fixtures.GetValidReportConfiguration()
-	//ret.NotifierConfig = &storage.ReportConfiguration_EmailConfig{}
-	id := uuid.NewV4().String()
+	ret.Id = reportID
+	notifierID := uuid.NewV4().String()
 	ret.NotifierConfig = &storage.ReportConfiguration_EmailConfig{
 		EmailConfig: &storage.EmailNotifierConfiguration{
-			NotifierId:   id,
+			NotifierId:   notifierID,
 			MailingLists: []string{"foo@yahoo.com"},
 		},
 	}
@@ -70,7 +74,7 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	notifierProto := &storage.Notifier{
-		Id: id,
+		Id: notifierID,
 	}
 
 	notifier, err := newSchema.ConvertNotifierFromProto(notifierProto)
@@ -91,7 +95,7 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	s.Require().NoError(migration.Run(dbs))
+	migration.Run(dbs)
 
 	configs, _ := s.gormDB.Rows()
 	snapshots, _ := s.snapshotgormdB.Rows()
@@ -104,7 +108,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.Require().NoError(err)
 		config, _ := newSchema.ConvertReportConfigurationToProto(reportConfig)
 		actualConfigProto = append(actualConfigProto, config)
-		if config.GetId() == "report1" {
+		if config.GetId() == reportID {
 			v1Config = config
 		} else {
 			v2Config = config

@@ -93,19 +93,19 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 	return nil
 }
 
-func checkifNotifierExsists(notifiertID string, database *types.Databases) (bool, error) {
-	sql := fmt.Sprintf(
-		"SELECT serialized FROM %s WHERE id = $1",
-		updatedSchema.NotifiersTableName)
-	row, err := database.PostgresDB.Query(database.DBCtx, sql, notifiertID)
-	if err != nil {
-		return false, err
-	}
-	if row.Next() {
-		return true, nil
-	}
-	return false, nil
-}
+//func checkifNotifierExsists(notifiertID string, database *types.Databases) (bool, error) {
+//	sql := fmt.Sprintf(
+//		"SELECT serialized FROM %s WHERE id = $1",
+//		updatedSchema.NotifiersTableName)
+//	row, err := database.PostgresDB.Query(database.DBCtx, sql, notifiertID)
+//	if err != nil {
+//		return false, err
+//	}
+//	if row.Next() {
+//		return true, nil
+//	}
+//	return false, nil
+//}
 
 func getMigratedReportConfigIfExsists(reportID string, database *types.Databases) (bool, *storage.ReportConfiguration, error) {
 	sql := fmt.Sprintf(
@@ -158,7 +158,7 @@ func migrate(database *types.Databases) error {
 			return errors.Wrapf(err, "failed to convert report config  %+v to proto", reportConfigProto)
 		}
 		// skip if version=0 and scope id is not nil since it is v2 config created in tech preview
-		if reportConfigProto.Version == 0 && reportConfigProto.GetResourceScope() != nil {
+		if reportConfigProto.Version == 2 || (reportConfigProto.Version == 0 && reportConfigProto.GetResourceScope() != nil) {
 			reportConfigProto.Version = 2
 			// convert report config proto back to gorm model
 			convertedGormConfig, err := updatedSchema.ConvertReportConfigurationFromProto(reportConfigProto)
@@ -182,16 +182,16 @@ func migrate(database *types.Databases) error {
 			continue
 		}
 
-		notifierFound, err := checkifNotifierExsists(reportConfigProto.GetEmailConfig().GetNotifierId(), database)
-		if err != nil {
-			return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
-		}
-
-		if !notifierFound {
-			log.Infof("Did not find notifier with id %s attached to report config %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
-				reportConfigProto)
-			continue
-		}
+		//notifierFound, err := checkifNotifierExsists(reportConfigProto.GetEmailConfig().GetNotifierId(), database)
+		//if err != nil {
+		//	return errors.Wrapf(err, "failed to query notifier with id %s", reportConfigProto.GetEmailConfig().GetNotifierId())
+		//}
+		//
+		//if !notifierFound {
+		//	log.Infof("Did not find notifier with id %s attached to report config %+v", reportConfigProto.GetEmailConfig().GetNotifierId(),
+		//		reportConfigProto)
+		//	continue
+		//}
 
 		// create v2 report config from v1
 		newConfig := createV2reportConfig(reportConfigProto)
