@@ -605,7 +605,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		log.Infof("Sensor (%s) can do client reconciliation: sending deduper state", c.clusterID)
 
 		// Send hashes to sensor
-		maxEntries := env.MaxDeduperEntriesPerMessage.IntegerSetting()
+		maxEntries := env.GetMaxDeduperEntriesPerMessage()
 		successfulHashes := c.hashDeduper.GetSuccessfulHashes()
 		// If there are no hashes we send the empty map
 		if len(successfulHashes) == 0 {
@@ -613,18 +613,13 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 				return err
 			}
 		}
-		// Since the environment variable can be set to zero or some negative number.
-		// Make sure maxEntries is a valid number to not panic
-		if maxEntries < 1 {
-			maxEntries = 200000
-		}
-		log.Debugf("DeduperState chunk size %d", maxEntries)
 		total := int32(math.Ceil(float64(len(successfulHashes)) / float64(maxEntries)))
+		log.Debugf("DeduperState total number of hashes %d chunk size %d number of chunks to send %d", len(successfulHashes), maxEntries, total)
 		var current int32 = 1
 		payload := make(map[string]uint64)
 		for k, v := range successfulHashes {
 			payload[k] = v
-			if len(payload) == maxEntries {
+			if len(payload) == int(maxEntries) {
 				if err := c.sendDeduperState(server, payload, current, total); err != nil {
 					return err
 				}

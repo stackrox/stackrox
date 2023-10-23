@@ -275,7 +275,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		return nil
 	}
 	log.Info("Waiting for deduper state from Central")
-	var current int32 = 1
+	current := int32(1)
 	deduperState := make(map[string]uint64)
 	for {
 		done := make(chan struct{})
