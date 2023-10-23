@@ -7,10 +7,12 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+// Store the reconciliation store stores a map if resource types and ids.
+// This allows Sensor to reconcile resources after connecting with Central.
 type Store interface {
 	reconcile.Reconcilable
 	Cleanup()
-	Add(resType, id string)
+	Upsert(resType, id string)
 	Remove(resType, id string)
 }
 
@@ -19,6 +21,7 @@ type store struct {
 	resources map[string]set.StringSet
 }
 
+// NewStore creates a new reconciliation Store
 func NewStore() Store {
 	return &store{
 		resources: make(map[string]set.StringSet),
@@ -45,12 +48,14 @@ func (s *store) ReconcileDelete(resType, resID string, _ uint64) (string, error)
 
 var _ Store = (*store)(nil)
 
-func (s *store) Add(resType, id string) {
+// Upsert a resource type and id
+func (s *store) Upsert(resType, id string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.addResourceNoLock(resType, id)
 }
 
+// Remove a resource type and id
 func (s *store) Remove(resType, id string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

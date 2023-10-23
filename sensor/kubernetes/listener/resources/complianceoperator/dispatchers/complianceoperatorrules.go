@@ -59,7 +59,7 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorRule.String(), id)
 	} else {
-		c.reconciliationStore.Add(deduper.TypeComplianceOperatorRule.String(), id)
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorRule.String(), id)
 	}
 	return component.NewEvent(events...)
 }

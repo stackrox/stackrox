@@ -64,7 +64,7 @@ func (c *ScanSettingBindings) ProcessEvent(obj, _ interface{}, action central.Re
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorScanSettingBinding.String(), id)
 	} else {
-		c.reconciliationStore.Add(deduper.TypeComplianceOperatorScanSettingBinding.String(), id)
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), id)
 	}
 	return component.NewEvent(events...)
 }

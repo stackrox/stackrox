@@ -57,7 +57,7 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorScan.String(), string(complianceScan.GetUID()))
 	} else {
-		c.reconciliationStore.Add(deduper.TypeComplianceOperatorScan.String(), string(complianceScan.GetUID()))
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScan.String(), string(complianceScan.GetUID()))
 	}
 	return component.NewEvent(events...)
 }

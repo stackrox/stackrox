@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stretchr/testify/suite"
@@ -78,11 +79,52 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Namespace{Namespace: &storage.NamespaceMetadata{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"ComplianceOperatorProfile": {
+			resType:       deduper.TypeComplianceOperatorProfile.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorProfile{ComplianceOperatorProfile: &storage.ComplianceOperatorProfile{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"ComplianceOperatorRule": {
+			resType:       deduper.TypeComplianceOperatorRule.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorRule{ComplianceOperatorRule: &storage.ComplianceOperatorRule{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"ComplianceOperatorScan": {
+			resType:       deduper.TypeComplianceOperatorScan.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorScan{ComplianceOperatorScan: &storage.ComplianceOperatorScan{Id: testResID}}}},
+			expectedError: nil,
+		},
+		"ComplianceOperatorScanSettingBinding": {
+			resType:       deduper.TypeComplianceOperatorScanSettingBinding.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{Id: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
 			expectedError: errors.New("Not implemented for resource type Unknown"),
 		},
+	}
+	if features.ComplianceEnhancements.Enabled() {
+		cases["ComplianceOperatorResults"] = struct {
+			resType       string
+			expectedMsg   *central.MsgFromSensor_Event
+			expectedError error
+		}{
+			resType:       deduper.TypeComplianceOperatorResult.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorResultV2{ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{Id: testResID}}}},
+			expectedError: nil,
+		}
+	} else {
+		cases["ComplianceOperatorResults"] = struct {
+			resType       string
+			expectedMsg   *central.MsgFromSensor_Event
+			expectedError error
+		}{
+			resType:       deduper.TypeComplianceOperatorResult.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorResult{ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{Id: testResID}}}},
+			expectedError: nil,
+		}
 	}
 
 	for name, c := range cases {
@@ -136,6 +178,31 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetNamespace().GetId()
 		}, nil
+	case deduper.TypeComplianceOperatorProfile.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetComplianceOperatorProfile().GetId()
+		}, nil
+	case deduper.TypeComplianceOperatorResult.String():
+		if features.ComplianceEnhancements.Enabled() {
+			return func(event *central.SensorEvent) string {
+				return event.GetComplianceOperatorResultV2().GetId()
+			}, nil
+		}
+		return func(event *central.SensorEvent) string {
+			return event.GetComplianceOperatorResult().GetId()
+		}, nil
+	case deduper.TypeComplianceOperatorRule.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetComplianceOperatorRule().GetId()
+		}, nil
+	case deduper.TypeComplianceOperatorScan.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetComplianceOperatorScan().GetId()
+		}, nil
+	case deduper.TypeComplianceOperatorScanSettingBinding.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetComplianceOperatorScanSettingBinding().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -176,6 +243,17 @@ func initStore() *InMemoryStoreProvider {
 
 	s.nsStore.addNamespace(&storage.NamespaceMetadata{Id: "1", Name: "a"})
 	s.nsStore.addNamespace(&storage.NamespaceMetadata{Id: "2", Name: "b"})
+
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), "2")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorResult.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorResult.String(), "2")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorRule.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorRule.String(), "2")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScan.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScan.String(), "2")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), "1")
+	s.reconciliationStore.Upsert(deduper.TypeComplianceOperatorScanSettingBinding.String(), "2")
 	return s
 }
 
@@ -373,6 +451,121 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("98", deduper.TypeNamespace): 34567,
 				makeKey("97", deduper.TypeNamespace): 34567,
 				makeKey("1", deduper.TypeNamespace):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Compliance Operator Profile": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeComplianceOperatorProfile): 12345,
+				makeKey("2", deduper.TypeComplianceOperatorProfile): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Compliance Operator Profile": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorProfile): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorProfile):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Compliance Operator Profiles": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorProfile): 34567,
+				makeKey("98", deduper.TypeComplianceOperatorProfile): 34567,
+				makeKey("97", deduper.TypeComplianceOperatorProfile): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorProfile):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Compliance Operator Result": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeComplianceOperatorResult): 12345,
+				makeKey("2", deduper.TypeComplianceOperatorResult): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Compliance Operator Result": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorResult): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorResult):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Compliance Operator Results": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorResult): 34567,
+				makeKey("98", deduper.TypeComplianceOperatorResult): 34567,
+				makeKey("97", deduper.TypeComplianceOperatorResult): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorResult):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Compliance Operator Rule": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeComplianceOperatorRule): 12345,
+				makeKey("2", deduper.TypeComplianceOperatorRule): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Compliance Operator Rule": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorRule): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorRule):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Compliance Operator Rules": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorRule): 34567,
+				makeKey("98", deduper.TypeComplianceOperatorRule): 34567,
+				makeKey("97", deduper.TypeComplianceOperatorRule): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorRule):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Compliance Operator Scan": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeComplianceOperatorScan): 12345,
+				makeKey("2", deduper.TypeComplianceOperatorScan): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Compliance Operator Scan": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorScan): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorScan):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Compliance Operator Scans": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorScan): 34567,
+				makeKey("98", deduper.TypeComplianceOperatorScan): 34567,
+				makeKey("97", deduper.TypeComplianceOperatorScan): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorScan):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
+		},
+		"No Compliance Operator Scan Setting Binding": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding): 12345,
+				makeKey("2", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Compliance Operator Scan Setting Binding": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Compliance Operator Scan Setting Bindings": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
+				makeKey("98", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
+				makeKey("97", deduper.TypeComplianceOperatorScanSettingBinding): 34567,
+				makeKey("1", deduper.TypeComplianceOperatorScanSettingBinding):  12345,
 			},
 			deletedIDs: []string{"97", "98", "99"},
 		},

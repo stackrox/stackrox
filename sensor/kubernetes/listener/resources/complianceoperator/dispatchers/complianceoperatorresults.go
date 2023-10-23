@@ -151,7 +151,7 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 		if action == central.ResourceAction_REMOVE_RESOURCE {
 			c.reconciliationStore.Remove(deduper.TypeComplianceOperatorResult.String(), id)
 		} else {
-			c.reconciliationStore.Add(deduper.TypeComplianceOperatorResult.String(), id)
+			c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorResult.String(), id)
 		}
 		return component.NewEvent(events...)
 	}
@@ -177,7 +177,7 @@ func (c *ResultDispatcher) ProcessEvent(obj, _ interface{}, action central.Resou
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorResult.String(), id)
 	} else {
-		c.reconciliationStore.Add(deduper.TypeComplianceOperatorResult.String(), id)
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorResult.String(), id)
 	}
 	return component.NewEvent(events...)
 }

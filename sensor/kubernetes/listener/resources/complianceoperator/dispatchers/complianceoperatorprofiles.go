@@ -69,7 +69,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
 	} else {
-		c.reconciliationStore.Add(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
 	}
 	return component.NewEvent(events...)
 }
