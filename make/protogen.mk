@@ -12,15 +12,24 @@ ALL_PROTOS_REL = $(ALL_PROTOS:$(PROTO_BASE_PATH)/%=%)
 SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 
 API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
+
+# Space separated list of v2 service proto files to include in API docs
+V2_SERVICES_TO_INCLUDE_IN_DOCS = report_service.proto
+
+V2_SERVICE_PROTOS_REL = $(V2_SERVICES_TO_INCLUDE_IN_DOCS:%=api/v2/%)
+API_SERVICE_PROTOS_V2 = $(filter $(V2_SERVICE_PROTOS_REL), $(SERVICE_PROTOS_REL))
+
 STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/rhel/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
-GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
+MERGED_API_SWAGGER_SPEC_V2 = $(GENERATED_DOC_PATH)/api/v2/swagger.json
+GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference $(GENERATED_DOC_PATH)/api/v2/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
 GENERATED_API_GW_SRCS = $(SERVICE_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.gw.go)
 GENERATED_API_SWAGGER_SPECS = $(API_SERVICE_PROTOS:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
+GENERATED_API_SWAGGER_SPECS_V2 = $(API_SERVICE_PROTOS_V2:%.proto=$(GENERATED_BASE_PATH)/%.swagger.json)
 
 SCANNER_DIR = $(shell go list -f '{{.Dir}}' -m github.com/stackrox/scanner)
 ifneq ($(SCANNER_DIR),)
@@ -142,6 +151,10 @@ printdocs:
 printswaggers:
 	@echo $(GENERATED_API_SWAGGER_SPECS)
 
+.PHONY: printswaggersv2
+printswaggersv2:
+	@echo $(GENERATED_API_SWAGGER_SPECS_V2)
+
 .PHONY: printsrcs
 printsrcs:
 	@echo $(GENERATED_SRCS)
@@ -221,7 +234,7 @@ endif
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the
 # .proto files change.
-$(GENERATED_BASE_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
+$(GENERATED_BASE_PATH)/api/v1/%.swagger.json: $(PROTO_BASE_PATH)/api/v1/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
 	@echo "+ $@"
 ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
@@ -235,14 +248,34 @@ endif
 		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
+
+$(GENERATED_BASE_PATH)/api/v2/%.swagger.json: $(PROTO_BASE_PATH)/api/v2/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(PROTOC_GEN_SWAGGER) $(ALL_PROTOS)
+	@echo "+ $@"
+ifeq ($(SCANNER_DIR),)
+	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
+endif
+	$(SILENT)PATH=$(PROTO_GOBIN) $(PROTOC) \
+    		-I$(GOGO_DIR) \
+    		-I$(PROTOC_INCLUDES) \
+    		-I$(GRPC_GATEWAY_DIR)/third_party/googleapis \
+    		-I$(SCANNER_PROTO_BASE_PATH) \
+    		--proto_path=$(PROTO_BASE_PATH) \
+    		--swagger_out=logtostderr=true,json_names_for_fields=true:$(GENERATED_BASE_PATH) \
+    		$<
+
 # Generate the docs from the merged swagger specs.
 $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" "1" >"$@"
+
+$(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS_V2)
+	@echo "+ $@"
+	$(SILENT)mkdir -p "$(dir $@)"
+	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v2" "2" >"$@"
 
 # Generate the docs from the merged swagger specs.
-$(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
+$(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
 	docker run $(DOCKER_USER) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
