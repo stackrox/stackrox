@@ -110,7 +110,7 @@ func (r *celCompilerForType) CompileCelBasedEvaluator(query *query.Query) (evalu
 		return nil, fmt.Errorf("failed to compile cel: %w", err)
 	}
 	module = CelPrettyPrint(module)
-	log.Infof("Compiled: \n%s", module)
+	// log.Infof("Compiled: \n%s", module)
 	prg, err := compile(module)
 	if err != nil {
 		return nil, err

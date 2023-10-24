@@ -62,6 +62,7 @@ type Maintenance struct {
 	Compaction Compaction `yaml:"compaction"`
 	// Allowing force rollback only to this version.
 	ForceRollbackVersion string `yaml:"forceRollbackVersion"`
+	PolicyEvaluators     string `yaml:"policyEvaluators"`
 }
 
 func (m *Maintenance) applyDefaults() {
