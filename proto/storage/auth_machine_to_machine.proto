@@ -23,7 +23,7 @@ message AuthMachineToMachineConfig {
 
     message Mapping {
         string key                   = 1;
-        string value                 = 2;
+        string value_expression      = 2;
         string role                  = 3 [(gogoproto.moretags) = 'sql:"fk(Role:name),restrict-delete"'];
     }
     repeated Mapping mappings        = 4;

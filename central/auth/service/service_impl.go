@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
@@ -58,9 +57,9 @@ var (
 		},
 	})
 
-	errInvalidToken             = errors.New("invalid token expiration duration given")
-	errInvalidIssuer            = errors.New("invalid token issuer given")
-	errInvalidRegularExpression = errors.New("invalid regular expression given")
+	errInvalidTokenExpiration   = errors.New("invalid token expiration duration provided")
+	errInvalidIssuer            = errors.New("invalid token issuer provided")
+	errInvalidRegularExpression = errors.New("invalid regular expression provided")
 )
 
 type serviceImpl struct {
@@ -196,32 +195,34 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineT
 
 	duration, err := time.ParseDuration(config.GetTokenExpirationDuration())
 	if err != nil {
-		return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidToken, err)
+		return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidTokenExpiration, err)
 	}
 
 	if duration < time.Minute || duration > 24*time.Hour {
-		return errox.InvalidArgs.Newf("token expiration must be between 1 minute and 24 hours, but was %s",
-			duration.String())
+		return fmt.Errorf("%w: %w: token expiration must be between 1 minute and 24 hours, but was %s",
+			errox.InvalidArgs, errInvalidTokenExpiration, duration.String())
 	}
 
 	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetIssuer() == "" {
-		return errox.InvalidArgs.Newf("type %s was used, but no configuration for the issuer was given",
-			storage.AuthMachineToMachineConfig_GENERIC)
+		return fmt.Errorf("%w: %w: type %s was used, but no configuration for the issuer was given",
+			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC)
 	}
 
 	if config.GetIssuer() != "" {
-		_, err := url.Parse(config.GetIssuer())
+		parsedIssuer, err := url.Parse(config.GetIssuer())
 		if err != nil {
 			return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidIssuer, err)
 		}
-		config.Issuer = urlfmt.FormatURL(config.GetIssuer(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+		if parsedIssuer.Scheme == "http" {
+			return fmt.Errorf("%w: %w: HTTPS is required for the issuer", errox.InvalidArgs, errInvalidIssuer)
+		}
 	}
 
 	var regexValidationErrs error
 	for _, mapping := range config.GetMappings() {
-		if _, err := regexp.Compile(mapping.GetValue()); err != nil {
+		if _, err := regexp.Compile(mapping.GetValueExpression()); err != nil {
 			regexValidationErrs = errors.Join(regexValidationErrs,
-				fmt.Errorf("%w: %w", errInvalidRegularExpression, err))
+				fmt.Errorf("%w for key %q: %w", errInvalidRegularExpression, mapping.GetKey(), err))
 		}
 	}
 

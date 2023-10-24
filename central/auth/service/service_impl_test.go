@@ -201,28 +201,28 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			config: &v1.AuthMachineToMachineConfig{
 				Id: "some-id",
 			},
-			err: errox.InvalidArgs,
+			err: errInvalidTokenExpiration,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "1",
 			},
-			err: errInvalidToken,
+			err: errInvalidTokenExpiration,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "1s",
 			},
-			err: errox.InvalidArgs,
+			err: errInvalidTokenExpiration,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "24h1s",
 			},
-			err: errox.InvalidArgs,
+			err: errInvalidTokenExpiration,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
@@ -230,39 +230,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
 			},
-			err: errox.InvalidArgs,
-		},
-		{
-			config: &v1.AuthMachineToMachineConfig{
-				Id:                      "some-id",
-				TokenExpirationDuration: "5m",
-				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
-			},
-			err: errox.InvalidArgs,
-		},
-		{
-			config: &v1.AuthMachineToMachineConfig{
-				Id:                      "some-id",
-				TokenExpirationDuration: "5m",
-				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
-					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole1,
-					},
-					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole2,
-					},
-					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  "This doesn't exist",
-					},
-				},
-			},
-			err: errox.InvalidArgs,
+			err: errInvalidIssuer,
 		},
 		{
 			config: &v1.AuthMachineToMachineConfig{
@@ -279,9 +247,9 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
-						Key:   "some-key",
-						Value: "a(b",
-						Role:  testRole1,
+						Key:             "some-key",
+						ValueExpression: "a(b",
+						Role:            testRole1,
 					},
 				},
 			},
@@ -294,19 +262,19 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole1,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole2,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole2,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole3,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole3,
 					},
 				},
 			},
@@ -319,19 +287,19 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole1,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole2,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole2,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole3,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole3,
 					},
 				},
 			},
@@ -344,19 +312,19 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole1,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole2,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole2,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole3,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole3,
 					},
 				},
 			},
@@ -369,19 +337,19 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole1,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole2,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole2,
 					},
 					{
-						Key:   "some-key",
-						Value: "some-value",
-						Role:  testRole3,
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole3,
 					},
 				},
 			},
@@ -403,14 +371,14 @@ func (s *authServiceAccessControlTestSuite) TestGetConfig() {
 			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "something",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "github",
-					Role:  testRole3,
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
 				},
 			},
 		},
@@ -469,6 +437,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfigWithID() {
 	})
 	s.NoError(err)
 	s.NotEmpty(resp.GetConfig().GetId())
+	s.NotEqual(resp.GetConfig().GetId(), "80c053c2-24a7-4b97-bd69-85b3a511241e")
 }
 
 func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
@@ -484,6 +453,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGenericConfigWithID() {
 	})
 	s.NoError(err)
 	s.NotEmpty(resp.GetConfig().GetId())
+	s.NotEqual(resp.GetConfig().GetId(), "80c053c2-24a7-4b97-bd69-85b3a511241e")
 }
 
 func (s *authServiceAccessControlTestSuite) TestListConfigs() {
@@ -493,14 +463,14 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "something",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "github",
-					Role:  testRole3,
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
 				},
 			},
 		},
@@ -510,17 +480,18 @@ func (s *authServiceAccessControlTestSuite) TestListConfigs() {
 	config2, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
 			TokenExpirationDuration: "1h",
-			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+			Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+			Issuer:                  "https://stackrox.io",
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "somewhere",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "somewhere",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "the",
-					Role:  testRole2,
+					Key:             "aud",
+					ValueExpression: "the",
+					Role:            testRole2,
 				},
 			},
 		},
@@ -540,14 +511,14 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "something",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "github",
-					Role:  testRole3,
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
 				},
 			},
 		},
@@ -556,15 +527,20 @@ func (s *authServiceAccessControlTestSuite) TestUpdateExistingConfig() {
 
 	config.GetConfig().Mappings = []*v1.AuthMachineToMachineConfig_Mapping{
 		{
-			Key:   "sub",
-			Value: "someone",
-			Role:  testRole2,
+			Key:             "sub",
+			ValueExpression: "someone",
+			Role:            testRole2,
 		},
 	}
 
 	_, err = s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx,
 		&v1.UpdateAuthMachineToMachineConfigRequest{Config: config.GetConfig()})
 	s.NoError(err)
+
+	updatedConfig, err := s.svc.GetAuthMachineToMachineConfig(s.accessCtx, &v1.ResourceByID{Id: config.GetConfig().GetId()})
+	s.NoError(err)
+
+	s.Equal(config.GetConfig(), updatedConfig.GetConfig())
 }
 
 func (s *authServiceAccessControlTestSuite) TestUpdateAddConfig() {
@@ -579,6 +555,17 @@ func (s *authServiceAccessControlTestSuite) TestUpdateAddConfig() {
 	s.NoError(err)
 }
 
+func (s *authServiceAccessControlTestSuite) TestUpdateConfigWithEmptyID() {
+	newConfig := &v1.AuthMachineToMachineConfig{
+		TokenExpirationDuration: "1m",
+		Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+	}
+	_, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
+		Config: newConfig,
+	})
+	s.ErrorIs(err, errox.InvalidArgs)
+}
+
 func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 	config, err := s.svc.AddAuthMachineToMachineConfig(s.accessCtx, &v1.AddAuthMachineToMachineConfigRequest{
 		Config: &v1.AuthMachineToMachineConfig{
@@ -586,14 +573,14 @@ func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {
 			Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "something",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "github",
-					Role:  testRole3,
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
 				},
 			},
 		},

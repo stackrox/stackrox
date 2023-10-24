@@ -81,13 +81,13 @@ func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
 		TokenExpirationDuration: "5m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  "non-existing-role",
+				Key:             "sub",
+				ValueExpression: "some-value",
+				Role:            "non-existing-role",
 			},
 		},
 	})
-	s.ErrorIs(err, errox.NotFound)
+	s.ErrorIs(err, errox.ReferencedObjectNotFound)
 	s.Nil(config)
 }
 
@@ -98,9 +98,9 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 		TokenExpirationDuration: "5m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
+				Key:             "sub",
+				ValueExpression: "some-value",
+				Role:            testRole1,
 			},
 		},
 	})
@@ -113,113 +113,16 @@ func (s *datastorePostgresTestSuite) TestDeleteFKConstraint() {
 	s.NoError(s.roleDataStore.RemoveRole(s.ctx, testRole1))
 }
 
-func (s *datastorePostgresTestSuite) TestAddGitHubActionConfigFillIssuer() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
-			},
-		},
-	})
-
-	s.NoError(err)
-
-	s.Equal("https://token.actions.githubusercontent.com", config.GetIssuer())
-}
-
-func (s *datastorePostgresTestSuite) TestAddGitHubActionConfigCustomIssuer() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
-			},
-		},
-		Issuer: "https://stackrox.io",
-	})
-
-	s.NoError(err)
-
-	s.Equal("https://stackrox.io", config.GetIssuer())
-}
-
-func (s *datastorePostgresTestSuite) TestUpdateGitHubActionConfigFillIssuer() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
-			},
-		},
-		Issuer: "https://stackrox.io",
-	})
-
-	s.NoError(err)
-
-	config.Type = storage.AuthMachineToMachineConfig_GITHUB_ACTIONS
-	config.Issuer = ""
-
-	err = s.authDataStore.UpdateAuthM2MConfig(s.ctx, config)
-	s.NoError(err)
-
-	updatedConfig, exists, err := s.authDataStore.GetAuthM2MConfig(s.ctx, config.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal("https://token.actions.githubusercontent.com", updatedConfig.GetIssuer())
-}
-
-func (s *datastorePostgresTestSuite) TestUpdateGitHubActionConfigCustomIssuer() {
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
-			},
-		},
-		Issuer: "https://stackrox.io",
-	})
-
-	s.NoError(err)
-
-	config.Type = storage.AuthMachineToMachineConfig_GITHUB_ACTIONS
-	config.Issuer = "https://private.stackrox.io"
-
-	err = s.authDataStore.UpdateAuthM2MConfig(s.ctx, config)
-	s.NoError(err)
-
-	updatedConfig, exists, err := s.authDataStore.GetAuthM2MConfig(s.ctx, config.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal("https://private.stackrox.io", updatedConfig.GetIssuer())
-}
-
-func (s *datastorePostgresTestSuite) TestAddUniqueConstraint() {
+func (s *datastorePostgresTestSuite) TestAddUniqueIssuerConstraint() {
 	_, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
 		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
+				Key:             "sub",
+				ValueExpression: "some-value",
+				Role:            testRole1,
 			},
 		},
 		Issuer: "https://stackrox.io",
@@ -228,57 +131,18 @@ func (s *datastorePostgresTestSuite) TestAddUniqueConstraint() {
 	s.NoError(err)
 
 	_, err = s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c153c2-24a7-4b97-bd69-85b3a511241e",
+		Id:                      "12c153c2-24a7-4b97-bd69-85b3a511241e",
 		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
 		TokenExpirationDuration: "5m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole2,
+				Key:             "sub",
+				ValueExpression: "some-value",
+				Role:            testRole2,
 			},
 		},
 		Issuer: "https://stackrox.io",
 	})
-
-	s.Error(err)
-	s.ErrorIs(err, errox.AlreadyExists)
-}
-
-func (s *datastorePostgresTestSuite) TestUpdateUniqueConstraint() {
-	_, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c053c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole1,
-			},
-		},
-		Issuer: "https://stackrox.io",
-	})
-	s.Require().NoError(err)
-
-	config, err := s.authDataStore.AddAuthM2MConfig(s.ctx, &storage.AuthMachineToMachineConfig{
-		Id:                      "80c153c2-24a7-4b97-bd69-85b3a511241e",
-		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
-		TokenExpirationDuration: "5m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
-			{
-				Key:   "sub",
-				Value: "some-value",
-				Role:  testRole2,
-			},
-		},
-		Issuer: "https://private.stackrox.io",
-	})
-	s.Require().NoError(err)
-
-	config.Issuer = "https://stackrox.io"
-
-	err = s.authDataStore.UpdateAuthM2MConfig(s.ctx, config)
 
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)

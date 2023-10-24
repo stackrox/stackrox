@@ -22,10 +22,19 @@ func AuthM2MConfig(config *storage.AuthMachineToMachineConfig) *v1.AuthMachineTo
 		Type:                    convertTypeEnum(config.GetType()),
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                convertMappings(config.GetMappings()),
-		Issuer:                  config.GetIssuer(),
+		Issuer:                  setIssuer(config.GetType(), config.GetIssuer()),
 	}
 
 	return v1Config
+}
+
+func setIssuer(typ storage.AuthMachineToMachineConfig_Type, issuer string) string {
+	switch typ {
+	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
+		return "https://token.actions.githubusercontent.com"
+	default:
+		return issuer
+	}
 }
 
 func convertTypeEnum(val storage.AuthMachineToMachineConfig_Type) v1.AuthMachineToMachineConfig_Type {
@@ -39,9 +48,9 @@ func convertMappings(mappings []*storage.AuthMachineToMachineConfig_Mapping) []*
 	v1Mappings := make([]*v1.AuthMachineToMachineConfig_Mapping, 0, len(mappings))
 	for _, mapping := range mappings {
 		v1Mappings = append(v1Mappings, &v1.AuthMachineToMachineConfig_Mapping{
-			Key:   mapping.GetKey(),
-			Value: mapping.GetValue(),
-			Role:  mapping.GetRole(),
+			Key:             mapping.GetKey(),
+			ValueExpression: mapping.GetValueExpression(),
+			Role:            mapping.GetRole(),
 		})
 	}
 	return v1Mappings

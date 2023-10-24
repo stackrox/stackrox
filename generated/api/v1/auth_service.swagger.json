@@ -230,9 +230,9 @@
           "type": "string",
           "description": "A key within the identity token's claim value to use."
         },
-        "value": {
+        "valueExpression": {
           "type": "string",
-          "description": "The value that should match to map the identity token to a specific role.\nThis supports regular expressions of RE2 format, see more here:\nhttps://github.com/google/re2/wiki/Syntax."
+          "description": "A regular expression that will be evaluated against values of the identity token claim\nidentified by the specified key.\nThis regular expressions is in RE2 format, see more here:\nhttps://github.com/google/re2/wiki/Syntax."
         },
         "role": {
           "type": "string",
@@ -528,11 +528,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
-          }
+          },
+          "description": "At least one mapping is required."
         },
         "issuer": {
           "type": "string",
-          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\nIn case of GitHub actions, this will be https://token.actions.githubusercontent.com by default if left empty."
+          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com."
         }
       },
       "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."

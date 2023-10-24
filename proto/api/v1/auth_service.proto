@@ -59,18 +59,20 @@ message AuthMachineToMachineConfig {
    // Mappings map an identity token's claim values to a specific role within Central.
     message Mapping {
         // A key within the identity token's claim value to use.
-        string key            = 1;
-        // The value that should match to map the identity token to a specific role.
-        // This supports regular expressions of RE2 format, see more here:
+        string key              = 1;
+        // A regular expression that will be evaluated against values of the identity token claim
+        // identified by the specified key.
+        // This regular expressions is in RE2 format, see more here:
         // https://github.com/google/re2/wiki/Syntax.
-        string value          = 2;
+        string value_expression = 2;
         // The role which should be issued when the key and value match for a particular identity token.
-        string role           = 3;
+        string role             = 3;
     }
-    repeated Mapping mappings = 4;
+    // At least one mapping is required.
+    repeated Mapping mappings   = 4;
 
     // The issuer of the related OIDC provider issuing the ID tokens to exchange.
-    // In case of GitHub actions, this will be https://token.actions.githubusercontent.com by default if left empty.
+    // In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
     string issuer = 5;
 }
 
