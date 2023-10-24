@@ -40,12 +40,12 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 	}
 
 	if vulnRequest.GetDeferralReq() != nil {
-		out.Req = &v2.VulnerabilityException_DeferralReq{
-			DeferralReq: deferralRequest(vulnRequest.GetDeferralReq()),
+		out.Req = &v2.VulnerabilityException_DeferralRequest{
+			DeferralRequest: deferralRequest(vulnRequest.GetDeferralReq()),
 		}
 	} else if vulnRequest.GetFpRequest() != nil {
-		out.Req = &v2.VulnerabilityException_FpRequest{
-			FpRequest: &v2.FalsePositiveRequest{},
+		out.Req = &v2.VulnerabilityException_FalsePositiveRequest{
+			FalsePositiveRequest: &v2.FalsePositiveRequest{},
 		}
 	}
 

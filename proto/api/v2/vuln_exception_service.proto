@@ -87,8 +87,8 @@ message VulnerabilityException {
     Scope                            scope              = 11;
 
     oneof req {
-        DeferralRequest              deferral_req       = 12;
-        FalsePositiveRequest         fp_request         = 13;
+        DeferralRequest              deferral_request       = 12;
+        FalsePositiveRequest         false_positive_request = 13;
     }
 
     // Indicates the CVEs to which the exception applies.
