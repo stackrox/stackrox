@@ -242,13 +242,13 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 	oldScore := e.imageComponentRanker.GetScoreForID(
 		scancomponent.ComponentID(imageComponent.GetName(), imageComponent.GetVersion(), os))
 
-	// Image risk results are not currently used so if the score is the same then no need to upsert
-	if oldScore == risk.GetScore() {
+	// Image component risk results are currently unused so if the score is the same then no need to upsert
+	if risk.GetScore() == oldScore {
 		return
 	}
 
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
-		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
+		log.Errorf("Error reprocessing risk for image component %s %s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
 
 	imageComponent.RiskScore = risk.Score
@@ -268,13 +268,13 @@ func (e *managerImpl) reprocessNodeComponentRisk(nodeComponent *storage.Embedded
 	oldScore := e.nodeComponentRanker.GetScoreForID(
 		scancomponent.ComponentID(nodeComponent.GetName(), nodeComponent.GetVersion(), os))
 
-	// Node risk results are not currently used so if the score is the same then no need to upsert
-	if oldScore == risk.GetScore() {
+	// Node component risk results are not currently used so if the score is the same then no need to upsert
+	if risk.GetScore() == oldScore {
 		return
 	}
 
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
-		log.Errorf("Error reprocessing risk for node component %s v%s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
+		log.Errorf("Error reprocessing risk for node component %s %s: %v", nodeComponent.GetName(), nodeComponent.GetVersion(), err)
 	}
 
 	nodeComponent.RiskScore = risk.Score
