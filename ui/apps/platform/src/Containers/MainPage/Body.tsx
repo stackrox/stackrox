@@ -8,6 +8,7 @@ import {
     accessControlPath,
     administrationEventsPathWithParam,
     apidocsPath,
+    apidocsPathV2,
     clustersDelegatedScanningPath,
     clustersInitBundlesPathWithParam,
     clustersPathWithParam,
@@ -79,6 +80,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     apidocs: {
         component: asyncComponent(() => import('Containers/Docs/ApiPage')),
         path: apidocsPath,
+    },
+    'apidocs-v2': {
+        component: asyncComponent(() => import('Containers/Docs/ApiPageV2')),
+        path: apidocsPathV2,
     },
     // Delegated image scanning must precede generic Clusters.
     'clusters/delegated-image-scanning': {
