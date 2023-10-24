@@ -79,7 +79,6 @@ func (c *ShallowObjectArrayCache[T]) doBackgroundRefresh() {
 		return
 	}
 	_ = c.Refresh(c.refreshCtx)
-	return
 }
 
 func (c *ShallowObjectArrayCache[T]) triggerBackgroundRefresh() bool {
