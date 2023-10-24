@@ -53,14 +53,19 @@ function prettifyDate(date = ''): string {
     return date.substring(0, 10);
 }
 
-export type DeferralFormProps = {
+export type ExceptionRequestFormProps = {
     cves: CveSelectionsProps['cves'];
     scopeContext: ScopeContext;
     onSubmit: (formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) => void;
     onCancel: () => void;
 };
 
-function DeferralForm({ cves, scopeContext, onSubmit, onCancel }: DeferralFormProps) {
+function ExceptionRequestForm({
+    cves,
+    scopeContext,
+    onSubmit,
+    onCancel,
+}: ExceptionRequestFormProps) {
     const [activeKeyTab, setActiveKeyTab] = useState<string | number>('options');
     const { data: config, loading, error } = useRestQuery(fetchVulnerabilitiesExceptionConfig);
 
@@ -215,7 +220,7 @@ function DeferralForm({ cves, scopeContext, onSubmit, onCancel }: DeferralFormPr
                                                     onChange={(_, value) =>
                                                         setExpiry({
                                                             type: 'CUSTOM_DATE',
-                                                            date: value,
+                                                            date: new Date(value).toISOString(),
                                                         })
                                                     }
                                                     validators={[futureDateValidator]}
@@ -277,4 +282,4 @@ function DeferralForm({ cves, scopeContext, onSubmit, onCancel }: DeferralFormPr
     );
 }
 
-export default DeferralForm;
+export default ExceptionRequestForm;
