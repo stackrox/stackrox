@@ -204,7 +204,7 @@ func (s *splunk) getHttpToken() (string, error) {
 	}
 
 	if s.GetNotifierSecret() == "" {
-		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", e.notifier.GetName())
+		return "", errors.Errorf("encrypted notifier credentials for notifier '%s' empty", s.GetName())
 	}
 	decCreds, err := s.cryptoCodec.Decrypt(s.cryptoKey, s.GetNotifierSecret())
 	if err != nil {
