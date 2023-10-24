@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -182,7 +183,13 @@ func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, er
 				Id:     resID,
 				Action: central.ResourceAction_REMOVE_RESOURCE,
 				Resource: &central.SensorEvent_ComplianceOperatorRule{
-					ComplianceOperatorRule: &storage.ComplianceOperatorRule{Id: resID},
+					ComplianceOperatorRule: &storage.ComplianceOperatorRule{
+						Id: resID,
+						Annotations: map[string]string{
+							// This annotation is needed, otherwise central ignores this message
+							v1alpha1.RuleIDAnnotationKey: v1alpha1.RuleIDAnnotationKey,
+						},
+					},
 				},
 			},
 		}
