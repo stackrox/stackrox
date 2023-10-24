@@ -14,7 +14,6 @@ COPY . .
 
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
     # TODO(ROX-20233): Fetch git tags outside of Dockerfile
-    ls -lisa && \
     git tag
 #     # git fetch --tags --force && \
 #     mkdir -p image/bin
