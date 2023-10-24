@@ -417,10 +417,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
-	log.Debugf("Enriching connection: %+v", conn)
-
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-	log.Debugf("Found container for connection? %t", ok)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -429,21 +426,22 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			flowMetrics.ContainerIDMisses.Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
 		}
+		log.Debugf("Container with ID %q for connection %v not found", conn.containerID, conn)
 		return
 	}
-	log.Debugf("Container for connection: %s, %s", container.ContainerName, container.ContainerID)
 
 	var lookupResults []clusterentities.LookupResult
 
 	// Check if the remote address represents the de-facto INTERNET entity.
+	log.Debugf("Checking whether connection is INTERNET: conn.remote.IPAndPort.Address=%v, externalIPv4Addr=%v, externalIPv6Addr=%v", conn.remote.IPAndPort.Address, externalIPv4Addr, externalIPv6Addr)
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
+		log.Debugf("Looking up endpoint for %v", conn.remote)
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
-	log.Debugf("Connection is fresh: %t", isFresh)
-	log.Debugf("Connection lookupResults: %+v", lookupResults)
+	log.Debugf("Connection: containerID=%s, containerName=%s, isFresh=%t, lookupResults=%+v", container.ContainerID, container.ContainerName, isFresh, lookupResults)
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time

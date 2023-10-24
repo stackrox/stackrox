@@ -3,6 +3,7 @@ package clusterentities
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,6 +22,10 @@ type ContainerMetadata struct {
 	StartTime     *types.Timestamp
 	ImageID       string
 }
+
+var (
+	log = logging.LoggerForModule()
+)
 
 // PublicIPsListener is an interface for listeners on changes to the set of public IP addresses.
 // Note: Implementors of this interface must ensure the methods complete in a very short time/do not block, as they
@@ -93,6 +98,7 @@ func (ed *EntityData) AddIP(ip net.IPAddress) {
 	if ed.ips == nil {
 		ed.ips = make(map[net.IPAddress]struct{})
 	}
+	log.Debugf("AddIP: Adding %q", ip.String())
 	ed.ips[ip] = struct{}{}
 }
 
@@ -101,6 +107,8 @@ func (ed *EntityData) AddEndpoint(ep net.NumericEndpoint, info EndpointTargetInf
 	if ed.endpoints == nil {
 		ed.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo)
 	}
+	log.Debugf("AddEndpoint: Adding %s", ep.String())
+
 	ed.endpoints[ep] = append(ed.endpoints[ep], info)
 }
 
@@ -124,6 +132,7 @@ func (e *Store) Cleanup() {
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
+	log.Debugf("Apply: Applying update %v", updates)
 	e.applyNoLock(updates, incremental)
 }
 
@@ -265,6 +274,8 @@ type LookupResult struct {
 func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
+	log.Debugf("LookupByEndpoint: endpointMap=%v", e.endpointMap)
+	log.Debugf("LookupByEndpoint: ipMap=%v", e.ipMap)
 	return e.lookupNoLock(endpoint)
 }
 
@@ -290,7 +301,6 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 		}
 		results = append(results, result)
 	}
-
 	if len(results) > 0 {
 		return
 	}
