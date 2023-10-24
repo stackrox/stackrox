@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/reconciliation"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -196,11 +197,15 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
+	hashReconciler := resources.NewResourceStoreReconciler(storeProvider)
+	deduperStateProcessor := reconciliation.NewDeduperStateProcessor(hashReconciler)
+
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
+		deduperStateProcessor,
 		components...,
 	)
 

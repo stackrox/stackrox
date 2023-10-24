@@ -36,6 +36,7 @@ import {
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    exceptionManagementPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -123,6 +124,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
         path: exceptionConfigurationPath,
+    },
+    'exception-management': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
+        ),
+        path: exceptionManagementPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),

@@ -15,6 +15,7 @@ const (
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
 	apiTokenNameField = "api_token_name"
+	clusterNameField  = "cluster_name"
 )
 
 var (
@@ -79,6 +80,11 @@ func APITokenID(id string) zap.Field {
 // APITokenName provides the API token name as a structured log field.
 func APITokenName(name string) zap.Field {
 	return zap.String(apiTokenNameField, name)
+}
+
+// ClusterName provides the cluster name as a structured log field.
+func ClusterName(name string) zap.Field {
+	return zap.String(clusterNameField, name)
 }
 
 // Wrapper functions for zap.Field functions.

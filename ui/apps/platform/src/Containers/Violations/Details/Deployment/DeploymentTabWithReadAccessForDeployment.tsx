@@ -2,27 +2,22 @@ import React, { ReactElement } from 'react';
 import { Alert, Card, CardBody, CardTitle, Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import useFetchDeployment from 'hooks/useFetchDeployment';
-import usePermissions from 'hooks/usePermissions';
-import { DeploymentAlert } from 'types/alert.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { AlertDeployment } from 'types/alert.proto';
 
 import ContainerConfiguration from './ContainerConfiguration';
 import DeploymentOverview from './DeploymentOverview';
-import NetworkPoliciesCard from './NetworkPoliciesCard';
 import PortDescriptionList from './PortDescriptionList';
 import SecurityContext from './SecurityContext';
 
-export type DeploymentDetailsProps = {
-    alertDeployment: Pick<
-        NonNullable<DeploymentAlert['deployment']>,
-        'id' | 'clusterId' | 'namespace'
-    >;
+export type DeploymentTabWithReadAccessForDeploymentProps = {
+    alertDeployment: AlertDeployment;
 };
 
-function DeploymentDetails({ alertDeployment }: DeploymentDetailsProps): ReactElement {
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
-
+function DeploymentTabWithReadAccessForDeployment({
+    alertDeployment,
+}: DeploymentTabWithReadAccessForDeploymentProps): ReactElement {
     // attempt to fetch related deployment to selected alert
     const { deployment: relatedDeployment, error: relatedDeploymentFetchError } =
         useFetchDeployment(alertDeployment.id);
@@ -51,7 +46,10 @@ function DeploymentDetails({ alertDeployment }: DeploymentDetailsProps): ReactEl
                             <CardTitle component="h3">Deployment overview</CardTitle>
                             <CardBody>
                                 {relatedDeployment && (
-                                    <DeploymentOverview deployment={relatedDeployment} />
+                                    <DeploymentOverview
+                                        alertDeployment={alertDeployment}
+                                        deployment={relatedDeployment}
+                                    />
                                 )}
                             </CardBody>
                         </Card>
@@ -81,14 +79,6 @@ function DeploymentDetails({ alertDeployment }: DeploymentDetailsProps): ReactEl
                     <FlexItem>
                         <SecurityContext deployment={relatedDeployment} />
                     </FlexItem>
-                    {hasReadAccessForNetworkPolicy && (
-                        <FlexItem>
-                            <NetworkPoliciesCard
-                                clusterId={alertDeployment.clusterId}
-                                namespaceName={alertDeployment.namespace}
-                            />
-                        </FlexItem>
-                    )}
                 </Flex>
                 <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                     <FlexItem>
@@ -119,4 +109,4 @@ function DeploymentDetails({ alertDeployment }: DeploymentDetailsProps): ReactEl
     );
 }
 
-export default DeploymentDetails;
+export default DeploymentTabWithReadAccessForDeployment;
