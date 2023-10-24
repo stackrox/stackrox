@@ -1,5 +1,5 @@
 {{- include "srox.init" . -}}
-{{- if not ._rox.scannerV4.disable -}}
+{{- if ._rox.scannerV4._dbEnabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
