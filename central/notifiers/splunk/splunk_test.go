@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,7 +47,7 @@ func getSplunk(t *testing.T) *splunk {
 		},
 	}
 
-	s, err := newSplunk(notifier)
+	s, err := newSplunk(notifier, cryptocodec.Singleton(), "stackrox")
 	require.NoError(t, err)
 	return s
 }
