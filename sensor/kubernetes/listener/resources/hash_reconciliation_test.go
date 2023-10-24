@@ -73,6 +73,11 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Binding{Binding: &storage.K8SRoleBinding{Id: testResID}}}},
 			expectedError: nil,
 		},
+		"Namespace": {
+			resType:       deduper.TypeNamespace.String(),
+			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_Namespace{Namespace: &storage.NamespaceMetadata{Id: testResID}}}},
+			expectedError: nil,
+		},
 		"Unknown should throw error": {
 			resType:       "Unknown",
 			expectedMsg:   nil,
@@ -127,6 +132,10 @@ func resourceTypeToFn(resType string) (func(*central.SensorEvent) string, error)
 		return func(event *central.SensorEvent) string {
 			return event.GetBinding().GetId()
 		}, nil
+	case deduper.TypeNamespace.String():
+		return func(event *central.SensorEvent) string {
+			return event.GetNamespace().GetId()
+		}, nil
 	default:
 		return nil, errors.Errorf("not implemented for resource type %v", resType)
 	}
@@ -164,6 +173,9 @@ func initStore() *InMemoryStoreProvider {
 	s.rbacStore.UpsertClusterRole(&rbacV1.ClusterRole{ObjectMeta: metav1.ObjectMeta{UID: "6002", Name: "6002"}})
 	s.rbacStore.UpsertBinding(&rbacV1.RoleBinding{ObjectMeta: metav1.ObjectMeta{UID: "6003"}})
 	s.rbacStore.UpsertClusterBinding(&rbacV1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{UID: "6004"}})
+
+	s.nsStore.addNamespace(&storage.NamespaceMetadata{Id: "1", Name: "a"})
+	s.nsStore.addNamespace(&storage.NamespaceMetadata{Id: "2", Name: "b"})
 	return s
 }
 
@@ -340,6 +352,29 @@ func (s *HashReconciliationSuite) TestProcessHashes() {
 				makeKey("98", deduper.TypeBinding):   87654,
 			},
 			deletedIDs: []string{"99", "98"},
+		},
+		"No Namespace": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("1", deduper.TypeNamespace): 12345,
+				makeKey("2", deduper.TypeNamespace): 34567,
+			},
+			deletedIDs: []string{},
+		},
+		"Single Namespace": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNamespace): 34567,
+				makeKey("1", deduper.TypeNamespace):  12345,
+			},
+			deletedIDs: []string{"99"},
+		},
+		"Multiple Namespaces": {
+			dstate: map[deduper.Key]uint64{
+				makeKey("99", deduper.TypeNamespace): 34567,
+				makeKey("98", deduper.TypeNamespace): 34567,
+				makeKey("97", deduper.TypeNamespace): 34567,
+				makeKey("1", deduper.TypeNamespace):  12345,
+			},
+			deletedIDs: []string{"97", "98", "99"},
 		},
 	}
 
