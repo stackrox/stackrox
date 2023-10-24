@@ -33,7 +33,7 @@ func Export(ctx context.Context, outputDir string) error {
 		return err
 	}
 
-	limiter := rate.NewLimiter(rate.Every(time.Second), 5)
+	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
 			limiter:   limiter,
@@ -63,22 +63,30 @@ func Export(ctx context.Context, outputDir string) error {
 
 	for i, uSet := range [][]string{
 		{"oracle", "photon", "suse", "aws", "rhcc"},
-		{"alpine", "rhel", "ubuntu", "osv", "debian"},
+		{"alpine", "rhel", "osv", "debian"},
+		{"ubuntu"},
 	} {
 		jsonStore, err := jsonblob.New()
 		if err != nil {
 			return err
 		}
+		var mgr *updates.Manager
+		if i >= len(outOfTree) {
+			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+				updates.WithEnabled(uSet),
+			)
+		} else {
+			mgr, err = updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
+				updates.WithEnabled(uSet),
+				updates.WithOutOfTree(outOfTree[i]),
+			)
+		}
 
-		updateMgr, err := updates.NewManager(ctx, jsonStore, updates.NewLocalLockSource(), httpClient,
-			updates.WithEnabled(uSet),
-			updates.WithOutOfTree(outOfTree[i]),
-		)
 		if err != nil {
 			return err
 		}
 
-		if err := updateMgr.Run(ctx); err != nil {
+		if err := mgr.Run(ctx); err != nil {
 			return err
 		}
 
