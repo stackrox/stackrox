@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,11 +14,13 @@ import (
 )
 
 type rateLimiter struct {
-	mutex              sync.Mutex
-	tokenBucketLimiter *rate.Limiter
+	mutex sync.Mutex
+
+	maxThrottleDuration time.Duration
+	tokenBucketLimiter  *rate.Limiter
 }
 
-func newRateLimiter(maxPerSec int) *rateLimiter {
+func newRateLimiter(maxPerSec int, maxThrottleDuration time.Duration) *rateLimiter {
 	limit := rate.Inf
 	if maxPerSec > 0 {
 		limit = rate.Every(time.Second / time.Duration(maxPerSec))
@@ -25,7 +28,8 @@ func newRateLimiter(maxPerSec int) *rateLimiter {
 
 	// When no limit is set, we use "rate.Inf," and burst is disregarded.
 	limiter := &rateLimiter{
-		tokenBucketLimiter: rate.NewLimiter(limit, maxPerSec),
+		maxThrottleDuration: maxThrottleDuration,
+		tokenBucketLimiter:  rate.NewLimiter(limit, maxPerSec),
 	}
 
 	return limiter
@@ -33,7 +37,14 @@ func newRateLimiter(maxPerSec int) *rateLimiter {
 
 // Limit implements "ratelimit.Limiter" interface.
 func (limiter *rateLimiter) Limit() bool {
-	return !limiter.tokenBucketLimiter.Allow()
+	if limiter.maxThrottleDuration < time.Second {
+		return !limiter.tokenBucketLimiter.Allow()
+	}
+
+	ctx, cancelFnc := context.WithDeadline(context.Background(), time.Now().Add(limiter.maxThrottleDuration))
+	defer cancelFnc()
+
+	return limiter.tokenBucketLimiter.Wait(ctx) != nil
 }
 
 func (limiter *rateLimiter) modifyRateLimit(limitDelta int) {
@@ -95,14 +106,11 @@ func (limiter *rateLimiter) GetHTTPInterceptor() httputil.HTTPInterceptor {
 
 // NewRateLimiter defines rate limiter any type of events. The rate limit
 // will be considered unlimited when the value of maxPerSec is less than or
-// equal to zero.
-//
-// Note: Please be aware that we're currently employing a basic token bucket
-// rate limiting approach. Once the limit is reached, any additional events
-// will be declined. It's worth noting that a more effective solution would
-// involve implementing event throttling before reaching the hard limit.
-// However, this alternative would introduce a 1ms delay for each event
-// and necessitate the creation of timers for every throttled event.
-func NewRateLimiter(maxPerSec int) RateLimiter {
-	return newRateLimiter(maxPerSec)
+// equal to zero. In the event that the rate limit is exceeded, we will
+// initiate request throttling. If incoming requests are not processed within
+// the allocated throttle time, they will begin to time out, resulting in
+// an error response. Any maxThrottleDuration less than 1 second will not be
+// taken into account.
+func NewRateLimiter(maxPerSec int, maxThrottleDuration time.Duration) RateLimiter {
+	return newRateLimiter(maxPerSec, maxThrottleDuration)
 }

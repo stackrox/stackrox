@@ -222,6 +222,7 @@ var (
 
 const (
 	grpcServerWatchdogTimeout = 20 * time.Second
+	maxAPIThrottleDuration    = 10 * time.Second
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
 
@@ -484,7 +485,7 @@ func newAPIRateLimiter() ratelimit.RateLimiter {
 		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
 	}
 
-	return ratelimit.NewRateLimiter(apiRequestLimitPerSec)
+	return ratelimit.NewRateLimiter(apiRequestLimitPerSec, maxAPIThrottleDuration)
 }
 
 func startGRPCServer() {
