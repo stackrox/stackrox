@@ -14,6 +14,8 @@ import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 // @TODO: Add tests for these
 
+export type RequestContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS';
+
 export type RequestIDTableCellProps = {
     id: VulnerabilityException['id'];
     name: VulnerabilityException['name'];
@@ -30,16 +32,14 @@ export function RequesterTableCell({ requester }: RequesterTableCellProps) {
     return <div>{requester.name}</div>;
 }
 
-export type RequestedActionContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS';
-
 export type RequestedActionTableCellProps = {
     exception: VulnerabilityException;
-    context: RequestedActionContext;
+    context: RequestContext;
 };
 
 function getDeferralExpiryToUse(
     exception: VulnerabilityDeferralException,
-    context: RequestedActionContext
+    context: RequestContext
 ): ExceptionExpiry {
     switch (exception.exceptionStatus) {
         case 'PENDING':
@@ -60,10 +60,7 @@ function getDeferralExpiryToUse(
     }
 }
 
-function getRequestedAction(
-    exception: VulnerabilityException,
-    context: RequestedActionContext
-): string {
+function getRequestedAction(exception: VulnerabilityException, context: RequestContext): string {
     if (isDeferralException(exception)) {
         const exceptionExpiry: ExceptionExpiry = getDeferralExpiryToUse(exception, context);
         let duration = 'indefinitely';
@@ -99,22 +96,21 @@ export function RequestedTableCell({ createdAt }: RequestedTableCellProps) {
 
 export type ExpiresTableCellProps = {
     exception: VulnerabilityException;
+    context: RequestContext;
 };
 
-function getExpiresDate(exception: VulnerabilityException): string {
+function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
     if (isDeferralException(exception)) {
-        const latestExpiry = exception.deferralUpdate
-            ? exception.deferralUpdate.expiry
-            : exception.deferralReq.expiry;
-        if (latestExpiry.expiryType === 'TIME' && latestExpiry.expiresOn) {
-            return getDate(latestExpiry.expiresOn);
+        const exceptionExpiry: ExceptionExpiry = getDeferralExpiryToUse(exception, context);
+        if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
+            return getDate(exceptionExpiry.expiresOn);
         }
     }
     return '-';
 }
 
-export function ExpiresTableCell({ exception }: ExpiresTableCellProps) {
-    return <div>{getExpiresDate(exception)}</div>;
+export function ExpiresTableCell({ exception, context }: ExpiresTableCellProps) {
+    return <div>{getExpiresDate(exception, context)}</div>;
 }
 
 export type ScopeTableCellProps = {

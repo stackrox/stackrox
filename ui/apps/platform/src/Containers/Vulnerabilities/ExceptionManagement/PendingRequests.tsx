@@ -121,7 +121,10 @@ function PendingApprovals() {
                                     <RequestedTableCell createdAt={createdAt} />
                                 </Td>
                                 <Td>
-                                    <ExpiresTableCell exception={exception} />
+                                    <ExpiresTableCell
+                                        exception={exception}
+                                        context="PENDING_REQUESTS"
+                                    />
                                 </Td>
                                 <Td>
                                     <ScopeTableCell scope={scope} />
