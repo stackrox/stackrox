@@ -24,6 +24,7 @@
 {{ $scannerV4Cfg := index . 1 }}
 {{ $_ := false }}
 
+{{/* Handle high-level defaulting logic. */}}
 {{- if and (not $scannerV4Cfg.disable) (kindIs "invalid" $scannerV4Cfg.indexer.disable) (kindIs "invalid" $scannerV4Cfg.matcher.disable) -}}
 {{- /* The top-level setting scannerV4.disable=false activates a default setting based on the chart. */ -}}
 {{- if eq $.Chart.Name "stackrox-central-services" -}}
@@ -37,6 +38,20 @@
 {{- else -}}
 {{- end -}}
 
+{{- if eq $.Chart.Name "stackrox-central-services" -}}
+  {{- if and (not $scannerV4Cfg.indexer.disable) $scannerV4Cfg.matcher.disable -}}
+    {{- include "srox.fail" "This chart only supports deploying indexer and matcher together." -}}
+  {{- end -}}
+  {{- if and (not $scannerV4Cfg.matcher.disable) $scannerV4Cfg.indexer.disable -}}
+    {{- include "srox.fail" "This chart only supports deploying indexer and matcher together." -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
+  {{- if not $scannerV4Cfg.matcher.disable -}}
+    {{- include "srox.fail" "This chart only supports deploying the scanner V4 indexer." -}}
+  {{- end -}}
+{{- end -}}
 
 {{- $scannerV4Mode := "none" -}}
 {{- if and (not $scannerV4Cfg.indexer.disable) (not $._rox.scannerV4.matcher.disable) -}}
