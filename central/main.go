@@ -874,11 +874,12 @@ func waitForTerminationSignal() {
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
-		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	} else {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
 	}
 
 	if features.AdministrationEvents.Enabled() {
