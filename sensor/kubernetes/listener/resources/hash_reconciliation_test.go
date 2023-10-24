@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -85,8 +86,13 @@ func (s *HashReconciliationSuite) TestResourceToMessage() {
 			expectedError: nil,
 		},
 		"ComplianceOperatorRule": {
-			resType:       deduper.TypeComplianceOperatorRule.String(),
-			expectedMsg:   &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorRule{ComplianceOperatorRule: &storage.ComplianceOperatorRule{Id: testResID}}}},
+			resType: deduper.TypeComplianceOperatorRule.String(),
+			expectedMsg: &central.MsgFromSensor_Event{Event: &central.SensorEvent{Id: testResID, Action: central.ResourceAction_REMOVE_RESOURCE, Resource: &central.SensorEvent_ComplianceOperatorRule{ComplianceOperatorRule: &storage.ComplianceOperatorRule{
+				Id: testResID,
+				Annotations: map[string]string{
+					v1alpha1.RuleIDAnnotationKey: v1alpha1.RuleIDAnnotationKey,
+				},
+			}}}},
 			expectedError: nil,
 		},
 		"ComplianceOperatorScan": {
