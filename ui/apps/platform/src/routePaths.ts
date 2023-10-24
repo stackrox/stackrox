@@ -251,7 +251,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'exception-management': {
         featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
-        resourceAccessRequirements: everyResource(['VulnerabilityManagementRequests']),
+        resourceAccessRequirements: someResource([
+            'VulnerabilityManagementRequests',
+            'VulnerabilityManagementApprovals',
+        ]),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
