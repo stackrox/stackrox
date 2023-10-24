@@ -5,11 +5,18 @@ import { FormikHelpers } from 'formik';
 import {
     BaseVulnerabilityException,
     createDeferralVulnerabilityException,
+    createFalsePositiveVulnerabilityException,
 } from 'services/VulnerabilityExceptionService';
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { CveExceptionRequestType } from '../../types';
-import { DeferralValues, ScopeContext, formValuesToDeferralRequest } from './utils';
+import {
+    DeferralValues,
+    FalsePositiveValues,
+    ScopeContext,
+    formValuesToDeferralRequest,
+    formValuesToFalsePositiveRequest,
+} from './utils';
 import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
 
 export type ExceptionRequestModalOptions = {
@@ -38,12 +45,13 @@ function ExceptionRequestModal({
             ? `Request deferral for ${cveCountText}`
             : `Mark ${cveCountText} as false positive`;
 
-    const { mutate, error: deferralError } = useRestMutation(createDeferralVulnerabilityException);
+    const createDeferralMutation = useRestMutation(createDeferralVulnerabilityException);
+    const createFalsePositiveMutation = useRestMutation(createFalsePositiveVulnerabilityException);
 
     function onDeferralSubmit(formValues: DeferralValues, helpers: FormikHelpers<DeferralValues>) {
         if (formValues.expiry) {
             const payload = formValuesToDeferralRequest(formValues, formValues.expiry);
-            mutate(payload, {
+            createDeferralMutation.mutate(payload, {
                 onSuccess: onExceptionRequestSuccess,
                 onError: () => helpers.setSubmitting(false),
             });
@@ -52,7 +60,33 @@ function ExceptionRequestModal({
         }
     }
 
-    const submissionError = deferralError;
+    function onFalsePositiveSubmit(
+        formValues: FalsePositiveValues,
+        helpers: FormikHelpers<FalsePositiveValues>
+    ) {
+        const payload = formValuesToFalsePositiveRequest(formValues);
+        createFalsePositiveMutation.mutate(payload, {
+            onSuccess: onExceptionRequestSuccess,
+            onError: () => helpers.setSubmitting(false),
+        });
+    }
+
+    const formProps =
+        type === 'DEFERRAL'
+            ? {
+                  formHeaderText: `CVEs will be marked as deferred after approval`,
+                  commentFieldLabel: `Deferral rationale`,
+                  onSubmit: onDeferralSubmit,
+                  showExpiryField: true,
+              }
+            : {
+                  formHeaderText: `CVEs will be marked as false positive after approval`,
+                  commentFieldLabel: `False positive rationale`,
+                  onSubmit: onFalsePositiveSubmit,
+                  showExpiryField: false,
+              };
+
+    const submissionError = createDeferralMutation.error ?? createFalsePositiveMutation.error;
 
     return (
         <Modal
@@ -73,17 +107,12 @@ function ExceptionRequestModal({
                         {getAxiosErrorMessage(submissionError)}
                     </Alert>
                 )}
-                {type === 'DEFERRAL' && (
-                    <ExceptionRequestForm
-                        cves={cves}
-                        scopeContext={scopeContext}
-                        onSubmit={onDeferralSubmit}
-                        onCancel={onClose}
-                        showExpiryField
-                        formHeaderText="CVEs will be marked as deferred after approval"
-                        commentFieldLabel="Deferral rationale"
-                    />
-                )}
+                <ExceptionRequestForm
+                    cves={cves}
+                    scopeContext={scopeContext}
+                    onCancel={onClose}
+                    {...formProps}
+                />
             </ModalBoxBody>
         </Modal>
     );
