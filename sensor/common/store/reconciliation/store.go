@@ -12,19 +12,22 @@ import (
 type Store interface {
 	reconcile.Reconcilable
 	Cleanup()
+	UpsertType(resType string)
 	Upsert(resType, id string)
 	Remove(resType, id string)
 }
 
 type store struct {
-	lock      sync.Mutex
-	resources map[string]set.StringSet
+	lock          sync.Mutex
+	resources     map[string]set.StringSet
+	resourceTypes set.StringSet
 }
 
 // NewStore creates a new reconciliation Store
 func NewStore() Store {
 	return &store{
-		resources: make(map[string]set.StringSet),
+		resources:     make(map[string]set.StringSet),
+		resourceTypes: set.NewStringSet(),
 	}
 }
 
@@ -32,6 +35,9 @@ func (s *store) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.resources = make(map[string]set.StringSet)
+	for resType, _ := range s.resourceTypes {
+		s.resources[resType] = set.NewStringSet()
+	}
 }
 
 func (s *store) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
@@ -47,6 +53,14 @@ func (s *store) ReconcileDelete(resType, resID string, _ uint64) (string, error)
 }
 
 var _ Store = (*store)(nil)
+
+// UpsertType a resource type. These types won't be removed if Cleanup is called.
+func (s *store) UpsertType(resType string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.resourceTypes.Add(resType)
+	s.resources[resType] = set.NewStringSet()
+}
 
 // Upsert a resource type and id
 func (s *store) Upsert(resType, id string) {
@@ -65,6 +79,7 @@ func (s *store) Remove(resType, id string) {
 func (s *store) addResourceNoLock(resType, id string) {
 	if ids, found := s.resources[resType]; !found {
 		s.resources[resType] = set.NewStringSet(id)
+		s.resourceTypes.Add(resType)
 	} else {
 		ids.Add(id)
 	}
@@ -73,8 +88,5 @@ func (s *store) addResourceNoLock(resType, id string) {
 func (s *store) removeResourceNoLock(resType, id string) {
 	if ids, found := s.resources[resType]; found {
 		ids.Remove(id)
-	}
-	if len(s.resources[resType]) == 0 {
-		delete(s.resources, resType)
 	}
 }

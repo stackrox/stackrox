@@ -31,6 +31,40 @@ func Test_StoreSuite(t *testing.T) {
 	suite.Run(t, new(storeSuite))
 }
 
+func (s *storeSuite) Test_UpsertType() {
+	testCases := map[string]struct {
+		inputTypes    []string
+		expectedTypes []string
+	}{
+		"One resource": {
+			inputTypes:    []string{resourceTypeA},
+			expectedTypes: []string{resourceTypeA},
+		},
+		"Same resource is only added once": {
+			inputTypes:    []string{resourceTypeA, resourceTypeA},
+			expectedTypes: []string{resourceTypeA},
+		},
+		"Multiple resource types": {
+			inputTypes:    []string{resourceTypeA, resourceTypeB},
+			expectedTypes: []string{resourceTypeA, resourceTypeB},
+		},
+	}
+	for name, tc := range testCases {
+		s.Run(name, func() {
+			s.resourceStore.resourceTypes = set.NewStringSet()
+			for _, input := range tc.inputTypes {
+				s.resourceStore.UpsertType(input)
+			}
+			s.Assert().Len(s.resourceStore.resourceTypes, len(tc.expectedTypes))
+			for _, resType := range tc.expectedTypes {
+				_, found := s.resourceStore.resources[resType]
+				s.Require().True(found)
+				s.Assert().Contains(s.resourceStore.resourceTypes, resType)
+			}
+		})
+	}
+}
+
 func (s *storeSuite) Test_Upsert() {
 	testCases := map[string]struct {
 		inputResources    map[string][]string
@@ -168,5 +202,9 @@ func (s *storeSuite) Test_Cleanup() {
 
 	s.resourceStore.Cleanup()
 
-	s.Assert().Len(s.resourceStore.resources, 0)
+	for _, ids := range s.resourceStore.resources {
+		s.Assert().Len(ids, 0)
+	}
+	s.Assert().Equal(len(s.resourceStore.resourceTypes), len(s.resourceStore.resources))
+	s.Assert().Equal(2, len(s.resourceStore.resourceTypes))
 }

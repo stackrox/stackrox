@@ -82,7 +82,13 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.registryStore,
 		p.registryMirrorStore,
 		p.nsStore,
+		p.reconciliationStore,
 	}
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorProfile.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorResult.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorRule.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorScan.String())
+	p.reconciliationStore.UpsertType(deduper.TypeComplianceOperatorScanSettingBinding.String())
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
 		deduper.TypeDeployment.String():                           p.deploymentStore,
 		deduper.TypePod.String():                                  p.podStore,
