@@ -25,7 +25,31 @@ func Test_SensorHello(t *testing.T) {
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})
+	t.Cleanup(c.Stop)
 
+	require.NoError(t, err)
+
+	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		hello1 := testContext.WaitForHello(t, 3*time.Minute)
+		require.NotNil(t, hello1)
+		assert.Equal(t, central.SensorHello_STARTUP, hello1.GetSensorState())
+		testContext.RestartFakeCentralConnection()
+		hello2 := testContext.WaitForHello(t, 3*time.Minute)
+		require.NotNil(t, hello2)
+		assert.Equal(t, central.SensorHello_RECONNECT, hello2.GetSensorState())
+	}))
+
+}
+
+func Test_SensorHello2(t *testing.T) {
+	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
+
+	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
+		InitialSystemPolicies: nil,
+		CertFilePath:          "../../../tools/local-sensor/certs/",
+	})
 	t.Cleanup(c.Stop)
 
 	require.NoError(t, err)
@@ -54,6 +78,8 @@ func Test_SensorReconnects(t *testing.T) {
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})
+
+	t.Cleanup(c.Stop)
 
 	require.NoError(t, err)
 
