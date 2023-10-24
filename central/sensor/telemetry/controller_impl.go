@@ -181,7 +181,7 @@ func (c *controller) PullClusterInfo(ctx context.Context, cb ClusterInfoCallback
 	return c.streamingRequest(ctx, central.PullTelemetryDataRequest_CLUSTER_INFO, genericCB, time.Now())
 }
 
-func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error {
+func (c *controller) ProcessTelemetryDataResponse(ctx context.Context, resp *central.PullTelemetryDataResponse) error {
 	requestID := resp.GetRequestId()
 	if resp.GetPayload() == nil {
 		return utils.ShouldErr(errors.Errorf("received a telemetry response with an empty payload for requested ID %s", requestID))
@@ -204,6 +204,8 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 	}
 
 	select {
+	case <-ctx.Done():
+		return ctx.Err()
 	case <-c.stopSig.Done():
 		return errors.Wrap(c.stopSig.Err(), "sensor connection stopped while waiting for network policies response")
 	case retC <- resp.GetPayload():
