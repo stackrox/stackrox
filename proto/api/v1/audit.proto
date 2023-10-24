@@ -35,17 +35,17 @@ message Audit {
             string endpoint             = 1;
             string method               = 2;
             google.protobuf.Any payload = 3;
-            // Source holds information about the request's source.
-            message Source {
-                // Holds the value of the "X-Forwarded-For" header associated with the request, if it was present.
-                string x_forwarded_for     = 2;
-                // Holds the value of the "Remote-Addr" header associated with the request, if it was present.
-                string remote_addr         = 3;
-                // Holds the value of the HTTP request's address. This will always be present, but may not preserve
+            // SourceHeaders holds information about the request's source.
+            message SourceHeaders {
+                // The "X-Forwarded-For" header associated with the request, if it was present.
+                string x_forwarded_for     = 1;
+                // The "Remote-Addr" header associated with the request, if it was present.
+                string remote_addr         = 2;
+                // The HTTP request's address. This will always be present, but may not preserve
                 // the _actual_ client IP. See source_ip for a more detailed documentation.
-                string request_addr = 4;
+                string request_addr        = 3;
             }
-            Source source                  = 5;
+            SourceHeaders source_headers          = 4;
             // The source IP of the request.
             // This is determined from the values found within the request's source.
             // The following priority is given:
@@ -66,7 +66,7 @@ message Audit {
             //
             // In case of exposure with a custom loadbalancer / ingress controller, if HTTPS is passed through to the
             // Central, it also might not preserve the client IP correctly.
-            string source_ip                    = 4;
+            string source_ip                    = 5;
         }
         google.protobuf.Timestamp time          = 1;
         RequestStatus             status        = 2;

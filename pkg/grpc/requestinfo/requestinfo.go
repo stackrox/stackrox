@@ -347,8 +347,7 @@ func metadataFromHeader(header http.Header) metadata.MD {
 func sourceFromRequest(request *http.Request) Source {
 	// If using the XFF header, the real client IP is the first value in the list of CSV values.
 	var xffSourceIP string
-	xff := request.Header.Get(forwardedForKey)
-	if xff != "" {
+	if xff := request.Header.Get(forwardedForKey); xff != "" {
 		ips := strings.Split(xff, ",")
 		xffSourceIP = strings.TrimSpace(ips[0])
 	}
