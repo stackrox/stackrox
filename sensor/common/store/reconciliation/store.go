@@ -35,7 +35,7 @@ func (s *store) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.resources = make(map[string]set.StringSet)
-	for resType, _ := range s.resourceTypes {
+	for resType := range s.resourceTypes {
 		s.resources[resType] = set.NewStringSet()
 	}
 }
