@@ -21,8 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
-const clusterNameLogField = "clusterName"
-
 var (
 	invalidPathElementChars = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 )
