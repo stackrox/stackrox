@@ -12,6 +12,10 @@ import (
 	"github.com/NYTimes/gziphandler"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
+	administrationUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
+	administrationUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
+	administrationUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
+	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
@@ -35,7 +39,9 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
+	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	complianceOperatorIntegrationService "github.com/stackrox/rox/central/complianceoperator/v2/integration/service"
+	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
 	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
@@ -107,10 +113,6 @@ import (
 	processBaselineService "github.com/stackrox/rox/central/processbaseline/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
-	productUsageCSV "github.com/stackrox/rox/central/productusage/csv"
-	productUsageDataStore "github.com/stackrox/rox/central/productusage/datastore/securedunits"
-	productUsageInjector "github.com/stackrox/rox/central/productusage/injector"
-	productUsageService "github.com/stackrox/rox/central/productusage/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
@@ -153,6 +155,7 @@ import (
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnerabilityrequest/service"
+	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
@@ -181,6 +184,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -342,7 +346,7 @@ func startServices() {
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
-	productUsageInjector.Singleton().Start()
+	administrationUsageInjector.Singleton().Start()
 
 	if features.AdministrationEvents.Enabled() {
 		administrationEventHandler.Singleton().Start()
@@ -394,11 +398,9 @@ func servicesToRegister() []pkgGRPC.APIService {
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processBaselineService.Singleton(),
-		productUsageService.Singleton(),
+		administrationUsageService.Singleton(),
 		rbacService.Singleton(),
-		reportConfigurationService.Singleton(),
 		roleService.Singleton(),
-		reportService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
@@ -410,6 +412,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
+		// TODO: [ROX-20245] Make the "/v1/cve/requests" APIs unavailable.
+		// This cannot be now because the frontend is not ready with the feature flag checks.
 		vulnRequestService.Singleton(),
 		clusterCVEService.Singleton(),
 		imageCVEService.Singleton(),
@@ -419,17 +423,23 @@ func servicesToRegister() []pkgGRPC.APIService {
 		processListeningOnPorts.Singleton(),
 	}
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
-		// TODO Remove (deprecated) v1 report configuration service when Reporting 2.0 is GA.
+	if features.VulnReportingEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
+		servicesToRegister = append(servicesToRegister, complianceScanSettings.Singleton())
 	}
 
 	if features.AdministrationEvents.Enabled() {
 		servicesToRegister = append(servicesToRegister, administrationEventService.Singleton())
+	}
+
+	if features.UnifiedCVEDeferral.Enabled() {
+		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -441,6 +451,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		networkBaselineDataStore.Singleton(),
 		delegatedRegistryConfigDataStore.Singleton(),
 		iiDatastore.Singleton(),
+		v2ComplianceMgr.Singleton(),
 		autoTriggerUpgrades,
 	); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
@@ -464,6 +475,16 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 			panic(err)
 		}
 	}
+}
+
+// Returns API rate limiter for gRPC/HTTP/Stream requests made to central.
+func newAPIRateLimiter() ratelimit.RateLimiter {
+	apiRequestLimitPerSec := env.CentralAPIRateLimitPerSecond.IntegerSetting()
+	if apiRequestLimitPerSec < 0 {
+		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
+	}
+
+	return ratelimit.NewRateLimiter(apiRequestLimitPerSec)
 }
 
 func startGRPCServer() {
@@ -532,6 +553,7 @@ func startGRPCServer() {
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
+		RateLimiter:        newAPIRateLimiter(),
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
@@ -560,13 +582,8 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	telemetryCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Administration)))
-
-	if cds, err := configDS.Singleton().GetConfig(telemetryCtx); err == nil || cds == nil {
-		if t := cds.GetPublicConfig().GetTelemetry(); t == nil || t.GetEnabled() {
+	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
+		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
 			if cfg := centralclient.Enable(); cfg.Enabled() {
 				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
 				gs := cfg.Gatherer()
@@ -769,9 +786,9 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
-			Route:         "/api/product/usage/secured-units/csv",
+			Route:         "/api/administration/usage/secured-units/csv",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
-			ServerHandler: productUsageCSV.CSVHandler(productUsageDataStore.Singleton()),
+			ServerHandler: administrationUsageCSV.CSVHandler(administrationUsageDataStore.Singleton()),
 			Compression:   true,
 		},
 	}
@@ -803,7 +820,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		// Append report custom routes
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/jobs/download",
@@ -855,13 +872,14 @@ func waitForTerminationSignal() {
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
 		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
-		{productUsageInjector.Singleton(), "product usage injector"},
+		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{obj: apiTokenExpiration.Singleton(), name: "api token expiration notifier"},
-		{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"},
 	}
 
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	} else {
+		stoppables = append(stoppables, stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
 	}
 
 	if features.AdministrationEvents.Enabled() {

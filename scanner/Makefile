@@ -33,14 +33,16 @@ endif
 
 GO_VERSION := $(firstword $(subst go version ,,$(shell go version)))
 EXPECTED_GO_VERSION := $(shell cat ../EXPECTED_GO_VERSION)
-ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
-$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
-endif
 
 BUILD_FLAGS := CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH}
-BUILD_CMD := go build -trimpath -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)" -o image/scanner/bin/scanner ./cmd/scanner
+BUILD_CMD := $(BUILD_FLAGS) go build \
+                 -trimpath \
+                 -ldflags="-X github.com/stackrox/stackrox/scanner/internal/version.Version=$(TAG)"
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
+
+# The namespace to use for targets that require it (E2E, certs, etc).
+SCANNER_NAMESPACE ?= stackrox
 
 .PHONY: all
 all: deps scanner-go-build images
@@ -50,9 +52,15 @@ all: deps scanner-go-build images
 ###############################################################
 
 OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN):
-	$(SILENT)echo "+ $@"
+$(OSSLS_BIN): | scanner-go-check-ver
+	@echo "+ $@"
 	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
+
+.PHONY: scanner-go-check-ver
+scanner-go-check-ver:
+ifneq ($(GO_VERSION),$(EXPECTED_GO_VERSION))
+	$(error 'Go version "$(GO_VERSION)" does not match the expected "$(EXPECTED_GO_VERSION)" version.')
+endif
 
 #########
 ## Tag ##
@@ -60,40 +68,60 @@ $(OSSLS_BIN):
 
 .PHONY: tag
 tag:
-	$(SILENT)echo $(TAG)
+	@echo $(TAG)
+
+###############
+## Go Builds ##
+###############
+
+build-cmd := $(BUILD_CMD)
+build-d   := bin
+build-t   := $(addprefix $(build-d)/,$(notdir $(wildcard cmd/*)))
+
+.PHONY: build
+build: $(build-t)
+
+.PHONY: $(build-t)
+$(build-t): deps
+	@echo "+ $@"
+	$(build-cmd) -o $@ ./cmd/$(@F)
+
+.PHONY: clean-build
+clean-build:
+	@echo "+ $@"
+	$(SILENT)rm -rf bin/
 
 ############
 ## Images ##
 ############
 
+image-prefix := scanner-v4
+
 .PHONY: images
 images: scanner-image db-image
 
-.PHONY: scanner-go-build
-scanner-go-build: deps
-	$(SILENT)echo "+ $@"
-	$(BUILD_FLAGS) $(BUILD_CMD)
+image/scanner/bin/scanner: bin/scanner
+	@echo "+ $@"
+	cp $< $@
 
 .PHONY: scanner-go-build-local
 scanner-go-build-local:
-	$(SILENT)echo "+ $@"
-	$(SILENT)$(MAKE) GOOS=${HOST_OS} scanner-go-build
+	@echo "+ $@"
+	$(MAKE) SILENT=$(SILENT) GOOS=${HOST_OS} image/scanner/bin/scanner
 
 OSSLS_NOTICE_DEP := ossls-notice
 ifdef CI
 	OSSLS_NOTICE_DEP := ossls-notice-no-download
 endif
 .PHONY: scanner-image
-scanner-image: scanner-go-build copy-scripts $(OSSLS_NOTICE_DEP)
-	$(SILENT)echo "+ $@"
-	$(SILENT)echo "Building scanner:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4:$(TAG) -f image/scanner/Dockerfile image/scanner
+scanner-image: image/scanner/bin/scanner copy-scripts $(OSSLS_NOTICE_DEP)
+	@echo "+ $@"
+	$(DOCKERBUILD) -t stackrox/$(image-prefix):$(TAG) -f image/scanner/Dockerfile image/scanner
 
 .PHONY: db-image
 db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
-	$(SILENT)echo "+ $@"
-	$(SILENT)echo "Building scanner-db:$(TAG)"
-	$(SILENT)$(DOCKERBUILD) -t stackrox/scanner-v4-db:$(TAG) -f image/db/Dockerfile image/db
+	@echo "+ $@"
+	$(DOCKERBUILD) -t stackrox/$(image-prefix)-db:$(TAG) -f image/db/Dockerfile image/db
 
 ###########
 ## Tests ##
@@ -103,8 +131,8 @@ db-image: copy-db-scripts copy-db-image-scripts copy-db-sigs
 ## Tools ##
 ###########
 
-deps: ../go.mod
-	$(SILENT)echo "+ $@"
+deps: ../go.mod | scanner-go-check-ver
+	@echo "+ $@"
 	$(SILENT)go mod tidy
 ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { \
@@ -113,60 +141,226 @@ ifdef CI
 	}
 endif
 	$(SILENT)go mod verify
-	$(SILENT)touch deps
+	$(SILENT)touch $@
 
 .PHONY: ossls-notice-no-download
 ossls-notice-no-download: deps
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)ossls version
 	$(SILENT)ossls audit --export image/scanner/THIRD_PARTY_NOTICES
 
 .PHONY: ossls-notice
 ossls-notice: deps $(OSSLS_BIN)
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)$(OSSLS_BIN) version
 	$(SILENT)$(OSSLS_BIN) audit --export image/scanner/THIRD_PARTY_NOTICES
 
 SCRIPTS := restore-all-dir-contents import-additional-cas save-dir-contents
 .PHONY: copy-scripts
 copy-scripts: $(addprefix ../image/rhel/static-bin/,$(SCRIPTS))
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/scanner/scripts
 
 .PHONY: copy-db-scripts
 copy-db-scripts: ../image/postgres/download.sh
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/db
 
 .PHONY: copy-db-image-scripts
 copy-db-image-scripts: ../image/postgres/scripts/init-entrypoint.sh
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp $^ image/db/scripts
 
 .PHONY: copy-db-sigs
 copy-db-sigs: ../image/postgres/signatures
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)cp -R $^ image/db/signatures
+
+##################
+## Certificates ##
+##################
+
+# Certificates vars
+# =================
+
+SCANNER_CERTS_NAMESPACE ?= $(SCANNER_NAMESPACE)
+
+certs-d         := certs
+certs-names     := scanner-v4 scanner-v4-db scannerctl
+certs-namespace := $(SCANNER_CERTS_NAMESPACE)
+
+# Targets.
+certs-t := $(foreach name,$(certs-names),$(certs-d)/$(name)/.verified)
+
+# Subject prefix.
+certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=Scanner
+
+# DNS name or CN of the current cert target.
+cert-dns = $(notdir $(@D)).$(certs-namespace)
+
+# Certificates rules
+# ==================
+
+.PHONY: certs clean-certs
+
+certs: $(certs-t)
+
+clean-certs:
+	@echo "+ $@"
+	$(SILENT)rm -rf certs/
+
+# Generate keys.
+#
+.PRECIOUS: $(certs-d)/%/key.pem
+$(certs-d)/%/key.pem:
+	@echo "+ $@"
+	$(SILENT)mkdir -p $(@D)
+	$(SILENT) openssl genpkey  \
+	    -algorithm RSA \
+	    -out $@
+
+# Generate root certificate authority.
+#
+$(certs-d)/ca/root.pem: $(certs-d)/ca/key.pem
+	@echo "+ $@"
+	$(SILENT) openssl req \
+	    -new \
+	    -x509 \
+	    -nodes \
+	    -days 398 \
+	    -subj "$(certs-subj)/CN=RootCA" \
+	    -key $< \
+	    -out $@
+
+# Generate a certificate signing request.
+#
+$(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
+	$(SILENT) openssl req \
+	    -new \
+	    -subj "$(certs-subj)/CN=$(cert-dns)" \
+	    -key $< \
+	    -out $@
+
+# Copy CA cert and key.
+#
+.PRECIOUS: $(certs-d)/%/ca.pem
+$(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
+	@echo "+ $@"
+	$(SILENT)ln -fs $(abspath $<) $@
+
+.PRECIOUS: $(certs-d)/%/ca-key.pem
+$(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
+	@echo "+ $@"
+	$(SILENT)ln -fs $(abspath $<) $@
+
+# Generate a certificate.
+#
+.PRECIOUS: $(certs-d)/%/cert.pem
+$(certs-d)/%/cert.pem: $(certs-d)/%/cert.csr $(certs-d)/%/ca.pem $(certs-d)/%/ca-key.pem
+	@echo "+ $@"
+	$(SILENT) openssl x509 \
+	    -req \
+	    -days 365 \
+	    -in $< \
+	    -CA $(@D)/ca.pem \
+	    -CAkey $(@D)/ca-key.pem \
+	    -CAcreateserial \
+	    -sha256 \
+	    -extfile <(echo "subjectAltName = DNS:$(cert-dns), DNS:localhost, DNS:127.0.0.1") \
+	    -out $@
+
+# Verify certs (loose sanity check).
+#
+$(certs-d)/%/.verified: $(certs-d)/%/cert.pem
+	$(SILENT) openssl verify \
+	    -CAfile $(@D)/ca.pem \
+	    $<
+	@echo >$@
+
+#########
+## E2E ##
+#########
+
+# E2E vars
+# ========
+
+SCANNER_E2E_TAG       ?= $(TAG)
+SCANNER_E2E_NAMESPACE ?= $(SCANNER_NAMESPACE)
+
+e2e-chart     := e2etests/helmchart
+e2e-namespace := $(SCANNER_E2E_NAMESPACE)
+e2e-tag       := $(SCANNER_E2E_TAG)
+
+e2e-conf-files := db-postgresql.conf \
+                  db-pg_hba.conf
+
+e2e-certs := ca.pem \
+             scanner-v4-key.pem \
+             scanner-v4-cert.pem \
+             scanner-v4-db-key.pem \
+             scanner-v4-db-cert.pem
+
+e2e-files-d      := $(e2e-chart)/files
+e2e-conf-files-t := $(addprefix $(e2e-files-d)/,$(e2e-conf-files))
+e2e-certs-t      := $(addprefix $(e2e-files-d)/,$(e2e-certs))
+
+# E2E rules
+# =========
+
+.PHONY: e2e-deploy clean-e2e
+
+ifeq ($(SILENT),@)
+.SILENT: e2e-deploy $(e2e-conf-files-t)
+endif
+
+e2e-deploy: $(e2e-conf-files-t) $(e2e-certs-t)
+	@echo "+ $@" $(e2e-tag)
+	$(SILENT)-kubectl create namespace $(e2e-namespace)
+	helm upgrade scanner-v4-e2e $(e2e-chart) \
+	    --install \
+	    --namespace $(e2e-namespace) \
+	    --set image.tag="$(e2e-tag)"
+
+clean-e2e:
+	@echo "+ $@"
+	$(SILENT)rm -rf $(e2e-files-d)/*
+
+# DB configuration files.
+#
+$(e2e-files-d)/db-%.conf: image/db/%.conf
+	$(SILENT)mkdir -p $(@D)
+	$(SILENT)cp $^ $@
+
+# CA, cert and key from cert targets.
+#
+$(e2e-files-d)/%-key.pem: $(certs-d)/%/.verified
+	$(SILENT)cp $(<D)/key.pem $@
+
+$(e2e-files-d)/%-cert.pem: $(certs-d)/%/.verified
+	$(SILENT)cp $(<D)/cert.pem $@
+
+$(e2e-files-d)/ca.pem: $(certs-d)/ca/root.pem
+	$(SILENT)cp $< $@
 
 ###########
 ## Clean ##
 ###########
 
 .PHONY: clean
-clean: clean-image clean-gobin clean-deps
-	$(SILENT)echo "+ $@"
+clean: clean-image clean-gobin clean-deps clean-e2e clean-certs clean-build
+	@echo "+ $@"
 
 .PHONY: clean-image
 clean-image:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)git clean -xdf image/scanner/bin
 
 .PHONY: clean-gobin
 clean-gobin:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)rm -rf $(GOBIN)
 
 .PHONY: clean-deps
 clean-deps:
-	$(SILENT)echo "+ $@"
+	@echo "+ $@"
 	$(SILENT)rm -f deps

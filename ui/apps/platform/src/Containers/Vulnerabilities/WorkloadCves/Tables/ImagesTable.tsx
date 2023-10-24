@@ -79,7 +79,9 @@ export type ImagesTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
+    hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
+    onUnwatchImage: (imageName: string) => void;
 };
 
 function ImagesTable({
@@ -87,8 +89,12 @@ function ImagesTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
+    hasWriteAccessForWatchedImage,
     onWatchImage,
+    onUnwatchImage,
 }: ImagesTableProps) {
+    const colSpan = hasWriteAccessForWatchedImage ? 7 : 6;
+
     return (
         <TableComposable borders={false} variant="compact">
             <Thead noWrap>
@@ -106,10 +112,10 @@ function ImagesTable({
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
-                    <Td />
+                    {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
                 </Tr>
             </Thead>
-            {images.length === 0 && <EmptyTableResults colSpan={6} />}
+            {images.length === 0 && <EmptyTableResults colSpan={colSpan} />}
             {images.map(
                 ({
                     id,
@@ -125,6 +131,11 @@ function ImagesTable({
                     const importantCount = imageCVECountBySeverity.important.total;
                     const moderateCount = imageCVECountBySeverity.moderate.total;
                     const lowCount = imageCVECountBySeverity.low.total;
+
+                    const isWatchedImage = watchStatus === 'WATCHED';
+                    const watchImageMenuText = isWatchedImage ? 'Unwatch image' : 'Watch image';
+                    const watchImageMenuAction = isWatchedImage ? onUnwatchImage : onWatchImage;
+
                     return (
                         <Tbody
                             key={id}
@@ -136,7 +147,7 @@ function ImagesTable({
                                 <Td dataLabel="Image">
                                     {name ? (
                                         <ImageNameTd name={name} id={id}>
-                                            {watchStatus === 'WATCHED' && (
+                                            {isWatchedImage && (
                                                 <Label
                                                     isCompact
                                                     variant="outline"
@@ -181,21 +192,23 @@ function ImagesTable({
                                 <Td>
                                     <DateDistanceTd date={scanTime} />
                                 </Td>
-                                <Td isActionCell>
-                                    {name?.tag && (
-                                        <ActionsColumn
-                                            items={[
-                                                {
-                                                    title: 'Watch image',
-                                                    onClick: () =>
-                                                        onWatchImage(
-                                                            `${name.registry}/${name.remote}:${name.tag}`
-                                                        ),
-                                                },
-                                            ]}
-                                        />
-                                    )}
-                                </Td>
+                                {hasWriteAccessForWatchedImage && (
+                                    <Td isActionCell>
+                                        {name?.tag && (
+                                            <ActionsColumn
+                                                items={[
+                                                    {
+                                                        title: watchImageMenuText,
+                                                        onClick: () =>
+                                                            watchImageMenuAction(
+                                                                `${name.registry}/${name.remote}:${name.tag}`
+                                                            ),
+                                                    },
+                                                ]}
+                                            />
+                                        )}
+                                    </Td>
+                                )}
                             </Tr>
                         </Tbody>
                     );

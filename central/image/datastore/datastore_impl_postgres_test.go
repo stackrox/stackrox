@@ -78,8 +78,7 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 	cveIndexer := imageCVEPostgres.NewIndexer(s.db)
 	cveSearcher := imageCVESearch.New(cveStorage, cveIndexer)
-	cveDataStore, err := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
-	s.NoError(err)
+	cveDataStore := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 }
 

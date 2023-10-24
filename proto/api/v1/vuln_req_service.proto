@@ -20,33 +20,16 @@ message ListVulnerabilityRequestsResponse {
     repeated storage.VulnerabilityRequest request_infos = 1;
 }
 
-// next available tag: 8
+// next available tag: 6
 message DeferVulnRequest {
-    enum ExpiryType {
-        TIME            = 0;
-        ALL_CVE_FIXABLE = 1;
-        ANY_CVE_FIXABLE = 2;
-    }
-
     // This field indicates the CVEs requested to be deferred.
-    // Only one field, `cve` or `cves`, can be set in the request.
     string                             cve                      = 1;
-    // This field is under development. This field indicates the CVEs requested to be deferred.
-    // Only one field, `cve` or `cves`, can be set in the request.
-    repeated string                    cves                     = 6;
     string                             comment                  = 2;
     storage.VulnerabilityRequest.Scope scope                    = 3;
     oneof expiry {
         bool                           expires_when_fixed       = 4;
         google.protobuf.Timestamp      expires_on               = 5;
     }
-    // This field is under development.
-    // This field can be used only for deferral requests.
-    // This field indicates the type of expiry set for the request.
-    // `TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.
-    // `ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request are fixable.
-    // `ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable.
-    ExpiryType                        expiry_type               = 7;
 }
 
 message DeferVulnResponse {
@@ -55,11 +38,7 @@ message DeferVulnResponse {
 
 message FalsePositiveVulnRequest {
     // This field indicates the CVE requested to be marked as false-positive.
-    // Only one field, `cve` or `cves`, can be set in the request.
     string                             cve     = 1;
-    // This field is under development. This field indicates the CVEs requested to be marked as false-positive.
-    // Only one field, `cve` or `cves`, can be set in the request.
-    repeated string                    cves    = 4;
     storage.VulnerabilityRequest.Scope scope   = 2;
     string                             comment = 3;
 }

@@ -22,12 +22,14 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	grpc_errors "github.com/stackrox/rox/pkg/grpc/errors"
 	grpc_logging "github.com/stackrox/rox/pkg/grpc/logging"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
+	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -43,8 +45,9 @@ import (
 )
 
 const (
-	defaultMaxMsgSize         = 12 * 1024 * 1024
-	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
+	defaultMaxMsgSize               = 12 * 1024 * 1024
+	defaultMaxResponseMsgSize       = 256 * 1024 * 1024 // 256MB
+	defaultMaxGrpcConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
 )
 
 func init() {
@@ -55,13 +58,23 @@ func init() {
 var (
 	log = logging.LoggerForModule()
 
-	maxMsgSizeSetting         = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
-	maxResponseMsgSizeSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
-	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
+	// MaxMsgSizeSetting is the setting used for gRPC servers and clients to set maximum receive sizes.
+	MaxMsgSizeSetting               = env.RegisterIntegerSetting("ROX_GRPC_MAX_MESSAGE_SIZE", defaultMaxMsgSize)
+	maxResponseMsgSizeSetting       = env.RegisterIntegerSetting("ROX_GRPC_MAX_RESPONSE_SIZE", defaultMaxResponseMsgSize)
+	maxGrpcConcurrentStreamsSetting = env.RegisterIntegerSetting("ROX_GRPC_MAX_CONCURRENT_STREAMS", defaultMaxGrpcConcurrentStreams)
+	enableRequestTracing            = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
 func maxResponseMsgSize() int {
 	return maxResponseMsgSizeSetting.IntegerSetting()
+}
+
+func maxGrpcConcurrentStreams() uint32 {
+	if maxGrpcConcurrentStreamsSetting.IntegerSetting() <= 0 {
+		return defaultMaxGrpcConcurrentStreams
+	}
+
+	return uint32(maxGrpcConcurrentStreamsSetting.IntegerSetting())
 }
 
 type server interface {
@@ -120,6 +133,7 @@ type Config struct {
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
 	Auditor            audit.Auditor
+	RateLimiter        ratelimit.RateLimiter
 
 	PreAuthContextEnrichers  []contextutil.ContextUpdater
 	PostAuthContextEnrichers []contextutil.ContextUpdater
@@ -177,12 +191,20 @@ func (a *apiImpl) Stop() bool {
 }
 
 func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
-	u := []grpc.UnaryServerInterceptor{
-		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		grpc_errors.ErrorToGrpcCodeInterceptor,
-		grpc_prometheus.UnaryServerInterceptor,
-		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
+	var u []grpc.UnaryServerInterceptor
+
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
+	u = append(u, grpc_prometheus.UnaryServerInterceptor)
+	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
+
+	if a.config.RateLimiter != nil {
+		u = append(u, a.config.RateLimiter.GetUnaryServerInterceptor())
 	}
+
+	u = append(u, contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
+	u = append(u, contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
 
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		u = append(u, contextutil.UnaryServerInterceptor(a.config.PreAuthContextEnrichers...))
@@ -216,13 +238,21 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 }
 
 func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
-	s := []grpc.StreamServerInterceptor{
-		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
-		grpc_prometheus.StreamServerInterceptor,
-		grpc_errors.ErrorToGrpcCodeStreamInterceptor,
-		contextutil.StreamServerInterceptor(
-			authn.ContextUpdater(a.config.IdentityExtractors...)),
+	var s []grpc.StreamServerInterceptor
+
+	// The metrics and error interceptors are first in line, i.e., outermost, to
+	// make sure all requests are registered in Prometheus with errors converted
+	// to gRPC status codes.
+	s = append(s, grpc_prometheus.StreamServerInterceptor)
+	s = append(s, grpc_errors.ErrorToGrpcCodeStreamInterceptor)
+
+	if a.config.RateLimiter != nil {
+		s = append(s, a.config.RateLimiter.GetStreamServerInterceptor())
 	}
+
+	s = append(s, contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC))
+	s = append(s, contextutil.StreamServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)))
+
 	if len(a.config.PreAuthContextEnrichers) > 0 {
 		s = append(s, contextutil.StreamServerInterceptor(a.config.PreAuthContextEnrichers...))
 	}
@@ -286,23 +316,28 @@ func allowCookiesHeaderMatcher(key string) (string, bool) {
 }
 
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
+	var preAuthHTTPInterceptors []httputil.HTTPInterceptor
+	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.requestInfoHandler.HTTPIntercept)
+
+	if a.config.RateLimiter != nil {
+		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
+	}
+
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
 	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
+	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, contextutil.HTTPInterceptor(contextUpdaters...))
 
 	// Interceptors for HTTP/1.1 requests (in order of processing):
 	// - RequestInfo handler (consumed by other handlers)
 	// - IdentityExtractor
 	// - AuthConfigChecker
-	preAuthHTTPInterceptors := httputil.ChainInterceptors(
-		a.requestInfoHandler.HTTPIntercept,
-		contextutil.HTTPInterceptor(contextUpdaters...),
-	)
+	preAuthHTTPInterceptorChain := httputil.ChainInterceptors(preAuthHTTPInterceptors...)
 
 	// Interceptors for HTTP/1.1 requests that must be called after
 	// authorization (in order of processing):
 	// - Post auth context enrichers, including SAC (with authz tracing if on)
 	// - Any other specified interceptors (with authz tracing sink if on)
-	postAuthHTTPInterceptors := httputil.ChainInterceptors(
+	postAuthHTTPInterceptorChain := httputil.ChainInterceptors(
 		append([]httputil.HTTPInterceptor{
 			contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)},
 			a.config.HTTPInterceptors...)...,
@@ -318,13 +353,13 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		allRoutes = append(allRoutes, srvWithRoutes.CustomRoutes()...)
 	}
 	for _, route := range allRoutes {
-		handler := preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptors))
+		handler := preAuthHTTPInterceptorChain(route.Handler(postAuthHTTPInterceptorChain))
 
 		if a.config.Auditor != nil && route.EnableAudit {
 			postAuthHTTPInterceptorsWithAudit := httputil.ChainInterceptors(
-				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptors)...,
+				append([]httputil.HTTPInterceptor{a.config.Auditor.PostAuthHTTPInterceptor}, postAuthHTTPInterceptorChain)...,
 			)
-			handler = preAuthHTTPInterceptors(route.Handler(postAuthHTTPInterceptorsWithAudit))
+			handler = preAuthHTTPInterceptorChain(route.Handler(postAuthHTTPInterceptorsWithAudit))
 		}
 
 		if a.config.HTTPMetrics != nil {
@@ -334,7 +369,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	if a.config.AuthProviders != nil {
-		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptors(a.config.AuthProviders))
+		mux.Handle(a.config.AuthProviders.URLPathPrefix(), preAuthHTTPInterceptorChain(a.config.AuthProviders))
 	}
 
 	gwMux := runtime.NewServeMux(
@@ -357,7 +392,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		}
 	}
 	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
-	if env.VulnReportingEnhancements.BooleanSetting() {
+	if features.VulnReportingEnhancements.Enabled() {
 		mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
 	}
 	if err := prometheus.Register(mux); err != nil {
@@ -379,7 +414,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
-		grpc.MaxRecvMsgSize(maxMsgSizeSetting.IntegerSetting()),
+		grpc.MaxRecvMsgSize(MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time: 40 * time.Second,
 		}),
@@ -387,6 +422,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 			MinTime:             5 * time.Second,
 			PermitWithoutStream: true,
 		}),
+		grpc.MaxConcurrentStreams(maxGrpcConcurrentStreams()),
 	)
 
 	for _, service := range a.apiServices {
@@ -446,6 +482,5 @@ func (a *apiImpl) serveBlocking(srvAndLis serverAndListener, errC chan<- error) 
 				errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
 			}
 		}
-
 	}
 }

@@ -13,6 +13,7 @@ export const selectors = {
         enforcementTab: 'li.pf-c-tabs__item:contains("Enforcement")',
         deploymentTab: 'li.pf-c-tabs__item:contains("Deployment")',
         policyTab: 'li.pf-c-tabs__item:contains("Policy")',
+        networkPoliciesTab: 'li.pf-c-tabs__item:contains("Network policies")',
     },
     enforcement: {
         detailMessage: '[aria-label="Enforcement detail message"]',
@@ -23,7 +24,5 @@ export const selectors = {
         containerConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Container configuration")')`,
         securityContext: `[aria-label="Deployment details"] article:has('h3:contains("Security context")')`,
         portConfiguration: `[aria-label="Deployment details"] article:has('h3:contains("Port configuration")')`,
-        networkPolicy: `[aria-label="Deployment details"] article:has('h3:contains("Network policies")')`,
-        networkPolicyModal: '[role="dialog"]:contains("Network policy details")',
     },
 };

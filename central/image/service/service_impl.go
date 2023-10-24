@@ -8,10 +8,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	cluster "github.com/stackrox/rox/central/cluster/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -84,6 +84,8 @@ var (
 	})
 
 	reprocessInterval = env.ReprocessInterval.DurationSetting()
+
+	delegateScanPermissions = []string{"Image"}
 )
 
 // serviceImpl provides APIs for alerts.
@@ -105,7 +107,7 @@ type serviceImpl struct {
 
 	scanWaiterManager waiter.Manager[*storage.Image]
 
-	clusterDataStore cluster.DataStore
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -203,7 +205,7 @@ func internalScanRespFromImage(img *storage.Image) *v1.ScanImageInternalResponse
 
 func (s *serviceImpl) saveImage(img *storage.Image) error {
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
 		return err
 	}
 	return nil
@@ -311,7 +313,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 
 	if request.GetCluster() != "" {
 		// The request indicates enrichment should be delegated to a specific cluster.
-		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterDataStore, request.GetCluster())
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, s.clusterSACHelper, request.GetCluster(), delegateScanPermissions)
 		if err != nil {
 			return nil, err
 		}
@@ -411,7 +413,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 		// the central datastore. Without this users would not have an indication that scans from
 		// secured clusters are failing.
 		hasErrors = true
-		log.Warnf("Received image enrichment request with errors %q: %v", request.GetImageName().GetFullName(), request.GetError())
+		log.Warnw("Received image enrichment request with errors",
+			logging.ImageName(request.GetImageName().GetFullName()), logging.Err(errors.New(request.GetError())))
 	}
 
 	var imgExists bool
@@ -513,7 +516,8 @@ func buildNames(srcImage *storage.ImageName, metadata *storage.ImageMetadata) []
 	if mirror := metadata.GetDataSource().GetMirror(); mirror != "" {
 		mirrorImg, err := utils.GenerateImageFromString(mirror)
 		if err != nil {
-			log.Warnf("Failed generating image from string %q: %v", mirror, err)
+			log.Warnw("Failed generating image from string",
+				logging.String("mirror", mirror), logging.Err(err))
 		} else {
 			names = append(names, mirrorImg.GetName())
 		}
@@ -529,7 +533,8 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 	}
 
 	if err := s.scanWaiterManager.Send(reqID, img, scanErr); err != nil {
-		log.Errorf("Failed to send result to scan waiter %q: %v", reqID, err)
+		log.Errorw("Failed to send results to scan waiter",
+			logging.String("request_id", reqID), logging.Err(err))
 	}
 }
 

@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
@@ -36,11 +37,12 @@ type datastoreImpl struct {
 	keyFence concurrency.KeyFence
 }
 
-func (ds *datastoreImpl) buildSuppressedCache() error {
+func (ds *datastoreImpl) buildSuppressedCache() {
 	query := pkgSearch.NewQueryBuilder().AddBools(pkgSearch.CVESuppressed, true).ProtoQuery()
 	suppressedCVEs, err := ds.searcher.SearchRawImageCVEs(accessAllCtx, query)
 	if err != nil {
-		return errors.Wrap(err, "searching suppress CVEs")
+		log.Error(errors.Wrap(err, "Vulnerability exception management may not function correctly. Failed to build cache of CVE exceptions."))
+		return
 	}
 
 	ds.cveSuppressionLock.Lock()
@@ -51,7 +53,6 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 			SuppressExpiry:     cve.GetSnoozeExpiry(),
 		}
 	}
-	return nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

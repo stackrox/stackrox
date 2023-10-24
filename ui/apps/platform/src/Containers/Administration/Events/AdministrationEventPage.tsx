@@ -4,6 +4,7 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Divider,
     Flex,
     PageSection,
     Spinner,
@@ -16,7 +17,6 @@ import { AdministrationEvent, getAdministrationEvent } from 'services/Administra
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { administrationEventsBasePath } from 'routePaths';
 
-import { getLevelText } from './AdministrationEvent';
 import AdministrationEventDescription from './AdministrationEventDescription';
 
 export type AdministrationEventPageProps = {
@@ -44,40 +44,41 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
             });
     }, [id]);
 
-    const h1 = event ? `${getLevelText(event.level)} - ${event.domain}` : 'Administration event';
+    const h1 = event ? event.domain : 'Administration event';
 
     /* eslint-disable no-nested-ternary */
     return (
         <>
             <PageTitle title={`Administration events - ${h1}`} />
             <PageSection component="div" variant="light">
-                <Flex direction={{ default: 'column' }}>
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={administrationEventsBasePath}>
-                            Administration events
-                        </BreadcrumbItemLink>
-                        <BreadcrumbItem>{h1}</BreadcrumbItem>
-                    </Breadcrumb>
-                    <Title headingLevel="h1">{h1}</Title>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
+                    <Flex direction={{ default: 'column' }}>
+                        <Breadcrumb>
+                            <BreadcrumbItemLink to={administrationEventsBasePath}>
+                                Administration events
+                            </BreadcrumbItemLink>
+                            <BreadcrumbItem>{h1}</BreadcrumbItem>
+                        </Breadcrumb>
+                        <Divider component="div" />
+                        <Title headingLevel="h1">{h1}</Title>
+                    </Flex>
+                    {isLoading ? (
+                        <Bullseye>
+                            <Spinner isSVG />
+                        </Bullseye>
+                    ) : errorMessage ? (
+                        <Alert
+                            variant="warning"
+                            title="Unable to fetch administration event"
+                            component="div"
+                            isInline
+                        >
+                            {errorMessage}
+                        </Alert>
+                    ) : event ? (
+                        <AdministrationEventDescription event={event} />
+                    ) : null}
                 </Flex>
-            </PageSection>
-            <PageSection component="div" variant="light">
-                {isLoading ? (
-                    <Bullseye>
-                        <Spinner isSVG />
-                    </Bullseye>
-                ) : errorMessage ? (
-                    <Alert
-                        variant="warning"
-                        title="Unable to fetch administration event"
-                        component="div"
-                        isInline
-                    >
-                        {errorMessage}
-                    </Alert>
-                ) : event ? (
-                    <AdministrationEventDescription event={event} />
-                ) : null}
             </PageSection>
         </>
     );

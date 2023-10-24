@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { CodeBlock, Flex } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
     TableComposable,
@@ -11,41 +10,54 @@ import {
     Tr,
 } from '@patternfly/react-table';
 
-import { AdministrationEvent } from 'services/AdministrationEventsService';
+import IconText from 'Components/PatternFly/IconText/IconText';
+import { UseURLSortResult } from 'hooks/useURLSort';
+import {
+    AdministrationEvent,
+    hasAdministrationEventsFilter,
+    lastOccurredAtField,
+    numOccurrencesField,
+} from 'services/AdministrationEventsService';
+import { SearchFilter } from 'types/search';
 
 import { getLevelIcon, getLevelText } from './AdministrationEvent';
+import AdministrationEventHintMessage from './AdministrationEventHintMessage';
 
-import './AdministrationEventsTable.css';
+import AdministrationEventsEmptyState from './AdministrationEventsEmptyState';
+
+const colSpan = 5;
 
 export type AdministrationEventsTableProps = {
     events: AdministrationEvent[];
+    getSortParams: UseURLSortResult['getSortParams'];
+    searchFilter: SearchFilter;
 };
 
-function AdministrationEventsTable({ events }: AdministrationEventsTableProps): ReactElement {
+function AdministrationEventsTable({
+    events,
+    getSortParams,
+    searchFilter,
+}: AdministrationEventsTableProps): ReactElement {
     return (
-        <>
-            <TableComposable variant="compact" borders={false} id="AdministrationEventsTable">
-                <Thead>
-                    <Tr>
-                        <Td />
-                        <Th>Level</Th>
-                        <Th>Domain</Th>
-                        <Th>Resource type</Th>
-                        <Th>Event last occurred at</Th>
-                        <Th className="pf-u-text-align-right">Occurrences</Th>
-                    </Tr>
-                </Thead>
-                {events.map((event) => {
-                    const {
-                        domain,
-                        hint,
-                        id,
-                        lastOccurredAt,
-                        level,
-                        message,
-                        numOccurrences,
-                        resourceType,
-                    } = event;
+        <TableComposable variant="compact" borders={false}>
+            <Thead>
+                <Tr>
+                    <Th>Domain</Th>
+                    <Th modifier="nowrap">Resource type</Th>
+                    <Th>Level</Th>
+                    <Th sort={getSortParams(lastOccurredAtField)}>Last occurred</Th>
+                    <Th sort={getSortParams(numOccurrencesField)}>Count</Th>
+                </Tr>
+            </Thead>
+            {events.length === 0 ? (
+                <AdministrationEventsEmptyState
+                    colSpan={colSpan}
+                    hasFilter={hasAdministrationEventsFilter(searchFilter)}
+                />
+            ) : (
+                events.map((event) => {
+                    const { domain, id, lastOccurredAt, level, numOccurrences, resource } = event;
+                    const { type: resourceType } = resource;
 
                     return (
                         <Tbody
@@ -56,37 +68,35 @@ function AdministrationEventsTable({ events }: AdministrationEventsTableProps): 
                             }}
                         >
                             <Tr>
-                                <Td dataLabel="Level icon">{getLevelIcon(level)}</Td>
-                                <Td dataLabel="Level">
-                                    <Link to={`/main/administration-events/${id}`}>
-                                        {getLevelText(level)}
-                                    </Link>
+                                <Td dataLabel="Domain" modifier="nowrap">
+                                    <Link to={`/main/administration-events/${id}`}>{domain}</Link>
                                 </Td>
-                                <Td dataLabel="Domain">{domain}</Td>
-                                <Td dataLabel="Resource type">{resourceType}</Td>
-                                <Td dataLabel="Event last occurred at" modifier="nowrap">
+                                <Td dataLabel="Resource type" modifier="nowrap">
+                                    {resourceType}
+                                </Td>
+                                <Td dataLabel="Level">
+                                    <IconText
+                                        icon={getLevelIcon(level)}
+                                        text={getLevelText(level)}
+                                    />
+                                </Td>
+                                <Td dataLabel="Last occurred" modifier="nowrap">
                                     {lastOccurredAt}
                                 </Td>
-                                <Td dataLabel="Occurrences" className="pf-u-text-align-right">
-                                    {numOccurrences}
-                                </Td>
+                                <Td dataLabel="Count">{numOccurrences}</Td>
                             </Tr>
                             <Tr>
-                                <Td />
-                                <Td colSpan={6}>
+                                <Td colSpan={colSpan}>
                                     <ExpandableRowContent>
-                                        <Flex direction={{ default: 'column' }}>
-                                            {hint && <p>{hint}</p>}
-                                            <CodeBlock>{message}</CodeBlock>
-                                        </Flex>
+                                        <AdministrationEventHintMessage event={event} />
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>
                         </Tbody>
                     );
-                })}
-            </TableComposable>
-        </>
+                })
+            )}
+        </TableComposable>
     );
 }
 

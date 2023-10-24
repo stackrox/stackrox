@@ -1,8 +1,10 @@
 package resources
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
 
@@ -44,7 +46,7 @@ The Find operation returns all NetworkPolicies that would match a given set of l
 Example:
   policiesMatchingDeployment := store.Find("default"), map[string]string{"app": "nginx"})
 
-*) TODO: See ADR-XXX for alternative implementations that were considered
+See ADR-0002 "Design In-Memory Data Store for Network Policies in Sensor" for alternative implementations that were considered
 
 ## Complexities
 
@@ -80,6 +82,22 @@ type networkPolicyStoreImpl struct {
 	lock sync.RWMutex
 	// data: namespace -> result (map: policyID -> policy object ref)
 	data map[string]map[string]*storage.NetworkPolicy
+}
+
+// ReconcileDelete is called after Sensor reconnects with Central and receives its state hashes.
+// Reconciliacion ensures that Sensor and Central have the same state by checking whether a given resource
+// shall be deleted from Central.
+func (n *networkPolicyStoreImpl) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
+	if resType != deduper.TypeNetworkPolicy.String() {
+		return "", errors.Errorf("invalid resource type %v", resType)
+	}
+
+	p := n.Get(resID)
+	if p != nil {
+		return "", nil
+	}
+	// Resource on Central but not on Sensor, send for deletion
+	return resID, nil
 }
 
 func newNetworkPoliciesStore() *networkPolicyStoreImpl {

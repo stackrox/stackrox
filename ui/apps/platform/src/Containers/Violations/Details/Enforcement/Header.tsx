@@ -2,7 +2,7 @@ import React, { ReactElement } from 'react';
 
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { ENFORCEMENT_ACTIONS, ENFORCEMENT_ACTIONS_AS_STRING } from 'constants/enforcementActions';
-import { LifecycleStage } from '../../types/violationTypes';
+import { LifecycleStage } from 'types/policy.proto';
 
 function getDeployHeader(count) {
     let message = '';

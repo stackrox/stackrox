@@ -13,8 +13,7 @@ type ReportRequest struct {
 }
 
 type reportEmailBodyFormat struct {
-	BrandedProductName      string
-	BrandedProductNameShort string
+	BrandedPrefix string
 }
 
 type reportEmailSubjectFormat struct {

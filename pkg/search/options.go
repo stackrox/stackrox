@@ -134,9 +134,9 @@ var (
 	PortProtocol   = newFieldLabel("Port Protocol")
 	// Priority is used in risk datastore internally.
 	Priority                      = newFieldLabel("Priority")
-	ProductUsageTimestamp         = newFieldLabel("Product Usage Timestamp")
-	ProductUsageNodes             = newFieldLabel("Product Usage Nodes")
-	ProductUsageCPUUnits          = newFieldLabel("Product Usage CPU Units")
+	AdministrationUsageTimestamp  = newFieldLabel("Administration Usage Timestamp")
+	AdministrationUsageNodes      = newFieldLabel("Administration Usage Nodes")
+	AdministrationUsageCPUUnits   = newFieldLabel("Administration Usage CPU Units")
 	ClusterPriority               = newFieldLabel("Cluster Risk Priority")
 	NamespacePriority             = newFieldLabel("Namespace Risk Priority")
 	Privileged                    = newFieldLabel("Privileged")
@@ -186,7 +186,8 @@ var (
 	ProcessCreationTime = newFieldLabel("Process Creation Time")
 
 	// ProcessListeningOnPort Search fields
-	Closed = newFieldLabel("Closed")
+	Closed     = newFieldLabel("Closed")
+	ClosedTime = newFieldLabel("Closed Time")
 
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")
@@ -303,6 +304,9 @@ var (
 	RequestedVulnerabilityState = newFieldLabel("Requested Vulnerability State")
 	UserID                      = newFieldLabel("User ID")
 	UserName                    = newFieldLabel("User Name")
+	ImageRegistryScope          = newFieldLabel("Image Registry Scope")
+	ImageRemoteScope            = newFieldLabel("Image Remote Scope")
+	ImageTagScope               = newFieldLabel("Image Tag Scope")
 
 	ComplianceDomainID             = newFieldLabel("Compliance Domain ID")
 	ComplianceRunID                = newFieldLabel("Compliance Run ID")

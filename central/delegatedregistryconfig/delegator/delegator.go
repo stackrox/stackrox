@@ -3,33 +3,36 @@ package delegator
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	centralMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/waiter"
 )
 
 var (
 	log = logging.LoggerForModule()
+
+	inferNamespacePermissions = []string{"Image"}
 )
 
 // New creates a new delegator.
-func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], namespaceDS namespaceDataStore.DataStore) *delegatorImpl {
+func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], namespaceSACHelper sachelper.ClusterNamespaceSacHelper) *delegatorImpl {
 	return &delegatorImpl{
-		deleRegConfigDS:   deleRegConfigDS,
-		connManager:       connManager,
-		scanWaiterManager: scanWaiterManager,
-		namespaceDS:       namespaceDS,
+		deleRegConfigDS:    deleRegConfigDS,
+		connManager:        connManager,
+		scanWaiterManager:  scanWaiterManager,
+		namespaceSACHelper: namespaceSACHelper,
 	}
 }
 
@@ -37,8 +40,8 @@ type delegatorImpl struct {
 	// deleRegConfigDS for pulling the current delegated registry config.
 	deleRegConfigDS datastore.DataStore
 
-	// namespaceDS for confirming namespace exists and user has access.
-	namespaceDS namespaceDataStore.DataStore
+	// namespaceSACHelper for confirming namespace exists and user has access.
+	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
 
 	// connManager for sending scan requests to secured clusters and ensuring
 	// clusters are valid for delegation.
@@ -122,20 +125,18 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 	// Extract namespace from image path following OCP integrated registry convention.
 	namespace := utils.ExtractOpenShiftProject(imgName)
 
-	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, namespace).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	// SearchNamespaces will only return a result if user has access.
-	namespaces, err := d.namespaceDS.SearchNamespaces(ctx, q)
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorInferNamespace")
+
+	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
 	if err != nil {
 		log.Warnf("Skipping namespace inference for %q (%s) and cluster %q due to error: %v", imgName.GetFullName(), namespace, clusterID, err)
 		return ""
 	}
 
-	if len(namespaces) == 1 {
-		return namespace
-	}
-
-	if len(namespaces) > 1 {
-		log.Warnf("Skipping namespace inference, multiple %q namespaces found for cluster %q", namespace, clusterID)
+	for _, ns := range namespaces {
+		if ns.GetName() == namespace {
+			return namespace
+		}
 	}
 
 	return ""

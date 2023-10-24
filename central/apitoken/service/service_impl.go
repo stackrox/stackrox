@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -29,8 +30,13 @@ var (
 			"/v1.APITokenService/GetAPITokens",
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.APITokenService/GenerateToken",
 			"/v1.APITokenService/RevokeToken",
+		},
+		user.With(permissions.View(resources.Access), permissions.Modify(resources.Integration)): {
+			"/v1.APITokenService/GenerateToken",
+		},
+		user.With(permissions.View(resources.Access)): {
+			"/v1.APITokenService/ListAllowedTokenRoles",
 		},
 	})
 )
@@ -114,6 +120,31 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	return &v1.GenerateTokenResponse{
 		Token:    token,
 		Metadata: metadata,
+	}, nil
+}
+
+func (s *serviceImpl) ListAllowedTokenRoles(ctx context.Context, _ *v1.Empty) (*v1.ListAllowedTokenRolesResponse, error) {
+	id, err := authn.IdentityFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	allRoles, err := s.roles.GetAllResolvedRoles(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch all roles")
+	}
+	var result []string
+	for _, role := range allRoles {
+		// Skip "None" role as there's no benefit in assigning it to the API token.
+		if role.GetRoleName() == accesscontrol.None {
+			continue
+		}
+		// We assume that error is returned only when there is a privilege escalation.
+		if err := verifyNoPrivilegeEscalation(id.Roles(), []permissions.ResolvedRole{role}); err == nil {
+			result = append(result, role.GetRoleName())
+		}
+	}
+	return &v1.ListAllowedTokenRolesResponse{
+		RoleNames: result,
 	}, nil
 }
 

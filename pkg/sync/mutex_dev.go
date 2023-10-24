@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultLockTimeout = 5 * time.Second
+	defaultLockTimeout = 10 * time.Second
 
 	// We omit the `ROX_` prefix as this is fairly general (potential open-sourcing). Also, this is not a setting in the
 	// classical sense that is read by roxctl and propagated to deploying. It is a debug setting that normally should

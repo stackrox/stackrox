@@ -16,7 +16,7 @@ import {
     compliancePath,
     configManagementPath,
     dashboardPath,
-    deferralConfigurationPath,
+    exceptionConfigurationPath,
     deprecatedPoliciesPath,
     integrationsPath,
     isRouteEnabled, // predicate function
@@ -36,6 +36,7 @@ import {
     vulnManagementRiskAcceptancePath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
+    exceptionManagementPath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -47,6 +48,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 
 import asyncComponent from './AsyncComponent';
+import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
@@ -105,7 +107,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     'compliance-enhanced': {
         component: asyncComponent(
-            () => import('Containers/ComplianceEnhanced/Status/ComplianceStatusPage')
+            () => import('Containers/ComplianceEnhanced/ComplianceEnhancedPage')
         ),
         path: complianceEnhancedBasePath,
     },
@@ -117,11 +119,17 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/Dashboard/DashboardPage')),
         path: dashboardPath,
     },
-    'deferral-configuration': {
+    'exception-configuration': {
         component: asyncComponent(
-            () => import('Containers/DeferralConfiguration/DeferralConfigurationPage')
+            () => import('Containers/ExceptionConfiguration/ExceptionConfigurationPage')
         ),
-        path: deferralConfigurationPath,
+        path: exceptionConfigurationPath,
+    },
+    'exception-management': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/ExceptionManagement/ExceptionManagementPage')
+        ),
+        path: exceptionManagementPath,
     },
     integrations: {
         component: asyncComponent(() => import('Containers/Integrations/IntegrationsPage')),
@@ -231,6 +239,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
+                <InviteUsersModal />
             </ErrorBoundary>
         </div>
     );

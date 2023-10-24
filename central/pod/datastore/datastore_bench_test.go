@@ -30,7 +30,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	pool := pgtestbase.DB
 
 	simpleFilter := filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
-	podsDatastore, err := NewPostgresDB(pool, nil, simpleFilter)
+	podsDatastore, err := NewPostgresDB(pool, nil, nil, simpleFilter)
 	require.NoError(b, err)
 
 	podPrototype := fixtures.GetPod().Clone()

@@ -12,7 +12,7 @@ FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 LABEL name="scanner-db" \
       vendor="StackRox" \
-      maintainer="support@stackrox.com" \
+      maintainer="https://stackrox.io/" \
       summary="Static vulnerability scanner database for the StackRox Security Platform" \
       description="This image supports static vulnerability scanning for the StackRox Security Platform."
 

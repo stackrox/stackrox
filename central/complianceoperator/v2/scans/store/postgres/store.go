@@ -53,7 +53,6 @@ type Store interface {
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storeType, error)
 
 	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
@@ -97,7 +96,7 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetId(),
-		obj.GetScanConfigId(),
+		pgutils.NilOrUUID(obj.GetScanConfigId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		serialized,
 	}
@@ -160,7 +159,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
-			obj.GetScanConfigId(),
+			pgutils.NilOrUUID(obj.GetScanConfigId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			serialized,
 		})

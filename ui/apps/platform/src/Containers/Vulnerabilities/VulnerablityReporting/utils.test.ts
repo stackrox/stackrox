@@ -1,5 +1,6 @@
 import { ReportStatus } from 'services/ReportsService.types';
-import { getReportStatusText } from './utils';
+import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
+import { ReportParametersFormValues } from './forms/useReportFormValues';
 
 // @TODO: Consider making a more unique name for general utils file under Vulnerability Reporting
 describe('utils', () => {
@@ -69,6 +70,59 @@ describe('utils', () => {
             reportStatus.reportNotificationMethod = 'EMAIL';
 
             expect(getReportStatusText(reportStatus, isDownloadAvailable)).toEqual('Waiting');
+        });
+    });
+
+    describe('getCVEsDiscoveredSinceText', () => {
+        it('should display the correct text when presenting CVEs discovered from all time', () => {
+            const reportParameters: ReportParametersFormValues = {
+                reportName: 'Test Report',
+                reportDescription: '',
+                cveSeverities: [],
+                cveStatus: [],
+                imageType: [],
+                cvesDiscoveredSince: 'ALL_VULN',
+                cvesDiscoveredStartDate: undefined,
+                reportScope: null,
+            };
+
+            const text = getCVEsDiscoveredSinceText(reportParameters);
+
+            expect(text).toBe('All time');
+        });
+
+        it('should display the correct text when presenting CVEs discovered since the last scheduled report that was successfully sent', () => {
+            const reportParameters: ReportParametersFormValues = {
+                reportName: 'Test Report',
+                reportDescription: '',
+                cveSeverities: [],
+                cveStatus: [],
+                imageType: [],
+                cvesDiscoveredSince: 'SINCE_LAST_REPORT',
+                cvesDiscoveredStartDate: undefined,
+                reportScope: null,
+            };
+
+            const text = getCVEsDiscoveredSinceText(reportParameters);
+
+            expect(text).toBe('Last scheduled report that was successfully sent');
+        });
+
+        it('should display the correct text when presenting CVEs discovered since a specific start date', () => {
+            const reportParameters: ReportParametersFormValues = {
+                reportName: 'Test Report',
+                reportDescription: '',
+                cveSeverities: [],
+                cveStatus: [],
+                imageType: [],
+                cvesDiscoveredSince: 'START_DATE',
+                cvesDiscoveredStartDate: '2023-10-02',
+                reportScope: null,
+            };
+
+            const text = getCVEsDiscoveredSinceText(reportParameters);
+
+            expect(text).toBe('10/02/2023');
         });
     });
 });

@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/x509utils"
-	"go.uber.org/zap"
 )
 
 const (
@@ -235,7 +234,7 @@ func getInternalCertificates(namespace string) ([]tls.Certificate, error) {
 
 	log.Warnw("Internal TLS certificates are not valid for all cluster-internal DNS names due to deployment in "+
 		"alternative namespace, issuing ephemeral certificate with adequate DNS names",
-		zap.String("namespace", namespace), zap.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
+		logging.String("namespace", namespace), logging.Strings("internalDNSNames", mtls.CentralSubject.AllHostnamesForNamespace(namespace)))
 	newInternalCert, err := issueInternalCertificate(namespace)
 	if err != nil {
 		return internalCerts, err

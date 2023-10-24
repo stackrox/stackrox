@@ -11,7 +11,7 @@ global:
 jobs:
   - name: cluster-density
     namespace: cluster-density
-    jobIterations: 10
+    jobIterations: 5
     jobPause: 1000h
     qps: 20
     burst: 20
@@ -36,6 +36,11 @@ jobs:
         inputVars:
           podReplicas: 2
 
+      - objectTemplate: endpoint-load-deployment.yml
+        replicas: 5
+        inputVars:
+          podReplicas: 2
+
       - objectTemplate: service.yml
         replicas: 5
 
@@ -43,4 +48,7 @@ jobs:
         replicas: 10
 
       - objectTemplate: configmap.yml
+        replicas: 10
+
+      - objectTemplate: berserker-configmap-endpoints-zipf.yml
         replicas: 10

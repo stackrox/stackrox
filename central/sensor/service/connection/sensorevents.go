@@ -32,15 +32,16 @@ type sensorEventHandler struct {
 	workerQueues      map[string]*workerQueue
 	workerQueuesMutex sync.RWMutex
 
-	deduper  hashManager.Deduper
-	pipeline pipeline.ClusterPipeline
-	injector common.MessageInjector
-	stopSig  *concurrency.ErrorSignal
+	deduper     hashManager.Deduper
+	initSyncMgr *initSyncManager
+	pipeline    pipeline.ClusterPipeline
+	injector    common.MessageInjector
+	stopSig     *concurrency.ErrorSignal
 
 	reconciliationMap *reconciliation.StoreMap
 }
 
-func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper) *sensorEventHandler {
+func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipeline pipeline.ClusterPipeline, injector common.MessageInjector, stopSig *concurrency.ErrorSignal, deduper hashManager.Deduper, initSyncMgr *initSyncManager) *sensorEventHandler {
 	return &sensorEventHandler{
 		cluster:       cluster,
 		sensorVersion: sensorVersion,
@@ -48,10 +49,11 @@ func newSensorEventHandler(cluster *storage.Cluster, sensorVersion string, pipel
 		workerQueues:      make(map[string]*workerQueue),
 		reconciliationMap: reconciliation.NewStoreMap(),
 
-		deduper:  deduper,
-		pipeline: pipeline,
-		injector: injector,
-		stopSig:  stopSig,
+		deduper:     deduper,
+		initSyncMgr: initSyncMgr,
+		pipeline:    pipeline,
+		injector:    injector,
+		stopSig:     stopSig,
 	}
 }
 
@@ -66,6 +68,10 @@ func stripTypePrefix(s string) string {
 	return s
 }
 
+func (s *sensorEventHandler) disableReconciliation() {
+	s.reconciliationMap.Close()
+}
+
 func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.MsgFromSensor) {
 	event := msg.GetEvent()
 	if event == nil {
@@ -75,11 +81,19 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 
 	var workerType string
 	switch event.Resource.(type) {
+	// The occurrence of a "Synced" event from the sensor marks the conclusion
+	// of the initial synchronization process.
 	case *central.SensorEvent_Synced:
 		// Call the reconcile functions
+		log.Info("Receiving reconciliation event")
+		if s.reconciliationMap.IsClosed() {
+			log.Infof("Ignoring SYNC from cluster %s (ClusterID:%s) since reconciliationMap is already closed", s.cluster.GetName(), s.cluster.GetId())
+			return
+		}
 		if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 			log.Errorf("error reconciling state: %v", err)
 		}
+		s.initSyncMgr.Remove(s.cluster.GetId())
 		s.deduper.ProcessSync()
 		s.reconciliationMap.Close()
 		return
@@ -114,9 +128,8 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	metrics.IncSensorEventsDeduper(false, msg)
 
 	// Lazily create the queue for a type when not found.
-	var queue *workerQueue
-	concurrency.WithRLock(&s.workerQueuesMutex, func() {
-		queue = s.workerQueues[workerType]
+	queue := concurrency.WithRLock1(&s.workerQueuesMutex, func() *workerQueue {
+		return s.workerQueues[workerType]
 	})
 	if queue == nil {
 		concurrency.WithLock(&s.workerQueuesMutex, func() {

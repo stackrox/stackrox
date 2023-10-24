@@ -4,10 +4,10 @@ go 1.19
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3
-	cloud.google.com/go/containeranalysis v0.11.0
+	cloud.google.com/go/containeranalysis v0.11.1
 	cloud.google.com/go/storage v1.33.0
 	github.com/BurntSushi/toml v1.3.2
-	github.com/ComplianceAsCode/compliance-operator v1.2.0
+	github.com/ComplianceAsCode/compliance-operator v1.3.1
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/NYTimes/gziphandler v1.1.1
@@ -17,7 +17,7 @@ require (
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.6.5
 	github.com/andygrunwald/go-jira v1.16.0
-	github.com/aws/aws-sdk-go v1.45.4
+	github.com/aws/aws-sdk-go v1.46.1
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v1.6.4
 	github.com/cockroachdb/pebble v0.0.0-20230330185756-53a50a04c2ef
@@ -36,7 +36,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/georgysavva/scany v1.2.1
-	github.com/ghodss/yaml v1.0.0
+	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
 	github.com/godbus/dbus/v5 v5.1.0
@@ -46,7 +46,7 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/google/certificate-transparency-go v1.1.6
 	github.com/google/gnostic-models v0.6.8
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
 	github.com/gorilla/schema v1.2.0
 	github.com/graph-gophers/graphql-go v1.5.0
@@ -56,7 +56,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/hashicorp/go-version v1.6.0
-	github.com/hashicorp/golang-lru/v2 v2.0.6
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.3.1
 	github.com/helm/helm-mapkubeapis v0.4.1
 	github.com/heroku/docker-registry-client v0.0.0
@@ -65,34 +65,34 @@ require (
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/joshdk/go-junit v1.0.0
-	github.com/klauspost/compress v1.16.7
+	github.com/klauspost/compress v1.17.1
 	github.com/lib/pq v1.10.9
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/moby/sys/mountinfo v0.6.2
-	github.com/np-guard/cluster-topology-analyzer v1.7.0
+	github.com/np-guard/cluster-topology-analyzer v1.9.0
 	github.com/np-guard/netpol-analyzer v0.4.3
 	github.com/nxadm/tail v1.4.8
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.12.0
-	github.com/onsi/gomega v1.27.10
+	github.com/onsi/ginkgo/v2 v2.13.0
+	github.com/onsi/gomega v1.28.0
 	github.com/open-policy-agent/opa v0.56.0
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/openshift/api v0.0.0-20230502160752-c71432710382
-	github.com/openshift/client-go v0.0.0-20230120202327-72f107311084
+	github.com/openshift/api v0.0.0-20230815081605-d7f5a4c98505
+	github.com/openshift/client-go v0.0.0-20230607134213-3cd0021bbee3
 	github.com/openshift/runtime-utils v0.0.0-20220926190846-5c488b20a19f
 	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
-	github.com/owenrumney/go-sarif/v2 v2.2.0
+	github.com/owenrumney/go-sarif/v2 v2.3.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.16.0
-	github.com/prometheus/client_model v0.4.0
+	github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.44.0
-	github.com/quay/claircore v1.5.16
+	github.com/quay/claircore v1.5.19
 	github.com/quay/zlog v1.1.5
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.4.0
 	github.com/segmentio/analytics-go/v3 v3.2.1
@@ -114,28 +114,28 @@ require (
 	go.etcd.io/bbolt v1.3.7
 	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.2.1
-	go.uber.org/mock v0.2.0
+	go.uber.org/mock v0.3.0
 	go.uber.org/zap v1.25.0
-	golang.org/x/crypto v0.13.0
+	golang.org/x/crypto v0.14.0
 	golang.org/x/exp v0.0.0-20230510235704-dd950f8aeaea
-	golang.org/x/net v0.15.0
-	golang.org/x/oauth2 v0.11.0
-	golang.org/x/sync v0.3.0
-	golang.org/x/sys v0.12.0
+	golang.org/x/net v0.17.0
+	golang.org/x/oauth2 v0.13.0
+	golang.org/x/sync v0.4.0
+	golang.org/x/sys v0.13.0
 	golang.org/x/text v0.13.0
 	golang.org/x/time v0.3.0
-	golang.org/x/tools v0.13.0
-	golang.stackrox.io/grpc-http1 v0.2.11
-	google.golang.org/api v0.138.0
-	google.golang.org/genproto v0.0.0-20230803162519-f966b187b2e5
-	google.golang.org/grpc v1.58.0
+	golang.org/x/tools v0.14.0
+	golang.stackrox.io/grpc-http1 v0.2.12
+	google.golang.org/api v0.148.0
+	google.golang.org/genproto v0.0.0-20231002182017-d307bd883b97
+	google.golang.org/grpc v1.58.3
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.2
-	gorm.io/gorm v1.25.4
+	gorm.io/gorm v1.25.5
 	helm.sh/helm/v3 v3.12.3
 	k8s.io/api v0.28.2
 	k8s.io/apiextensions-apiserver v0.28.0
@@ -144,19 +144,18 @@ require (
 	k8s.io/cli-runtime v0.28.2
 	k8s.io/client-go v0.28.2
 	k8s.io/kubectl v0.28.2
-	k8s.io/kubelet v0.26.7
+	k8s.io/kubelet v0.27.2
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 	sigs.k8s.io/controller-runtime v0.16.2
-	sigs.k8s.io/controller-tools v0.11.3
+	sigs.k8s.io/controller-tools v0.13.0
 	sigs.k8s.io/e2e-framework v0.3.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
-	aqwari.net/xml v0.0.0-20210331023308-d9421b293817 // indirect
-	cloud.google.com/go v0.110.6 // indirect
+	cloud.google.com/go v0.110.8 // indirect
 	cloud.google.com/go/compute v1.23.0 // indirect
-	cloud.google.com/go/iam v1.1.1 // indirect
+	cloud.google.com/go/iam v1.1.2 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/DataDog/zstd v1.4.5 // indirect
@@ -192,9 +191,10 @@ require (
 	github.com/containers/storage v1.45.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
-	github.com/davecgh/go-spew v1.1.1
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
 	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
+	github.com/distribution/distribution/v3 v3.0.0-20230511163743-f7717b7855ca // indirect
 	github.com/docker/cli v23.0.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -249,11 +249,11 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230510103437-eeec1cb781c3 // indirect
-	github.com/google/s2a-go v0.1.5 // indirect
+	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/trillian v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
+	github.com/google/uuid v1.3.1 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -333,9 +333,8 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/procfs v0.10.1 // indirect
-	github.com/quay/alas v1.0.1 // indirect
-	github.com/quay/claircore/toolkit v1.0.0 // indirect
+	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/quay/claircore/toolkit v1.1.1 // indirect
 	github.com/quay/claircore/updater/driver v1.0.0 // indirect
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
@@ -394,13 +393,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.starlark.net v0.0.0-20230612165344-9532f5667272 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/term v0.12.0 // indirect
+	golang.org/x/mod v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20231002182017-d307bd883b97 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231012201019-e917dd12ba7a // indirect
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -417,7 +416,7 @@ require (
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.6.0 // indirect
 	modernc.org/opt v0.1.3 // indirect
-	modernc.org/sqlite v1.25.0 // indirect
+	modernc.org/sqlite v1.26.0 // indirect
 	modernc.org/strutil v1.1.3 // indirect
 	modernc.org/token v1.0.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
@@ -427,6 +426,8 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.14.3-0.20230601165947-6ce0bf390ce3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
+
+require aqwari.net/xml v0.0.0-20210331023308-d9421b293817 // indirect
 
 // HOW TO BUMP
 // ===========
@@ -469,7 +470,7 @@ replace (
 
 	// github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that
 	// we currently depend on.
-	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230804132854-090c1105ecf3
+	github.com/operator-framework/helm-operator-plugins => github.com/stackrox/helm-operator v0.0.12-0.20230825152000-1361e2f7db46
 
 	github.com/sigstore/cosign/v2 => github.com/stackrox/cosign/v2 v2.0.0-20230524131509-aa1a890d9fb7
 

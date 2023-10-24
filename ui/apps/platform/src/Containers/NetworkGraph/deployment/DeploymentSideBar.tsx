@@ -19,6 +19,7 @@ import {
 
 import useTabs from 'hooks/patternfly/useTabs';
 import useFetchDeployment from 'hooks/useFetchDeployment';
+import usePermissions from 'hooks/usePermissions';
 import {
     getListenPorts,
     getNodeById,
@@ -59,6 +60,9 @@ function DeploymentSideBar({
     defaultDeploymentTab,
 }: DeploymentSideBarProps) {
     // component state
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
+    const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
     const { deployment, isLoading: isLoadingDeployment, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
         defaultTab: defaultDeploymentTab,
@@ -174,19 +178,25 @@ function DeploymentSideBar({
                                 title={<TabTitleText>{deploymentTabs.FLOWS}</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
-                            <Tab
-                                eventKey={deploymentTabs.BASELINE}
-                                tabContentId={deploymentTabs.BASELINE}
-                                title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
-                            />
-                            <Tab
-                                eventKey={deploymentTabs.NETWORK_POLICIES}
-                                tabContentId={deploymentTabs.NETWORK_POLICIES}
-                                title={
-                                    <TabTitleText>{deploymentTabs.NETWORK_POLICIES}</TabTitleText>
-                                }
-                                disabled={isBaselineSimulationOn}
-                            />
+                            {hasReadAccessForDeploymentExtension && (
+                                <Tab
+                                    eventKey={deploymentTabs.BASELINE}
+                                    tabContentId={deploymentTabs.BASELINE}
+                                    title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
+                                />
+                            )}
+                            {hasReadAccessForNetworkPolicy && (
+                                <Tab
+                                    eventKey={deploymentTabs.NETWORK_POLICIES}
+                                    tabContentId={deploymentTabs.NETWORK_POLICIES}
+                                    title={
+                                        <TabTitleText>
+                                            {deploymentTabs.NETWORK_POLICIES}
+                                        </TabTitleText>
+                                    }
+                                    disabled={isBaselineSimulationOn}
+                                />
+                            )}
                         </Tabs>
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
@@ -238,16 +248,18 @@ function DeploymentSideBar({
                                 />
                             )}
                         </TabContent>
-                        <TabContent
-                            eventKey={deploymentTabs.NETWORK_POLICIES}
-                            id={deploymentTabs.NETWORK_POLICIES}
-                            hidden={activeKeyTab !== deploymentTabs.NETWORK_POLICIES}
-                        >
-                            <NetworkPolicies
-                                entityName={deployment.name}
-                                policyIds={deploymentPolicyIds}
-                            />
-                        </TabContent>
+                        {hasReadAccessForNetworkPolicy && (
+                            <TabContent
+                                eventKey={deploymentTabs.NETWORK_POLICIES}
+                                id={deploymentTabs.NETWORK_POLICIES}
+                                hidden={activeKeyTab !== deploymentTabs.NETWORK_POLICIES}
+                            >
+                                <NetworkPolicies
+                                    entityName={deployment.name}
+                                    policyIds={deploymentPolicyIds}
+                                />
+                            </TabContent>
+                        )}
                     </StackItem>
                 </>
             )}

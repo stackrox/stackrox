@@ -290,7 +290,9 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			}
 
 			// The secrets captured in this block are used for delegated image scanning.
-			if env.LocalImageScanningEnabled.BooleanSetting() && !env.DelegatedScanningDisabled.BooleanSetting() {
+			if env.LocalImageScanningEnabled.BooleanSetting() &&
+				!env.DelegatedScanningDisabled.BooleanSetting() &&
+				action != central.ResourceAction_REMOVE_RESOURCE {
 				// Store registry secrets to enable downstream scanning of all images
 				//
 				// This is only triggered when saName is empty so that we do not overwrite entries inserted
@@ -393,6 +395,16 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	oldSecret, ok := oldObj.(*v1.Secret)
 	if !ok {
 		oldSecret = nil
+	}
+
+	parsedID := string(secret.GetUID())
+	switch action {
+	case central.ResourceAction_SYNC_RESOURCE, central.ResourceAction_CREATE_RESOURCE:
+		s.regStore.AddSecretID(parsedID)
+	case central.ResourceAction_REMOVE_RESOURCE:
+		if !s.regStore.RemoveSecretID(parsedID) {
+			log.Warnf("Should have secret (%s:%s) in registryStore known IDs but ID wasn't found", secret.GetName(), parsedID)
+		}
 	}
 
 	switch secret.Type {

@@ -83,6 +83,27 @@ func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
 	suite.NoError(err)
 }
 
+func (suite *PipelineTestSuite) TestSensorReconcileDeploymentRemove() {
+	deployment := fixtures.GetDeployment()
+
+	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(gomock.Any()).Return(nil)
+
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     deployment.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: &storage.Deployment{Id: deployment.GetId()},
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
+
 func (suite *PipelineTestSuite) TestCreateNetworkBaseline() {
 	deployment := fixtures.GetDeployment()
 

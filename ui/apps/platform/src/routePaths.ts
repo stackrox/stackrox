@@ -13,6 +13,7 @@ export const loginPath = '/login';
 export const testLoginResultsPath = '/test-login-results';
 export const authResponsePrefix = '/auth/response/';
 export const authorizeRoxctlPath = '/authorize-roxctl';
+export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 
 // Add (related) path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
 export const accessControlBasePath = `${mainPath}/access-control`;
@@ -35,10 +36,13 @@ export const complianceEnhancedStatusPath = `${complianceEnhancedBasePath}/statu
 export const complianceEnhancedStatusClustersPath = `${complianceEnhancedStatusPath}/clusters/:id`;
 export const complianceEnhancedStatusProfilesPath = `${complianceEnhancedStatusPath}/profiles/:id`;
 export const complianceEnhancedStatusScansPath = `${complianceEnhancedStatusPath}/scans/:id`;
+export const complianceEnhancedScanConfigsBasePath = `${complianceEnhancedBasePath}/scan-configs`;
+export const complianceEnhancedScanConfigsPath = `${complianceEnhancedBasePath}/scan-configs/:scanConfigId`;
 export const configManagementPath = `${mainPath}/configmanagement`;
 export const dashboardPath = `${mainPath}/dashboard`;
 export const dataRetentionPath = `${mainPath}/retention`;
-export const deferralConfigurationPath = `${mainPath}/deferral-configuration`;
+export const exceptionConfigurationPath = `${mainPath}/exception-configuration`;
+export const exceptionManagementPath = `${vulnerabilitiesBasePath}/exception-management`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const integrationCreatePath = `${integrationsPath}/:source/:type/create`;
 export const integrationDetailsPath = `${integrationsPath}/:source/:type/view/:id`;
@@ -66,13 +70,29 @@ export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;
 export const vulnManagementReportsPath = `${vulnManagementPath}/reports`;
 export const vulnManagementRiskAcceptancePath = `${vulnManagementPath}/risk-acceptance`;
-export const vulnerabilitiesBasePath = `${mainPath}/vulnerabilities`;
 export const vulnerabilitiesWorkloadCvesPath = `${vulnerabilitiesBasePath}/workload-cves`;
 export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
+
+// Given an array of feature flags, higher-order functions return true or false based on
+// whether all feature flags are enabled or disabled
+
+type FeatureFlagPredicate = (isFeatureFlagEnabled: IsFeatureFlagEnabled) => boolean;
+
+export function allEnabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => isFeatureFlagEnabled(featureFlag));
+    };
+}
+
+export function allDisabled(featureFlags: FeatureFlagEnvVar[]): FeatureFlagPredicate {
+    return (isFeatureFlagEnabled: IsFeatureFlagEnabled): boolean => {
+        return featureFlags.every((featureFlag) => !isFeatureFlagEnabled(featureFlag));
+    };
+}
 
 // Compose resourceAccessRequirements from resource names and predicates.
 
@@ -88,7 +108,7 @@ function evaluateItem(resourceItem: ResourceItem, hasReadAccess: HasReadAccess) 
     return hasReadAccess(resourceItem);
 }
 
-// Given array or resource names, higher-order functions return predicate function.
+// Given array of resource names, higher-order functions return predicate function.
 // You can also compose every with some, if requirements ever become so complicated.
 
 export function everyResource(resourceItems: ResourceItem[]): ResourcePredicate {
@@ -113,7 +133,7 @@ export const nonGlobalResourceNamesForNetworkGraph: ResourceName[] = [
 ];
 
 type RouteRequirements = {
-    featureFlagDependency?: FeatureFlagEnvVar[]; // assume multiple feature flags imply all must be enabled
+    featureFlagRequirements?: FeatureFlagPredicate;
     resourceAccessRequirements: ResourcePredicate; // assume READ_ACCESS
 };
 
@@ -134,7 +154,8 @@ export type RouteKey =
     | 'compliance-enhanced'
     | 'configmanagement'
     | 'dashboard'
-    | 'deferral-configuration'
+    | 'exception-configuration'
+    | 'exception-management'
     | 'integrations'
     | 'listening-endpoints'
     | 'network-graph'
@@ -160,7 +181,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Access']),
     },
     'administration-events': {
-        featureFlagDependency: ['ROX_ADMINISTRATION_EVENTS'],
+        featureFlagRequirements: allEnabled(['ROX_ADMINISTRATION_EVENTS']),
         resourceAccessRequirements: everyResource(['Administration']),
     },
     apidocs: {
@@ -172,7 +193,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     // Cluster init bundles must precede generic Clusters in Body and so here for consistency.
     'clusters/init-bundles': {
-        featureFlagDependency: ['ROX_MOVE_INIT_BUNDLES_UI'],
+        featureFlagRequirements: allEnabled(['ROX_MOVE_INIT_BUNDLES_UI']),
         resourceAccessRequirements: everyResource(['Administration', 'Integration']),
     },
     clusters: {
@@ -200,7 +221,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-enhanced': {
-        featureFlagDependency: ['ROX_COMPLIANCE_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
@@ -224,9 +245,16 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     dashboard: {
         resourceAccessRequirements: everyResource([]),
     },
-    'deferral-configuration': {
-        featureFlagDependency: ['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL'],
+    'exception-configuration': {
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
         resourceAccessRequirements: everyResource(['Administration']),
+    },
+    'exception-management': {
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL']),
+        resourceAccessRequirements: someResource([
+            'VulnerabilityManagementRequests',
+            'VulnerabilityManagementApprovals',
+        ]),
     },
     integrations: {
         resourceAccessRequirements: everyResource(['Integration']),
@@ -279,11 +307,12 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/reports': {
-        featureFlagDependency: ['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS'],
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     // Reports must precede generic Vulnerability Management in Body and so here for consistency.
     'vulnerability-management/reports': {
+        featureFlagRequirements: allDisabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Integration', 'WorkflowAdministration']),
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.
@@ -305,8 +334,8 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'workload-cves': {
-        featureFlagDependency: ['ROX_VULN_MGMT_WORKLOAD_CVES'],
-        resourceAccessRequirements: everyResource(['Deployment', 'Image', 'WatchedImage']),
+        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_WORKLOAD_CVES']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
 };
 
@@ -319,19 +348,15 @@ export function isRouteEnabled(
     { hasReadAccess, isFeatureFlagEnabled }: RoutePredicates,
     routeKey: RouteKey
 ) {
-    const { featureFlagDependency, resourceAccessRequirements } = routeRequirementsMap[routeKey];
+    const { featureFlagRequirements, resourceAccessRequirements } = routeRequirementsMap[routeKey];
 
-    if (Array.isArray(featureFlagDependency)) {
-        if (
-            !featureFlagDependency.every((featureFlagEnvVar) =>
-                isFeatureFlagEnabled(featureFlagEnvVar)
-            )
-        ) {
-            return false;
-        }
-    }
+    const areFeatureFlagRequirementsMet = featureFlagRequirements
+        ? featureFlagRequirements(isFeatureFlagEnabled)
+        : true;
 
-    return resourceAccessRequirements(hasReadAccess);
+    const areResourceAccessRequirementsMet = resourceAccessRequirements(hasReadAccess);
+
+    return areFeatureFlagRequirementsMet && areResourceAccessRequirementsMet;
 }
 
 /**
@@ -392,6 +417,7 @@ const vulnerabilitiesPathToLabelMap = {
     [vulnerabilitiesBasePath]: 'Vulnerabilities',
     [vulnerabilitiesWorkloadCvesPath]: 'Workload CVEs',
     [vulnerabilityReportsPath]: 'Vulnerability Reporting',
+    [exceptionManagementPath]: 'Exception Management',
 };
 
 export const basePathToLabelMap = {

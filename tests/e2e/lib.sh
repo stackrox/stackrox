@@ -236,6 +236,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_PROCESSES_LISTENING_ON_PORT:-true}"'"'
     customize_envVars+=$'\n      - name: ROX_TELEMETRY_STORAGE_KEY_V1'
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
+    customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
+    customize_envVars+=$'\n        value: "15s"'
     customize_envVars+=$'\n      - name: ROX_OPA_BASED_EVALUATOR'
     customize_envVars+=$'\n        value: "'"${ROX_OPA_BASED_EVALUATOR:-false}"'"'
 
@@ -757,7 +759,7 @@ restore_56_1_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/stackrox_56_1_fixed_upgrade.zip .
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central db restore --timeout 2m stackrox_56_1_fixed_upgrade.zip
 }

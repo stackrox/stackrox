@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,6 +33,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.ProcessIndicator": ProcessIndicatorsSchema,
 			"storage.Deployment":       DeploymentsSchema,
+			"storage.Pod":              PodsSchema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -55,8 +57,10 @@ type ListeningEndpoints struct {
 	ID                 string             `gorm:"column:id;type:uuid;primaryKey"`
 	Port               uint32             `gorm:"column:port;type:bigint"`
 	Protocol           storage.L4Protocol `gorm:"column:protocol;type:integer"`
+	CloseTimestamp     *time.Time         `gorm:"column:closetimestamp;type:timestamp"`
 	ProcessIndicatorID string             `gorm:"column:processindicatorid;type:uuid;index:listeningendpoints_processindicatorid,type:btree"`
 	Closed             bool               `gorm:"column:closed;type:bool;index:listeningendpoints_closed,type:btree"`
 	DeploymentID       string             `gorm:"column:deploymentid;type:uuid;index:listeningendpoints_deploymentid,type:btree"`
+	PodUID             string             `gorm:"column:poduid;type:uuid;index:listeningendpoints_poduid,type:hash"`
 	Serialized         []byte             `gorm:"column:serialized;type:bytea"`
 }

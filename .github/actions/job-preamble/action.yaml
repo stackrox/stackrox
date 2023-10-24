@@ -1,0 +1,17 @@
+name: Job Preamble
+description: Common steps for most jobs
+runs:
+  using: composite
+  steps:
+    - name: Recover docker image cache space
+      run: |
+        df --si /
+        docker system prune --force --all
+        df --si /
+      shell: bash
+
+    - name: Ignore dubious repository ownership
+      run: |
+        # Prevent fatal error "detected dubious ownership in repository" from recent git.
+        git config --global --add safe.directory "$(pwd)"
+      shell: bash

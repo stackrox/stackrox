@@ -593,6 +593,9 @@
         "syslog": {
           "$ref": "#/definitions/storageSyslog"
         },
+        "notifierSecret": {
+          "type": "string"
+        },
         "traits": {
           "$ref": "#/definitions/storageTraits"
         }

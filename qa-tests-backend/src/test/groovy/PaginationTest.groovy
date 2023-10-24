@@ -10,6 +10,7 @@ import services.SecretService
 
 import spock.lang.Tag
 
+@Tag("PZ")
 class PaginationTest extends BaseSpecification {
     static final private Map<String, String> SECRETS = [
             "pagination-secret-1" : null,

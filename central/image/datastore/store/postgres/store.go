@@ -6,7 +6,9 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/jackc/pgx/v4"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/metrics"
@@ -125,7 +127,6 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	var query string
-
 	if metadataUpdated {
 		for childIdx, child := range cloned.GetMetadata().GetV1().GetLayers() {
 			if err := insertIntoImagesLayers(ctx, tx, child, cloned.GetId(), childIdx); err != nil {
@@ -141,8 +142,10 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	if !scanUpdated {
+		sensorEventsDeduperCounter.With(prometheus.Labels{"status": "deduped"}).Inc()
 		return nil
 	}
+	sensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
 	// DO NOT CHANGE THE ORDER.
 	if err := copyFromImageComponentEdges(ctx, tx, cloned.GetId(), parts.imageComponentEdges...); err != nil {
@@ -647,17 +650,13 @@ func removeOrphanedImageCVEEdges(ctx context.Context, tx *postgres.Tx, orphanedE
 	return nil
 }
 
-func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, bool, error) {
-	oldImage, found, err := s.GetImageMetadata(ctx, image.GetId())
-	if err != nil {
-		return false, false, err
-	}
-	if !found {
+func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error) {
+	if oldImage == nil {
 		return true, true, nil
 	}
-
 	metadataUpdated := false
 	scanUpdated := false
+
 	if oldImage.GetMetadata().GetV1().GetCreated().Compare(image.GetMetadata().GetV1().GetCreated()) > 0 {
 		image.Metadata = oldImage.GetMetadata()
 	} else {
@@ -682,18 +681,47 @@ func (s *storeImpl) isUpdated(ctx context.Context, image *storage.Image) (bool, 
 	return metadataUpdated, scanUpdated, nil
 }
 
+type hashWrapper struct {
+	Components []*storage.EmbeddedImageScanComponent `hash:"set"`
+}
+
+func populateImageScanHash(scan *storage.ImageScan) error {
+	hash, err := hashstructure.Hash(hashWrapper{scan.GetComponents()}, hashstructure.FormatV2, &hashstructure.HashOptions{ZeroNil: true})
+	if err != nil {
+		return errors.Wrap(err, "calculating hash for image scan")
+	}
+	scan.Hashoneof = &storage.ImageScan_Hash{
+		Hash: hash,
+	}
+	return nil
+}
+
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	iTime := protoTypes.TimestampNow()
 
 	if !s.noUpdateTimestamps {
 		obj.LastUpdated = iTime
 	}
-	metadataUpdated, scanUpdated, err := s.isUpdated(ctx, obj)
+
+	oldImage, _, err := s.GetImageMetadata(ctx, obj.GetId())
+	if err != nil {
+		return errors.Wrapf(err, "retrieving existing image: %q", obj.GetId())
+	}
+
+	metadataUpdated, scanUpdated, err := s.isUpdated(oldImage, obj)
 	if err != nil {
 		return err
 	}
 	if !metadataUpdated && !scanUpdated {
 		return nil
+	}
+
+	if obj.GetScan() != nil {
+		if err := populateImageScanHash(obj.GetScan()); err != nil {
+			log.Errorf("unable to populate image scan hash for %q", obj.GetId())
+		} else if oldImage.GetScan().GetHashoneof() != nil && obj.GetScan().GetHash() == oldImage.GetScan().GetHash() {
+			scanUpdated = false
+		}
 	}
 
 	imageParts := getPartsAsSlice(common.Split(obj, scanUpdated))
@@ -778,7 +806,12 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	return s.getFullImage(ctx, tx, id)
+	image, found, err := s.getFullImage(ctx, tx, id)
+	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+	if err := tx.Commit(ctx); err != nil {
+		return nil, false, err
+	}
+	return image, found, err
 }
 
 func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.Image, bool, error) {
@@ -1013,7 +1046,13 @@ func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
 		return err
 	}
 
-	return s.deleteImageTree(ctx, tx, id)
+	if err := s.deleteImageTree(ctx, tx, id); err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageID string) error {
@@ -1031,7 +1070,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageI
 	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+" where "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
 		return err
 	}
-	return tx.Commit(ctx)
+	return nil
 }
 
 // GetIDs returns all the IDs for the store
@@ -1080,12 +1119,21 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, tx, id)
 		if err != nil {
+			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+			if err := tx.Commit(ctx); err != nil {
+				return nil, nil, err
+			}
 			return nil, nil, err
 		}
 		if !found {
 			continue
 		}
 		resultsByID[msg.GetId()] = msg
+	}
+
+	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
+	if err := tx.Commit(ctx); err != nil {
+		return nil, nil, err
 	}
 
 	missingIndices := make([]int, 0, len(ids)-len(resultsByID))

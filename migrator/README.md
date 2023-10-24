@@ -162,7 +162,71 @@ In migrator, there are a multiple ways to access data.
     in an object oriented way. You may have partial data access by trimming the gorm model.
     Check the [details](https://gorm.io/docs/) how to use Gorm.
 
-    For example, to get all the image id and operating system from the image table, a Gorm model is needed first.
+    The example below, illustrates how to walk the object to populate a field that was promoted to a column.  Note that
+    we must explicitly narrow the fields we select.  If we select the whole object, gorm will default to a `select *`
+    and in that case a subsquent migration modifying the structure of the same table will fail because the statement
+    cach will be invalid.  The simplest way to do that is to use a separate handle to query vs write.
+    
+    ```go
+    func migrate(database *types.Databases) error {
+        // We are simply promoting a field to a column so the serialized object is unchanged.  Thus, we
+        // have no need to worry about the old schema and can simply perform all our work on the new one.
+        db := database.GormDB
+        pgutils.CreateTableFromModel(database.DBCtx, db, schema.CreateTableListeningEndpointsStmt)
+        db = db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName)
+        query := db.WithContext(database.DBCtx).Table(schema.ListeningEndpointsTableName).Select("serialized")
+
+        rows, err := query.Rows()
+        if err != nil {
+            return errors.Wrapf(err, "failed to iterate table %s", schema.ListeningEndpointsTableName)
+        }
+        defer func() { _ = rows.Close() }()
+
+        var convertedPLOPs []*schema.ListeningEndpoints
+        var count int
+        for rows.Next() {
+            var plop *schema.ListeningEndpoints
+            if err = query.ScanRows(rows, &plop); err != nil {
+                return errors.Wrap(err, "failed to scan rows")
+            }
+
+            plopProto, err := schema.ConvertProcessListeningOnPortStorageToProto(plop)
+            if err != nil {
+                return errors.Wrapf(err, "failed to convert %+v to proto", plop)
+            }
+
+            converted, err := schema.ConvertProcessListeningOnPortStorageFromProto(plopProto)
+            if err != nil {
+                return errors.Wrapf(err, "failed to convert from proto %+v", plopProto)
+            }
+            convertedPLOPs = append(convertedPLOPs, converted)
+            count++
+
+            if len(convertedPLOPs) == batchSize {
+                // Upsert converted blobs
+                if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableListeningEndpointsStmt.GormModel).Create(&convertedPLOPs).Error; err != nil {
+                    return errors.Wrapf(err, "failed to upsert converted %d objects after %d upserted", len(convertedPLOPs), count-len(convertedPLOPs))
+                }
+                convertedPLOPs = convertedPLOPs[:0]
+            }
+        }
+
+        if err := rows.Err(); err != nil {
+            return errors.Wrapf(err, "failed to get rows for %s", schema.ListeningEndpointsTableName)
+        }
+
+        if len(convertedPLOPs) > 0 {
+            if err = db.Clauses(clause.OnConflict{UpdateAll: true}).Model(schema.CreateTableListeningEndpointsStmt.GormModel).Create(&convertedPLOPs).Error; err != nil {
+                return errors.Wrapf(err, "failed to upsert last %d objects", len(convertedPLOPs))
+            }
+        }
+        log.Infof("Converted %d plop records", count)
+
+        return nil
+    }
+    ```
+
+    Another example, to get all the image id and operating system from the image table, a Gorm model is needed first.
     As not all data is needed, a trimmed model can be used. All Gorm models can be read from `pkg/postgres/schema`,
     copied and trimmed.
 

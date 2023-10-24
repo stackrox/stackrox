@@ -36,8 +36,9 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Tag("BAT")
+@Tag("PZ")
 class SACTest extends BaseSpecification {
-    static final private String IMAGE = "quay.io/rhacs-eng/qa:nginx-unprivileged-1.25.2"
+    static final private String IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA1 = "sac-deploymentnginx-qa1"
     static final private String NAMESPACE_QA1 = "qa-test1"
     static final private String DEPLOYMENTNGINX_NAMESPACE_QA2 = "sac-deploymentnginx-qa2"

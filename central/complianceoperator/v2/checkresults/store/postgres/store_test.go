@@ -105,9 +105,6 @@ func (s *ComplianceOperatorCheckResultV2StoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, complianceOperatorCheckResultV2s))
-	allComplianceOperatorCheckResultV2, err := store.GetAll(ctx)
-	s.NoError(err)
-	s.ElementsMatch(complianceOperatorCheckResultV2s, allComplianceOperatorCheckResultV2)
 
 	complianceOperatorCheckResultV2Count, err = store.Count(ctx)
 	s.NoError(err)

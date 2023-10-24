@@ -38,6 +38,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "ProcessListeningOnPortUpdate"
 	case *central.MsgFromSensor_ComplianceOperatorInfo:
 		return "ComplianceOperatorInfo"
+	case *central.MsgFromSensor_ComplianceResponse:
+		return "ComplianceResponse"
 	default:
 		log.Errorf("UNEXPECTED:  Unknown message type: %T", t)
 		return "Unknown"

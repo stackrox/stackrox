@@ -41,6 +41,7 @@ import spock.lang.Unroll
 
 // TODO(ROX-13739): Re-enable these tests in compatibility-test step
 @Stepwise
+@Tag("PZ")
 class NetworkFlowTest extends BaseSpecification {
 
     // Deployment names
@@ -91,7 +92,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
                     .setExposeAsService(true)
-                    .setCreateLoadBalancer(true)
+                    .setCreateLoadBalancer(!
+                        (Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x"))
                     .setCreateRoute(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT),
         ]
     }

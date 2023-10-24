@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -62,8 +63,8 @@ type ReportServiceTestSuite struct {
 }
 
 func (s *ReportServiceTestSuite) SetupSuite() {
-	s.T().Setenv(env.VulnReportingEnhancements.EnvVar(), "true")
-	if !env.VulnReportingEnhancements.BooleanSetting() {
+	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
+	if !features.VulnReportingEnhancements.Enabled() {
 		s.T().Skip("Skip test when reporting enhancements are disabled")
 		s.T().SkipNow()
 	}
@@ -563,7 +564,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier: Custom email subject too long",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomSubject = strings.Repeat("a", validation.CustomEmailSubjectMaxLen+1)
+				ret.Notifiers[0].GetEmailConfig().CustomSubject = strings.Repeat("a", env.ReportCustomEmailSubjectMaxLen.IntegerSetting()+1)
 				return ret
 			},
 			isValidationError: true,
@@ -572,7 +573,7 @@ func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []up
 			desc: "Report config with invalid notifier: Custom email body too long",
 			setMocksAndGenReportConfig: func() *apiV2.ReportConfiguration {
 				ret := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
-				ret.Notifiers[0].GetEmailConfig().CustomBody = strings.Repeat("a", validation.CustomEmailBodyMaxLen+1)
+				ret.Notifiers[0].GetEmailConfig().CustomBody = strings.Repeat("a", env.ReportCustomEmailBodyMaxLen.IntegerSetting()+1)
 				return ret
 			},
 			isValidationError: true,

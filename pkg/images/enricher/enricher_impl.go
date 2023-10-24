@@ -360,10 +360,10 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 	for _, registry := range registries {
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
-			var currentRegistryErrors int32
-			concurrency.WithLock(&e.registryErrorsLock, func() {
-				currentRegistryErrors = e.errorsPerRegistry[registry] + 1
+			currentRegistryErrors := concurrency.WithLock1(&e.registryErrorsLock, func() int32 {
+				currentRegistryErrors := e.errorsPerRegistry[registry] + 1
 				e.errorsPerRegistry[registry] = currentRegistryErrors
+				return currentRegistryErrors
 			})
 
 			if currentRegistryErrors >= consecutiveErrorThreshold { // update health
@@ -380,9 +380,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 			continue
 		}
 		if updated {
-			var currentRegistryErrors int32
-			concurrency.WithRLock(&e.registryErrorsLock, func() {
-				currentRegistryErrors = e.errorsPerRegistry[registry]
+			currentRegistryErrors := concurrency.WithRLock1(&e.registryErrorsLock, func() int32 {
+				return e.errorsPerRegistry[registry]
 			})
 			if currentRegistryErrors > 0 {
 				concurrency.WithLock(&e.registryErrorsLock, func() {
@@ -564,10 +563,10 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
-			var currentScannerErrors int32
-			concurrency.WithLock(&e.scannerErrorsLock, func() {
-				currentScannerErrors = e.errorsPerScanner[scanner] + 1
+			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
+				currentScannerErrors := e.errorsPerScanner[scanner] + 1
 				e.errorsPerScanner[scanner] = currentScannerErrors
+				return currentScannerErrors
 			})
 			if currentScannerErrors >= consecutiveErrorThreshold { // update health
 				e.integrationHealthReporter.UpdateIntegrationHealthAsync(&storage.IntegrationHealth{
@@ -583,9 +582,8 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			continue
 		}
 		if result != ScanNotDone {
-			var currentScannerErrors int32
-			concurrency.WithRLock(&e.scannerErrorsLock, func() {
-				currentScannerErrors = e.errorsPerScanner[scanner]
+			currentScannerErrors := concurrency.WithRLock1(&e.scannerErrorsLock, func() int32 {
+				return e.errorsPerScanner[scanner]
 			})
 			if currentScannerErrors > 0 {
 				concurrency.WithLock(&e.scannerErrorsLock, func() {

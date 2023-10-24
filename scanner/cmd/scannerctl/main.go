@@ -2,23 +2,32 @@ package main
 
 import (
 	"context"
-	"crypto/sha512"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"strings"
 
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/pkg/client"
+	"golang.org/x/sys/unix"
 )
+
+var authEnvName = "ROX_SCANNERCTL_BASIC_AUTH"
 
 func main() {
 	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
+	basicAuth := flag.String("auth", "", fmt.Sprintf("Use the specified basic auth credentials "+
+		"(warning: debug only and unsafe, use env var %s).", authEnvName))
+	imageDigest := flag.String("digest", "", "Use the specified image digest in the image "+
+		"manifest ID. The default is to retrieve the image digest from the registry and "+
+		"use that.")
 	flag.Parse()
 
 	// If certs was specified, configure the identity environment.
@@ -30,33 +39,73 @@ func main() {
 		utils.CrashOnError(os.Setenv(mtls.KeyFileEnvName, filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 	}
 
+	// Extract basic auth username and password.
+	auth := authn.Anonymous
+	if *basicAuth == "" {
+		*basicAuth = os.Getenv(authEnvName)
+	}
+	if *basicAuth != "" {
+		u, p, ok := strings.Cut(*basicAuth, ":")
+		if !ok {
+			log.Fatal("Invalid basic auth: expecting the username and the " +
+				"password with a colon (aladdin:opensesame)")
+		}
+		auth = &authn.Basic{
+			Username: u,
+			Password: p,
+		}
+	}
+
 	if len(flag.Args()) < 1 {
 		log.Fatalf("Missing <image-url>")
 	}
 
+	// Get the image digest, from the URL or command option.
 	imageURL := flag.Args()[0]
-	ctx := context.Background()
-	tlsConfig, err := clientconn.TLSConfig(mtls.ScannerSubject, clientconn.TLSConfigOptions{
-		UseClientCert: clientconn.MustUseClientCert,
-	})
+	ref, err := indexer.GetDigestFromURL(imageURL, auth)
 	if err != nil {
-		log.Fatalf("tls config: %v", err)
+		log.Fatalf("failed to retrieve image hash id: %v", err)
+	}
+	if *imageDigest == "" {
+		*imageDigest = ref.DigestStr()
+		log.Printf("image digest: %s", *imageDigest)
+	}
+	if *imageDigest != ref.DigestStr() {
+		log.Printf("WARNING: the actual image digest %q is different from %q",
+			ref.DigestStr(), *imageDigest)
 	}
 
-	conn, err := grpc.Dial(":8443", grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	c := v4.NewIndexerClient(conn)
+	// Create a context that is cancellable on the usual command line signals. Double
+	// signal forcefully exits.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer ctx.Done()
+	go func() {
+		sigC := make(chan os.Signal, 1)
+		signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
+		sig := <-sigC
+		log.Printf("%s caught, shutting down...", sig)
+		// Cancel the main context.
+		cancel()
+		go func() {
+			// A second signal will forcefully quit.
+			<-sigC
+			os.Exit(1)
+		}()
+	}()
 
-	resp, err := c.CreateIndexReport(ctx, &v4.CreateIndexReportRequest{
-		HashId: fmt.Sprintf("/v4/containerimage/%x", sha512.Sum512([]byte(imageURL))),
-		ResourceLocator: &v4.CreateIndexReportRequest_ContainerImage{ContainerImage: &v4.ContainerImageLocator{
-			Url:      imageURL,
-			Username: "",
-			Password: "",
-		}},
-	})
-	log.Printf("Reply: %v (%v)", resp, err)
-	defer utils.IgnoreError(conn.Close)
+	// Connect to scanner and scan.
+	c, err := client.NewGRPCScanner(ctx)
+	if err != nil {
+		log.Fatalf("connecting: %v", err)
+	}
+	vr, err := c.IndexAndScanImage(ctx, ref, auth)
+	if err != nil {
+		log.Fatalf("scanning: %v", err)
+	}
+	vrJSON, err := json.MarshalIndent(vr, "", "  ")
+	if err != nil {
+		log.Fatalf("decoding report: %v", err)
+	}
+
+	fmt.Println(string(vrJSON))
 }

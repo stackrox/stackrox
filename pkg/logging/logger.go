@@ -208,6 +208,7 @@ func (l *LoggerImpl) createAdministrationEventFromLog(msg string, level string, 
 	}
 
 	// We will use the log converter to convert logs to an events.AdministrationEvent.
-	event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...)
-	l.opts.AdministrationEventsStream.Produce(event)
+	if event := l.opts.AdministrationEventsConverter.Convert(msg, level, l.Module().Name(), keysAndValues...); event != nil {
+		l.opts.AdministrationEventsStream.Produce(event)
+	}
 }

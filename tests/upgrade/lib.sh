@@ -39,10 +39,10 @@ wait_for_scanner_to_be_ready() {
       if [[  "$replicas" == "$readyReplicas" ]]; then
         break
       fi
-      if (( $(date '+%s') - start_time > 300 )); then
+      if (( $(date '+%s') - start_time > 1200 )); then
         kubectl -n stackrox get pod -o wide
         kubectl -n stackrox get deploy -o wide
-        echo >&2 "Timed out after 5m"
+        echo >&2 "Timed out after 20m"
         exit 1
       fi
       sleep 5

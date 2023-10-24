@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"github.com/stackrox/rox/pkg/logging/mocks"
+	"github.com/stackrox/rox/pkg/cache/lru"
+	lruMocks "github.com/stackrox/rox/pkg/cache/lru/mocks"
+	logMocks "github.com/stackrox/rox/pkg/logging/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap/zapcore"
@@ -27,13 +29,13 @@ func TestRateLimitedLogger(t *testing.T) {
 type rateLimitedLoggerTestSuite struct {
 	suite.Suite
 
-	mockLogger *mocks.MockLogger
+	mockLogger *logMocks.MockLogger
 	rlLogger   *RateLimitedLogger
 
 	testLRU *expirable.LRU[string, *rateLimitedLog]
 }
 
-func newTestRateLimitedLogger(_ *testing.T, logger Logger, c *expirable.LRU[string, *rateLimitedLog]) *RateLimitedLogger {
+func newTestRateLimitedLogger(_ *testing.T, logger Logger, c lru.LRU[string, *rateLimitedLog]) *RateLimitedLogger {
 	testLogger := &RateLimitedLogger{
 		logger,
 		c,
@@ -44,7 +46,7 @@ func newTestRateLimitedLogger(_ *testing.T, logger Logger, c *expirable.LRU[stri
 
 func (s *rateLimitedLoggerTestSuite) SetupTest() {
 	mockController := gomock.NewController(s.T())
-	s.mockLogger = mocks.NewMockLogger(mockController)
+	s.mockLogger = logMocks.NewMockLogger(mockController)
 	s.testLRU = expirable.NewLRU[string, *rateLimitedLog](testCacheSize, onEvict, testLimiterPeriod)
 	s.rlLogger = newTestRateLimitedLogger(s.T(), s.mockLogger, s.testLRU)
 }
@@ -263,4 +265,63 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 		s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix2, expected, "").Times(1)
 		logDebug(fillerTemplate, i+1)
 	}
+}
+
+func TestMockedRateLimitedLogger(t *testing.T) {
+	suite.Run(t, new(mockedRateLimitedLoggerTestSuite))
+}
+
+type mockedRateLimitedLoggerTestSuite struct {
+	suite.Suite
+
+	mockLogger *logMocks.MockLogger
+	rlLogger   *RateLimitedLogger
+
+	testLRU *lruMocks.MockLRU[string, *rateLimitedLog]
+}
+
+func (s *mockedRateLimitedLoggerTestSuite) SetupTest() {
+	mockController := gomock.NewController(s.T())
+	s.mockLogger = logMocks.NewMockLogger(mockController)
+	s.testLRU = lruMocks.NewMockLRU[string, *rateLimitedLog](mockController)
+	s.rlLogger = newTestRateLimitedLogger(s.T(), s.mockLogger, s.testLRU)
+}
+
+func (s *mockedRateLimitedLoggerTestSuite) TearDownTest() {
+	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	s.testLRU.EXPECT().Purge().AnyTimes()
+	s.rlLogger.rateLimitedLogs.Purge()
+	s.rlLogger.stop()
+}
+
+func (s *mockedRateLimitedLoggerTestSuite) TestCacheEvictionRace() {
+	limiter := "eviction"
+	log := "This is a rate limited log"
+	cachedLog := &rateLimitedLog{
+		logger:  s.mockLogger,
+		id:      "00000000-1111-2222-3333-111111111111",
+		level:   zapcore.InfoLevel,
+		limiter: limiter,
+		payload: log,
+		file:    testCallerFile,
+		line:    123,
+		count:   atomic.Int32{},
+	}
+	s.testLRU.EXPECT().Get(gomock.Any()).Times(1).Return(cachedLog, true)
+	s.testLRU.EXPECT().Get(gomock.Any()).Times(1).Return(nil, true)
+	prefix := getLogCallerPrefix(123)
+	suffix := ""
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, log, suffix)
+	s.rlLogger.InfoL(limiter, log)
+}
+
+func (s *mockedRateLimitedLoggerTestSuite) TestCacheLookupReturnsValidNil() {
+	limiter := "eviction"
+	log := "This is a rate limited log"
+	s.testLRU.EXPECT().Get(gomock.Any()).Times(1).Return(nil, true)
+	s.testLRU.EXPECT().Remove(gomock.Any())
+	s.testLRU.EXPECT().Add(gomock.Any(), gomock.Any())
+	suffix := ""
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", gomock.Any(), log, suffix)
+	s.rlLogger.InfoL(limiter, log)
 }

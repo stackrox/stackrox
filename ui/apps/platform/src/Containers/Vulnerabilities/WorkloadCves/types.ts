@@ -34,14 +34,6 @@ export function isDetailsTab(value: unknown): value is DetailsTab {
     return detailsTabValues.some((tab) => tab === value);
 }
 
-export const cveStatusTabValues = ['Observed', 'Deferred', 'False Positive'] as const;
-
-export type CveStatusTab = (typeof cveStatusTabValues)[number];
-
-export function isValidCveStatusTab(value: unknown): value is CveStatusTab {
-    return cveStatusTabValues.some((tab) => tab === value);
-}
-
 export const entityTabValues = ['CVE', 'Image', 'Deployment'] as const;
 
 export type EntityTab = (typeof entityTabValues)[number];
@@ -50,4 +42,6 @@ export function isValidEntityTab(value: unknown): value is EntityTab {
     return entityTabValues.some((tab) => tab === value);
 }
 
-export type WatchStatus = 'WATCHED' | 'NOT_WATCHED';
+export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
+
+export type CveExceptionRequestType = 'DEFERRAL' | 'FALSE_POSITIVE';

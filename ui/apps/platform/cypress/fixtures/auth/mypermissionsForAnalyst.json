@@ -1,0 +1,28 @@
+{
+    "resourceToAccess": {
+        "Access": "READ_ACCESS",
+        "Administration": "NO_ACCESS",
+        "Alert": "READ_ACCESS",
+        "CVE": "READ_ACCESS",
+        "Cluster": "READ_ACCESS",
+        "Compliance": "READ_ACCESS",
+        "Deployment": "READ_ACCESS",
+        "DeploymentExtension": "READ_ACCESS",
+        "Detection": "READ_ACCESS",
+        "Image": "READ_ACCESS",
+        "Integration": "READ_ACCESS",
+        "K8sRole": "READ_ACCESS",
+        "K8sRoleBinding": "READ_ACCESS",
+        "K8sSubject": "READ_ACCESS",
+        "Namespace": "READ_ACCESS",
+        "NetworkGraph": "READ_ACCESS",
+        "NetworkPolicy": "READ_ACCESS",
+        "Node": "READ_ACCESS",
+        "Secret": "READ_ACCESS",
+        "ServiceAccount": "READ_ACCESS",
+        "VulnerabilityManagementApprovals": "READ_ACCESS",
+        "VulnerabilityManagementRequests": "READ_ACCESS",
+        "WatchedImage": "READ_ACCESS",
+        "WorkflowAdministration" : "READ_ACCESS"
+    }
+}

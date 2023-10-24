@@ -59,7 +59,16 @@ message DeferralRequest {
 
 message FalsePositiveRequest { }
 
-// Next available tag: 23
+message DeferralUpdate {
+    repeated string CVEs = 1;
+    RequestExpiry expiry = 2;
+}
+
+message FalsePositiveUpdate {
+    repeated string CVEs = 1;
+}
+
+// Next available tag: 27
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
 message VulnerabilityRequest {
     message CVEs {
@@ -69,9 +78,9 @@ message VulnerabilityRequest {
     }
     message Scope {
         message Image {
-            string registry  = 1;
-            string remote    = 2;
-            string tag       = 3;
+            string registry  = 1 [(gogoproto.moretags) = 'search:"Image Registry Scope"'];
+            string remote    = 2 [(gogoproto.moretags) = 'search:"Image Remote Scope"'];
+            string tag       = 3 [(gogoproto.moretags) = 'search:"Image Tag Scope"'];
         }
 
         message Global {}
@@ -84,7 +93,7 @@ message VulnerabilityRequest {
         }
     }
     string                           id                 = 1 [(gogoproto.moretags) = 'sql:"pk"'];
-    string                           name               = 22 [(gogoproto.moretags) = 'search:"Request Name" sql:"unique"'];
+    string                           name               = 26 [(gogoproto.moretags) = 'search:"Request Name" sql:"unique"'];
     // Indicates the state the vulnerabilities will move to once the request is complete.
     VulnerabilityState               target_state       = 2 [(gogoproto.moretags) = 'search:"Requested Vulnerability State"'];
     // Indicates the status of a request.
@@ -112,7 +121,9 @@ message VulnerabilityRequest {
 
     // 21 to 25 reserved for the updated request type oneof.
     oneof updated_req {
-        DeferralRequest              updated_deferral_req       = 21 [(gogoproto.moretags) = 'search:"-"'];
+        DeferralRequest              updated_deferral_req  = 21 [deprecated = true, (gogoproto.moretags) = 'search:"-"'];
+        DeferralUpdate               deferral_update       = 22 [(gogoproto.moretags) = 'search:"-"'];
+        FalsePositiveUpdate          false_positive_update = 23;
     }
 
 }

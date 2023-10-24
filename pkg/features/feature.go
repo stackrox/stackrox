@@ -3,14 +3,13 @@ package features
 import (
 	"os"
 	"strings"
-
-	"github.com/stackrox/rox/pkg/buildinfo"
 )
 
 type feature struct {
 	envVar       string
 	name         string
 	defaultValue bool
+	overridable  bool
 }
 
 func (f *feature) EnvVar() string {
@@ -26,7 +25,7 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
-	if buildinfo.ReleaseBuild {
+	if !f.overridable {
 		return f.defaultValue
 	}
 

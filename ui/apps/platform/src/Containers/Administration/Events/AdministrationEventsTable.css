@@ -1,7 +1,0 @@
-#AdministrationEventsTable td:first-child {
-    width: 14px;
-}
-
-#AdministrationEventsTable td:first-child[data-label="Level icon"] {
-    vertical-align: middle;
-}

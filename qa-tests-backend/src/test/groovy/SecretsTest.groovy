@@ -9,6 +9,7 @@ import util.Timer
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class SecretsTest extends BaseSpecification {
 
     private static Deployment renderDeployment(String deploymentName, String secretName, boolean fromEnv) {

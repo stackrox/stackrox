@@ -31,12 +31,6 @@ func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...Namesp
 func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	ns := obj.(*v1.Namespace)
 
-	if action == central.ResourceAction_REMOVE_RESOURCE {
-		for _, listener := range h.deletionListeners {
-			listener.OnNamespaceDeleted(ns.Name)
-		}
-	}
-
 	roxNamespace := &storage.NamespaceMetadata{
 		Id:           string(ns.GetUID()),
 		Name:         ns.GetName(),
@@ -45,7 +39,14 @@ func (h *namespaceDispatcher) ProcessEvent(obj, _ interface{}, action central.Re
 		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
 	}
 
-	h.nsStore.addNamespace(roxNamespace)
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		for _, listener := range h.deletionListeners {
+			listener.OnNamespaceDeleted(ns.Name)
+		}
+		h.nsStore.removeNamespace(roxNamespace)
+	} else {
+		h.nsStore.addNamespace(roxNamespace)
+	}
 
 	return component.NewEvent(&central.SensorEvent{
 		Id:     string(ns.GetUID()),

@@ -60,8 +60,8 @@ func (p *ProcessPool) remove(containerID string) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	delete(p.Processes, containerID)
 	p.Size -= len(p.Processes[containerID])
+	delete(p.Processes, containerID)
 }
 
 func (p *ProcessPool) getRandomProcess(containerID string) *storage.ProcessSignal {

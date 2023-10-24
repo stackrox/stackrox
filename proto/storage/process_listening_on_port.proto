@@ -13,17 +13,17 @@ package storage;
 
 message ProcessListeningOnPort {
     message Endpoint {
-        uint32 port = 1;
+        uint32 port         = 1;
         L4Protocol protocol = 2;
     }
-    Endpoint endpoint = 1;
-    string deployment_id = 2;
-    string container_name = 3;
-    string pod_id = 4;
-    string pod_uid = 5;
-    ProcessSignal signal = 6;
-    string cluster_id = 7;
-    string namespace = 8;
+    Endpoint endpoint                              = 1;
+    string deployment_id                           = 2;
+    string container_name                          = 3;
+    string pod_id                                  = 4;
+    string pod_uid                                 = 5;
+    ProcessSignal signal                           = 6;
+    string cluster_id                              = 7;
+    string namespace                               = 8;
 
     google.protobuf.Timestamp container_start_time = 9;
 
@@ -31,33 +31,36 @@ message ProcessListeningOnPort {
 }
 
 message ProcessListeningOnPortFromSensor {
-    uint32 port = 1;
-    L4Protocol protocol = 2;
-    ProcessIndicatorUniqueKey process = 3;
+    uint32 port                               = 1;
+    L4Protocol protocol                       = 2;
+    ProcessIndicatorUniqueKey process         = 3;
     google.protobuf.Timestamp close_timestamp = 4;
-    string cluster_id = 6;
-    string deployment_id = 7;
+    string cluster_id                         = 6;
+    string deployment_id                      = 7;
+    string pod_uid                            = 8;
 }
 
 message ProcessListeningOnPortStorage {
     // Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
     // bigint with a sequence. Unfortunately at the moment some bits of store
     // generator assume an id has to be a string.
-    string id = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
+    string id                         = 1 [(gogoproto.moretags) = 'sql:"pk,type(uuid)"'];
 
-    uint32 port = 2 [(gogoproto.moretags) = 'search:"Port,store"'];
-    L4Protocol protocol = 3 [(gogoproto.moretags) = 'search:"Port Protocol,store"'];
-    google.protobuf.Timestamp close_timestamp = 4;
+    uint32 port                       = 2 [(gogoproto.moretags) = 'search:"Port,store"'];
+    L4Protocol protocol               = 3 [(gogoproto.moretags) = 'search:"Port Protocol,store"'];
+    google.protobuf.Timestamp close_timestamp = 4 [(gogoproto.moretags) = 'search:"Closed Time,hidden"'];
 
-    string process_indicator_id = 5
+    string process_indicator_id       = 5
         [(gogoproto.moretags) = 'search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"'];
 
     // XXX: Make it a partial index on only active, not closed, PLOP
-    bool closed = 6 [(gogoproto.moretags) = 'search:"Closed,store" sql:"index=btree"'];
+    bool closed                       = 6 [(gogoproto.moretags) = 'search:"Closed,store" sql:"index=btree"'];
 
     // ProcessIndicator will be not empty only for those cases when we were not
     // able to find references process in the database
     ProcessIndicatorUniqueKey process = 7;
 
-    string deployment_id = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
+    string deployment_id              = 8 [(gogoproto.moretags) = 'search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"'];
+
+    string pod_uid                    = 9 [(gogoproto.moretags) = 'search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"'];
 }

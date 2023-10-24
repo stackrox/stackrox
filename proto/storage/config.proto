@@ -74,7 +74,7 @@ message PrivateConfig {
     DecommissionedClusterRetentionConfig    decommissioned_cluster_retention            = 5;
     ReportRetentionConfig                   report_retention_config                     = 6;
 
-    VulnerabilityDeferralConfig             vulnerability_deferral_config               = 7;
+    VulnerabilityExceptionConfig             vulnerability_exception_config             = 7;
 
     AdministrationEventsConfig              administration_events_config                = 8;
 }
@@ -84,7 +84,7 @@ message Config {
     PrivateConfig private_config = 2;
 }
 
-message VulnerabilityDeferralConfig {
+message VulnerabilityExceptionConfig {
     message FixableCVEOptions {
         bool all_fixable = 1;
         bool any_fixable = 2;
@@ -94,6 +94,7 @@ message VulnerabilityDeferralConfig {
         repeated DayOption  day_options          = 1;
         FixableCVEOptions   fixable_cve_options  = 2;
         bool                custom_date          = 3;
+        bool                indefinite           = 4;
     }
 
     ExpiryOptions expiry_options = 1;

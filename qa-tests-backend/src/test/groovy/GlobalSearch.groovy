@@ -10,6 +10,7 @@ import util.Env
 import spock.lang.Tag
 import spock.lang.Unroll
 
+@Tag("PZ")
 class GlobalSearch extends BaseSpecification {
     static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_DEPLOYMENT_CATEGORIES = []
     static final private List<SearchServiceOuterClass.SearchCategory> EXPECTED_IMAGE_CATEGORIES = []

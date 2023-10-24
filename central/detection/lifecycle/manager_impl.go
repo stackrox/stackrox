@@ -372,15 +372,36 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
 		return nil
 	}
-	// These alerts are all for a single cluster but may belong to any number of namespaces or resource types (except deployment)
-	// Ideally search filters should be for lifecycle stage && (namespace1 || namespace2...) && resource_type!=DEPLOYMENT
-	// But with these filters they are all ANDs
-	// Therefore for now, we will have to pull all non-deployment alerts for this lifecycle stage within specified cluster.
-	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
-		alertmanager.WithLifecycleStage(stage), alertmanager.WithClusterID(clusterID), alertmanager.WithoutResourceType(storage.ListAlert_DEPLOYMENT)); err != nil {
-		return err
-	}
 
+	// Split the alerts into unique groups so that we can do targeted lookups of alerts that need to be merged.
+	// Based on the current Sensor logic, this should only ever result in a single group as the alert results are
+	// multiple policy evaluations against the same audit event which only ever references a single resource type and name.
+	type alertKey struct {
+		namespace    string
+		resourceName string
+		resourceType storage.Alert_Resource_ResourceType
+	}
+	alertGroups := make(map[alertKey][]*storage.Alert)
+	for _, alert := range alerts {
+		key := alertKey{
+			namespace:    alert.GetNamespace(),
+			resourceName: alert.GetResource().GetName(),
+			resourceType: alert.GetResource().GetResourceType(),
+		}
+		alertGroups[key] = append(alertGroups[key], alert)
+	}
+	for key, alerts := range alertGroups {
+		opts := []alertmanager.AlertFilterOption{
+			alertmanager.WithLifecycleStage(stage),
+			// Use cluster id and namespace name to align with sac filters
+			alertmanager.WithClusterID(clusterID),
+			alertmanager.WithNamespace(key.namespace),
+			alertmanager.WithResource(key.resourceName, key.resourceType),
+		}
+		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

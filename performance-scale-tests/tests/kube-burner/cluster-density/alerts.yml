@@ -1,0 +1,65 @@
+# etcd
+
+- expr: avg_over_time(histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[2m]))[10m:]) > 0.01
+  description: 10 minutes avg. 99th etcd fsync latency on {{$labels.pod}} higher than 10ms. {{$value}}s
+  severity: warning
+
+- expr: avg_over_time(histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[2m]))[10m:]) > 0.03
+  description: 10 minutes avg. 99th etcd commit latency on {{$labels.pod}} higher than 30ms. {{$value}}s
+  severity: warning
+
+- expr: rate(etcd_server_leader_changes_seen_total[2m]) > 0
+  description: etcd leader changes observed
+  severity: warning
+
+# API server
+- expr: avg_over_time(histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"POST|PUT|DELETE|PATCH", subresource!~"log|exec|portforward|attach|proxy"}[2m])) by (le, resource, verb))[10m:]) > 1
+  description: 10 minutes avg. 99th mutating API call latency for {{$labels.verb}}/{{$labels.resource}} higher than 1 second. {{$value}}s
+  severity: warning
+
+- expr: avg_over_time(histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"LIST|GET", subresource!~"log|exec|portforward|attach|proxy", scope="resource"}[2m])) by (le, resource, verb, scope))[5m:]) > 1
+  description: 5 minutes avg. 99th read-only API call latency for {{$labels.verb}}/{{$labels.resource}} in scope {{$labels.scope}} higher than 1 second. {{$value}}s
+  severity: warning
+
+- expr: avg_over_time(histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"LIST|GET", subresource!~"log|exec|portforward|attach|proxy", scope="namespace"}[2m])) by (le, resource, verb, scope))[5m:]) > 5
+  description: 5 minutes avg. 99th read-only API call latency for {{$labels.verb}}/{{$labels.resource}} in scope {{$labels.scope}} higher than 5 seconds. {{$value}}s
+  severity: warning
+
+- expr: avg_over_time(histogram_quantile(0.99, sum(irate(apiserver_request_duration_seconds_bucket{apiserver="kube-apiserver", verb=~"LIST|GET", subresource!~"log|exec|portforward|attach|proxy", scope="cluster"}[2m])) by (le, resource, verb, scope))[5m:]) > 30
+  description: 5 minutes avg. 99th read-only API call latency for {{$labels.verb}}/{{$labels.resource}} in scope {{$labels.scope}} higher than 30 seconds. {{$value}}s
+  severity: warning
+
+# Control plane pods
+- expr: up{apiserver=~"kube-apiserver|openshift-apiserver"} == 0
+  description: "{{$labels.apiserver}} {{$labels.instance}} down"
+  severity: warning
+
+- expr: up{namespace=~"openshift-etcd"} == 0
+  description: "{{$labels.namespace}}/{{$labels.pod}} down"
+  severity: error
+
+- expr: up{namespace=~"openshift-.*(kube-controller-manager|scheduler|controller-manager|sdn|ovn-kubernetes|dns)"} == 0
+  description: "{{$labels.namespace}}/{{$labels.pod}} down"
+  severity: warning
+
+- expr: up{job=~"crio|kubelet"} == 0
+  description: "{{$labels.job}} down"
+  severity: warning
+
+# Service sync latency
+- expr: histogram_quantile(0.99, sum(rate(kubeproxy_network_programming_duration_seconds_bucket[2m])) by (le)) > 10
+  description: 99th Kubeproxy network programming latency higher than 10 seconds. {{$value}}s
+  severity: warning
+
+# Prometheus alerts
+- expr: ALERTS{severity="critical"} > 0
+  description: Critical prometheus alert. {{$labels.alertname}}
+  severity: warning
+
+##################
+### ACS Alerts ###
+##################
+
+- expr: up{namespace=~"stackrox"} == 0
+  description: "{{$labels.namespace}}/{{$labels.pod}}/{{$labels.container}} down"
+  severity: warning

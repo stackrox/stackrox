@@ -3,10 +3,10 @@ package clustermetrics
 import (
 	"context"
 
+	datastore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	clusterTelemetry "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/telemetry"
-	usageDS "github.com/stackrox/rox/central/productusage/datastore/securedunits"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	productUsageWriteSCC = sac.AllowFixedScopes(
+	administrationUsageWriteSCC = sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Administration))
 
@@ -46,11 +46,11 @@ func (prometheusStore) Set(clusterID string, cm *central.ClusterMetrics) {
 
 // GetPipeline returns an instantiation of this particular pipeline.
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(&prometheusStore{}, telemetry.Singleton(), usageDS.Singleton())
+	return NewPipeline(&prometheusStore{}, telemetry.Singleton(), datastore.Singleton())
 }
 
 // NewPipeline returns a new instance of the pipeline.
-func NewPipeline(metricsStore MetricsStore, telemetryMetrics telemetry.Telemetry, usageStore usageDS.DataStore) pipeline.Fragment {
+func NewPipeline(metricsStore MetricsStore, telemetryMetrics telemetry.Telemetry, usageStore datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{metricsStore: metricsStore, telemetryMetrics: telemetryMetrics, usageStore: usageStore}
 }
 
@@ -59,7 +59,7 @@ type pipelineImpl struct {
 
 	metricsStore     MetricsStore
 	telemetryMetrics telemetry.Telemetry
-	usageStore       usageDS.DataStore
+	usageStore       datastore.DataStore
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -85,7 +85,7 @@ func (p *pipelineImpl) Run(
 	p.metricsStore.Set(clusterID, clusterMetrics)
 	p.telemetryMetrics.SetClusterMetrics(clusterID, clusterMetrics)
 
-	if err := p.usageStore.UpdateUsage(sac.WithGlobalAccessScopeChecker(ctx, productUsageWriteSCC),
+	if err := p.usageStore.UpdateUsage(sac.WithGlobalAccessScopeChecker(ctx, administrationUsageWriteSCC),
 		clusterID, &storage.SecuredUnits{
 			NumNodes:    clusterMetrics.GetNodeCount(),
 			NumCpuUnits: clusterMetrics.GetCpuCapacity(),

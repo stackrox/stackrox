@@ -65,8 +65,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 
 	cveStore := cvePG.New(s.db)
 	cveIndexer := cvePG.NewIndexer(s.db)
-	cveDataStore, err := cveDS.New(cveStore, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
-	s.NoError(err)
+	cveDataStore := cveDS.New(cveStore, cveSearcher.New(cveStore, cveIndexer), concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 
 	s.reprocessorLoop = NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)

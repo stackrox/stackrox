@@ -8,11 +8,13 @@ import {
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
+import { getDate } from 'utils/dateUtils';
 import {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,
     DeliveryDestination,
     ReportFormValues,
+    ReportParametersFormValues,
 } from './forms/useReportFormValues';
 
 export const imageTypeLabelMap: Record<ImageType, string> = {
@@ -246,4 +248,13 @@ export function getReportStatusText(
     }
 
     return statusText;
+}
+
+export function getCVEsDiscoveredSinceText(reportParameters: ReportParametersFormValues): string {
+    const text =
+        reportParameters.cvesDiscoveredSince === 'START_DATE' &&
+        !!reportParameters.cvesDiscoveredStartDate
+            ? getDate(reportParameters.cvesDiscoveredStartDate)
+            : cvesDiscoveredSinceLabelMap[reportParameters.cvesDiscoveredSince];
+    return text;
 }

@@ -84,10 +84,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - uses: ./.github/actions/create-concatenated-ui-monorepo-lock
 
@@ -119,10 +116,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -158,10 +152,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -214,10 +205,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -303,16 +291,13 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - uses: ./.github/actions/job-preamble
+
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+        uses: docker/setup-buildx-action@v3
 
       - name: Checkout submodules
         run: |
@@ -403,6 +388,8 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
+            # Need to free up some space before push_matching_collector_scanner_images() does its pull.
+            docker system prune --all --force
             source ./scripts/ci/lib.sh
             push_matching_collector_scanner_images "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"
 
@@ -461,10 +448,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Checkout submodules
       run: |
@@ -526,10 +510,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -596,10 +577,7 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - name: Ignore dubious repository ownership
-      run: |
-        # Prevent fatal error "detected dubious ownership in repository" from recent git.
-        git config --global --add safe.directory "$(pwd)"
+    - uses: ./.github/actions/job-preamble
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -615,13 +593,13 @@ jobs:
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Login to quay.io/rhacs-eng
       # Skip for external contributions.
       if: |
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
@@ -652,10 +630,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Ignore dubious repository ownership
-        run: |
-          # Prevent fatal error "detected dubious ownership in repository" from recent git.
-          git config --global --add safe.directory "$(pwd)"
+      - uses: ./.github/actions/job-preamble
 
       - name: Checkout submodules
         run: |

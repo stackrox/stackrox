@@ -33,7 +33,7 @@ var replacements = map[string]map[string]string{
 // List of the linted package paths. Since structured logs aren't being rolled out immediately to all packages,
 // we will gradually increase the list here. Ultimately, all logs should be moved to structured logs.
 var packagesToLint = []*regexp.Regexp{
-	regexp.MustCompile(`^github\.com/stackrox/rox/central/reprocessor(/|$)`),
+	regexp.MustCompile(`^github\.com/stackrox/rox/central/reprocessor(/|$)|^github\.com/stackrox/rox/central/image/service(/|$)|^github\.com/stackrox/rox/pkg/notifiers(/|$)`),
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -81,6 +81,9 @@ func isNonStructuredLogFunction(fn *types.Func) (bool, string, string) {
 		return false, "", ""
 	}
 
+	if fn.Pkg() == nil {
+		return false, "", ""
+	}
 	logReplacements, isLogFunction := replacements[fn.Pkg().Path()]
 	if !isLogFunction {
 		return false, "", ""

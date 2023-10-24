@@ -6,7 +6,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -60,8 +59,8 @@ var (
 		ExpiredVulnReqRetentionDurationDays: DefaultExpiredVulnReqRetention,
 	}
 
-	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityDeferralConfig{
-		ExpiryOptions: &storage.VulnerabilityDeferralConfig_ExpiryOptions{
+	defaultVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
+		ExpiryOptions: &storage.VulnerabilityExceptionConfig_ExpiryOptions{
 			DayOptions: []*storage.DayOption{
 				{
 					NumDays: 14,
@@ -80,11 +79,12 @@ var (
 					Enabled: true,
 				},
 			},
-			FixableCveOptions: &storage.VulnerabilityDeferralConfig_FixableCVEOptions{
+			FixableCveOptions: &storage.VulnerabilityExceptionConfig_FixableCVEOptions{
 				AllFixable: true,
 				AnyFixable: true,
 			},
 			CustomDate: false,
+			Indefinite: false,
 		},
 	}
 )
@@ -103,6 +103,10 @@ func initialize() {
 	if err != nil {
 		panic(err)
 	}
+
+	// See the note next to the publicConfigCache variable in datastore.go for
+	// more information on public config caching.
+	cachePublicConfig(config.GetPublicConfig())
 
 	privateConfig := config.GetPrivateConfig()
 	needsUpsert := false
@@ -127,10 +131,11 @@ func initialize() {
 		needsUpsert = true
 	}
 
-	if env.UnifiedCVEDeferral.BooleanSetting() {
-		if privateConfig.GetVulnerabilityDeferralConfig() == nil {
-			privateConfig.VulnerabilityDeferralConfig = defaultVulnerabilityDeferralConfig
+	if features.UnifiedCVEDeferral.Enabled() {
+		if privateConfig.GetVulnerabilityExceptionConfig() == nil {
+			privateConfig.VulnerabilityExceptionConfig = defaultVulnerabilityDeferralConfig
 		}
+		needsUpsert = true
 	}
 
 	if features.AdministrationEvents.Enabled() {

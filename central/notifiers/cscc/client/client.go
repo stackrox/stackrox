@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -18,7 +19,10 @@ import (
 
 const (
 	cloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
-	timeout            = 5 * time.Second
+)
+
+var (
+	timeout = env.CSCCTimeout.DurationSetting()
 )
 
 var (
@@ -76,7 +80,7 @@ func (c *Config) CreateFinding(ctx context.Context, finding *findings.Finding, i
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	return notifiers.CreateError("Cloud SCC", resp)
+	return notifiers.CreateError("Cloud SCC", resp, codes.CloudPlatformGeneric)
 }
 
 func (c *Config) request(finding *findings.Finding, id string) (*http.Request, error) {

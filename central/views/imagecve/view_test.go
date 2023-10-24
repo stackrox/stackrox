@@ -100,8 +100,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	// Initialize the datastore.
-	imageStore, err := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.Require().NoError(err)
+	imageStore := imageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	deploymentStore, err := deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
 

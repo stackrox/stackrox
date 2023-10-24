@@ -22,6 +22,7 @@ import spock.lang.Tag
 import spock.lang.Timeout
 import spock.lang.Unroll
 
+@Tag("PZ")
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
     private String clusterId
