@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -36,18 +38,44 @@ func (g *genericClaimExtractor) ExtractRoxClaims(idToken *oidc.IDToken) (tokens.
 		return tokens.RoxClaims{}, errors.Wrap(err, "extracting claims")
 	}
 
-	userID := fmt.Sprintf("%s|%s", idToken.Subject, g.configID)
+	return createRoxClaimsFromGenericClaims(idToken.Subject, unstructured), nil
+}
+
+func createRoxClaimsFromGenericClaims(subject string, unstructured map[string]interface{}) tokens.RoxClaims {
+	stringClaims := mapToStringClaims(unstructured)
+
+	friendlyName := getFriendlyName(stringClaims)
+
+	userID := utils.IfThenElse(friendlyName == "", subject,
+		fmt.Sprintf("%s|%s", subject, friendlyName))
 
 	userClaims := &tokens.ExternalUserClaim{
 		UserID:     userID,
-		FullName:   userID,
+		FullName:   stringutils.FirstNonEmpty(friendlyName, userID),
 		Attributes: mapToStringClaims(unstructured),
 	}
 
 	return tokens.RoxClaims{
 		ExternalUser: userClaims,
 		Name:         userID,
-	}, nil
+	}
+}
+
+func getFriendlyName(claims map[string][]string) string {
+	// These are some sample claims that typically have the user's name or email.
+	userNameClaims := []string{
+		"email",
+		"preferred_username",
+		"full_name",
+	}
+
+	for _, userNameClaim := range userNameClaims {
+		if value, ok := claims[userNameClaim]; ok && len(value) == 1 {
+			return value[0]
+		}
+	}
+
+	return ""
 }
 
 type githubClaimExtractor struct {
@@ -73,9 +101,13 @@ func (g *githubClaimExtractor) ExtractRoxClaims(idToken *oidc.IDToken) (tokens.R
 		return tokens.RoxClaims{}, errors.Wrap(err, "extracting GitHub Actions claims")
 	}
 
+	return createRoxClaimsFromGitHubClaims(idToken.Subject, idToken.Audience, claims), nil
+}
+
+func createRoxClaimsFromGitHubClaims(subject string, audiences []string, claims githubActionClaims) tokens.RoxClaims {
 	// This is in-line with the user ID we use for other auth providers, where a mix of username + ID wil be used.
 	// In general, "|" is used as a separator for auth attributes.
-	actorWithID := fmt.Sprintf("%s|%s|%s", claims.Actor, claims.ActorID, g.configID)
+	actorWithID := fmt.Sprintf("%s|%s", claims.ActorID, claims.Actor)
 
 	userClaims := &tokens.ExternalUserClaim{
 		UserID:   actorWithID,
@@ -88,13 +120,13 @@ func (g *githubClaimExtractor) ExtractRoxClaims(idToken *oidc.IDToken) (tokens.R
 			"environment":      {claims.Environment},
 			"event_name":       {claims.EventName},
 			"ref":              {claims.GitRef},
-			"sub":              {idToken.Subject},
-			"aud":              idToken.Audience,
+			"sub":              {subject},
+			"aud":              audiences,
 		},
 	}
 
 	return tokens.RoxClaims{
 		ExternalUser: userClaims,
 		Name:         actorWithID,
-	}, nil
+	}
 }
