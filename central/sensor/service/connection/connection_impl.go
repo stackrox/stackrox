@@ -252,7 +252,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
-		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
+		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
 	case *central.MsgFromSensor_ComplianceResponse:
