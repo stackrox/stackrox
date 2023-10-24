@@ -1,7 +1,10 @@
 import { addDays, isAfter } from 'date-fns';
 import * as yup from 'yup';
 
-import { CreateDeferVulnerabilityExceptionRequest } from 'services/VulnerabilityExceptionService';
+import {
+    CreateDeferVulnerabilityExceptionRequest,
+    CreateFalsePositiveVulnerabilityExceptionRequest,
+} from 'services/VulnerabilityExceptionService';
 import { ensureExhaustive } from 'utils/type.utils';
 
 export type ScopeContext = 'GLOBAL' | { image: { name: string; tag: string } };
@@ -82,4 +85,14 @@ export function formValuesToDeferralRequest(
         default:
             return ensureExhaustive(expiryType);
     }
+}
+
+export function formValuesToFalsePositiveRequest(
+    formValues: FalsePositiveValues
+): CreateFalsePositiveVulnerabilityExceptionRequest {
+    return {
+        cves: formValues.cves,
+        comment: formValues.comment,
+        scope: formValues.scope,
+    };
 }
