@@ -105,8 +105,8 @@ func (p *EndpointPool) remove(containerID string) {
 	defer p.lock.Unlock()
 
 	p.EndpointsToBeClosed = append(p.EndpointsToBeClosed, p.Endpoints[containerID]...)
-	delete(p.Endpoints, containerID)
 	p.Size -= len(p.Endpoints[containerID])
+	delete(p.Endpoints, containerID)
 }
 
 func (p *EndpointPool) clearEndpointsToBeClosed() {
