@@ -25,7 +25,7 @@ type Controller interface {
 	PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback, since time.Time) error
 	PullClusterInfo(ctx context.Context, cb ClusterInfoCallback) error
 	PullMetrics(ctx context.Context, cb MetricsInfoChunkCallback) error
-	ProcessTelemetryDataResponse(resp *central.PullTelemetryDataResponse) error
+	ProcessTelemetryDataResponse(ctx context.Context, resp *central.PullTelemetryDataResponse) error
 }
 
 // NewController creates and returns a new controller for telemetry data.
