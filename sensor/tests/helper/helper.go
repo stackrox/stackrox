@@ -471,6 +471,24 @@ func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) {
 	}
 }
 
+// WaitForMessageWithEventID will wait until timeout and check if a message with ID was sent to fake central.
+func (c *TestContext) WaitForMessageWithEventID(id string, timeout time.Duration) (*central.MsgFromSensor, error) {
+	timer := time.NewTimer(timeout)
+	ticker := time.NewTicker(defaultTicker)
+	for {
+		select {
+		case <-timer.C:
+			return nil, errors.Errorf("message with ID %s not found", id)
+		case <-ticker.C:
+			for _, msg := range c.GetFakeCentral().GetAllMessages() {
+				if msg.GetEvent().GetId() == id {
+					return msg, nil
+				}
+			}
+		}
+	}
+}
+
 // WaitForDeploymentEvent waits until sensor process a given deployment
 func (c *TestContext) WaitForDeploymentEvent(t *testing.T, name string) {
 	c.WaitForDeploymentEventWithTimeout(t, name, defaultWaitTimeout)
@@ -888,6 +906,16 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 			}
 		}
 	}
+}
+
+// CheckEventReceived will look at all received messages in Fake Central and validate if event with ID was received.
+func (c *TestContext) CheckEventReceived(uid string) bool {
+	for _, msg := range c.GetFakeCentral().GetAllMessages() {
+		if msg.GetEvent().GetId() == uid {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFirstMessageWithDeploymentName find the first sensor message by namespace and deployment name
