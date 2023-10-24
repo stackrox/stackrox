@@ -2,6 +2,9 @@ scannerV4:
   disable: [< not .FeatureFlags.ROX_SCANNER_V4 >]
   indexer:
     disable: [< not .FeatureFlags.ROX_SCANNER_V4 >]
+    image:
+      name: [< required "" .ScannerV4ImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
     replicas: 3
     logLevel: INFO
     autoscaling:
@@ -17,7 +20,13 @@ scannerV4:
         cpu: "2000m"
   matcher:
     disable: true
+    image:
+      name: [< required "" .ScannerV4ImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
   db:
+    image:
+      name: [< required "" .ScannerV4DBImageRemote >]
+      tag: [< required "" .ScannerV4ImageTag >]
     postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
     hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
     resources:

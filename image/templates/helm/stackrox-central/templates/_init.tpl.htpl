@@ -287,12 +287,10 @@
   */}}
 
 {{ $scannerV4Cfg := $._rox.scannerV4 }}
-{{ if not $scannerV4Cfg.disable }}
-  {{/* TODO: should also check if indexer and matcher are disabled? */}}
-  {{/* if and (not ._rox.scannerV4.indexer.disable) (not ._rox.scannerV4.matcher.disable) }}
-  {{ end */}}
+{{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
+
+{{ if $._rox.scannerV4._dbEnabled }}
   {{ include "srox.scannerV4Volume" $ }}
-  {{ include "srox.scannerV4Init" (list $ $scannerV4Cfg) }}
 {{ end }}
 
 [<- end >]

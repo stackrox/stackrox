@@ -23,13 +23,25 @@
 {{ $ := index . 0 }}
 {{ $scannerV4Cfg := index . 1 }}
 
+{{- $scannerV4Mode := "none" -}}
+{{- if and (not $._rox.scannerV4.indexer.disable) (not $._rox.scannerV4.matcher.disable) -}}
+{{- $scannerV4Mode = "combo" -}} 
+{{- else if not $._rox.scannerV4.indexer.disable -}}
+{{- $scannerV4Mode = "indexer" -}}
+{{- else if not $._rox.scannerV4.matcher.disable -}}
+{{- $scannerV4Mode = "matcher" -}}
+{{- end -}}
+
+{{- $_ := set $._rox "_scannerV4Mode" $scannerV4Mode -}}
+{{- $dbEnabled := false -}}
+
 {{ if not $scannerV4Cfg.indexer.disable }}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+    {{ $dbEnabled = true }}
 {{ end }}
 {{ if not $scannerV4Cfg.matcher.disable }}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+    {{ $dbEnabled = true }}
 
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $scannerCertSpec) }}
@@ -41,6 +53,10 @@
     {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
 {{ end }}
 
-{{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
+{{ if $dbEnabled }}
+  {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
+  {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+{{ end }}
+{{ $_ = set $._rox.scannerV4 "_dbEnabled" $dbEnabled }}
 
 {{ end }}

@@ -3,6 +3,27 @@
 StackRox {{.Chart.AppVersion}} has been installed.
 
 [< if not .Operator >]
+Central Services Configuration Summary:
+
+  Name:                                        {{ ._rox.clusterName }}
+  Kubernetes Namespace:                        {{ ._rox._namespace }}{{ if ne .Release.Namespace ._rox._namespace }} [NOTE: Helm release is attached to namespace {{ .Release.Namespace }}]{{ end }}
+  Helm Release Name:                           {{ .Release.Name }}
+  Central Endpoint:                            {{ ._rox.centralEndpoint }}
+  OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
+  Scanner v4 Mode:                             {{ ._rox._scannerV4Mode }}
+{{- if ._rox._scannerV4Volume }}
+  Scanner v4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+{{- end }}
+
+{{ if ._rox._state.notes -}}
+Please take note of the following:
+{{ range ._rox._state.notes }}
+- {{ . | wrapWith 98 "\n  " -}}
+{{ end }}
+
+{{ end -}}
+
+
 {{ if include "srox.checkGenerated" (list . "central.adminPassword.value") -}}
 An administrator password has been generated automatically. Use username 'admin' and the following
 password to log in for initial setup:
