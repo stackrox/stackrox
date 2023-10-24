@@ -166,7 +166,6 @@ defaults:
   scannerV4:
     disable: true
     matcher:
-      disable: true 
       autoscaling:
         disable: false
         minReplicas: 2
@@ -182,7 +181,6 @@ defaults:
         name: [< required "" .ScannerV4ImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
     indexer:
-      disable: true 
       autoscaling:
         disable: false
         minReplicas: 2
@@ -198,7 +196,6 @@ defaults:
         name: [< required "" .ScannerV4ImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
     db:
-      disable: true
       persistence: # FIXME/MC can be removed
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
       hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
