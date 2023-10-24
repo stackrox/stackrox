@@ -71,7 +71,7 @@ func NewDispatcherRegistry(
 	serviceAccountStore := storeProvider.serviceAccountStore
 	deploymentStore := storeProvider.deploymentStore
 	podStore := storeProvider.podStore
-	nsStore := newNamespaceStore()
+	nsStore := storeProvider.nsStore
 	netPolicyStore := storeProvider.networkPolicyStore
 	endpointManager := storeProvider.endpointManager
 	portExposureReconciler := newPortExposureReconciler(deploymentStore, storeProvider.Services())

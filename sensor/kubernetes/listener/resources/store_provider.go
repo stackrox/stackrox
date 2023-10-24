@@ -31,6 +31,7 @@ type InMemoryStoreProvider struct {
 	orchestratorNamespaces *orchestratornamespaces.OrchestratorNamespaces
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
+	nsStore                *namespaceStore
 
 	cleanableStores    []CleanableStore
 	reconcilableStores map[string]reconcile.Reconcilable
@@ -62,6 +63,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		orchestratorNamespaces: orchestratornamespaces.NewOrchestratorNamespaces(),
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
+		nsStore:                newNamespaceStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
@@ -76,6 +78,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		p.orchestratorNamespaces,
 		p.registryStore,
 		p.registryMirrorStore,
+		p.nsStore,
 	}
 	p.reconcilableStores = map[string]reconcile.Reconcilable{
 		deduper.TypeDeployment.String():     p.deploymentStore,
@@ -86,6 +89,7 @@ func InitializeStore() *InMemoryStoreProvider {
 		deduper.TypeNetworkPolicy.String():  p.networkPolicyStore,
 		deduper.TypeRole.String():           p.rbacStore,
 		deduper.TypeBinding.String():        p.rbacStore,
+		deduper.TypeNamespace.String():      p.nsStore,
 	}
 
 	return p
