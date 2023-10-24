@@ -18,6 +18,7 @@ import (
 
 const (
 	telemetryChanGCPeriod = 5 * time.Minute
+	progressTimeout       = 5 * time.Minute
 )
 
 type controller struct {
@@ -99,6 +100,10 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		go c.sendCancellation(requestID)
 	}()
 
+	// In case there's no progress regarding sensor sending telemetry response data,
+	// we should stop waiting.
+	progressTicker := time.NewTicker(progressTimeout)
+	defer progressTicker.Stop()
 	for {
 		var resp *central.TelemetryResponsePayload
 		select {
@@ -106,7 +111,10 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 			return errors.Wrap(ctx.Err(), "context error")
 		case <-c.stopSig.Done():
 			return errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
+		case <-progressTicker.C:
+			return errors.Errorf("sensor didn't sent any data in last %s", progressTimeout)
 		case resp = <-retC:
+			progressTicker.Reset(progressTimeout)
 		}
 
 		if eos := resp.GetEndOfStream(); eos != nil {

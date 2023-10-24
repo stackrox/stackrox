@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
@@ -123,9 +124,11 @@ func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn
 	pullClusterCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
+	clusterID := sensorConn.ClusterID()
 	err := sensorConn.Telemetry().PullClusterInfo(pullClusterCtx, callback)
 	if err != nil {
-		return nil, err
+		clusterName := clusterMap[clusterID].GetName()
+		return nil, errors.Wrapf(err, "failed to pull cluster info for the cluster %s", clusterName)
 	}
 
 	var cluster data.ClusterInfo
@@ -133,7 +136,7 @@ func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn
 	if err != nil {
 		return nil, err
 	}
-	cluster.ID = sensorConn.ClusterID()
+	cluster.ID = clusterID
 	cluster.HelmManaged = clusterMap[cluster.ID].GetHelmConfig() != nil
 	if cluster.Sensor != nil {
 		curTime := time.Now()
