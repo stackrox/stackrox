@@ -9,8 +9,8 @@ import {
 import useRestMutation from 'hooks/useRestMutation';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { CveExceptionRequestType } from '../../types';
-import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
 import { DeferralValues, ScopeContext, formValuesToDeferralRequest } from './utils';
+import ExceptionRequestForm, { ExceptionRequestFormProps } from './ExceptionRequestForm';
 
 export type ExceptionRequestModalOptions = {
     type: CveExceptionRequestType;
@@ -55,7 +55,14 @@ function ExceptionRequestModal({
     const submissionError = deferralError;
 
     return (
-        <Modal hasNoBodyWrapper onClose={onClose} title={title} isOpen variant="medium">
+        <Modal
+            aria-label={title}
+            title={title}
+            hasNoBodyWrapper
+            onClose={onClose}
+            isOpen
+            variant="medium"
+        >
             <ModalBoxBody className="pf-u-display-flex pf-u-flex-direction-column">
                 {submissionError && (
                     <Alert
@@ -72,6 +79,9 @@ function ExceptionRequestModal({
                         scopeContext={scopeContext}
                         onSubmit={onDeferralSubmit}
                         onCancel={onClose}
+                        showExpiryField
+                        formHeaderText="CVEs will be marked as deferred after approval"
+                        commentFieldLabel="Deferral rationale"
                     />
                 )}
             </ModalBoxBody>
