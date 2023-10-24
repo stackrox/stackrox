@@ -37,7 +37,7 @@ export type RequestedActionTableCellProps = {
     context: RequestContext;
 };
 
-function getDeferralExpiryToUse(
+export function getDeferralExpiryToUse(
     exception: VulnerabilityDeferralException,
     context: RequestContext
 ): ExceptionExpiry {
@@ -60,7 +60,10 @@ function getDeferralExpiryToUse(
     }
 }
 
-function getRequestedAction(exception: VulnerabilityException, context: RequestContext): string {
+export function getRequestedAction(
+    exception: VulnerabilityException,
+    context: RequestContext
+): string {
     if (isDeferralException(exception)) {
         const exceptionExpiry: ExceptionExpiry = getDeferralExpiryToUse(exception, context);
         let duration = 'indefinitely';
@@ -99,7 +102,7 @@ export type ExpiresTableCellProps = {
     context: RequestContext;
 };
 
-function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
+export function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
     if (isDeferralException(exception)) {
         const exceptionExpiry: ExceptionExpiry = getDeferralExpiryToUse(exception, context);
         if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
