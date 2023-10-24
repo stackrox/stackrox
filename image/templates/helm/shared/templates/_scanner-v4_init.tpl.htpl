@@ -22,40 +22,52 @@
 
 {{ $ := index . 0 }}
 {{ $scannerV4Cfg := index . 1 }}
+{{ $_ := false }}
 
-{{- $scannerV4Mode := "none" -}}
-{{- if and (not $._rox.scannerV4.indexer.disable) (not $._rox.scannerV4.matcher.disable) -}}
-{{- $scannerV4Mode = "combo" -}} 
-{{- else if not $._rox.scannerV4.indexer.disable -}}
-{{- $scannerV4Mode = "indexer" -}}
-{{- else if not $._rox.scannerV4.matcher.disable -}}
-{{- $scannerV4Mode = "matcher" -}}
+{{- if and (not $scannerV4Cfg.disable) (kindIs "invalid" $scannerV4Cfg.indexer.disable) (kindIs "invalid" $scannerV4Cfg.matcher.disable) -}}
+{{- /* The top-level setting scannerV4.disable=false activates a default setting based on the chart. */ -}}
+{{- if eq $.Chart.Name "stackrox-central-services" -}}
+  {{- $_ = set $scannerV4Cfg.indexer "disable" false -}}
+  {{- $_ = set $scannerV4Cfg.matcher "disable" false -}}
+{{- else if eq $.Chart.Name "stackrox-secured-cluster-services" -}}
+  {{- $_ = set $scannerV4Cfg.indexer "disable" false -}}
+{{- else -}}
+  {{- include "srox.fail" (printf "Unexpected Helm chart name %q." $.Chart.Name) -}}
+{{- end -}}
+{{- else -}}
 {{- end -}}
 
-{{- $_ := set $._rox "_scannerV4Mode" $scannerV4Mode -}}
-{{- $dbEnabled := false -}}
 
+{{- $scannerV4Mode := "none" -}}
+{{- if and (not $scannerV4Cfg.indexer.disable) (not $._rox.scannerV4.matcher.disable) -}}
+{{- $scannerV4Mode = "indexer-and-matcher" -}} 
+{{- else if not $scannerV4Cfg.indexer.disable -}}
+{{- $scannerV4Mode = "indexer-only" -}}
+{{- else if not $scannerV4Cfg.matcher.disable -}}
+{{- $scannerV4Mode = "matcher-only" -}}
+{{- end -}}
+{{- $_ := set $._rox "_scannerV4Mode" $scannerV4Mode -}}
+
+{{- $dbEnabled := false -}}
 {{ if not $scannerV4Cfg.indexer.disable }}
     {{ include "srox.configureImage" (list $ $scannerV4Cfg.indexer.image) }}
-    {{ $dbEnabled = true }}
-{{ end }}
-{{ if not $scannerV4Cfg.matcher.disable }}
-    {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
-    {{ $dbEnabled = true }}
-
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_INDEXER_SERVICE: Scanner v4 Indexer" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.indexer.serviceTLS" $scannerCertSpec) }}
+    {{ $dbEnabled = true }}
+{{ end }}
 
+{{ if not $scannerV4Cfg.matcher.disable }}
+    {{ include "srox.configureImage" (list $ $scannerV4Cfg.matcher.image) }}
     {{ $scannerCertSpec := dict "CN" "SCANNER_V4_MATCHER_SERVICE: Scanner v4 Matcher" "dnsBase" "scanner-v4" }}
     {{ include "srox.configureCrypto" (list $ "scannerV4.matcher.serviceTLS" $scannerCertSpec) }}
-
-    {{ $scannerDBCertSpec := dict "CN" "SCANNER_DB_SERVICE: Scanner DB" "dnsBase" "scanner-db" }} // TODO: Shouldn't this be SCANNER_V4_DB_SERVICE? -mc
-    {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
+    {{ $dbEnabled = true }}
 {{ end }}
 
 {{ if $dbEnabled }}
-  {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
   {{ include "srox.configureImage" (list $ $scannerV4Cfg.db.image) }}
+  {{ $scannerDBCertSpec := dict "CN" "SCANNER_V4_DB_SERVICE: Scanner DB" "dnsBase" "scanner-v4" }}
+  {{ include "srox.configureCrypto" (list $ "scannerV4.db.serviceTLS" $scannerDBCertSpec) }}
+  {{ include "srox.configurePassword" (list $ "scannerV4.db.password") }}
 {{ end }}
 {{ $_ = set $._rox.scannerV4 "_dbEnabled" $dbEnabled }}
 

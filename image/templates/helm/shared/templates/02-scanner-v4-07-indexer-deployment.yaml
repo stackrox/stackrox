@@ -79,6 +79,7 @@ spec:
             drop: ["NET_RAW"]
           runAsNonRoot: true
           runAsUser: 65534
+{{- if false }}
         readinessProbe:
           grpc:
             port: 8443
@@ -86,6 +87,7 @@ spec:
           periodSeconds: 10
           failureThreshold: 6
           successThreshold: 1
+{{- end }}
         volumeMounts:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
