@@ -8,7 +8,9 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -17,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
 
@@ -29,23 +32,26 @@ const (
 // audit handles the creation of auditPkg logs from gRPC requests that aren't GETs
 // currently, it only handles grpc because we do not do anything substantial on HTTP Post
 type audit struct {
-	notifications notifier.Processor
+	notifications      notifier.Processor
+	withoutPermissions bool
 }
 
 // New takes in a processor and returns an audit struct
 func New(notifications notifier.Processor) auditPkg.Auditor {
 	return &audit{
-		notifications: notifications,
+		notifications:      notifications,
+		withoutPermissions: env.AuditLogWithoutPermissions.BooleanSetting(),
 	}
 }
 
 // SendAuditMessage will send an audit message for the specified request.
-func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMethod string, authError interceptor.AuthStatus, requestError error) {
+func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMethod string,
+	authError interceptor.AuthStatus, requestError error) {
 	if !a.notifications.HasEnabledAuditNotifiers() {
 		return
 	}
 
-	am := newAuditMessage(ctx, req, grpcMethod, authError, requestError)
+	am := a.newAuditMessage(ctx, req, grpcMethod, authError, requestError)
 	if am == nil {
 		return
 	}
@@ -79,7 +85,8 @@ var requestInteractionMap = map[string]v1.Audit_Interaction{
 	defaultGRPCMethod: v1.Audit_UPDATE,
 }
 
-func newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string, authError interceptor.AuthStatus, requestError error) *v1.Audit_Message {
+func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string,
+	authError interceptor.AuthStatus, requestError error) *v1.Audit_Message {
 	ri := requestinfo.FromContext(ctx)
 
 	msg := &v1.Audit_Message{
@@ -92,7 +99,10 @@ func newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string
 		if identity.Service() != nil {
 			return nil
 		}
-		msg.User = identity.User()
+		msg.User = utils.IfThenElse(a.withoutPermissions,
+			stripPermissionsFromUserInfo(identity.User()),
+			identity.User(),
+		)
 	}
 
 	var method, endpoint string
@@ -127,8 +137,10 @@ func newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string
 }
 
 // UnaryServerInterceptor is the interceptor for audit logging
-func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface{},
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler) (interface{}, error) {
 		resp, err := handler(ctx, req)
 		go a.SendAuditMessage(ctx, req, info.FullMethod, interceptor.GetAuthErrorFromContext(ctx), err)
 		return resp, err
@@ -141,7 +153,8 @@ func (a *audit) PostAuthHTTPInterceptor(handler http.Handler) http.Handler {
 		statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 		handler.ServeHTTP(statusTrackingWriter, r)
 
-		go a.SendAuditMessage(r.Context(), r, r.RequestURI, interceptor.AuthStatus{}, statusTrackingWriter.GetStatusCodeError())
+		go a.SendAuditMessage(r.Context(), r, r.RequestURI, interceptor.AuthStatus{},
+			statusTrackingWriter.GetStatusCodeError())
 	})
 }
 
@@ -156,4 +169,19 @@ func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) 
 	default:
 		return v1.Audit_REQUEST_SUCCEEDED, ""
 	}
+}
+
+func stripPermissionsFromUserInfo(userInfo *storage.UserInfo) *storage.UserInfo {
+	userInfoWithoutPermissions := userInfo.Clone()
+	userInfoWithoutPermissions.Permissions = nil
+
+	userRolesWithoutPermissions := make([]*storage.UserInfo_Role, 0, len(userInfo.GetRoles()))
+	for _, userRole := range userInfo.GetRoles() {
+		userRolesWithoutPermissions = append(userRolesWithoutPermissions, &storage.UserInfo_Role{
+			Name: userRole.GetName(),
+		})
+	}
+	userInfoWithoutPermissions.Roles = userRolesWithoutPermissions
+
+	return userInfoWithoutPermissions
 }
