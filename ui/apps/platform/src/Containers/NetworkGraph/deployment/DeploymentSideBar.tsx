@@ -61,6 +61,7 @@ function DeploymentSideBar({
 }: DeploymentSideBarProps) {
     // component state
     const { hasReadAccess } = usePermissions();
+    const hasReadAccessForDeploymentExtension = hasReadAccess('DeploymentExtension');
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
     const { deployment, isLoading: isLoadingDeployment, error } = useFetchDeployment(deploymentId);
     const { activeKeyTab, onSelectTab, setActiveKeyTab } = useTabs({
@@ -177,11 +178,13 @@ function DeploymentSideBar({
                                 title={<TabTitleText>{deploymentTabs.FLOWS}</TabTitleText>}
                                 disabled={isBaselineSimulationOn}
                             />
-                            <Tab
-                                eventKey={deploymentTabs.BASELINE}
-                                tabContentId={deploymentTabs.BASELINE}
-                                title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
-                            />
+                            {hasReadAccessForDeploymentExtension && (
+                                <Tab
+                                    eventKey={deploymentTabs.BASELINE}
+                                    tabContentId={deploymentTabs.BASELINE}
+                                    title={<TabTitleText>{deploymentTabs.BASELINE}</TabTitleText>}
+                                />
+                            )}
                             {hasReadAccessForNetworkPolicy && (
                                 <Tab
                                     eventKey={deploymentTabs.NETWORK_POLICIES}
