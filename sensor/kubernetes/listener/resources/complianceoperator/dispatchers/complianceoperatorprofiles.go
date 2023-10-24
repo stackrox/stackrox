@@ -5,6 +5,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/deduper"
+	"github.com/stackrox/rox/sensor/common/store/reconciliation"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,11 +17,15 @@ var (
 )
 
 // ProfileDispatcher handles compliance operator profile objects
-type ProfileDispatcher struct{}
+type ProfileDispatcher struct {
+	reconciliationStore reconciliation.Store
+}
 
 // NewProfileDispatcher creates and returns a new profile dispatcher
-func NewProfileDispatcher() *ProfileDispatcher {
-	return &ProfileDispatcher{}
+func NewProfileDispatcher(store reconciliation.Store) *ProfileDispatcher {
+	return &ProfileDispatcher{
+		reconciliationStore: store,
+	}
 }
 
 // ProcessEvent processes a compliance operator profile
@@ -59,6 +65,11 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 				ComplianceOperatorProfile: protoProfile,
 			},
 		},
+	}
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		c.reconciliationStore.Remove(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
+	} else {
+		c.reconciliationStore.Upsert(deduper.TypeComplianceOperatorProfile.String(), protoProfile.GetId())
 	}
 	return component.NewEvent(events...)
 }
