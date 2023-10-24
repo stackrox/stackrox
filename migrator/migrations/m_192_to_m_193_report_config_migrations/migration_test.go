@@ -50,7 +50,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	s.gormDB = s.gormDB.WithContext(s.ctx).Table("report_configurations")
 	s.snapshotgormdB = s.db.GetGormDB()
 	s.snapshotgormdB = s.snapshotgormdB.WithContext(s.ctx).Table("report_configurations_notifiers")
-
 	notifierdB := s.db.GetGormDB()
 	notifierdB = notifierdB.WithContext(s.ctx).Table("notifiers")
 	ret := fixtures.GetValidReportConfiguration()
@@ -65,18 +64,15 @@ func (s *migrationTestSuite) SetupSuite() {
 	ret.LastRunStatus = &storage.ReportLastRunStatus{
 		ReportStatus: storage.ReportLastRunStatus_SUCCESS,
 	}
-
 	ret.LastSuccessfulRunTime = timestamp.Now().GogoProtobuf()
 	converted, err := newSchema.ConvertReportConfigurationFromProto(ret)
 	s.Require().NoError(err)
 	convertedReportConfigs := []*newSchema.ReportConfigurations{converted}
 	err = s.gormDB.Clauses(clause.OnConflict{UpdateAll: true}).Model(newSchema.CreateTableReportConfigurationsStmt.GormModel).Create(&convertedReportConfigs).Error
 	s.Require().NoError(err)
-
 	notifierProto := &storage.Notifier{
 		Id: notifierID,
 	}
-
 	notifier, err := newSchema.ConvertNotifierFromProto(notifierProto)
 	notifiers := []*newSchema.Notifiers{notifier}
 	s.Require().NoError(err)
@@ -95,10 +91,34 @@ func (s *migrationTestSuite) TestMigration() {
 		DBCtx:      s.ctx,
 	}
 
-	migration.Run(dbs)
+	//verify getMigratedReportConfigIfExists function
+	found, conf, err := getMigratedReportConfigIfExists(reportID, dbs.GormDB, dbs.DBCtx)
+	s.Require().NoError(err)
+	s.True(found)
+	s.NotNil(conf)
 
-	configs, _ := s.gormDB.Rows()
-	snapshots, _ := s.snapshotgormdB.Rows()
+	notifierID := conf.GetEmailConfig().GetNotifierId()
+
+	found, conf, err = getMigratedReportConfigIfExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	s.Require().NoError(err)
+	s.False(found)
+	s.Nil(conf)
+	//verify checkifNotifierExists function
+	found, err = checkifNotifierExists(notifierID, dbs.GormDB, dbs.DBCtx)
+	s.Require().NoError(err)
+	s.True(found)
+
+	found, err = checkifNotifierExists("does-not-exist", dbs.GormDB, dbs.DBCtx)
+	s.Require().NoError(err)
+	s.False(found)
+
+	//run and verify migration
+	s.Require().NoError(migration.Run(dbs))
+
+	configs, err := s.gormDB.Rows()
+	s.Require().NoError(err)
+	snapshots, err := s.snapshotgormdB.Rows()
+	s.Require().NoError(err)
 	actualConfigProto := []*storage.ReportConfiguration{}
 	v1Config := &storage.ReportConfiguration{}
 	v2Config := &storage.ReportConfiguration{}
@@ -106,7 +126,8 @@ func (s *migrationTestSuite) TestMigration() {
 		var reportConfig *newSchema.ReportConfigurations
 		err := s.gormDB.ScanRows(configs, &reportConfig)
 		s.Require().NoError(err)
-		config, _ := newSchema.ConvertReportConfigurationToProto(reportConfig)
+		config, err := newSchema.ConvertReportConfigurationToProto(reportConfig)
+		s.Require().NoError(err)
 		actualConfigProto = append(actualConfigProto, config)
 		if config.GetId() == reportID {
 			v1Config = config
@@ -120,7 +141,8 @@ func (s *migrationTestSuite) TestMigration() {
 		var snapshot *newSchema.ReportSnapshots
 		err := s.snapshotgormdB.ScanRows(snapshots, &snapshot)
 		s.Require().NoError(err)
-		repSnapshot, _ := newSchema.ConvertReportSnapshotToProto(snapshot)
+		repSnapshot, err := newSchema.ConvertReportSnapshotToProto(snapshot)
+		s.Require().NoError(err)
 		actualSnapahshotProto = append(actualSnapahshotProto, repSnapshot)
 	}
 	//there should be 2 copies of report config
@@ -128,6 +150,5 @@ func (s *migrationTestSuite) TestMigration() {
 	s.Equal(int32(1), v1Config.GetVersion())
 	s.Equal(int32(2), v2Config.GetVersion())
 	s.Equal(v2Config.GetResourceScope().GetCollectionId(), v1Config.GetScopeId())
-
 	s.Equal(len(actualSnapahshotProto), 1)
 }
