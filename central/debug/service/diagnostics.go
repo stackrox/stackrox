@@ -21,6 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
+const clusterNameLogField = "clusterName"
+
 var (
 	invalidPathElementChars = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 )
@@ -60,7 +62,7 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	}
 
 	if err != nil {
-		log.Warnw("Error pulling kubernetes info from sensor", logging.Err(err))
+		log.Warnw("Error pulling kubernetes info from sensor", logging.ClusterName(clusterName), logging.Err(err))
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),
@@ -87,7 +89,7 @@ func pullMetricsFromSensor(ctx context.Context, clusterName string, sensorConn c
 	}
 
 	if err != nil {
-		log.Warnw("Error pulling metrics from sensor", logging.Err(err))
+		log.Warnw("Error pulling metrics from sensor", logging.ClusterName(clusterName), logging.Err(err))
 		errFile := k8sintrospect.File{
 			Path:     path.Join(clusterName, "pull-error.txt"),
 			Contents: []byte(err.Error()),

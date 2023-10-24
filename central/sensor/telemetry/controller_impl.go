@@ -112,7 +112,7 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		case <-c.stopSig.Done():
 			return errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
 		case <-progressTicker.C:
-			return errors.New("no data was received from sensor within expected period")
+			return errors.Errorf("sensor didn't sent any data in last %s", progressTimeout)
 		case resp = <-retC:
 			progressTicker.Reset(progressTimeout)
 		}
