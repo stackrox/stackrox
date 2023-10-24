@@ -178,7 +178,7 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	token, err := s.getHttpToken()
+	token, err := s.getHTTPToken()
 	if err != nil {
 		return err
 	}
@@ -193,7 +193,7 @@ func (s *splunk) sendHTTPPayload(ctx context.Context, method, path string, data 
 	return notifiers.CreateError(s.GetName(), resp, codes.SplunkGeneric)
 }
 
-func (s *splunk) getHttpToken() (string, error) {
+func (s *splunk) getHTTPToken() (string, error) {
 	if s.creds != "" {
 		return s.creds, nil
 	}
