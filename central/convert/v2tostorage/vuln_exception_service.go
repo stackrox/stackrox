@@ -37,11 +37,11 @@ func VulnerabilityRequest(vulnException *v2.VulnerabilityException) *storage.Vul
 		UpdatedReq: nil,
 	}
 
-	if vulnException.GetDeferralReq() != nil {
+	if vulnException.GetDeferralRequest() != nil {
 		out.Req = &storage.VulnerabilityRequest_DeferralReq{
-			DeferralReq: deferralRequest(vulnException.GetDeferralReq()),
+			DeferralReq: deferralRequest(vulnException.GetDeferralRequest()),
 		}
-	} else if vulnException.GetFpRequest() != nil {
+	} else if vulnException.GetFalsePositiveRequest() != nil {
 		out.Req = &storage.VulnerabilityRequest_FpRequest{
 			FpRequest: &storage.FalsePositiveRequest{},
 		}
