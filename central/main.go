@@ -681,13 +681,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/docs/swagger",
 			Authorizer:    user.Authenticated(),
-			ServerHandler: docs.SwaggerV2(),
+			ServerHandler: docs.Swagger(),
 			Compression:   true,
 		},
 		{
 			Route:         "/api/docs/v2/swagger",
 			Authorizer:    user.Authenticated(),
-			ServerHandler: docs.Swagger(),
+			ServerHandler: docs.SwaggerV2(),
 			Compression:   true,
 		},
 		{
