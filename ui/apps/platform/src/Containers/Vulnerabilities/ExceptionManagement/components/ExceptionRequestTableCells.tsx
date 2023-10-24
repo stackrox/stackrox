@@ -4,25 +4,15 @@ import pluralize from 'pluralize';
 
 import { exceptionManagementPath } from 'routePaths';
 import {
+    ExceptionExpiry,
     VulnerabilityDeferralException,
     VulnerabilityException,
-    VulnerabilityFalsePositiveException,
+    isDeferralException,
+    isFalsePositiveException,
 } from 'services/VulnerabilityExceptionService';
 import { getDate, getDistanceStrictAsPhrase } from 'utils/dateUtils';
 
 // @TODO: Add tests for these
-
-function isVulnerabilityDeferralException(
-    exception: VulnerabilityException
-): exception is VulnerabilityDeferralException {
-    return exception.targetState === 'DEFERRED';
-}
-
-function isVulnerabilityFalsePositiveException(
-    exception: VulnerabilityException
-): exception is VulnerabilityFalsePositiveException {
-    return exception.targetState === 'FALSE_POSITIVE';
-}
 
 export type RequestIDTableCellProps = {
     id: VulnerabilityException['id'];
@@ -30,7 +20,7 @@ export type RequestIDTableCellProps = {
 };
 
 export function RequestIDTableCell({ id, name }: RequestIDTableCellProps) {
-    return <Link to={`${exceptionManagementPath}/requests/:${id}`}>{name}</Link>;
+    return <Link to={`${exceptionManagementPath}/requests/${id}`}>{name}</Link>;
 }
 
 export type RequesterTableCellProps = {
@@ -40,37 +30,64 @@ export function RequesterTableCell({ requester }: RequesterTableCellProps) {
     return <div>{requester.name}</div>;
 }
 
+export type RequestedActionContext = 'PENDING_REQUESTS' | 'APPROVED_DEFERRALS';
+
 export type RequestedActionTableCellProps = {
     exception: VulnerabilityException;
+    context: RequestedActionContext;
 };
 
-function getRequestedAction(exception: VulnerabilityException): string {
-    if (isVulnerabilityDeferralException(exception)) {
-        const latestExpiry = exception.deferralUpdate
-            ? exception.deferralUpdate.expiry
-            : exception.deferralReq.expiry;
+function getDeferralExpiryToUse(
+    exception: VulnerabilityDeferralException,
+    context: RequestedActionContext
+): ExceptionExpiry {
+    switch (exception.exceptionStatus) {
+        case 'PENDING':
+            return exception.deferralReq.expiry;
+        case 'APPROVED':
+        case 'DENIED':
+            if (exception.deferralUpdate) {
+                return exception.deferralUpdate.expiry;
+            }
+            return exception.deferralReq.expiry;
+        case 'APPROVED_PENDING_UPDATE':
+            if (context === 'PENDING_REQUESTS' && exception.deferralUpdate) {
+                return exception.deferralUpdate.expiry;
+            }
+            return exception.deferralReq.expiry;
+        default:
+            return exception.deferralReq.expiry;
+    }
+}
+
+function getRequestedAction(
+    exception: VulnerabilityException,
+    context: RequestedActionContext
+): string {
+    if (isDeferralException(exception)) {
+        const exceptionExpiry: ExceptionExpiry = getDeferralExpiryToUse(exception, context);
         let duration = 'indefinitely';
-        if (latestExpiry.expiryType === 'TIME' && latestExpiry.expiresOn) {
+        if (exceptionExpiry.expiryType === 'TIME' && exceptionExpiry.expiresOn) {
             duration = getDistanceStrictAsPhrase(
-                latestExpiry.expiresOn,
+                exceptionExpiry.expiresOn,
                 exception.lastUpdated,
                 'd'
             );
-        } else if (latestExpiry.expiryType === 'ALL_CVE_FIXABLE') {
+        } else if (exceptionExpiry.expiryType === 'ALL_CVE_FIXABLE') {
             duration = 'when all fixed';
-        } else if (latestExpiry.expiryType === 'ANY_CVE_FIXABLE') {
+        } else if (exceptionExpiry.expiryType === 'ANY_CVE_FIXABLE') {
             duration = 'when any fixed';
         }
         return `Deferral (${duration})`;
     }
-    if (isVulnerabilityFalsePositiveException(exception)) {
+    if (isFalsePositiveException(exception)) {
         return 'False positive';
     }
     return '-';
 }
 
-export function RequestedActionTableCell({ exception }: RequestedActionTableCellProps) {
-    return <div>{getRequestedAction(exception)}</div>;
+export function RequestedActionTableCell({ exception, context }: RequestedActionTableCellProps) {
+    return <div>{getRequestedAction(exception, context)}</div>;
 }
 
 export type RequestedTableCellProps = {
@@ -85,7 +102,7 @@ export type ExpiresTableCellProps = {
 };
 
 function getExpiresDate(exception: VulnerabilityException): string {
-    if (isVulnerabilityDeferralException(exception)) {
+    if (isDeferralException(exception)) {
         const latestExpiry = exception.deferralUpdate
             ? exception.deferralUpdate.expiry
             : exception.deferralReq.expiry;

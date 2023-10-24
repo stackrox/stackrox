@@ -27,7 +27,7 @@ const vulnerabilityExceptions: VulnerabilityException[] = [
         id: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
         name: '4837bb34-5357-4b78-ad2b-188fc0b33e78',
         targetState: 'DEFERRED',
-        exceptionStatus: 'PENDING',
+        exceptionStatus: 'APPROVED_PENDING_UPDATE',
         expired: false,
         requester: {
             id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
@@ -104,7 +104,7 @@ function PendingApprovals() {
                     {vulnerabilityExceptions.map((exception) => {
                         const { id, name, requester, createdAt, scope, cves } = exception;
                         return (
-                            <Tr>
+                            <Tr key={id}>
                                 <Td>
                                     <RequestIDTableCell id={id} name={name} />
                                 </Td>
@@ -112,7 +112,10 @@ function PendingApprovals() {
                                     <RequesterTableCell requester={requester} />
                                 </Td>
                                 <Td>
-                                    <RequestedActionTableCell exception={exception} />
+                                    <RequestedActionTableCell
+                                        exception={exception}
+                                        context="PENDING_REQUESTS"
+                                    />
                                 </Td>
                                 <Td>
                                     <RequestedTableCell createdAt={createdAt} />
