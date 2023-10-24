@@ -3,6 +3,7 @@ package reconciliation
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -64,6 +65,7 @@ func (s *storeSuite) Test_Upsert() {
 	}
 	for name, tc := range testCases {
 		s.Run(name, func() {
+			s.resourceStore.resources = make(map[string]set.StringSet)
 			for inputType, input := range tc.inputResources {
 				for _, res := range input {
 					s.resourceStore.Upsert(inputType, res)
