@@ -204,24 +204,14 @@ func (s *serviceImpl) pullSensorMetrics(ctx context.Context, zipWriter *zip.Writ
 		go pullMetricsFromSensor(ctx, clusterName, sensorConn, filesC, &wg)
 	}
 
-	go func() {
-		select {
-		case <-wg.Done():
-			// All invoked goroutines are done.  Close the channel so the handling loop knows it can terminate
-			close(filesC)
-		case <-ctx.Done():
-		}
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case file, ok := <-filesC:
-			if !ok {
-				log.Info("Finished writing Sensor data to diagnostic bundle")
-				return nil
-			}
+		case <-wg.Done():
+			log.Info("Finished writing Sensor data to diagnostic bundle")
+			return nil
+		case file := <-filesC:
 			err := writePrefixedFileToZip(zipWriter, "sensor-metrics", file)
 			if err != nil {
 				return err
@@ -274,24 +264,14 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zip.Writ
 		go pullCentralClusterDiagnostics(ctx, filesC, &wg, opts.since)
 	}
 
-	go func() {
-		select {
-		case <-wg.Done():
-			// All invoked goroutines are done.  Close the channel so the handling loop knows it can terminate
-			close(filesC)
-		case <-ctx.Done():
-		}
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case file, ok := <-filesC:
-			if !ok {
-				log.Info("Finished writing Kubernetes data to diagnostic bundle")
-				return nil
-			}
+		case <-wg.Done():
+			log.Info("Finished writing Kubernetes data to diagnostic bundle")
+			return nil
+		case file := <-filesC:
 			err := writePrefixedFileToZip(zipWriter, "kubernetes", file)
 			if err != nil {
 				return err
