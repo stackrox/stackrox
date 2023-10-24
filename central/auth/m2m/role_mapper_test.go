@@ -31,34 +31,34 @@ func TestResolveRolesForClaims(t *testing.T) {
 	config := &storage.AuthMachineToMachineConfig{
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
 			{
-				Key:   "sub",
-				Value: "something",
-				Role:  "Admin",
+				Key:             "sub",
+				ValueExpression: "something",
+				Role:            "Admin",
 			},
 			{
-				Key:   "aud",
-				Value: "somewhere",
-				Role:  "Analyst",
+				Key:             "aud",
+				ValueExpression: "somewhere",
+				Role:            "Analyst",
 			},
 			{
-				Key:   "aud",
-				Value: "something",
-				Role:  "Analyst",
+				Key:             "aud",
+				ValueExpression: "something",
+				Role:            "Analyst",
 			},
 			{
-				Key:   "aud",
-				Value: "elsewhere",
-				Role:  "Continuous Integration",
+				Key:             "aud",
+				ValueExpression: "elsewhere",
+				Role:            "Continuous Integration",
 			},
 			{
-				Key:   "repository",
-				Value: "github.com/sample-org/sample-repo.*",
-				Role:  "roxctl",
+				Key:             "repository",
+				ValueExpression: "github.com/sample-org/sample-repo.*",
+				Role:            "roxctl",
 			},
 			{
-				Key:   "iss",
-				Value: ".*",
-				Role:  authn.NoneRole,
+				Key:             "iss",
+				ValueExpression: ".*",
+				Role:            authn.NoneRole,
 			},
 		},
 	}

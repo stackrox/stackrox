@@ -61,6 +61,12 @@ func (d *datastoreImpl) AddAuthM2MConfig(ctx context.Context, config *storage.Au
 func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+
+	existingConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
+	if err != nil {
+		return err
+	}
+
 	exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
 	if err != nil {
 		return err
@@ -73,6 +79,17 @@ func (d *datastoreImpl) UpdateAuthM2MConfig(ctx context.Context, config *storage
 	if err := d.set.UpsertTokenExchanger(exchanger, config.GetIssuer()); err != nil {
 		return err
 	}
+
+	// We need to ensure that any previously existing config is removed from the token exchanger set.
+	// Since this updated config may have updated the issuer, we need to fetch the existing, stored config from the
+	// database and ensure it's removed properly from the set. We do this at the end since we want the new config
+	// to successfully exist beforehand.
+	if exists && config.GetIssuer() != existingConfig.GetIssuer() {
+		if err := d.set.RemoveTokenExchanger(existingConfig.GetIssuer()); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

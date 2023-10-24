@@ -141,7 +141,7 @@ func createRegexp(config *storage.AuthMachineToMachineConfig) []*regexp.Regexp {
 
 	for _, mapping := range config.GetMappings() {
 		// The mapping value is validated on insert / update to contain a valid regexp, thus we can use MustCompile here.
-		regExps = append(regExps, regexp.MustCompile(mapping.GetValue()))
+		regExps = append(regExps, regexp.MustCompile(mapping.GetValueExpression()))
 	}
 
 	return regExps

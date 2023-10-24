@@ -712,14 +712,14 @@ func (s *authServiceAccessControlTestSuite) TestExchangeToken() {
 			Issuer:                  "https://stackrox.io",
 			Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 				{
-					Key:   "sub",
-					Value: "something",
-					Role:  testRole1,
+					Key:             "sub",
+					ValueExpression: "something",
+					Role:            testRole1,
 				},
 				{
-					Key:   "aud",
-					Value: "github",
-					Role:  testRole3,
+					Key:             "aud",
+					ValueExpression: "github",
+					Role:            testRole3,
 				},
 			},
 		},
