@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common/deduper"
 )
 
@@ -137,6 +139,79 @@ func resourceToMessage(resType string, resID string) (*central.MsgFromSensor, er
 				Action: central.ResourceAction_REMOVE_RESOURCE,
 				Resource: &central.SensorEvent_Namespace{
 					Namespace: &storage.NamespaceMetadata{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeComplianceOperatorProfile.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorProfile{
+					ComplianceOperatorProfile: &storage.ComplianceOperatorProfile{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeComplianceOperatorResult.String():
+		if features.ComplianceEnhancements.Enabled() {
+			msg := central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Id:     resID,
+					Action: central.ResourceAction_REMOVE_RESOURCE,
+					Resource: &central.SensorEvent_ComplianceOperatorResultV2{
+						ComplianceOperatorResultV2: &central.ComplianceOperatorCheckResultV2{Id: resID},
+					},
+				},
+			}
+			return &central.MsgFromSensor{Msg: &msg}, nil
+		}
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorResult{
+					ComplianceOperatorResult: &storage.ComplianceOperatorCheckResult{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeComplianceOperatorRule.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorRule{
+					ComplianceOperatorRule: &storage.ComplianceOperatorRule{
+						Id: resID,
+						Annotations: map[string]string{
+							// This annotation is needed, otherwise central ignores this message
+							v1alpha1.RuleIDAnnotationKey: v1alpha1.RuleIDAnnotationKey,
+						},
+					},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeComplianceOperatorScan.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorScan{
+					ComplianceOperatorScan: &storage.ComplianceOperatorScan{Id: resID},
+				},
+			},
+		}
+		return &central.MsgFromSensor{Msg: &msg}, nil
+	case deduper.TypeComplianceOperatorScanSettingBinding.String():
+		msg := central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     resID,
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorScanSettingBinding{
+					ComplianceOperatorScanSettingBinding: &storage.ComplianceOperatorScanSettingBinding{Id: resID},
 				},
 			},
 		}
