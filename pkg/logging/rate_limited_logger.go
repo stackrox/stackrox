@@ -8,6 +8,7 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2/expirable"
+	pkgCacheLRU "github.com/stackrox/rox/pkg/cache/lru"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/zap/zapcore"
@@ -16,7 +17,7 @@ import (
 // RateLimitedLogger wraps a zap.SugaredLogger that supports rate limiting.
 type RateLimitedLogger struct {
 	logger          Logger
-	rateLimitedLogs *lru.LRU[string, *rateLimitedLog]
+	rateLimitedLogs pkgCacheLRU.LRU[string, *rateLimitedLog]
 }
 
 const (
@@ -37,10 +38,10 @@ var (
 //	logging.GetRatedLimitedLogger().ErrorL("logLimiter", "This is a rate-limited error log")
 func GetRateLimitedLogger() *RateLimitedLogger {
 	once.Do(func() {
+		logCache := lru.NewLRU[string, *rateLimitedLog](cacheSize, onEvict, rateLimitPeriod)
 		commonLogger = newRateLimitLogger(
 			rootLogger,
-			cacheSize,
-			rateLimitPeriod,
+			logCache,
 		)
 	})
 	return commonLogger
@@ -55,11 +56,7 @@ var (
 	}
 )
 
-func newRateLimitLogger(l Logger, size int, ttl time.Duration) *RateLimitedLogger {
-	if size < 0 {
-		size = 0
-	}
-	logCache := lru.NewLRU[string, *rateLimitedLog](size, onEvict, ttl)
+func newRateLimitLogger(l Logger, logCache pkgCacheLRU.LRU[string, *rateLimitedLog]) *RateLimitedLogger {
 	logger := &RateLimitedLogger{
 		l,
 		logCache,
@@ -213,7 +210,7 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 		// In case the log were evicted between cache lookup and count increase,
 		// check for existence in the cache after the increase, and log if the retrieved
 		// log is not in the cache anymore.
-		if checkLog, checkFound := rl.rateLimitedLogs.Get(key); !checkFound || throttledLog.id != checkLog.id {
+		if checkLog, checkFound := rl.rateLimitedLogs.Get(key); !checkFound || throttledLog.getID() != checkLog.getID() {
 			throttledLog.log()
 		}
 	} else if found && throttledLog == nil {
@@ -268,6 +265,13 @@ func newRateLimitedLog(
 	}
 	log.count.Add(1)
 	return log
+}
+
+func (l *rateLimitedLog) getID() string {
+	if l == nil {
+		return ""
+	}
+	return l.id
 }
 
 func (l *rateLimitedLog) log() {
