@@ -353,7 +353,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
-				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
 				Issuer:                  "http://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
