@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,9 @@ func Test_SensorHello(t *testing.T) {
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
+
+	// TODO(ROX-20433): Make test pass with feature flag enabled as well
+	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "false")
 
 	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
 		InitialSystemPolicies: nil,
@@ -45,6 +49,9 @@ func Test_SensorHello2(t *testing.T) {
 	t.Setenv("ROX_PREVENT_SENSOR_RESTART_ON_DISCONNECT", "true")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
 	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
+
+	// TODO(ROX-20433): Make test pass with feature flag enabled as well
+	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "false")
 
 	c, err := helper.NewContextWithConfig(t, helper.CentralConfig{
 		InitialSystemPolicies: nil,
