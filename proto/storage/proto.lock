@@ -101,17 +101,259 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "administration_event.proto",
+      "def": {
+        "enums": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "AdministrationEventType",
+            "enum_fields": [
+              {
+                "name": "ADMINISTRATION_EVENT_TYPE_UNKNOWN"
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_TYPE_GENERIC",
+                "integer": 1
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE",
+                "integer": 2
+              }
+            ]
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "AdministrationEventLevel",
+            "enum_fields": [
+              {
+                "name": "ADMINISTRATION_EVENT_LEVEL_UNKNOWN"
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_LEVEL_INFO",
+                "integer": 1
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_LEVEL_SUCCESS",
+                "integer": 2
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_LEVEL_WARNING",
+                "integer": 3
+              },
+              {
+                "name": "ADMINISTRATION_EVENT_LEVEL_ERROR",
+                "integer": 4
+              }
+            ]
           }
-        ]
+        ],
+        "messages": [
+          {
+            "name": "AdministrationEvent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "type",
+                "type": "AdministrationEventType",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Event Type,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "level",
+                "type": "AdministrationEventLevel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Event Level,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "message",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "hint",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "domain",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Event Domain,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "resource",
+                "type": "Resource"
+              },
+              {
+                "id": 8,
+                "name": "num_occurrences",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Event Occurrence,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 9,
+                "name": "last_occurred_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Last Updated,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 10,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Created Time,hidden\""
+                  }
+                ]
+              }
+            ],
+            "messages": [
+              {
+                "name": "Resource",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "type",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"Resource Type,hidden\""
+                      }
+                    ]
+                  },
+                  {
+                    "id": 2,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "administration_usage.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "SecuredUnits",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "timestamp",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"unique\"search:\"Administration Usage Timestamp,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "num_nodes",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Administration Usage Nodes,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "num_cpu_units",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Administration Usage CPU Units,hidden\""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -131,6 +373,26 @@
               {
                 "name": "CONFIGMAPS",
                 "integer": 2
+              },
+              {
+                "name": "CLUSTER_ROLES",
+                "integer": 3
+              },
+              {
+                "name": "CLUSTER_ROLE_BINDINGS",
+                "integer": 4
+              },
+              {
+                "name": "NETWORK_POLICIES",
+                "integer": 5
+              },
+              {
+                "name": "SECURITY_CONTEXT_CONSTRAINTS",
+                "integer": 6
+              },
+              {
+                "name": "EGRESS_FIREWALLS",
+                "integer": 7
               }
             ]
           },
@@ -167,6 +429,26 @@
               {
                 "name": "CONFIGMAPS",
                 "integer": 2
+              },
+              {
+                "name": "CLUSTER_ROLES",
+                "integer": 3
+              },
+              {
+                "name": "CLUSTER_ROLE_BINDINGS",
+                "integer": 4
+              },
+              {
+                "name": "NETWORK_POLICIES",
+                "integer": 5
+              },
+              {
+                "name": "SECURITY_CONTEXT_CONSTRAINTS",
+                "integer": 6
+              },
+              {
+                "name": "EGRESS_FIREWALLS",
+                "integer": 7
               }
             ]
           },
@@ -202,7 +484,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sensorhash:\"ignore\"sql:\"pk,type(uuid)\""
+                    "value": "search:\"Alert ID,hidden\"sensorhash:\"ignore\"sql:\"pk,type(uuid)\""
                   }
                 ]
               },
@@ -290,7 +572,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"ignore-fks\""
+                    "value": "sql:\"ignore-fks,ignore-index\""
                   }
                 ]
               },
@@ -478,7 +760,7 @@
                         "options": [
                           {
                             "name": "(gogoproto.moretags)",
-                            "value": "search:\"-\"sql:\"ignore-fks\""
+                            "value": "search:\"-\"sql:\"ignore-fks,ignore-index\""
                           }
                         ]
                       },
@@ -1051,17 +1333,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1101,12 +1373,24 @@
               {
                 "id": 5,
                 "name": "expiration",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Expiration,store\""
+                  }
+                ]
               },
               {
                 "id": 6,
                 "name": "revoked",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Revoked,store\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1132,17 +1416,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -1226,6 +1500,11 @@
                 "id": 12,
                 "name": "traits",
                 "type": "Traits"
+              },
+              {
+                "id": 14,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -1234,7 +1513,13 @@
                 "field": {
                   "id": 6,
                   "name": "config",
-                  "type": "string"
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "scrub:\"map-values\""
+                    }
+                  ]
                 }
               },
               {
@@ -1267,6 +1552,9 @@
         ],
         "imports": [
           {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
             "path": "gogoproto/gogo.proto"
           },
           {
@@ -1275,17 +1563,78 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "blob.proto",
+      "def": {
+        "messages": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "Blob",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\"search:\"Blob Name\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "oid",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "checksum",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "length",
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Blob Length\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "modified_time",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Blob Modified On\""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "path": "google/protobuf/timestamp.proto"
           }
-        ]
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -1328,11 +1677,21 @@
               },
               {
                 "name": "KERNEL_MODULE",
-                "integer": 2
+                "integer": 2,
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "name": "EBPF",
                 "integer": 3
+              },
+              {
+                "name": "CORE_BPF",
+                "integer": 4
               }
             ]
           },
@@ -2260,17 +2619,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -2332,17 +2681,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -2367,17 +2706,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3014,17 +3343,124 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "compliance_config.proto",
+      "def": {
+        "messages": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "ComplianceConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "standard_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "hideScanResults",
+                "type": "bool"
+              }
+            ]
           }
-        ]
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "compliance_integration.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ComplianceIntegration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Version,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:compliance_unique_indicator\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Namespace,store\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "namespace_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Namespace ID\"sql:\"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "status_errors",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -3388,17 +3824,782 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "compliance_operator_v2.proto",
+      "def": {
+        "enums": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "NodeRole",
+            "enum_fields": [
+              {
+                "name": "INFRA"
+              },
+              {
+                "name": "WORKER",
+                "integer": 1
+              },
+              {
+                "name": "MASTER",
+                "integer": 2
+              }
+            ]
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "ScanType",
+            "enum_fields": [
+              {
+                "name": "UNSET_SCAN_TYPE"
+              },
+              {
+                "name": "NODE_SCAN",
+                "integer": 1
+              },
+              {
+                "name": "PLATFORM_SCAN",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "RuleSeverity",
+            "enum_fields": [
+              {
+                "name": "UNSET_RULE_SEVERITY"
+              },
+              {
+                "name": "UNKNOWN_RULE_SEVERITY",
+                "integer": 1
+              },
+              {
+                "name": "INFO_RULE_SEVERITY",
+                "integer": 2
+              },
+              {
+                "name": "LOW_RULE_SEVERITY",
+                "integer": 3
+              },
+              {
+                "name": "MEDIUM_RULE_SEVERITY",
+                "integer": 4
+              },
+              {
+                "name": "HIGH_RULE_SEVERITY",
+                "integer": 5
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorCheckResultV2.CheckStatus",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "PASS",
+                "integer": 1
+              },
+              {
+                "name": "FAIL",
+                "integer": 2
+              },
+              {
+                "name": "ERROR",
+                "integer": 3
+              },
+              {
+                "name": "INFO",
+                "integer": 4
+              },
+              {
+                "name": "MANUAL",
+                "integer": 5
+              },
+              {
+                "name": "NOT_APPLICABLE",
+                "integer": 6
+              },
+              {
+                "name": "INCONSISTENT",
+                "integer": 7
+              }
+            ]
           }
-        ]
+        ],
+        "messages": [
+          {
+            "name": "ProfileShim",
+            "fields": [
+              {
+                "id": 1,
+                "name": "profile_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorProfileV2:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "profile_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorProfileV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "profile_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Profile Name,hidden,store\"sql:\"index=category:unique;name:rule_unique_indicator\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Version,hidden,store\"sql:\"index=category:unique;name:rule_unique_indicator\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "profile_version",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "product_type",
+                "type": "string",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Profile Product Type,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "standard",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Profile Standard,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 10,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "rules",
+                "type": "Rule",
+                "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "product",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Profile Product,hidden,store\""
+                  }
+                ]
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 8,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 9,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "name": "Rule",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "rule_name",
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\"-\"sql:\"fk(ComplianceOperatorRuleV2:name),no-fk-constraint\""
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorRuleV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Rule Name,hidden,store\"sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Version,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "rule_version",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Rule Version,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "rule_type",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Rule Type,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "severity",
+                "type": "RuleSeverity",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Operator Rule Severity,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 8,
+                "name": "title",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "rationale",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "fixes",
+                "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorScanConfigurationV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "scan_name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Name,store\"sql:\"unique\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "auto_apply_remediations",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "auto_update_remediations",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "one_time_scan",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "profiles",
+                "type": "ProfileShim",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "node_roles",
+                "type": "NodeRole",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "strict_node_scan",
+                "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "schedule",
+                "type": "storage.Schedule"
+              },
+              {
+                "id": 12,
+                "name": "created_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 13,
+                "name": "last_updated_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 14,
+                "name": "modified_by",
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorClusterScanConfigStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"pk,fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "scan_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "errors",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "last_updated_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorCheckResultV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "check_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "check_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 15,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "status",
+                "type": "CheckStatus",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Check Status,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "severity",
+                "type": "RuleSeverity",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Rule Severity,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "instructions",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "created_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 12,
+                "name": "standard",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Standard,hidden,store\""
+                  }
+                ]
+              },
+              {
+                "id": 13,
+                "name": "control",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "scan_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanV2:id),no-fk-constraint\""
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "scan_config_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)\""
+                  }
+                ]
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 9,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 10,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "ScanStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "phase",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "result",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "warnings",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorScanV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "scan_config_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Compliance Scan Config ID,hidden,store\"sql:\"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator\""
+                  }
+                ]
+              },
+              {
+                "id": 14,
+                "name": "scan_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Cluster ID,hidden,store\"sql:\"fk(Cluster:id),no-fk-constraint,type(uuid),index=category:unique;name:scan_unique_indicator\""
+                  }
+                ]
+              },
+              {
+                "id": 13,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "errors",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "profile",
+                "type": "ProfileShim",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "scan_type",
+                "type": "ScanType"
+              },
+              {
+                "id": 9,
+                "name": "node_selector",
+                "type": "NodeRole"
+              },
+              {
+                "id": 10,
+                "name": "status",
+                "type": "ScanStatus"
+              },
+              {
+                "id": 11,
+                "name": "created_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 12,
+                "name": "last_executed_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/schedule.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -3489,6 +4690,11 @@
                 "id": 3,
                 "name": "footer",
                 "type": "BannerConfig"
+              },
+              {
+                "id": 4,
+                "name": "telemetry",
+                "type": "TelemetryConfiguration"
               }
             ]
           },
@@ -3553,6 +4759,26 @@
             ]
           },
           {
+            "name": "ReportRetentionConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "history_retention_duration_days",
+                "type": "uint32"
+              },
+              {
+                "id": 2,
+                "name": "downloadable_report_retention_days",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "downloadable_report_global_retention_bytes",
+                "type": "uint32"
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -3579,6 +4805,21 @@
                 "id": 5,
                 "name": "decommissioned_cluster_retention",
                 "type": "DecommissionedClusterRetentionConfig"
+              },
+              {
+                "id": 6,
+                "name": "report_retention_config",
+                "type": "ReportRetentionConfig"
+              },
+              {
+                "id": 7,
+                "name": "vulnerability_exception_config",
+                "type": "VulnerabilityExceptionConfig"
+              },
+              {
+                "id": 8,
+                "name": "administration_events_config",
+                "type": "AdministrationEventsConfig"
               }
             ]
           },
@@ -3596,26 +4837,97 @@
                 "type": "PrivateConfig"
               }
             ]
+          },
+          {
+            "name": "VulnerabilityExceptionConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "expiry_options",
+                "type": "ExpiryOptions"
+              }
+            ],
+            "messages": [
+              {
+                "name": "FixableCVEOptions",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "all_fixable",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 2,
+                    "name": "any_fixable",
+                    "type": "bool"
+                  }
+                ]
+              },
+              {
+                "name": "ExpiryOptions",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "day_options",
+                    "type": "DayOption",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 2,
+                    "name": "fixable_cve_options",
+                    "type": "FixableCVEOptions"
+                  },
+                  {
+                    "id": 3,
+                    "name": "custom_date",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 4,
+                    "name": "indefinite",
+                    "type": "bool"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "AdministrationEventsConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "retention_duration_days",
+                "type": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "DayOption",
+            "fields": [
+              {
+                "id": 1,
+                "name": "num_days",
+                "type": "uint32"
+              },
+              {
+                "id": 2,
+                "name": "enabled",
+                "type": "bool"
+              }
+            ]
           }
         ],
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/telemetry.proto"
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -3669,17 +4981,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -4217,7 +5519,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"CVE,store\""
+                    "value": "search:\"CVE,store\"sql:\"index=hash\""
                   }
                 ]
               },
@@ -4716,17 +6018,183 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "declarative_config_health.proto",
+      "def": {
+        "enums": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "DeclarativeConfigHealth.Status",
+            "enum_fields": [
+              {
+                "name": "UNHEALTHY"
+              },
+              {
+                "name": "HEALTHY",
+                "integer": 1
+              }
+            ]
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "DeclarativeConfigHealth.ResourceType",
+            "enum_fields": [
+              {
+                "name": "CONFIG_MAP"
+              },
+              {
+                "name": "ACCESS_SCOPE",
+                "integer": 1
+              },
+              {
+                "name": "PERMISSION_SET",
+                "integer": 2
+              },
+              {
+                "name": "ROLE",
+                "integer": 3
+              },
+              {
+                "name": "AUTH_PROVIDER",
+                "integer": 4
+              },
+              {
+                "name": "GROUP",
+                "integer": 5
+              },
+              {
+                "name": "NOTIFIER",
+                "integer": 6
+              }
+            ]
           }
-        ]
+        ],
+        "messages": [
+          {
+            "name": "DeclarativeConfigHealth",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "status",
+                "type": "Status"
+              },
+              {
+                "id": 5,
+                "name": "error_message",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "resource_name",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "resource_type",
+                "type": "ResourceType"
+              },
+              {
+                "id": 8,
+                "name": "last_timestamp",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "delegated_registry_config.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "DelegatedRegistryConfig.EnabledFor",
+            "enum_fields": [
+              {
+                "name": "NONE"
+              },
+              {
+                "name": "ALL",
+                "integer": 1
+              },
+              {
+                "name": "SPECIFIC",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "DelegatedRegistryConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled_for",
+                "type": "EnabledFor"
+              },
+              {
+                "id": 2,
+                "name": "default_cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "registries",
+                "type": "DelegatedRegistry",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "DelegatedRegistry",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "cluster_id",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -5174,7 +6642,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Image Sha,store,hidden\"sql:\"fk(Image:id),no-fk-constraint\""
+                    "value": "search:\"Image Sha,store,hidden\"sql:\"fk(Image:id),no-fk-constraint,index=hash\""
                   }
                 ]
               },
@@ -5700,7 +7168,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "policy:\"Exposure Infos\""
+                    "value": "policy:\"Exposure Infos\"sensorhash:\"set\""
                   }
                 ]
               }
@@ -6071,17 +7539,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6257,17 +7715,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6285,7 +7733,13 @@
               {
                 "id": 3,
                 "name": "role_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Role,hidden\"sql:\"index=name:groups_unique_indicator;category:unique\""
+                  }
+                ]
               }
             ]
           },
@@ -6311,17 +7765,35 @@
               {
                 "id": 1,
                 "name": "auth_provider_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Group Auth Provider,hidden\"sql:\"index=category:unique;name:groups_unique_indicator\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "key",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Group Key,hidden\"sql:\"index=category:unique;name:groups_unique_indicator\""
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "value",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Group Value,hidden\"sql:\"index=category:unique;name:groups_unique_indicator\""
+                  }
+                ]
               }
             ]
           }
@@ -6336,17 +7808,48 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "hash.proto",
+      "def": {
+        "messages": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "Hash",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk\""
+                  }
+                ]
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 2,
+                  "name": "hashes",
+                  "type": "uint64"
+                }
+              }
+            ]
           }
-        ]
+        ],
+        "imports": [
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -6371,17 +7874,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6469,17 +7962,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -6767,6 +8250,11 @@
                 "id": 2,
                 "name": "name",
                 "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "mirror",
+                "type": "string"
               }
             ]
           },
@@ -6822,6 +8310,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "hash",
+                "type": "uint64"
               }
             ]
           },
@@ -6901,7 +8394,13 @@
                 "id": 4,
                 "name": "vulns",
                 "type": "EmbeddedVulnerability",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\"set\""
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -6911,7 +8410,13 @@
               {
                 "id": 6,
                 "name": "priority",
-                "type": "int64"
+                "type": "int64",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\"ignore\""
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -7351,17 +8856,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7482,17 +8977,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -7579,11 +9064,6 @@
                 "type": "GoogleConfig"
               },
               {
-                "id": 14,
-                "name": "clair",
-                "type": "ClairConfig"
-              },
-              {
                 "id": 22,
                 "name": "clair_v4",
                 "type": "ClairV4Config"
@@ -7626,6 +9106,7 @@
               7,
               12,
               17,
+              14,
               19
             ],
             "messages": [
@@ -7735,27 +9216,6 @@
                     ]
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "name": "ClairConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "endpoint",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "validate:\"nolocalendpoint\""
-                  }
-                ]
-              },
-              {
-                "id": 2,
-                "name": "insecure",
-                "type": "bool"
               }
             ]
           },
@@ -8005,17 +9465,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8045,17 +9495,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8095,6 +9535,10 @@
               {
                 "name": "BACKUP",
                 "integer": 3
+              },
+              {
+                "name": "DECLARATIVE_CONFIG",
+                "integer": 4
               }
             ]
           }
@@ -8152,17 +9596,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8230,6 +9664,26 @@
               {
                 "name": "CONFIGMAPS",
                 "integer": 4
+              },
+              {
+                "name": "CLUSTER_ROLES",
+                "integer": 5
+              },
+              {
+                "name": "CLUSTER_ROLE_BINDINGS",
+                "integer": 6
+              },
+              {
+                "name": "NETWORK_POLICIES",
+                "integer": 7
+              },
+              {
+                "name": "SECURITY_CONTEXT_CONSTRAINTS",
+                "integer": 8
+              },
+              {
+                "name": "EGRESS_FIREWALLS",
+                "integer": 9
               }
             ]
           }
@@ -8445,17 +9899,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8596,17 +10040,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8636,17 +10070,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8670,7 +10094,13 @@
               {
                 "id": 2,
                 "name": "timestamp",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Log Imbue Creation Time,hidden\""
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -8690,17 +10120,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8815,17 +10235,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -8932,17 +10342,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9076,17 +10476,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9407,17 +10797,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9453,17 +10833,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -9830,17 +11200,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10217,13 +11577,7 @@
               {
                 "id": 4,
                 "name": "components",
-                "type": "Components",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "sql:\"-\""
-                  }
-                ]
+                "type": "Components"
               },
               {
                 "id": 5,
@@ -10414,17 +11768,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10521,17 +11865,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -10571,17 +11905,35 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "notification_schedule.proto",
+      "def": {
+        "messages": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "NotificationSchedule",
+            "fields": [
+              {
+                "id": 2,
+                "name": "last_run",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "reserved_ids": [
+              1
+            ]
           }
-        ]
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -10637,6 +11989,18 @@
               {
                 "name": "LOCAL7",
                 "integer": 7
+              }
+            ]
+          },
+          {
+            "name": "Syslog.MessageFormat",
+            "enum_fields": [
+              {
+                "name": "LEGACY"
+              },
+              {
+                "name": "CEF",
+                "integer": 1
               }
             ]
           }
@@ -10731,6 +12095,22 @@
                 "id": 18,
                 "name": "syslog",
                 "type": "Syslog"
+              },
+              {
+                "id": 19,
+                "name": "notifier_secret",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "scrub:\"always\""
+                  }
+                ]
+              },
+              {
+                "id": 50,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "reserved_ids": [
@@ -11136,6 +12516,11 @@
                 "name": "extra_fields",
                 "type": "KeyValuePair",
                 "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "message_format",
+                "type": "MessageFormat"
               }
             ],
             "messages": [
@@ -11182,21 +12567,36 @@
           },
           {
             "path": "storage/policy.proto"
+          },
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "operation_status.proto",
+      "def": {
+        "enums": [
           {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "OperationStatus",
+            "enum_fields": [
+              {
+                "name": "FAIL"
+              },
+              {
+                "name": "PASS",
+                "integer": 1
+              }
+            ]
           }
-        ]
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -11236,17 +12636,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12046,17 +13436,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12084,7 +13464,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Policy Category,store\"sql:\"unique\""
+                    "value": "search:\"Policy Category,store,hidden\"sql:\"unique\""
                   }
                 ]
               },
@@ -12103,21 +13483,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12156,7 +13522,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\"Deployment ID,hidden\"sql:\"type(uuid)\""
+                    "value": "search:\"Deployment ID,hidden\"sql:\"type(uuid),index=hash\""
                   }
                 ]
               },
@@ -12348,21 +13714,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12542,7 +13894,13 @@
               {
                 "id": 3,
                 "name": "time",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Process Creation Time,hidden\""
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -12657,21 +14015,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -12777,6 +14121,16 @@
                 "id": 6,
                 "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "deployment_id",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "pod_uid",
+                "type": "string"
               }
             ]
           },
@@ -12819,7 +14173,13 @@
               {
                 "id": 4,
                 "name": "close_timestamp",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Closed Time,hidden\""
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -12847,6 +14207,28 @@
                 "id": 7,
                 "name": "process",
                 "type": "ProcessIndicatorUniqueKey"
+              },
+              {
+                "id": 8,
+                "name": "deployment_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Deployment ID,store\"sql:\"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 9,
+                "name": "pod_uid",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Pod UID,hidden\"sql:\"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)\""
+                  }
+                ]
               }
             ]
           }
@@ -12867,17 +14249,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          }
-        ]
+        }
       }
     },
     {
@@ -13012,7 +14384,13 @@
                 "id": 10,
                 "name": "rules",
                 "type": "PolicyRule",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sensorhash:\"set\""
+                  }
+                ]
               }
             ],
             "maps": [
@@ -13262,21 +14640,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          },
-          {
-            "name": "(gogoproto.equal_all)",
-            "value": "true"
-          }
-        ]
+        }
       }
     },
     {
@@ -13614,6 +14978,44 @@
                 ]
               }
             ]
+          },
+          {
+            "name": "PolicyCategoryEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,id\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "policy_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"fk(Policy:id)\"search:\"Policy ID,store,hidden\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "category_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"fk(PolicyCategory:id)\""
+                  }
+                ]
+              }
+            ]
           }
         ],
         "imports": [
@@ -13629,17 +15031,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -13679,6 +15071,18 @@
               {
                 "name": "NOT_FIXABLE",
                 "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "VulnerabilityReportFilters.ImageType",
+            "enum_fields": [
+              {
+                "name": "DEPLOYED"
+              },
+              {
+                "name": "WATCHED",
+                "integer": 1
               }
             ]
           }
@@ -13733,7 +15137,13 @@
               {
                 "id": 6,
                 "name": "scope_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Embedded Collection ID\""
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -13754,6 +15164,28 @@
                 "id": 10,
                 "name": "last_successful_run_time",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "resource_scope",
+                "type": "ResourceScope"
+              },
+              {
+                "id": 12,
+                "name": "notifiers",
+                "type": "NotifierConfiguration",
+                "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "creator",
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               }
             ]
           },
@@ -13795,6 +15227,70 @@
                 "name": "severities",
                 "type": "VulnerabilitySeverity",
                 "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "image_types",
+                "type": "ImageType",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "all_vuln",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "since_last_sent_scheduled_report",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "since_start_date",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ResourceScope",
+            "fields": [
+              {
+                "id": 1,
+                "name": "collection_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Collection ID\""
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "NotifierConfiguration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "email_config",
+                "type": "EmailNotifierConfiguration"
+              },
+              {
+                "id": 2,
+                "name": "id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"fk(Notifier:id),restrict-delete\""
+                  }
+                ]
               }
             ]
           },
@@ -13811,6 +15307,16 @@
                 "name": "mailing_lists",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "custom_subject",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "custom_body",
+                "type": "string"
               }
             ]
           }
@@ -13827,26 +15333,295 @@
           },
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          },
+          {
+            "path": "storage/role.proto"
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "report_snapshot.proto",
+      "def": {
+        "enums": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "ReportSnapshot.ReportType",
+            "enum_fields": [
+              {
+                "name": "VULNERABILITY"
+              }
+            ]
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "ReportStatus.RunState",
+            "enum_fields": [
+              {
+                "name": "WAITING"
+              },
+              {
+                "name": "PREPARING",
+                "integer": 1
+              },
+              {
+                "name": "GENERATED",
+                "integer": 2
+              },
+              {
+                "name": "DELIVERED",
+                "integer": 3
+              },
+              {
+                "name": "FAILURE",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "ReportStatus.NotificationMethod",
+            "enum_fields": [
+              {
+                "name": "EMAIL"
+              },
+              {
+                "name": "DOWNLOAD",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "ReportStatus.RunMethod",
+            "enum_fields": [
+              {
+                "name": "ON_DEMAND"
+              },
+              {
+                "name": "SCHEDULED",
+                "integer": 1
+              }
+            ]
           }
-        ]
+        ],
+        "messages": [
+          {
+            "name": "ReportSnapshot",
+            "fields": [
+              {
+                "id": 1,
+                "name": "report_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"pk,type(uuid)\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "report_configuration_id",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Configuration ID\"sql:\"fk(ReportConfiguration:id)\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Name\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "type",
+                "type": "ReportType"
+              },
+              {
+                "id": 6,
+                "name": "vuln_report_filters",
+                "type": "VulnerabilityReportFilters"
+              },
+              {
+                "id": 7,
+                "name": "collection",
+                "type": "CollectionSnapshot"
+              },
+              {
+                "id": 8,
+                "name": "schedule",
+                "type": "storage.Schedule"
+              },
+              {
+                "id": 9,
+                "name": "report_status",
+                "type": "ReportStatus"
+              },
+              {
+                "id": 10,
+                "name": "notifiers",
+                "type": "NotifierSnapshot",
+                "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "requester",
+                "type": "SlimUser"
+              }
+            ]
+          },
+          {
+            "name": "CollectionSnapshot",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "NotifierSnapshot",
+            "fields": [
+              {
+                "id": 1,
+                "name": "email_config",
+                "type": "EmailNotifierConfiguration"
+              },
+              {
+                "id": 2,
+                "name": "notifier_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ReportStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "run_state",
+                "type": "RunState",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report State\""
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "queued_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Init Time\""
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "completed_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Completion Time\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "error_msg",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "report_request_type",
+                "type": "RunMethod",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Request Type\""
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "report_notification_method",
+                "type": "NotificationMethod",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Report Notification Method\""
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          },
+          {
+            "path": "storage/report_configuration.proto"
+          },
+          {
+            "path": "storage/schedule.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
       "protopath": "resource_collection.proto",
       "def": {
+        "enums": [
+          {
+            "name": "MatchType",
+            "enum_fields": [
+              {
+                "name": "EXACT"
+              },
+              {
+                "name": "REGEX",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ResourceCollection",
@@ -13891,12 +15666,24 @@
               {
                 "id": 6,
                 "name": "created_by",
-                "type": "SlimUser"
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               },
               {
                 "id": 7,
                 "name": "updated_by",
-                "type": "SlimUser"
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               },
               {
                 "id": 8,
@@ -13922,7 +15709,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\"Embedded Collection ID,hidden\"sql:\"fk(ResourceCollection:id),restrict-delete\""
+                        "value": "search:\"Embedded Collection ID\"sql:\"fk(ResourceCollection:id),restrict-delete\""
                       }
                     ]
                   }
@@ -13969,6 +15756,11 @@
                 "id": 1,
                 "name": "value",
                 "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "match_type",
+                "type": "MatchType"
               }
             ]
           }
@@ -13989,17 +15781,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14177,17 +15959,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14283,6 +16055,11 @@
                     "value": "true"
                   }
                 ]
+              },
+              {
+                "id": 8,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "maps": [
@@ -14334,6 +16111,11 @@
                 "id": 3,
                 "name": "description",
                 "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "maps": [
@@ -14381,6 +16163,11 @@
                 "id": 4,
                 "name": "rules",
                 "type": "Rules"
+              },
+              {
+                "id": 5,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "messages": [
@@ -14517,22 +16304,15 @@
             "path": "storage/labels.proto"
           },
           {
+            "path": "storage/traits.proto"
+          },
+          {
             "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14633,17 +16413,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -14690,17 +16460,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15128,17 +16888,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15158,17 +16908,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15298,17 +17038,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15469,17 +17199,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15554,17 +17274,67 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
+        }
+      }
+    },
+    {
+      "protopath": "system_info.proto",
+      "def": {
+        "messages": [
           {
-            "name": "go_package",
-            "value": "storage"
+            "name": "BackupInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "backup_last_run_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "status",
+                "type": "OperationStatus"
+              },
+              {
+                "id": 3,
+                "name": "requestor",
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
+              }
+            ]
           },
           {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
+            "name": "SystemInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "backup_info",
+                "type": "BackupInfo"
+              }
+            ]
           }
-        ]
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/operation_status.proto"
+          },
+          {
+            "path": "storage/user.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {
@@ -15692,17 +17462,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -15720,7 +17480,13 @@
               {
                 "id": 2,
                 "name": "last_set_time",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               }
             ]
           }
@@ -15732,21 +17498,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -16298,7 +18050,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "sql:\"pk\"search:\"Test Key 2,store,hidden\""
+                    "value": "search:\"Test Key 2,store,hidden\""
                   }
                 ]
               },
@@ -16741,6 +18493,18 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\"Test Parent1 Val\""
+                  }
+                ]
+              },
+              {
+                "id": 5,
+                "name": "string_slice",
+                "type": "string",
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Test Parent1 String Slice\""
                   }
                 ]
               }
@@ -17193,21 +18957,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "cc_enable_arenas",
-            "value": "true"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17237,6 +18987,26 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "Traits.Origin",
+            "enum_fields": [
+              {
+                "name": "IMPERATIVE"
+              },
+              {
+                "name": "DEFAULT",
+                "integer": 1
+              },
+              {
+                "name": "DECLARATIVE",
+                "integer": 2
+              },
+              {
+                "name": "DECLARATIVE_ORPHANED",
+                "integer": 3
+              }
+            ]
           }
         ],
         "messages": [
@@ -17252,23 +19022,18 @@
                 "id": 2,
                 "name": "visibility",
                 "type": "Visibility"
+              },
+              {
+                "id": 3,
+                "name": "origin",
+                "type": "Origin"
               }
             ]
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17281,7 +19046,13 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"User ID\""
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -17414,17 +19185,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17437,17 +19198,46 @@
               {
                 "id": 1,
                 "name": "seq_num",
-                "type": "int32"
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Current Sequence Number\""
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "version",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Version\""
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "last_persisted",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Last Persisted\""
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "min_seq_num",
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Minimum Sequence Number\""
+                  }
+                ]
               }
             ]
           }
@@ -17455,21 +19245,14 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "gogoproto/gogo.proto"
           }
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17495,6 +19278,22 @@
                 "integer": 3
               }
             ]
+          },
+          {
+            "name": "RequestExpiry.ExpiryType",
+            "enum_fields": [
+              {
+                "name": "TIME"
+              },
+              {
+                "name": "ALL_CVE_FIXABLE",
+                "integer": 1
+              },
+              {
+                "name": "ANY_CVE_FIXABLE",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -17514,7 +19313,13 @@
               {
                 "id": 3,
                 "name": "user",
-                "type": "SlimUser"
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -17547,6 +19352,17 @@
                     "value": "search:\"Request Expiry Time\""
                   }
                 ]
+              },
+              {
+                "id": 3,
+                "name": "expiry_type",
+                "type": "ExpiryType",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Expiry Type\""
+                  }
+                ]
               }
             ]
           },
@@ -17564,6 +19380,33 @@
             "name": "FalsePositiveRequest"
           },
           {
+            "name": "DeferralUpdate",
+            "fields": [
+              {
+                "id": 1,
+                "name": "CVEs",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "expiry",
+                "type": "RequestExpiry"
+              }
+            ]
+          },
+          {
+            "name": "FalsePositiveUpdate",
+            "fields": [
+              {
+                "id": 1,
+                "name": "CVEs",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
             "name": "VulnerabilityRequest",
             "fields": [
               {
@@ -17574,6 +19417,17 @@
                   {
                     "name": "(gogoproto.moretags)",
                     "value": "sql:\"pk\""
+                  }
+                ]
+              },
+              {
+                "id": 26,
+                "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"Request Name\"sql:\"unique\""
                   }
                 ]
               },
@@ -17613,13 +19467,25 @@
               {
                 "id": 5,
                 "name": "requestor",
-                "type": "SlimUser"
+                "type": "SlimUser",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               },
               {
                 "id": 6,
                 "name": "approvers",
                 "type": "SlimUser",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "sql:\"ignore_labels(User ID)\""
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -17675,10 +19541,30 @@
                 "type": "DeferralRequest",
                 "options": [
                   {
+                    "name": "deprecated",
+                    "value": "true"
+                  },
+                  {
                     "name": "(gogoproto.moretags)",
                     "value": "search:\"-\""
                   }
                 ]
+              },
+              {
+                "id": 22,
+                "name": "deferral_update",
+                "type": "DeferralUpdate",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\"-\""
+                  }
+                ]
+              },
+              {
+                "id": 23,
+                "name": "false_positive_update",
+                "type": "FalsePositiveUpdate"
               }
             ],
             "messages": [
@@ -17720,17 +19606,35 @@
                       {
                         "id": 1,
                         "name": "registry",
-                        "type": "string"
+                        "type": "string",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\"Image Registry Scope\""
+                          }
+                        ]
                       },
                       {
                         "id": 2,
                         "name": "remote",
-                        "type": "string"
+                        "type": "string",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\"Image Remote Scope\""
+                          }
+                        ]
                       },
                       {
                         "id": 3,
                         "name": "tag",
-                        "type": "string"
+                        "type": "string",
+                        "options": [
+                          {
+                            "name": "(gogoproto.moretags)",
+                            "value": "search:\"Image Tag Scope\""
+                          }
+                        ]
                       }
                     ]
                   },
@@ -17758,17 +19662,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     },
     {
@@ -17903,7 +19797,13 @@
                 "id": 18,
                 "name": "vulnerability_types",
                 "type": "VulnerabilityType",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "hash:\"ignore\""
+                  }
+                ]
               },
               {
                 "id": 12,
@@ -17929,12 +19829,24 @@
               {
                 "id": 15,
                 "name": "first_system_occurrence",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"First System Occurrence Timestamp\"hash:\"ignore\""
+                  }
+                ]
               },
               {
                 "id": 16,
                 "name": "first_image_occurrence",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "policy:\"First Image Occurrence Timestamp\"hash:\"ignore\""
+                  }
+                ]
               },
               {
                 "id": 19,
@@ -18041,17 +19953,7 @@
         ],
         "package": {
           "name": "storage"
-        },
-        "options": [
-          {
-            "name": "go_package",
-            "value": "storage"
-          },
-          {
-            "name": "java_package",
-            "value": "io.stackrox.proto.storage"
-          }
-        ]
+        }
       }
     }
   ]
