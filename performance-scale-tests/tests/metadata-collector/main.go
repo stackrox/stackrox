@@ -101,6 +101,9 @@ func newMetadataStringField(
 }
 
 func (f *MetadataField) getFlagName() string {
+	if f == nil {
+		return ""
+	}
 	var b strings.Builder
 	lastIsLower := false
 	for _, c := range f.Name {
@@ -186,6 +189,7 @@ func main() {
 	}
 
 	if err := cmd.Execute(); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -219,14 +223,16 @@ func collectAutomaticData(kubeConfigPath string) error {
 	return err.ErrorOrNil()
 }
 
-func getGitRevision() (string, error) {
+func getGitRoot() (*git.Repository, error) {
 	currentWorkingDir, getWorkingDirErr := os.Getwd()
 	if getWorkingDirErr != nil {
-		return "", getWorkingDirErr
+		return nil, getWorkingDirErr
 	}
 	var gitRepo *git.Repository
 	var repoOpenErr error
 	cwdLen := len(currentWorkingDir)
+	// Start from the current working directory and go up the directory
+	// hierarchy until a git repo is found, or root is reached.
 	for i := 0; i < cwdLen; i++ {
 		index := cwdLen - i - 1
 		lastChar := currentWorkingDir[index]
@@ -238,6 +244,14 @@ func getGitRevision() (string, error) {
 			break
 		}
 	}
+	if repoOpenErr != nil {
+		return nil, repoOpenErr
+	}
+	return gitRepo, nil
+}
+
+func getGitRevision() (string, error) {
+	gitRepo, repoOpenErr := getGitRoot()
 	if repoOpenErr != nil {
 		return "", repoOpenErr
 	}
