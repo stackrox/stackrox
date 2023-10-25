@@ -170,11 +170,6 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 		}
 
 		if !prevExists {
-			if val.CloseTimestamp != nil {
-				// We try to close a not existing Endpoint, something is wrong
-				log.Warnf("Found no matching PLOP to close for %+v", plopToNoSecretsString(val))
-			}
-
 			plopObjects = addNewPLOP(plopObjects, indicatorID, processInfo, val)
 		}
 	}
