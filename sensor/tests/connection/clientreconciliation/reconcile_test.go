@@ -17,7 +17,12 @@ import (
 
 var (
 	resourceCases = map[string]helper.K8sResourceInfo{
-		"Deployment": {Kind: "Deployment", YamlFile: "deployment/create.yaml", Name: "nginx-deployment"},
+		"Deployment": {
+			Kind:      "Deployment",
+			YamlFile:  "deployment/create.yaml",
+			Name:      "nginx-deployment",
+			PatchFile: "deployment/patch.json",
+		},
 	}
 	checkType = map[string]helper.GetLastMessageTypeMatcher{
 		"Deployment": func(m *central.MsgFromSensor) bool {
@@ -30,6 +35,7 @@ type resourceDef struct {
 	uid      string
 	hash     uint64
 	deleteFn func() error
+	obj      k8s.Object
 }
 
 func Test_SensorReconciles(t *testing.T) {
@@ -42,8 +48,8 @@ func Test_SensorReconciles(t *testing.T) {
 	t.Setenv(features.SensorReconciliationOnReconnect.EnvVar(), "true")
 
 	t.Setenv("ROX_RESYNC_DISABLED", "true")
-	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "1s")
-	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "2s")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_INITIAL_INTERVAL", "2s")
+	t.Setenv("ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL", "10s")
 
 	cfg := helper.DefaultCentralConfig()
 	cfg.SendDeduperState = true
@@ -61,6 +67,10 @@ func Test_SensorReconciles(t *testing.T) {
 
 		resourceMap := make(map[string]*resourceDef, len(resourceCases))
 
+		/********************
+		* TESTING CREATES
+		**********************/
+
 		for name, info := range resourceCases {
 			obj := helper.ObjByKind(info.Kind)
 			deleteFn, err := c.ApplyResourceAndWait(ctx, t, helper.DefaultNamespace, &info, obj, nil)
@@ -70,6 +80,7 @@ func Test_SensorReconciles(t *testing.T) {
 			resourceMap[name] = &resourceDef{
 				uid:      uid,
 				deleteFn: deleteFn,
+				obj:      obj,
 			}
 		}
 
@@ -96,19 +107,67 @@ func Test_SensorReconciles(t *testing.T) {
 		}
 
 		resourceHashes := makeResourceHashes(resourceMap)
-
 		c.SetCentralDeduperState(central.DeduperState{
 			ResourceHashes: resourceHashes,
 		})
 
-		c.RestartFakeCentralConnection()
+		c.StartFakeGRPC()
 
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// No events should've been received for the resources applied, since they are all in the deduper state
 		for name, def := range resourceMap {
-			assert.Falsef(t, c.CheckEventReceived(def.uid, central.ResourceAction_SYNC_RESOURCE, checkType[name]), "Resource of type %s should not have been received during SYNC", name)
+			require.Falsef(t, c.CheckEventReceived(def.uid, central.ResourceAction_SYNC_RESOURCE, checkType[name]), "Resource of type %s should not have been received during SYNC", name)
 		}
+
+		t.Logf("!!! Create tests passed. Starting update tests.")
+
+		/********************
+		* TESTING UPDATES
+		**********************/
+
+		for name, info := range resourceCases {
+			resource, ok := resourceMap[name]
+			require.True(t, ok)
+			c.PatchResource(ctx, t, resource.obj, &info)
+			assert.Eventually(t, func() bool {
+				return c.CheckEventReceived(resource.uid, central.ResourceAction_UPDATE_RESOURCE, checkType[name])
+			}, time.Minute, time.Second)
+		}
+
+		c.RestartFakeCentralConnection()
+
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
+
+		// All events should've been patched, meaning that all resources should be received with SYNC action
+		for name, def := range resourceMap {
+			assert.Truef(t, c.CheckEventReceived(def.uid, central.ResourceAction_SYNC_RESOURCE, checkType[name]), "Resource of type %s should have been received during SYNC", name)
+		}
+
+		/********************
+		* TESTING DELETES
+		**********************/
+
+		for name, resource := range resourceMap {
+			require.NoErrorf(t, resource.deleteFn(), "Deleting resource %s", name)
+			// This is just to make sure that sensor fully processed delete events before we restart the connection
+			assert.Eventually(t, func() bool {
+				return c.CheckEventReceived(resource.uid, central.ResourceAction_REMOVE_RESOURCE, checkType[name])
+			}, time.Minute, time.Second)
+		}
+
+		c.RestartFakeCentralConnection()
+
+		testContext.WaitForSyncEvent(t, 2*time.Minute)
+
+		// All resources should've been deleted, meaning that after SYNC, we should eventually see all deletes arriving
+		// due to the hash reconciliator in Sensor.
+		for name, def := range resourceMap {
+			require.Eventuallyf(t, func() bool {
+				return c.CheckEventReceived(def.uid, central.ResourceAction_REMOVE_RESOURCE, checkType[name])
+			}, time.Minute, time.Second, "Should receive delete for resource %s", name)
+		}
+
 	}))
 }
 

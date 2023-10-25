@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -33,6 +34,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	v13 "k8s.io/api/networking/v1"
 	v12 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	// import gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -65,10 +67,11 @@ const (
 
 // K8sResourceInfo is a test file in YAML or a struct
 type K8sResourceInfo struct {
-	Kind     string
-	YamlFile string
-	Obj      interface{}
-	Name     string
+	Kind      string
+	YamlFile  string
+	Obj       interface{}
+	Name      string
+	PatchFile string
 }
 
 // requiredWaitResources slice of resources that need to be awaited
@@ -283,6 +286,8 @@ func (c *TestContext) RestartFakeCentralConnection() {
 
 // StartFakeGRPC will start a gRPC server to act as Central.
 func (c *TestContext) StartFakeGRPC() {
+	c.centralStopped.Store(false)
+
 	fakeCentral := centralDebug.MakeFakeCentralWithInitialMessages(
 		message.SensorHello(certID),
 		message.ClusterConfig(),
@@ -812,6 +817,16 @@ func (c *TestContext) ApplyResourceAndWait(ctx context.Context, t *testing.T, ns
 	}
 
 	return fn, nil
+}
+
+func (c *TestContext) PatchResource(ctx context.Context, t *testing.T, obj k8s.Object, resource *K8sResourceInfo) {
+	content, err := os.ReadFile(path.Join("yaml", resource.PatchFile))
+	require.NoErrorf(t, err, "Failed to read patch file for resource %v", resource)
+	err = c.r.Patch(ctx, obj, k8s.Patch{
+		PatchType: types.StrategicMergePatchType,
+		Data:      content,
+	})
+	require.NoErrorf(t, err, "Failed to patch resource (%s): %s . Using JSON patch: %s", resource.Kind, err, string(content))
 }
 
 // ApplyResource creates a Kubernetes resource in namespace `ns` from a resource definition (see
