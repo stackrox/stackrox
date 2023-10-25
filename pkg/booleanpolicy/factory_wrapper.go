@@ -42,16 +42,19 @@ type evaluatorWrapper struct {
 
 func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Result, bool) {
 	if len(e.otherEvaluators) == 0 {
+		log.Info("Evaluating with legacy")
 		return e.legacyEvaluator.Evaluate(obj)
 	}
 	keys := maputil.Keys(e.otherEvaluators)
 	sort.Strings(keys)
 	for _, name := range keys {
+		log.Infof("Evaluating with %s", name)
 		evaluator := e.otherEvaluators[name]
 		result, matched := evaluator.Evaluate(obj)
 		return result, matched
 	}
 
+	log.Info("Evaluating with legacy")
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
 
 	return legacyResult, legacyMatched
