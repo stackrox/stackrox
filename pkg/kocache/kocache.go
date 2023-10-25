@@ -135,13 +135,13 @@ func (c *koCache) getOrAddEntry(path string) (*entry, error) {
 	if e == nil {
 		if !c.IsOnline() {
 			return nil, context.Cause(c.Context())
-		} else if c.entries == nil {
-			return nil, errKoCacheShuttingDown
-		} else {
-			e = newEntry()
-			c.entries[path] = e
-			go e.Populate(c.Context(), c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 		}
+		if c.entries == nil {
+			return nil, errKoCacheShuttingDown
+		}
+		e = newEntry()
+		c.entries[path] = e
+		go e.Populate(c.Context(), c.upstreamClient, fmt.Sprintf("%s/%s", c.upstreamBaseURL, path), c.opts)
 	}
 	e.AcquireRef()
 	return e, nil

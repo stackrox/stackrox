@@ -40,14 +40,14 @@ func getBytesFromPem(path string) ([]byte, error) {
 
 // GetPrivateKeyBytes returns the contents of the file containing the private key.
 func GetPrivateKeyBytes() ([]byte, error) {
-	if _, err := os.Stat(privateKeyPath); err == nil {
+	var err error
+	if _, err = os.Stat(privateKeyPath); err == nil {
 		return os.ReadFile(privateKeyPath)
-	} else if _, err := os.Stat(privateKeyPathPEM); err == nil {
+	} else if _, err = os.Stat(privateKeyPathPEM); err == nil {
 		// Second attempt: Try reading PEM version and convert.
 		return getBytesFromPem(privateKeyPathPEM)
-	} else {
-		return nil, errors.Wrap(err, "could not load private key")
 	}
+	return nil, errors.Wrap(err, "could not load private key")
 }
 
 func create() (tokens.IssuerFactory, tokens.Validator, error) {

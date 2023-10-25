@@ -171,9 +171,8 @@ func matches(values []string, key, target, defaultStr string) (string, bool) {
 		return fmt.Sprintf("%q is set to %q and not the target value of %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), false
 	} else if target == defaultStr {
 		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), false
 	}
+	return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), false
 }
 
 func notMatches(values []string, key, target, defaultStr string) (string, bool) {
@@ -192,9 +191,8 @@ func notMatches(values []string, key, target, defaultStr string) (string, bool) 
 		return fmt.Sprintf("%q is set to %s which does not match %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
 	} else if target == defaultStr {
 		return fmt.Sprintf("%q has a default value that matches the target value of %q", key, defaultStr), false
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), true
 	}
+	return fmt.Sprintf("%q has a default value of %q that does not match the target value of %q", key, defaultStr, target), true
 }
 
 func onlyContains(values []string, key, targets, defaults string) (string, bool) {

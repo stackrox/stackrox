@@ -114,8 +114,9 @@ func (s *errorSignalState) getErrPtr() *error {
 }
 
 func (s *errorSignalState) trigger(err error) bool {
-	//#nosec G103
-	if !atomic.CompareAndSwapPointer(&s.errPtr, nil, unsafe.Pointer(&err)) {
+	if !atomic.CompareAndSwapPointer(&s.errPtr, nil,
+		//#nosec G103
+		unsafe.Pointer(&err)) {
 		return false
 	}
 	close(s.signalC)
@@ -190,8 +191,11 @@ func (s *ErrorSignal) ErrorAndReset() (Error, bool) {
 	// concurrent reset happened and succeeded, this Reset invocation will not. If the signal has been reset and
 	// triggered in the meantime, we fail, too, pretending this Reset invocation happened as the first action in a
 	// Reset - Trigger - Reset sequence.
-	//#nosec G103
-	if !atomic.CompareAndSwapPointer(&s.statePtr, unsafe.Pointer(rawState), unsafe.Pointer(newErrorSignalState())) {
+	if !atomic.CompareAndSwapPointer(&s.statePtr,
+		//#nosec G103
+		unsafe.Pointer(rawState),
+		//#nosec G103
+		unsafe.Pointer(newErrorSignalState())) {
 		return nil, false
 	}
 	return state.Err(), true
