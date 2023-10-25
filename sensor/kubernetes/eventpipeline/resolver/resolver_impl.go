@@ -123,7 +123,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 
 				// Skip generating an event and sending the deployment to the detector if the object is not
 				// new and detection isn't forced.
-				if !deploymentReference.ForceDetection && newObject {
+				if deploymentReference.ForceDetection || newObject {
 					msg.AddSensorEvent(toEvent(deploymentReference.ParentResourceAction, d, msg.DeploymentTiming)).
 						AddDeploymentForDetection(component.DetectorMessage{Object: d, Action: deploymentReference.ParentResourceAction})
 				}
