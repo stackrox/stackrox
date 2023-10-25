@@ -1,6 +1,8 @@
 package clusterentities
 
 import (
+	"fmt"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
@@ -167,7 +169,26 @@ func (e *Store) purgeNoLock(deploymentID string) {
 }
 
 func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
-	log.Debugf("Calling Apply incremental=%t with updates: %v", incremental, updates)
+	dbgS := ""
+	for k, v := range updates {
+		dbgS += fmt.Sprintf("DeplID: %q, EntityData: ", k)
+		dbgS += "{IPs: ["
+		for k2 := range v.ips {
+			dbgS += fmt.Sprintf("%s, ", k2)
+		}
+		dbgS += "]},"
+		dbgS += "{Endpoints: ["
+		for k2, v2 := range v.endpoints {
+			dbgS += fmt.Sprintf("%s: %v, ", k2, v2)
+		}
+		dbgS += "]"
+		dbgS += "{ContainerIDs: ["
+		for k2 := range v.containerIDs {
+			dbgS += fmt.Sprintf("%s, ", k2)
+		}
+		dbgS += "]"
+	}
+	log.Debugf("Calling Apply incremental=%t with updates: %s", incremental, dbgS)
 	if !incremental {
 		for deploymentID := range updates {
 			e.purgeNoLock(deploymentID)
