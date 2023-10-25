@@ -99,6 +99,9 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if priorLen == len(d.lastSent) {
 			return nil
 		}
+		if event.GetImageIntegration() != nil {
+			log.Debugf("Image Integration: %s %s", event.GetAction(), event.GetImageIntegration().GetId())
+		}
 		return d.stream.Send(msg)
 	}
 
@@ -112,6 +115,9 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 			SensorHash: hashValue,
 		}
 		d.lastSent[key] = hashValue
+	}
+	if event.GetImageIntegration() != nil {
+		log.Debugf("Image Integration: %s %s", event.GetAction(), event.GetImageIntegration().GetId())
 	}
 
 	if err := d.stream.Send(msg); err != nil {

@@ -252,6 +252,8 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		return nil
 	}
 
+	log.Infof("docker config: %s %s", action.String(), secret.GetName())
+
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 

@@ -2,9 +2,15 @@ package reconciliation
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reconcile"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/deduper"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Store the reconciliation store stores a map if resource types and ids.
@@ -43,9 +49,18 @@ func (s *store) Cleanup() {
 func (s *store) ReconcileDelete(resType, resID string, _ uint64) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if resType == deduper.TypeImageIntegration.String() {
+		log.Infof("Reconcile Image Integration %s", resID)
+	}
 	if ids, found := s.resources[resType]; found {
 		if ids.Contains(resID) {
+			if resType == deduper.TypeImageIntegration.String() {
+				log.Infof("Reconcile Image Integration FOUND %s", resID)
+			}
 			return "", nil
+		}
+		if resType == deduper.TypeImageIntegration.String() {
+			log.Infof("Reconcile Image Integration NOT FOUND %s", resID)
 		}
 		return resID, nil
 	}
@@ -66,6 +81,9 @@ func (s *store) UpsertType(resType string) {
 func (s *store) Upsert(resType, id string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if resType == deduper.TypeImageIntegration.String() {
+		log.Infof("Upsert Image Integration: %s", id)
+	}
 	s.addResourceNoLock(resType, id)
 }
 
@@ -73,6 +91,9 @@ func (s *store) Upsert(resType, id string) {
 func (s *store) Remove(resType, id string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if resType == deduper.TypeImageIntegration.String() {
+		log.Infof("Remove Image Integration: %s", id)
+	}
 	s.removeResourceNoLock(resType, id)
 }
 
