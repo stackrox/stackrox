@@ -11,8 +11,196 @@
     "application/json"
   ],
   "paths": {
+    "/v1/auth/m2m": {
+      "get": {
+        "summary": "ListAuthMachineToMachineConfigs lists the available auth machine to machine configs.",
+        "operationId": "AuthService_ListAuthMachineToMachineConfigs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "tags": [
+          "AuthService"
+        ]
+      },
+      "post": {
+        "summary": "AddAuthMachineToMachineConfig creates a new auth machine to machine config.",
+        "operationId": "AuthService_AddAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1AddAuthMachineToMachineConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/exchange": {
+      "post": {
+        "summary": "ExchangeAuthMachineToMachineToken exchanges a given identity token for a Central access token based on\nconfigured auth machine to machine configs.",
+        "operationId": "AuthService_ExchangeAuthMachineToMachineToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExchangeAuthMachineToMachineTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ExchangeAuthMachineToMachineTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/{config.id}": {
+      "put": {
+        "summary": "UpdateAuthMachineToMachineConfig updates an existing auth machine to machine config.\nIn case the auth machine to machine config does not exist, a new one will be created.",
+        "operationId": "AuthService_UpdateAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "config.id",
+            "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UpdateAuthMachineToMachineConfigRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
+    "/v1/auth/m2m/{id}": {
+      "get": {
+        "summary": "GetAuthMachineToMachineConfig retrieves the specific auth machine to machine config.",
+        "operationId": "AuthService_GetAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAuthMachineToMachineConfigResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteAuthMachineToMachineConfig deletes the specific auth machine to machine config.\nIn case a specified auth machine to machine config does not exist is deleted, no error will be returned.",
+        "operationId": "AuthService_DeleteAuthMachineToMachineConfig",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/v1/auth/status": {
       "get": {
+        "summary": "GetAuthStatus returns the status for the current client.",
         "operationId": "AuthService_GetAuthStatus",
         "responses": {
           "200": {
@@ -35,6 +223,24 @@
     }
   },
   "definitions": {
+    "AuthMachineToMachineConfigMapping": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "A key within the identity token's claim value to use."
+        },
+        "valueExpression": {
+          "type": "string",
+          "description": "A regular expression that will be evaluated against values of the identity token claim\nidentified by the specified key.\nThis regular expressions is in RE2 format, see more here:\nhttps://github.com/google/re2/wiki/Syntax."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role which should be issued when the key and value match for a particular identity token."
+        }
+      },
+      "description": "Mappings map an identity token's claim values to a specific role within Central."
+    },
     "AuthProviderRequiredAttribute": {
       "type": "object",
       "properties": {
@@ -288,6 +494,59 @@
       },
       "description": "Role is wire compatible with the old format of storage.Role and\nhence only includes role name and associated permissions."
     },
+    "v1AddAuthMachineToMachineConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1AddAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1AuthMachineToMachineConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID of the config.\nNote that when adding a machine to machine config, this field should not be set."
+        },
+        "type": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfigType"
+        },
+        "tokenExpirationDuration": {
+          "type": "string",
+          "description": "Sets the expiration of the token returned from the ExchangeAuthMachineToMachineToken API call.\nPossible valid time units are: s, m, h.\nThe maximum allowed expiration duration is 24h.\nAs an example: 2h45m.\nFor additional information on the validation of the duration, see:\nhttps://pkg.go.dev/time#ParseDuration."
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
+          },
+          "description": "At least one mapping is required to resolve to a valid role for the access token to be successfully generated."
+        },
+        "issuer": {
+          "type": "string",
+          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\n\nMust be non-empty string containing URL when type is GENERIC.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.\n\nIssuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each\nGENERIC config must have a distinct issuer."
+        }
+      },
+      "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."
+    },
+    "v1AuthMachineToMachineConfigType": {
+      "type": "string",
+      "enum": [
+        "GENERIC",
+        "GITHUB_ACTIONS"
+      ],
+      "default": "GENERIC",
+      "description": "The type of the auth machine to machine config.\nCurrently supports GitHub actions or any other generic OIDC provider to use for verifying and\nexchanging the token."
+    },
     "v1AuthStatus": {
       "type": "object",
       "properties": {
@@ -315,6 +574,54 @@
           "items": {
             "$ref": "#/definitions/v1UserAttribute"
           }
+        }
+      }
+    },
+    "v1Empty": {
+      "type": "object"
+    },
+    "v1ExchangeAuthMachineToMachineTokenRequest": {
+      "type": "object",
+      "properties": {
+        "idToken": {
+          "type": "string",
+          "description": "Identity token that is supposed to be exchanged."
+        }
+      }
+    },
+    "v1ExchangeAuthMachineToMachineTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "description": "The exchanged access token."
+        }
+      }
+    },
+    "v1GetAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+        }
+      }
+    },
+    "v1ListAuthMachineToMachineConfigResponse": {
+      "type": "object",
+      "properties": {
+        "configs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AuthMachineToMachineConfig"
+          }
+        }
+      }
+    },
+    "v1UpdateAuthMachineToMachineConfigRequest": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AuthMachineToMachineConfig"
         }
       }
     },
