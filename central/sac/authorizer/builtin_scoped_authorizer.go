@@ -26,9 +26,8 @@ var (
 	// ErrUnknownResource is returned when resource is unknown.
 	ErrUnknownResource = errors.New("unknown resource")
 
-	refreshCtx     = sac.WithAllAccess(context.Background())
-	clusterCache   = objectarraycache.NewShallowObjectArrayCache(refreshCtx, cacheRefreshPeriod, fetchClustersFromDB)
-	namespaceCache = objectarraycache.NewShallowObjectArrayCache(refreshCtx, cacheRefreshPeriod, fetchNamespacesFromDB)
+	clusterCache   = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchClustersFromDB)
+	namespaceCache = objectarraycache.NewObjectArrayCache(cacheRefreshPeriod, fetchNamespacesFromDB)
 )
 
 const (
@@ -38,11 +37,13 @@ const (
 // NewBuiltInScopeChecker returns a new SAC-aware scope checker for the given
 // list of roles.
 func NewBuiltInScopeChecker(ctx context.Context, roles []permissions.ResolvedRole) (sac.ScopeCheckerCore, error) {
-	clusters, err := fetchClusters()
+	adminCtx := sac.WithGlobalAccessScopeChecker(ctx, sac.AllowAllAccessScopeChecker())
+
+	clusters, err := fetchClusters(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all clusters")
 	}
-	namespaces, err := fetchNamespaces()
+	namespaces, err := fetchNamespaces(adminCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all namespaces")
 	}
@@ -370,16 +371,16 @@ func effectiveAccessScopeAllows(effectiveAccessScope *effectiveaccessscope.Scope
 	return ok && namespaceNode.State == effectiveaccessscope.Included
 }
 
-func fetchClusters() ([]*storage.Cluster, error) {
-	return clusterCache.GetObjects(), nil
+func fetchClusters(ctx context.Context) ([]*storage.Cluster, error) {
+	return clusterCache.GetObjects(ctx)
 }
 
 func fetchClustersFromDB(ctx context.Context) ([]*storage.Cluster, error) {
 	return clusterStore.Singleton().GetClusters(ctx)
 }
 
-func fetchNamespaces() ([]*storage.NamespaceMetadata, error) {
-	return namespaceCache.GetObjects(), nil
+func fetchNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
+	return namespaceCache.GetObjects(ctx)
 }
 
 func fetchNamespacesFromDB(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
