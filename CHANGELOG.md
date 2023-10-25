@@ -18,6 +18,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     This synchronization occurs once Sensor establishes a connection with Central. It is recommended to set this limit when a significant number of secured clusters are connected to a single Central instance to avoid resource exhaustion.
   - `ROX_CENTRAL_RATE_LIMIT_PER_SECOND` setting functions as a global rate limiter for all requests directed to Central. It is set to a default value `0` (unlimited).
     The primary objective of this configuration is to serve as a protective measure against Distributed Denial of Service (DDoS) attacks on Central.
+  - `ROX_CENTRAL_RATE_LIMIT_THROTTLE_DURATION` setting allows you to specify the maximum throttle duration when the rate limit is reached. If set to less than 1 second (or 0), requests are immediately rejected. The default value is `10s` (10 seconds).
 
 ### Removed Features
 
