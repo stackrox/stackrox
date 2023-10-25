@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
+import useAnalytics, { INVITE_USERS_SUBMITTED } from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as authActions } from 'reducers/auth';
@@ -72,6 +73,7 @@ function InviteUsersModal(): ReactElement | null {
     const [modalView, setModalView] = useState<'FORM' | 'TEMPLATE' | 'CONFIRM'>('FORM');
     const [emailBuckets, setEmailBuckets] = useState<BucketsForNewAndExistingEmails | null>(null);
     const [apiError, setApiError] = useState<Error | null>(null);
+    const { analyticsTrack } = useAnalytics();
 
     const { authProviders, groups, roles, showInviteModal } = useSelector(feedbackState);
     const authProvidersWithRules = mergeGroupsWithAuthProviders(authProviders, groups);
@@ -139,6 +141,9 @@ function InviteUsersModal(): ReactElement | null {
     }
 
     function submitInvitations() {
+        // track request to invite
+        analyticsTrack(INVITE_USERS_SUBMITTED);
+
         // check whether any of the listed emails already have rules for this auth provider
         const providerWithRules = authProvidersWithRules.find(
             (provider) => provider.name === values.provider
