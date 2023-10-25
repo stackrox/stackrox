@@ -319,8 +319,12 @@ type AuthMachineToMachineConfig struct {
 	// At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
 	Mappings []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer of the related OIDC provider issuing the ID tokens to exchange.
+	//
 	// Must be non-empty string containing URL when type is GENERIC.
 	// In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
+	//
+	// Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
+	// GENERIC config must have a distinct issuer.
 	Issuer               string   `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

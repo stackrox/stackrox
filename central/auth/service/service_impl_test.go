@@ -349,6 +349,37 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidIssuer,
 		},
+		"invalid issuer - non-https issuer used": {
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Issuer:                  "http://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
+			},
+			err: errInvalidIssuer,
+		},
+		"invalid config for GITHUB_ACTIONS with empty issuer": {
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
+			},
+			err: errInvalidIssuer,
+		},
 		"valid config for GENERIC": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
@@ -364,26 +395,12 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				},
 			},
 		},
-		"valid config for GITHUB_ACTIONS with empty issuer": {
-			config: &v1.AuthMachineToMachineConfig{
-				Id:                      "some-id",
-				TokenExpirationDuration: "5m",
-				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole1,
-					},
-				},
-			},
-		},
 		"valid config for GITHUB_ACTIONS with issuer set": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
-				Issuer:                  githubActionsIssuer,
+				Issuer:                  "https://token.actions.githubusercontent.com",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:             "some-key",
@@ -463,6 +480,7 @@ func (s *authServiceAccessControlTestSuite) TestAddGitHubActionsConfig() {
 	})
 	s.NoError(err)
 	s.NotEmpty(resp.GetConfig().GetId())
+	s.Equal("https://token.actions.githubusercontent.com", resp.GetConfig().GetIssuer())
 }
 
 func (s *authServiceAccessControlTestSuite) TestAddGenericConfig() {

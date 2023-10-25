@@ -29,6 +29,7 @@ import (
 )
 
 const (
+	// See https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token
 	githubActionsIssuer = "https://token.actions.githubusercontent.com"
 )
 
@@ -239,8 +240,7 @@ func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
 			errox.InvalidArgs, errInvalidIssuer, config.GetType())
 	}
 	// For GitHub action types, the issuer either has to be empty or set to the github actions issuer.
-	if config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS &&
-		(config.GetIssuer() != githubActionsIssuer && config.GetIssuer() != "") {
+	if config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS && config.GetIssuer() != githubActionsIssuer {
 		return fmt.Errorf("%w: %w: type %s was used, but an issuer other than %s was used: %q",
 			errox.InvalidArgs, errInvalidIssuer, config.GetType(), githubActionsIssuer,
 			config.GetIssuer())
