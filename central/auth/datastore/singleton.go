@@ -1,16 +1,11 @@
 package datastore
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/auth/m2m"
 	pgStore "github.com/stackrox/rox/central/auth/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/jwt"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -31,9 +26,7 @@ func Singleton() DataStore {
 		// However, we do this in the background since the creation of the token exchanger
 		// will reach out to the OIDC provider's configuration endpoint.
 		go func() {
-			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
-			utils.Should(ds.(*datastoreImpl).InitializeTokenExchangers(ctx))
+			utils.Should(ds.(*datastoreImpl).InitializeTokenExchangers())
 		}()
 	})
 	return ds

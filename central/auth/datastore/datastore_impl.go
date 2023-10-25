@@ -123,9 +123,11 @@ func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) erro
 	return d.store.Delete(ctx, id)
 }
 
-func (d *datastoreImpl) InitializeTokenExchangers(ctx context.Context) error {
+func (d *datastoreImpl) InitializeTokenExchangers() error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
 
 	configs, err := d.listAuthM2MConfigsNoLock(ctx)
 	if err != nil {
