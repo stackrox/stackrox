@@ -77,6 +77,8 @@ spec:
         env:
         - name: PGDATA
           value: "/var/lib/postgresql/data/pgdata"
+        - name: POSTGRES_PASSWORD_FILE
+          value: "/run/secrets/stackrox.io/secrets/password"
         command:
         - init-entrypoint.sh
         volumeMounts:
