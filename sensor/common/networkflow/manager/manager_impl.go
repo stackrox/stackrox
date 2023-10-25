@@ -416,6 +416,8 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	log.Debugf("enrichConnection: start")
+	defer log.Debugf("enrichConnection: end")
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
@@ -433,12 +435,12 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	var lookupResults []clusterentities.LookupResult
 
 	// Check if the remote address represents the de-facto INTERNET entity.
-	log.Debugf("Checking whether connection is INTERNET: conn.remote.IPAndPort.Address=%v, externalIPv4Addr=%v, externalIPv6Addr=%v", conn.remote.IPAndPort.Address, externalIPv4Addr, externalIPv6Addr)
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
+		log.Debugf("Connection %s is INTERNET", conn.remote.IPAndPort.String())
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
-		log.Debugf("Looking up endpoint for %v", conn.remote)
+		log.Debugf("Connection %s is NOT INTERNET. Looking up endpoint.", conn.remote.IPAndPort.String())
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
 	log.Debugf("Connection: containerID=%s, containerName=%s, isFresh=%t, lookupResults=%+v", container.ContainerID, container.ContainerName, isFresh, lookupResults)

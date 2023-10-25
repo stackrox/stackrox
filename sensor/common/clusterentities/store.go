@@ -132,7 +132,6 @@ func (e *Store) Cleanup() {
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	log.Debugf("Apply: Applying update %v", updates)
 	e.applyNoLock(updates, incremental)
 }
 
@@ -151,6 +150,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		set := e.endpointMap[ep]
 		delete(set, deploymentID)
 		if len(set) == 0 {
+			log.Debugf("EndpointMap: Removing endpoint %s for deploymentID %s, value", ep.String(), deploymentID)
 			delete(e.endpointMap, ep)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.decPublicIPRefNoLock(ipAddr)
@@ -167,6 +167,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 }
 
 func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
+	log.Debugf("Calling Apply intcremental=%t", incremental)
 	if !incremental {
 		for deploymentID := range updates {
 			e.purgeNoLock(deploymentID)
@@ -274,8 +275,6 @@ type LookupResult struct {
 func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	log.Debugf("LookupByEndpoint: endpointMap=%v", e.endpointMap)
-	log.Debugf("LookupByEndpoint: ipMap=%v", e.ipMap)
 	return e.lookupNoLock(endpoint)
 }
 
