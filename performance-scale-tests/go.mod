@@ -7,7 +7,6 @@ require (
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/client-go v0.28.2
 )
@@ -47,7 +46,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/skeema/knownhosts v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
