@@ -12,10 +12,7 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
-    # TODO(ROX-20233): Fetch git tags outside of Dockerfile
-    git fetch --tags --force && \
-    mkdir -p image/bin
+RUN mkdir -p image/bin
 
 # TODO(ROX-20240): enable non-release development builds.
 ENV CI=1 GOFLAGS="" GOTAGS="release"
