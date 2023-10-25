@@ -29,6 +29,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Features
 - The UI menu option `Vulnerability Management (1.0)` has been deprecated and will be removed in the future. It will be replaced by `Vulnerability Management (2.0)`.
 - The `/v1/cve/requests` APIs have been deprecated and will be replaced by `/v2/vulnerability-exceptions/` APIs in the future.
+- Vulnerability deferral management for host(/node) and platform(/cluster) vulnerabilities has been deprecated and 
+will be removed in the future. Once removed, deferral cannot be created for host and platform vulnerabilities 
+and the existing exceptions enforced on host and platform vulnerabilities will be reverted. The affected APIs are
+`/v1/nodecves/suppress`, `/v1/nodecves/unsuppress`, `/v1/clustercves/suppress`, and `/v1/clustercves/unsuppress`.
 
 ### Technical Changes
 - Increased minimum Node.js version to 18.0.0 because 16 reached end of life. This change affects `yarn` commands in the ui folder.
