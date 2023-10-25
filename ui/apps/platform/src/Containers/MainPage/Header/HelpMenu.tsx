@@ -29,14 +29,14 @@ function HelpMenu(): ReactElement {
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPath}>
-                        API Reference
+                        API Reference (v1)
                     </Link>
                 }
             />
             <ApplicationLauncherItem
                 component={
                     <Link className="pf-c-app-launcher__menu-item" to={apidocsPathV2}>
-                        API Reference(v2)
+                        API Reference (v2)
                     </Link>
                 }
             />
