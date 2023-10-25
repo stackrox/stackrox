@@ -14,7 +14,7 @@ COPY . .
 
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
     # TODO(ROX-20233): Fetch git tags outside of Dockerfile
-    git fetch --tags --force && \
+    git tag && \
     mkdir -p image/bin
 
 # TODO(ROX-20240): enable non-release development builds.
