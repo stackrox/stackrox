@@ -189,7 +189,7 @@ func (s *serviceImpl) DeleteAuthMachineToMachineConfig(ctx context.Context, id *
 }
 
 func (s *serviceImpl) ExchangeAuthMachineToMachineToken(_ context.Context, _ *v1.ExchangeAuthMachineToMachineTokenRequest) (*v1.ExchangeAuthMachineToMachineTokenResponse, error) {
-	return nil, errox.InvariantViolation.New("not yet implemented")
+	return nil, errox.NotImplemented.New("not yet implemented")
 }
 
 func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineToMachineConfig, skipIDCheck bool) error {
