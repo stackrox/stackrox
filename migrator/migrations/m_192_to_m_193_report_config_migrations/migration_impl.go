@@ -101,7 +101,7 @@ func checkifNotifierExists(notifierID string, db *gorm.DB, dbctx context.Context
 	return id != "", nil
 }
 
-func getMigratedReportConfigIfExsists(reportID string, db *gorm.DB, dbctx context.Context) (bool, *storage.ReportConfiguration, error) {
+func getMigratedReportConfigIfExists(reportID string, db *gorm.DB, dbctx context.Context) (bool, *storage.ReportConfiguration, error) {
 	var reportConfig updatedSchema.ReportConfigurations
 	row := db.WithContext(dbctx).Table(updatedSchema.ReportConfigurationsTableName).Select("serialized").Where(&updatedSchema.ReportConfigurations{ID: reportID}).Limit(1).Find(&reportConfig)
 	if row.Error != nil {
@@ -186,7 +186,7 @@ func migrate(database *types.Databases) error {
 
 			//if deterministic id exists no need to copy the config
 			//since getMigratedReportConfigIfExsists only reads data from older migration, no need to write a new tx
-			migrated, data, err := getMigratedReportConfigIfExsists(newConfig.GetId(), db, database.DBCtx)
+			migrated, data, err := getMigratedReportConfigIfExists(newConfig.GetId(), db, database.DBCtx)
 			if err != nil {
 				return errors.Wrapf(err, "failed to query v2 report config with id %s", newConfig.GetId())
 			}
