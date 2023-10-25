@@ -281,6 +281,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 	id := uuid.NewV4().String()
 	d.reconciliationStore.Upsert(deduper.TypeImageIntegration.String(), id)
 	return &central.SensorEvent{
+		Id:     id,
 		Action: central.ResourceAction_UPDATE_RESOURCE,
 		Resource: &central.SensorEvent_ImageIntegration{
 			ImageIntegration: &storage.ImageIntegration{
