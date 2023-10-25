@@ -12,6 +12,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
@@ -38,6 +39,21 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
+}
+
+// CheckResultStats mocks base method.
+func (m *MockDataStore) CheckResultStats(ctx context.Context, query *v1.Query) ([]*datastore.ResourceCountByResultByCluster, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckResultStats", ctx, query)
+	ret0, _ := ret[0].([]*datastore.ResourceCountByResultByCluster)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckResultStats indicates an expected call of CheckResultStats.
+func (mr *MockDataStoreMockRecorder) CheckResultStats(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckResultStats", reflect.TypeOf((*MockDataStore)(nil).CheckResultStats), ctx, query)
 }
 
 // DeleteResult mocks base method.

@@ -6,6 +6,7 @@ import (
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore defines the possible interactions with compliance operator check results
@@ -20,9 +21,12 @@ type DataStore interface {
 
 	// SearchCheckResults retrieves the scan results specified by query
 	SearchCheckResults(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorCheckResultV2, error)
+
+	// CheckResultStats retrieves the scan results stats specified by query
+	CheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceCountByResultByCluster, error)
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store) DataStore {
-	return &datastoreImpl{store: store}
+func New(store store.Store, db postgres.DB) DataStore {
+	return &datastoreImpl{store: store, db: db}
 }
