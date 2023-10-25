@@ -174,6 +174,11 @@ func NewContextWithConfig(t *testing.T, config CentralConfig) (*TestContext, err
 		centralStopped:   atomic.Bool{},
 		config:           config,
 		archivedMessages: [][]*central.MsgFromSensor{},
+		deduperState: central.DeduperState{
+			ResourceHashes: map[string]uint64{},
+			Current:        1,
+			Total:          1,
+		},
 	}
 
 	tc.StartFakeGRPC()

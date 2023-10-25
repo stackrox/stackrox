@@ -109,6 +109,8 @@ func Test_SensorReconciles(t *testing.T) {
 		resourceHashes := makeResourceHashes(resourceMap)
 		c.SetCentralDeduperState(central.DeduperState{
 			ResourceHashes: resourceHashes,
+			Current:        1,
+			Total:          1,
 		})
 
 		c.StartFakeGRPC()
