@@ -73,8 +73,7 @@ func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
 		return
 	}
 	c.lastRefreshed = refreshTime
-	c.objectCache = c.objectCache[:0]
-	c.objectCache = append(c.objectCache, objects...)
+	c.objectCache = objects
 }
 
 // Refresh triggers a manual refresh of the cache.
