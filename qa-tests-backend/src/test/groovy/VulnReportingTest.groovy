@@ -8,11 +8,11 @@ import objects.EmailNotifier
 import services.CollectionsService
 import services.VulnReportService
 import util.MailServer
-import util.Env
 
 import org.junit.Assume
 import spock.lang.Shared
 import spock.lang.Tag
+import spock.lang.IgnoreIf
 
 @Tag("PZ")
 class VulnReportingTest extends BaseSpecification {
