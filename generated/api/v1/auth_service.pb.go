@@ -316,9 +316,10 @@ type AuthMachineToMachineConfig struct {
 	// For additional information on the validation of the duration, see:
 	// https://pkg.go.dev/time#ParseDuration.
 	TokenExpirationDuration string `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration,proto3" json:"token_expiration_duration,omitempty"`
-	// At least one mapping is required.
+	// At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
 	Mappings []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
 	// The issuer of the related OIDC provider issuing the ID tokens to exchange.
+	// Must be non-empty string containing URL when type is GENERIC.
 	// In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
 	Issuer               string   `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`

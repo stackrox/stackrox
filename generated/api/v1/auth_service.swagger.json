@@ -529,11 +529,11 @@
           "items": {
             "$ref": "#/definitions/AuthMachineToMachineConfigMapping"
           },
-          "description": "At least one mapping is required."
+          "description": "At least one mapping is required to resolve to a valid role for the access token to be successfully generated."
         },
         "issuer": {
           "type": "string",
-          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com."
+          "description": "The issuer of the related OIDC provider issuing the ID tokens to exchange.\nMust be non-empty string containing URL when type is GENERIC.\nIn case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com."
         }
       },
       "description": "AuthMachineToMachineConfig determines rules for exchanging an identity token from a third party with\na Central access token. The M2M stands for machine to machine, as this is the intended use-case\nfor the config."

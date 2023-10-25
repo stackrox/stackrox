@@ -57,10 +57,12 @@ type AuthMachineToMachineConfig struct {
 	Type                    AuthMachineToMachineConfig_Type       `protobuf:"varint,2,opt,name=type,proto3,enum=storage.AuthMachineToMachineConfig_Type" json:"type,omitempty"`
 	TokenExpirationDuration string                                `protobuf:"bytes,3,opt,name=token_expiration_duration,json=tokenExpirationDuration,proto3" json:"token_expiration_duration,omitempty"`
 	Mappings                []*AuthMachineToMachineConfig_Mapping `protobuf:"bytes,4,rep,name=mappings,proto3" json:"mappings,omitempty"`
-	Issuer                  string                                `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"`
-	XXX_NoUnkeyedLiteral    struct{}                              `json:"-"`
-	XXX_unrecognized        []byte                                `json:"-"`
-	XXX_sizecache           int32                                 `json:"-"`
+	// The issuer is related to an ID token's issuer.
+	// Spec: https://openid.net/specs/openid-connect-core-1_0.html#IDToken.
+	Issuer               string   `protobuf:"bytes,5,opt,name=issuer,proto3" json:"issuer,omitempty" sql:"unique"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *AuthMachineToMachineConfig) Reset()         { *m = AuthMachineToMachineConfig{} }
