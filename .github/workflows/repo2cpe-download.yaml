@@ -37,7 +37,7 @@ jobs:
         # Zip the files into mapping.zip
         zip mapping.zip repomapping-tmp/*
         
-        mkdir -p redhat-repository-mappings && mv repomapping.zip redhat-repository-mappings/
+        mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
         # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
 
