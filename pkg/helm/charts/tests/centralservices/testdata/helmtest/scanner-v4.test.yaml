@@ -120,6 +120,24 @@ tests:
     .rolebindings["stackrox-scanner-v4-psp"] | assertThat(. != null)
     .clusterroles["stackrox-scanner-v4-psp"] | assertThat(. != null)
 
+- name: "Installation fails if"
+  tests:
+    - name: "indexer is enabled without matcher also being enabled"
+      values:
+        scannerV4:
+          indexer:
+            disable: false
+          matcher:
+            disable: true
+    - name: "matche is enabled without indexer also being enabled"
+      values:
+        scannerV4:
+          indexer:
+            disable: true
+          matcher:
+            disable: false
+  expectError: true
+
 # - name: "scanner V4 service account can access image pull secrets"
 #   set:
 #     scannerV4.disable: false
