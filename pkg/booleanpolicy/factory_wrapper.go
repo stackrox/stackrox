@@ -48,14 +48,16 @@ func (e *evaluatorWrapper) Evaluate(obj *pathutil.AugmentedObj) (*evaluator.Resu
 	keys := maputil.Keys(e.otherEvaluators)
 	sort.Strings(keys)
 	for _, name := range keys {
-		log.Infof("Evaluating with %s", name)
 		evaluator := e.otherEvaluators[name]
+		start := time.Now()
 		result, matched := evaluator.Evaluate(obj)
+		log.Infof("Evaluating with %s: %d", name, time.Since(start).Nanoseconds())
 		return result, matched
 	}
 
-	log.Info("Evaluating with legacy")
+	start := time.Now()
 	legacyResult, legacyMatched := e.legacyEvaluator.Evaluate(obj)
+	log.Infof("Evaluating legacy %d", time.Since(start).Nanoseconds())
 
 	return legacyResult, legacyMatched
 }
