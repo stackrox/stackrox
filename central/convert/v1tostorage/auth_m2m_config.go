@@ -36,6 +36,7 @@ func convertMappings(mappings []*v1.AuthMachineToMachineConfig_Mapping) []*stora
 func setIssuer(typ v1.AuthMachineToMachineConfig_Type, issuer string) string {
 	switch typ {
 	case v1.AuthMachineToMachineConfig_GITHUB_ACTIONS:
+		// See https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token
 		return "https://token.actions.githubusercontent.com"
 	default:
 		return issuer

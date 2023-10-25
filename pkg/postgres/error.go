@@ -17,7 +17,7 @@ func toErrox(err error) error {
 		case "23503":
 			// Special case: for insert and update operations a FK constraint violation can occur when the referenced
 			// FK does not exist. Instead of returning errox.ReferencedByAnotherObject, we shall return
-			// errox.NotFound here.
+			// errox.ReferencedObjectNotFound here.
 			// The format of the detail message will be of:
 			// Key (X)=(Y) is not present in table "Z".
 			if strings.Contains(pgErr.Detail, "is not present in table") {

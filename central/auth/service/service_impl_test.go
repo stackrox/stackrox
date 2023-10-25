@@ -189,61 +189,117 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 		skipIDCheck bool
 		err         error
 	}{
+		// Nil config.
 		{
 			config: nil,
 			err:    errox.InvalidArgs,
 		},
-		{
-			config: &v1.AuthMachineToMachineConfig{},
-			err:    errox.InvalidArgs,
-		},
+		// Empty ID given and ID validation is not skipped.
 		{
 			config: &v1.AuthMachineToMachineConfig{
-				Id: "some-id",
+				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
-			err: errInvalidTokenExpiration,
+			err: errox.InvalidArgs,
 		},
+		// Invalid token expiration - parsing duration.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
-				TokenExpirationDuration: "1",
+				TokenExpirationDuration: "5",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
 			err: errInvalidTokenExpiration,
 		},
+		// Invalid token expiration - duration is too low.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "1s",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
 			err: errInvalidTokenExpiration,
 		},
+		// Invalid token expiration - duration is too high.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "24h1s",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
 			err: errInvalidTokenExpiration,
 		},
+		// Invalid issuer - empty issuer for GENERIC type.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
 			err: errInvalidIssuer,
 		},
+		// Invalid issuer - URL cannot be parsed.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
-				Issuer:                  "something-invalid/%+o",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://something-invalid/%+o",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
 			},
 			err: errInvalidIssuer,
 		},
+		// Invalid regular expression - parsing the expression.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
 				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
@@ -255,30 +311,24 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidRegularExpression,
 		},
+		// Invalid regular expression - empty regular expression given.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
-				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer:                  "https://stackrox.io",
 				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:             "some-key",
-						ValueExpression: "some-value",
+						ValueExpression: "",
 						Role:            testRole1,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole2,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole3,
 					},
 				},
 			},
+			err: errInvalidRegularExpression,
 		},
+		// Invalid issuer - non-github actions issuer for type GitHub actions
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
@@ -291,19 +341,11 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 						ValueExpression: "some-value",
 						Role:            testRole1,
 					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole2,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole3,
-					},
 				},
 			},
+			err: errInvalidIssuer,
 		},
+		// Valid config for Generic.
 		{
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
@@ -316,19 +358,41 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 						ValueExpression: "some-value",
 						Role:            testRole1,
 					},
+				},
+			},
+		},
+		// Valid config for GitHub actions with empty issuer.
+		{
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
 					{
 						Key:             "some-key",
 						ValueExpression: "some-value",
-						Role:            testRole2,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole3,
+						Role:            testRole1,
 					},
 				},
 			},
 		},
+		// Valid config for GitHub actions with issuer set.
+		{
+			config: &v1.AuthMachineToMachineConfig{
+				Id:                      "some-id",
+				TokenExpirationDuration: "5m",
+				Type:                    v1.AuthMachineToMachineConfig_GITHUB_ACTIONS,
+				Issuer:                  githubActionsIssuer,
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
+			},
+		},
+		// Valid config without ID but skipping the ID validation.
 		{
 			skipIDCheck: true,
 			config: &v1.AuthMachineToMachineConfig{
@@ -340,16 +404,6 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 						Key:             "some-key",
 						ValueExpression: "some-value",
 						Role:            testRole1,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole2,
-					},
-					{
-						Key:             "some-key",
-						ValueExpression: "some-value",
-						Role:            testRole3,
 					},
 				},
 			},
@@ -563,7 +617,7 @@ func (s *authServiceAccessControlTestSuite) TestUpdateConfigWithEmptyID() {
 	_, err := s.svc.UpdateAuthMachineToMachineConfig(s.accessCtx, &v1.UpdateAuthMachineToMachineConfigRequest{
 		Config: newConfig,
 	})
-	s.ErrorIs(err, errox.InvalidArgs)
+	s.ErrorIs(err, errEmptyID)
 }
 
 func (s *authServiceAccessControlTestSuite) TestRemoveConfig() {

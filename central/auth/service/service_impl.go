@@ -29,6 +29,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	githubActionsIssuer = "https://token.actions.githubusercontent.com"
+)
+
 var (
 	_ v1.AuthServiceServer = (*serviceImpl)(nil)
 
@@ -60,6 +64,7 @@ var (
 	errInvalidTokenExpiration   = errors.New("invalid token expiration duration provided")
 	errInvalidIssuer            = errors.New("invalid token issuer provided")
 	errInvalidRegularExpression = errors.New("invalid regular expression provided")
+	errEmptyID                  = errors.New("empty ID provided")
 )
 
 type serviceImpl struct {
@@ -190,7 +195,7 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineT
 		return errox.InvalidArgs.New("empty config given")
 	}
 	if config.GetId() == "" && !skipIDCheck {
-		return errox.InvalidArgs.New("empty ID given")
+		return fmt.Errorf("%w: %w", errox.InvalidArgs, errEmptyID)
 	}
 
 	duration, err := time.ParseDuration(config.GetTokenExpirationDuration())
@@ -203,23 +208,16 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineT
 			errox.InvalidArgs, errInvalidTokenExpiration, duration.String())
 	}
 
-	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetIssuer() == "" {
-		return fmt.Errorf("%w: %w: type %s was used, but no configuration for the issuer was given",
-			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC)
-	}
-
-	if config.GetIssuer() != "" {
-		parsedIssuer, err := url.Parse(config.GetIssuer())
-		if err != nil {
-			return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidIssuer, err)
-		}
-		if parsedIssuer.Scheme == "http" {
-			return fmt.Errorf("%w: %w: HTTPS is required for the issuer", errox.InvalidArgs, errInvalidIssuer)
-		}
+	if err := validateIssuer(config); err != nil {
+		return err
 	}
 
 	var regexValidationErrs error
 	for _, mapping := range config.GetMappings() {
+		if mapping.GetValueExpression() == "" {
+			regexValidationErrs = errors.Join(regexValidationErrs,
+				fmt.Errorf("%w for key %q: empty regex given", errInvalidRegularExpression, mapping.GetKey()))
+		}
 		if _, err := regexp.Compile(mapping.GetValueExpression()); err != nil {
 			regexValidationErrs = errors.Join(regexValidationErrs,
 				fmt.Errorf("%w for key %q: %w", errInvalidRegularExpression, mapping.GetKey(), err))
@@ -230,5 +228,31 @@ func (s *serviceImpl) validateAuthMachineToMachineConfig(config *v1.AuthMachineT
 		return fmt.Errorf("%w: %w", errox.InvalidArgs, regexValidationErrs)
 	}
 
+	return nil
+}
+
+func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
+	// For Generic types, the issuer has to be set.
+	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetIssuer() == "" {
+		return fmt.Errorf("%w: %w: type %s was used, but no configuration for the issuer was given",
+			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC)
+	}
+	// For GitHub action types, the issuer either has to be empty or set to the github actions issuer.
+	if config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS &&
+		(config.GetIssuer() != githubActionsIssuer && config.GetIssuer() != "") {
+		return fmt.Errorf("%w: %w: type %s was used, but an issuer other than %s was used: %q",
+			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC, githubActionsIssuer,
+			config.GetIssuer())
+	}
+
+	if config.GetIssuer() != "" {
+		parsedIssuer, err := url.Parse(config.GetIssuer())
+		if err != nil {
+			return fmt.Errorf("%w: %w: %w", errox.InvalidArgs, errInvalidIssuer, err)
+		}
+		if parsedIssuer.Scheme != "https" {
+			return fmt.Errorf("%w: %w: HTTPS is required for the issuer", errox.InvalidArgs, errInvalidIssuer)
+		}
+	}
 	return nil
 }

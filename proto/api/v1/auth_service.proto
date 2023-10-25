@@ -68,10 +68,11 @@ message AuthMachineToMachineConfig {
         // The role which should be issued when the key and value match for a particular identity token.
         string role             = 3;
     }
-    // At least one mapping is required.
+    // At least one mapping is required to resolve to a valid role for the access token to be successfully generated.
     repeated Mapping mappings   = 4;
 
     // The issuer of the related OIDC provider issuing the ID tokens to exchange.
+    // Must be non-empty string containing URL when type is GENERIC.
     // In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
     string issuer = 5;
 }
