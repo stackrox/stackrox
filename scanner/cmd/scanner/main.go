@@ -40,7 +40,7 @@ type Backends struct {
 }
 
 func main() {
-	configPath := flag.String("conf", "", "Path to scanner's configuration file.")
+	configPath := flag.String("conf", "/etc/scanner/config.yaml", "Path to scanner's configuration file.")
 	flag.Parse()
 	cfg, err := config.Read(*configPath)
 	if err != nil {
