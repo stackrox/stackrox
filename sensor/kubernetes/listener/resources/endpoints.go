@@ -199,7 +199,7 @@ func (m *endpointManagerImpl) OnServiceCreate(svc *serviceWrap) {
 		m.addEndpointDataForService(deployment, svc, update)
 		updates[deployment.GetId()] = update
 	}
-
+	log.Debugf("OnServiceCreate: updating incremental: %v", updates)
 	m.entityStore.Apply(updates, true)
 }
 
@@ -208,7 +208,7 @@ func (m *endpointManagerImpl) OnServiceUpdateOrRemove(namespace string, sel sele
 	for _, deployment := range m.deploymentStore.getMatchingDeployments(namespace, sel) {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
-
+	log.Debugf("OnServiceUpdateOrRemove: updating non-incremental: %v", updates)
 	m.entityStore.Apply(updates, false)
 }
 

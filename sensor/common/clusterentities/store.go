@@ -70,6 +70,7 @@ func NewStore() *Store {
 }
 
 func (e *Store) initMaps() {
+	log.Debugf("EndpointMap is about to be reset. State: %v", e.endpointMap)
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -107,8 +108,6 @@ func (ed *EntityData) AddEndpoint(ep net.NumericEndpoint, info EndpointTargetInf
 	if ed.endpoints == nil {
 		ed.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo)
 	}
-	log.Debugf("AddEndpoint: Adding %s", ep.String())
-
 	ed.endpoints[ep] = append(ed.endpoints[ep], info)
 }
 
@@ -150,8 +149,9 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		set := e.endpointMap[ep]
 		delete(set, deploymentID)
 		if len(set) == 0 {
-			log.Debugf("EndpointMap: Removing endpoint %s for deploymentID %s, value", ep.String(), deploymentID)
+			log.Debugf("EndpointMap: Removing endpoint %s for deploymentID %s", ep.String(), deploymentID)
 			delete(e.endpointMap, ep)
+			log.Debugf("EndpointMap: State after removal: %v", e.endpointMap)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
 				e.decPublicIPRefNoLock(ipAddr)
 			}
@@ -167,7 +167,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 }
 
 func (e *Store) applyNoLock(updates map[string]*EntityData, incremental bool) {
-	log.Debugf("Calling Apply intcremental=%t", incremental)
+	log.Debugf("Calling Apply incremental=%t with updates: %v", incremental, updates)
 	if !incremental {
 		for deploymentID := range updates {
 			e.purgeNoLock(deploymentID)
