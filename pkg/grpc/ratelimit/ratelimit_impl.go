@@ -41,7 +41,7 @@ func (limiter *rateLimiter) Limit() bool {
 		return !limiter.tokenBucketLimiter.Allow()
 	}
 
-	ctx, cancelFnc := context.WithDeadline(context.Background(), time.Now().Add(limiter.maxThrottleDuration))
+	ctx, cancelFnc := context.WithTimeout(context.Background(), limiter.maxThrottleDuration)
 	defer cancelFnc()
 
 	return limiter.tokenBucketLimiter.Wait(ctx) != nil
