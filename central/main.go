@@ -477,11 +477,11 @@ func watchdog(signal concurrency.Waitable, timeout time.Duration) {
 	}
 }
 
-// Returns API rate limiter for gRPC/HTTP/Stream requests made to central.
-func newAPIRateLimiter() ratelimit.RateLimiter {
-	apiRequestLimitPerSec := env.CentralAPIRateLimitPerSecond.IntegerSetting()
+// Returns rate limiter for gRPC/HTTP/Stream requests made to central.
+func newRateLimiter() ratelimit.RateLimiter {
+	apiRequestLimitPerSec := env.CentralRateLimitPerSecond.IntegerSetting()
 	if apiRequestLimitPerSec < 0 {
-		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
+		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralRateLimitPerSecond.EnvVar())
 	}
 
 	return ratelimit.NewRateLimiter(apiRequestLimitPerSec, env.CentralRateLimitThrottleDuration.DurationSetting())
@@ -553,7 +553,7 @@ func startGRPCServer() {
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 		Auditor:            audit.New(processor.Singleton()),
-		RateLimiter:        newAPIRateLimiter(),
+		RateLimiter:        newRateLimiter(),
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
