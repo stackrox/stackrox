@@ -40,6 +40,20 @@ const (
 		(SELECT 1 FROM pods WHERE pi.poduid = pods.Id) AND 
 		(signal_time < now() at time zone 'utc' - INTERVAL '%d MINUTES' OR signal_time is NULL))`
 
+	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
+	// This leads to a possible race condition where a listening endpoint reaches the database before the deployment,
+	// and the pruning job happens to run before the deployment information arrives in the database.
+	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
+	deleteOrphanedPLOPDeploymentsWithPodUID = `DELETE FROM listening_endpoints WHERE poduid IS NOT NULL AND NOT EXISTS
+		(SELECT 1 FROM deployments WHERE listening_endpoints.deploymentid = deployments.Id)`
+
+	// Unfortunately if a listening endpoint is marked as being open there is no indication of how old it is.
+	// This leads to a possible race condition where a listening endpoint reaches the database before the pod,
+	// and the pruning job happens to run before the pod information arrives in the database.
+	// This should be rare, so this should be acceptable. This could be improved by adding a timestamp to the listening endpoints table
+	deleteOrphanedPLOPPodsWithPodUID = `DELETE FROM listening_endpoints WHERE poduid IS NOT NULL AND NOT EXISTS
+		(SELECT 1 FROM pods WHERE listening_endpoints.poduid = pods.Id)`
+
 	deleteOrphanedProcesses = `WITH orphan_proc AS 
 		(SELECT id FROM process_indicators pi WHERE NOT EXISTS 
 		(SELECT 1 FROM deployments WHERE pi.deploymentid = deployments.Id) 
@@ -209,12 +223,22 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 	}
 }
 
-// PruneOrphanedPLOP prunes old PLOPs
-func PruneOrphanedPLOP(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
+// PruneOrphanedPLOPs prunes old PLOPs
+func PruneOrphanedPLOPs(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) int64 {
 	query := fmt.Sprintf(pruneOrphanedPLOPs, int(orphanWindow.Minutes()))
 	commandTag, err := pool.Exec(ctx, query)
 	if err != nil {
 		log.Errorf("failed to prune PLOP: %v", err)
+	}
+
+	// Delete processes listening on ports orphaned due to missing deployments
+	if _, err := pool.Exec(ctx, deleteOrphanedPLOPDeploymentsWithPodUID); err != nil {
+		log.Errorf("failed to prune process listening on ports by deployment: %v", err)
+	}
+
+	// Delete processes listening on ports orphaned due to missing pods.
+	if _, err := pool.Exec(ctx, deleteOrphanedPLOPPodsWithPodUID); err != nil {
+		log.Errorf("failed to prune process listening on ports by pods: %v", err)
 	}
 
 	return commandTag.RowsAffected()
