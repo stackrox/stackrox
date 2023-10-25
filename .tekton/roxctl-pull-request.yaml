@@ -30,7 +30,7 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
-  # TODO(ROX-20233, ROX-20234): Enable hermetic builds
+  # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
   #   value: "true"
   # - name: prefetch-input
