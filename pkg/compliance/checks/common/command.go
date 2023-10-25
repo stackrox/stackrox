@@ -253,9 +253,8 @@ func contains(values []string, key, target, defaultStr string) (string, bool) {
 		return fmt.Sprintf("%q is set to %q and does not contain the target value of %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), false
 	} else if strings.Contains(defaultStr, target) {
 		return fmt.Sprintf("%q has a default value that contains the target value of %q", key, defaultStr), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that does not contain the target value of %q", key, defaultStr, target), false
 	}
+	return fmt.Sprintf("%q has a default value of %q that does not contain the target value of %q", key, defaultStr, target), false
 }
 
 func notContains(values []string, key, target, defaultStr string) (string, bool) {
@@ -275,9 +274,8 @@ func notContains(values []string, key, target, defaultStr string) (string, bool)
 		return fmt.Sprintf("%q is set to %s which does not contain %q", key, msgfmt.FormatStrings(nonMatchingValues...), target), true
 	} else if !strings.Contains(defaultStr, target) {
 		return fmt.Sprintf("%q does not contain %q", key, target), true
-	} else {
-		return fmt.Sprintf("%q has a default value of %q that contains %q", key, defaultStr, target), false
 	}
+	return fmt.Sprintf("%q has a default value of %q that contains %q", key, defaultStr, target), false
 }
 
 // MasterNodeKubernetesCommandlineCheck checks the arguments of the given process if this is the Kubernetes master node
