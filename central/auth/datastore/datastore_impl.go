@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
@@ -37,6 +38,10 @@ func (d *datastoreImpl) getAuthM2MConfigNoLock(ctx context.Context, id string) (
 func (d *datastoreImpl) ListAuthM2MConfigs(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
+	return d.listAuthM2MConfigsNoLock(ctx)
+}
+
+func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storage.AuthMachineToMachineConfig, error) {
 	return d.store.GetAll(ctx)
 }
 
@@ -116,4 +121,30 @@ func (d *datastoreImpl) RemoveAuthM2MConfig(ctx context.Context, id string) erro
 	}
 
 	return d.store.Delete(ctx, id)
+}
+
+func (d *datastoreImpl) InitializeTokenExchangers(ctx context.Context) error {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	configs, err := d.listAuthM2MConfigsNoLock(ctx)
+	if err != nil {
+		return err
+	}
+
+	var tokenExchangerErrors error
+	for _, config := range configs {
+		exchanger, err := d.set.NewTokenExchangerFromConfig(ctx, config)
+		if err != nil {
+			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
+			continue
+		}
+		if err := d.set.UpsertTokenExchanger(exchanger, config.GetId()); err != nil {
+			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
+		}
+	}
+	if tokenExchangerErrors != nil {
+		return tokenExchangerErrors
+	}
+	return tokenExchangerErrors
 }

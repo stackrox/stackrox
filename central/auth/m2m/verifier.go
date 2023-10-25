@@ -2,10 +2,13 @@ package m2m
 
 import (
 	"context"
+	"net/http"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 var (
@@ -17,7 +20,10 @@ type tokenVerifier interface {
 }
 
 func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
-	provider, err := oidc.NewProvider(ctx, config.GetIssuer())
+	provider, err := oidc.NewProvider(
+		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute, Transport: proxy.RoundTripper()}),
+		config.GetIssuer(),
+	)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", config.GetIssuer())
 	}

@@ -28,22 +28,13 @@ func Singleton() DataStore {
 		ds = New(pgStore.New(globaldb.GetPostgres()), set)
 
 		// On initialization of the store, list all existing configs and fill the set.
-		ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
-		createTokenExchangersForExistingConfigs(ctx, ds, set)
+		// However, we do this in the background since the creation of the token exchanger
+		// will reach out to the OIDC provider's configuration endpoint.
+		go func() {
+			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Access)))
+			utils.Should(ds.(*datastoreImpl).InitializeTokenExchangers(ctx))
+		}()
 	})
 	return ds
-}
-
-func createTokenExchangersForExistingConfigs(ctx context.Context, ds DataStore, set m2m.TokenExchangerSet) {
-	configs, err := ds.ListAuthM2MConfigs(ctx)
-	utils.Should(err)
-	for _, config := range configs {
-		exchanger, err := set.NewTokenExchangerFromConfig(ctx, config)
-		utils.Should(err)
-		if err != nil {
-			continue
-		}
-		utils.Should(set.UpsertTokenExchanger(exchanger, config.GetId()))
-	}
 }
