@@ -64,6 +64,7 @@ COPY --from=downloads /output/go/ /go/
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
+COPY ./docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
 
 RUN if [[ "$(uname -m)" == "x86_64" ]]; then rpm -i /tmp/snappy.rpm && rm /tmp/snappy.rpm; fi
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
