@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -416,8 +417,6 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
-	log.Debugf("enrichConnection: start")
-	defer log.Debugf("enrichConnection: end")
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
@@ -434,16 +433,20 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	var lookupResults []clusterentities.LookupResult
 
+	dbgS := ""
 	// Check if the remote address represents the de-facto INTERNET entity.
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
-		log.Debugf("Connection %s is INTERNET", conn.remote.IPAndPort.String())
+		dbgS = fmt.Sprintf("Connection %s (INTERNET)", conn.remote.IPAndPort.String())
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
-		log.Debugf("Connection %s is NOT INTERNET. Looking up endpoint.", conn.remote.IPAndPort.String())
+		dbgS = fmt.Sprintf("Connection %s (NOT INTERNET)", conn.remote.IPAndPort.String())
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
 	}
-	log.Debugf("Connection: containerID=%s, containerName=%s, isFresh=%t, lookupResults=%+v", container.ContainerID, container.ContainerName, isFresh, lookupResults)
+	// Focused debugging
+	if strings.HasPrefix(container.ContainerName, "client-") || container.ContainerName == "nginx" {
+		log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
+	}
 
 	if len(lookupResults) == 0 {
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
@@ -495,6 +498,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			return
 		}
 	}
+
+	log.Debugf("%s. ContainerID=%s, containerName=%s, isFresh=%t, phase2-lookupResults=%+v", dbgS, container.ContainerID, container.ContainerName, isFresh, lookupResults)
 
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
