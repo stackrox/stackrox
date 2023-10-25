@@ -73,15 +73,8 @@ func (c *ObjectArrayCache[T]) refreshCache(objects []*T) {
 		return
 	}
 	c.lastRefreshed = refreshTime
-	if len(c.objectCache) == len(objects) {
-		// Save the re-allocation of the object array
-		for i := 0; i < len(c.objectCache); i++ {
-			c.objectCache[i] = objects[i]
-		}
-	} else {
-		c.objectCache = make([]*T, 0, len(objects))
-		c.objectCache = append(c.objectCache, objects...)
-	}
+	c.objectCache = c.objectCache[:0]
+	c.objectCache = append(c.objectCache, objects...)
 }
 
 // Refresh triggers a manual refresh of the cache.
