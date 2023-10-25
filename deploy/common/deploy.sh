@@ -303,7 +303,7 @@ function setup_internal_sso() {
 	echo "Setting up Dev Internal SSO login"
 
     roxctl declarative-config create auth-provider oidc \
-        --secret=declarative-configurations \
+        --secret=sensitive-declarative-configurations \
         --namespace=stackrox \
         --name="Internal-SSO" \
         --ui-endpoint="${LOCAL_API_ENDPOINT}" \

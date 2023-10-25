@@ -222,7 +222,8 @@ function launch_central {
       add_args "--enable-pod-security-policies=${POD_SECURITY_POLICIES}"
     fi
 
-    add_args "--declarative-config-secrets=declarative-configurations"
+    add_args "--declarative-config-config-maps=declarative-configurations"
+    add_args "--declarative-config-secrets=sensitive-declarative-configurations"
 
     if [[ -n "${ROX_TELEMETRY_STORAGE_KEY_V1}" ]]; then
       add_args "--enable-telemetry=true"
@@ -422,7 +423,7 @@ function launch_central {
     fi
 
     if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
-        ${KUBE_COMMAND:-kubectl} create secret generic declarative-configurations -n "${STACKROX_NAMESPACE}" &>/dev/null
+        ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${STACKROX_NAMESPACE}" &>/dev/null
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
 
