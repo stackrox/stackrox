@@ -15,7 +15,5 @@ func TestAuthM2MConfig(t *testing.T) {
 
 	storageConfig := AuthM2MConfig(config)
 
-	config.Issuer = "https://token.actions.githubusercontent.com"
-
 	convertTestUtils.AssertProtoMessageEqual(t, config, storageConfig)
 }

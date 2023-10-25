@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/datastore"
@@ -184,18 +183,16 @@ func (s *authServiceAccessControlTestSuite) TestAuthServiceResponse() {
 }
 
 func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConfig() {
-	testCases := []struct {
+	testCases := map[string]struct {
 		config      *v1.AuthMachineToMachineConfig
 		skipIDCheck bool
 		err         error
 	}{
-		// Nil config.
-		{
+		"nil config": {
 			config: nil,
 			err:    errox.InvalidArgs,
 		},
-		// Empty ID given and ID validation is not skipped.
-		{
+		"empty ID given and ID validation is not skipped": {
 			config: &v1.AuthMachineToMachineConfig{
 				TokenExpirationDuration: "5m",
 				Type:                    v1.AuthMachineToMachineConfig_GENERIC,
@@ -208,10 +205,9 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 					},
 				},
 			},
-			err: errox.InvalidArgs,
+			err: errEmptyID,
 		},
-		// Invalid token expiration - parsing duration.
-		{
+		"invalid token expiration - parsing duration": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5",
@@ -227,8 +223,22 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidTokenExpiration,
 		},
-		// Invalid token expiration - duration is too low.
-		{
+		"invalid token expiration - duration is empty": {
+			config: &v1.AuthMachineToMachineConfig{
+				Id:     "some-id",
+				Type:   v1.AuthMachineToMachineConfig_GENERIC,
+				Issuer: "https://stackrox.io",
+				Mappings: []*v1.AuthMachineToMachineConfig_Mapping{
+					{
+						Key:             "some-key",
+						ValueExpression: "some-value",
+						Role:            testRole1,
+					},
+				},
+			},
+			err: errInvalidTokenExpiration,
+		},
+		"invalid token expiration - duration is too low": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "1s",
@@ -244,8 +254,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidTokenExpiration,
 		},
-		// Invalid token expiration - duration is too high.
-		{
+		"invalid token expiration - duration is too high": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "24h1s",
@@ -261,8 +270,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidTokenExpiration,
 		},
-		// Invalid issuer - empty issuer for GENERIC type.
-		{
+		"invalid issuer - empty issuer for GENERIC type": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -277,8 +285,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidIssuer,
 		},
-		// Invalid issuer - URL cannot be parsed.
-		{
+		"invalid issuer - URL cannot be parsed": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -294,8 +301,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidIssuer,
 		},
-		// Invalid regular expression - parsing the expression.
-		{
+		"invalid regular expression - parsing the expression": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -311,8 +317,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidRegularExpression,
 		},
-		// Invalid regular expression - empty regular expression given.
-		{
+		"invalid regular expression - empty regular expression": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -328,8 +333,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidRegularExpression,
 		},
-		// Invalid issuer - non-github actions issuer for type GitHub actions
-		{
+		"invalid issuer - non-github actions issuer for type GitHub actions": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -345,8 +349,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 			},
 			err: errInvalidIssuer,
 		},
-		// Valid config for Generic.
-		{
+		"valid config for GENERIC": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -361,8 +364,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				},
 			},
 		},
-		// Valid config for GitHub actions with empty issuer.
-		{
+		"valid config for GITHUB_ACTIONS with empty issuer": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -376,8 +378,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				},
 			},
 		},
-		// Valid config for GitHub actions with issuer set.
-		{
+		"valid config for GITHUB_ACTIONS with issuer set": {
 			config: &v1.AuthMachineToMachineConfig{
 				Id:                      "some-id",
 				TokenExpirationDuration: "5m",
@@ -392,8 +393,7 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 				},
 			},
 		},
-		// Valid config without ID but skipping the ID validation.
-		{
+		"valid config without ID but skipping the ID validation": {
 			skipIDCheck: true,
 			config: &v1.AuthMachineToMachineConfig{
 				TokenExpirationDuration: "5m",
@@ -410,8 +410,8 @@ func (s *authServiceAccessControlTestSuite) TestValidateAuthMachineToMachineConf
 		},
 	}
 
-	for i, testCase := range testCases {
-		s.Run(fmt.Sprintf("test case %d", i), func() {
+	for name, testCase := range testCases {
+		s.Run(name, func() {
 			err := s.svc.validateAuthMachineToMachineConfig(testCase.config, testCase.skipIDCheck)
 			s.ErrorIs(err, testCase.err)
 		})

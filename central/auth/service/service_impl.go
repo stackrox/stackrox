@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	userPkg "github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/errox"
@@ -153,6 +152,7 @@ func (s *serviceImpl) GetAuthMachineToMachineConfig(ctx context.Context, id *v1.
 
 func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request *v1.AddAuthMachineToMachineConfigRequest) (*v1.AddAuthMachineToMachineConfigResponse, error) {
 	config := request.GetConfig()
+	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, true); err != nil {
 		return nil, err
 	}
@@ -167,6 +167,7 @@ func (s *serviceImpl) AddAuthMachineToMachineConfig(ctx context.Context, request
 
 func (s *serviceImpl) UpdateAuthMachineToMachineConfig(ctx context.Context, request *v1.UpdateAuthMachineToMachineConfigRequest) (*v1.Empty, error) {
 	config := request.GetConfig()
+	resolveGitHubActionsIssuer(config)
 	if err := s.validateAuthMachineToMachineConfig(config, false); err != nil {
 		return nil, err
 	}
@@ -235,13 +236,13 @@ func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
 	// For Generic types, the issuer has to be set.
 	if config.GetType() == v1.AuthMachineToMachineConfig_GENERIC && config.GetIssuer() == "" {
 		return fmt.Errorf("%w: %w: type %s was used, but no configuration for the issuer was given",
-			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC)
+			errox.InvalidArgs, errInvalidIssuer, config.GetType())
 	}
 	// For GitHub action types, the issuer either has to be empty or set to the github actions issuer.
 	if config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS &&
 		(config.GetIssuer() != githubActionsIssuer && config.GetIssuer() != "") {
 		return fmt.Errorf("%w: %w: type %s was used, but an issuer other than %s was used: %q",
-			errox.InvalidArgs, errInvalidIssuer, storage.AuthMachineToMachineConfig_GENERIC, githubActionsIssuer,
+			errox.InvalidArgs, errInvalidIssuer, config.GetType(), githubActionsIssuer,
 			config.GetIssuer())
 	}
 
@@ -255,4 +256,10 @@ func validateIssuer(config *v1.AuthMachineToMachineConfig) error {
 		}
 	}
 	return nil
+}
+
+func resolveGitHubActionsIssuer(config *v1.AuthMachineToMachineConfig) {
+	if config != nil && config.GetType() == v1.AuthMachineToMachineConfig_GITHUB_ACTIONS && config.GetIssuer() == "" {
+		config.Issuer = githubActionsIssuer
+	}
 }
