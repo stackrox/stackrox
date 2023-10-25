@@ -30,7 +30,7 @@ describe('usePaginatedQuery hook', () => {
         expect(result.current.data).toHaveLength(0);
 
         // Test after initial automatic fetch
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toEqual([[{ id: '1' }, { id: '2' }]]);
 
         // Test event causing a fetch of the next page
@@ -38,7 +38,7 @@ describe('usePaginatedQuery hook', () => {
             // Test with an `immediate=true` parameter to cover immediate and debounced use cases
             result.current.fetchNextPage(true);
         });
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toEqual([
             [{ id: '1' }, { id: '2' }],
             [{ id: '3' }, { id: '4' }],
@@ -48,7 +48,7 @@ describe('usePaginatedQuery hook', () => {
         act(() => {
             result.current.fetchNextPage();
         });
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toEqual([
             [{ id: '1' }, { id: '2' }],
             [{ id: '3' }, { id: '4' }],
@@ -59,7 +59,7 @@ describe('usePaginatedQuery hook', () => {
         act(() => {
             result.current.fetchNextPage();
         });
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toEqual([
             [{ id: '1' }, { id: '2' }],
             [{ id: '3' }, { id: '4' }],
@@ -72,7 +72,7 @@ describe('usePaginatedQuery hook', () => {
         act(() => {
             result.current.fetchNextPage();
         });
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.isEndOfResults).toBeTruthy();
     });
 
@@ -85,7 +85,7 @@ describe('usePaginatedQuery hook', () => {
         expect(result.current.data).toHaveLength(0);
 
         // Test after initial automatic fetch
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toEqual([[{ id: '1' }, { id: '2' }]]);
 
         // Test that data is cleared correctly
@@ -97,7 +97,7 @@ describe('usePaginatedQuery hook', () => {
         expect(result.current.data).toHaveLength(0);
 
         // Test that reset automatically fetches the first page
-        await waitForNextUpdate(result.current);
+        await waitForNextUpdate(result);
         expect(result.current.data).toHaveLength(1);
         expect(result.current.isRefreshingResults).toBeFalsy();
         expect(result.current.isFetchingNextPage).toBeFalsy();

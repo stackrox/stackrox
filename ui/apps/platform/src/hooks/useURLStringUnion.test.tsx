@@ -25,6 +25,12 @@ function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps)
     );
 }
 
+const createWrapper = (props) => {
+    return function CreatedWrapper({ children }) {
+        return <Wrapper {...props}>{children}</Wrapper>;
+    };
+};
+
 test('should read/write only the specified set of strings to the URL parameter', async () => {
     let params;
     let testLocation;
@@ -32,14 +38,13 @@ test('should read/write only the specified set of strings to the URL parameter',
     const possibleUrlValues = ['Alpha', 'Beta', 'Delta'] as const;
 
     const { result } = renderHook(() => useURLStringUnion('urlKey', possibleUrlValues), {
-        initialProps: {
+        wrapper: createWrapper({
             children: [],
             onRouteRender: ({ location }) => {
                 testLocation = location;
             },
             initialEntries: [''],
-        },
-        wrapper: Wrapper,
+        }),
     });
 
     // Check that default value is applied correctly
@@ -97,14 +102,13 @@ test('should default to the current URL parameter value on initialization, if it
     const { result: initialValidResult } = renderHook(
         () => useURLStringUnion('urlKey', possibleUrlValues),
         {
-            initialProps: {
+            wrapper: createWrapper({
                 children: [],
                 onRouteRender: ({ location }) => {
                     testLocation = location;
                 },
                 initialEntries: ['?urlKey=Beta'],
-            },
-            wrapper: Wrapper,
+            }),
         }
     );
 
@@ -121,14 +125,13 @@ test('should use the default value when an invalid value is entered directly int
     const { result: initialInvalidResult } = renderHook(
         () => useURLStringUnion('urlKey', possibleUrlValues),
         {
-            initialProps: {
+            wrapper: createWrapper({
                 children: [],
                 onRouteRender: ({ location }) => {
                     testLocation = location;
                 },
                 initialEntries: ['?urlKey=Bogus'],
-            },
-            wrapper: Wrapper,
+            }),
         }
     );
 

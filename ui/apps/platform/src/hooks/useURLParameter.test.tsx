@@ -25,19 +25,24 @@ function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps)
     );
 }
 
+const createWrapper = (props) => {
+    return function CreatedWrapper({ children }) {
+        return <Wrapper {...props}>{children}</Wrapper>;
+    };
+};
+
 test('should read/write scoped string value in URL parameter without changing existing URL parameters', async () => {
     let params;
     let testLocation;
 
     const { result } = renderHook(() => useURLParameter('testKey', undefined), {
-        initialProps: {
+        wrapper: createWrapper({
             children: [],
             onRouteRender: ({ location }) => {
                 testLocation = location;
             },
             initialEntries: ['?oldKey=test'],
-        },
-        wrapper: Wrapper,
+        }),
     });
 
     // Check new and existing values before setter function is called
@@ -77,14 +82,13 @@ test('should allow multiple sequential parameter updates without data loss', asy
     const { result } = renderHook(
         () => [useURLParameter('key1', 'oldValue1'), useURLParameter('key2', undefined)],
         {
-            initialProps: {
+            wrapper: createWrapper({
                 children: [],
                 onRouteRender: ({ location }) => {
                     testLocation = location;
                 },
                 initialEntries: ['?key1=oldValue1'],
-            },
-            wrapper: Wrapper,
+            }),
         }
     );
 
@@ -121,14 +125,13 @@ test('should read/write scoped complex object in URL parameter without changing 
 
     const emptyState: StateObject = { clusters: [] };
     const { result } = renderHook(() => useURLParameter('testKey', emptyState), {
-        initialProps: {
+        wrapper: createWrapper({
             children: [],
             onRouteRender: ({ location }) => {
                 testLocation = location;
             },
             initialEntries: ['?oldKey=test'],
-        },
-        wrapper: Wrapper,
+        }),
     });
 
     function isStateObject(obj: unknown): obj is StateObject {
@@ -192,7 +195,7 @@ test('should implement push and replace state for history', async () => {
     let testLocation;
 
     const { result } = renderHook(() => useURLParameter('testKey', undefined), {
-        initialProps: {
+        wrapper: createWrapper({
             children: [],
             onRouteRender: ({ history, location }) => {
                 testHistory = history;
@@ -200,8 +203,7 @@ test('should implement push and replace state for history', async () => {
             },
             initialIndex: 1,
             initialEntries: ['/main/dashboard', '/main/clusters?oldKey=test'],
-        },
-        wrapper: Wrapper,
+        }),
     });
 
     // Test the the default behavior is to push URL parameter changes to the history stack
