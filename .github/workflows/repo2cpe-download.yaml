@@ -3,9 +3,6 @@ name: Download and Upload Repository Mappings
 on:
   schedule:
     - cron: "0 0 * * *"
-  push:
-    branches:
-      - "yli3/*"
 
 jobs:
   download-and-upload:
@@ -36,7 +33,7 @@ jobs:
       run: |
         # Zip the files into mapping.zip
         zip mapping.zip repomapping-tmp/*
-        
+
         mkdir -p redhat-repository-mappings && mv mapping.zip redhat-repository-mappings/
         # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
