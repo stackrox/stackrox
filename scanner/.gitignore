@@ -19,3 +19,6 @@ nohup.out
 
 # Go mod
 vendor
+
+# Local config file
+config.yaml

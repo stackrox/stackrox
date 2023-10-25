@@ -22,6 +22,10 @@ import (
 var authEnvName = "ROX_SCANNERCTL_BASIC_AUTH"
 
 func main() {
+	address := flag.String("address", ":8443", "Address of the scanner service.")
+	serverName := flag.String("server-name", "scanner-v4.stackrox",
+		"Server name of the scanner service, primarily used for TLS verification.")
+	skipTLSVerify := flag.Bool("insecure-skip-tls-verify", false, "Skip TLS certificate validation.")
 	certsPath := flag.String("certs", "", "Path to directory containing scanner certificates.")
 	basicAuth := flag.String("auth", "", fmt.Sprintf("Use the specified basic auth credentials "+
 		"(warning: debug only and unsafe, use env var %s).", authEnvName))
@@ -75,6 +79,15 @@ func main() {
 			ref.DigestStr(), *imageDigest)
 	}
 
+	// Set options for the gRPC connection.
+	opts := []client.Option{
+		client.WithServerName(*serverName),
+		client.WithAddress(*address),
+	}
+	if *skipTLSVerify {
+		opts = append(opts, client.WithoutTLSVerify)
+	}
+
 	// Create a context that is cancellable on the usual command line signals. Double
 	// signal forcefully exits.
 	ctx, cancel := context.WithCancel(context.Background())
@@ -94,7 +107,7 @@ func main() {
 	}()
 
 	// Connect to scanner and scan.
-	c, err := client.NewGRPCScanner(ctx)
+	c, err := client.NewGRPCScanner(ctx, opts...)
 	if err != nil {
 		log.Fatalf("connecting: %v", err)
 	}
