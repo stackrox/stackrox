@@ -10,6 +10,8 @@ FROM registry.access.redhat.com/ubi8/go-toolset:1.19 as builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
+COPY . .
+
 RUN git config --global --add safe.directory /go/src/github.com/stackrox/rox/app && \
     # TODO(ROX-20233): Fetch git tags outside of Dockerfile
     git tag && \
