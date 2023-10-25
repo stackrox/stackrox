@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -82,9 +83,9 @@ func shouldRetryResource(kind string) bool {
 	return false
 }
 
-// objByKind returns the supported dynamic k8s resources that can be created
+// ObjByKind returns the supported dynamic k8s resources that can be created
 // add new ones here to support adding new resource types
-func objByKind(kind string) k8s.Object {
+func ObjByKind(kind string) k8s.Object {
 	switch kind {
 	case "Deployment":
 		return &appsV1.Deployment{}
@@ -118,15 +119,17 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
 // and assertions.
 type TestContext struct {
-	r               *resources.Resources
-	env             *envconf.Config
-	fakeCentral     *centralDebug.FakeService
-	centralReceived chan *central.MsgFromSensor
-	stopFn          func()
-	sensorStopped   concurrency.ReadOnlyErrorSignal
-	centralStopped  atomic.Bool
-	config          CentralConfig
-	grpcFactory     centralDebug.FakeGRPCFactory
+	r                *resources.Resources
+	env              *envconf.Config
+	fakeCentral      *centralDebug.FakeService
+	centralReceived  chan *central.MsgFromSensor
+	stopFn           func()
+	sensorStopped    concurrency.ReadOnlyErrorSignal
+	centralStopped   atomic.Bool
+	config           CentralConfig
+	grpcFactory      centralDebug.FakeGRPCFactory
+	deduperStateLock sync.Mutex
+	deduperState     central.DeduperState
 
 	// archivedMessages holds messages sent from Sensor to FakeCentral before stopping Central. These can be fetched
 	// in case the test needs to assert on messages sent right before stopping the gRPC connection.
@@ -145,6 +148,7 @@ func DefaultCentralConfig() CentralConfig {
 	return CentralConfig{
 		InitialSystemPolicies: policies,
 		CertFilePath:          "../../../../tools/local-sensor/certs/",
+		SendDeduperState:      false,
 	}
 }
 
@@ -286,6 +290,9 @@ func (c *TestContext) StartFakeGRPC() {
 		message.BaselineSync([]*storage.ProcessBaseline{}),
 		message.NetworkBaselineSync(nil))
 
+	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
+	fakeCentral.SetDeduperState(c.deduperState)
+
 	conn, shutdown := createConnectionAndStartServer(fakeCentral)
 
 	// grpcFactory will be nil on the first run of the testContext
@@ -331,7 +338,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 	var removeFunctions []func() error
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
-		obj := objByKind(resources[i].Kind)
+		obj := ObjByKind(resources[i].Kind)
 		removeFn, err := c.ApplyResourceAndWait(context.Background(), t, DefaultNamespace, &resources[i], obj, retryFn)
 		if err != nil {
 			return errors.Errorf("fail to apply resource: %s", err)
@@ -471,8 +478,8 @@ func (c *TestContext) WaitForSyncEvent(t *testing.T, timeout time.Duration) {
 	}
 }
 
-// WaitForMessageWithEventID will wait until timeout and check if a message with ID was sent to fake central.
-func (c *TestContext) WaitForMessageWithEventID(id string, timeout time.Duration) (*central.MsgFromSensor, error) {
+// LastStateMessageWithID will wait until timeout and check if a message with ID was sent to fake central.
+func (c *TestContext) LastStateMessageWithID(id string, timeout time.Duration) (*central.MsgFromSensor, error) {
 	timer := time.NewTimer(timeout)
 	ticker := time.NewTicker(defaultTicker)
 	for {
@@ -726,6 +733,7 @@ func GetAllAlertsForDeploymentName(messages []*central.MsgFromSensor, name strin
 type CentralConfig struct {
 	InitialSystemPolicies []*storage.Policy
 	CertFilePath          string
+	SendDeduperState      bool
 }
 
 func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config) {
@@ -786,7 +794,7 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 // ApplyResourceAndWaitNoObject creates a Kubernetes resource using `ApplyResourceAndWait` without requiring an object reference.
 // Use this if there is no need to get or manipulate the data in the YAML file.
 func (c *TestContext) ApplyResourceAndWaitNoObject(ctx context.Context, t *testing.T, ns string, resource K8sResourceInfo, retryFn RetryCallback) (func() error, error) {
-	obj := objByKind(resource.Kind)
+	obj := ObjByKind(resource.Kind)
 	return c.ApplyResourceAndWait(ctx, t, ns, &resource, obj, retryFn)
 }
 
@@ -909,13 +917,21 @@ func (c *TestContext) waitForResource(timeout time.Duration, fn condition) error
 }
 
 // CheckEventReceived will look at all received messages in Fake Central and validate if event with ID was received.
-func (c *TestContext) CheckEventReceived(uid string) bool {
+func (c *TestContext) CheckEventReceived(uid string, action central.ResourceAction, fn GetLastMessageTypeMatcher) bool {
 	for _, msg := range c.GetFakeCentral().GetAllMessages() {
-		if msg.GetEvent().GetId() == uid {
+		if msg.GetEvent().GetId() == uid && fn(msg) && msg.GetEvent().GetAction() == action {
 			return true
 		}
 	}
 	return false
+}
+
+// SetCentralDeduperState will update the deduper state from Central so that the next restart will return this state.
+func (c *TestContext) SetCentralDeduperState(state central.DeduperState) {
+	c.deduperStateLock.Lock()
+	defer c.deduperStateLock.Unlock()
+
+	c.deduperState = state
 }
 
 // GetFirstMessageWithDeploymentName find the first sensor message by namespace and deployment name
@@ -924,6 +940,19 @@ func GetFirstMessageWithDeploymentName(messages []*central.MsgFromSensor, ns, na
 		deployment := msg.GetEvent().GetDeployment()
 		if deployment.GetName() == name && deployment.GetNamespace() == ns {
 			return msg
+		}
+	}
+	return nil
+}
+
+// GetLastMessageTypeMatcher will check that message has a certain type.
+type GetLastMessageTypeMatcher func(m *central.MsgFromSensor) bool
+
+// GetLastMessageWithEventIDAndType returns the last state sent to central that matches this ID.
+func GetLastMessageWithEventIDAndType(messages []*central.MsgFromSensor, id string, fn GetLastMessageTypeMatcher) *central.MsgFromSensor {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].GetEvent().GetId() == id && fn(messages[i]) {
+			return messages[i]
 		}
 	}
 	return nil

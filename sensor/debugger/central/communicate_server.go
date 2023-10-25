@@ -43,7 +43,7 @@ type FakeService struct {
 
 	deduperStateLock    sync.RWMutex
 	deduperStateEnabled atomic.Bool
-	deduperState        map[string]uint64
+	deduperState        central.DeduperState
 
 	t *testing.T
 }
@@ -78,7 +78,7 @@ func MakeFakeCentralWithInitialMessages(initialMessages ...*central.MsgToSensor)
 		messageCallback:      func(_ *central.MsgFromSensor) { /* noop */ },
 		messageCallbackLock:  sync.RWMutex{},
 		centralStubMessagesC: make(chan *central.MsgToSensor, 1),
-		deduperState:         make(map[string]uint64),
+		deduperState:         central.DeduperState{ResourceHashes: make(map[string]uint64)},
 		deduperStateLock:     sync.RWMutex{},
 	}
 }
@@ -168,9 +168,7 @@ func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer
 
 	if s.deduperStateEnabled.Load() {
 		if err := stream.Send(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_DeduperState{DeduperState: &central.DeduperState{
-				ResourceHashes: s.deduperState,
-			}},
+			Msg: &central.MsgToSensor_DeduperState{DeduperState: &s.deduperState},
 		}); err != nil {
 			s.t.Errorf("sending deduper state to sensor")
 			return err
@@ -205,7 +203,7 @@ func (s *FakeService) EnableDeduperState(v bool) {
 }
 
 // SetDeduperState overwrites the deduper state that is going to be sent to Sensor.
-func (s *FakeService) SetDeduperState(state map[string]uint64) {
+func (s *FakeService) SetDeduperState(state central.DeduperState) {
 	s.deduperStateLock.Lock()
 	defer s.deduperStateLock.Unlock()
 
