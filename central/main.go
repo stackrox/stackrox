@@ -685,6 +685,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/docs/v2/swagger",
+			Authorizer:    user.Authenticated(),
+			ServerHandler: docs.SwaggerV2(),
+			Compression:   true,
+		},
+		{
 			Route:         "/api/graphql",
 			Authorizer:    user.Authenticated(), // graphql enforces permissions internally
 			ServerHandler: graphqlHandler.Handler(),
