@@ -72,7 +72,7 @@
         "react-popper": "0.9.0",
         "react-redux": "^7.2.6",
         "react-responsive": "^9.0.2",
-        "react-router-dom": "^5.2.0",
+        "react-router-dom": "^5.3.4",
         "react-router-hash-link": "^2.4.3",
         "react-router-prop-types": "^1.0.5",
         "react-select": "^2.0.0",
