@@ -24,8 +24,19 @@ func initializeIntegrations(storage store.Store) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	iis, err := storage.GetAll(ctx)
 	utils.CrashOnError(err)
+
+	// If we are starting from scratch, it means there are no preexisting integrations.
+	fromScratch := len(iis) == 0
+	// Ensure there are no preexisting image integrations which are no longer supported.
+	if !fromScratch {
+		for _, ii := range iis {
+			if ii.GetIntegrationConfig() == nil {
+				utils.Should(storage.Delete(ctx, ii.GetId()))
+			}
+		}
+	}
 	// If we are starting from scratch in online-mode, add the default image integrations.
-	if !env.OfflineModeEnv.BooleanSetting() && len(iis) == 0 {
+	if !env.OfflineModeEnv.BooleanSetting() && fromScratch {
 		// Add default integrations
 		for _, ii := range store.DefaultImageIntegrations {
 			utils.Should(storage.Upsert(ctx, ii))
