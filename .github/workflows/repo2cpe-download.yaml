@@ -34,11 +34,11 @@ jobs:
 
     - name: Upload repository mappings to Google Cloud Storage
       run: |
-        # Zip the files into repomapping.zip
-        zip repomapping.zip repomapping-tmp/*
+        # Zip the files into mapping.zip
+        zip mapping.zip repomapping-tmp/*
         
         mkdir -p redhat-repository-mappings && mv repomapping.zip redhat-repository-mappings/
-        # Upload repomapping.zip to Google Cloud Storage
+        # Upload mapping.zip to Google Cloud Storage
         gsutil cp -r "redhat-repository-mappings" "gs://scanner-v4-test/"
 
     - name: Send Slack notification on workflow failure
