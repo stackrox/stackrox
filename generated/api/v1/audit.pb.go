@@ -295,7 +295,7 @@ type Audit_Message_Request struct {
 	// Depending on how Central configured to be exposed, the source IP _may_ be a cluster internal IP.
 	//
 	// In case of exposure with a Kubernetes Load Balancer Service, follow this configuration instruction
-	// to preserve the client IPm: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+	// to preserve the client IP: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
 	//
 	// In case of exposure with a Route, following types support preserving the client IP:
 	// - edge

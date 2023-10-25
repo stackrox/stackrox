@@ -45,7 +45,7 @@ message Audit {
                 // the _actual_ client IP. See source_ip for a more detailed documentation.
                 string request_addr        = 3;
             }
-            SourceHeaders source_headers          = 4;
+            SourceHeaders source_headers   = 4;
             // The source IP of the request.
             // This is determined from the values found within the request's source.
             // The following priority is given:
@@ -56,7 +56,7 @@ message Audit {
             // Depending on how Central configured to be exposed, the source IP _may_ be a cluster internal IP.
             //
             // In case of exposure with a Kubernetes Load Balancer Service, follow this configuration instruction
-            // to preserve the client IPm: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+            // to preserve the client IP: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
             //
             // In case of exposure with a Route, following types support preserving the client IP:
             // - edge
