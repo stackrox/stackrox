@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
 import useURLStringUnion from './useURLStringUnion';

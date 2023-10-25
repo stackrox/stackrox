@@ -1,6 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -49,7 +49,6 @@ beforeEach(() => {
 
 const setup = () => {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
-    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -85,12 +84,12 @@ describe('AgingImages dashboard widget', () => {
             await screen.findByText(`${result0 + result1 + result2 + result3} Aging images`)
         ).toBeInTheDocument();
 
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         expect(checkboxes).toHaveLength(4);
 
         // Disable the first bucket
-        await user.click(checkboxes[0]);
+        await act(() => user.click(checkboxes[0]));
 
         // With the first item deselected, aging images < 90 days should no longer be present
         // in the chart or the card header
@@ -109,8 +108,8 @@ describe('AgingImages dashboard widget', () => {
         expect(await screen.findByText(`${range2}-${range3} days`)).toBeInTheDocument();
         expect(await screen.findByText(`>1 year`)).toBeInTheDocument();
 
-        await user.click(checkboxes[0]);
-        await user.click(checkboxes[2]);
+        await act(() => user.click(checkboxes[0]));
+        await act(() => user.click(checkboxes[2]));
 
         // With the first item re-selected (regardless of the other selected items), the heading total
         // should revert to the original value.
@@ -136,23 +135,25 @@ describe('AgingImages dashboard widget', () => {
             utils: { history },
         } = setup();
 
+        await screen.findByText(`${result0 + result1 + result2 + result3} Aging images`);
+
         // Check default links
-        await user.click(await screen.findByText(`30-90 days`));
+        await act(() => user.click(screen.getByText(`30-90 days`)));
         expect(history.location.search).toContain('s[Image Created Time]=30d-90d');
 
-        await user.click(await screen.findByText('90-180 days'));
+        await act(() => user.click(screen.getByText('90-180 days')));
         expect(history.location.search).toContain('s[Image Created Time]=90d-180d');
 
-        await user.click(await screen.findByText('>1 year'));
+        await act(() => user.click(screen.getByText('>1 year')));
         expect(history.location.search).toContain('s[Image Created Time]=>365d');
 
         // Deselect the second time range, merging the first and second time buckets
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
-        await user.click(checkboxes[1]);
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(checkboxes[1]));
+        await act(() => user.click(screen.getByLabelText('Options')));
 
-        await user.click(await screen.findByText('30-180 days'));
+        await act(() => user.click(screen.getByText('30-180 days')));
         expect(history.location.search).toContain('s[Image Created Time]=30d-180d');
     });
 
@@ -160,7 +161,7 @@ describe('AgingImages dashboard widget', () => {
         setup();
         const user = userEvent.setup({ skipHover: true });
 
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
         const checkboxes = await screen.findAllByLabelText('Toggle image time range');
         const inputs = (await screen.findAllByLabelText('Image age in days')) as HTMLInputElement[];
 
@@ -170,13 +171,13 @@ describe('AgingImages dashboard widget', () => {
             expect.arrayContaining([30, 90, 180, 365])
         );
 
-        await user.click(checkboxes[0]);
-        await user.click(checkboxes[1]);
+        await act(() => user.click(checkboxes[0]));
+        await act(() => user.click(checkboxes[1]));
         // Double clicking allows us to select the current input value and type over it
-        await user.dblClick(inputs[1]);
-        await user.type(inputs[1], '100', { skipClick: true });
-        await user.dblClick(inputs[2]);
-        await user.type(inputs[2], '200', { skipClick: true });
+        await act(() => user.dblClick(inputs[1]));
+        await act(() => user.type(inputs[1], '100', { skipClick: true }));
+        await act(() => user.dblClick(inputs[2]));
+        await act(() => user.type(inputs[2], '200', { skipClick: true }));
 
         expect(checkboxes[0]).not.toBeChecked();
         expect(checkboxes[1]).not.toBeChecked();
@@ -187,7 +188,7 @@ describe('AgingImages dashboard widget', () => {
         );
 
         const resetButton = await screen.findByLabelText('Revert to default options');
-        await user.click(resetButton);
+        await act(() => user.click(resetButton));
 
         checkboxes.forEach((cb) => expect(cb).toBeChecked());
         expect(inputs.map(({ value }) => parseInt(value, 10))).toEqual(

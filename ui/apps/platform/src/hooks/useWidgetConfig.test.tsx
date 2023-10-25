@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import React from 'react';
 import { render, act as reactAct } from '@testing-library/react';
-import { renderHook, act as hooksAct } from '@testing-library/react-hooks';
+import { renderHook, act as hooksAct } from '@testing-library/react';
 import useWidgetConfig, { defaultStorageKey } from 'hooks/useWidgetConfig';
 
 beforeEach(() => {

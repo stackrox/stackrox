@@ -1,6 +1,6 @@
 import React from 'react';
 import { MockedProvider } from '@apollo/client/testing';
-import { screen } from '@testing-library/react';
+import { screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -65,7 +65,6 @@ beforeEach(() => {
 
 function setup() {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
-    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(
         <MockedProvider mocks={mocks} addTypename={false}>
@@ -108,20 +107,20 @@ describe('Violations by policy severity widget', () => {
         expect(await screen.findByText(withTextContent(/220 ?Low/))).toBeInTheDocument();
 
         // Test the 'View all' violations link button
-        await user.click(await screen.findByText('View all'));
+        await act(() => user.click(screen.getByText('View all')));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('sortOption[field]=Severity');
 
         // Test links from the violation count tiles
-        await user.click(await screen.findByText('Low'));
+        await act(() => user.click(screen.getByText('Low')));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=LOW_SEVERITY');
-        await user.click(await screen.findByText('Critical'));
+        await act(() => user.click(screen.getByText('Critical')));
         expect(history.location.pathname).toBe(`${violationsBasePath}`);
         expect(history.location.search).toContain('[Severity]=CRITICAL_SEVERITY');
 
         // Test links from the 'most recent violations' section
-        await user.click(await screen.findByText(/ubuntu package manager/i));
+        await act(async () => user.click(await screen.findByText(/ubuntu package manager/i)));
         expect(history.location.pathname).toBe(`${violationsBasePath}/${mockAlerts[0].id}`);
     });
 });

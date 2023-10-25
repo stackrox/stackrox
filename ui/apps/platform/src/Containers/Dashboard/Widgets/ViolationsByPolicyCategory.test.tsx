@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -44,7 +44,6 @@ beforeEach(() => {
 
 const setup = () => {
     // Ignore false positive, see: https://github.com/testing-library/eslint-plugin-testing-library/issues/800
-    // eslint-disable-next-line testing-library/await-async-events
     const user = userEvent.setup();
     const utils = renderWithRouter(<ViolationsByPolicyCategory />);
 
@@ -86,9 +85,9 @@ describe('Violations by policy category widget', () => {
         ]);
 
         // Switch to sort-by-volume, which orders the chart by total violations per category
-        await user.click(await screen.findByLabelText('Options'));
-        await user.click(await screen.findByText('Total'));
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
+        await act(() => user.click(screen.getByText('Total')));
+        await act(() => user.click(screen.getByLabelText('Options')));
 
         await waitForAxisLinksToBe([
             'Security Best Practices',
@@ -105,13 +104,13 @@ describe('Violations by policy category widget', () => {
         expect(await screen.findByText('Anomalous Activity')).toBeInTheDocument();
 
         // Sort by volume, so that enabling lower severity bars changes the order of the chart
-        await user.click(await screen.findByLabelText('Options'));
-        await user.click(await screen.findByText('Total'));
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
+        await act(() => user.click(screen.getByText('Total')));
+        await act(() => user.click(screen.getByLabelText('Options')));
 
         // Toggle on low and medium violations, which are disabled by default
-        await user.click(await screen.findByText('Low'));
-        await user.click(await screen.findByText('Medium'));
+        await act(() => user.click(screen.getByText('Low')));
+        await act(() => user.click(screen.getByText('Medium')));
 
         await waitForAxisLinksToBe([
             'Vulnerability Management',
@@ -126,7 +125,7 @@ describe('Violations by policy category widget', () => {
         setup();
         const user = userEvent.setup({ skipHover: true });
 
-        await user.click(await screen.findByLabelText('Options'));
+        await act(() => user.click(screen.getByLabelText('Options')));
         const [severity, total, all, deploy, runtime] = await screen.findAllByRole('button', {
             name: /Severity|Total|All|Deploy|Runtime/,
         });
@@ -139,8 +138,8 @@ describe('Violations by policy category widget', () => {
         expect(runtime).toHaveAttribute('aria-pressed', 'false');
 
         // Change some options
-        await user.click(total);
-        await user.click(runtime);
+        await act(() => user.click(total));
+        await act(() => user.click(runtime));
 
         expect(severity).toHaveAttribute('aria-pressed', 'false');
         expect(total).toHaveAttribute('aria-pressed', 'true');
@@ -149,7 +148,7 @@ describe('Violations by policy category widget', () => {
         expect(runtime).toHaveAttribute('aria-pressed', 'true');
 
         const resetButton = await screen.findByLabelText('Revert to default options');
-        await user.click(resetButton);
+        await act(() => user.click(resetButton));
 
         expect(severity).toHaveAttribute('aria-pressed', 'true');
         expect(total).toHaveAttribute('aria-pressed', 'false');
