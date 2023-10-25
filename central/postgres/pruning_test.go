@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	protoTypes "github.com/gogo/protobuf/types"
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
@@ -17,13 +16,16 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	podStore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,12 +44,12 @@ func TestPruning(t *testing.T) {
 	suite.Run(t, new(PostgresPruningSuite))
 }
 
-func (s *PostgresPruningSuite) SetupSuite() {
+func (s *PostgresPruningSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *PostgresPruningSuite) TearDownSuite() {
+func (s *PostgresPruningSuite) TearDownTest() {
 	s.testDB.Teardown(s.T())
 }
 
@@ -286,11 +288,13 @@ func (s *PostgresPruningSuite) TestGetOrphanedPodIDs() {
 
 func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 	cases := []struct {
-		name              string
-		initialProcesses  []*storage.ProcessIndicator
-		deployments       set.FrozenStringSet
-		pods              set.FrozenStringSet
-		expectedDeletions []string
+		name                  string
+		initialProcesses      []*storage.ProcessIndicator
+		initialPlops          []*storage.ProcessListeningOnPortStorage
+		deployments           set.FrozenStringSet
+		pods                  set.FrozenStringSet
+		expectedDeletions     []string
+		expectedPlopDeletions []string
 	}{
 		{
 			name: "no deployments nor pods - remove all old indicators",
@@ -299,9 +303,25 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
 			deployments:       set.NewFrozenStringSet(),
 			pods:              set.NewFrozenStringSet(),
 			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1, fixtureconsts.ProcessIndicatorID2, fixtureconsts.ProcessIndicatorID3},
+			expectedPlopDeletions: []string{
+				fixtureconsts.PlopUID1,
+				fixtureconsts.PlopUID2,
+				fixtureconsts.PlopUID3,
+				fixtureconsts.PlopUID4,
+				fixtureconsts.PlopUID5,
+				fixtureconsts.PlopUID6,
+			},
 		},
 		{
 			name: "no deployments nor pods - remove no new orphaned indicators",
@@ -310,9 +330,15 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 20*time.Minute, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(),
-			pods:              set.NewFrozenStringSet(),
-			expectedDeletions: nil,
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedDeletions:     nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "all pods separate deployments - remove no indicators",
@@ -321,9 +347,15 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions: nil,
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions:     nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "all pods same deployment - remove no indicators",
@@ -332,9 +364,10 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
-			expectedDeletions: nil,
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedDeletions:     nil,
+			expectedPlopDeletions: nil,
 		},
 		{
 			name: "some pods separate deployments - remove some indicators",
@@ -343,9 +376,15 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment5, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment3, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 		{
 			name: "some pods same deployment - remove some indicators",
@@ -354,13 +393,21 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID2, 20*time.Minute, fixtureconsts.Deployment6, fixtureconsts.PodUID2),
 				newIndicatorWithDeploymentAndPod(fixtureconsts.ProcessIndicatorID3, 1*time.Hour, fixtureconsts.Deployment6, fixtureconsts.PodUID3),
 			},
-			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment6),
-			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID3),
-			expectedDeletions: []string{fixtureconsts.ProcessIndicatorID1},
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID3),
+			expectedDeletions:     []string{fixtureconsts.ProcessIndicatorID1},
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID1},
 		},
 	}
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
+			s.testDB.Teardown(s.T())
+			s.testDB = pgtest.ForT(s.T())
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Nil(err)
@@ -382,10 +429,22 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses), countFromDB)
 
+			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
+			err = plopStore.UpsertMany(s.ctx, c.initialPlops)
+			s.NoError(err)
+			plopCount, err := plopStore.Count(s.ctx)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops), plopCount)
+
 			PruneOrphanedProcessIndicators(s.ctx, s.testDB.DB, orphanWindow)
+
 			countFromDB, err = processDatastore.Count(s.ctx, nil)
 			s.NoError(err)
 			s.Equal(len(c.initialProcesses)-len(c.expectedDeletions), countFromDB)
+
+			plopCount, err = plopStore.Count(s.ctx)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
 
 			// Cleanup
 			var cleanupIDs []string
@@ -401,6 +460,120 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			for _, podID := range c.pods.AsSlice() {
 				s.NoError(podDS.RemovePod(s.ctx, podID))
 			}
+
+		})
+	}
+}
+
+func (s *PostgresPruningSuite) TestRemoveOrphanedPLOPs() {
+	cases := []struct {
+		name                  string
+		initialPlops          []*storage.ProcessListeningOnPortStorage
+		deployments           set.FrozenStringSet
+		pods                  set.FrozenStringSet
+		expectedPlopDeletions []string
+	}{
+		{
+			name: "no deployments nor pods - remove plops with PodUid since there are no pods",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(),
+			pods:                  set.NewFrozenStringSet(),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID4, fixtureconsts.PlopUID5, fixtureconsts.PlopUID6},
+		},
+		{
+			name: "deployments one missing pod - remove plops with PodUid with no matching pod even though there are deployments",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID6},
+		},
+		{
+			name: "one missing deployments no missing pods - remove plops with PodUid with no matching deployments even though there are matching pods",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage1(),
+				fixtures.GetPlopStorage2(),
+				fixtures.GetPlopStorage3(),
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorage5(),
+				fixtures.GetPlopStorage6(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID4},
+		},
+		{
+			name: "no missing deployments or pods but plops are expired - remove all expired plops",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				fixtures.GetPlopStorage4(),
+				fixtures.GetPlopStorageExpired1(),
+				fixtures.GetPlopStorageExpired2(),
+				fixtures.GetPlopStorageExpired3(),
+			},
+			deployments:           set.NewFrozenStringSet(fixtureconsts.Deployment6, fixtureconsts.Deployment5, fixtureconsts.Deployment3),
+			pods:                  set.NewFrozenStringSet(fixtureconsts.PodUID1, fixtureconsts.PodUID2, fixtureconsts.PodUID3),
+			expectedPlopDeletions: []string{fixtureconsts.PlopUID7, fixtureconsts.PlopUID8, fixtureconsts.PlopUID9},
+		},
+	}
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			s.testDB.Teardown(s.T())
+			s.testDB = pgtest.ForT(s.T())
+			// Add deployments if necessary
+			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
+			}
+
+			podDS, err := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+			s.Nil(err)
+			for _, podID := range c.pods.AsSlice() {
+				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
+				s.Nil(err)
+			}
+
+			plopStore := plopPostgresStore.NewFullStore(s.testDB.DB)
+			err = plopStore.UpsertMany(s.ctx, c.initialPlops)
+			s.NoError(err)
+			plopCount, err := plopStore.Count(s.ctx)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops), plopCount)
+
+			PruneOrphanedPLOPs(s.ctx, s.testDB.DB, orphanWindow)
+
+			plopCount, err = plopStore.Count(s.ctx)
+			s.NoError(err)
+			s.Equal(len(c.initialPlops)-len(c.expectedPlopDeletions), plopCount)
+
+			ids, err := plopStore.GetIDs(s.ctx)
+			s.NoError(err)
+			for id := range ids {
+				s.NotContains(c.expectedPlopDeletions, id)
+			}
+
+			// Cleanup
+			for _, deploymentID := range c.deployments.AsSlice() {
+				s.NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
+			}
+
+			for _, podID := range c.pods.AsSlice() {
+				s.NoError(podDS.RemovePod(s.ctx, podID))
+			}
+
 		})
 	}
 }
@@ -412,7 +585,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "cd118b6d-0b2e-5ab1-b1fc-c992d58eda9f",
-			LastOccurredAt: timeBeforeDays(2),
+			LastOccurredAt: timestamp.TimeBeforeDays(2),
 		},
 		// Should not be subject to pruning.
 		{
@@ -427,7 +600,7 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should not be subject to pruning.
 		{
 			Id:             "5e2ab54d-0a19-5f31-9093-136d49b6bd94",
-			LastOccurredAt: timeBeforeDays(3),
+			LastOccurredAt: timestamp.TimeBeforeDays(3),
 		},
 		// Should not be subject to pruning.
 		{
@@ -437,12 +610,12 @@ func (s *PostgresPruningSuite) TestPruneAdministrationEvents() {
 		// Should be subject to pruning.
 		{
 			Id:             "8e1876a3-a0c0-56c3-bccc-961d89f80220",
-			LastOccurredAt: timeBeforeDays(12),
+			LastOccurredAt: timestamp.TimeBeforeDays(12),
 		},
 		// Should be subject to pruning.
 		{
 			Id:             "396ad8a4-1cd5-5c2d-9176-bd831c7cc0d7",
-			LastOccurredAt: timeBeforeDays(365),
+			LastOccurredAt: timestamp.TimeBeforeDays(365),
 		},
 	}
 	s.Require().NoError(administrationEventDS.UpsertTestEvents(s.ctx, s.T(),
@@ -475,7 +648,7 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 		ContainerName: "",
 		PodId:         "",
 		Signal: &storage.ProcessSignal{
-			Time: timestampNowMinus(age),
+			Time: timestamp.NowMinus(age),
 		},
 	}
 }
@@ -484,12 +657,4 @@ func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID
 	indicator := newIndicatorWithDeployment(id, age, deploymentID)
 	indicator.PodUid = podUID
 	return indicator
-}
-
-func timestampNowMinus(t time.Duration) *types.Timestamp {
-	return protoconv.ConvertTimeToTimestamp(time.Now().Add(-t))
-}
-
-func timeBeforeDays(days int) *protoTypes.Timestamp {
-	return timestampNowMinus(24 * time.Duration(days) * time.Hour)
 }
