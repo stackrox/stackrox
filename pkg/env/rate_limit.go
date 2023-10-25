@@ -11,8 +11,8 @@ var (
 	// per second to central from all sources. Default 0 (no limit).
 	CentralAPIRateLimitPerSecond = RegisterIntegerSetting("ROX_CENTRAL_API_RATE_LIMIT_PER_SECOND", 0)
 
-	// CentralAPIRateLimitThrottleDuration sets the maximum allowed throttle
+	// CentralRateLimitThrottleDuration sets the maximum allowed throttle
 	// duration when the rate limit is reached. If set under 1s (or 0),
 	// requests are immediately rejected. The default value is 10s.
-	CentralAPIRateLimitThrottleDuration = registerDurationSetting("ROX_CENTRAL_API_RATE_LIMIT_THROTTLE_DURATION", 10*time.Second, WithDurationZeroAllowed())
+	CentralRateLimitThrottleDuration = registerDurationSetting("ROX_CENTRAL_RATE_LIMIT_THROTTLE_DURATION", 10*time.Second, WithDurationZeroAllowed())
 )

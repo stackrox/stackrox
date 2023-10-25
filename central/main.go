@@ -484,7 +484,7 @@ func newAPIRateLimiter() ratelimit.RateLimiter {
 		log.Panicf("Negative number is not allowed for API request rate limit. Check env variable: %q", env.CentralAPIRateLimitPerSecond.EnvVar())
 	}
 
-	return ratelimit.NewRateLimiter(apiRequestLimitPerSec, env.CentralAPIRateLimitThrottleDuration.DurationSetting())
+	return ratelimit.NewRateLimiter(apiRequestLimitPerSec, env.CentralRateLimitThrottleDuration.DurationSetting())
 }
 
 func startGRPCServer() {
